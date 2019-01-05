@@ -6,12 +6,79 @@ unittest
 {
     IRCParser parser;
 
-    parser.client.nickname = "kameloso";
+    {
+        immutable event = parser.toIRCEvent(":sinisalo.freenode.net 004 kameloso^ sinisalo.freenode.net ircd-seven-1.1.7 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_MYINFO), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "sinisalo.freenode.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI"), content);
+            assert((aux == "ircd-seven-1.1.7"), aux);
+            assert((num == 4), num.to!string);
+        }
+    }
 
-    immutable daemon = IRCServer.Daemon.ircdseven;
-    parser.typenums = typenumsOf(daemon);
-    parser.client.server.daemon = daemon;
-    parser.client.server.daemonstring = "freenode";
+    /*
+    server.daemonstring = "ircd-seven-1.1.7";
+    server.daemon = IRCServer.Daemon.ircdseven;
+    */
+
+    with (parser.client)
+    {
+        assert((server.daemonstring == "ircd-seven-1.1.7"), server.daemonstring);
+        assert((server.daemon == IRCServer.Daemon.ircdseven), Enum!(IRCServer.Daemon).toString(server.daemon));
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":sinisalo.freenode.net 005 kameloso^ CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "sinisalo.freenode.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    /*
+    server.daemonstring = "freenode";
+    server.caseMapping = IRCServer.CaseMapping.rfc1459;
+    */
+
+    with (parser.client)
+    {
+        assert((server.daemonstring == "freenode"), server.daemonstring);
+        assert((server.caseMapping == IRCServer.CaseMapping.rfc1459), Enum!(IRCServer.CaseMapping).toString(server.caseMapping));
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":sinisalo.freenode.net 005 kameloso^ CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,jrxz CLIENTVER=3.0 WHOX KNOCK ETRACE :are supported by this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "sinisalo.freenode.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,jrxz CLIENTVER=3.0 WHOX KNOCK ETRACE"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    /*
+    server.maxNickLength = 16;
+    server.maxChannelLength = 50;
+    server.extbanPrefix = '$';
+    server.extbanTypes = "jrxz";
+    */
+
+    with (parser.client)
+    {
+        assert((server.maxNickLength == 16), server.maxNickLength.to!string);
+        assert((server.maxChannelLength == 50), server.maxChannelLength.to!string);
+        assert((server.extbanPrefix == '$'), server.extbanPrefix.to!string);
+        assert((server.extbanTypes == "jrxz"), server.extbanTypes);
+    }
 
     /+
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"

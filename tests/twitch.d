@@ -13,12 +13,12 @@ unittest
         server.daemon = IRCServer.Daemon.twitch;
         server.network = "Twitch";
         server.daemonstring = "twitch";
-        server.aModes = "eIbq";
-        server.bModes = "k";
-        server.cModes = "flj";
-        server.dModes = "CFLMPQScgimnprstz";
-        server.prefixchars = ['v':'+', 'o':'@'];
-        server.prefixes = "ov";
+        server.aModes = ""; //"eIbq";
+        server.bModes = ""; //"k";
+        server.cModes = ""; //"flj";
+        server.dModes = ""; //"CFLMPQScgimnprstz";
+        server.prefixchars = ['o':'@'];
+        server.prefixes = "o";
     }
 
     parser.typenums = typenumsOf(parser.client.server.daemon);
