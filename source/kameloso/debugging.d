@@ -33,7 +33,7 @@ debug:
  +/
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 {
-    sink.put("IRCParser parser;\n");
+    sink.put("IRCParser parser;\n\n");
     sink.put("with (parser.client)\n");
     sink.put("{\n");
     sink.formatDelta(IRCClient.init, client, 1);
@@ -68,6 +68,7 @@ unittest
 
     assert(sink.data ==
 `IRCParser parser;
+
 with (parser.client)
 {
     nickname = "NICKNAME";
