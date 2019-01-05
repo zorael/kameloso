@@ -7,21 +7,34 @@ version(TwitchSupport):
 unittest
 {
     IRCParser parser;
+
     with (parser.client)
     {
+        nickname = "kameloso";
+        user = "kameloso!";
         server.address = "irc.chat.twitch.tv";
-        server.daemon = IRCServer.Daemon.twitch;
-        server.network = "Twitch";
-        server.daemonstring = "twitch";
-        server.aModes = ""; //"eIbq";
-        server.bModes = ""; //"k";
-        server.cModes = ""; //"flj";
-        server.dModes = ""; //"CFLMPQScgimnprstz";
-        server.prefixchars = ['o':'@'];
-        server.prefixes = "o";
     }
 
-    parser.typenums = typenumsOf(parser.client.server.daemon);
+    {
+        immutable event = parser.toIRCEvent(":tmi.twitch.tv 004 kameloso :-");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_MYINFO), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((num == 4), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.daemon == IRCServer.Daemon.twitch), Enum!(IRCServer.Daemon).toString(server.daemon));
+        assert((server.network == "Twitch"), server.network);
+        assert((server.daemonstring == "Twitch"), server.daemonstring);
+        assert((server.maxNickLength == 25), server.maxNickLength.to!string);
+        assert((server.prefixchars == ['@':'o']), server.prefixchars.to!string);
+        assert((server.prefixes == "o"), server.prefixes);
+    }
 
     immutable e18 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -");
     with (e18)
@@ -81,19 +94,6 @@ unittest
             assert((channel == "#zorael"), channel);
             assert((tags == "broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0"), tags);
         }
-    }
-    {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv 004 zorael :-");
-        with (IRCEvent.Type)
-        with (event)
-        {
-            assert((type == RPL_MYINFO), Enum!(IRCEvent.Type).toString(type));
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
-            assert((num == 4), num.to!string);
-        }
-        assert((parser.client.server.network == "Twitch"), parser.client.server.network);
-        assert(parser.client.server.daemon == IRCServer.daemon.twitch);
     }
     {
         immutable event = parser.toIRCEvent(":tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
