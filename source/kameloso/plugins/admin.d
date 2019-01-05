@@ -129,7 +129,6 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         version(FlushStdout) stdout.flush();
     }
 
-    debug
     if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
