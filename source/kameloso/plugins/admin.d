@@ -1373,6 +1373,30 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 }
 
 
+// start
+/++
+ +  Print the initial assignment of client member fields, if we're printing asserts.
+ +
+ +  This lets us copy and paste the environment of later generated asserts.
+ +
+ +  `printAsserts` is debug-only, so gate this behind debug too.
+ +/
+debug
+void start(AdminPlugin plugin)
+{
+    if (!plugin.adminSettings.printAsserts) return;
+
+    import kameloso.debugging : formatClientAssignment;
+    import std.stdio : stdout, writeln;
+
+    writeln();
+    formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+    writeln();
+
+    plugin.previousClient = plugin.state.client;
+}
+
+
 version(OmniscientAdmin)
 {
     mixin UserAwareness!(ChannelPolicy.any);
