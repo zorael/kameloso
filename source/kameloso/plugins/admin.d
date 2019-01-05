@@ -157,9 +157,11 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
             writeln("with (parser.client)");
             writeln("{");
-            stdout.lockingTextWriter.formatDelta(plugin.previousClient, plugin.state.client, 1);
-            plugin.previousClient = plugin.state.client;
+            stdout.lockingTextWriter.formatDelta!(Yes.asserts)
+                (plugin.previousClient, plugin.state.client, 1);
             writeln("}\n");
+
+            plugin.previousClient = plugin.state.client;
         }
 
         version(FlushStdout) stdout.flush();
