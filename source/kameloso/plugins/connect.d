@@ -33,7 +33,7 @@ struct ConnectSettings
     import kameloso.uda : CannotContainComments, Separator;
 
     /// Whether or not to join channels upon being invited to them.
-    bool joinOnInvite = false;
+    bool joinOnInvite = true;
 
     /// Whether to use SASL authentication or not.
     bool sasl = true;
