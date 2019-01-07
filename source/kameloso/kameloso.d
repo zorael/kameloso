@@ -313,7 +313,7 @@ Next checkMessages(ref IRCBot bot)
     /// Reverse-formats an event and sends it to the server.
     void eventToServer(IRCEvent event)
     {
-        import kameloso.string : splitWords;
+        import kameloso.string : splitOnWord;
         import std.format : format;
 
         enum maxIRCLineLength = 512;
@@ -329,7 +329,7 @@ Next checkMessages(ref IRCBot bot)
         {
         case CHAN:
             prelude = "PRIVMSG %s :".format(channel);
-            lines = content.splitWords(' ', maxIRCLineLength-prelude.length);
+            lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
             break;
 
         case QUERY:
@@ -342,7 +342,7 @@ Next checkMessages(ref IRCBot bot)
             }
 
             if (!prelude.length) prelude = "PRIVMSG %s :".format(target.nickname);
-            lines = content.splitWords(' ', maxIRCLineLength-prelude.length);
+            lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
             break;
 
         case EMOTE:
@@ -364,8 +364,7 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case JOIN:
-            prelude = "JOIN ";
-            lines = channel.splitWords(',', maxIRCLineLength-prelude.length);
+            lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
             break;
 
         case KICK:

@@ -1605,10 +1605,10 @@ unittest
 }
 
 
-// splitWords
+// splitOnWord
 /++
- +  Splits a string with a supplied separator, into one or more lines not longer
- +  then the passed maximum length.
+ +  Splits a string with on word boundary by a supplied separator, into one or
+ +  more lines not longer than the passed maximum length.
  +
  +  If a line cannot be split due to the line being too short or the separator
  +  not occurring in the text, it is added to the returned array as-is and no
@@ -1618,7 +1618,7 @@ unittest
  +  ---
  +  string line = "I am a fish in a sort of long sentence~";
  +  enum maxLineLength = 20;
- +  auto splitLines = line.splitWords(' ', maxLineLength);
+ +  auto splitLines = line.splitOnWord(' ', maxLineLength);
  +
  +  assert(splitLines[0] == "I am a fish in a");
  +  assert(splitLines[1] == "sort of a long");
@@ -1633,7 +1633,7 @@ unittest
  +  Returns:
  +      A `string[]` array with lines split out of the passed `line`.
  +/
-T[] splitWords(T,C)(const T line, const C separator, const size_t maxLength)
+T[] splitOnWord(T,C)(const T line, const C separator, const size_t maxLength)
 if (isSomeString!T && (is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
     string[] lines;
@@ -1706,7 +1706,7 @@ unittest
             "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
             "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
             "ssssssssssssssssssssssssssssssssssssssssssssssssssssssss";
-        const splitLines = rawLine.splitWords(' ', maxLength);
+        const splitLines = rawLine.splitOnWord(' ', maxLength);
         assert((splitLines.length == 4), splitLines.length.text);
     }
     {
@@ -1721,7 +1721,7 @@ unittest
             "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
             "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
             "ssssssssssssssssssssssssssssssssssssssssssssssssssssssss";
-        const splitLines = rawLine.splitWords(' ', maxLength);
+        const splitLines = rawLine.splitOnWord(' ', maxLength);
         assert((splitLines.length == 1), splitLines.length.text);
         assert(splitLines[0] == rawLine);
     }
