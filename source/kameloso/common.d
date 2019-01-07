@@ -543,7 +543,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +/
 void writeConfigurationFile(ref IRCBot bot, const string filename)
 {
-    import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
+    import kameloso.config : justifiedConfigurationText, serialise;
     import kameloso.string : beginsWith, encode64;
     import std.array : Appender;
 
@@ -568,6 +568,52 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
         immutable justified = sink.data.justifiedConfigurationText;
         writeToDisk(filename, justified, Yes.addBanner);
     }
+}
+
+
+// writeToDisk
+/++
+ +  Saves the passed configuration text to disk, with the given filename.
+ +
+ +  Optionally add the `kameloso` version banner at the head of it.
+ +
+ +  Example:
+ +  ---
+ +  Appender!string sink;
+ +  sink.serialise(client, client.server, settings);
+ +  immutable configText = sink.data.justifiedConfigurationText;
+ +  writeToDisk("kameloso.conf", configText, Yes.addBanner);
+ +  ---
+ +
+ +  Params:
+ +      filename = Filename of file to write to.
+ +      configurationText = Content to write to file.
+ +      banner = Whether or not to add the "*kameloso bot*" banner at the head of the file.
+ +/
+void writeToDisk(const string filename, const string configurationText,
+    Flag!"addBanner" banner = Yes.addBanner)
+{
+    import std.file : mkdirRecurse;
+    import std.path : dirName;
+    import std.stdio : File, writefln, writeln;
+
+    immutable dir = filename.dirName;
+    mkdirRecurse(dir);
+
+    auto file = File(filename, "w");
+
+    if (banner)
+    {
+        import core.time : msecs;
+        import std.datetime.systime : Clock;
+
+        auto timestamp = Clock.currTime;
+        timestamp.fracSecs = 0.msecs;
+
+        file.writefln("# kameloso bot config (%s)\n", timestamp);
+    }
+
+    file.writeln(configurationText);
 }
 
 
