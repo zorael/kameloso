@@ -352,7 +352,7 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case MODE:
-            line = "MODE %s %s :%s".format(channel, aux, content);
+            line = "MODE %s %s %s".format(channel, aux, content);
             break;
 
         case TOPIC:
@@ -360,7 +360,7 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case INVITE:
-            line = "INVITE %s :%s".format(channel, target.nickname);
+            line = "INVITE %s %s".format(channel, target.nickname);
             break;
 
         case JOIN:
