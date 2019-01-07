@@ -800,7 +800,7 @@ unittest
  +  TODO:
  +      Support partial globs.
  +/
-uint sharedDomains(const string rawOne, const string rawOther) pure nothrow
+auto sharedDomains(const string rawOne, const string rawOther) pure nothrow
 {
     uint dots;
     bool doubleDots;
@@ -1633,7 +1633,7 @@ unittest
  +  Returns:
  +      A `string[]` array with lines split out of the passed `line`.
  +/
-T[] splitOnWord(T,C)(const T line, const C separator, const size_t maxLength)
+T[] splitOnWord(T, C)(const T line, const C separator, const size_t maxLength)
 if (isSomeString!T && (is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
     string[] lines;

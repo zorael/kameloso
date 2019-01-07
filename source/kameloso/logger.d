@@ -76,7 +76,7 @@ final class KamelosoLogger : Logger
      +      `kameloso.terminal.colour` to get a string.
      +/
     version(Colours)
-    static TerminalForeground tint(const LogLevel level, const bool bright)
+    static auto tint(const LogLevel level, const bool bright)
     {
         return bright ? logcoloursBright[level] : logcoloursDark[level];
     }
@@ -141,19 +141,19 @@ final class KamelosoLogger : Logger
     version(Colours)
     {
         /// Provides easy way to get a log tint.
-        string logtint() const @property { return tintImpl!(LogLevel.all); }
+        auto logtint() const @property { return tintImpl!(LogLevel.all); }
 
         /// Provides easy way to get an info tint.
-        string infotint() const @property { return tintImpl!(LogLevel.info); }
+        auto infotint() const @property { return tintImpl!(LogLevel.info); }
 
         /// Provides easy way to get a warning tint.
-        string warningtint() const @property { return tintImpl!(LogLevel.warning); }
+        auto warningtint() const @property { return tintImpl!(LogLevel.warning); }
 
         /// Provides easy way to get an error tint.
-        string errortint() const @property { return tintImpl!(LogLevel.error); }
+        auto errortint() const @property { return tintImpl!(LogLevel.error); }
 
         /// Provides easy way to get a fatal tint.
-        string fataltint() const @property { return tintImpl!(LogLevel.fatal); }
+        auto fataltint() const @property { return tintImpl!(LogLevel.fatal); }
     }
 
     /++
@@ -162,7 +162,7 @@ final class KamelosoLogger : Logger
      +  Params:
      +      payload = Message payload to write.
      +/
-    override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
+    override void writeLogMsg(ref LogEntry payload) pure nothrow const @nogc {}
 
     /// Outputs the head of a logger message.
     protected void beginLogMsg(Sink)(auto ref Sink sink,

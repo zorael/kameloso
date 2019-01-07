@@ -598,7 +598,7 @@ naN     !"¤%&/`;
  +  Returns:
  +      .ini file-like configuration text, justified into two columns.
  +/
-string justifiedConfigurationText(const string origLines)
+auto justifiedConfigurationText(const string origLines)
 {
     import kameloso.string : stripped;
     import std.algorithm.iteration : splitter;
