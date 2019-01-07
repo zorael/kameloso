@@ -1127,7 +1127,8 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
-    import kameloso.config : ConfigurationFileReadFailureException;
+    import kameloso.config : ConfigurationFileReadFailureException,
+        ConfigurationFileParsingException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
@@ -1167,6 +1168,10 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
     {
         logger.errorf("Error reading and decoding configuration file [%s%s%s]: %1$s%4$s",
             logtint, e.filename, errortint, e.msg);
+    }
+    catch (ConfigurationFileParsingException e)
+    {
+        logger.errorf("Error parsing configuration file: %s%s", logtint, e.msg);
     }
     catch (Exception e)
     {

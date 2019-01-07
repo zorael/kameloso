@@ -3,9 +3,6 @@
  +/
 module kameloso.config;
 
-import kameloso.common : logger;
-import kameloso.uda;
-
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -381,20 +378,17 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
         case '[':
             // New section
+            immutable sectionBackup = line;
+
             try
             {
                 import std.format : formattedRead;
                 line.formattedRead("[%s]", section);
-
-                if (section == "IRCBot")
-                {
-                    // Compatibility with old configuration files pre IRCBot <-> IRCClient swap
-                    section = "IRCClient";
-                }
             }
             catch (Exception e)
             {
-                logger.warningf(`Malformed configuration section header "%s": %s`, line, e.msg);
+                throw new ConfigurationFileParsingException("Malformed configuration " ~
+                    `section header "%s", %s`.format(sectionBackup, e.msg));
             }
             continue;
 
@@ -402,8 +396,8 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             // entry-value line
             if (!section.length)
             {
-                logger.warningf(`Malformed configuration line, sectionless orphan "%s"`, line);
-                continue;
+                throw new ConfigurationFileParsingException("Malformed configuration " ~
+                    `line, sectionless orphan "%s"`.format(line));
             }
 
             static if (Things.length == 1)
