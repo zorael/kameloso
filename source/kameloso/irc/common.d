@@ -1061,40 +1061,47 @@ void setMode(ref IRCChannel channel, const string signedModestring,
     import std.array : array;
     import std.algorithm.iteration : splitter;
     import std.range : StoppingPolicy, retro, zip;
+    import std.string : representation;
 
     if (!signedModestring.length) return;
 
-    char sign = signedModestring[0];
-    string modestring;
-
-    if ((sign == '+') || (sign == '-'))
+    struct SignedModechar
     {
-        // Explicitly plus or minus
-        sign = signedModestring[0];
-        modestring = signedModestring[1..$];
-    }
-    else
-    {
-        // No sign, implicitly plus (and don't slice it away)
-        sign = '+';
-        modestring = signedModestring;
+        char sign;
+        char modechar;
     }
 
-    alias Mode = IRCChannel.Mode;
+    char nextSign = '+';
+    SignedModechar[] modecharArray;
+
+    foreach (immutable c; signedModestring.representation)
+    {
+        if ((c == '+') || (c == '-'))
+        {
+            nextSign = c;
+        }
+        else
+        {
+            modecharArray ~= SignedModechar(nextSign, c);
+        }
+    }
+
+    if (!modecharArray.length) return;
+
     auto datalines = data.splitter(" ").array.retro;
-    auto moderange = modestring.retro;
+    auto moderange = modecharArray.retro;
     auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
 
-    Mode[] newModes;
     IRCUser[] carriedExceptions;
 
     ziploop:
-    foreach (immutable modechar, immutable datastring; ziprange)
+    foreach (immutable signedModechar, immutable datastring; ziprange)
     {
-        import std.conv : to;
+        immutable modechar = signedModechar.modechar;
+        immutable sign = signedModechar.sign;
 
-        Mode newMode;
-        newMode.modechar = modechar.to!char;
+        IRCChannel.Mode newMode;
+        newMode.modechar = modechar;
 
         if ((modechar == server.exceptsChar) || (modechar == server.invexChar))
         {
@@ -1267,7 +1274,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 continue;
             }
 
-            newModes ~= newMode;
+            channel.modes ~= newMode;
         }
         else if (sign == '-')
         {
@@ -1334,12 +1341,6 @@ void setMode(ref IRCChannel channel, const string signedModestring,
         {
             assert(0, "Invalid mode sign: " ~ sign);
         }
-
-    }
-
-    if (sign == '+')
-    {
-        channel.modes ~= newModes;
     }
 }
 
