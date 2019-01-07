@@ -817,6 +817,24 @@ final class ConfigurationFileReadFailureException : Exception
 }
 
 
+// ConfigurationFileParsingException
+/++
+ +  Exception, to be thrown when the specified configuration file could not be
+ +  parsed, for whatever reason.
+ +/
+final class ConfigurationFileParsingException : Exception
+{
+@safe:
+    /++
+     +  Create a new `ConfigurationFileParsingException`.
+     +/
+    this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure
+    {
+        super(message, file, line);
+    }
+}
+
+
 // splitEntryValue
 /++
  +  Splits a line into an entry and a value component.
