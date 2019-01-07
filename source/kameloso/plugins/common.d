@@ -1945,9 +1945,9 @@ public:
      +  Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)(const string channel,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string key = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
     {
-        return kameloso.messaging.join!priority(privateState, channel, quiet);
+        return kameloso.messaging.join!priority(privateState, channel, key, quiet);
     }
 
     // kick

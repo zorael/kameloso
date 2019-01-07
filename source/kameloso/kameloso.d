@@ -364,7 +364,15 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case JOIN:
-            lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
+            if (aux.length)
+            {
+                line = channel ~ " " ~ aux;
+            }
+            else
+            {
+                prelude = "JOIN ";
+                lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
+            }
             break;
 
         case KICK:

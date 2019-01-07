@@ -419,10 +419,12 @@ unittest
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel to join.
+ +      key = Channel key to join the channel with, if it's locked.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const bool quiet = settings.hideOutgoing)
+    const string channel, const string key = string.init,
+    const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -430,6 +432,7 @@ void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
     event.type = IRCEvent.Type.JOIN;
     if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
+    event.aux = key;
 
     state.mainThread.send(event);
 }
