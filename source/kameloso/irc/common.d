@@ -1486,6 +1486,32 @@ unittest
             assert(blarf.matchesByMask(user));
         }
     }
+
+    {
+        IRCChannel chan;
+
+        chan.setMode("+t", string.init, server);
+        assert(!chan.modes.length, chan.modes.length.text);
+        assert((chan.modechars == "t"), chan.modechars);
+
+        chan.setMode("-t+nlk", "42 chankey", server);
+        assert((chan.modes.length == 2), chan.modes.length.text);
+        with (chan.modes[0])
+        {
+            assert((modechar == 'k'), modechar.text);
+            assert((data == "chankey"), data);
+        }
+        with (chan.modes[1])
+        {
+            assert((modechar == 'l'), modechar.text);
+            assert((data == "42"), data);
+        }
+
+        assert((chan.modechars == "n"), chan.modechars);
+
+        chan.setMode("-kl", string.init, server);
+        assert(!chan.modes.length, chan.modes.length.text);
+    }
 }
 
 
