@@ -149,6 +149,7 @@ if (Things.length > 1)
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
+    import kameloso.uda : Separator, Unconfigurable;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
     import std.traits : Unqual;
@@ -359,6 +360,8 @@ pipyon 3
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
     import kameloso.string : stripSuffix, stripped;
+    import kameloso.uda : CannotContainComments, Unconfigurable;
+    import std.format : format;
 
     string section;
     string[][string] invalidEntries;
@@ -474,6 +477,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
 unittest
 {
+    import kameloso.uda : Separator;
     import std.algorithm.iteration : splitter;
     import std.conv : text;
 
