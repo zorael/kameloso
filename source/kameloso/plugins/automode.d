@@ -233,11 +233,32 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
             continue;
         }
 
-        // FIXME: use messaging.mode
-        plugin.state.raw("MODE %s %s%s %s"
-            .format(occupiedChannel.name, "+".repeat(modes.length).join, *modes, nickname));
+        plugin.state.mode(occupiedChannel.name, "+".repeat(modes.length).join ~ *modes, nickname);
         plugin.appliedAutomodes[channelName][account] = true;
     }
+}
+
+unittest
+{
+    import kameloso.conv : Enum;
+    import std.concurrency;
+    import std.format : format;
+
+    // Only tests the messenger mode call
+
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.mode("#channel", "++ov", "mydude");
+    immutable event = receiveOnly!IRCEvent;
+
+    assert((event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(event.type));
+    assert((event.channel == "#channel"), event.channel);
+    assert((event.aux == "++ov"), event.aux);
+    assert((event.content == "mydude"), event.content);
+
+    immutable line = "MODE %s %s %s".format(event.channel, event.aux, event.content);
+    assert((line == "MODE #channel ++ov mydude"), line);
 }
 
 
