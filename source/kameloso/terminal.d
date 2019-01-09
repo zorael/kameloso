@@ -584,24 +584,25 @@ string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
     import std.format : format;
     import std.string : indexOf;
 
+    static if (caseInsensitive)
+    {
+        import std.uni : toLower;
+        ptrdiff_t startpos = line.toLower.indexOf(toInvert.toLower);
+    }
+    else
+    {
+        ptrdiff_t startpos = line.indexOf(toInvert);
+    }
+
+    //assert((startpos != -1), "Tried to invert nonexistent text");
+    if (startpos == -1) return line;
+
     immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.format,
         TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
 
     Appender!string sink;
     sink.reserve(512);  // Maximum IRC message length by spec
     string slice = line;
-
-    static if (caseInsensitive)
-    {
-        import std.uni : toLower;
-        ptrdiff_t startpos = slice.toLower.indexOf(toInvert.toLower);
-    }
-    else
-    {
-        ptrdiff_t startpos = slice.indexOf(toInvert);
-    }
-
-    assert((startpos != -1), "Tried to invert nonexistent text");
 
     uint i;
 
