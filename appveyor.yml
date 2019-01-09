@@ -4,7 +4,7 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.084
+      DVersion: 2.084.0
       DSubversion:
       DAppVeyorBuildJob: 84u3srj5gv90n0td
       arch: x64
