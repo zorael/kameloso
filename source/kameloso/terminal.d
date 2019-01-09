@@ -793,4 +793,19 @@ unittest
         immutable expected = "Blah blah " ~ pre ~ "kameloso" ~ post ~ " Blah blah";
         assert((line == expected), line);
     }
+    {
+        immutable line = "Blah blah".invert("kameloso");
+        immutable expected = "Blah blah";
+        assert((line == expected), line);
+    }
+    {
+        immutable line = "".invert("kameloso");
+        immutable expected = "";
+        assert((line == expected), line);
+    }
+    {
+        immutable line = "KAMELOSO".invert("kameloso");
+        immutable expected = "KAMELOSO";
+        assert((line == expected), line);
+    }
 }
