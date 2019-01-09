@@ -4,7 +4,7 @@
 
 A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's easily extensible, API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas for inclusion welcome.
 
-IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet. Once discovered it's generally not a difficult thing to do.
+IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -267,7 +267,7 @@ The IRC event parsing is largely decoupled from the bot parts of the program, ne
 * [`traits.d`](source/kameloso/traits.d)
 * [`uda.d`](source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required; inquire within.
+Feel free to copy these and drop them into your own project. Examples of parsing results can be found in the test files in [`tests/`](source/tests/). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required; inquire within.
 
 # Known issues
 
