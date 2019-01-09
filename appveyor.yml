@@ -104,7 +104,7 @@ test_script:
  - dub test           --arch=%Darch% --compiler=%DC%
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% -c vanilla
  #- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c polyglot || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
+ #- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c polyglot
  - mv kameloso.exe kameloso-dev.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
