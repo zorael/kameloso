@@ -439,8 +439,7 @@ enum PrefixPolicy
 {
     direct,   /// Message will be treated as-is without looking for prefixes.
     prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
-    optionalNickname, /// Message may begin with bot name, if so it will be stripped.
-    requiredNickname, /// Message must begin with bot name, except in `QUERY` events.
+    nickname, /// Message should begin with the bot's name, except in `QUERY` and `WHISPER` events.
 }
 
 
@@ -3025,7 +3024,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
         }
         break;
 
-    case optionalNickname:
+    case nickname:
         if (content.beginsWith('@'))
         {
             // Using @name to refer to someone is not
@@ -3035,63 +3034,17 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
 
         if (content.beginsWith(client.nickname))
         {
-            content = content.stripSeparatedPrefix(client.nickname);
+            content = content.stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
         }
-        break;
-
-    case requiredNickname:
-        if (type == IRCEvent.Type.QUERY)
+        else if ((type == IRCEvent.Type.QUERY) || (type == IRCEvent.Type.WHISPER))
         {
-            /*static if (verbose)
-            {
-                writeln(name, "but it is a query, consider optional");
-                version(FlushStdout) stdout.flush();
-            }*/
-            goto case optionalNickname;
-        }
-
-        if (content.beginsWith('@'))
-        {
-            content = content[1..$];
-        }
-
-        if (content.beginsWith(client.nickname) && (content.length > client.nickname.length))
-        {
-            /*static if (verbose)
-            {
-                writefln("%s trailing character '%s'", name, content[client.nickname.length]);
-            }*/
-
-            switch (content[client.nickname.length])
-            {
-            case ':':
-            case ' ':
-            case '!':
-            case '?':
-                // Content begins with bot nickname,
-                // followed by this non-nick character;
-                // indicative of a command
-                break;
-
-            default:
-                // Content begins with bot nickname,
-                // followed by something allowed in
-                // nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
-                // Hence we can't say it's aimed towards
-                // us, may be another nick
-                return false;
-            }
+            // Doesn't start with nickname but it's a private message; let pass
         }
         else
         {
-            // Message started with something unrelated
-            // (not bot nickname)
+            // Nickname required but not present
             return false;
         }
-
-        // Event.content *guaranteed* to begin with
-        // client.nickname here
-        content = content.stripSeparatedPrefix(client.nickname);
         break;
     }
 
