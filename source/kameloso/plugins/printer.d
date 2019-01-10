@@ -8,7 +8,7 @@
  +
  +  It is not technically necessary, but it is the main form of feedback you
  +  get from the plugin, so you will only want to disable it if you want a
- +  really "headless" environment.
+ +  really "headless" environment. There's also logging to consider.
  +/
 module kameloso.plugins.printer;
 
@@ -23,7 +23,6 @@ import kameloso.irc.colours;
 
 version(Colours) import kameloso.terminal : TerminalForeground;
 
-import std.datetime.systime : SysTime;
 import std.typecons : No, Yes;
 
 
@@ -58,10 +57,7 @@ struct PrinterSettings
     /// Whether or not to filter away most uninteresting events.
     bool filterMost = true;
 
-    /++
-     +  Whether or not to send a terminal bell signal when the bot is mentioned
-     +  in chat.
-     +/
+    /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
     bool bellOnMention = true;
 
     /// Whether or not to bell on parsing errors.
@@ -97,7 +93,7 @@ struct PrinterSettings
 /++
  +  Prints an event to the local terminal.
  +
- +  Does not allocate, writes directly to a `std.stdio.LockingTextWriter`.
+ +  Avoids extra allocation by writing directly to a `std.stdio.LockingTextWriter`.
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
@@ -222,7 +218,7 @@ struct LogLineBuffer
     /// Basename directory this buffer will be saved to.
     string dir;
 
-    /// Fully qualifed filename this bufer will be saved to.
+    /// Fully qualifed filename this buffer will be saved to.
     string file;
 
     /// Buffered lines that will be saved to `file`, in `dir`.
@@ -721,7 +717,7 @@ void onISUPPORT(PrinterPlugin plugin)
         import std.string : capitalize;
         import std.uni : isLower;
 
-        immutable networkName = network[0].isLower ? network.capitalize() : network;
+        immutable networkName = network[0].isLower ? capitalize(network) : network;
         string infotint, logtint, tintreset;
 
         version(Colours)
@@ -1781,6 +1777,7 @@ void periodically(PrinterPlugin plugin)
  +      A `std.datetime.systime.SysTime` of the midnight following the date
  +      passed as argument.
  +/
+import std.datetime.systime : SysTime;
 SysTime getNextMidnight(const SysTime now)
 {
     import std.datetime : DateTime;
