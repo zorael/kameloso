@@ -1851,7 +1851,7 @@ unittest
  +  Returns:
  +      The passed path with some characters replaced.
  +/
-string escapedPath(const string path)
+auto escapedPath(const string path)
 {
     import std.array : replace;
 
