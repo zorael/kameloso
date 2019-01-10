@@ -286,6 +286,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
 unittest
 {
+    import kameloso.uda : Quoted;
     import std.array : Appender;
 
     struct FooSettings
@@ -293,6 +294,7 @@ unittest
         string fooasdf = "foo 1";
         string bar = "foo 1";
         string bazzzzzzz = "foo 1";
+        @Quoted flerrp = "hirr steff  ";
         double pi = 3.14159;
     }
 
@@ -301,6 +303,7 @@ unittest
         string foofdsa = "foo 2";
         string bar = "bar 2";
         string bazyyyyyyy = "baz 2";
+        @Quoted flarrp = "   hirrsteff";
         double pipyon = 3.0;
     }
 
@@ -309,6 +312,7 @@ unittest
 fooasdf foo 1
 bar foo 1
 bazzzzzzz foo 1
+flerrp "hirr steff  "
 pi 3.14159
 `;
 
@@ -323,6 +327,7 @@ pi 3.14159
 foofdsa foo 2
 bar bar 2
 bazyyyyyyy baz 2
+flarrp "   hirrsteff"
 pipyon 3
 `;
 
@@ -330,7 +335,7 @@ pipyon 3
     barSink.reserve(64);
 
     barSink.serialise(BarSettings.init);
-    assert(barSink.data == barSerialised);
+    assert((barSink.data == barSerialised), '\n' ~ barSink.data);
 
     // try two at once
     Appender!string bothSink;
