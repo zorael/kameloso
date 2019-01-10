@@ -4,7 +4,7 @@
  +
  +  It has no commands; all `kameloso.irc.defs.IRCEvent`s will be parsed and
  +  printed, excluding certain types that were deemed too spammy. Print them as
- +  well by disabling `PrinterSettings.filterVerbose`.
+ +  well by disabling `PrinterSettings.filterMost`.
  +
  +  It is not technically necessary, but it is the main form of feedback you
  +  get from the plugin, so you will only want to disable it if you want a
@@ -56,7 +56,7 @@ struct PrinterSettings
     bool motd = false;
 
     /// Whether or not to filter away most uninteresting events.
-    bool filterVerbose = true;
+    bool filterMost = true;
 
     /++
      +  Whether or not to send a terminal bell signal when the bot is mentioned
@@ -158,7 +158,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ROOMSTATE:
     case SASL_AUTHENTICATE:
         // These event types are spammy; ignore if we're configured to
-        if (!plugin.printerSettings.filterVerbose) goto default;
+        if (!plugin.printerSettings.filterMost) goto default;
         break;
 
     case JOIN:
