@@ -14,6 +14,7 @@ import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
 //version = TwitchWarnings;
+version = PrefixedCommandsFallBackToNickname;
 
 
 // 2.079.0 getSymolsByUDA
@@ -3020,7 +3021,14 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
         }
         else
         {
-            return false;
+            version(PrefixedCommandsFallBackToNickname)
+            {
+                goto case nickname;
+            }
+            else
+            {
+                return false;
+            }
         }
         break;
 
