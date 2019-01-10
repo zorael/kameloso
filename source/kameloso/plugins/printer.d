@@ -48,8 +48,12 @@ struct PrinterSettings
     /// Whether or not to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
-    /// Whether or not to show Message of the Day upon connecting.
-    bool motd = true;
+    /++
+     +  Whether or not to show Message of the Day upon connecting.
+     +
+     +  Warning! MOTD generally lists server rules, which might be good to read.
+     +/
+    bool motd = false;
 
     /// Whether or not to filter away most uninteresting events.
     bool filterVerbose = true;
