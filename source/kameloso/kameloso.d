@@ -526,11 +526,11 @@ void exhaustMessages()
     import std.variant : Variant;
 
     bool notEmpty;
-    static immutable instant = 10.msecs;
+    static immutable almostInstant = 10.msecs;
 
     do
     {
-        notEmpty = receiveTimeout(instant,
+        notEmpty = receiveTimeout(almostInstant,
             (Variant v) {}
         );
     }
