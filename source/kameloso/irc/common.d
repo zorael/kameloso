@@ -1607,6 +1607,9 @@ struct IRCClient
         /// Client IDENT identifier.
         string ident = "NaN";
 
+        /// Client GECOS/"real name".
+        string realName = "kameloso IRC bot";
+
         /// Default reason given when quitting without specifying one.
         string quitReason = "beep boop I am a bot";
 
