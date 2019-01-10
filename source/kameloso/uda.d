@@ -24,3 +24,8 @@ struct Hidden;
  +  indicate a comment.
  +/
 struct CannotContainComments;
+
+/++
+ +  UDA conveying that this member's value must be quoted in the configuration file.
+ +/
+struct Quoted;
