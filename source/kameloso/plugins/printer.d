@@ -225,9 +225,6 @@ struct LogLineBuffer
     /// Fully qualifed filename this bufer will be saved to.
     string file;
 
-    /// The month this buffer was created, to allow us to rotate on month change.
-    int month;
-
     /// Buffered lines that will be saved to `file`, in `dir`.
     Appender!(string[]) lines;
 
@@ -240,8 +237,6 @@ struct LogLineBuffer
         import std.datetime.date : Date;
 
         this.dir = dir;
-        this.month = now.month;
-
         // Cut the day from the date string, keep YYYY-MM
         this.file = buildNormalizedPath(this.dir, (cast(Date)now).toISOExtString[0..7] ~ ".log");
     }
@@ -253,7 +248,6 @@ struct LogLineBuffer
     this(const string dir, const string filename)
     {
         this.dir = dir;
-        this.month = -1;
         this.file = buildNormalizedPath(this.dir, filename);
     }
 }
