@@ -1497,6 +1497,18 @@ int kamelosoMain(string[] args)
         complainAboutMissingConfiguration(args);
     }
 
+    if (!settings.force)
+    {
+        IRCServer conservativeServer;
+        conservativeServer.maxNickLength = 25;  // Twitch max, should be enough
+
+        if (!bot.parser.client.nickname.isValidNickname(conservativeServer))
+        {
+            logger.error("Invalid nickname!");  // No need to print it, visile from printObjects
+            return 1;
+        }
+    }
+
     version(Posix)
     {
         // Workaround for Issue 19247:
