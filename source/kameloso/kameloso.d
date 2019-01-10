@@ -1472,6 +1472,13 @@ int kamelosoMain(string[] args)
     printVersionInfo(pre, post);
     writeln();
 
+    // If no client.user set, inherit client.nickname into it.
+    // Then we don't have to hardcode a default "kameloso!"
+    if (!bot.parser.client.user.length)
+    {
+        bot.parser.client.user = bot.parser.client.nickname;
+    }
+
     // Print the current settings to show what's going on.
     import kameloso.printing : printObjects;
     import kameloso.string : contains;

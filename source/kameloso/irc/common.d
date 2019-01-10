@@ -1602,7 +1602,7 @@ struct IRCClient
         string nickname = "kameloso";
 
         /// Client "user" or full name.
-        string user = "kameloso!";
+        string user; // = "kameloso!";
 
         /// Client IDENT identifier.
         string ident = "NaN";
