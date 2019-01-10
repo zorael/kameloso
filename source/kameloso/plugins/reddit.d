@@ -63,7 +63,7 @@ struct RedditLookup
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "reddit")
-@BotCommand(PrefixPolicy.requiredNickname, "reddit")
+@BotCommand(PrefixPolicy.nickname, "reddit")
 @Description("Look up an URL and see if it has been posted on Reddit. Echo that link if so.",
     "$command [URL to look up]")
 void onMessage(RedditPlugin plugin, const IRCEvent event)

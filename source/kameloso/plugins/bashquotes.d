@@ -46,7 +46,7 @@ struct BashQuotesSettings
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "bash")
-@BotCommand(PrefixPolicy.requiredNickname, "bash")
+@BotCommand(PrefixPolicy.nickname, "bash")
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {

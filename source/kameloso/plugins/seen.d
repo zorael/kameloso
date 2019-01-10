@@ -435,11 +435,8 @@ void onEndOfList(SeenPlugin plugin)
  +  Prefix policies can be one of:
  +  * `direct`, where the raw command is expected without any bot prefix at all.
  +  * `prefixed`, where the message has to start with the command prefix (usually `!`)
- +  * `optionalNickname`, where the bot's nickname will be allowed and stripped away,
- +     but the function will still be invoked given the right command string.
- +     <br>
- +  * `requiredNickname`, where the message has to start with the name of the bot
- +     if in a `CHAN` message, but it needn't be there in a `QUERY`.<br>
+ +  * `nickname`, where the message has to start with bot's nickname, except
+ +     if it's in a `QUERY` or `WHISPER` message.<br>
  +
  +  The plugin system will have made certain we only get messages starting with
  +  "`seen`", since we annotated this function with such a
@@ -473,7 +470,7 @@ void onEndOfList(SeenPlugin plugin)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "seen")
-@BotCommand(PrefixPolicy.requiredNickname, "seen")
+@BotCommand(PrefixPolicy.nickname, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
@@ -627,7 +624,7 @@ debug
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.requiredNickname, "printseen")
+@BotCommand(PrefixPolicy.nickname, "printseen")
 @Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
 void onCommandPrintSeen(SeenPlugin plugin)
 {
