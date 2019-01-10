@@ -2999,7 +2999,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
-    import kameloso.string : beginsWith, nom, stripPrefix;
+    import kameloso.string : beginsWith, nom, stripSeparatedPrefix;
     import std.typecons : No, Yes;
 
     with (mutEvent)
@@ -3035,7 +3035,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
 
         if (content.beginsWith(client.nickname))
         {
-            content = content.stripPrefix(client.nickname);
+            content = content.stripSeparatedPrefix(client.nickname);
         }
         break;
 
@@ -3091,7 +3091,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
 
         // Event.content *guaranteed* to begin with
         // client.nickname here
-        content = content.stripPrefix(client.nickname);
+        content = content.stripSeparatedPrefix(client.nickname);
         break;
     }
 
