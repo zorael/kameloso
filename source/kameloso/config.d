@@ -175,6 +175,8 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
         {
             import std.traits : isArray, isSomeString;
 
+            enum memberstring = __traits(identifier, thing.tupleof[i]);
+
             static if (!isSomeString!T && isArray!T)
             {
                 import std.algorithm.iteration : map;
@@ -183,13 +185,13 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 // array, join it together
                 static assert (hasUDA!(thing.tupleof[i], Separator),
                     "%s.%s is not annotated with a Separator"
-                    .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
+                    .format(Thing.stringof, memberstring));
 
                 import std.traits : getUDAs;
                 alias separators = getUDAs!(thing.tupleof[i], Separator);
                 enum separator = separators[0].token;
                 static assert(separator.length, "%s.%s has invalid Separator (empty)"
-                    .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
+                    .format(Thing.stringof, memberstring));
 
                 enum arrayPattern = "%-(%s" ~ separator ~ "%)";
 
@@ -257,7 +259,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             if (comment)
             {
                 // .init or otherwise disabled
-                sink.formattedWrite("#%s\n", __traits(identifier, thing.tupleof[i]));
+                sink.formattedWrite("#%s\n", memberstring);
             }
             else
             {
@@ -267,17 +269,17 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
                     if (value.contains!(Yes.decode)(" "))
                     {
-                        sink.formattedWrite("%s \"%s\"\n", __traits(identifier, thing.tupleof[i]), value);
+                        sink.formattedWrite("%s \"%s\"\n", memberstring, value);
                     }
                     else
                     {
                         // Copy/paste below
-                        sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
+                        sink.formattedWrite("%s %s\n", memberstring, value);
                     }
                 }
                 else
                 {
-                    sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
+                    sink.formattedWrite("%s %s\n", memberstring, value);
                 }
             }
         }
