@@ -3206,6 +3206,9 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
  +  associative array and the ones in each `IRCChannel.users` associative arrays.
  +
  +  This optimises lookup and should be done every so often,
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
  +/
 void rehashUsers(IRCPlugin plugin)
 {

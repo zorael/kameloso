@@ -353,6 +353,8 @@ pipyon 3
  +      An associative array of string arrays of invalid configuration entries.
  +      The associative array key is the section the entry was found under, and
  +      the arrays merely lists of such erroneous entries thereunder.
+ +
+ +  Throws: `ConfigurationFileParsingException` if there were bad lines.
  +/
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
