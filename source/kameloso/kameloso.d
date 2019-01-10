@@ -1472,11 +1472,18 @@ int kamelosoMain(string[] args)
     printVersionInfo(pre, post);
     writeln();
 
+    // Nickname, user and GECOS/real name must be set to register.
     // If no client.user set, inherit client.nickname into it.
     // Then we don't have to hardcode a default "kameloso!"
     if (!bot.parser.client.user.length)
     {
         bot.parser.client.user = bot.parser.client.nickname;
+    }
+
+    // Likewise with client GECOS/"real name"
+    if (!bot.parser.client.realName.length)
+    {
+        bot.parser.client.realName = bot.parser.client.nickname;
     }
 
     // Print the current settings to show what's going on.
