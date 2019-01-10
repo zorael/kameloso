@@ -657,7 +657,7 @@ unittest
 }
 
 
-// stripPrefix
+// stripSeparatedPrefix
 /++
  +  Strips a prefix word from a string, optionally also stripping away some
  +  non-word characters (`:?! `).
@@ -668,7 +668,7 @@ unittest
  +  Example:
  +  ---
  +  string prefixed = "kameloso: sudo MODE +o #channel :user";
- +  string command = prefixed.stripPrefix("kameloso");
+ +  string command = prefixed.stripSeparatedPrefix("kameloso");
  +  assert((command == "sudo MODE +o #channel :user"), command);
  +  ---
  +
@@ -682,11 +682,13 @@ unittest
  +  Returns:
  +      The passed line with the `prefix` sliced away.
  +/
-string stripPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
+string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure
 {
-    // Characters to also strip away after `prefix`.
-    enum separatingChars = ":?! ";
+    import std.algorithm.searching : skipOver, startsWith;
+    import std.meta : AliasSeq;
+
+    alias separatingChars = AliasSeq!(':', ' ', '!', '?');
 
     string slice = line.strippedLeft;  // mutable
 
@@ -696,15 +698,18 @@ string stripPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.dema
     static if (demandSeparatingChars)
     {
         // Return the whole line, a non-match, if there are no separating characters
-        // (at least one of [:?! ])
-        if (!slice.beginsWithOneOf(separatingChars)) return line;
-        slice = slice[1..$];  // One less call to beginsWithOneOf if we do this here
-    }
-
-    while (slice.length && slice.beginsWithOneOf(separatingChars))
-    {
+        // (at least one of the chars in separatingChars
+        if (!slice.startsWith(separatingChars)) return line;
         slice = slice[1..$];
     }
+
+    bool strippedSomething;
+
+    do
+    {
+        strippedSomething = slice.skipOver(separatingChars);
+    }
+    while (strippedSomething);
 
     return slice;
 }
@@ -712,22 +717,22 @@ string stripPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.dema
 ///
 unittest
 {
-    immutable lorem = "say: lorem ipsum".stripPrefix("say");
+    immutable lorem = "say: lorem ipsum".stripSeparatedPrefix("say");
     assert((lorem == "lorem ipsum"), lorem);
 
-    immutable notehello = "note!!!! zorael hello".stripPrefix("note");
+    immutable notehello = "note!!!! zorael hello".stripSeparatedPrefix("note");
     assert((notehello == "zorael hello"), notehello);
 
-    immutable sudoquit = "sudo quit :derp".stripPrefix("sudo");
+    immutable sudoquit = "sudo quit :derp".stripSeparatedPrefix("sudo");
     assert((sudoquit == "quit :derp"), sudoquit);
 
-    immutable eightball = "8ball predicate?".stripPrefix("");
+    immutable eightball = "8ball predicate?".stripSeparatedPrefix("");
     assert((eightball == "8ball predicate?"), eightball);
 
-    immutable isnotabot = "kamelosois a bot".stripPrefix("kameloso");
+    immutable isnotabot = "kamelosois a bot".stripSeparatedPrefix("kameloso");
     assert((isnotabot == "kamelosois a bot"), isnotabot);
 
-    immutable isabot = "kamelosois a bot".stripPrefix!(No.demandSeparatingChars)("kameloso");
+    immutable isabot = "kamelosois a bot".stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
     assert((isabot == "is a bot"), isabot);
 }
 
