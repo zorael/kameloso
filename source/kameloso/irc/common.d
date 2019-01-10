@@ -1599,7 +1599,7 @@ struct IRCClient
         import kameloso.uda : CannotContainComments, Hidden, Separator, Unconfigurable;
 
         /// Client nickname.
-        string nickname = "kameloso";
+        string nickname; // = "kameloso";
 
         /// Client "user" or full name.
         string user; // = "kameloso!";
