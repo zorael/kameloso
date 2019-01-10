@@ -923,7 +923,8 @@ void negotiateNick(ConnectService service)
 
     service.nickNegotiation = Progress.started;
 
-    service.raw("USER %s * 8 : %s".format(service.state.client.ident, service.state.client.user));
+    service.raw("USER %s * 8 : %s".format(service.state.client.ident,
+        service.state.client.realName));
     service.raw("NICK " ~ service.state.client.nickname);
 }
 
