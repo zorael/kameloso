@@ -146,7 +146,7 @@ if (Things.length > 1)
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
-    import kameloso.uda : Separator, Unconfigurable;
+    import kameloso.uda : Separator, Unconfigurable, Quoted;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
     import std.traits : Unqual;
@@ -261,7 +261,14 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             }
             else
             {
-                sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
+                static if (is(T == string) && hasUDA!(Thing.tupleof[i], Quoted))
+                {
+                    sink.formattedWrite("%s \"%s\"\n", __traits(identifier, thing.tupleof[i]), value);
+                }
+                else
+                {
+                    sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
+                }
             }
         }
     }
