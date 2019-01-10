@@ -1507,6 +1507,12 @@ int kamelosoMain(string[] args)
             logger.error("Invalid nickname!");  // No need to print it, visile from printObjects
             return 1;
         }
+
+        if (!settings.prefix.length)
+        {
+            logger.error("No prefix configured!");
+            return 1;
+        }
     }
 
     version(Posix)
