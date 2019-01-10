@@ -120,7 +120,7 @@ struct CoreSettings
     bool endlesslyConnect = false;
 
     /// Character(s) that prefix a bot chat command.
-    string prefix = "!";
+    @Quoted string prefix = "!";
 
     @Unconfigurable
     @Hidden
