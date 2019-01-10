@@ -1800,7 +1800,7 @@ void complainAboutMissingConfiguration(const string[] args)
     import std.file : exists;
     import std.path : baseName;
 
-    logger.warning("Warning: No administrators nor channels configured!");
+    logger.warning("Warning: No administrators nor home channels configured!");
 
     immutable configFileExists = settings.configFile.exists;
     string infotint, logtint;
