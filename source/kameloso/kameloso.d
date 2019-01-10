@@ -468,22 +468,22 @@ Next checkMessages(ref IRCBot bot)
         }
     }
 
+    import core.time : seconds;
+    import std.datetime.systime : Clock;
+
     /// Did the concurrency receive catch something?
     bool receivedSomething;
 
-    /// Number of received concurrency messages this run.
-    uint receivedInARow;
+    /// Timestamp of when the loop started.
+    immutable loopStartTime = Clock.currTime;
 
-    /// After how many consecutive concurrency messages we should break.
-    enum maxReceiveBeforeBreak = 5;
+    static immutable instant = 0.seconds;
+    static immutable oneSecond = 1.seconds;
 
     do
     {
-        import core.time : seconds;
         import std.concurrency : receiveTimeout;
         import std.variant : Variant;
-
-        static immutable instant = 0.seconds;
 
         receivedSomething = receiveTimeout(instant,
             &sendline,
@@ -505,11 +505,9 @@ Next checkMessages(ref IRCBot bot)
                 logger.warning("Main thread received unknown Variant: ", v);
             }
         );
-
-        if (receivedSomething) ++receivedInARow;
     }
     while (receivedSomething && (next == Next.continue_) &&
-        (receivedInARow < maxReceiveBeforeBreak));
+        ((Clock.currTime - loopStartTime) <= oneSecond));
 
     return next;
 }
