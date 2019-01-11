@@ -37,6 +37,9 @@ version(Colours)
  +/
 void postprocess(TwitchSupportService service, ref IRCEvent event)
 {
+    // isEnabled doesn't work here since we're not offering to disable this plugin
+    if (service.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+
     service.parseTwitchTags(event);
 
     with (IRCEvent.Type)
@@ -792,8 +795,7 @@ private:
      +/
     public void onEvent(const IRCEvent event)
     {
-        if ((state.client.server.daemon != IRCServer.Daemon.unset) &&
-            (state.client.server.daemon != IRCServer.Daemon.twitch))
+        if (state.client.server.daemon != IRCServer.Daemon.twitch)
         {
             // Daemon known and not Twitch
             return;
