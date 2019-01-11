@@ -157,7 +157,7 @@ struct CoreSettings
  +  Returns:
  +      The multiple of `n` that reaches and possibly overshoots `num`.
  +/
-uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
+auto getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     (const Number num, const int n)
 {
     assert((n > 0), "Cannot get multiple of 0 or negatives");
@@ -186,7 +186,7 @@ uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
         immutable mod = (floor_ == frac) ? floor_ : (floor_ + 1);
     }
 
-    return (mod * n);
+    return cast(uint)(mod * n);
 }
 
 ///
@@ -878,7 +878,7 @@ unittest
  +  Returns:
  +      A string with the passed duration expressed in natural English language.
  +/
-string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
+auto timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {
     import std.array : Appender;
 
@@ -997,7 +997,7 @@ else version(FreeBSD)
  +  Returns:
  +      A string path to the default configuration file.
  +/
-string defaultConfigurationPrefix()
+auto defaultConfigurationPrefix()
 {
     import std.path : buildNormalizedPath;
     import std.process : environment;
@@ -1070,7 +1070,7 @@ unittest
  +  Returns:
  +      A string path to the default resource directory.
  +/
-string defaultResourcePrefix()
+auto defaultResourcePrefix()
 {
     import std.path : buildNormalizedPath;
     import std.process : environment;
