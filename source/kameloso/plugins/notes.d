@@ -212,7 +212,6 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "note")
-@BotCommand(PrefixPolicy.nickname, "note")
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {

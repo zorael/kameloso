@@ -470,7 +470,6 @@ void onEndOfList(SeenPlugin plugin)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "seen")
-@BotCommand(PrefixPolicy.nickname, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {

@@ -50,9 +50,6 @@ struct ChatbotSettings
 @BotCommand(PrefixPolicy.prefixed, "say")
 @BotCommand(PrefixPolicy.prefixed, "säg")
 @BotCommand(PrefixPolicy.prefixed, "echo")
-@BotCommand(PrefixPolicy.nickname, "say")
-@BotCommand(PrefixPolicy.nickname, "säg")
-@BotCommand(PrefixPolicy.nickname, "echo")
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
@@ -81,7 +78,6 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "8ball")
-@BotCommand(PrefixPolicy.nickname, "8ball")
 @Description("Implements 8ball. Randomises a vague yes/no response.")
 void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
