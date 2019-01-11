@@ -202,7 +202,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 
         with (IRCControlCharacter)
         {
-            service.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+            service.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), true);
         }
     }
 }

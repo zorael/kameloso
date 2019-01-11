@@ -153,6 +153,17 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     //case USERSTATE:
     case ROOMSTATE:
     case SASL_AUTHENTICATE:
+    case CTCP_AVATAR:
+    case CTCP_CLIENTINFO:
+    case CTCP_DCC:
+    case CTCP_FINGER:
+    case CTCP_LAG:
+    case CTCP_PING:
+    case CTCP_SLOTS:
+    case CTCP_SOURCE:
+    case CTCP_TIME:
+    case CTCP_USERINFO:
+    case CTCP_VERSION:
         // These event types are spammy; ignore if we're configured to
         if (!plugin.printerSettings.filterMost) goto default;
         break;
