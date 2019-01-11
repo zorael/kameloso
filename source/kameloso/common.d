@@ -213,9 +213,6 @@ unittest
 }
 
 
-@system:
-
-
 // IRCBot
 /++
  +  State needed for the kameloso bot, aggregated in a struct for easier passing
@@ -305,7 +302,7 @@ struct IRCBot
      +  Throws:
      +      `IRCPluginSettingsException` on failure to apply custom settings.
      +/
-    string[][string] initPlugins(string[] customSettings)
+    string[][string] initPlugins(string[] customSettings) @system
     {
         import kameloso.plugins : EnabledPlugins;
         import kameloso.plugins.common : IRCPluginState, applyCustomSettings;
@@ -369,7 +366,7 @@ struct IRCBot
      +  This merely calls `kameloso.plugins.common.IRCPlugin.initResources()` on
      +  each plugin.
      +/
-    void initPluginResources()
+    void initPluginResources() @system
     {
         foreach (plugin; plugins)
         {
@@ -385,7 +382,7 @@ struct IRCBot
      +
      +  Think of it as a plugin destructor.
      +/
-    void teardownPlugins()
+    void teardownPlugins() @system
     {
         if (!plugins.length) return;
 
@@ -433,7 +430,7 @@ struct IRCBot
      +  This has to happen after `initPlugins` or there will not be any plugins
      +  in the `plugins` array to start.
      +/
-    void startPlugins()
+    void startPlugins() @system
     {
         foreach (plugin; plugins)
         {
@@ -460,7 +457,7 @@ struct IRCBot
      +  Params:
      +      client = `kameloso.irc.common.IRCClient` to propagate to all plugins.
      +/
-    void propagateClient(IRCClient client) pure nothrow @nogc @safe
+    void propagateClient(IRCClient client) pure nothrow @nogc
     {
         foreach (plugin; plugins)
         {
@@ -484,7 +481,7 @@ struct IRCBot
  +      colourCode = Terminal foreground colour to display the text in.
  +/
 version(Colours)
-void printVersionInfo(TerminalForeground colourCode)
+void printVersionInfo(TerminalForeground colourCode) @system
 {
     import kameloso.terminal : colour;
     return printVersionInfo(colourCode.colour, TerminalForeground.default_.colour);
@@ -508,7 +505,7 @@ void printVersionInfo(TerminalForeground colourCode)
  +      pre = String to preface the line with, usually a colour code string.
  +      post = String to end the line with, usually a resetting code string.
  +/
-void printVersionInfo(const string pre = string.init, const string post = string.init)
+void printVersionInfo(const string pre = string.init, const string post = string.init) @system
 {
     import kameloso.constants : KamelosoInfo;
     import std.stdio : stdout, writefln;
@@ -541,7 +538,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +      bot = Reference to the current `IRCBot`, with all its settings.
  +      filename = String filename of the file to write to.
  +/
-void writeConfigurationFile(ref IRCBot bot, const string filename)
+void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 {
     import kameloso.config : justifiedConfigurationText, serialise;
     import kameloso.string : beginsWith, encode64;
@@ -938,7 +935,7 @@ unittest
  +
  +  Used in both `kameloso.getopt` and `kameloso.main`, so place it here.
  +/
-void complainAboutIncompleteConfiguration()
+void complainAboutIncompleteConfiguration() @system
 {
     string infotint, logtint;
 
