@@ -1614,12 +1614,12 @@ struct IRCClient
         string quitReason = "beep boop I am a bot";
 
         /// Username to use for services account.
-        string authLogin;
+        string account;
 
         @Hidden
         {
             /// Password for services account.
-            string authPassword;
+            string password;
 
             /// Login `PASS`, different from `SASL` and services.
             string pass;
