@@ -914,7 +914,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 import kameloso.conv : Enum;
                 import std.stdio : writeln, writefln;
-                version(FlushStdout) import std.stdio : flush;
+                version(FlushStdout) import std.stdio : stdout;
             }
 
             udaloop:
@@ -1211,11 +1211,29 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (__traits(hasMember, this, "allow") &&
                         isSomeFunction!(__traits(getMember, this, "allow")))
                     {
+                        static if (verbose)
+                        {
+                            writeln("... custom allow!");
+                            version(FlushStdout) stdout.flush();
+                        }
+
                         immutable result = allow(mutEvent, privilegeLevel);
                     }
                     else
                     {
+                        static if (verbose)
+                        {
+                            writeln("... built-in allow.");
+                            version(FlushStdout) stdout.flush();
+                        }
+
                         immutable result = allowImpl(mutEvent, privilegeLevel);
+                    }
+
+                    static if (verbose)
+                    {
+                        writeln("... result is ", Enum!FilterResult.toString(result));
+                        version(FlushStdout) stdout.flush();
                     }
 
                     with (FilterResult)
