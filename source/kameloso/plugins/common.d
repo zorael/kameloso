@@ -3271,18 +3271,18 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
             import kameloso.common : initLogger, settings;
             import kameloso.objmanip : setMemberByName;
 
-            settings.setMemberByName(setting, value);
+            immutable success = settings.setMemberByName(setting, value);
 
-            if ((setting == "monochrome") || (setting == "brightTerminal"))
+            if (!success)
+            {
+                logger.warningf("No such %score%s setting: %1$s%3$s",
+                    logtint, warningtint, setting);
+                noErrors = false;
+            }
+            else if ((setting == "monochrome") || (setting == "brightTerminal"))
             {
                 initLogger(settings.monochrome, settings.brightTerminal);
             }
-
-            foreach (plugin; plugins)
-            {
-                settings.setMemberByName(setting, value);
-            }
-
             continue top;
         }
         else
