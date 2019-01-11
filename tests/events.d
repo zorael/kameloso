@@ -6,8 +6,7 @@ import std.conv : to;
 unittest
 {
     IRCParser parser;
-
-    parser.client.nickname = "kameloso";
+    parser.client.nickname = "kameloso";  // Because we removed the default value
 
     {
         immutable event = parser.toIRCEvent("ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)");
@@ -136,6 +135,7 @@ unittest
 unittest
 {
     IRCParser parser;
+    parser.client.nickname = "kameloso^";  // Because we removed the default value
 
     immutable daemon = IRCServer.Daemon.inspircd;
     parser.typenums = typenumsOf(daemon);
@@ -152,7 +152,7 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#flerrp"), channel);
             assert((content == "End of channel exemptchanops list"), content);
-             assert((num == 953), num.to!string);
+            assert((num == 953), num.to!string);
         }
     }
 }
@@ -187,6 +187,7 @@ unittest
 unittest
 {
     IRCParser parser;
+    parser.client.nickname = "kameloso";  // Because we removed the default value
 
     with (parser.client)
     {
@@ -242,6 +243,7 @@ unittest
 unittest
 {
     IRCParser parser;
+    parser.client.nickname = "kameloso";  // Because we removed the default value
 
     with (parser.client)
     {
@@ -373,6 +375,7 @@ unittest
 unittest
 {
     IRCParser parser;
+    parser.client.nickname = "kameloso";  // Because we removed the default value
 
     with (parser.client)
     {

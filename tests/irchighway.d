@@ -5,6 +5,7 @@ import std.conv : to;
 unittest
 {
     IRCParser parser;
+    parser.client.nickname = "kameloso";  // Because we removed the default value
 
     {
         immutable event = parser.toIRCEvent(":eggbert.ca.na.irchighway.net 004 kameloso eggbert.ca.na.irchighway.net InspIRCd-2.0 BIRSWghiorswx ACDIMNORSTabcdehiklmnopqrstvz Iabdehkloqv");
