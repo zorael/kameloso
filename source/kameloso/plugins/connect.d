@@ -715,16 +715,14 @@ void onSASLAuthenticate(ConnectService service)
 {
     with (service.state.client)
     {
-        import kameloso.string : beginsWith, decode64;
-        import std.base64 : Base64;
-        import std.string : representation;
+        import kameloso.string : beginsWith, decode64, encode64;
 
         service.authentication = Progress.started;
 
         immutable account_ = account.length ? account : origNickname;
         immutable password_ = password.beginsWith("base64:") ? decode64(password[7..$]) : password;
         immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
-        immutable encoded = Base64.encode(authToken.representation);
+        immutable encoded = encode64(authToken);
 
         service.raw("AUTHENTICATE " ~ encoded, true);
         if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
