@@ -1488,7 +1488,7 @@ int kamelosoMain(string[] args)
 
         if (!bot.parser.client.nickname.isValidNickname(conservativeServer))
         {
-            logger.error("Invalid nickname!");  // No need to print it, visile from printObjects
+            logger.error("Invalid nickname!");  // No need to print it, visible from printObjects
             return 1;
         }
 
