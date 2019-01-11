@@ -1605,7 +1605,7 @@ struct IRCClient
         string user; // = "kameloso!";
 
         /// Client IDENT identifier.
-        string ident = "NaN";
+        string ident; // = "NaN";
 
         /// Client GECOS/"real name".
         string realName = "kameloso IRC bot";
