@@ -547,7 +547,6 @@ void writeConfigurationFile(ref IRCBot bot, const string filename) @system
     Appender!string sink;
     sink.reserve(2048);  // ~1756
 
-    with (bot)
     with (bot.parser)
     {
         if (client.password.length && !client.password.beginsWith("base64:"))
@@ -557,7 +556,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 
         sink.serialise(client, client.server, settings);
 
-        foreach (plugin; plugins)
+        foreach (plugin; bot.plugins)
         {
             plugin.serialiseConfigInto(sink);
         }
