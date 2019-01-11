@@ -242,8 +242,8 @@ void tryAuth(ConnectService service)
     with (service.state)
     {
         import kameloso.string : beginsWith, decode64;
-        immutable password = client.authPassword.beginsWith("base64:") ?
-            decode64(client.authPassword[7..$]) : client.authPassword;
+        immutable password = client.password.beginsWith("base64:") ?
+            decode64(client.password[7..$]) : client.password;
 
         // Specialcase networks
         switch (client.server.network)
@@ -313,9 +313,9 @@ void tryAuth(ConnectService service)
         case u2:
             // Accepts auth login
             // GameSurge is AuthServ
-            string account = client.authLogin;
+            string account = client.account;
 
-            if (!client.authLogin.length)
+            if (!client.account.length)
             {
                 logger.logf("No account specified! Trying %s%s%s ...", infotint, client.origNickname, logtint);
                 account = client.origNickname;
@@ -340,7 +340,7 @@ void tryAuth(ConnectService service)
             logger.warning("Unsure of what AUTH approach to use.");
             logger.info("Please report information about what approach succeeded!");
 
-            if (client.authLogin.length)
+            if (client.account.length)
             {
                 goto case ircdseven;
             }
@@ -365,7 +365,7 @@ void tryAuth(ConnectService service)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
 {
-    if (service.state.client.authPassword.length &&
+    if (service.state.client.password.length &&
         (service.authentication == Progress.notStarted) &&
         (service.state.client.server.daemon != IRCServer.Daemon.twitch))
     {
@@ -373,7 +373,7 @@ void onEndOfMotd(ConnectService service)
     }
 
     if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
-        !service.state.client.authPassword.length ||
+        !service.state.client.password.length ||
         (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
     {
         // tryAuth finished early with an unsuccessful login, else
@@ -618,7 +618,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!service.connectSettings.sasl || !service.state.client.authPassword.length) continue;
+                if (!service.connectSettings.sasl || !service.state.client.password.length) continue;
                 service.raw("CAP REQ :sasl", true);
                 tryingSASL = true;
                 break;
@@ -700,15 +700,15 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.irc.common.IRCClient.authLogin` and `kameloso.irc.common.IRCClient.authPassword`,
+ +  `kameloso.irc.common.IRCClient.account` and `kameloso.irc.common.IRCClient.password`,
  +  then sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
- +     `base64(authLogin \0 authLogin \0 authPassword)`
+ +     `base64(account \0 account \0 password)`
  +
- +  ...where `kameloso.irc.common.IRCClient.authLogin` is the services account name and
- +  `kameloso.irc.common.IRCClient.authPassword` is the account password.
+ +  ...where `kameloso.irc.common.IRCClient.account` is the services account name and
+ +  `kameloso.irc.common.IRCClient.password` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
@@ -721,9 +721,9 @@ void onSASLAuthenticate(ConnectService service)
 
         service.authentication = Progress.started;
 
-        immutable authLogin = authLogin.length ? authLogin : origNickname;
-        immutable password = authPassword.beginsWith("base64:") ? decode64(authPassword[7..$]) : authPassword;
-        immutable authToken = "%s%c%s%c%s".format(authLogin, '\0', authLogin, '\0', password);
+        immutable account_ = account.length ? account : origNickname;
+        immutable password_ = password.beginsWith("base64:") ? decode64(password[7..$]) : password;
+        immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
         immutable encoded = Base64.encode(authToken.representation);
 
         service.raw("AUTHENTICATE " ~ encoded, true);

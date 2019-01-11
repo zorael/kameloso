@@ -553,9 +553,9 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
     with (bot)
     with (bot.parser)
     {
-        if (client.authPassword.length && !client.authPassword.beginsWith("base64:"))
+        if (client.password.length && !client.password.beginsWith("base64:"))
         {
-            client.authPassword = "base64:" ~ encode64(client.authPassword);
+            client.password = "base64:" ~ encode64(client.password);
         }
 
         sink.serialise(client, client.server, settings);
