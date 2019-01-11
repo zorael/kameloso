@@ -4,6 +4,7 @@
  +/
 module kameloso.common;
 
+import kameloso.irc.common : IRCClient;
 import kameloso.uda;
 
 import core.time : Duration;
@@ -223,7 +224,6 @@ unittest
 struct IRCBot
 {
     import kameloso.connection : Connection;
-    import kameloso.irc.common : IRCClient;
     import kameloso.irc.parsing : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
@@ -1131,6 +1131,72 @@ unittest
         immutable df = defaultResourcePrefix;
         assert(df.endsWith("\\Local\\kameloso"), df);
     }
+}
+
+
+// completeClient
+/++
+ +  Completes a client's member fields with values needed to connect.
+ +
+ +  Nickname, user, ident and GECOS/"real name" is required. If there is no
+ +  nickname, generate a random one, then just update the other members to have
+ +  the same value (if they're empty).
+ +
+ +  Params:
+ +      client = Reference to the `kameloso.irc.common.IRCClient` to complete.
+ +/
+void completeClient(ref IRCClient client)
+{
+    // If no client.nickname set, generate a random guest name.
+    if (!client.nickname.length)
+    {
+        import std.format : format;
+        import std.random : uniform;
+
+        client.nickname = "guest%03d".format(uniform(0, 1000));
+    }
+
+    // If no client.user set, inherit client.nickname into it.
+    if (!client.user.length)
+    {
+        client.user = client.nickname;
+    }
+
+    // If no client.ident set, ditto.
+    if (!client.ident.length)
+    {
+        client.ident = client.nickname;
+    }
+
+    // If no client.realName set, ditto.
+    if (!client.realName.length)
+    {
+        client.realName = client.nickname;
+    }
+}
+
+///
+unittest
+{
+    IRCClient client;
+
+    assert(!client.nickname.length, client.nickname);
+    assert(!client.user.length, client.user);
+    assert(!client.ident.length, client.ident);
+    assert(client.realName.length);
+
+    client.realName = string.init;
+    completeClient(client);
+
+    assert(client.nickname.length);
+    assert((client.user == client.nickname), client.user);
+    assert((client.ident == client.ident), client.ident);
+    assert((client.realName == client.realName), client.realName);
+
+    client.user = string.init;
+    completeClient(client);
+
+    assert((client.user == client.nickname), client.user);
 }
 
 
