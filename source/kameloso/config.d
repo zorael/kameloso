@@ -265,17 +265,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             {
                 static if (is(T == string) && hasUDA!(Thing.tupleof[i], Quoted))
                 {
-                    import kameloso.string : contains;
-
-                    if (value.contains!(Yes.decode)(" "))
-                    {
-                        sink.formattedWrite("%s \"%s\"\n", memberstring, value);
-                    }
-                    else
-                    {
-                        // Copy/paste below
-                        sink.formattedWrite("%s %s\n", memberstring, value);
-                    }
+                    sink.formattedWrite("%s \"%s\"\n", __traits(identifier, thing.tupleof[i]), value);
                 }
                 else
                 {
