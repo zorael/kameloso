@@ -1470,29 +1470,6 @@ int kamelosoMain(string[] args)
     printVersionInfo(pre, post);
     writeln();
 
-    // Nickname, user and GECOS/real name must be set to register.
-    // If no client.nickname set, generate a random guest name.
-    // If no client.user set, inherit client.nickname into it.
-    // If no client.realName set, ditto.
-
-    if (!bot.parser.client.nickname.length)
-    {
-        import std.format : format;
-        import std.random : uniform;
-
-        bot.parser.client.nickname = "guest%03d".format(uniform(0, 1000));
-    }
-
-    if (!bot.parser.client.user.length)
-    {
-        bot.parser.client.user = bot.parser.client.nickname;
-    }
-
-    if (!bot.parser.client.realName.length)
-    {
-        bot.parser.client.realName = bot.parser.client.nickname;
-    }
-
     // Print the current settings to show what's going on.
     import kameloso.printing : printObjects;
     import kameloso.string : contains;

@@ -319,7 +319,7 @@ public:
  +/
 Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : completeClient, printVersionInfo, settings;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
@@ -431,6 +431,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
          +/
 
         meldSettingsFromFile(client, settings);
+        completeClient(client);
         adjustGetopt(argsBackup,
             "--bright", &settings.brightTerminal,
             "--brightTerminal", &settings.brightTerminal,
