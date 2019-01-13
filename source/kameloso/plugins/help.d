@@ -46,7 +46,7 @@ struct HelpSettings
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.whitelist)
 @BotCommand(PrefixPolicy.nickname, "help")
-@Description("Shows a list of all available commands.")
+@Description("Shows a list of all available commands.", "$command [plugin] [command]")
 void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc.colours : ircBold;
@@ -156,7 +156,6 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 }
 
                 plugin.state.query(sender.nickname, message);
-                return;
             }
             else
             {
@@ -164,7 +163,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 {
                     if ((p.name != content) || !p.commands.length || p.name.endsWith("Service"))  continue;
 
-                    enum width = 11;
+                    enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
 
                     string message;
@@ -206,7 +205,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 cast(string)KamelosoInfo.built);
 
             enum bannerColoured = ("kameloso IRC bot v%s".ircBold ~ ", built %s")
-                .format(cast(string)KamelosoInfo.version_.ircBold,
+                .format(cast(string)KamelosoInfo.version_,
                 cast(string)KamelosoInfo.built);
 
             immutable banner = settings.colouredOutgoing ? bannerColoured : bannerUncoloured;
@@ -217,7 +216,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             {
                 if (!p.commands.length || p.name.endsWith("Service")) continue;
 
-                enum width = 11;
+                enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
 
                 string message;
