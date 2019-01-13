@@ -2,7 +2,7 @@
 
 **kameloso** sits in your channels and listens to commands and events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's easily extensible, API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's easily extensible, API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
 
 IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet.
 
@@ -29,9 +29,9 @@ If nothing else it makes for a good lurkbot.
 ## Current limitations:
 
 * missing good how-to-use guide. Use the source, Luke! Also [the wiki](https://github.com/zorael/kameloso/wiki).
-* the dmd and ldc compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
-* Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
+* the **dmd** and **ldc** compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
+* Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
 * IRC servers that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
@@ -85,7 +85,7 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
 
 ## Prerequisites
 
-You need a D compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (released September 2017). You will also need some 4 Gb of RAM to build all features (Linux, excluding tests).
+You need a D compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (September 2017). You will also need more than 4 Gb of free memory to build all features (Linux, excluding tests).
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
@@ -95,8 +95,6 @@ You need a D compiler and the [**dub**](https://code.dlang.org/download) package
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 ```
-
-Note: do not use `dub fetch` until we have released **v1.0.0**. It will download an ancient version.
 
 ## Compiling
 
@@ -124,12 +122,12 @@ There are several configurations in which the bot may be built.
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `full`, includes both of the above
-* `twitch`, everything so far, plus the Twitch bot
+* `twitch`, everything so far, plus the Twitch streamer bot
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
 * `windows`, default on Windows, also equals `full`
 * `cygwin`, equals `full` but with extra code needed for running under the default Cygwin terminal (**mintty**)
 * `twitch+cygwin`, `cygwin` but with the Twitch bot
-* `polyglot`, equals everything available, including things like more error messages and the Admin plugin being able to see Twitch users (more of a development build)
+* `polyglot`, equals everything available, including things like more error messages (development build)
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
@@ -154,11 +152,11 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 * Windows: `%LOCALAPPDATA%\kameloso`
 * Other unexpected platforms: fallback to current working directory
 
-Open the file in a text editor and fill in the fields.
+Open the file in a normal text editor.
 
 ### Command-line arguments
 
-You can override some settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will save these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will save these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
 
 ```bash
 $ ./kameloso \
@@ -172,13 +170,13 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a valid setting, so settings that relate to plugins that *are currently not built in* are removed, as well as comments.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a valid setting, so settings that relate to plugins *that are currently not built in* are removed, as well as comments.
 
 ### Display settings
 
 If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-If you are on Windows and you're seeing weird `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a permanent fix.
+If you are on Windows and you're seeing `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a permanent fix.
 
 ### Other files
 
@@ -194,10 +192,10 @@ kameloso sets mode +o you
      you | I am a fish
      you | s/fish/snek/
 kameloso | you | I am a snek
-     you | !addquote you This is a quote
+     you | !addquote kameloso I am a snek
 kameloso | Quote saved. (1 on record)
-     you | !quote you
-kameloso | you | This is a quote
+     you | !quote kameloso
+kameloso | kameloso | I am a snek
      you | !note OfflinePerson Why so offline?
 kameloso | Note added.
      you | !seen OfflinePerson
@@ -216,10 +214,10 @@ The **prefix** character (here `!`) is configurable; refer to your generated con
 
 ```ini
 [Core]
-prefix              !
+prefix              "!"
 ```
 
-It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix, like `"please "` (making it `please note`, `please quote`, ...).
+It can technically be any string and not just one character. It may include spaces, like `"please "` (making it `please note`, `please quote`, ...). Prefixing commands with the bot's nickname also works (and in some cases *only* works, like `kameloso: sudo [...]` in the example above).
 
 ## Twitch
 
@@ -250,7 +248,7 @@ $ ./kameloso --set twitchbot.enabled=true --writeconfig
 
 Assuming a prefix of `!`, commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`
 
-NOTE: a dot `.` prefix will not work on Twitch, as it conflicts with Twitch's own commands.
+Note: a dot `.` prefix will not work on Twitch, as it conflicts with Twitch's own commands.
 
 Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
 
@@ -285,7 +283,7 @@ Otherwise use the `--monochrome` setting to disable colours, or compile a non-`c
 
 Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Powershell and `cmd` consoles are unaffected.
 
-When run in such Cygwin terminals, the bot will not gracefully shut down upon hitting Ctrl+C. Any changes to configuration will thus have to be otherwise saved prior to forcefully terminating like that.
+When run in such Cygwin terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that.
 
 ## Posix
 
