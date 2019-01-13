@@ -98,19 +98,26 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                         if (description.syntax.length)
                         {
+                            import kameloso.string : beginsWith;
                             import std.array : replace;
+
+                            immutable udaSyntax = description.syntax
+                                .replace("$nickname", plugin.state.client.nickname)
+                                .replace("$command", specifiedCommand);
+
+                            // Prepend the prefix to non-PrefixPolicy.nickname commands
+                            immutable prefixedSyntax = description.syntax.beginsWith("$nickname") ?
+                                udaSyntax : settings.prefix ~ udaSyntax;
 
                             string syntax;
 
                             if (settings.colouredOutgoing)
                             {
-                                syntax = "Usage".ircBold ~ ": " ~ description.syntax
-                                    .replace("$command", specifiedCommand);
+                                syntax = "Usage".ircBold ~ ": " ~ prefixedSyntax;
                             }
                             else
                             {
-                                syntax = "Usage: " ~ description.syntax
-                                    .replace("$command", specifiedCommand);
+                                syntax = "Usage: " ~ prefixedSyntax;
                             }
 
                             plugin.state.query(sender.nickname, syntax);

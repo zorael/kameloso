@@ -1745,7 +1745,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     static if (hasUDA!(fun, Description))
                     {
-                        descriptions[commandUDA.string_] = getUDAs!(fun, Description)[0];
+                        enum desc = getUDAs!(fun, Description)[0];
+                        descriptions[commandUDA.string_] = desc;
+
+                        static if (commandUDA.policy == PrefixPolicy.nickname)
+                        {
+                            static if (desc.syntax.length)
+                            {
+                                // Prefix the command with the bot's nickname,
+                                // as that's how it's actually used.
+                                descriptions[commandUDA.string_].syntax = "$nickname: " ~ desc.syntax;
+                            }
+                            else
+                            {
+                                // Define an empty nickname: command syntax
+                                // to give hint about the nickname prefix
+                                descriptions[commandUDA.string_].syntax = "$nickname: $command";
+                            }
+                        }
                     }
                 }
             }
