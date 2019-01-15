@@ -33,8 +33,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 {
     import std.range : only;
 
-    if (event.type == IRCEvent.Type.QUIT) return;
-
     foreach (user; only(&event.sender, &event.target))
     {
         if (!user.nickname.length) continue;
@@ -61,15 +59,20 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 auto stored = user.nickname in service.state.users;
 
-                if (!stored)
-                {
-                    service.state.users[user.nickname] = *user;
-                    stored = user.nickname in service.state.users;
-                }
-                else
+                if (stored)
                 {
                     import kameloso.meld : MeldingStrategy, meldInto;
                     (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
+                }
+                else if (event.type == IRCEvent.Type.QUIT)
+                {
+                    // Hack around QUITs so we don't create a new user
+                    stored = user;
+                }
+                else
+                {
+                    service.state.users[user.nickname] = *user;
+                    stored = user.nickname in service.state.users;
                 }
 
                 if (stored.class_ == IRCUser.Class.unset)
@@ -136,7 +139,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             // Inject the modified user into the event
             *user = *stored;
         }
-        else
+        else if (event.type != IRCEvent.Type.QUIT)
         {
             // New entry
             if (user.account == "*") user.account = string.init;
