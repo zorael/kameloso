@@ -541,6 +541,24 @@ void onSelfPart(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
+// onNick
+/++
+ +  Updates the list of applied automodes to reflect a change in someone's nickname.
+ +/
+@(IRCEvent.Type.NICK)
+void onNick(AutomodePlugin plugin, const IRCEvent event)
+{
+    foreach (ref channelApplications; plugin.appliedAutomodes)
+    {
+        if (event.sender.nickname in channelApplications)
+        {
+            channelApplications[event.target.nickname] = true;
+            channelApplications.remove(event.sender.nickname);
+        }
+    }
+}
+
+
 // onEndOfMotd
 /++
  +  Populate automodes array after we have successfully logged onto the server.
