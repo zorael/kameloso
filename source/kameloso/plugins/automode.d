@@ -188,11 +188,9 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 
     foreach (immutable channelName, const channelaccounts; plugin.appliedAutomodes)
     {
-        if (!plugin.state.client.homes.canFind(channelName)) continue;
-
         const appliedAccounts = channelName in plugin.appliedAutomodes;
 
-        if (appliedAccounts && account in *appliedAccounts)
+        if (appliedAccounts && nickname in *appliedAccounts)
         {
             logger.log("Already applied modes to ", nickname);
             return;
@@ -201,8 +199,6 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 
     foreach (immutable channelName, const channelaccounts; plugin.automodes)
     {
-        if (!plugin.state.client.homes.canFind(channelName)) continue;
-
         const modes = account in channelaccounts;
         if (!modes || !modes.length) continue;
 
@@ -234,7 +230,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
         }
 
         plugin.state.mode(occupiedChannel.name, "+".repeat(modes.length).join ~ *modes, nickname);
-        plugin.appliedAutomodes[channelName][account] = true;
+        plugin.appliedAutomodes[channelName][nickname] = true;
     }
 }
 
@@ -513,11 +509,9 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (!event.sender.account.length) return;
-
     if (auto channelApplications = event.channel in plugin.appliedAutomodes)
     {
-        (*channelApplications).remove(event.sender.account);
+        (*channelApplications).remove(event.sender.nickname);
     }
 }
 
@@ -529,11 +523,9 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUIT)
 void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (!event.sender.account.length) return;
-
     foreach (ref channelApplications; plugin.appliedAutomodes)
     {
-        channelApplications.remove(event.sender.account);
+        channelApplications.remove(event.sender.nickname);
     }
 }
 
