@@ -133,6 +133,9 @@ void initResources(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
+    // In case of self WHOIS results, don't automode ourselves
+    if (event.sender.nickname == plugin.state.client.nickname) return;
+
     string account, nickname;
 
     with (IRCEvent.Type)
