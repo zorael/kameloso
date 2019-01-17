@@ -1688,5 +1688,145 @@ struct IRCClient
     }
 }
 
-deprecated("Client is now IRCClient")
-alias Client = IRCClient;
+
+// matchesByMask
+/++
+ +  Compares this `IRCUser` with a second one, treating fields with
+ +  asterisks as glob wildcards, mimicking `*!*@*` mask matching.
+ +
+ +  Example:
+ +  ---
+ +  IRCUser u1;
+ +  with (u1)
+ +  {
+ +      nickname = "foo";
+ +      ident = "NaN";
+ +      address = "asdf.asdf.com";
+ +  }
+ +
+ +  IRCUser u2;
+ +  with (u2)
+ +  {
+ +      nickname = "*";
+ +       ident = "NaN";
+ +      address = "*";
+ +  }
+ +
+ +  assert(u1.matchesByMask(u2));
+ +  assert(u1.matchesByMask("f*!NaN@*.com"));
+ +  ---
+ +
+ +  Params:
+ +      this_ = `IRCUser` to compare.
+ +      that = `IRCUser` to compare `this_` with.
+ +      caseMapping = `IRCServer.CaseMapping` with which to translate
+ +          the nicknames in the relevant masks to lowercase.
+ +
+ +  Returns:
+ +      `true` if the `IRCUser`s are deemed to match, `false` if not.
+ +/
+auto matchesByMask(const IRCUser this_, const IRCUser that,
+    IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) pure nothrow
+{
+    // unpatternedGlobMatch
+    /++
+     +  Performs a glob match without taking special consideration of
+     +  bracketed patterns (with [, ], { and }).
+     +
+     +  Params:
+     +      first = First string.
+     +      second = Second expression string to glob match with the first.
+     +
+     +  Returns:
+     +      True if `first` matches the `second` glob mask, false if not.
+     +/
+    static bool unpatternedGlobMatch(const string first, const string second)
+    {
+        import std.array : replace;
+        import std.path : CaseSensitive, globMatch;
+
+        enum caseSetting = CaseSensitive.no;
+
+        enum openBracketSubstitution = "\1";
+        enum closedBracketSubstitution = "\2";
+        enum openCurlySubstitution = "\3";
+        enum closedCurlySubstitution = "\4";
+
+        immutable firstReplaced = first
+            .replace("[", openBracketSubstitution)
+            .replace("]", closedBracketSubstitution)
+            .replace("{", openCurlySubstitution)
+            .replace("}", closedCurlySubstitution);
+
+        immutable secondReplaced = second
+            .replace("[", openBracketSubstitution)
+            .replace("]", closedBracketSubstitution)
+            .replace("{", openCurlySubstitution)
+            .replace("}", closedCurlySubstitution);
+
+        return firstReplaced.globMatch!caseSetting(secondReplaced);
+    }
+
+    // Only ever compare nicknames case-insensitive
+    immutable ourLower = IRCUser.toLowerCase(this_.nickname, caseMapping);
+    immutable theirLower = IRCUser.toLowerCase(that.nickname, caseMapping);
+
+    // (unpatterned) globMatch in both directions
+    // If no match and either is empty, that means they're *
+
+    immutable matchNick = ((ourLower == theirLower) ||
+        !this_.nickname.length || !that.nickname.length ||
+        unpatternedGlobMatch(ourLower, theirLower) ||
+        unpatternedGlobMatch(theirLower, ourLower));
+    if (!matchNick) return false;
+
+    immutable matchIdent = ((this_.ident == that.ident) ||
+        !this_.ident.length || !that.ident.length ||
+        unpatternedGlobMatch(this_.ident, that.ident) ||
+        unpatternedGlobMatch(that.ident, this_.ident));
+    if (!matchIdent) return false;
+
+    immutable matchAddress = ((this_.address == that.address) ||
+        !this_.address.length || !that.address.length ||
+        unpatternedGlobMatch(this_.address, that.address) ||
+        unpatternedGlobMatch(that.address, this_.address));
+    if (!matchAddress) return false;
+
+    return true;
+}
+
+///
+unittest
+{
+    IRCUser first = IRCUser("kameloso!NaN@wopkfoewopk.com");
+
+    IRCUser second = IRCUser("*!*@*");
+    assert(first.matchesByMask(second));
+
+    IRCUser third = IRCUser("kame*!*@*.com");
+    assert(first.matchesByMask(third));
+
+    IRCUser fourth = IRCUser("*loso!*@wop*");
+    assert(first.matchesByMask(fourth));
+
+    assert(second.matchesByMask(first));
+    assert(third.matchesByMask(first));
+    assert(fourth.matchesByMask(first));
+
+    IRCUser fifth = IRCUser("kameloso!*@*");
+    IRCUser sixth = IRCUser("KAMELOSO!ident@address.com");
+    assert(fifth.matchesByMask(sixth));
+
+    IRCUser seventh = IRCUser("^[0V0]^!ID@ADD");
+    IRCUser eight = IRCUser("~{0v0}~!id@add");
+    assert(seventh.matchesByMask(eight, IRCServer.CaseMapping.rfc1459));
+    assert(!seventh.matchesByMask(eight, IRCServer.CaseMapping.strict_rfc1459));
+
+    IRCUser ninth = IRCUser("*!*@170.233.40.144]");  // Accidental trailing ]
+    IRCUser tenth = IRCUser("Joe!Shmoe@*");
+    assert(ninth.matchesByMask(tenth, IRCServer.CaseMapping.rfc1459));
+
+    IRCUser eleventh = IRCUser("abc]!*@*");
+    IRCUser twelfth = IRCUser("abc}!abc}@abc}");
+    assert(eleventh.matchesByMask(twelfth, IRCServer.CaseMapping.rfc1459));
+}
