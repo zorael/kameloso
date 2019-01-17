@@ -1830,3 +1830,102 @@ unittest
     IRCUser twelfth = IRCUser("abc}!abc}@abc}");
     assert(eleventh.matchesByMask(twelfth, IRCServer.CaseMapping.rfc1459));
 }
+
+
+// toLowerCase
+/++
+ +  Produces the passed string in lowercase as per the supplied case
+ +  mappings.
+ +
+ +  Params:
+ +      name = String to parse into lowercase.
+ +      caseMapping = Server case mapping; maps uppercase to lowercase
+ +          characters.
+ +
+ +  Returns:
+ +      The passed `name` string with uppercase characters replaced as per
+ +      the case mappings.
+ +/
+auto toLowerCase(const string name, IRCServer.CaseMapping caseMapping) nothrow pure
+{
+    import std.string : representation;
+    import std.uni : toLower;
+
+    ubyte[] lowercased;
+    lowercased.length = name.length;
+
+    foreach (immutable i, immutable c; name.representation)
+    {
+        if ((caseMapping == IRCServer.CaseMapping.rfc1459) ||
+            (caseMapping == IRCServer.CaseMapping.strict_rfc1459))
+        {
+            switch (c)
+            {
+            case '[':
+                lowercased[i] = '{';
+                continue;
+            case ']':
+                lowercased[i] = '}';
+                continue;
+            case '\\':
+                lowercased[i] = '|';
+                continue;
+            case '^':
+                if (caseMapping == IRCServer.CaseMapping.rfc1459)
+                {
+                    lowercased[i] = '~';
+                    continue;
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        lowercased[i] = cast(ubyte)c.toLower;
+    }
+
+    return cast(string)lowercased.idup;
+}
+
+///
+unittest
+{
+    IRCServer.CaseMapping m = IRCServer.CaseMapping.rfc1459;
+
+    {
+        immutable lowercase = toLowerCase("ABCDEF", m);
+        assert((lowercase == "abcdef"), lowercase);
+    }
+    {
+        immutable lowercase = toLowerCase("123", m);
+        assert((lowercase == "123"), lowercase);
+    }
+    {
+        immutable lowercase = toLowerCase("^[0v0]^", m);
+        assert((lowercase == "~{0v0}~"), lowercase);
+    }
+    {
+        immutable lowercase = toLowerCase(`A|\|`, m);
+        assert((lowercase == "a|||"), lowercase);
+    }
+
+    m = IRCServer.caseMapping.ascii;
+
+    {
+        immutable lowercase = toLowerCase("^[0v0]^", m);
+        assert((lowercase == "^[0v0]^"), lowercase);
+    }
+    {
+        immutable lowercase = toLowerCase(`A|\|`, m);
+        assert((lowercase == `a|\|`), lowercase);
+    }
+
+    m = IRCServer.CaseMapping.strict_rfc1459;
+
+    {
+        immutable lowercase = toLowerCase("^[0v0]^", m);
+        assert((lowercase == "^{0v0}^"), lowercase);
+    }
+}
