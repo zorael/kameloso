@@ -64,11 +64,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                     import kameloso.meld : MeldingStrategy, meldInto;
                     (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
                 }
-                else if (event.type == IRCEvent.Type.QUIT)
-                {
-                    // Hack around QUITs so we don't create a new user
-                    stored = user;
-                }
                 else
                 {
                     service.state.users[user.nickname] = *user;
