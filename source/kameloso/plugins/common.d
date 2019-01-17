@@ -3566,10 +3566,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND) return;
 
+        import kameloso.irc.common : toLowerCase;
+
         immutable m = plugin.state.client.server.caseMapping;
 
-        if (IRCUser.toLowerCase(mixin(carriedVariableName), m) !=
-            IRCUser.toLowerCase(whoisEvent.target.nickname, m))
+        if (toLowerCase(mixin(carriedVariableName), m) !=
+            whoisEvent.target.nickname.toLowerCase(m))
         {
             // Wrong WHOIS; await a new one
             Fiber.yield();

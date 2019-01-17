@@ -1768,8 +1768,8 @@ auto matchesByMask(const IRCUser this_, const IRCUser that,
     }
 
     // Only ever compare nicknames case-insensitive
-    immutable ourLower = IRCUser.toLowerCase(this_.nickname, caseMapping);
-    immutable theirLower = IRCUser.toLowerCase(that.nickname, caseMapping);
+    immutable ourLower = this_.nickname.toLowerCase(caseMapping);
+    immutable theirLower = that.nickname.toLowerCase(caseMapping);
 
     // (unpatterned) globMatch in both directions
     // If no match and either is empty, that means they're *
