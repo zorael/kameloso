@@ -4,7 +4,7 @@
 
 A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's easily extensible, API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
 
-IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet.
+IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -22,7 +22,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * piping text from the terminal to the server (Linux/OSX and other Posix platforms only)
 * mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* configuration stored on file; [create one](#configuration) and edit it to get an idea of the settings available
+* configuration file; [create one](#configuration) and edit it to get an idea of the settings available
 
 If nothing else it makes for a good lurkbot.
 
@@ -32,7 +32,6 @@ If nothing else it makes for a good lurkbot.
 * the **dmd** and **ldc** compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
 * Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
-* IRC servers that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
@@ -156,7 +155,7 @@ Open the file in a normal text editor.
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will save these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will apply these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
 
 ```bash
 $ ./kameloso \
@@ -170,7 +169,7 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a valid setting, so settings that relate to plugins *that are currently not built in* are removed, as well as comments.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently valid setting, so settings that relate to plugins *that are currently not built in* are removed, as well as comments.
 
 ### Display settings
 
@@ -184,7 +183,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
+Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
 
 ```
      you joined #channel
@@ -221,7 +220,7 @@ It can technically be any string and not just one character. It may include spac
 
 ## Twitch
 
-To connect to Twitch servers you must supply an [*OAuth token*](https://en.wikipedia.org/wiki/OAuth) *pass*. Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+To connect to Twitch servers you must supply an [*OAuth token*](https://en.wikipedia.org/wiki/OAuth) *pass* (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
 ```ini
 [IRCBot]
@@ -287,7 +286,7 @@ When run in such Cygwin terminals, the bot will not gracefully shut down upon hi
 
 ## Posix
 
-If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads. Help wanted.
+If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve as it requires figuring out how to do non-blocking reads. Help wanted.
 
 # Roadmap
 
