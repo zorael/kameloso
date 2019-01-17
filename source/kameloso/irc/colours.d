@@ -1,6 +1,11 @@
 /++
- +  This module contains functions for working with IRC colouring and
- +  formatting, mapping it to terminal such, stripping it, etc.
+ +  Functions related to IRC colouring and formatting, mapping it to ANSI
+ +  terminal such, stripping it, etc.
+ +
+ +  IRC colours are not in the standard as such, but there is a de facto standard
+ +  based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
+ +  `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
+ +  background colour number.
  +/
 module kameloso.irc.colours;
 

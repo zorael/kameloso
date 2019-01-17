@@ -1,6 +1,12 @@
 /++
  +  Definitions of struct aggregates used throughout the program, representing
  +  `IRCEvent`s and thereto related objects like `IRCServer` and `IRCUser`.
+ +
+ +  Things related to being a bot do not belong here; what's here should only be
+ +  applicable to be used as a header. Some methods are included though, like
+ +  some `toString`s and `opEqual`s.
+ +
+ +  The only kameloso dependency should be `kameloso.uda`.
  +/
 module kameloso.irc.defs;
 
@@ -31,7 +37,9 @@ struct IRCEvent
      +  https://defs.ircdocs.horse
      +
      +  Some are outright fabrications of ours, like `CHAN` and `QUERY`, to make
-     +  things easier for plugins.
+     +  things easier for plugins. These are not prefixed with `RPL_` and `ERR_`
+     +  (but not all such are made up, like `AWAY` and `CHGHOST` that are properly
+     +  `AWAY` and `CHGHOST`).
      +/
     enum Type
     {

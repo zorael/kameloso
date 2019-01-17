@@ -1,6 +1,9 @@
 /++
  +  Functions needed to parse raw IRC event strings into
  +  `kameloso.irc.defs.IRCEvent`s.
+ +
+ +  These are largely helpers; consider `isValidNickname`, `isValidChannel` and
+ +  `matchesByMask`.
  +/
 module kameloso.irc.common;
 

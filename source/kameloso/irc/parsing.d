@@ -1,3 +1,20 @@
+/++
+ +  Functions related to parsing IRC events.
+ +
+ +  IRC events come in very heterogenous forms along the lines of:
+ +      `:sender.address.tld TYPE [args...] :content`
+ +
+ +  The number and syntax of arguments for a type vary wildly. As such, one
+ +  common parsing routine can't be used; there are simply too many exceptions.
+ +  The beginning `:sender.address` is almost always the same form, and it's
+ +  always followed by the type, either in name or in numeric form. What we can
+ +  do then is to parse this type, and interpret the arguments following as
+ +  befits the type.
+ +
+ +  This translates to large `switch`es, which can't be helped.
+ +
+ +  See the `tests/` directory for example parses.
+ +/
 module kameloso.irc.parsing;
 
 import kameloso.irc.defs;
@@ -37,7 +54,7 @@ version(AsAnApplication)
  +  Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them, in order.
  +
- +  See `tests/events.d` for unittest examples.
+ +  See the files in `tests/` for unittest examples.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
