@@ -429,7 +429,17 @@ struct IRCPluginState
 /++
  +  The tristate results from comparing a username with the admin or whitelist lists.
  +/
-enum FilterResult { fail, pass, whois }
+enum FilterResult
+{
+    fail,   /// The user is not allowed to trigger this function.
+    pass,   /// The user is allowed to trigger this function.
+
+    /++
+     +  We don't know enough to say whether the user is allowed to trigger this
+     +  function, so do a WHOIS query and act based on the results.
+     +/
+    whois,
+}
 
 
 /++
@@ -494,7 +504,7 @@ struct BotCommand
     }
 
     /++
-     +  Create a new `BotCommand` with a default `direct` policy and the passed
+     +  Create a new `BotCommand` with a default `prefixed` policy and the passed
      +  trigger `string_`.
      +/
     this(const string string_) pure

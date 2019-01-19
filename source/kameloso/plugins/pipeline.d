@@ -410,10 +410,7 @@ public:
 // PipelinePlugin
 /++
  +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to
- +  send to the server.
- +
- +  It is for debugging purposes until such time we figure out a way to properly
- +  input lines via the terminal.
+ +  send to the server, as well as to live-control the bot to a certain degree.
  +/
 final class PipelinePlugin : IRCPlugin
 {
