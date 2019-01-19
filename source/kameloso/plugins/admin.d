@@ -1422,7 +1422,7 @@ final class AdminPlugin : IRCPlugin
 {
 private:
     /// Snapshot of previous `IRCClient`.
-    IRCClient previousClient;
+    debug IRCClient previousClient;
 
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";

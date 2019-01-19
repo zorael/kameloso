@@ -383,7 +383,7 @@ WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn
  +/
 struct IRCPluginState
 {
-    import kameloso.common : CoreSettings, Labeled;
+    import kameloso.common : Labeled;
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
@@ -3558,8 +3558,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         with (whoisEvent)
         {
             import kameloso.conv : Enum;
-            assert(((type == RPL_WHOISACCOUNT) || (type == RPL_WHOISREGNICK) ||
-                (type == RPL_ENDOFWHOIS) || (type == ERR_NOSUCHNICK) || (type == ERR_UNKNOWNCOMMAND)),
+            assert(((type == RPL_WHOISACCOUNT) ||
+                (type == RPL_WHOISREGNICK) ||
+                (type == RPL_ENDOFWHOIS) ||
+                (type == ERR_NOSUCHNICK) ||
+                (type == ERR_UNKNOWNCOMMAND)),
                 "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
                 Enum!(IRCEvent.Type).toString(type));
         }
