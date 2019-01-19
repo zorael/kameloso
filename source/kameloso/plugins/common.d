@@ -1905,6 +1905,9 @@ public:
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
+    static assert(__traits(compiles, this.hasIRCPluginImpl),
+        "MessagingProxy should be mixed into the context of a plugin or service.");
+
     enum hasMessagingProxy = true;
 
     pragma(inline):
@@ -3543,8 +3546,8 @@ mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     static assert((__traits(compiles, plugin) || __traits(compiles, service)),
-        "WHOISFiberDelegate should be mixed into the context of a plugin. " ~
-        "(Could not access neither plugin nor service)");
+        "WHOISFiberDelegate should be mixed into the context of an event handler. " ~
+        "(Could not access neither plugin nor service from " ~ __FUNCTION__ ~ ")");
 
     import std.conv : text;
 
@@ -3620,7 +3623,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 pragma(msg, typeof(onSuccess).stringof ~ "  " ~ __traits(identifier, onSuccess));
                 pragma(msg, Params);
                 static assert(0, "Unexpected signature of success function " ~
-                    "alias passed to mixin WHOISFiberDelegate");
+                    "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__);
             }
         }
         else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
@@ -3651,7 +3654,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     pragma(msg, typeof(onFailure).stringof ~ "  " ~ __traits(identifier, onFailure));
                     pragma(msg, Params);
                     static assert(0, "Unexpected signature of failure function " ~
-                        "alias passed to mixin WHOISFiberDelegate");
+                        "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__);
                 }
             }
         }
@@ -3693,8 +3696,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
         else
         {
-            assert(0, "WHOISFiberDelegate mixed in into incorrect context; " ~
-                "neither plugin nor service visible");
+            assert(0);  // Should never get here, error message already given
         }
 
         with (IRCEvent.Type)
