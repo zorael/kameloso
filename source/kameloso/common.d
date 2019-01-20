@@ -130,6 +130,7 @@ struct CoreSettings
         string resourceDirectory;  /// Path to resource directory.
         string configDirectory;  /// Path to configuration directory.
         bool force;  /// Whether or not to force connecting.
+        bool flush;  /// Whether or not to flush stdout after writing to it.
     }
 }
 
