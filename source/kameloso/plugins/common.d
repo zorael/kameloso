@@ -695,7 +695,11 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
         //immutable isSpecial = (user.class_ == IRCUser.Class.special);
 
-        if (isAdmin && (level <= PrivilegeLevel.admin))
+        if (isBlacklisted)
+        {
+            // Should always be ignored
+        }
+        else if (isAdmin && (level <= PrivilegeLevel.admin))
         {
             return FilterResult.pass;
         }
@@ -703,11 +707,11 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         {
             return FilterResult.pass;
         }
-        else if (isAnyone && (level <= PrivilegeLevel.anyone))
+        else if (isAnyone && (level == PrivilegeLevel.anyone))
         {
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
-        else if ((level == PrivilegeLevel.ignore) && !isBlacklisted)
+        else if (level == PrivilegeLevel.ignore)
         {
             return FilterResult.pass;
         }
@@ -722,8 +726,14 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         {
             // Should always be ignored
         }
-        else if (level >= PrivilegeLevel.anyone)
+        else if ((level == PrivilegeLevel.admin) || (level == PrivilegeLevel.whitelist))
         {
+            // Unknown sender; WHOIS if old result expired, otherwise fail
+            return whoisExpired ? FilterResult.whois : FilterResult.fail;
+        }
+        else if (level == PrivilegeLevel.anyone)
+        {
+            // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
         else if (level == PrivilegeLevel.ignore)
@@ -732,6 +742,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         }
         else if (timediff > Timeout.whoisRetry)
         {
+            // When does this happen?
             return FilterResult.whois;
         }
     }
