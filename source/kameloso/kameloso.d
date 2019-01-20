@@ -1420,7 +1420,7 @@ int kamelosoMain(string[] args)
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
-    initLogger(settings.monochrome, settings.brightTerminal);
+    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();

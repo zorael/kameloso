@@ -439,7 +439,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         );
 
         import kameloso.common : initLogger;
-        initLogger(settings.monochrome, settings.brightTerminal);
+        initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
 
         // 5. Give common.d a copy of `settings`, for `printObject` and for plugins
         static import kameloso.common;

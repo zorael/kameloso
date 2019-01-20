@@ -53,20 +53,22 @@ Logger logger;
  +
  +  Example:
  +  ---
- +  initLogger(settings.monochrome, settings.brightTerminal);
+ +  initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
  +  ---
  +
  +  Params:
  +      monochrome = Whether the terminal is set to monochrome or not.
  +      bright = Whether the terminal has a bright background or not.
+ +      flush = Whether or not to flush stdout after finishing writing to it.
  +/
 void initLogger(const bool monochrome = settings.monochrome,
-    const bool bright = settings.brightTerminal)
+    const bool bright = settings.brightTerminal,
+    const bool flush = settings.flush)
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome, bright);
+    logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
 }
 
 

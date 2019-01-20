@@ -3318,7 +3318,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
             }
             else if ((setting == "monochrome") || (setting == "brightTerminal"))
             {
-                initLogger(settings.monochrome, settings.brightTerminal);
+                initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
             }
             continue top;
         }

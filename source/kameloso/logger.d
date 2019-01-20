@@ -42,13 +42,15 @@ final class KamelosoLogger : Logger
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;   /// Whether or not to use colours for a bright background.
+    bool flush;  /// Whether or not we should flush stdout after finishing writing to it.
 
     /// Create a new `KamelosoLogger` with the passed settings.
     this(LogLevel lv = LogLevel.all, bool monochrome = false,
-        bool brightTerminal = false)
+        bool brightTerminal = false, bool flush = false)
     {
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
+        this.flush = flush;
         super(lv);
     }
 
