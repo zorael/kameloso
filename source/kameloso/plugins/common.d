@@ -2105,22 +2105,17 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
      +  `kameloso.irc.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
+     +  `RPL_ENDOFWHOIS` is also handled, to cover the case where a user without
+     +  an account triggering `anyone`- or `ignored`-level commands.
+     +
      +  This function was part of `UserAwareness` but triggering queued requests
      +  is too common to conflate with it.
-     +
-     +  Most of the time a plugin doesn't require a full `UserAwareness`; only
-     +  those that need looking up users outside of the current event do. The
-     +  persistency service allows for plugins to just read the information from
-     +  the `kameloso.irc.defs.IRCUser` embedded in the event directly, and that's
-     +  often enough.
-     +
-     +  General rule: if a plugin doesn't access `state.users`, it's probably
-     +  going to be enough with only `MinimalAuthentication`.
      +/
     @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
+    @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
         // Catch the user here, before replaying anything.
@@ -2216,7 +2211,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             foreach_reverse (immutable i; garbageIndexes)
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
-                plugin.state.whoisQueue[event.target.nickname].remove!(SwapStrategy.unstable)(i);
+                auto inQueue = event.target.nickname in plugin.state.whoisQueue;
+                *inQueue = (*inQueue).remove!(SwapStrategy.unstable)(i);
             }
 
             if (!plugin.state.whoisQueue[event.target.nickname].length)
@@ -2230,19 +2226,6 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         {
             plugin.state.whoisQueue.remove(garbageNick);
         }
-    }
-
-
-    // onMinimalAuthenticationEndOfWHOISMixin
-    /++
-     +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
-     +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onMinimalAuthenticationEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        plugin.state.whoisQueue.remove(event.target.nickname);
     }
 
 
