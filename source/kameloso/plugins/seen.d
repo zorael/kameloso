@@ -631,7 +631,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
     import std.stdio : stdout, writeln;
 
     writeln(JSONValue(plugin.seenUsers).toPrettyString);
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 

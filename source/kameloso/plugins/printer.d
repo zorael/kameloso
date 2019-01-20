@@ -206,7 +206,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
                 plugin.printerSettings.bellOnMention);
         }
 
-        version(FlushStdout) stdout.flush();
+        if (settings.flush) stdout.flush();
         break;
     }
 }

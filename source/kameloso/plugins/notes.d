@@ -278,7 +278,7 @@ void onCommandPrintNotes(NotesPlugin plugin)
 
     writeln("Currently queued notes:");
     writeln(plugin.notes.toPrettyString);
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 

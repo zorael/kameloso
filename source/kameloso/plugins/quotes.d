@@ -365,7 +365,7 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 
     writeln("Currently stored quotes:");
     writeln(plugin.quotes.toPrettyString);
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 

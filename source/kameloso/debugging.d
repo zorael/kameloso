@@ -484,7 +484,11 @@ void generateAsserts(ref IRCBot bot) @system
 
             if (*abort) return;
 
-            version(FlushStdout) scope(exit) stdout.flush();
+            scope(exit)
+            {
+                import kameloso.common : settings;
+                if (settings.flush) stdout.flush();
+            }
 
             string raw = input[0..$-1];  // mutable, slice away linebreak
             while (raw.beginsWithOneOf(" /"))

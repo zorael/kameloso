@@ -68,7 +68,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
         formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, false, things);
     }
 
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 alias printObject = printObjects;

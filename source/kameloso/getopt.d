@@ -324,7 +324,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
 
-    version(FlushStdout) scope(exit) stdout.flush();
+    scope(exit) if (settings.flush) stdout.flush();
 
     bool shouldWriteConfig;
     bool shouldShowVersion;

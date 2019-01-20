@@ -244,7 +244,7 @@ final class KamelosoLogger : Logger
     override protected void finishLogMsg() @trusted const
     {
         finishLogMsg(stdout.lockingTextWriter);
-        version(FlushStdout) stdout.flush();
+        if (flush) stdout.flush();
     }
 }
 

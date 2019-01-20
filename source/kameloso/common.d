@@ -520,7 +520,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
         cast(string)KamelosoInfo.source,
         post);
 
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 

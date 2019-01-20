@@ -114,7 +114,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.tags.length) writeln(event.tags, '$');
         writeln(event.raw, '$');
-        version(FlushStdout) stdout.flush();
+        if (settings.flush) stdout.flush();
     }
 
     if (plugin.adminSettings.printBytes)
@@ -126,7 +126,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
 
-        version(FlushStdout) stdout.flush();
+        if (settings.flush) stdout.flush();
     }
 
     if (plugin.adminSettings.printAsserts)
@@ -164,7 +164,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
             plugin.previousClient = plugin.state.client;
         }
 
-        version(FlushStdout) stdout.flush();
+        if (settings.flush) stdout.flush();
     }
 }
 
@@ -264,7 +264,7 @@ void onCommandShowUsers(AdminPlugin plugin)
         (IRCUser.sizeof * plugin.state.users.length), plugin.state.users.length,
         plugin.state.users.deepSizeof);
 
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 
@@ -983,7 +983,7 @@ void onCommandResetTerminal()
     import std.stdio : stdout, write;
 
     write(cast(char)TerminalToken.reset);
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 
@@ -1095,7 +1095,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
         formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
     }
 
-    version(FlushStdout) stdout.flush();
+    if (settings.flush) stdout.flush();
 }
 
 
