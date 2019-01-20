@@ -1297,3 +1297,50 @@ final class FileTypeMismatchException : Exception
         super(message, file, line);
     }
 }
+
+
+// getPlatform
+/++
+ +  Returns the string of the name of the current platform, adjusted to include
+ +  `cygwin` as an alternative next to `win32` and `win64`, as well as embedded
+ +  terminal consoles like in Visual Studio Code.
+ +
+ +  Returns:
+ +      String name of the current platform.
+ +/
+auto getPlatform()
+{
+    import std.conv : text;
+    import std.process : environment;
+    import std.system : os;
+
+    enum osName = os.text;
+
+    version(Windows)
+    {
+        import std.process : execute;
+
+        immutable term = environment.get("TERM", string.init);
+
+        if (term.length)
+        {
+            try
+            {
+                immutable uname = execute([ "uname", "-o" ]);
+                return uname.output; // == "Cygwin") ? "cygwin" : osName;
+            }
+            catch (Exception e)
+            {
+                return osName;
+            }
+        }
+        else
+        {
+            return osName;
+        }
+    }
+    else
+    {
+        return environment.get("TERM_PROGRAM", osName);
+    }
+}
