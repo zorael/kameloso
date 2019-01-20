@@ -20,9 +20,9 @@ branches:
 
 artifacts:
   - path: kameloso.exe
-    name: Normal Cygwin build (debug mode)
+    name: Normal build (debug mode)
   - path: kameloso-twitch.exe
-    name: Cygwin with Twitch bot (debug mode)
+    name: With Twitch bot (debug mode)
   - path: kameloso-dev.exe
     name: All-inclusive dev build (debug mode)
 
@@ -107,7 +107,7 @@ test_script:
 #- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c polyglot
  - mv kameloso.exe kameloso-dev.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch+cygwin
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
  - mv kameloso.exe kameloso-twitch.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c vanilla
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c cygwin
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c full
