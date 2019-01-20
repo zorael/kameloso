@@ -2085,6 +2085,15 @@ public:
 // MinimalAuthenticator
 /++
  +  Implements triggering of queued events in a plugin module.
+ +
+ +  Most of the time a plugin doesn't require a full `UserAwareness`; only
+ +  those that need looking up users outside of the current event do. The
+ +  persistency service allows for plugins to just read the information from
+ +  the `kameloso.irc.defs.IRCUser` embedded in the event directly, and that's
+ +  often enough.
+ +
+ +  General rule: if a plugin doesn't access `state.users`, it's probably
+ +  going to be enough with only `MinimalAuthentication`.
  +/
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
