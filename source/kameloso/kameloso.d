@@ -1407,6 +1407,13 @@ int kamelosoMain(string[] args)
     settings.configFile = buildNormalizedPath(defaultConfigurationPrefix, "kameloso.conf");
     settings.resourceDirectory = defaultResourcePrefix;
 
+    immutable platform = getPlatform();
+    if ((platform == "cygwin") || (platform == "vscode"))
+    {
+        // Whitelist more as we find them.
+        settings.flush = true;
+    }
+
     // Prepare an array for `handleGetopt` to fill by ref with custom settings
     // set on the command-line using `--set plugin.setting=value`
     string[] customSettings;
