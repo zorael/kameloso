@@ -1408,7 +1408,7 @@ int kamelosoMain(string[] args)
     settings.resourceDirectory = defaultResourcePrefix;
 
     immutable platform = getPlatform();
-    if ((platform == "cygwin") || (platform == "vscode"))
+    if ((platform == "Cygwin") || (platform == "vscode"))
     {
         // Whitelist more as we find them.
         settings.flush = true;
