@@ -684,12 +684,12 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
     immutable user = event.sender;
     immutable now = Clock.currTime.toUnixTime;
     immutable timediff = (now - user.lastWhois);
+    immutable whoisExpired = (timediff > 6 * Timeout.whoisRetry);
 
     immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
 
     if (user.account.length)
     {
-        immutable whoisExpired = (timediff > 6 * Timeout.whoisRetry);
         immutable isAdmin = (user.class_ == IRCUser.Class.admin);  // Trust in persistence.d
         immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
         immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
@@ -703,9 +703,9 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         {
             return FilterResult.pass;
         }
-        else if (isAnyone && ((level <= PrivilegeLevel.anyone) || whoisExpired))
+        else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
-            return FilterResult.pass;
+            return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
         else if ((level == PrivilegeLevel.ignore) && !isBlacklisted)
         {
@@ -721,6 +721,10 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         if (isBlacklisted)
         {
             // Should always be ignored
+        }
+        else if (level >= PrivilegeLevel.anyone)
+        {
+            return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
         else if (level == PrivilegeLevel.ignore)
         {
