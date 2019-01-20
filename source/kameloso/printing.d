@@ -44,6 +44,7 @@ public:
  +/
 void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)(Things things) @trusted
 {
+    import kameloso.common : settings;
     import std.stdio : stdout;
 
     // writeln trusts `lockingTextWriter` so we will too.
@@ -52,8 +53,6 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
 
     version(Colours)
     {
-        import kameloso.common : settings;
-
         if (!settings.monochrome)
         {
             formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter,
