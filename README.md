@@ -124,14 +124,12 @@ There are several configurations in which the bot may be built.
 * `twitch`, everything so far, plus the Twitch streamer bot
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
 * `windows`, default on Windows, also equals `full`
-* `cygwin`, equals `full` but with extra code needed for running under the default Cygwin terminal (**mintty**)
-* `twitch+cygwin`, `cygwin` but with the Twitch bot
 * `polyglot`, equals everything available, including things like more error messages (development build)
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
 ```bash
-$ dub build -c cygwin
+$ dub build -c colours
 ```
 
 # How to use
@@ -280,9 +278,7 @@ Terminal colours may also not work, requiring a registry edit to make it display
 
 Otherwise use the `--monochrome` setting to disable colours, or compile a non-`colours` configuration.
 
-Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Powershell and `cmd` consoles are unaffected.
-
-When run in such Cygwin terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that.
+When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that.
 
 ## Posix
 
