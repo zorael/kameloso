@@ -1328,8 +1328,9 @@ auto getPlatform()
         {
             try
             {
-                immutable uname = execute([ "uname", "-o" ]);
-                return uname.output; // == "Cygwin") ? "cygwin" : osName;
+                // Get the uname and strip the newline
+                immutable uname = execute([ "uname", "-o" ]).output;
+                return uname.length ? uname[0..$-1] : osName;
             }
             catch (Exception e)
             {
