@@ -1258,7 +1258,10 @@ Next tryConnect(ref IRCBot bot)
 
             interruptibleSleep(incrementedRetryDelay.seconds, *abort);
             if (*abort) return Next.returnFailure;
+
+            enum delayCap = 10*60;  // seconds
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+            incrementedRetryDelay = (incrementedRetryDelay < delayCap) ? incrementedRetryDelay : delayCap;
             continue;
 
         case delayThenNextIP:
@@ -1363,7 +1366,10 @@ Next tryResolve(ref IRCBot bot)
                     infotint, incrementedRetryDelay, logtint);
                 interruptibleSleep(incrementedRetryDelay.seconds, *abort);
                 if (*abort) return Next.returnFailure;
+
+                enum delayCap = 10*60;  // seconds
                 incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+                incrementedRetryDelay = (incrementedRetryDelay < delayCap) ? incrementedRetryDelay : delayCap;
             }
             continue;
 
