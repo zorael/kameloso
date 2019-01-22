@@ -613,6 +613,7 @@ unittest
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      nickname = String nickname to query for.
+ +      force = Whether or not to force the WHOIS, skipping any hysteresis queues.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void whois(Flag!"priority" priority = No.priority)(IRCPluginState state,
