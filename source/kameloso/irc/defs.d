@@ -108,19 +108,21 @@ struct IRCEvent
         HOSTTARGET,       /// Twitch channel hosting target.
         RECONNECT,        /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
         WHISPER,          /// Twitch private query message.
-        TWITCH_HOSTSTART, /// Twitch channel hosting start.
-        TWITCH_HOSTEND,   /// Twitch channel hosting end.
-        TWITCH_SUB,       /// Twitch subscription event, including resubs.
+        TWITCH_NOTICE,    /// Twitch generic server notice, see `event.aux`.
+        TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
         TWITCH_TIMEOUT,   /// Twitch temporary ban (seconds in `aux`).
         TWITCH_BAN,       /// Twitch permanent ban.
-        TWITCH_SUBGIFT,   /// Twitch subscription gift event.
+        TWITCH_SUB,       /// Twitch subscription event, including resubs.
         TWITCH_CHEER,     /// Twitch "bits" donation.
+        TWITCH_SUBGIFT,   /// Twitch subscription gift event.
+        TWITCH_HOSTSTART, /// Twitch channel hosting start.
+        TWITCH_HOSTEND,   /// Twitch channel hosting end.
+
+        // These might be worth removing.
+        TWITCH_RAID,      /// Twitch raid.
         TWITCH_RITUAL,    /// Twitch Ritual event.
         TWITCH_REWARDGIFT,/// Twitch "reward gift".
         TWITCH_PURCHASE,  /// Twitch purchase(?).
-        TWITCH_NOTICE,    /// Twitch generic server notice, see `event.aux`.
-        TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
-        TWITCH_RAID,      /// Twitch raid.
         TWITCH_GIFTUPGRADE,/// Twitch "continuing the gift sub"
         TWITCH_CHARITY,   /// Twitch charity donation.
 
