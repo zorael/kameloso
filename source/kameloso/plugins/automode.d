@@ -503,6 +503,11 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
     {
         plugin.applyAutomodes(event.sender.nickname, event.sender.account);
     }
+    else
+    {
+        import kameloso.messaging : whois;
+        plugin.state.whois(event.sender.nickname, plugin.automodeSettings.helloForcesWhois);
+    }
 }
 
 
