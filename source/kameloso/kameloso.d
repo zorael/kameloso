@@ -780,7 +780,7 @@ Next mainLoop(ref IRCBot bot)
                         plugin.handleFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
-                        bot.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue, plugin.name);
+                        bot.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue);
 
                         if (plugin.state.client.updated)
                         {
@@ -1073,7 +1073,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
  +      reqs = Reference to an associative array of `TriggerRequest`s.
  +/
 import kameloso.plugins.common : TriggerRequest;
-void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] reqs, const string name)
+void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] reqs)
 {
     // Walk through requests and call `WHOIS` on those that haven't been
     // `WHOIS`ed in the last `Timeout.whois` seconds
