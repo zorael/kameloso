@@ -133,13 +133,13 @@ interface IRCPlugin
 }
 
 
-// WHOISRequest
+// TriggerRequest
 /++
  +  A queued event to be replayed upon a `WHOIS` request response.
  +
- +  It is abstract; all objects must be of a concrete `WHOISRequestImpl` type.
+ +  It is abstract; all objects must be of a concrete `TriggerRequestImpl` type.
  +/
-abstract class WHOISRequest
+abstract class TriggerRequest
 {
     /// Stored `kameloso.irc.defs.IRCEvent` to replay.
     IRCEvent event;
@@ -153,7 +153,7 @@ abstract class WHOISRequest
     /// Replay the stored event.
     void trigger();
 
-    /// Creates a new `WHOISRequest` with a timestamp of the current time.
+    /// Creates a new `TriggerRequest` with a timestamp of the current time.
     this() @safe
     {
         import std.datetime.systime : Clock;
@@ -162,7 +162,7 @@ abstract class WHOISRequest
 }
 
 
-// WHOISRequestImpl
+// TriggerRequestImpl
 /++
  +  Implementation of a queued `WHOIS` request call.
  +
@@ -175,7 +175,7 @@ abstract class WHOISRequest
  +      F = Some function type.
  +      Payload = Optional payload type.
  +/
-final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
+final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerRequest
 {
 @safe:
     /// Stored function pointer/delegate.
@@ -187,13 +187,13 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         Payload payload;
 
         /++
-         +  Create a new `WHOISRequestImpl` with the passed variables.
+         +  Create a new `TriggerRequestImpl` with the passed variables.
          +
          +  Params:
          +      payload = Payload of templated type `Payload` to attach to this
-         +          `WHOISRequestImpl`.
+         +          `TriggerRequestImpl`.
          +      event = `kameloso.irc.defs.IRCEvent` to attach to this
-         +          `WHOISRequestImpl`.
+         +          `TriggerRequestImpl`.
          +      privilegeLevel = The privilege level required to trigger the
          +          passed function.
          +      fn = Function pointer to call with the attached payloads when
@@ -212,11 +212,11 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
     else
     {
         /++
-         +  Create a new `WHOISRequestImpl` with the passed variables.
+         +  Create a new `TriggerRequestImpl` with the passed variables.
          +
          +  Params:
          +      payload = Payload of templated type `Payload` to attach to this
-         +          `WHOISRequestImpl`.
+         +          `TriggerRequestImpl`.
          +      fn = Function pointer to call with the attached payloads when
          +          the request is triggered.
          +/
@@ -239,7 +239,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         import std.meta : AliasSeq, staticMap;
         import std.traits : Parameters, Unqual, arity;
 
-        assert((fn !is null), "null fn in WHOISRequestImpl!" ~ F.stringof);
+        assert((fn !is null), "null fn in TriggerRequestImpl!" ~ F.stringof);
 
         alias Params = staticMap!(Unqual, Parameters!fn);
 
@@ -261,14 +261,14 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         }
         else
         {
-            static assert(0, "Unknown function signature in WHOISRequestImpl: " ~ typeof(fn).stringof);
+            static assert(0, "Unknown function signature in TriggerRequestImpl: " ~ typeof(fn).stringof);
         }
     }
 }
 
 unittest
 {
-    WHOISRequest[] queue;
+    TriggerRequest[] queue;
 
     IRCEvent event;
     event.target.nickname = "kameloso";
@@ -285,7 +285,7 @@ unittest
         ++i;
     }
 
-    WHOISRequest reqdg = new WHOISRequestImpl!(void delegate())(event, pl, &dg);
+    TriggerRequest reqdg = new TriggerRequestImpl!(void delegate())(event, pl, &dg);
     queue ~= reqdg;
 
     with (reqdg.event)
@@ -303,7 +303,7 @@ unittest
 
     static void fn() { }
 
-    auto reqfn = whoisRequest(event, pl, &fn);
+    auto reqfn = triggerRequest(event, pl, &fn);
     queue ~= reqfn;
 
     // delegate(ref IRCEvent)
@@ -313,7 +313,7 @@ unittest
         thisEvent.content = "blah";
     }
 
-    auto reqdg2 = whoisRequest(event, pl, &dg2);
+    auto reqdg2 = triggerRequest(event, pl, &dg2);
     queue ~= reqdg2;
 
     assert((reqdg2.event.content == "hirrpp"), event.content);
@@ -324,36 +324,36 @@ unittest
 
     static void fn2(IRCEvent thisEvent) { }
 
-    auto reqfn2 = whoisRequest(event, pl, &fn2);
+    auto reqfn2 = triggerRequest(event, pl, &fn2);
     queue ~= reqfn2;
 }
 
 
-// whoisRequest
+// triggerRequest
 /++
- +  Convenience function that returns a `WHOISRequestImpl` of the right type,
+ +  Convenience function that returns a `TriggerRequestImpl` of the right type,
  +  *with* a payload attached.
  +
  +  Params:
- +      payload = Payload to attach to the `WHOISRequest`.
+ +      payload = Payload to attach to the `TriggerRequest`.
  +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
  +  Returns:
- +      A `WHOISRequest` with template parameters inferred from the arguments
+ +      A `TriggerRequest` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
+TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
     PrivilegeLevel privilegeLevel, F fn) @safe
 {
-    return new WHOISRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
+    return new TriggerRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
 }
 
 
-// whoisRequest
+// triggerRequest
 /++
- +  Convenience function that returns a `WHOISRequestImpl` of the right type,
+ +  Convenience function that returns a `TriggerRequestImpl` of the right type,
  +  *without* a payload attached.
  +
  +  Params:
@@ -362,12 +362,12 @@ WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
  +  Returns:
- +      A `WHOISRequest` with template parameters inferred from the arguments
+ +      A `TriggerRequest` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
+TriggerRequest triggerRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
 {
-    return new WHOISRequestImpl!F(event, privilegeLevel, fn);
+    return new TriggerRequestImpl!F(event, privilegeLevel, fn);
 }
 
 
@@ -408,9 +408,9 @@ struct IRCPluginState
      +
      +  The main loop iterates this after processing all on-event functions so
      +  as to know what nicks the plugin wants a `WHOIS` for. After the `WHOIS`
-     +  response returns, the event bundled with the `WHOISRequest` will be replayed.
+     +  response returns, the event bundled with the `TriggerRequest` will be replayed.
      +/
-    WHOISRequest[][string] whoisQueue;
+    TriggerRequest[][string] triggerRequestQueue;
 
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
@@ -2141,7 +2141,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         string[] garbageNicknames;
 
         // See if there are any queued WHOIS requests to trigger
-        if (auto requestsForNickname = event.target.nickname in plugin.state.whoisQueue)
+        if (auto requestsForNickname = event.target.nickname in plugin.state.triggerRequestQueue)
         {
             size_t[] garbageIndexes;
 
@@ -2236,11 +2236,11 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             foreach_reverse (immutable i; garbageIndexes)
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
-                auto inQueue = event.target.nickname in plugin.state.whoisQueue;
+                auto inQueue = event.target.nickname in plugin.state.triggerRequestQueue;
                 *inQueue = (*inQueue).remove!(SwapStrategy.unstable)(i);
             }
 
-            if (!plugin.state.whoisQueue[event.target.nickname].length)
+            if (!plugin.state.triggerRequestQueue[event.target.nickname].length)
             {
                 // All requests were processed, flag for removal
                 garbageNicknames ~= event.target.nickname;
@@ -2249,7 +2249,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
         foreach (immutable garbageNick; garbageNicknames)
         {
-            plugin.state.whoisQueue.remove(garbageNick);
+            plugin.state.triggerRequestQueue.remove(garbageNick);
         }
     }
 
@@ -2270,7 +2270,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         {
             // We're on a server that doesn't support WHOIS
             // --> clear WHOIS queue and pretend like nothing happened
-            plugin.state.whoisQueue.clear();
+            plugin.state.triggerRequestQueue.clear();
         }
     }
 }
@@ -3176,7 +3176,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +
  +  Params:
  +      plugin = Current `IRCPlugin`.
- +      payload = Payload to attach to the `WHOISRequest`, generally an
+ +      payload = Payload to attach to the `TriggerRequest`, generally an
  +          `kameloso.irc.defs.IRCEvent` to replay once the `WHOIS` results return.
  +      event = `kameloso.irc.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
@@ -3203,11 +3203,11 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
 
     static if (!is(Payload == typeof(null)))
     {
-        plugin.state.whoisQueue[user.nickname] ~= whoisRequest(payload, event, privilegeLevel, fn);
+        plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(payload, event, privilegeLevel, fn);
     }
     else
     {
-        plugin.state.whoisQueue[user.nickname] ~= whoisRequest(event, privilegeLevel, fn);
+        plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(event, privilegeLevel, fn);
     }
 }
 

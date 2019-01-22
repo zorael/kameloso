@@ -780,7 +780,7 @@ Next mainLoop(ref IRCBot bot)
                         plugin.handleFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
-                        bot.handleWHOISQueue(plugin.state.whoisQueue);
+                        bot.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue, plugin.name);
 
                         if (plugin.state.client.updated)
                         {
@@ -1064,31 +1064,31 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
 }
 
 
-// handleWHOISQueue
+// whoisForTriggerRequestQueue
 /++
- +  Takes a queue of `WHOISRequest` objects and emits `WHOIS` requests for each one.
+ +  Takes a queue of `TriggerRequest` objects and emits `WHOIS` requests for each one.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      reqs = Reference to an associative array of `WHOISRequest`s.
+ +      reqs = Reference to an associative array of `TriggerRequest`s.
  +/
-import kameloso.plugins.common : WHOISRequest;
-void handleWHOISQueue(ref IRCBot bot, ref WHOISRequest[][string] reqs)
+import kameloso.plugins.common : TriggerRequest;
+void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] reqs, const string name)
 {
     // Walk through requests and call `WHOIS` on those that haven't been
     // `WHOIS`ed in the last `Timeout.whois` seconds
 
     foreach (immutable nickname, const requestsForNickname; reqs)
     {
-        assert(nickname.length, "Empty nickname in WHOIS queue");
+        assert(nickname.length, "Empty nickname in trigger queue");
 
         import kameloso.constants : Timeout;
         import std.datetime.systime : Clock;
 
-        const then = nickname in bot.previousWhoisTimestamps;
         immutable now = Clock.currTime.toUnixTime;
+        immutable then = bot.previousWhoisTimestamps.get(nickname, now);
 
-        if (!then || ((now - *then) > Timeout.whoisRetry))
+        if ((now - then) > Timeout.whoisRetry)
         {
             if (!settings.hideOutgoing) logger.trace("--> WHOIS ", nickname);
             bot.throttleline("WHOIS ", nickname);
