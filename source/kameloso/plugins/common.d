@@ -685,7 +685,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
     immutable user = event.sender;
     immutable now = Clock.currTime.toUnixTime;
     immutable timediff = (now - user.lastWhois);
-    immutable whoisExpired = (timediff > 6 * Timeout.whoisRetry);
+    immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
     immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
     if (isBlacklisted) return FilterResult.fail;
