@@ -995,6 +995,7 @@ private:
         {
         case ignore:
         case anyone:
+        case registered:
         case whitelist:
             // Fallback to original, unchanged behaviour
             return allowImpl(event, privilegeLevel);

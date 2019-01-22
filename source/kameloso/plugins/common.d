@@ -473,8 +473,9 @@ enum PrivilegeLevel
 {
     ignore = 0, /// Override privilege checks.
     anyone = 1, /// Anyone may trigger this event.
-    whitelist = 2, /// Only those of the `whitelist` class may trigger this event.
-    admin = 3, /// Only the administrators may trigger this event.
+    registered = 2,  /// Anyone registered with services may trigger this event.
+    whitelist = 3, /// Only those of the `whitelist` class may trigger this event.
+    admin = 4, /// Only the administrators may trigger this event.
 }
 
 
@@ -687,6 +688,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
     immutable whoisExpired = (timediff > 6 * Timeout.whoisRetry);
 
     immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
+    if (isBlacklisted) return FilterResult.fail;
 
     if (user.account.length)
     {
@@ -695,15 +697,15 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
         //immutable isSpecial = (user.class_ == IRCUser.Class.special);
 
-        if (isBlacklisted)
-        {
-            // Should always be ignored
-        }
-        else if (isAdmin && (level <= PrivilegeLevel.admin))
+        if (isAdmin && (level <= PrivilegeLevel.admin))
         {
             return FilterResult.pass;
         }
         else if (isWhitelisted && (level <= PrivilegeLevel.whitelist))
+        {
+            return FilterResult.pass;
+        }
+        else if (level == PrivilegeLevel.registered)
         {
             return FilterResult.pass;
         }
@@ -715,39 +717,30 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         {
             return FilterResult.pass;
         }
-        /*else if (isBlacklisted || isSpecial)
+        else
         {
             return FilterResult.fail;
-        }*/
+        }
     }
     else
     {
-        if (isBlacklisted)
+        with (PrivilegeLevel)
+        final switch (level)
         {
-            // Should always be ignored
-        }
-        else if ((level == PrivilegeLevel.admin) || (level == PrivilegeLevel.whitelist))
-        {
+        case admin:
+        case whitelist:
+        case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
             return whoisExpired ? FilterResult.whois : FilterResult.fail;
-        }
-        else if (level == PrivilegeLevel.anyone)
-        {
+
+        case anyone:
             // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
-        }
-        else if (level == PrivilegeLevel.ignore)
-        {
+
+        case ignore:
             return FilterResult.pass;
         }
-        else if (timediff > Timeout.whoisRetry)
-        {
-            // When does this happen?
-            return FilterResult.whois;
-        }
     }
-
-    return FilterResult.fail;
 }
 
 ///
@@ -2208,6 +2201,15 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 case whitelist:
                     if ((event.target.class_ == IRCUser.Class.admin) ||
                         (event.target.class_ == IRCUser.Class.whitelist))
+                    {
+                        explainReplay();
+                        request.trigger();
+                        garbageIndexes ~= i;
+                    }
+                    break;
+
+                case registered:
+                    if (event.target.account.length)
                     {
                         explainReplay();
                         request.trigger();
