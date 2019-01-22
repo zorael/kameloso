@@ -71,7 +71,7 @@
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "WithPlugins", "Web", "Colours", "TwitchWarnings",
-                "TwitchBot", "OmniscientAdmin", "PrintStacktraces" ],
+                "TwitchBot", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dflags": [ "-dip25", "-dip1000", "-dip1008" ],
