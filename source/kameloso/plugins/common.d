@@ -15,6 +15,7 @@ import std.typecons : Flag, No, Yes;
 
 //version = TwitchWarnings;
 version = PrefixedCommandsFallBackToNickname;
+//version = ExplainReplay;
 
 
 // 2.079.0 getSymolsByUDA
@@ -2161,6 +2162,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     continue;
                 }
 
+                version(ExplainReplay)
                 void explainReplay()
                 {
                     import kameloso.common : logger, settings;
@@ -2179,7 +2181,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                         }
                     }
 
-                    logger.logf("%s%s%s plugin replaying %1$s%4$s%3$s-tier event " ~
+                    logger.logf("%s%s%s plugin replaying %1$s%4$s%3$s-level event " ~
                         "based on WHOIS results (user is %1$s%5$s%3$s class)",
                         infotint, plugin.name, logtint,
                         Enum!PrivilegeLevel.toString(request.privilegeLevel),
@@ -2192,7 +2194,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 case admin:
                     if (event.target.class_ == IRCUser.Class.admin)
                     {
-                        explainReplay();
+                        version(ExplainReplay) explainReplay();
                         request.trigger();
                         garbageIndexes ~= i;
                     }
@@ -2202,7 +2204,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     if ((event.target.class_ == IRCUser.Class.admin) ||
                         (event.target.class_ == IRCUser.Class.whitelist))
                     {
-                        explainReplay();
+                        version(ExplainReplay) explainReplay();
                         request.trigger();
                         garbageIndexes ~= i;
                     }
@@ -2211,7 +2213,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 case registered:
                     if (event.target.account.length)
                     {
-                        explainReplay();
+                        version(ExplainReplay) explainReplay();
                         request.trigger();
                         garbageIndexes ~= i;
                     }
@@ -2220,7 +2222,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 case anyone:
                     if (event.target.class_ != IRCUser.Class.blacklist)
                     {
-                        explainReplay();
+                        version(ExplainReplay) explainReplay();
                         request.trigger();
                     }
 
