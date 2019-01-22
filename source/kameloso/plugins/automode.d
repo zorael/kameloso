@@ -34,6 +34,9 @@ struct AutomodeSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /// Toggles whether or not the `hello` command always forces a WHOIS.
+    bool helloForcesWhois = true;
 }
 
 
