@@ -33,7 +33,7 @@ enum Timeout
     connectionLost = 600,
     resolve = 10,
     ping = 200,
-    whoisRetry = 60,
+    whoisRetry = 300,
     titleCache = 600,
     initialPeriodical = 3600,
 }
