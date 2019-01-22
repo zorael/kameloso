@@ -602,6 +602,53 @@ unittest
 }
 
 
+// whois
+/++
+ +  Queries the server for WHOIS information about a user.
+ +
+ +  Params:
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      nickname = String nickname to query for.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +/
+void whois(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string nickname, const bool force = false, const bool quiet = settings.hideOutgoing)
+{
+    static if (priority) import std.concurrency : send = prioritySend;
+
+    IRCEvent event;
+    event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
+    event.target.nickname = nickname;
+    if (force) event.num = 1;
+
+    state.mainThread.send(event);
+}
+
+///
+unittest
+{
+    import kameloso.conv : Enum;
+
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.whois("kameloso", true);
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(num > 0);
+    }
+}
+
+
 // raw
 /++
  +  Sends text to the server, verbatim.
