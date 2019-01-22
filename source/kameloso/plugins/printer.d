@@ -57,6 +57,9 @@ struct PrinterSettings
     /// Whether or not to filter away most uninteresting events.
     bool filterMost = true;
 
+    /// Whether or not to filter WHOIS queries.
+    bool filterWhois = true;
+
     /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
     bool bellOnMention = true;
 
