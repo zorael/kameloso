@@ -118,18 +118,63 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (plugin.printerSettings.motd) goto default;
         break;
 
+    case RPL_WHOISACCOUNT:
+    case RPL_WHOISACCOUNTONLY:
+    case RPL_WHOISADMIN:
+    case RPL_WHOISBOT:
+    case RPL_WHOISCERTFP:
+    case RPL_WHOISCHANNELS:
+    case RPL_WHOISCHANOP:
+    case RPL_WHOISHELPER:
+    case RPL_WHOISHELPOP:
+    case RPL_WHOISHOST:
+    case RPL_WHOISIDLE:
+    case RPL_ENDOFWHOIS:
+    case RPL_TARGUMODEG:
+    case RPL_WHOISREGNICK:
+    case RPL_WHOISKEYVALUE:
+    case RPL_WHOISKILL:
+    case RPL_WHOISLANGUAGE:
+    case RPL_WHOISMARKS:
+    case RPL_WHOISMODES:
+    case RPL_WHOISOPERATOR:
+    case RPL_WHOISPRIVDEAF:
+    case RPL_WHOISREALIP:
+    case RPL_WHOISSECURE:
+    case RPL_WHOISSPECIAL:
+    case RPL_WHOISSSLFP:
+    case RPL_WHOISSTAFF:
+    case RPL_WHOISSVCMSG:
+    case RPL_WHOISTEXT:
+    case RPL_WHOISUSER:
+    case RPL_WHOISVIRT:
+    case RPL_WHOISWEBIRC:
+    case RPL_WHOISYOURID:
+    case RPL_WHOIS_HIDDEN:
+    case RPL_WHOISACTUALLY:
+    case RPL_WHOWASDETAILS:
+    case RPL_WHOWASHOST:
+    case RPL_WHOWASIP:
+    case RPL_WHOWASREAL:
+    case RPL_WHOWASUSER:
+    case RPL_WHOWAS_TIME:
+    case RPL_ENDOFWHOWAS:
+    case RPL_CHARSET:
+        if (!plugin.printerSettings.filterWhois) goto default;
+        break;
+
     case RPL_NAMREPLY:
     case RPL_YOURHOST:
     case RPL_ISUPPORT:
     case RPL_TOPICWHOTIME:
-    case RPL_WHOISSECURE:
+    //case RPL_WHOISSECURE:
     case RPL_LUSERCLIENT:
     case RPL_LUSEROP:
     case RPL_LUSERCHANNELS:
     case RPL_LUSERME:
     case RPL_LUSERUNKNOWN:
     case RPL_WHOISSERVER:
-    case RPL_ENDOFWHOIS:
+    //case RPL_ENDOFWHOIS:
     case RPL_ENDOFNAMES:
     case RPL_GLOBALUSERS:
     case RPL_LOCALUSERS:
