@@ -564,6 +564,22 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         }
         break;
 
+    version(TwitchSupport)
+    {
+        case JOIN:
+        case PART:
+        case USERSTATE:
+            if (state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                // These Twitch events are just noise.
+                return;
+            }
+            else
+            {
+                goto default;
+            }
+    }
+
     default:
         if (channel.length && (sender.nickname.length || type == MODE))
         {
