@@ -40,13 +40,17 @@ import kameloso.irc.defs;
 import kameloso.irc.colours : ircBold, ircColourNick;
 
 // `kameloso.common` for some globals.
-import kameloso.common;
+import kameloso.common : logger, settings;
+
+// `std.datetime` for the `Clock`, to update times with.
+import std.datetime.systime : Clock;
+
 
 /+
     Most of the module can (and ideally should) be kept private. Our surface
     area here will be restricted to only one `kameloso.plugins.common.IRCPlugin`
     class, and the usual pattern used is to have the private bits first and that
-    public class last. We'll turn that around here to make it easier to parse.
+    public class last. We'll turn that around here to make it easier to visually parse.
  +/
 
 public:
@@ -78,7 +82,7 @@ public:
  +      Tid mainThread;
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;
- +      WHOISRequest[string] whoisQueue;
+ +      WHOISRequest[string] triggerRequestQueue;
  +      Fiber[][IRCEvent.Type] awaitingFibers;
  +      Labeled!(Fiber, long)[] timedFibers;
  +      long nextPeriodical;
@@ -89,7 +93,7 @@ public:
  +     connected to.
  +
  +  * `mainThread` is the *thread ID* of the thread running the main loop. We
- +     indirectly used it to send strings to the server by way of concurrency
+ +     indirectly use it to send strings to the server by way of concurrency
  +     messages, but it is usually not something you will have to deal with directly.
  +
  +  * `users` is an associative array keyed with users' nicknames. The value to
@@ -102,10 +106,10 @@ public:
  +     channels keyed by their names. This way we can access detailed
  +     information about any given channel, knowing only their name.
  +
- +  * `whoisQueue` is also an associative array into which we place
- +    `kameloso.plugins.common.WHOISRequest`s. The main loop will pick up on
+ +  * `triggerRequestQueue` is also an associative array into which we place
+ +    `kameloso.plugins.common.TriggerRequest`s. The main loop will pick up on
  +     these and call `WHOIS` on the nickname in the key. A
- +     `kameloso.plugins.common.WHOISRequest` is otherwise just an
+ +     `kameloso.plugins.common.TriggerRequest` is otherwise just an
  +     `kameloso.irc.defs.IRCEvent` to be played back when the `WHOIS` results
  +     return, as well as a function pointer to call with that event. This is
  +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
@@ -128,18 +132,13 @@ public:
 final class SeenPlugin : IRCPlugin
 {
 private:  // Module-level private.
+
     // seenSettings
     /++
      +  An instance of *settings* for the Seen plugin. We will define this
      +  later. The members of it will be saved to and loaded from the
      +  configuration file, for use in our module. We need to annotate it
-     +  `@Settings` to ensure it ends up there, and the wizardry will pick it
-     +  up.
-     +
-     +  This settings variable can be at top-level scope, but it can be
-     +  considered good practice to keep it nested here. The entire
-     +  `SeenSettings` struct definition can be placed here too, for that
-     +  matter.
+     +  `@Settings` to ensure it ends up there, and the wizardry will pick it up.
      +/
     @Settings SeenSettings seenSettings;
 
@@ -234,7 +233,11 @@ private:
  +/
 struct SeenSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+     +  Toggles whether or not the plugin should react to events at all.
+     +  The `@Enabler` annotation makes it special and lets us easily enable or
+     +  disable it without having checks everywhere.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -253,7 +256,7 @@ struct SeenSettings
  +  `kameloso.irc.defs.IRCEvent.Type` annotations, even if this one matched. The
  +  default is otherwise that it will end early after one match, but this
  +  doesn't ring well with catch-all functions like these. It's sensible to save
- +  `kameloso.plugins.common.Chainable` for the modules and functions that
+ +  `kameloso.plugins.common.Chainable` only for the modules and functions that
  +  actually need it.
  +
  +  The `kameloso.plugins.common.ChannelPolicy` annotation dictates whether or not this
@@ -274,14 +277,16 @@ struct SeenSettings
  +     <br>
  +  * `anyone` will let precisely anyone trigger it, but only after having
  +     looked them up.<br>
+ +  * `registered` will let anyone logged into a services account trigger it.<br>
  +  * `whitelist` will only allow users in the `whitelist` array in the
  +     configuration file.<br>
  +  * `admin` will allow only you and your other administrators, also as defined
  +     in the configuration file.
  +
- +  In the case of `anyone`, `whitelist`, `admin`, it will look you up and
+ +  In the case of `whitelist` and `admin` it will look you up and
  +  compare your *services account name* to those configured before doing
- +  anything. In the case of `anyone`, the results won't matter and it will just
+ +  anything. In the case of `registered`, merely being logged in is enough.
+ +  In the case of `anyone`, the WHOIS results won't matter and it will just
  +  let it pass. In the other cases, if you aren't logged into services or if
  +  your account name isn't included in the lists, the function will not trigger.
  +
@@ -305,20 +310,15 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
         `JOIN`, `PART` and `QUIT` events. Furthermore, it will only trigger if
         it took place in a home channel, in the case of all but `QUIT` (which
         as noted is global and not associated with a channel).
-
-        It says `plugin.updateUser(...)` but there is no method `updateUser` in
-        the `SeenPlugin plugin`; it is top-/module-level. Virtually the entirety
-        of our implementation will rely on UFCS.
      +/
-    import std.datetime.systime : Clock;
     plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
 }
 
 
 // onNick
 /++
- +  When someone changes nickname, moves the old seen timestamp to a new entry
- +  for the new nickname, removing the old one.
+ +  When someone changes nickname, add a new entry with the current timestamp for
+ +  the new nickname, and remove the old one.
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +/
@@ -327,16 +327,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.ignore)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
-    /+
-        There may not be an old one if the user was not indexed upon us joining
-        the channel for some reason.
-     +/
-
-    if (const user = event.sender.nickname in plugin.seenUsers)
-    {
-        plugin.seenUsers[event.target.nickname] = *user;
-        plugin.seenUsers.remove(event.sender.nickname);
-    }
+    plugin.seenUsers[event.target.nickname] = Clock.currTime.toUnixTime;
+    plugin.seenUsers.remove(event.sender.nickname);
 }
 
 
@@ -355,7 +347,6 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
     // Update the user's entry
-    import std.datetime.systime : Clock;
     plugin.updateUser(event.target.nickname, Clock.currTime.toUnixTime);
 }
 
@@ -375,7 +366,6 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
-    import std.datetime.systime : Clock;
 
     /+
         Use a `std.algorithm.iteration.splitter` to iterate each name and call
@@ -441,7 +431,8 @@ void onEndOfList(SeenPlugin plugin)
  +  The plugin system will have made certain we only get messages starting with
  +  "`seen`", since we annotated this function with such a
  +  `kameloso.plugins.common.BotCommand`. It will since have been sliced off,
- +  so we're left only with the "arguments" to "`seen`".
+ +  so we're left only with the "arguments" to "`seen`". `event.aux` contains
+ +  the triggering word, if it's needed.
  +
  +  If this is a `CHAN` event, the original lines could (for example) have been
  +  "`kameloso: seen Joe`", or merely "`!seen Joe`" (assuming a `!` prefix).
@@ -477,7 +468,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     import kameloso.irc.common : isValidNickname;
     import kameloso.string : contains;
     import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock, SysTime;
+    import std.datetime.systime : SysTime;
     import std.format : format;
 
     /+
@@ -688,7 +679,6 @@ void updateAllUsers(SeenPlugin plugin)
         }
     }
 
-    import std.datetime.systime : Clock;
     immutable now = Clock.currTime.toUnixTime;
 
     foreach (immutable nickname, immutable nil; uniqueUsers)
@@ -810,8 +800,6 @@ void onEndOfMotd(SeenPlugin plugin)
  +/
 void periodically(SeenPlugin plugin)
 {
-    import std.datetime.systime : Clock;
-
     enum hoursBetweenSaves = 3;
 
     immutable now = Clock.currTime.toUnixTime;
