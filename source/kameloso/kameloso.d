@@ -396,6 +396,31 @@ Next checkMessages(ref IRCBot bot)
             if (channel.length) goto case CHAN;
             else goto case QUERY;
 
+        case RPL_WHOISACCOUNT:
+            import kameloso.constants : Timeout;
+            import std.datetime.systime : Clock;
+
+            immutable now = Clock.currTime.toUnixTime;
+
+            if (num > 0)
+            {
+                // Force
+                line = "WHOIS " ~ target.nickname;
+                bot.previousWhoisTimestamps[target.nickname] = now;
+            }
+            else
+            {
+                // Copy/paste from whoisForTriggerRequestQueue
+                immutable then = bot.previousWhoisTimestamps.get(target.nickname, now);
+
+                if ((now - then) > Timeout.whoisRetry)
+                {
+                    line = "WHOIS " ~ target.nickname;
+                    bot.previousWhoisTimestamps[target.nickname] = now;
+                }
+            }
+            break;
+
         case UNSET:
             line = content;
             break;
@@ -429,7 +454,7 @@ Next checkMessages(ref IRCBot bot)
                 appropriateline(prelude ~ splitLine);
             }
         }
-        else
+        else if (line.length)
         {
             appropriateline(line);
         }
