@@ -411,7 +411,7 @@ Next checkMessages(ref IRCBot bot)
             else
             {
                 // Copy/paste from whoisForTriggerRequestQueue
-                immutable then = bot.previousWhoisTimestamps.get(target.nickname, now);
+                immutable then = bot.previousWhoisTimestamps.get(target.nickname, 0);
 
                 if ((now - then) > Timeout.whoisRetry)
                 {
@@ -1086,7 +1086,7 @@ void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] 
         import std.datetime.systime : Clock;
 
         immutable now = Clock.currTime.toUnixTime;
-        immutable then = bot.previousWhoisTimestamps.get(nickname, now);
+        immutable then = bot.previousWhoisTimestamps.get(nickname, 0);
 
         if ((now - then) > Timeout.whoisRetry)
         {
