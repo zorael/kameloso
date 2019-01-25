@@ -260,15 +260,16 @@ void createFIFO(const string filename)
 }
 
 
-// onWelcome
+// onMotd
 /++
  +  Spawns the pipereader thread.
  +
  +  Snapshots the filename to use, as we base it on the bot's nickname, which
  +  may change during the connection's lifetime.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(PipelinePlugin plugin)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onMotd(PipelinePlugin plugin)
 {
     with (plugin)
     {
