@@ -13,6 +13,7 @@
 module kameloso.plugins.printer;
 
 version(WithPlugins):
+version(WithPrinterPlugin):
 
 private:
 

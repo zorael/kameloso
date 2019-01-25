@@ -15,7 +15,28 @@
         "--ex", "arsd."
     ],
     "-ddoxTool" : "scod",
-    "versions": [ "AsAnApplication", "TwitchSupport" ],
+    "versions":
+    [
+        "AsAnApplication",
+        "TwitchSupport",
+        "WithAdminPlugin",
+        "WithAutomodePlugin",
+        "WithBashQuotesPlugin",
+        "WithChanQueriesService",
+        "WithChatbotPlugin",
+        "WithConnectService",
+        "WithCTCPService",
+        "WithHelpPlugin",
+        "WithNotesPlugin",
+        "WithPersistenceService",
+        "WithPipelinePlugin",
+        "WithPrinterPlugin",
+        "WithQuotesPlugin",
+        "WithRedditPlugin",
+        "WithSedReplacePlugin",
+        "WithSeenPlugin",
+        "WithWebtitlesPlugin"
+    ],
     "configurations":
     [
         {
@@ -32,13 +53,13 @@
         },
         {
             "name": "twitch",
-            "versions": [ "WithPlugins", "Colours", "Web", "TwitchBot" ],
+            "versions": [ "WithPlugins", "Colours", "Web", "WithTwitchBotPlugin" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
             "name": "polyglot",
             "versions": [ "WithPlugins", "Colours", "Web",
-                "TwitchBot", "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces" ],
+                "WithTwitchBotPlugin", "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
@@ -71,7 +92,7 @@
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "WithPlugins", "Web", "Colours", "TwitchWarnings",
-                "TwitchBot", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
+                "WithTwitchBotPlugin", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dflags": [ "-dip25", "-dip1000", "-dip1008" ],

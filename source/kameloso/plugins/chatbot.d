@@ -14,6 +14,7 @@
 module kameloso.plugins.chatbot;
 
 version(WithPlugins):
+version(WithChatbotPlugin):
 
 private:
 

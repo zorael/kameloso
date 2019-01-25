@@ -25,6 +25,7 @@
 module kameloso.plugins.sedreplace;
 
 version(WithPlugins):
+version(WithSedReplacePlugin):
 
 private:
 

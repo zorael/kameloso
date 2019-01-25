@@ -108,7 +108,7 @@ version(WithPlugins)
     {
         mixin(tryImportMixin("kameloso.plugins.twitchsupport", "TwitchSupportService"));
 
-        version(TwitchBot)
+        version(WithTwitchBotPlugin)
         {
             mixin(tryImportMixin("kameloso.plugins.twitchbot", "TwitchBotPlugin"));
         }

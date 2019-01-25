@@ -12,7 +12,7 @@ module kameloso.plugins.twitchbot;
 
 version(WithPlugins):
 version(TwitchSupport):
-version(TwitchBot):
+version(WithTwitchBotPlugin):
 
 private:
 

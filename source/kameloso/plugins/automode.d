@@ -14,6 +14,7 @@
 module kameloso.plugins.automode;
 
 version(WithPlugins):
+version(WithAutomodePlugin):
 
 private:
 

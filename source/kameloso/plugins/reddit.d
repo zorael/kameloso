@@ -14,6 +14,7 @@ module kameloso.plugins.reddit;
 
 version(WithPlugins):
 version(Web):
+version(WithRedditPlugin):
 
 private:
 

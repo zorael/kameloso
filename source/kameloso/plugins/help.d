@@ -4,6 +4,7 @@
 module kameloso.plugins.help;
 
 version(WithPlugins):
+version(WithHelpPlugin):
 
 private:
 

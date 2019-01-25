@@ -11,6 +11,7 @@
 module kameloso.plugins.ctcp;
 
 version(WithPlugins):
+version(WithCTCPService):
 
 private:
 

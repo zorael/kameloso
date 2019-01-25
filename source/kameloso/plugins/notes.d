@@ -14,6 +14,7 @@
 module kameloso.plugins.notes;
 
 version(WithPlugins):
+version(WithNotesPlugin):
 
 private:
 

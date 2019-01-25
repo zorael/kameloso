@@ -37,6 +37,7 @@
 module kameloso.plugins.admin;
 
 version(WithPlugins):
+version(WithAdminPlugin):
 
 //version = OmniscientAdmin;
 

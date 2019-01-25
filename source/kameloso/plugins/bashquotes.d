@@ -13,6 +13,7 @@ module kameloso.plugins.bashquotes;
 
 version(WithPlugins):
 version(Web):
+version(WithBashQuotesPlugin):
 
 private:
 
