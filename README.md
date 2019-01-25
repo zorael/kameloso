@@ -2,9 +2,9 @@
 
 **kameloso** sits in your channels and listens to commands and events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's easily extensible, API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
+A variety of features come bundled in the form of compile-time plugins. It's easily extensible; API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
 
-IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
+IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -84,7 +84,7 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
 
 ## Prerequisites
 
-You need a D compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (September 2017). You will also need more than 4 Gb of free memory to build all features (Linux, excluding tests).
+You need a D compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (September 2017). You will also need more than 4 Gb of free memory to build all features (Linux debug, excluding tests).
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
@@ -121,15 +121,15 @@ There are several configurations in which the bot may be built.
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `full`, includes both of the above
-* `twitch`, everything so far, plus the Twitch streamer bot
+* `twitch`, everything so far, plus the Twitch streamer bot (chat support is always included)
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
 * `windows`, default on Windows, also equals `full`
-* `polyglot`, equals everything available, including things like more error messages (development build)
+* `polyglot`, development build equalling everything available, including things like more error messages
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
 ```bash
-$ dub build -c colours
+$ dub build -c twitch
 ```
 
 # How to use
@@ -153,7 +153,7 @@ Open the file in a normal text editor.
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will apply these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will apply these changes to the configuration file, without having to manually edit it.
 
 ```bash
 $ ./kameloso \
@@ -167,7 +167,7 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently valid setting, so settings that relate to plugins *that are currently not built in* are removed, as well as comments.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently valid setting, so settings that relate to plugins *that are currently not built in* are silently removed, as are comments.
 
 ### Display settings
 
@@ -181,7 +181,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
+Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your `users.json`.
 
 ```
      you joined #channel
@@ -236,14 +236,14 @@ See [the wiki](https://github.com/zorael/kameloso/wiki/Twitch) for more informat
 
 ### Twitch bot
 
-The streamer bot plugin is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled with the bot included. (It will not show up when generating the file if the plugin is not compiled in.)
+The streamer bot plugin is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. (The configuration file section will not show up when generating the file if the plugin is not compiled in.)
 
 ```bash
 $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=true --writeconfig
 ```
 
-Assuming a prefix of `!`, commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`
 
 Note: a dot `.` prefix will not work on Twitch, as it conflicts with Twitch's own commands.
 
@@ -272,13 +272,13 @@ Web URL lookup, including the web titles and Reddit plugins, will not work out o
 
 Terminal colours may also not work, requiring a registry edit to make it display properly. This works for at least Windows 10.
 
-* Under `HKEY_CURRENT_USER\Console`, create a `DWORD` named `VirtualTerminalLevel` and give it a value of `1`.
+* In `regedit` under `HKEY_CURRENT_USER\Console`, create a `DWORD` named `VirtualTerminalLevel` and give it a value of `1`.
 * Alternatively in Powershell: `Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1`
-* Alternatively in `cmd`: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
+* Alternatively in a `cmd` console: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
 
 Otherwise use the `--monochrome` setting to disable colours, or compile a non-`colours` configuration.
 
-When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that.
+When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command.
 
 ## Posix
 
