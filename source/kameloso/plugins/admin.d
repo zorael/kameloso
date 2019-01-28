@@ -29,7 +29,8 @@
  +  `part`<br>
  +  `set`<br>
  +  `auth`<br>
- +  `status` (debug)
+ +  `status` (debug)<br>
+ +  `bus` (debug)
  +
  +  It is optional if you don't intend to be controlling the bot from another
  +  client or via the terminal.
@@ -1244,6 +1245,51 @@ void onCommandStatus(AdminPlugin plugin)
         writeln(nickname);
         printObject(user);
     }*/
+}
+
+
+// onCommandBus
+/++
+ +  Sends an internal bus message to other plugins, much like how such can be
+ +  sent with the Pipeline plugin.
+ +/
+debug
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "bus")
+@Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
+void onCommandBus(AdminPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : contains, nom;
+    import kameloso.thread : ThreadMessage, busMessage;
+    import std.stdio : stdout, writeln;
+
+    if (!event.content.length) return;
+
+    if (!event.content.contains!(Yes.decode)(" "))
+    {
+        logger.info("Sending bus message.");
+        writeln("Header: ", event.content);
+        writeln("Cotent: (empty)");
+        if (settings.flush) stdout.flush();
+
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
+    }
+    else
+    {
+        string slice = event.content;  // mutable
+        immutable header = slice.nom(" ");
+
+        logger.info("Sending bus message.");
+        writeln("Header: ", header);
+        writeln("Cotent: ", slice);
+        if (settings.flush) stdout.flush();
+
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+            header, busMessage(slice));
+    }
 }
 
 
