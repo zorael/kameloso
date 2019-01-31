@@ -2,7 +2,7 @@
     "name": "kameloso",
     "description": "IRC bot in D",
     "authors": [ "JR" ],
-    "copyright": "Copyright © 2018, JR",
+    "copyright": "Copyright © 2019, JR",
     "license": "MIT",
     "targetType": "executable",
     "mainSourceFile": "source/kameloso/main.d",
@@ -58,8 +58,8 @@
         },
         {
             "name": "polyglot",
-            "versions": [ "WithPlugins", "Colours", "Web",
-                "WithTwitchBotPlugin", "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces" ],
+            "versions": [ "WithPlugins", "Colours", "Web", "WithTwitchBotPlugin",
+                "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
@@ -91,8 +91,8 @@
         {
             "name": "unittest",
             "buildType": "unittest",
-            "versions": [ "WithPlugins", "Web", "Colours", "TwitchWarnings",
-                "WithTwitchBotPlugin", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
+            "versions": [ "WithPlugins", "Colours", "Web", "WithTwitchBotPlugin",
+                "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dflags": [ "-dip25", "-dip1000", "-dip1008" ],
