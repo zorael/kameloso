@@ -40,7 +40,7 @@ private string tryImportMixin(const string module_, const string alias_)
     import std.format : format;
 
     return q{
-        static if (__traits(compiles, __traits(identifier, %1$s)))
+        static if (__traits(compiles, __traits(identifier, %1$s.%2$s)))
         {
             //pragma(msg, "Importing plugin: %1$s");
             public import %1$s;
