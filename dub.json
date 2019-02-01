@@ -1,6 +1,6 @@
 {
     "name": "kameloso",
-    "description": "IRC bot in D",
+    "description": "IRC bot",
     "authors": [ "JR" ],
     "copyright": "Copyright © 2019, JR",
     "license": "MIT",
@@ -14,7 +14,7 @@
         "--unittest-examples",
         "--ex", "arsd."
     ],
-    "-ddoxTool" : "scod",
+    "-ddoxTool": "scod",
     "versions":
     [
         "AsAnApplication",
