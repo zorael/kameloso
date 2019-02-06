@@ -578,9 +578,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-viewerCount":
             // RAID; viewer count of raiding channel
             // msg-param-viewerCount = '9'
-        case "msg-param-months":
-            // The number of consecutive months the user has subscribed for,
-            // in a resub notice.
         case "msg-param-bits-amount":
             //msg-param-bits-amount = '199'
         case "msg-param-crateCount":
@@ -598,6 +595,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // Number of total gifts this promotion
         case "msg-param-total":
             // Total amount donated to this charity
+        case "msg-param-cumulative-months":
+            // Total number of months subscribed, over time. Replaces msg-param-months
             import std.conv : to;
             event.count = value.to!int;
             break;
@@ -706,7 +705,20 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "thread-id":
             // thread-id = 22216721_404208264
             // WHISPER, private message session?
-
+        case "msg-param-cumulative-tenure-months":
+            // Ongoing number of subscriptions (in a row)
+        case "msg-param-should-share-streak-tenure":
+        case "msg-param-should-share-streak":
+        case "msg-param-streak-months":
+        case "msg-param-streak-tenure-months":
+            // Streak resubs
+            // There's no extra field in which to place streak sub numbers
+            // without creating a new type, but even then information is lost
+            // unless we fall back to auxes of "1000 streak 3".
+        case "msg-param-months":
+            // DEPRECATED in favor of msg-param-cumulative-months.
+            // The number of consecutive months the user has subscribed for,
+            // in a resub notice.
 
             // Ignore these events.
             break;
