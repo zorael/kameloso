@@ -133,7 +133,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
     auto matches = findURLs(event.content);
 
-    foreach (url; matches)
+    foreach (immutable i, url; matches)
     {
         if (url.contains!(Yes.decode)('#'))
         {
@@ -167,8 +167,12 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         titleReq.event = event;
         titleReq.url = url;
 
+        /// In the case of chained URL lookups, how much to delay each lookup by.
+        enum delayMsecs = 250;
+
         shared IRCPluginState sState = cast(shared)plugin.state;
-        spawn(&worker, sState, plugin.cache, titleReq, settings.colouredOutgoing);
+        spawn(&worker, sState, plugin.cache, titleReq, cast(int)(i * delayMsecs),
+            settings.colouredOutgoing);
     }
 }
 
@@ -302,11 +306,21 @@ unittest
  +          (between multiple threads).
  +      cache = Reference to the cache of previous `TitleLookup`s.
  +      titleReq = Current title request.
+ +      delayMsecs = How many milliseconds to delay lookup by.
  +      colouredOutgoing = Whether or not to include mIRC colours in outgoing messages.
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
-    TitleRequest titleReq, const bool colouredOutgoing)
+    TitleRequest titleReq, const int delayMsecs, const bool colouredOutgoing)
 {
+    assert(titleReq.url.length, "Tried to look up an empty URL");
+
+    if (delayMsecs > 0)
+    {
+        import core.thread : Thread;
+        import core.time : msecs;
+        Thread.sleep(delayMsecs.msecs);
+    }
+
     auto state = cast()sState;
 
     try
