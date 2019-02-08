@@ -360,9 +360,33 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
             titleReq.url = rewriteDirectImgurURL(titleReq.url);
         }
 
-        auto lookup = lookupTitle(titleReq.url);
-        state.reportURL(lookup, titleReq.event, colouredOutgoing);
-        cache[titleReq.url] = lookup;
+        /// Look up the URL and report the title to the channel.
+        void lookupAndReport()
+        {
+            auto lookup = lookupTitle(titleReq.url);
+            state.reportURL(lookup, titleReq.event, colouredOutgoing);
+            cache[titleReq.url] = lookup;
+        }
+
+        try
+        {
+            lookupAndReport();
+        }
+        catch (Exception e)
+        {
+            // url guaranteed not empty because of earlier checks.
+
+            if (titleReq.url[$-1] == '/')
+            {
+                titleReq.url = titleReq.url[0..$-1];
+            }
+            else
+            {
+                titleReq.url ~= '/';
+            }
+
+            lookupAndReport();
+        }
     }
     catch (Exception e)
     {
