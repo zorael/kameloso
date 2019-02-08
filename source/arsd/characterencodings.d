@@ -18,28 +18,45 @@
 	ought to just work.
 
 	Example:
+		---
 		auto data = cast(immutable(ubyte)[])
 			std.file.read("my-windows-file.txt");
 		string utf8String = convertToUtf8(data, "windows-1252");
 		// utf8String can now be used
+		---
 
 
 	The encodings currently implemented for decoding are:
-		UTF-8 (a no-op; it simply casts the array to string)
-		UTF-16,
-		UTF-32,
-		Windows-1252,
-		ISO 8859 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, and 16.
+		$(LIST
+			* UTF-8 (a no-op; it simply casts the array to string)
+			* UTF-16,
+			* UTF-32,
+			* Windows-1252,
+			* ISO 8859 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, and 16.
+			* KOI8-R
+		)
 
 	It treats ISO 8859-1, Latin-1, and Windows-1252 the same way, since
-	those labels are pretty much de-facto the same thing in wild documents.
-
+	those labels are pretty much de-facto the same thing in wild documents (people mislabel them a lot and I found it more useful to just deal with it than to be pedantic).
 
 	This module currently makes no attempt to look at control characters.
 */
 module arsd.characterencodings;
 
-version(Web):
+version(Web)
+{
+	version = UseDom;
+}
+else version(WithWebtitlesPlugin)
+{
+	version = UseDom;
+}
+else version(WithBashQuotesPlugin)
+{
+	version = UseDom;
+}
+
+version(UseDom):
 
 import std.string;
 import std.array;
