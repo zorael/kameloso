@@ -501,8 +501,9 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                   1000-4999, purple for 100-999, gray for 1-99
                 * size – A digit between 1 and 4
             */
+            import std.conv : to;
             event.type = Type.TWITCH_CHEER;
-            event.aux = value;
+            event.count = value.to!int;
             break;
 
         case "msg-param-sub-plan":
