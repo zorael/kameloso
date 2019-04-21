@@ -564,7 +564,7 @@ unittest
  +  Returns:
  +      A rewritten string if it's a compatible imgur one, else the passed `url`.
  +/
-string rewriteDirectImgurURL(const string url)
+string rewriteDirectImgurURL(const string url) @safe pure
 {
     import kameloso.string : beginsWith, nom;
     import std.typecons : No, Yes;
