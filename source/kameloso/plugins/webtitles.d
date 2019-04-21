@@ -115,19 +115,19 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
     string infotint;
 
-    version(Colours)
-    {
-        import kameloso.common : settings;
-
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-            infotint = (cast(KamelosoLogger)logger).infotint;
-        }
-    }
-
     foreach (immutable i, url; findURLs(event.content))
     {
+        version(Colours)
+        {
+            import kameloso.common : settings;
+
+            if (!settings.monochrome && !infotint.length)
+            {
+                import kameloso.logger : KamelosoLogger;
+                infotint = (cast(KamelosoLogger)logger).infotint;
+            }
+        }
+
         if (url.contains!(Yes.decode)('#'))
         {
             import kameloso.string : nom;
