@@ -92,7 +92,6 @@ version(WithPlugins)
     {
         mixin(tryImportMixin("kameloso.plugins.webtitles", "WebtitlesPlugin"));
         mixin(tryImportMixin("kameloso.plugins.bashquotes", "BashQuotesPlugin"));
-        mixin(tryImportMixin("kameloso.plugins.reddit", "RedditPlugin"));
     }
     else
     {
@@ -100,7 +99,6 @@ version(WithPlugins)
         // able to resolve these plugins.
         alias WebtitlesPlugin = AliasSeq!();
         alias BashQuotesPlugin = AliasSeq!();
-        alias RedditPlugin = AliasSeq!();
     }
 
 
@@ -133,7 +131,6 @@ version(WithPlugins)
      +/
     public alias EnabledWebPlugins = AliasSeq!(
         WebtitlesPlugin,
-        RedditPlugin,
         BashQuotesPlugin,
     );
 
