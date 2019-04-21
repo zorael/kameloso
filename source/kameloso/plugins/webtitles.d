@@ -35,6 +35,9 @@ struct WebtitlesSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /// Toggles whether Reddit lookups should be done for pasted URLs.
+    bool redditLookup = false;
 }
 
 
