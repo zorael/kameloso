@@ -451,7 +451,7 @@ void reportReddit(TitleLookupRequest request)
     {
         if (results.redditURL.length)
         {
-            state.chan(event.channel, "On Reddit: " ~ results.redditURL);
+            state.chan(event.channel, "Reddit: " ~ results.redditURL);
         }
     }
 }
