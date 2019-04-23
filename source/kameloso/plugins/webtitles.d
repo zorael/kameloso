@@ -180,10 +180,11 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +  Params:
  +      sRequest = Shared `TitleLookupRequest` aggregate with all the state and
  +          context needed to look up a URL and report the results to the local terminal.
+ +      cache = Shared cache of previous `TitleLookupRequest`s.
  +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
  +          parallel lookups without bursting all of them at once.
- +      redditLookup = Whether or not to look up Reddit posts of the URL.
- +      colouredOutgoin = Whether or not to send coloured output to the server.
+ +      webtitlesSettings = Copy of the plugin's settings.
+ +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     ulong delayMsecs, WebtitlesSettings webtitlesSettings, bool colouredOutgoing)
