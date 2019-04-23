@@ -716,11 +716,13 @@ unittest
  +      state = The current plugin instance's `kameloso.plugin.common.IRCPluginState`,
  +          for use to send text to the local terminal.
  +      url = URL to query Reddit for.
+ +      modified = Whether the URL has been modified to add an extra slash at
+ +          the end, or remove one if one already existed.
  +
  +  Returns:
  +      URL to the Reddit post that links to `url`.
  +/
-string lookupReddit(const string url)
+string lookupReddit(const string url, const bool modified = false)
 {
     import kameloso.constants : BufferSize;
     import requests : Request;
@@ -742,9 +744,16 @@ string lookupReddit(const string url)
         {
             import std.algorithm.searching : endsWith;
 
-            // No Reddit post found but retry with a slash appended if it
-            // doesn't already end with one. It apparently matters.
-            return url.endsWith("/") ? string.init : lookupReddit(url ~ '/');
+            // Whether URLs end with slashes or not seems to matter.
+            // If we're here, no post could be found, so strip any trailing
+            // slashes and retry, or append a slash and retry if no trailing.
+            // Pass a bool flag to only do this once, so we don't infinitely recurse.
+
+            if (modified) return string.init;
+
+            return url.endsWith("/") ?
+                lookupReddit(url[0..$-1], true) :
+                lookupReddit(url ~ '/', true);
         }
         else
         {
