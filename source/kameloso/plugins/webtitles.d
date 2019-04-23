@@ -65,6 +65,9 @@ struct TitleLookupResults
 
     /// URL to the Reddit post linking to the requested URL.
     string redditURL;
+
+    /// The UNIX timestamp of when the title was looked up.
+    long when;
 }
 
 
@@ -88,9 +91,6 @@ struct TitleLookupRequest
 
     /// Results of the title lookup.
     TitleLookupResults results;
-
-    /// The UNIX timestamp of when the title was looked up.
-    long when;
 }
 
 
@@ -146,10 +146,10 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         prune(plugin.cache);
 
-        if (auto cached = url in plugin.cache)
+        if (auto cachedResult = url in plugin.cache)
         {
             logger.log("Found cached lookup.");
-            request.results = cached.results;
+            request.results = *cachedResult;
             reportTitle(request, settings.colouredOutgoing);
             if (plugin.webtitlesSettings.redditLookup) reportReddit(request);
             continue;
@@ -181,7 +181,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +      redditLookup = Whether or not to look up Reddit posts of the URL.
  +      colouredOutgoin = Whether or not to send coloured output to the server.
  +/
-void worker(shared TitleLookupRequest sRequest, shared TitleLookupRequest[string] cache,
+void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     ulong delayMsecs, bool redditLookup, bool colouredOutgoing)
 {
     if (delayMsecs > 0)
@@ -204,8 +204,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupRequest[string
             request.results = lookupTitle(request.url);
             reportTitle(request, colouredOutgoing);
             if (redditLookup) reportReddit(request);
-            request.when = Clock.currTime.toUnixTime;
-            cache[request.url] = cast(shared)request;
+            request.results.when = Clock.currTime.toUnixTime;
+            cache[request.url] = cast(shared)request.results;
         }
 
         if (request.url.contains("://i.imgur.com/"))
@@ -237,8 +237,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupRequest[string
                     request.results.youtubeAuthor = info.author;
                     reportYouTubeTitle(request, colouredOutgoing);
                     if (redditLookup) reportReddit(request);
-                    request.when = Clock.currTime.toUnixTime;
-                    cache[request.url] = cast(shared)request;
+                    request.results.when = Clock.currTime.toUnixTime;
+                    cache[request.url] = cast(shared)request.results;
                     return;
                 }
                 else
@@ -786,7 +786,7 @@ void prune(T)(shared T[string] cache)
  +/
 void start(WebtitlesPlugin plugin)
 {
-    plugin.cache[string.init] = TitleLookupRequest.init;
+    plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
 }
 
@@ -806,7 +806,7 @@ final class WebtitlesPlugin : IRCPlugin
 {
 private:
     /// Cache of recently looked-up web titles.
-    shared TitleLookupRequest[string] cache;
+    shared TitleLookupResults[string] cache;
 
     /// All Webtitles options gathered.
     @Settings WebtitlesSettings webtitlesSettings;
