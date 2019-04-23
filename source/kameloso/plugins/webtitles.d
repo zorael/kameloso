@@ -24,6 +24,7 @@ import kameloso.irc.defs;
 import kameloso.irc.colours : ircBold;
 
 import std.concurrency;
+import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 
@@ -228,22 +229,38 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             if (slice.beginsWith("youtube.com/watch?v=") ||
                 slice.beginsWith("youtu.be/"))
             {
-                // Don't cache it for now
+                import std.json : JSONException;
+
                 immutable info = getYouTubeInfo(request.url);
 
-                if (info.title.length)
+                try
                 {
-                    request.results.youtubeTitle = info.title;
-                    request.results.youtubeAuthor = info.author;
-                    reportYouTubeTitle(request, colouredOutgoing);
-                    if (redditLookup) reportReddit(request);
-                    request.results.when = Clock.currTime.toUnixTime;
-                    cache[request.url] = cast(shared)request.results;
-                    return;
+                    if (info["title"].str.length)
+                    {
+                        request.results.youtubeTitle = info["title"].str;
+                        request.results.youtubeAuthor = info["author"].str;
+                        reportYouTubeTitle(request, colouredOutgoing);
+
+                        if (redditLookup) reportReddit(request);
+
+                        request.results.when = Clock.currTime.toUnixTime;
+                        cache[request.url] = cast(shared)request.results;
+                        return;
+                    }
+                    else
+                    {
+                        // No title fetched, drop down
+                    }
                 }
-                else
+                catch (JSONException e)
                 {
-                    // No title fetched, drop down
+                    request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
+                    // Drop down
+                }
+                catch (Exception e)
+                {
+                    request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
+                    // Drop down
                 }
             }
             else
@@ -604,31 +621,24 @@ unittest
  +  Example:
  +  ---
  +  auto info = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
- +  writeln(info.title);
- +  writeln(info.author);
+ +  writeln(info["title"].str);
+ +  writeln(info["author"].str);
  +  ---
  +
  +  Params:
  +      url = A YouTube video link string.
  +
  +  Returns:
- +      A `YouTubeVideoInfo` Voldemort with members describing the looked-up video.
+ +      A `JSONValue` with fields describing the looked-up video.
  +
- +  Throws: `Exception` if the YouTube ID was invalid and could not be queried.
+ +  Throws:
+ +      `Exception` if the YouTube ID was invalid and could not be queried.
+ +      `JSONException` if the JSON response could not be parsed.
  +/
-auto getYouTubeInfo(const string url)
+JSONValue getYouTubeInfo(const string url)
 {
     import requests : getContent;
     import std.json : parseJSON;
-
-    struct YouTubeVideoInfo
-    {
-        string title;
-
-        string author;
-    }
-
-    YouTubeVideoInfo info;
 
     immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
     const data = cast(char[])getContent(youtubeURL).data;
@@ -639,11 +649,7 @@ auto getYouTubeInfo(const string url)
         throw new Exception("Invalid YouTube video ID");
     }
 
-    auto jsonFromYouTube = parseJSON(data);
-
-    info.title = jsonFromYouTube["title"].str;
-    info.author = jsonFromYouTube["author_name"].str;
-    return info;
+    return parseJSON(data);
 }
 
 
