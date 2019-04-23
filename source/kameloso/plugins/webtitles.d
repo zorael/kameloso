@@ -37,6 +37,9 @@ struct WebtitlesSettings
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
+    /// Toggles whether YouTube lookups should be done for pasted URLs.
+    bool youtubeLookup = true;
+
     /// Toggles whether Reddit lookups should be done for pasted URLs.
     bool redditLookup = false;
 }
@@ -160,7 +163,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         enum delayMsecs = 250;
 
         spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs,
-            plugin.webtitlesSettings.redditLookup, settings.colouredOutgoing);
+            plugin.webtitlesSettings, settings.colouredOutgoing);
     }
 }
 
@@ -183,7 +186,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +      colouredOutgoin = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    ulong delayMsecs, bool redditLookup, bool colouredOutgoing)
+    ulong delayMsecs, WebtitlesSettings webtitlesSettings, bool colouredOutgoing)
 {
     if (delayMsecs > 0)
     {
@@ -204,7 +207,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         {
             request.results = lookupTitle(request.url);
             reportTitle(request, colouredOutgoing);
-            if (redditLookup) reportReddit(request);
+
+            if (webtitlesSettings.redditLookup) reportReddit(request);
+
             request.results.when = Clock.currTime.toUnixTime;
             cache[request.url] = cast(shared)request.results;
         }
@@ -215,7 +220,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             // Rewrite and look those up instead.
             request.url = rewriteDirectImgurURL(request.url);
         }
-        else if (request.url.contains("youtube.com/watch?v=") || request.url.contains("youtu.be/"))
+        else if (webtitlesSettings.youtubeLookup &&
+            request.url.contains("youtube.com/watch?v=") ||
+            request.url.contains("youtu.be/"))
         {
             // Do our own slicing instead of using regexes, because footprint.
             string slice = request.url;
@@ -230,7 +237,6 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 slice.beginsWith("youtu.be/"))
             {
                 import std.json : JSONException;
-
                 immutable info = getYouTubeInfo(request.url);
 
                 try
@@ -241,7 +247,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                         request.results.youtubeAuthor = info["author"].str;
                         reportYouTubeTitle(request, colouredOutgoing);
 
-                        if (redditLookup) reportReddit(request);
+                        if (webtitlesSettings.redditLookup) reportReddit(request);
 
                         request.results.when = Clock.currTime.toUnixTime;
                         cache[request.url] = cast(shared)request.results;
