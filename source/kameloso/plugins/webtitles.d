@@ -345,8 +345,7 @@ TitleLookupResults lookupTitle(const string url)
 
 // reportTitle
 /++
- +  Prints the result of a web title lookup in the channel or as a message to
- +  the user specified.
+ +  Echoes the result of a web title lookup to a channel.
  +
  +  Params:
  +      request = A `TitleLookupRequest` containing the results of the lookup.
@@ -376,15 +375,14 @@ void reportTitle(TitleLookupRequest request, const bool colouredOutput)
             line = results.title;
         }
 
-        state.privmsg(event.channel, event.sender.nickname, line);
+        state.chan(event.channel, line);
     }
 }
 
 
 // reportYouTubeTitle
 /++
- +  Prints the result of a YouTube lookup in the channel or as a message to
- +  the user specified.
+ +  Echoes the result of a YouTube lookup to a channel.
  +
  +  Params:
  +      request = A `TitleLookupRequest` containing the results of the lookup.
@@ -409,7 +407,7 @@ void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
                 .format(results.youtubeTitle, results.youtubeAuthor);
         }
 
-        state.privmsg(event.channel, event.sender.nickname, line);
+        state.chan(event.channel, line);
     }
 }
 
@@ -427,8 +425,7 @@ void reportReddit(TitleLookupRequest request)
     {
         if (results.redditURL.length)
         {
-            state.privmsg(event.channel, event.sender.nickname,
-                "On Reddit: " ~ results.redditURL);
+            state.chan(event.channel, "On Reddit: " ~ results.redditURL);
         }
     }
 }
