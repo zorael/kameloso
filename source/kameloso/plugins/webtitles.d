@@ -206,8 +206,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         void lookupAndReport()
         {
             request.results = lookupTitle(request.url);
-            reportTitle(request, colouredOutgoing);
+            if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
 
+            reportTitle(request, colouredOutgoing);
             if (webtitlesSettings.redditLookup) reportReddit(request);
 
             request.results.when = Clock.currTime.toUnixTime;
@@ -243,10 +244,11 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 {
                     if (info["title"].str.length)
                     {
-                        request.results.youtubeTitle = info["title"].str;
+                        request.results.youtubeTitle = decodeTitle(info["title"].str);
                         request.results.youtubeAuthor = info["author"].str;
-                        reportYouTubeTitle(request, colouredOutgoing);
+                        if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
 
+                        reportYouTubeTitle(request, colouredOutgoing);
                         if (webtitlesSettings.redditLookup) reportReddit(request);
 
                         request.results.when = Clock.currTime.toUnixTime;
