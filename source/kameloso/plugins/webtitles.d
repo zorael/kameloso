@@ -278,12 +278,22 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             }
         }
 
+        import core.exception : UnicodeException;
+
         try
         {
             lookupAndReport();
         }
+        catch (UnicodeException e)
+        {
+            request.state.askToError("Webtitles worker Unicode exception: " ~
+                e.msg ~ " (link is probably to an image or similar)");
+        }
         catch (Exception e)
         {
+            request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
+            request.state.askToLog("Rewriting URL and retrying ...");
+
             if (request.url[$-1] == '/')
             {
                 request.url = request.url[0..$-1];
