@@ -732,7 +732,11 @@ unittest
 string lookupReddit(const string url, const bool modified = false)
 {
     import kameloso.constants : BufferSize, KamelosoInfo;
+    import kameloso.string : contains;
     import requests : Request;
+
+    // Don't look up Reddit URLs. Naïve match, may have false negatives.
+    if (url.contains("reddit.com/")) return string.init;
 
     Request req;
     req.useStreaming = true;  // we only want as little as possible
