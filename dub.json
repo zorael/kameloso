@@ -32,7 +32,6 @@
         "WithPipelinePlugin",
         "WithPrinterPlugin",
         "WithQuotesPlugin",
-        "WithRedditPlugin",
         "WithSedReplacePlugin",
         "WithSeenPlugin",
         "WithWebtitlesPlugin"

@@ -119,7 +119,7 @@ There are several configurations in which the bot may be built.
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
-* `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
+* `web`, compiles in plugins with web lookup (`webtitles` and `bashquotes`)
 * `full`, includes both of the above
 * `twitch`, everything so far, plus the Twitch streamer bot (chat support is always included)
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
@@ -268,7 +268,7 @@ Feel free to copy these and drop them into your own project. Examples of parsing
 
 ## Windows
 
-Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
+Web URL lookup, including the web titles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 
 Terminal colours may also not work, requiring a registry edit to make it display properly. This works for at least Windows 10.
 
