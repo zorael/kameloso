@@ -342,7 +342,7 @@ TitleLookupResults lookupTitle(const string url)
     if (res.code >= 400)
     {
         import std.conv : text;
-        throw new Exception("Could not fetch URL; response code: " ~ res.code.text);
+        throw new Exception(res.code.text ~ " fetching URL " ~ url);
     }
 
     auto stream = res.receiveAsRange();
@@ -356,7 +356,7 @@ TitleLookupResults lookupTitle(const string url)
 
     if (!doc.title.length)
     {
-        throw new Exception("Could not find a title tag");
+        throw new Exception("No title tag found");
     }
 
     results.title = decodeTitle(doc.title);
