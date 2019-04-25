@@ -6,6 +6,8 @@ A variety of features come bundled in the form of compile-time plugins. It's eas
 
 IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
 
+For help on getting started, see [the wiki](https://github.com/zorael/kameloso/wiki).
+
 Please report bugs. Unreported bugs can only be fixed by accident.
 
 ## Current functionality includes:
@@ -28,7 +30,6 @@ If nothing else it makes for a good lurkbot.
 
 ## Current limitations:
 
-* missing good how-to-use guide. Use the source, Luke! Also [the wiki](https://github.com/zorael/kameloso/wiki).
 * the **dmd** and **ldc** compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
 * Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
