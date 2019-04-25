@@ -5,14 +5,15 @@ set -uexo pipefail
 install_deps() {
     sudo apt update
     sudo apt install -y apt-transport-https
-    sudo wget http://master.dl.sourceforge.net/project/d-apt/files/d-apt.list \
+
+    sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list \
         -O /etc/apt/sources.list.d/d-apt.list
-    sudo apt update
+    sudo apt update --allow-insecure-repositories
 
     # fingerprint 0xEBCF975E5BA24D5E
     sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
+    sudo apt update
     sudo apt install dmd-compiler dub
-
     #sudo apt install ldc
 }
 

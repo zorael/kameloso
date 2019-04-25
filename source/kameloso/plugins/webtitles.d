@@ -24,6 +24,7 @@ import kameloso.irc.defs;
 import kameloso.irc.colours : ircBold;
 
 import std.concurrency;
+import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 
@@ -35,10 +36,16 @@ struct WebtitlesSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /// Toggles whether YouTube lookups should be done for pasted URLs.
+    bool youtubeLookup = true;
+
+    /// Toggles whether Reddit lookups should be done for pasted URLs.
+    bool redditLookup = false;
 }
 
 
-// TitleLookup
+// TitleLookupResults
 /++
  +  A record of a URL lookup.
  +
@@ -46,7 +53,7 @@ struct WebtitlesSettings
  +  add hysteresis to lookups, so we don't look the same one up over and over
  +  if they were pasted over and over.
  +/
-struct TitleLookup
+struct TitleLookupResults
 {
     /// Looked up web page title.
     string title;
@@ -54,39 +61,40 @@ struct TitleLookup
     /// Domain name of the looked up URL.
     string domain;
 
+    /// YouTube video title, if such a YouTube link.
+    string youtubeTitle;
+
+    /// YouTube video author, if such a YouTube link.
+    string youtubeAuthor;
+
+    /// URL to the Reddit post linking to the requested URL.
+    string redditURL;
+
     /// The UNIX timestamp of when the title was looked up.
     long when;
 }
 
 
-// TitleRequest
+// TitleLookupRequest
 /++
  +  A record of an URL lookup request.
  +
  +  This is used to aggregate information about a lookup request, making it
  +  easier to pass it in between functions. It serves no greater purpose.
  +/
-struct TitleRequest
+struct TitleLookupRequest
 {
+    /// The context state of the requesting plugin instance.
+    IRCPluginState state;
+
     /// The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.
     string url;
-}
 
-
-// YouTubeVideoInfo
-/++
- +  Information about a YouTube video.
- +/
-struct YouTubeVideoInfo
-{
-    /// The title of this YouTube video.
-    string title;
-
-    /// Name of the author of this YouTube video.
-    string author;
+    /// Results of the title lookup.
+    TitleLookupResults results;
 }
 
 
@@ -106,35 +114,24 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : logger, settings;
     import kameloso.string : beginsWith, contains;
-    import std.typecons : No, Yes;
 
-    immutable prefix = settings.prefix;
-
-    if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
-        (event.content[prefix.length] != ' '))
-    {
-        // Message started with a prefix followed by a run-on word
-        // Ignore as it is probably a command.
-        return;
-    }
+    if (event.content.beginsWith(settings.prefix)) return;
 
     string infotint;
 
-    version(Colours)
+    foreach (immutable i, url; findURLs(event.content))
     {
-        import kameloso.common : settings;
-
-        if (!settings.monochrome)
+        version(Colours)
         {
-            import kameloso.logger : KamelosoLogger;
-            infotint = (cast(KamelosoLogger)logger).infotint;
+            import kameloso.common : settings;
+
+            if (!settings.monochrome && !infotint.length)
+            {
+                import kameloso.logger : KamelosoLogger;
+                infotint = (cast(KamelosoLogger)logger).infotint;
+            }
         }
-    }
 
-    auto matches = findURLs(event.content);
-
-    foreach (immutable i, url; matches)
-    {
         if (url.contains!(Yes.decode)('#'))
         {
             import kameloso.string : nom;
@@ -146,33 +143,330 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         logger.log("Caught URL: ", infotint, url);
 
-        // Garbage-collect entries too old to use
+        TitleLookupRequest request;
+        request.state = plugin.state;
+        request.event = event;
+        request.url = url;
+
         prune(plugin.cache);
 
-        const cachedLookup = url in plugin.cache;
-
-        import kameloso.constants : Timeout;
-        import std.datetime.systime : Clock;
-
-        if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when) < Timeout.titleCache))
+        if (auto cachedResult = url in plugin.cache)
         {
-            logger.log("Found title lookup in cache.");
-            plugin.state.reportURL(*cachedLookup, event, settings.colouredOutgoing);
+            logger.log("Found cached lookup.");
+            request.results = *cachedResult;
+            reportTitle(request, settings.colouredOutgoing);
+            if (plugin.webtitlesSettings.redditLookup) reportReddit(request);
             continue;
         }
-
-        // There were no cached entries for this URL
-
-        TitleRequest titleReq;
-        titleReq.event = event;
-        titleReq.url = url;
 
         /// In the case of chained URL lookups, how much to delay each lookup by.
         enum delayMsecs = 250;
 
-        shared IRCPluginState sState = cast(shared)plugin.state;
-        spawn(&worker, sState, plugin.cache, titleReq, cast(int)(i * delayMsecs),
-            settings.colouredOutgoing);
+        spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs,
+            plugin.webtitlesSettings, settings.colouredOutgoing);
+    }
+}
+
+
+// worker
+/++
+ +  Looks up and reports the title of a URL.
+ +
+ +  Additionally supports YouTube titles and authors, as well as reporting
+ +  Reddit post URLs if settings say to do such.
+ +
+ +  Worker to be run in its own thread.
+ +
+ +  Params:
+ +      sRequest = Shared `TitleLookupRequest` aggregate with all the state and
+ +          context needed to look up a URL and report the results to the local terminal.
+ +      cache = Shared cache of previous `TitleLookupRequest`s.
+ +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
+ +          parallel lookups without bursting all of them at once.
+ +      webtitlesSettings = Copy of the plugin's settings.
+ +      colouredOutgoing = Whether or not to send coloured output to the server.
+ +/
+void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
+    ulong delayMsecs, WebtitlesSettings webtitlesSettings, bool colouredOutgoing)
+{
+    if (delayMsecs > 0)
+    {
+        import core.thread : Thread;
+        import core.time : msecs;
+        Thread.sleep(delayMsecs.msecs);
+    }
+
+    TitleLookupRequest request = cast()sRequest;
+
+    try
+    {
+        import kameloso.string : beginsWith, contains, nom;
+        import std.datetime.systime : Clock;
+        import std.typecons : No, Yes;
+
+        void lookupAndReport()
+        {
+            request.results = lookupTitle(request.url);
+            if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
+
+            reportTitle(request, colouredOutgoing);
+            if (webtitlesSettings.redditLookup) reportReddit(request);
+
+            request.results.when = Clock.currTime.toUnixTime;
+            cache[request.url] = cast(shared)request.results;
+        }
+
+        if (request.url.contains("://i.imgur.com/"))
+        {
+            // imgur direct links naturally have no titles, but the normal pages do.
+            // Rewrite and look those up instead.
+            request.url = rewriteDirectImgurURL(request.url);
+        }
+        else if (webtitlesSettings.youtubeLookup &&
+            request.url.contains("youtube.com/watch?v=") ||
+            request.url.contains("youtu.be/"))
+        {
+            // Do our own slicing instead of using regexes, because footprint.
+            string slice = request.url;
+
+            slice.nom!(Yes.decode)("http");
+            if (slice[0] == 's') slice = slice[1..$];
+            slice = slice[3..$];  // ://
+
+            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
+
+            if (slice.beginsWith("youtube.com/watch?v=") ||
+                slice.beginsWith("youtu.be/"))
+            {
+                import std.json : JSONException;
+                immutable info = getYouTubeInfo(request.url);
+
+                try
+                {
+                    if (info["title"].str.length)
+                    {
+                        request.results.youtubeTitle = decodeTitle(info["title"].str);
+                        request.results.youtubeAuthor = info["author"].str;
+                        if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
+
+                        reportYouTubeTitle(request, colouredOutgoing);
+                        if (webtitlesSettings.redditLookup) reportReddit(request);
+
+                        request.results.when = Clock.currTime.toUnixTime;
+                        cache[request.url] = cast(shared)request.results;
+                        return;
+                    }
+                    else
+                    {
+                        // No title fetched, drop down
+                    }
+                }
+                catch (JSONException e)
+                {
+                    request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
+                    // Drop down
+                }
+                catch (Exception e)
+                {
+                    request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
+                    // Drop down
+                }
+            }
+            else
+            {
+                // Unsure what this is really. Drop down and treat like normal link
+            }
+        }
+
+        import core.exception : UnicodeException;
+
+        try
+        {
+            lookupAndReport();
+        }
+        catch (UnicodeException e)
+        {
+            request.state.askToError("Webtitles worker Unicode exception: " ~
+                e.msg ~ " (link is probably to an image or similar)");
+        }
+        catch (Exception e)
+        {
+            request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
+            request.state.askToLog("Rewriting URL and retrying ...");
+
+            if (request.url[$-1] == '/')
+            {
+                request.url = request.url[0..$-1];
+            }
+            else
+            {
+                request.url ~= '/';
+            }
+
+            lookupAndReport();
+        }
+    }
+    catch (Exception e)
+    {
+        request.state.askToError("Webtitles worker exception: " ~ e.msg);
+    }
+}
+
+
+// lookupTitle
+/++
+ +  Given an URL, tries to look up the web page title of it.
+ +
+ +  Params:
+ +      url = URL string to look up.
+ +
+ +  Returns:
+ +      A finished `TitleLookup`.
+ +
+ +  Throws: `Exception` if URL could not be fetched, or if no title could be
+ +      divined from it.
+ +/
+TitleLookupResults lookupTitle(const string url)
+{
+    import kameloso.constants : BufferSize, KamelosoInfo;
+    import arsd.dom : Document;
+    import requests : Request;
+    import std.array : Appender;
+
+    TitleLookupResults results;
+    auto doc = new Document;
+    Appender!(ubyte[]) sink;
+    sink.reserve(BufferSize.titleLookup);
+
+    Request req;
+    req.useStreaming = true;
+    req.keepAlive = false;
+    req.bufferSize = BufferSize.titleLookup;
+
+    /// User Agent to identify as when downloading pages.
+    immutable userAgentHeader = [ "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_ ];
+    req.addHeaders(userAgentHeader);
+
+    auto res = req.get(url);
+
+    if (res.code >= 400)
+    {
+        import std.conv : text;
+        throw new Exception(res.code.text ~ " fetching URL " ~ url);
+    }
+
+    auto stream = res.receiveAsRange();
+
+    foreach (const part; stream)
+    {
+        sink.put(part);
+        doc.parseGarbage(cast(string)sink.data.idup);
+        if (doc.title.length) break;
+    }
+
+    if (!doc.title.length)
+    {
+        throw new Exception("No title tag found");
+    }
+
+    results.title = decodeTitle(doc.title);
+    results.domain = res.finalURI.original_host;  // thanks to ikod
+
+    import kameloso.string : beginsWith;
+    if (results.domain.beginsWith("www."))
+    {
+        import kameloso.string : nom;
+        results.domain.nom('.');
+    }
+
+    return results;
+}
+
+
+// reportTitle
+/++
+ +  Echoes the result of a web title lookup to a channel.
+ +
+ +  Params:
+ +      request = A `TitleLookupRequest` containing the results of the lookup.
+ +      colouredOutput = Whether or not to send coloured output to the server.
+ +/
+void reportTitle(TitleLookupRequest request, const bool colouredOutput)
+{
+    with (request)
+    {
+        import std.format : format;
+
+        string line;
+
+        if (results.domain.length)
+        {
+            if (colouredOutput)
+            {
+                line = "[%s] %s".format(results.domain.ircBold, results.title);
+            }
+            else
+            {
+                line = "[%s] %s".format(results.domain, results.title);
+            }
+        }
+        else
+        {
+            line = results.title;
+        }
+
+        state.chan(event.channel, line);
+    }
+}
+
+
+// reportYouTubeTitle
+/++
+ +  Echoes the result of a YouTube lookup to a channel.
+ +
+ +  Params:
+ +      request = A `TitleLookupRequest` containing the results of the lookup.
+ +      colouredOutput = Whether or not to send coloured output to the server.
+ +/
+void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
+{
+    with (request)
+    {
+        import std.format : format;
+
+        string line;
+
+        if (colouredOutput)
+        {
+            line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold,
+                results.youtubeTitle, results.youtubeAuthor.ircBold);
+        }
+        else
+        {
+            line = "[youtube.com] %s (uploaded by %s)"
+                .format(results.youtubeTitle, results.youtubeAuthor);
+        }
+
+        state.chan(event.channel, line);
+    }
+}
+
+
+// reportReddit
+/++
+ +  Reports the Reddit post that links to the looked up URL.
+ +
+ +  Params:
+ +      request = A `TitleLookupRequest` containing the results of the lookup.
+ +/
+void reportReddit(TitleLookupRequest request)
+{
+    with (request)
+    {
+        if (results.redditURL.length)
+        {
+            state.chan(event.channel, "Reddit: " ~ results.redditURL);
+        }
     }
 }
 
@@ -294,107 +588,6 @@ unittest
 }
 
 
-// worker
-/++
- +  Looks up an URL and reports the title to the main thread, for printing in a channel.
- +
- +  Supposed to be run in its own, short-lived thread.
- +
- +  Params:
- +      sState = The `kameloso.plugins.common.IRCPluginState` of the current
- +          `WebtitlesPlugin`, `shared` so that it will persist between lookups
- +          (between multiple threads).
- +      cache = Reference to the cache of previous `TitleLookup`s.
- +      titleReq = Current title request.
- +      delayMsecs = How many milliseconds to delay lookup by.
- +      colouredOutgoing = Whether or not to include mIRC colours in outgoing messages.
- +/
-void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
-    TitleRequest titleReq, const int delayMsecs, const bool colouredOutgoing)
-{
-    assert(titleReq.url.length, "Tried to look up an empty URL");
-
-    if (delayMsecs > 0)
-    {
-        import core.thread : Thread;
-        import core.time : msecs;
-        Thread.sleep(delayMsecs.msecs);
-    }
-
-    auto state = cast()sState;
-
-    try
-    {
-        import kameloso.string : beginsWith, contains, nom;
-        import std.typecons : No, Yes;
-
-        if (titleReq.url.contains("youtube.com/watch?v=") || titleReq.url.contains("youtu.be/"))
-        {
-            // Do our own slicing instead of using regexes, because footprint.
-            string slice = titleReq.url;
-
-            slice.nom!(Yes.decode)("http");
-            if (slice[0] == 's') slice = slice[1..$];
-            slice = slice[3..$];  // ://
-
-            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
-
-            if (slice.beginsWith("youtube.com/watch?v=") ||
-                slice.beginsWith("youtu.be/"))
-            {
-                // Don't cache it for now
-                auto info = getYouTubeInfo(titleReq.url);
-                state.reportYouTube(info, titleReq.event, colouredOutgoing);
-                return;
-            }
-            else
-            {
-                // Unsure what this is really. Drop down and treat like normal link
-            }
-        }
-        else if (titleReq.url.contains("://i.imgur.com/"))
-        {
-            // imgur direct links naturally have no titles, but the normal pages do.
-            // Rewrite and look those up instead.
-
-            titleReq.url = rewriteDirectImgurURL(titleReq.url);
-        }
-
-        /// Look up the URL and report the title to the channel.
-        void lookupAndReport()
-        {
-            auto lookup = lookupTitle(titleReq.url);
-            state.reportURL(lookup, titleReq.event, colouredOutgoing);
-            cache[titleReq.url] = lookup;
-        }
-
-        try
-        {
-            lookupAndReport();
-        }
-        catch (Exception e)
-        {
-            // url guaranteed not empty because of earlier checks.
-
-            if (titleReq.url[$-1] == '/')
-            {
-                titleReq.url = titleReq.url[0..$-1];
-            }
-            else
-            {
-                titleReq.url ~= '/';
-            }
-
-            lookupAndReport();
-        }
-    }
-    catch (Exception e)
-    {
-        state.askToError("Webtitles worker exception: " ~ e.msg);
-    }
-}
-
-
 // rewriteDirectImgurURL
 /++
  +  Takes a direct imgur link (one that points to an image) and rewrites it to
@@ -408,7 +601,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
  +  Returns:
  +      A rewritten string if it's a compatible imgur one, else the passed `url`.
  +/
-string rewriteDirectImgurURL(const string url)
+string rewriteDirectImgurURL(const string url) @safe pure
 {
     import kameloso.string : beginsWith, nom;
     import std.typecons : No, Yes;
@@ -443,143 +636,6 @@ unittest
 }
 
 
-// reportURL
-/++
- +  Prints the result of a web title lookup in the channel or as a message to
- +  the user specified.
- +
- +  Params:
- +      state = The current `kameloso.plugins.common.IRCPluginState`.
- +      lookup = Finished title lookup.
- +      event = The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
- +      colouredOutput = Whether or not to include mIRC colours in outgoing messages.
- +/
-void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event,
-    const bool colouredOutput)
-{
-    string line;
-
-    if (lookup.domain.length)
-    {
-        import std.format : format;
-
-        if (colouredOutput)
-        {
-            line = "[%s] %s".format(lookup.domain.ircBold, lookup.title);
-        }
-        else
-        {
-            line = "[%s] %s".format(lookup.domain, lookup.title);
-        }
-    }
-    else
-    {
-        line = lookup.title;
-    }
-
-    state.privmsg(event.channel, event.sender.nickname, line);
-}
-
-
-// reportYouTube
-/++
- +  Prints the result of a YouTube lookup in the channel or as a message to
- +  the user specified.
- +
- +  Params:
- +      state = The current `kameloso.plugins.common.IRCPluginState`.
- +      info = `YouTubeVideoInfo` describing the lookup results.
- +      event = The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
- +      colouredOutput = Whether or not to include mIRC colours in outgoing messages.
- +/
-void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCEvent event,
-    const bool colouredOutput)
-{
-    import std.format : format;
-
-    string line;
-
-    if (colouredOutput)
-    {
-        line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold, info.title, info.author.ircBold);
-    }
-    else
-    {
-        line = "[youtube.com] %s (uploaded by %s)".format(info.title, info.author);
-    }
-
-    state.privmsg(event.channel, event.sender.nickname, line);
-}
-
-
-// lookupTitle
-/++
- +  Given an URL, tries to look up the web page title of it.
- +
- +  Params:
- +      url = URL string to look up.
- +
- +  Returns:
- +      A finished `TitleLookup`.
- +
- +  Throws: `Exception` if URL could not be fetched, or if no title could be
- +      divined from it.
- +/
-TitleLookup lookupTitle(const string url)
-{
-    import kameloso.constants : BufferSize;
-    import arsd.dom : Document;
-    import requests : Request;
-    import std.array : Appender;
-
-    TitleLookup lookup;
-    auto doc = new Document;
-    Appender!(ubyte[]) sink;
-    sink.reserve(BufferSize.titleLookup);
-
-    Request req;
-    req.useStreaming = true;
-    req.keepAlive = false;
-    req.bufferSize = BufferSize.titleLookup;
-
-    auto res = req.get(url);
-
-    if (res.code >= 400)
-    {
-        import std.conv : text;
-        throw new Exception("Could not fetch URL; response code: " ~ res.code.text);
-    }
-
-    auto stream = res.receiveAsRange();
-
-    foreach (const part; stream)
-    {
-        sink.put(part);
-        doc.parseGarbage(cast(string)sink.data.idup);
-        if (doc.title.length) break;
-    }
-
-    if (!doc.title.length)
-    {
-        throw new Exception("Could not find a title tag");
-    }
-
-    lookup.title = decodeTitle(doc.title);
-    lookup.domain = res.finalURI.original_host;  // thanks to ikod
-
-    import kameloso.string : beginsWith;
-    if (lookup.domain.beginsWith("www."))
-    {
-        import kameloso.string : nom;
-        lookup.domain.nom('.');
-    }
-
-    import std.datetime.systime : Clock;
-    lookup.when = Clock.currTime.toUnixTime;
-    return lookup;
-}
-
-
 /// getYouTubeInfo
 /++
  +  Fetches the JSON description of a YouTube video link, allowing us to report
@@ -587,25 +643,25 @@ TitleLookup lookupTitle(const string url)
  +
  +  Example:
  +  ---
- +  YouTubeVideoInfo info = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
- +  writeln(info.title);
- +  writeln(info.author);
+ +  auto info = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
+ +  writeln(info["title"].str);
+ +  writeln(info["author"].str);
  +  ---
  +
  +  Params:
  +      url = A YouTube video link string.
  +
  +  Returns:
- +      A `YouTubeVideoInfo` with members describing the looked-up video.
+ +      A `JSONValue` with fields describing the looked-up video.
  +
- +  Throws: `Exception` if the YouTube ID was invalid and could not be queried.
+ +  Throws:
+ +      `Exception` if the YouTube ID was invalid and could not be queried.
+ +      `JSONException` if the JSON response could not be parsed.
  +/
-YouTubeVideoInfo getYouTubeInfo(const string url)
+JSONValue getYouTubeInfo(const string url)
 {
     import requests : getContent;
     import std.json : parseJSON;
-
-    YouTubeVideoInfo info;
 
     immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
     const data = cast(char[])getContent(youtubeURL).data;
@@ -616,11 +672,7 @@ YouTubeVideoInfo getYouTubeInfo(const string url)
         throw new Exception("Invalid YouTube video ID");
     }
 
-    auto jsonFromYouTube = parseJSON(data);
-
-    info.title = jsonFromYouTube["title"].str;
-    info.author = jsonFromYouTube["author_name"].str;
-    return info;
+    return parseJSON(data);
 }
 
 
@@ -673,15 +725,79 @@ unittest
 }
 
 
-// prune
+// lookupReddit
 /++
- +  Garbage-collects old entries in a `TitleLookup[string]` lookup cache.
+ +  Given an URL, looks it up on Reddit to see if it has been posted there.
  +
  +  Params:
- +      cache = Cache of previous `TitleLookup`s, `shared` so that it can be
+ +      state = The current plugin instance's `kameloso.plugin.common.IRCPluginState`,
+ +          for use to send text to the local terminal.
+ +      url = URL to query Reddit for.
+ +      modified = Whether the URL has been modified to add an extra slash at
+ +          the end, or remove one if one already existed.
+ +
+ +  Returns:
+ +      URL to the Reddit post that links to `url`.
+ +/
+string lookupReddit(const string url, const bool modified = false)
+{
+    import kameloso.constants : BufferSize, KamelosoInfo;
+    import kameloso.string : contains;
+    import requests : Request;
+
+    // Don't look up Reddit URLs. Naïve match, may have false negatives.
+    if (url.contains("reddit.com/")) return string.init;
+
+    Request req;
+    req.useStreaming = true;  // we only want as little as possible
+    req.keepAlive = false;
+    req.bufferSize = BufferSize.titleLookup;
+
+    /// User Agent to identify as when downloading pages.
+    immutable userAgentHeader = [ "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_ ];
+    req.addHeaders(userAgentHeader);
+
+    auto res = req.get("https://www.reddit.com/" ~ url);
+
+    with (res.finalURI)
+    {
+        import kameloso.string : beginsWith;
+
+        if (uri.beginsWith("https://www.reddit.com/login") ||
+            uri.beginsWith("https://www.reddit.com/submit") ||
+            uri.beginsWith("https://www.reddit.com/http"))
+        {
+            import std.algorithm.searching : endsWith;
+
+            // Whether URLs end with slashes or not seems to matter.
+            // If we're here, no post could be found, so strip any trailing
+            // slashes and retry, or append a slash and retry if no trailing.
+            // Pass a bool flag to only do this once, so we don't infinitely recurse.
+
+            if (modified) return string.init;
+
+            return url.endsWith("/") ?
+                lookupReddit(url[0..$-1], true) :
+                lookupReddit(url ~ '/', true);
+        }
+        else
+        {
+            // Has been posted to Reddit
+            return res.finalURI.uri;
+        }
+    }
+}
+
+
+// prune
+/++
+ +  Garbage-collects old entries in a `T[string]` lookup cache.
+ +
+ +  Params:
+ +      cache = Cache of previous `T`s, `shared` so that it can be
  +          reused in further lookup (other threads).
  +/
-void prune(shared TitleLookup[string] cache)
+void prune(T)(shared T[string] cache)
 {
     enum expireSeconds = 600;
 
@@ -709,38 +825,12 @@ void prune(shared TitleLookup[string] cache)
 /++
  +  Initialises the shared cache, else it won't retain changes.
  +
- +  Just assign it an entry and remove it.
+ +  Just assign an entry and remove it.
  +/
 void start(WebtitlesPlugin plugin)
 {
-    plugin.cache[string.init] = TitleLookup.init;
+    plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
-}
-
-
-// onBusMessage
-/++
- +  Receives a passed `kameloso.thread.BusMessage` with the "`reddit title`"
- +  header, and calls functions based on the payload message.
- +
- +  This is used to let other plugins trigger web URL lookups.
- +
- +  Params:
- +      plugin = The current `WebtitlesPlugin`.
- +      header = String header describing the passed content payload.
- +      content = Message content.
- +/
-import kameloso.thread : Sendable;
-void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
-{
-    import kameloso.thread : BusMessage;
-
-    if (header == "reddit title")
-    {
-        auto message = cast(BusMessage!IRCEvent)content;
-        assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
-        return plugin.onMessage(message.payload);
-    }
 }
 
 
@@ -759,7 +849,7 @@ final class WebtitlesPlugin : IRCPlugin
 {
 private:
     /// Cache of recently looked-up web titles.
-    shared TitleLookup[string] cache;
+    shared TitleLookupResults[string] cache;
 
     /// All Webtitles options gathered.
     @Settings WebtitlesSettings webtitlesSettings;

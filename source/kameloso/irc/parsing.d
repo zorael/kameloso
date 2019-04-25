@@ -650,7 +650,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // (freenode) :zorael!~NaN@2001:41d0:2:80b4:: INVITE kameloso :#hirrsteff
         // (quakenet) :zorael!~zorael@ns3363704.ip-94-23-253.eu INVITE kameloso #hirrsteff
         event.target.nickname = slice.nom(' ');
-        event.channel = slice;
         event.channel = slice.beginsWith(':') ? slice[1..$] : slice;
         break;
 

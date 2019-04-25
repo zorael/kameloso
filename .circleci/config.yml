@@ -8,7 +8,7 @@ general:
 jobs:
   build:
     docker:
-      - image: circleci/node:4.8.2
+      - image: circleci/buildpack-deps:19.04
     steps:
       - checkout
       - run:
