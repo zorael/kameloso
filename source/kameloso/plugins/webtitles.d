@@ -318,7 +318,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
  +/
 TitleLookupResults lookupTitle(const string url)
 {
-    import kameloso.constants : BufferSize;
+    import kameloso.constants : BufferSize, KamelosoInfo;
     import arsd.dom : Document;
     import requests : Request;
     import std.array : Appender;
@@ -332,6 +332,10 @@ TitleLookupResults lookupTitle(const string url)
     req.useStreaming = true;
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
+
+    /// User Agent to identify as when downloading pages.
+    immutable userAgentHeader = [ "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_ ];
+    req.addHeaders(userAgentHeader);
 
     auto res = req.get(url);
 
@@ -727,13 +731,17 @@ unittest
  +/
 string lookupReddit(const string url, const bool modified = false)
 {
-    import kameloso.constants : BufferSize;
+    import kameloso.constants : BufferSize, KamelosoInfo;
     import requests : Request;
 
     Request req;
     req.useStreaming = true;  // we only want as little as possible
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
+
+    /// User Agent to identify as when downloading pages.
+    immutable userAgentHeader = [ "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_ ];
+    req.addHeaders(userAgentHeader);
 
     auto res = req.get("https://www.reddit.com/" ~ url);
 
