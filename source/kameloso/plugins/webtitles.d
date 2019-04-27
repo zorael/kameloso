@@ -225,9 +225,6 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             }
 
             if (webtitlesSettings.redditLookup) reportReddit(request);
-
-            request.results.when = Clock.currTime.toUnixTime;
-            cache[request.url] = cast(shared)request.results;
         }
 
         if (request.url.contains("://i.imgur.com/"))
