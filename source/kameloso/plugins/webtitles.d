@@ -209,12 +209,21 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         import std.datetime.systime : Clock;
         import std.typecons : No, Yes;
 
-        void lookupAndReport()
+        /// Calls the passed report function in the correct order with regards to Reddit-reporting.
+        void reportDispatch(alias reportImpl)()
         {
-            request.results = lookupTitle(request.url);
-            if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
+            // If simultaneous, check Reddit first and report later
+            if (webtitlesSettings.simultaneousReddit)
+            {
+                if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
+                reportImpl(request, colouredOutgoing);
+            }
+            else
+            {
+                reportImpl(request, colouredOutgoing);
+                if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
+            }
 
-            reportTitle(request, colouredOutgoing);
             if (webtitlesSettings.redditLookup) reportReddit(request);
 
             request.results.when = Clock.currTime.toUnixTime;
@@ -284,6 +293,14 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         }
 
         import core.exception : UnicodeException;
+
+        void lookupAndReport()
+        {
+            request.results = lookupTitle(request.url);
+            reportDispatch!reportTitle();
+            request.results.when = Clock.currTime.toUnixTime;
+            cache[request.url] = cast(shared)request.results;
+        }
 
         try
         {
