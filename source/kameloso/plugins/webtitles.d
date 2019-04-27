@@ -254,10 +254,10 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             {
                 import std.json : JSONException;
 
-                immutable info = getYouTubeInfo(request.url);
-
                 try
                 {
+                    immutable info = getYouTubeInfo(request.url);
+
                     // Let's assume all YouTube clips have titles and authors
                     // Should we decode the author too?
                     request.results.youtubeTitle = decodeTitle(info["title"].str);
