@@ -23,6 +23,8 @@ import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.irc.colours : ircBold;
 
+import requests : Request;
+
 import std.concurrency;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -313,6 +315,31 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 }
 
 
+// setRequestHeaders
+/++
+ +  Sets the HTTP request headers of a `requests.Request` to better reflect our
+ +  behaviour of only downloading text files.
+ +
+ +  By placing it into its own function we can reuse it when downloading pages
+ +  normally and when requesting Reddit links.
+ +
+ +  Params:
+ +      req = Reference to the `requests.Request` to add headers to.
+ +/
+void setRequestHeaders(ref Request req)
+{
+    import kameloso.constants : KamelosoInfo;
+
+    immutable headers =
+    [
+        "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+        "Accept" : "text/html",
+    ];
+
+    req.addHeaders(headers);
+}
+
+
 // lookupTitle
 /++
  +  Given an URL, tries to look up the web page title of it.
@@ -328,9 +355,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
  +/
 TitleLookupResults lookupTitle(const string url)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo;
+    import kameloso.constants : BufferSize;
     import arsd.dom : Document;
-    import requests : Request;
     import std.array : Appender;
 
     TitleLookupResults results;
@@ -342,10 +368,7 @@ TitleLookupResults lookupTitle(const string url)
     req.useStreaming = true;
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
-
-    /// User Agent to identify as when downloading pages.
-    immutable userAgentHeader = [ "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_ ];
-    req.addHeaders(userAgentHeader);
+    setRequestHeaders(req);
 
     auto res = req.get(url);
 
@@ -741,9 +764,8 @@ unittest
  +/
 string lookupReddit(const string url, const bool modified = false)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo;
+    import kameloso.constants : BufferSize;
     import kameloso.string : contains;
-    import requests : Request;
 
     // Don't look up Reddit URLs. Naïve match, may have false negatives.
     if (url.contains("reddit.com/")) return string.init;
@@ -752,10 +774,7 @@ string lookupReddit(const string url, const bool modified = false)
     req.useStreaming = true;  // we only want as little as possible
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
-
-    /// User Agent to identify as when downloading pages.
-    immutable userAgentHeader = [ "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_ ];
-    req.addHeaders(userAgentHeader);
+    setRequestHeaders(req);
 
     auto res = req.get("https://www.reddit.com/" ~ url);
 
