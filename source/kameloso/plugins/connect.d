@@ -812,10 +812,16 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
  +  Marks registration as completed upon `RPL_WELCOME` (numeric 001).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(ConnectService service)
+void onWelcome(ConnectService service, const IRCEvent event)
 {
     service.registration = Progress.finished;
     service.nickNegotiation = Progress.finished;
+
+    if (service.state.client.nickname != event.target.nickname)
+    {
+        service.state.client.nickname = event.target.nickname;
+        service.state.client.updated = true;
+    }
 }
 
 
