@@ -253,27 +253,21 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 slice.beginsWith("youtu.be/"))
             {
                 import std.json : JSONException;
+
                 immutable info = getYouTubeInfo(request.url);
 
                 try
                 {
-                    if (info["title"].str.length)
-                    {
-                        request.results.youtubeTitle = decodeTitle(info["title"].str);
-                        request.results.youtubeAuthor = info["author"].str;
-                        if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
+                    // Let's assume all YouTube clips have titles and authors
+                    // Should we decode the author too?
+                    request.results.youtubeTitle = decodeTitle(info["title"].str);
+                    request.results.youtubeAuthor = info["author_name"].str;
 
-                        reportYouTubeTitle(request, colouredOutgoing);
-                        if (webtitlesSettings.redditLookup) reportReddit(request);
+                    reportDispatch!reportYouTubeTitle();
 
-                        request.results.when = Clock.currTime.toUnixTime;
-                        cache[request.url] = cast(shared)request.results;
-                        return;
-                    }
-                    else
-                    {
-                        // No title fetched, drop down
-                    }
+                    request.results.when = Clock.currTime.toUnixTime;
+                    cache[request.url] = cast(shared)request.results;
+                    return;
                 }
                 catch (JSONException e)
                 {
