@@ -44,6 +44,9 @@ struct WebtitlesSettings
 
     /// Toggles whether Reddit lookups should be done for pasted URLs.
     bool redditLookup = false;
+
+    /// Toggles whether or not Reddit and title are reported simultaneously. This can be slow.
+    bool simultaneousReddit = false;
 }
 
 
