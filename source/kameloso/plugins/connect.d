@@ -817,7 +817,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
     service.registration = Progress.finished;
     service.nickNegotiation = Progress.finished;
 
-    if (service.state.client.nickname != event.target.nickname)
+    if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
     {
         service.state.client.nickname = event.target.nickname;
         service.state.client.updated = true;

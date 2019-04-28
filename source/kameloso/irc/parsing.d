@@ -1502,6 +1502,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         case RPL_WHOISACCOUNT:
         case RPL_WHOISREGNICK:
         case RPL_ENDOFWHOIS:
+        case RPL_WELCOME:
             // Keep bot's nickname as target for these event types.
             break;
 
