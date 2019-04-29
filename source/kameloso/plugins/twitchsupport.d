@@ -602,6 +602,25 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             event.count = value.to!int;
             break;
 
+        case "badge-info":
+            /+
+                Metadata related to the chat badges in the badges tag.
+
+                Currently this is used only for subscriber, to indicate the exact
+                number of months the user has been a subscriber. This number is
+                finer grained than the version number in badges. For example,
+                a user who has been a subscriber for 45 months would have a
+                badge-info value of 45 but might have a badges version number
+                for only 3 years.
+
+                https://dev.twitch.tv/docs/irc/tags/
+             +/
+            // As of yet we're not taking into consideration badge versions values.
+            // When/if we do, we'll have to make sure this value overwrites the
+            // subscriber/version value in the badges tag.
+            // For now, ignore, as "subscriber/*" is repeated in badges.
+            break;
+
         case "msg-param-asin":
             // PURCHASE
             //msg-param-asin = 'B07DBTZZTH'
