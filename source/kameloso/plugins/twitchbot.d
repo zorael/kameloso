@@ -229,6 +229,13 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     import std.format : format;
 
     auto channel = event.channel in plugin.activeChannels;
+
+    if (channel.broadcastStart == 0L)
+    {
+        plugin.state.chan(event.channel, "Broadcast was never registered as started...");
+        return;
+    }
+
     auto now = Clock.currTime;
     now.fracSecs = 0.msecs;
     const delta = now - SysTime.fromUnixTime(channel.broadcastStart);
