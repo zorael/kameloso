@@ -952,6 +952,9 @@ private:
     /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
+        /// Toggle of whether or not the bot should operate in this channel.
+        bool enabled = true;
+
         /// ID of the currently ongoing vote, if any (otherwise 0).
         int voteInstance;
 
