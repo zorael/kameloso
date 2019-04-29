@@ -311,7 +311,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    if (event.content.count(" ") < 2)
+    if (event.content.count(' ') < 2)
     {
         plugin.state.chan(event.channel, "Need one duration and at least two options.");
         return;
@@ -322,7 +322,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     try
     {
-        dur = slice.nom!(Yes.decode)(" ").to!long;
+        dur = slice.nom!(Yes.decode)(' ').to!long;
     }
     catch (ConvException e)
     {
@@ -421,7 +421,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         immutable vote = thisFiber.payload.content;
         immutable nickname = thisFiber.payload.sender.nickname;
 
-        if (!vote.length || (vote.contains(" ")))
+        if (!vote.length || vote.contains!(Yes.decode)(' '))
         {
             // Not a vote; yield and await a new event
         }
@@ -543,14 +543,14 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content;
-    immutable verb = slice.nom!(Yes.inherit)(" ");
+    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
 
     switch (verb)
     {
     case "add":
-        if (slice.contains(" "))
+        if (slice.contains!(Yes.decode)(' '))
         {
-            immutable trigger = slice.nom(" ");
+            immutable trigger = slice.nom!(Yes.decode)(' ');
 
             plugin.onelinersByChannel[event.channel][trigger] = slice;
             saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
@@ -641,7 +641,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.uni : toLower;
 
-    if (!event.content.length || (event.content.count(" ") > 1))
+    if (!event.content.length || (event.content.count(' ') > 1))
     {
         plugin.state.chan(event.channel, "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
@@ -649,7 +649,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content;
-    immutable verb = slice.nom!(Yes.inherit)(" ");
+    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
 
     switch (verb)
     {
