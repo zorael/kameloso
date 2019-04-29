@@ -1054,12 +1054,15 @@ private:
 
     /++
      +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does nothing on non-Twitch servers. The function to call is
-     +  `IRCPluginImpl.onEventImpl`.
+     +  plugin does nothing on non-Twitch servers. Also filters `IRCEvent.Type.CHAN`
+     +  events to only trigger on active channels (that have its `Channel.enabled`
+     +  set to true).
+     +
+     +  The function to call is `IRCPluginImpl.onEventImpl`.
      +
      +  Params:
      +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
-     +          after verifying we're on a Twitch server.
+     +          after verifying we should process the event.
      +/
     public void onEvent(const IRCEvent event)
     {
@@ -1070,6 +1073,42 @@ private:
             return;
         }
 
-        return onEventImpl(event);
+        if (event.type == IRCEvent.Type.CHAN)
+        {
+            import kameloso.string : beginsWith;
+
+            if (event.content.beginsWith(settings.prefix) &&
+                (event.content.length > settings.prefix.length))
+            {
+                import std.uni : toLower;
+
+                // Prefixed command. Use .toLower for now
+                switch (event.content[settings.prefix.length..$].toLower)
+                {
+                case "enable":
+                case "disable":
+                    // Always pass through
+                    return onEventImpl(event);
+
+                default:
+                    // Only pass through if the channel is enabled
+                    if (const channel = event.channel in activeChannels)
+                    {
+                        if (channel.enabled) return onEventImpl(event);
+                    }
+                    return;
+                }
+            }
+            else
+            {
+                // Normal non-command channnel message
+                return onEventImpl(event);
+            }
+        }
+        else
+        {
+            // Other event
+            return onEventImpl(event);
+        }
     }
 }
