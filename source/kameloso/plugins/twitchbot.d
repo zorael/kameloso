@@ -1083,14 +1083,14 @@ private:
                 import std.uni : toLower;
 
                 // Prefixed command. Use .toLower for now
-                switch (event.content[settings.prefix.length..$].toLower)
+                // We only need "enable"
+                if (event.content[settings.prefix.length..$].toLower == "enable")
                 {
-                case "enable":
-                case "disable":
                     // Always pass through
                     return onEventImpl(event);
-
-                default:
+                }
+                else
+                {
                     // Only pass through if the channel is enabled
                     if (const channel = event.channel in activeChannels)
                     {
