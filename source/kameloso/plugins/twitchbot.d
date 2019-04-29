@@ -122,6 +122,32 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandEnableDisable
+/++
+ +  Toggles whether or not the bot should operate in this channel.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "enable")
+@BotCommand(PrefixPolicy.prefixed, "disable")
+@Description("Toggles the Twitch bot in the current channel.")
+void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    if (event.aux == "enable")
+    {
+        plugin.activeChannels[event.channel].enabled = true;
+        plugin.state.chan(event.channel, "Streamer bot enabled!");
+    }
+    else /*if (event.aux == "disable")*/
+    {
+        plugin.activeChannels[event.channel].enabled = false;
+        plugin.state.chan(event.channel, "Streamer bot disabled.");
+    }
+}
+
+
 // onCommandUptime
 /++
  +  Reports how long the streamer has been streaming.
