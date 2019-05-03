@@ -6,6 +6,36 @@ module kameloso.thread;
 
 public:
 
+
+version(Posix)
+{
+    private import core.sys.posix.pthread : pthread_t;
+
+    // pthread_setname_-np
+    /++
+     +  Prototype to allow linking to `pthread`'s function for naming threads.
+     +/
+    extern(C) private int pthread_setname_np(pthread_t, const char*);
+
+
+    // setThreadName
+    /++
+     +  Sets the thread name of the current thread, so they will show up named
+     +  in process managers (like `top`).
+     +
+     +  Params:
+     +      name = String name to assign to the current thread.
+     +/
+    void setThreadName(const string name)
+    {
+        import std.string : toStringz;
+        import core.thread : Thread;
+
+        pthread_setname_np(Thread.getThis().id, name.toStringz);
+    }
+}
+
+
 // ThreadMessage
 /++
  +  Aggregate of thread message types.
