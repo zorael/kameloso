@@ -85,6 +85,12 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
     immutable url = !event.content.length ? "http://bash.org/?random" :
         "http://bash.org/?" ~ event.content;
 
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("bashquotes");
+    }
+
     try
     {
         import std.exception : assumeUnique;

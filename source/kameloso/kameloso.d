@@ -1428,6 +1428,12 @@ public:
  +/
 int kamelosoMain(string[] args)
 {
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("kameloso");
+    }
+
     // Initialise the main IRCBot. Set its abort pointer to the global abort.
     IRCBot bot;
     bot.abort = &abort;

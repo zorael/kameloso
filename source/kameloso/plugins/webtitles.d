@@ -194,6 +194,12 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     ulong delayMsecs, WebtitlesSettings webtitlesSettings, bool colouredOutgoing)
 {
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("webtitles");
+    }
+
     if (delayMsecs > 0)
     {
         import core.thread : Thread;

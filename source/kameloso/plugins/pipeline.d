@@ -75,6 +75,12 @@ void pipereader(shared IRCPluginState newState, const string filename)
 {
     import std.file : FileException, exists, remove;
 
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("pipeline");
+    }
+
     auto state = cast()newState;
 
     string infotint, logtint;
