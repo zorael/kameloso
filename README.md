@@ -1,12 +1,8 @@
 # kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX and documentation](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.org/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600)](https://github.com/zorael/kameloso/issues/46) [![GitHub commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.1.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.1.2...master)
 
-**kameloso** sits in your channels and listens to commands and events, like bots generally do.
-
-A variety of features come bundled in the form of compile-time plugins. It's easily extensible; API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
+**kameloso** sits in your channels and listens to commands and events, like bots generally do. It is modular and easily extensible.
 
 IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
-
-For help on getting started, see [the wiki](https://github.com/zorael/kameloso/wiki).
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -14,8 +10,8 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` on join for op)
-* looking up titles of pasted web URLs
 * logs
+* echoing titles of pasted web URLs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
@@ -24,9 +20,8 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * piping text from the terminal to the server (Linux/OSX and other Posix platforms only)
 * mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* configuration file; [create one](#configuration) and edit it to get an idea of the settings available
 
-If nothing else it makes for a good lurkbot.
+All of the above are plugins and can be runtime disabled or compiled out.
 
 ## Current limitations:
 
@@ -71,6 +66,7 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
   * [Twitch](#twitch)
     * [Twitch bot](#twitch-bot)
   * [Use as a library](#use-as-a-library)
+  * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
   * [Posix](#posix)
@@ -108,12 +104,6 @@ This will compile the bot in the default `debug` mode, which adds some extra cod
 
 The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them. Tests are run at the *start* of the program, not during compilation. Test builds will only run the unit tests and immediately exit.
-
-```bash
-$ dub test
-```
-
 ### Build configurations
 
 There are several configurations in which the bot may be built.
@@ -122,7 +112,7 @@ There are several configurations in which the bot may be built.
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles` and `bashquotes`)
 * `full`, includes both of the above
-* `twitch`, everything so far, plus the Twitch streamer bot (chat support is always included)
+* `twitch`, everything so far, plus the Twitch streamer bot (so far chat support is always included)
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
 * `windows`, default on Windows, also equals `full`
 * `polyglot`, development build equalling everything available, including things like more error messages
@@ -219,7 +209,7 @@ It can technically be any string and not just one character. It may include spac
 
 ## Twitch
 
-To connect to Twitch servers you must supply an [*OAuth token*](https://en.wikipedia.org/wiki/OAuth) *pass* (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+To connect to Twitch servers you must supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
 ```ini
 [IRCBot]
@@ -233,18 +223,18 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-See [the wiki](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
+See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
 ### Twitch bot
 
-The streamer bot plugin is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. (The configuration file section will not show up when generating the file if the plugin is not compiled in.)
+The streamer bot plugin is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. (Configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.)
 
 ```bash
 $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=true --writeconfig
 ```
 
-Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`, `!enable`, `!disable`
 
 Note: a dot `.` prefix will not work on Twitch, as it conflicts with Twitch's own commands.
 
@@ -263,7 +253,11 @@ The IRC event parsing is largely decoupled from the bot parts of the program, ne
 * [`traits.d`](source/kameloso/traits.d)
 * [`uda.d`](source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Examples of parsing results can be found in the test files in [`tests/`](source/tests/). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required; inquire within.
+Feel free to copy these and drop them into your own project. Examples of parsing results can be found in the test files in [`tests/`](source/tests/). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required.
+
+## Further help
+
+For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
 
 # Known issues
 
