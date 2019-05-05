@@ -822,6 +822,19 @@ void onWelcome(ConnectService service, const IRCEvent event)
         service.state.client.nickname = event.target.nickname;
         service.state.client.updated = true;
     }
+
+    version(TwitchSupport) {}
+    else
+    {
+        // No Twitch support built in
+        import std.algorithm.searching : endsWith;
+
+        if (service.state.client.server.address.endsWith(".twitch.tv"))
+        {
+            logger.warning("This bot was not built with Twitch support enabled. " ~
+                "Expect errors and general uselessness.");
+        }
+    }
 }
 
 
