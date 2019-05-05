@@ -935,7 +935,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (sender.badges.length)
+                if (plugin.printerSettings.twitchBadges && sender.badges.length)
                 {
                     with (IRCEvent.Type)
                     switch (type)
@@ -978,7 +978,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (target.badges.length)
+                if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     put(sink, " [");
                     sink.abbreviateBadges(target.badges);
@@ -1269,7 +1269,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (sender.badges.length)
+                if (plugin.printerSettings.twitchBadges && sender.badges.length)
                 {
                     with (IRCEvent.Type)
                     switch (type)
@@ -1338,7 +1338,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (target.badges.length)
+                if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
