@@ -48,6 +48,12 @@ struct PrinterSettings
     /// Whether or not to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
+    version(TwitchSupport)
+    {
+        /// Whether or not to display (abbreviated) Twitch badges.
+        bool twitchBadges = true;
+    }
+
     /++
      +  Whether or not to show Message of the Day upon connecting.
      +
