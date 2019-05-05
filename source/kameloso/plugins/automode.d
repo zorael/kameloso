@@ -651,10 +651,13 @@ private:
      +/
     public void onEvent(const IRCEvent event)
     {
-        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        version(TwitchSupport)
         {
-            // Daemon is known to be Twitch
-            return;
+            if (state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                // Daemon is known to be Twitch
+                return;
+            }
         }
 
         return onEventImpl(event);

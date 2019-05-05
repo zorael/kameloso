@@ -219,14 +219,17 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     case JOIN:
     case PART:
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        version(TwitchSupport)
         {
-            // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
-            goto case ROOMSTATE;
-        }
-        else
-        {
-            goto default;
+            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
+                goto case ROOMSTATE;
+            }
+            else
+            {
+                goto default;
+            }
         }
 
     case USERSTATE: // Insanely spammy, once every sent message

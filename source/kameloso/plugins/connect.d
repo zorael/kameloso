@@ -213,7 +213,10 @@ void onPing(ConnectService service, const IRCEvent event)
     immutable target = event.content.length ? event.content : event.sender.address;
     service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
 
-    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+    version(TwitchSupport)
+    {
+        if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+    }
 
     if (!service.joinedChannels && (service.authentication == Progress.started))
     {
@@ -332,10 +335,13 @@ void tryAuth(ConnectService service)
             if (!settings.hideOutgoing) logger.trace("--> NICKSERV IDENTIFY hunter2");
             break;
 
-        case twitch:
-            // No registration available
-            service.authentication = Progress.finished;
-            return;
+        version(TwitchSupport)
+        {
+            case twitch:
+                // No registration available
+                service.authentication = Progress.finished;
+                return;
+        }
 
         default:
             logger.warning("Unsure of what AUTH approach to use.");
@@ -448,7 +454,10 @@ void onAuthEnd(ConnectService service)
 @(IRCEvent.Type.NOTICE)
 void onAuthEndNotice(ConnectService service, const IRCEvent event)
 {
-    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+    version(TwitchSupport)
+    {
+        if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+    }
 
     import kameloso.string : beginsWith;
 
@@ -624,10 +633,16 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
                 tryingSASL = true;
                 break;
 
-            case "twitch.tv/membership":
-            case "twitch.tv/tags":
-            case "twitch.tv/commands":
-                // Twitch-specific capabilities
+            version(TwitchSupport)
+            {
+                case "twitch.tv/membership":
+                case "twitch.tv/tags":
+                case "twitch.tv/commands":
+                    // Twitch-specific capabilities
+                    // Drop down
+                    goto case;
+            }
+
             case "account-notify":
             case "extended-join":
             //case "identify-msg":
@@ -865,8 +880,8 @@ void onISUPPORT(ConnectService service)
  +  an error and the program would exit if
  +  `kameloso.common.CoreSettings.exitOnFailure` is set.
  +/
-@(IRCEvent.Type.RECONNECT)
 version(TwitchSupport)
+@(IRCEvent.Type.RECONNECT)
 void onReconnect(ConnectService service)
 {
     import std.concurrency : send;
@@ -896,12 +911,15 @@ void register(ConnectService service)
             service.raw("PASS " ~ client.pass, true);
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
-        else if (client.server.address.endsWith(".twitch.tv"))
+        else version(TwitchSupport)
         {
-            // client.server.daemon is always Daemon.unset at this point
-            logger.error("You *need* a pass to join this server.");
-            service.quit("Authentication failure (missing pass)");
-            return;
+            if (client.server.address.endsWith(".twitch.tv"))
+            {
+                // client.server.daemon is always Daemon.unset at this point
+                logger.error("You *need* a pass to join this server.");
+                service.quit("Authentication failure (missing pass)");
+                return;
+            }
         }
 
         // Nick negotiation after CAP END
