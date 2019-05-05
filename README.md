@@ -1,10 +1,6 @@
 # kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX and documentation](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.org/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600)](https://github.com/zorael/kameloso/issues/46) [![GitHub commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.1.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.1.2...master)
 
-**kameloso** sits in your channels and listens to commands and events, like bots generally do. It is modular and easily extensible.
-
-IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
-
-Please report bugs. Unreported bugs can only be fixed by accident.
+**kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
 ## Current functionality includes:
 
@@ -16,12 +12,12 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes`
-* Twitch chat support, including basic [streamer bot](source/kameloso/plugins/twitchbot.d) (default disabled); see [notes on connecting](#twitch) below
+* Twitch support, including basic [streamer bot](source/kameloso/plugins/twitchbot.d) (default disabled); see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Linux/OSX and other Posix platforms only)
 * mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 
-All of the above are plugins and can be runtime disabled or compiled out.
+All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible.
 
 ## Current limitations:
 
@@ -31,7 +27,11 @@ All of the above are plugins and can be runtime disabled or compiled out.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc), so support and coverage is best there.
+Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
+
+Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) servers, so support and coverage is best there.
+
+**Please report bugs. Unreported bugs can only be fixed by accident.**
 
 # TL;DR
 
