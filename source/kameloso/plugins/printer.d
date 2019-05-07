@@ -1833,7 +1833,7 @@ void periodically(PrinterPlugin plugin)
 
     if (!plugin.isEnabled) return;
 
-    if (plugin.printerSettings.printToScreen)
+    if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
     {
         logger.info(datestamp);
     }
