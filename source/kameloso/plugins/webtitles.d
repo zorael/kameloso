@@ -835,6 +835,8 @@ string lookupReddit(const string url, const bool modified = false)
  +/
 void prune(T)(shared T[string] cache)
 {
+    if (!cache.length) return;
+
     enum expireSeconds = 600;
 
     string[] garbage;
