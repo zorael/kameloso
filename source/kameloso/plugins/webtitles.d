@@ -839,7 +839,7 @@ void prune(T)(shared T[string] cache)
 
     string[] garbage;
 
-    foreach (key, entry; cache)
+    foreach (immutable key, const entry; cache)
     {
         import std.datetime.systime : Clock;
         immutable now = Clock.currTime.toUnixTime;
@@ -850,7 +850,7 @@ void prune(T)(shared T[string] cache)
         }
     }
 
-    foreach (key; garbage)
+    foreach (immutable key; garbage)
     {
         cache.remove(key);
     }

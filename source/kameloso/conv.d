@@ -60,7 +60,7 @@ if (is(E == enum))
             string enumSwitch = "import std.conv : ConvException;\n";
             enumSwitch ~= "with (E) switch (enumstring)\n{\n";
 
-            foreach (memberstring; __traits(allMembers, E))
+            foreach (immutable memberstring; __traits(allMembers, E))
             {
                 enumSwitch ~= `case "` ~ memberstring ~ `":`;
                 enumSwitch ~= "return " ~ memberstring ~ ";\n";
@@ -107,7 +107,7 @@ if (is(E == enum))
         switch (value)
         {
 
-        foreach (m; __traits(allMembers, E))
+        foreach (immutable m; __traits(allMembers, E))
         {
             case mixin("E." ~ m) : return m;
         }

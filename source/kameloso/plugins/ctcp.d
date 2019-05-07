@@ -216,7 +216,7 @@ unittest
 
     auto service = new CTCPService(IRCPluginState.init);
 
-    foreach (type; getUDAs!(onCTCPs, IRCEvent.Type))
+    foreach (immutable type; getUDAs!(onCTCPs, IRCEvent.Type))
     {
         IRCEvent event;
         event.type = type;
@@ -259,7 +259,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
         {
             static if (isSomeFunction!(fun))
             {
-                foreach (type; getUDAs!(fun, IRCEvent.Type))
+                foreach (immutable type; getUDAs!(fun, IRCEvent.Type))
                 {
                     import kameloso.conv : Enum;
                     enum typestring = Enum!(IRCEvent.Type).toString(type);

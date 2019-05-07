@@ -793,7 +793,7 @@ struct IRCEvent
             static engine = ctRegex!pattern;
             string[1024] arr;
 
-            foreach (line; s.splitter("\n"))
+            foreach (const line; s.splitter("\n"))
             {
                 auto hits = line.matchFirst(engine);
                 if (hits.length < 2) continue;
@@ -812,7 +812,7 @@ struct IRCEvent
 
             writeln("static immutable Type[1024] typenums =\n[");
 
-            foreach (i, val; arr)
+            foreach (immutable i, const val; arr)
             {
                 if (!val.length) continue;
 

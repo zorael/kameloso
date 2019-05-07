@@ -530,7 +530,7 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
 
     string slice = line;
 
-    foreach (hit; line.matchAll(engine))
+    foreach (const hit; line.matchAll(engine))
     {
         import std.array : Appender;
         import std.conv : to;
@@ -632,7 +632,7 @@ string stripColours(const string line)
 
     string slice = line;
 
-    foreach (hit; line.matchAll(engine))
+    foreach (const hit; line.matchAll(engine))
     {
         import std.array : Appender;
         import std.conv : to;

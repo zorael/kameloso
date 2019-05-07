@@ -817,7 +817,7 @@ auto sharedDomains(const string rawOne, const string rawOther) pure nothrow
     immutable one = (rawOne != rawOther) ? '.' ~ rawOne : rawOne;
     immutable other = (rawOne != rawOther) ? '.' ~ rawOther : rawOther;
 
-    foreach (i; 0..one.length)
+    foreach (immutable i; 0..one.length)
     {
         if (i == other.length)
         {
@@ -961,7 +961,7 @@ void indented(uint numTabs = 1, Sink)(const string string_, auto ref Sink sink)
     enum indent = numTabs.tabs;
     uint n;
 
-    foreach (l; string_.splitter("\n"))
+    foreach (immutable l; string_.splitter("\n"))
     {
         if (n++ > 0) sink.put("\n");
 

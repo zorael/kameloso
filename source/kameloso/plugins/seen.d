@@ -742,7 +742,7 @@ long[string] loadSeen(const string filename)
         const asJSON = parseJSON(filename.readText).object;
 
         // Manually insert each entry from the JSON file into the long[string] AA.
-        foreach (user, time; asJSON)
+        foreach (immutable user, const time; asJSON)
         {
             aa[user] = time.integer;
         }

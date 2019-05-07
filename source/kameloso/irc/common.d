@@ -757,12 +757,12 @@ unittest
         "$deity",
     ];
 
-    foreach (nickname; validNicknames)
+    foreach (immutable nickname; validNicknames)
     {
         assert(nickname.isValidNickname(s), nickname);
     }
 
-    foreach (nickname; invalidNicknames)
+    foreach (immutable nickname; invalidNicknames)
     {
         assert(!nickname.isValidNickname(s), nickname);
     }
@@ -830,7 +830,7 @@ unittest
 
     {
         immutable line = "abcDEFghi0{}29304_[]`\\^|---";
-        foreach (char c; line.representation)
+        foreach (immutable char c; line.representation)
         {
             assert(c.isValidNicknameCharacter, c ~ "");
         }

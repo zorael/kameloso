@@ -213,7 +213,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
                         static if (separators.length > 1)
                         {
-                            foreach (furtherSeparator; separators[1..$])
+                            foreach (immutable furtherSeparator; separators[1..$])
                             {
                                 // We're serialising; escape any other separators
                                 enum furtherEscaped = '\\' ~ furtherSeparator.token;
@@ -671,7 +671,7 @@ auto justifiedConfigurationText(const string origLines)
     enum minimumWidth = 24;
     immutable width = max(minimumWidth, longestEntryLength.getMultipleOf!(Yes.alwaysOneUp)(4));
 
-    foreach (line; unjustified.data)
+    foreach (immutable line; unjustified.data)
     {
         if (!line.length)
         {

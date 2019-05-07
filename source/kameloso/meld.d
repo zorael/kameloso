@@ -591,7 +591,7 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
         static assert(0, "Attempted to meld an unsupported type");
     }
 
-    foreach (immutable i, val; meldThis)
+    foreach (immutable i, const val; meldThis)
     {
         with (MeldingStrategy)
         final switch (strategy)
@@ -672,7 +672,7 @@ void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, AA)
     (AA meldThis, ref AA intoThis) pure
 if (isAssociativeArray!AA)
 {
-    foreach (key, val; meldThis)
+    foreach (immutable key, val; meldThis)
     {
         with (MeldingStrategy)
         final switch (strategy)

@@ -2103,7 +2103,7 @@ void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
         import kameloso.string : nom;
         emote.nom(':');
 
-        foreach (location; emote.splitter(","))
+        foreach (immutable location; emote.splitter(","))
         {
             import std.string : indexOf;
 

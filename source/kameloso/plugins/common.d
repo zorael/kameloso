@@ -936,7 +936,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
 
             udaloop:
-            foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
+            foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
             {
                 enum name = ()
                 {
@@ -1030,7 +1030,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         return Next.continue_;  // next function
                     }
 
-                    foreach (commandUDA; getUDAs!(fun, BotCommand))
+                    foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                     {
                         static assert(commandUDA.string_.length, name ~ " had an empty BotCommand string");
 
@@ -1105,7 +1105,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             return Next.continue_;  // next function
                         }
 
-                        foreach (regexUDA; getUDAs!(fun, BotRegex))
+                        foreach (immutable regexUDA; getUDAs!(fun, BotRegex))
                         {
                             static assert((regexUDA.ending == Regex!char.init),
                                 name ~ " has an incomplete BotRegex");
@@ -1759,7 +1759,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             foreach (fun; funs)
             {
-                foreach (commandUDA; getUDAs!(fun, BotCommand))
+                foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                 {
                     static if (hasUDA!(fun, Description))
                     {

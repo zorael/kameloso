@@ -1248,7 +1248,7 @@ Next tryConnect(ref IRCBot bot)
     connector.call();
 
     with (bot)
-    foreach (attempt; connector)
+    foreach (const attempt; connector)
     {
         import core.time : seconds;
 
@@ -1362,7 +1362,7 @@ Next tryResolve(ref IRCBot bot)
     resolver.call();
 
     with (bot)
-    foreach (attempt; resolver)
+    foreach (const attempt; resolver)
     {
         with (State)
         final switch (attempt.state)

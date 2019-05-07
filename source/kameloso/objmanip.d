@@ -93,7 +93,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 
                     string values = valueToSet.replace("\\\\", doubleEscapePlaceholder);
 
-                    foreach (separator; separators)
+                    foreach (immutable separator; separators)
                     {
                         enum escaped = '\\' ~ separator.token;
                         values = values
