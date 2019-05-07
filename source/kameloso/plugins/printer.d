@@ -79,6 +79,9 @@ struct PrinterSettings
     /// Whether or not to have the type (and badge) names be in capital letters.
     bool uppercaseTypes = false;
 
+    /// Whether or not to print a banner to the terminal at midnights, when day changes.
+    bool daybreaks = true;
+
     /// Whether or not to log events.
     bool logs = false;
 
