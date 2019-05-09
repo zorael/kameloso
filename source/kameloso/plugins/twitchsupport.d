@@ -621,6 +621,11 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // For now, ignore, as "subscriber/*" is repeated in badges.
             break;
 
+        case "id":
+            // A unique ID for the message.
+            event.id = value;
+            break;
+
         case "msg-param-asin":
             // PURCHASE
             //msg-param-asin = 'B07DBTZZTH'
@@ -656,8 +661,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "slow":
             // The number of seconds chatters without moderator privileges must
             // wait between sending messages.
-        case "id":
-            // A unique ID for the message.
         case "sent-ts":
             // ?
         case "tmi-sent-ts":
