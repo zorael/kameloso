@@ -863,6 +863,9 @@ struct IRCEvent
     {
         /// The Twitch emotes in the message.
         string emotes;
+
+        /// The Twitch ID of this message.
+        string id;
     }
 }
 
