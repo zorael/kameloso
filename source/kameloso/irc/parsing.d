@@ -1554,7 +1554,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     // :tolkien.freenode.net NOTICE * :*** Checking Ident
 
     // At least Twitch sends NOTICEs to channels, maybe other daemons do too
-    immutable channelOrNickname = slice.nom(" :");
+    immutable channelOrNickname = slice.nom!(Yes.inherit)(" :");
     event.content = slice;
 
     if (channelOrNickname.length && channelOrNickname.beginsWithOneOf(parser.client.server.chantypes))
@@ -1567,6 +1567,8 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         import kameloso.irc.common : isFromAuthService, isSpecial, isValidChannel;
 
         if (parser.isSpecial(event)) event.sender.class_ = IRCUser.Class.special;
+
+        if (!event.content.length) return;
 
         if (!client.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
