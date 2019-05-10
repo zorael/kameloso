@@ -1548,6 +1548,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : beginsWith, beginsWithOneOf;
+    import std.typecons : Flag, No, Yes;
 
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
