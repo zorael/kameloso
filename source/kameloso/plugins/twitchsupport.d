@@ -211,6 +211,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "bad_commercial_error":
             case "bad_delete_message_broadcaster":
             case "bad_delete_message_mod":
+            case "bad_delete_message_error":
             case "bad_host_error":
             case "bad_host_hosting":
             case "bad_host_rate_exceeded":
