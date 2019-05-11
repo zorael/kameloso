@@ -41,24 +41,24 @@
             "name": "posix",
             "platforms": [ "posix" ],
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         },
         {
             "name": "windows",
             "platforms": [ "windows" ],
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         },
         {
             "name": "twitch",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         },
         {
             "name": "polyglot",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin",
                 "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         },
         {
             "name": "vanilla",
@@ -71,12 +71,12 @@
         {
             "name": "web",
             "versions": [ "WithPlugins", "Web" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         },
         {
             "name": "full",
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         },
         {
             "name": "pluginless",
@@ -94,7 +94,7 @@
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dflags": [ "-dip25", "-dip1008" ],
-            "dependencies": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.8" }
         }
     ]
 }
