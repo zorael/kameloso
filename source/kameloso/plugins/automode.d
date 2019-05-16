@@ -579,7 +579,16 @@ void onNick(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(AutomodePlugin plugin)
 {
-    plugin.populateAutomodes();
+    import kameloso.json : JSONStorage, populateFromJSON;
+
+    with (plugin)
+    {
+        JSONStorage automodesJSON;
+        automodesJSON.load(automodeFile);
+        //automodes.clear();
+        automodes.populateFromJSON!(No.lowercaseValues, Yes.lowercaseKeys)(automodesJSON);
+        automodes.rehash();
+    }
 }
 
 
