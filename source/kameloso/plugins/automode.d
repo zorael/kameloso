@@ -41,36 +41,6 @@ struct AutomodeSettings
 }
 
 
-// populateAutomodes
-/++
- +  Reads automode definitions from disk, populating a `string[string][string]`
- +  associative array; `modestring[channel][account]`.
- +
- +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
- +  it to populate a normal associative array for faster lookups.
- +
- +  Params:
- +      plugin = The current `AutomodePlugin`.
- +/
-void populateAutomodes(AutomodePlugin plugin)
-{
-    import kameloso.json : JSONStorage;
-
-    JSONStorage automodesJSON;
-    automodesJSON.load(plugin.automodeFile);
-    plugin.automodes = typeof(plugin.automodes).init;
-
-    foreach (immutable channelName, const modesignsJSON; automodesJSON.object)
-    {
-        foreach (immutable account, const modesign; modesignsJSON.object)
-        {
-            import std.uni : toLower;
-            plugin.automodes[channelName.toLower][account] = modesign.str;
-        }
-    }
-}
-
-
 // saveAutomodes
 /++
  +  Saves automode definitions to disk.
