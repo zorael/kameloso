@@ -456,8 +456,8 @@ void populateFromJSON(T)(ref T target, const JSONValue json)
         case object:
         case array:
             import std.format : format;
-            throw new Exception("Type mismatch when populating a %s into a %s"
-                .format(json.type, typeof(target).stringof));
+            throw new Exception("Type mismatch when populating a %s with a %s"
+                .format(typeof(target).stringof, json.type));
         }
     }
 }
