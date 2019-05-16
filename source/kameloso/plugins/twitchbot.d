@@ -779,17 +779,20 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 {
     import kameloso.json : JSONStorage, populateFromJSON;
 
-    JSONStorage channelOnelinerJSON;
-    channelOnelinerJSON.load(plugin.onelinerFile);
-    //plugin.onelinersByChannel.clear();
-    plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON.storage);
-    plugin.onelinersByChannel.rehash();
+    with (plugin)
+    {
+        JSONStorage channelOnelinerJSON;
+        channelOnelinerJSON.load(onelinerFile);
+        //onelinersByChannel.clear();
+        onelinersByChannel.populateFromJSON(channelOnelinerJSON);
+        onelinersByChannel.rehash();
 
-    JSONStorage channelAdminsJSON;
-    channelAdminsJSON.load(plugin.adminsFile);
-    //plugin.adminsByChannel.clear();
-    plugin.adminsByChannel.populateFromJSON(channelAdminsJSON.storage);
-    plugin.adminsByChannel.rehash();
+        JSONStorage channelAdminsJSON;
+        channelAdminsJSON.load(adminsFile);
+        //adminsByChannel.clear();
+        adminsByChannel.populateFromJSON(channelAdminsJSON);
+        adminsByChannel.rehash();
+    }
 }
 
 
