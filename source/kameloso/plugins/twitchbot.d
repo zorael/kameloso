@@ -778,6 +778,7 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
     import kameloso.json : JSONStorage, populateFromJSON;
+    import std.typecons : Flag, No, Yes;
 
     with (plugin)
     {
@@ -790,7 +791,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
         JSONStorage channelAdminsJSON;
         channelAdminsJSON.load(adminsFile);
         //adminsByChannel.clear();
-        adminsByChannel.populateFromJSON(channelAdminsJSON);
+        adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
         adminsByChannel.rehash();
     }
 }
