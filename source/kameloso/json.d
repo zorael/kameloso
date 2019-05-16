@@ -412,6 +412,12 @@ void populateFromJSON(T)(ref T target, const JSONValue json)
 
             populateFromJSON(target[ikey], valJSON);
         }
+
+        /*static if (isAssociativeArray!T)
+        {
+            // This would make it @system.
+            target.rehash();
+        }*/
     }
     else
     {
