@@ -404,7 +404,7 @@ void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValue
             alias V = ElementType!T;
         }
 
-        foreach (ikey, ref valJSON; aggregate)
+        foreach (ikey, const valJSON; aggregate)
         {
             static if (isAssociativeArray!T)
             {
