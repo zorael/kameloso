@@ -368,6 +368,7 @@ unittest
 
 
 import std.json : JSONValue;
+import std.typecons : Flag, No, Yes;
 
 // populateFromJSON
 /++
@@ -378,10 +379,14 @@ import std.json : JSONValue;
  +  memory without the overhead of dealing with `JSONValue`s.
  +
  +  Params:
+ +      lowercaseValues = Whether or not to save final string values in lowercase.
+ +      lowercaseKeys = Whether or not to save string keys in lowercase.
  +      target = Reference to target array or associative array to write to.
  +      json = Source `JSONValue` to sync the contents with.
  +/
-void populateFromJSON(T)(ref T target, const JSONValue json)
+void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValues,
+    Flag!"lowercaseKeys" lowercaseKeys = No.lowercaseKeys, T)
+    (ref T target, const JSONValue json)
 {
     import std.traits : isAssociativeArray, isArray, ValueType;
     import std.range :  ElementType;
@@ -403,6 +408,12 @@ void populateFromJSON(T)(ref T target, const JSONValue json)
         {
             static if (isAssociativeArray!T)
             {
+                static if (is(V : string) && lowercaseKeys)
+                {
+                    import std.uni : toLower;
+                    ikey = ikey.toLower;
+                }
+
                 target[ikey] = V.init;
             }
             else static if (isArray!T)
@@ -429,6 +440,12 @@ void populateFromJSON(T)(ref T target, const JSONValue json)
         {
         case string:
             target = json.str.to!(typeof(target));
+
+            static if (lowercaseValues && is(typeof(target) : string))
+            {
+                import std.uni : toLower;
+                target = target.toLower;
+            }
             break;
 
         case integer:
