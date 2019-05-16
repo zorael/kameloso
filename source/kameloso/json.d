@@ -407,7 +407,7 @@ void populateFromJSON(T)(ref T target, const JSONValue json)
             }
             else static if (isArray!T)
             {
-                target ~= V.init;
+                if (ikey >= target.length) target ~= V.init;
             }
 
             populateFromJSON(target[ikey], valJSON);
