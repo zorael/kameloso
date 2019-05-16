@@ -452,6 +452,7 @@ void populateFromJSON(T)(ref T target, const JSONValue json)
 
         case null_:
             // Silently do nothing
+            break;
 
         case object:
         case array:
