@@ -369,7 +369,7 @@ unittest
 
 import std.json : JSONValue;
 
-// popImpl
+// populateFromJSON
 /++
  +  Recursively populates a passed associative or dynamic array with the
  +  contents of a `JSONValue`.
