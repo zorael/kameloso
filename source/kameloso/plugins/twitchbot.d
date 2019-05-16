@@ -777,8 +777,19 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    plugin.populateOneliners(plugin.onelinerFile);
-    plugin.populateAdmins(plugin.adminsFile);
+    import kameloso.json : JSONStorage, populateFromJSON;
+
+    JSONStorage channelOnelinerJSON;
+    channelOnelinerJSON.load(plugin.onelinerFile);
+    //plugin.onelinersByChannel.clear();
+    plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON.storage);
+    plugin.onelinersByChannel.rehash();
+
+    JSONStorage channelAdminsJSON;
+    channelAdminsJSON.load(plugin.adminsFile);
+    //plugin.adminsByChannel.clear();
+    plugin.adminsByChannel.populateFromJSON(channelAdminsJSON.storage);
+    plugin.adminsByChannel.rehash();
 }
 
 
