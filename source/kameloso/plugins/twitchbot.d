@@ -707,6 +707,10 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
                     saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
                     plugin.state.chan(event.channel, "Administrator removed.");
                 }
+                else
+                {
+                    plugin.state.chan(event.channel, "No such administrator: " ~ slice);
+                }
             }
         }
         else
