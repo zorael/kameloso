@@ -1846,6 +1846,8 @@ void periodically(PrinterPlugin plugin)
 }
 
 
+import std.datetime.systime : SysTime;
+
 // getNextMidnight
 /++
  +  Returns a `std.datetime.systime.SysTime` of the following midnight, for use
@@ -1865,7 +1867,6 @@ void periodically(PrinterPlugin plugin)
  +      A `std.datetime.systime.SysTime` of the midnight following the date
  +      passed as argument.
  +/
-import std.datetime.systime : SysTime;
 SysTime getNextMidnight(const SysTime now)
 {
     import std.datetime : DateTime;
