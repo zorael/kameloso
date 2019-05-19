@@ -781,8 +781,23 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    plugin.populateOneliners(plugin.onelinerFile);
-    plugin.populateAdmins(plugin.adminsFile);
+    import kameloso.json : JSONStorage, populateFromJSON;
+    import std.typecons : Flag, No, Yes;
+
+    with (plugin)
+    {
+        JSONStorage channelOnelinerJSON;
+        channelOnelinerJSON.load(onelinerFile);
+        //onelinersByChannel.clear();
+        onelinersByChannel.populateFromJSON(channelOnelinerJSON);
+        onelinersByChannel.rehash();
+
+        JSONStorage channelAdminsJSON;
+        channelAdminsJSON.load(adminsFile);
+        //adminsByChannel.clear();
+        adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
+        adminsByChannel.rehash();
+    }
 }
 
 
@@ -881,85 +896,6 @@ void initResources(TwitchBotPlugin plugin)
 
     onelinerJSON.save(plugin.onelinerFile);
     adminsJSON.save(plugin.adminsFile);
-}
-
-
-// populateOneliners
-/++
- +  Reads oneliners from disk, populating a `string[string][string]` associative
- +  array; `oneliner[trigger][channel]`.
- +
- +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
- +  it to populate a normal associative array for faster lookups.
- +
- +  Example:
- +  ---
- +  // Early after connect...
- +  plugin.populateOneliners(plugin.onelinerFile);
- +  plugin.populateAdmins(plugin.adminsFile);
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      filename = Filename of the file to read from.
- +/
-void populateOneliners(TwitchBotPlugin plugin, const string filename)
-{
-    import kameloso.json : JSONStorage;
-
-    JSONStorage channelOnelinerJSON;
-    channelOnelinerJSON.load(filename);
-    plugin.onelinersByChannel.clear();
-
-    foreach (immutable channelName, const onelinersJSON; channelOnelinerJSON.object)
-    {
-        foreach (immutable trigger, const stringJSON; onelinersJSON.object)
-        {
-            plugin.onelinersByChannel[channelName][trigger] = stringJSON.str;
-        }
-    }
-
-    plugin.onelinersByChannel.rehash();
-}
-
-
-// populateAdmins
-/++
- +  Reads admins from disk, populating a `string[][string]` associative array;
- +  `nickname[][channel]`.
- +
- +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
- +  it to populate a normal associative array for faster lookups.
- +
- +  Example:
- +  ---
- +  // Early after connect...
- +  plugin.populateOneliners(plugin.onelinerFile);
- +  plugin.populateAdmins(plugin.adminsFile);
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      filename = Filename of the file to read from.
- +/
-void populateAdmins(TwitchBotPlugin plugin, const string filename)
-{
-    import kameloso.json : JSONStorage;
-
-    JSONStorage channelAdminsJSON;
-    channelAdminsJSON.load(filename);
-    plugin.adminsByChannel.clear();
-
-    foreach (immutable channelName, const adminsJSON; channelAdminsJSON.object)
-    {
-        foreach (const nickname; adminsJSON.array)
-        {
-            import std.uni : toLower;
-            plugin.adminsByChannel[channelName] ~= nickname.str.toLower;
-        }
-    }
-
-    plugin.adminsByChannel.rehash();
 }
 
 

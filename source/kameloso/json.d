@@ -365,3 +365,243 @@ unittest
     s.storage["foo"]["arr"].array ~= JSONValue("bluh");
     assert((s.storage["foo"]["arr"].array.length == 2), s.storage["foo"]["arr"].array.length.text);
 }
+
+
+import std.json : JSONValue;
+import std.typecons : Flag, No, Yes;
+
+// populateFromJSON
+/++
+ +  Recursively populates a passed associative or dynamic array with the
+ +  contents of a `std.json.JSONValue`.
+ +
+ +  This is used where we want to store information on disk but keep it in
+ +  memory without the overhead of dealing with `std.json.JSONValue`s.
+ +
+ +  Note: This only works with `std.json.JSONValue`s that conform to arrays and
+ +  associative arrays, not such that mix element/value types.
+ +
+ +  Params:
+ +      lowercaseValues = Whether or not to save final string values in lowercase.
+ +      lowercaseKeys = Whether or not to save string keys in lowercase.
+ +      target = Reference to target array or associative array to write to.
+ +      json = Source `std.json.JSONValue` to sync the contents with.
+ +
+ +  Throws:
+ +      `Exception` if the passed `std.json.JSONValue` had unexpected types.
+ +/
+void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValues,
+    Flag!"lowercaseKeys" lowercaseKeys = No.lowercaseKeys, T)
+    (ref T target, const JSONValue json)
+{
+    import std.traits : isAssociativeArray, isArray, ValueType;
+    import std.range :  ElementType;
+
+    static if (isAssociativeArray!T || (isArray!T && !is(T : string)))
+    {
+        static if (isAssociativeArray!T)
+        {
+            const aggregate = json.objectNoRef;
+            alias V = ValueType!T;
+        }
+        else static if (isArray!T)
+        {
+            const aggregate = json.arrayNoRef;
+            alias V = ElementType!T;
+            target.reserve(aggregate.length);
+        }
+
+        foreach (ikey, const valJSON; aggregate)
+        {
+            static if (isAssociativeArray!T)
+            {
+                static if (is(V : string) && lowercaseKeys)
+                {
+                    import std.uni : toLower;
+                    ikey = ikey.toLower;
+                }
+
+                target[ikey] = V.init;
+            }
+            else static if (isArray!T)
+            {
+                if (ikey >= target.length) target ~= V.init;
+            }
+
+            populateFromJSON(target[ikey], valJSON);
+        }
+
+        /*static if (isAssociativeArray!T)
+        {
+            // This would make it @system.
+            target.rehash();
+        }*/
+    }
+    else
+    {
+        import std.conv : to;
+        import std.json : JSONType;
+
+        with (JSONType)
+        final switch (json.type)
+        {
+        case string:
+            target = json.str.to!(typeof(target));
+
+            static if (lowercaseValues && is(typeof(target) : string))
+            {
+                import std.uni : toLower;
+                target = target.toLower;
+            }
+            break;
+
+        case integer:
+            // .integer returns long, keep .to for int compatibility
+            target = json.integer.to!(typeof(target));
+            break;
+
+        case uinteger:
+            // as above
+            target = json.uinteger.to!(typeof(target));
+            break;
+
+        case float_:
+            target = json.floating.to!(typeof(target));
+            break;
+
+        case true_:
+        case false_:
+            target = json.boolean.to!(typeof(target));
+            break;
+
+        case null_:
+            // Silently do nothing
+            break;
+
+        case object:
+        case array:
+            import std.format : format;
+            throw new Exception("Type mismatch when populating a %s with a %s"
+                .format(typeof(target).stringof, json.type));
+        }
+    }
+}
+
+///
+unittest
+{
+    import std.json : JSONType, JSONValue;
+
+    {
+        long[string] aa =
+        [
+            "abc" : 123,
+            "def" : 456,
+            "ghi" : 789,
+        ];
+
+        JSONValue j = JSONValue(aa);
+        typeof(aa) fromJSON;
+
+        foreach (immutable key, const value; j.objectNoRef)
+        {
+            fromJSON[key] = value.integer;
+        }
+
+        assert(aa == fromJSON);  // not is
+
+        auto aaCopy = aa.dup;
+
+        aa["jlk"] = 12;
+        assert(aa != fromJSON);
+
+        aa = typeof(aa).init;
+        populateFromJSON(aa, j);
+        assert(aa == aaCopy);
+    }
+    {
+        auto aa =
+        [
+            "abc" : true,
+            "def" : false,
+            "ghi" : true,
+        ];
+
+        JSONValue j = JSONValue(aa);
+        typeof(aa) fromJSON;
+
+        foreach (immutable key, const value; j.objectNoRef)
+        {
+            if (value.type == JSONType.true_) fromJSON[key] = true;
+            else if (value.type == JSONType.false_) fromJSON[key] = false;
+            else
+            {
+                assert(0);
+            }
+        }
+
+        assert(aa == fromJSON);  // not is
+
+        auto aaCopy = aa.dup;
+
+        aa["jkl"] = false;
+        assert(aa != fromJSON);
+
+        aa = typeof(aa).init;
+        populateFromJSON(aa, j);
+        assert(aa == aaCopy);
+    }
+    {
+        auto arr = [ "abc", "def", "ghi", "jkl" ];
+
+        JSONValue j = JSONValue(arr);
+        typeof(arr) fromJSON;
+
+        foreach (const value; j.arrayNoRef)
+        {
+            fromJSON ~= value.str;
+        }
+
+        assert(arr == fromJSON);  // not is
+
+        auto arrCopy = arr.dup;
+
+        arr[0] = "no";
+        assert(arr != arrCopy);
+
+        arr = [];
+        populateFromJSON(arr, j);
+        assert(arr == arrCopy);
+    }
+    {
+        auto aa =
+        [
+            "abc" : [ "def", "ghi", "jkl" ],
+            "def" : [ "MNO", "PQR", "STU" ],
+        ];
+
+        JSONValue j = JSONValue(aa);
+        typeof(aa)fromJSON;
+
+        foreach (immutable key, const arrJSON; j.objectNoRef)
+        {
+            foreach (const entry; arrJSON.arrayNoRef)
+            {
+                fromJSON[key] ~= entry.str;
+            }
+        }
+
+        assert(aa == fromJSON);  // not is
+
+        auto aaCopy = aa.dup;
+        aaCopy["abc"] = aa["abc"].dup;
+
+        aa["abc"][0] = "no";
+        aa["ghi"] ~= "VWXYZ";
+        assert(aa != fromJSON);
+
+        aa = typeof(aa).init;
+        populateFromJSON(aa, j);
+        assert(aa == aaCopy);
+    }
+}
