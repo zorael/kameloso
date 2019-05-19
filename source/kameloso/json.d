@@ -378,6 +378,9 @@ import std.typecons : Flag, No, Yes;
  +  This is used where we want to store information on disk but keep it in
  +  memory without the overhead of dealing with `JSONValue`s.
  +
+ +  Note: This only works with `JSONValue`s that conform to arrays and associative
+ +  arrays, not such that mix element/value types.
+ +
  +  Params:
  +      lowercaseValues = Whether or not to save final string values in lowercase.
  +      lowercaseKeys = Whether or not to save string keys in lowercase.
