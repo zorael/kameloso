@@ -154,18 +154,18 @@ void pipereader(shared IRCPluginState newState, const string filename)
             {
                 if ((line.length > 6) && (line[4..6] == " :"))
                 {
-                    state.quit(line[6..$]);
+                    quit(state, line[6..$]);
                 }
                 else
                 {
-                    state.quit();
+                    quit(state);
                 }
 
                 break toploop;
             }
             else
             {
-                state.raw(line);
+                raw(state, line);
             }
 
             break;

@@ -95,7 +95,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                                 .format(p.name, specifiedCommand, description.string_);
                         }
 
-                        plugin.state.query(sender.nickname, message);
+                        query(plugin.state, sender.nickname, message);
 
                         if (description.syntax.length)
                         {
@@ -121,7 +121,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                                 syntax = "Usage: " ~ prefixedSyntax;
                             }
 
-                            plugin.state.query(sender.nickname, syntax);
+                            query(plugin.state, sender.nickname, syntax);
                         }
                     }
                     else
@@ -139,7 +139,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                                 .format(specifiedCommand, specifiedPlugin);
                         }
 
-                        plugin.state.query(sender.nickname, message);
+                        query(plugin.state, sender.nickname, message);
                     }
 
                     return;
@@ -156,7 +156,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     message = "No such plugin: " ~ specifiedPlugin;
                 }
 
-                plugin.state.query(sender.nickname, message);
+                query(plugin.state, sender.nickname, message);
             }
             else
             {
@@ -179,7 +179,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                         message = pattern.format(width, p.name, p.commands.keys.sort());
                     }
 
-                    plugin.state.query(sender.nickname, message);
+                    query(plugin.state, sender.nickname, message);
                     return;
                 }
 
@@ -194,7 +194,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     message = "No such plugin: " ~ content;
                 }
 
-                plugin.state.query(sender.nickname, message);
+                query(plugin.state, sender.nickname, message);
             }
         }
         else
@@ -210,8 +210,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 cast(string)KamelosoInfo.built);
 
             immutable banner = settings.colouredOutgoing ? bannerColoured : bannerUncoloured;
-            plugin.state.query(sender.nickname, banner);
-            plugin.state.query(sender.nickname, "Available bot commands per plugin:");
+            query(plugin.state, sender.nickname, banner);
+            query(plugin.state, sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -232,7 +232,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     message = pattern.format(width, p.name, p.commands.keys.sort());
                 }
 
-                plugin.state.query(sender.nickname, message);
+                query(plugin.state, sender.nickname, message);
             }
 
             string message;
@@ -247,8 +247,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 message = "Use help [plugin] [command] for information about a command.";
             }
 
-            plugin.state.query(sender.nickname, message);
-            plugin.state.query(sender.nickname, "Additional unlisted regex commands may be available.");
+            query(plugin.state, sender.nickname, message);
+            query(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 

@@ -3723,7 +3723,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             context.awaitEvents(fiber, types);
         }
 
-        context.state.raw!(Yes.priority)("WHOIS " ~ nickname);
+        raw!(Yes.priority)(context.state, "WHOIS " ~ nickname);
         mixin(carriedVariableName) = nickname;
     }
 }

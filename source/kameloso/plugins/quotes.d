@@ -148,7 +148,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             message = `"%s" is not a valid account or nickname.`.format(specified);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -280,7 +280,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
             message = `"%s" is not a valid account or nickname.`.format(specified);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -385,7 +385,7 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 @Description("Reloads quotes from disk.")
 void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
 {
-    plugin.state.privmsg(event.channel, event.sender.nickname, "Reloading quotes.");
+    privmsg(plugin.state, event.channel, event.sender.nickname, "Reloading quotes.");
     plugin.quotes.load(plugin.quotesFile);
 }
 

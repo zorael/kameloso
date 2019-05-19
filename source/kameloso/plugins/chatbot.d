@@ -58,11 +58,11 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname, "Say what?");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Say what?");
         return;
     }
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, event.content);
+    privmsg(plugin.state, event.channel, event.sender.nickname, event.content);
 }
 
 
@@ -112,7 +112,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, reply);
+    privmsg(plugin.state, event.channel, event.sender.nickname, reply);
 }
 
 

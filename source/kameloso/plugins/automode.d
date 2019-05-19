@@ -162,7 +162,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 
         // Not an extended join
         import kameloso.messaging : raw;
-        plugin.state.raw("WHOIS " ~ sender.nickname);
+        raw(plugin.state, "WHOIS " ~ sender.nickname);
         return;
 
     default:
@@ -236,7 +236,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
             continue;
         }
 
-        plugin.state.mode(occupiedChannel.name, "+".repeat(modes.length).join ~ *modes, nickname);
+        mode(plugin.state, occupiedChannel.name, "+".repeat(modes.length).join ~ *modes, nickname);
         plugin.appliedAutomodes[channelName][nickname] = true;
     }
 }
@@ -252,7 +252,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.mode("#channel", "++ov", "mydude");
+    mode(state, "#channel", "++ov", "mydude");
     immutable event = receiveOnly!IRCEvent;
 
     assert((event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(event.type));
@@ -285,7 +285,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (event.content.count(" ") != 2)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
+        privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: addmode [channel] [mode] [account/nickname]");
         return;
     }
@@ -315,7 +315,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "Invalid channel: " ~ channelName;
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
@@ -331,12 +331,12 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "Invalid account or nickname: " ~ specified;
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
     else if (!mode.length)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname, "You must supply a mode.");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "You must supply a mode.");
         return;
     }
 
@@ -367,7 +367,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
                 .format(verb, specified, maybeAccount, channelName, mode);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
 
@@ -416,7 +416,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (event.content.count(" ") != 1)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
+        privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: clearmode [channel] [account]");
         return;
     }
@@ -441,7 +441,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "Automode cleared: %s on %s".format(account, channelName);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
     else
@@ -457,7 +457,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "No automodes defined for channel " ~ channelName;
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 }
 
@@ -507,7 +507,7 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
     else
     {
         import kameloso.messaging : whois;
-        plugin.state.whois(event.sender.nickname, plugin.automodeSettings.helloForcesWhois);
+        whois(plugin.state, event.sender.nickname, plugin.automodeSettings.helloForcesWhois);
     }
 }
 

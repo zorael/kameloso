@@ -209,7 +209,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
                 message = "No such user: " ~ username;
             }
 
-            plugin.state.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
 }
@@ -233,7 +233,7 @@ void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, "Saving configuration to disk.");
+    privmsg(plugin.state, event.channel, event.sender.nickname, "Saving configuration to disk.");
     plugin.state.mainThread.send(ThreadMessage.Save());
 }
 
@@ -286,7 +286,7 @@ debug
     "$command [raw string]")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    plugin.state.raw(event.content);
+    raw(plugin.state, event.content);
 }
 
 
@@ -308,11 +308,11 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
     if (event.content.length)
     {
-        plugin.state.quit(event.content);
+        quit(plugin.state, event.content);
     }
     else
     {
-        plugin.state.quit();
+        quit(plugin.state);
     }
 }
 
@@ -342,13 +342,13 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     if (!channelToAdd.isValidChannel(plugin.state.client.server))
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname, "Invalid channel name.");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
         return;
     }
 
     if (plugin.state.client.homes.canFind(channelToAdd))
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname, "We are already in that home channel.");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "We are already in that home channel.");
         return;
     }
 
@@ -356,8 +356,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     // ChannelAwareness to pick up the SELFJOIN.
     plugin.state.client.homes ~= channelToAdd;
     plugin.state.client.updated = true;
-    plugin.state.join(channelToAdd);
-    plugin.state.privmsg(event.channel, event.sender.nickname, "Home added.");
+    join(plugin.state, channelToAdd);
+    privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
     // We have to follow up and see if we actually managed to join the channel
     // There are plenty ways for it to fail.
@@ -397,7 +397,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             break;
 
         default:
-            plugin.state.privmsg(event.channel, event.sender.nickname, "Failed to join home channel.");
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Failed to join home channel.");
             break;
         }
 
@@ -480,15 +480,15 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
             message = "Channel %s was not listed as a home.".format(channel);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 
     plugin.state.client.homes = plugin.state.client.homes
         .remove!(SwapStrategy.unstable)(homeIndex);
     plugin.state.client.updated = true;
-    plugin.state.part(channel);
-    plugin.state.privmsg(event.channel, event.sender.nickname, "Home removed.");
+    part(plugin.state, channel);
+    privmsg(plugin.state, event.channel, event.sender.nickname, "Home removed.");
 }
 
 
@@ -557,7 +557,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
                     message = "%sed %s.".format(list, id);
                 }
 
-                plugin.state.privmsg(event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
 
             case noSuchAccount:
@@ -575,7 +575,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
                     message = "Account %s already %sed.".format(id, list);
                 }
 
-                plugin.state.privmsg(event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
             }
         }
@@ -638,7 +638,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
                 message = "Invalid nickname/account: " ~ specified;
             }
 
-            plugin.state.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
         {
@@ -710,7 +710,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
         if (event.sender.nickname.length)
         {
             // IRC report
-            plugin.state.privmsg(event.channel, event.sender.nickname, "No account specified.");
+            privmsg(plugin.state, event.channel, event.sender.nickname, "No account specified.");
         }
         else
         {
@@ -744,7 +744,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
                 message = "No such account %s to de%s".format(account, list);
             }
 
-            plugin.state.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
@@ -759,7 +759,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
                 message = "de%sed %s".format(list, account);
             }
 
-            plugin.state.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
         }
     }
@@ -1019,7 +1019,7 @@ void onCommandprintRaw(AdminPlugin plugin, const IRCEvent event)
         message = "Printing all: " ~ plugin.adminSettings.printRaw.text;
     }
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
 
@@ -1053,7 +1053,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
         message = "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
     }
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
 
@@ -1088,7 +1088,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
         message = "Printing asserts: " ~ plugin.adminSettings.printAsserts.text;
     }
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
     if (plugin.adminSettings.printAsserts)
     {
@@ -1121,7 +1121,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname, "No channels supplied ...");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "No channels supplied ...");
         return;
     }
 
@@ -1132,11 +1132,11 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     if (event.aux.asLowerCase.equal("join"))
     {
-        plugin.state.join(channels);
+        join(plugin.state, channels);
     }
     else
     {
-        plugin.state.part(channels);
+        part(plugin.state, channels);
     }
 }
 
@@ -1169,17 +1169,17 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
             if (success)
             {
-                plugin.state.privmsg(event.channel, event.sender.nickname, "Setting changed.");
+                privmsg(plugin.state, event.channel, event.sender.nickname, "Setting changed.");
             }
             else
             {
-                plugin.state.privmsg(event.channel, event.sender.nickname,
+                privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid syntax or plugin/settings name.");
             }
         }
         catch (ConvException e)
         {
-            plugin.state.privmsg(event.channel, event.sender.nickname,
+            privmsg(plugin.state, event.channel, event.sender.nickname,
                 "There was a conversion error. Please verify the values in your setting.");
         }
     }

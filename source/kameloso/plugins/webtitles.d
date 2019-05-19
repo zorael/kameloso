@@ -455,7 +455,7 @@ void reportTitle(TitleLookupRequest request, const bool colouredOutput)
             line = results.title;
         }
 
-        state.chan(event.channel, line);
+        chan(state, event.channel, line);
     }
 }
 
@@ -487,7 +487,7 @@ void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
                 .format(results.youtubeTitle, results.youtubeAuthor);
         }
 
-        state.chan(event.channel, line);
+        chan(state, event.channel, line);
     }
 }
 
@@ -505,7 +505,7 @@ void reportReddit(TitleLookupRequest request)
     {
         if (results.redditURL.length)
         {
-            state.chan(event.channel, "Reddit: " ~ results.redditURL);
+            chan(state, event.channel, "Reddit: " ~ results.redditURL);
         }
     }
 }

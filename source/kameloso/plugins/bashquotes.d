@@ -114,7 +114,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
                 message = "No such bash.org quote: " ~ event.content;
             }
 
-            state.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(state, event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -143,11 +143,11 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
             message = "[bash.org] #%s".format(num);
         }
 
-        state.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(state, event.channel, event.sender.nickname, message);
 
         foreach (const line; range)
         {
-            state.privmsg(event.channel, event.sender.nickname, line);
+            privmsg(state, event.channel, event.sender.nickname, line);
         }
     }
     catch (Exception e)

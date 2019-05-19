@@ -58,7 +58,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.chan("#channel", "content");
+    chan(state, "#channel", "content");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -106,7 +106,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.query("kameloso", "content");
+    query(state, "kameloso", "content");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -164,7 +164,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.privmsg("#channel", string.init, "content");
+    privmsg(state, "#channel", string.init, "content");
 
     immutable event1 = receiveOnly!IRCEvent;
     with (event1)
@@ -175,7 +175,7 @@ unittest
         assert(!target.nickname.length, target.nickname);
     }
 
-    state.privmsg(string.init, "kameloso", "content");
+    privmsg(state, string.init, "kameloso", "content");
 
     immutable event2 = receiveOnly!IRCEvent;
     with (event2)
@@ -233,7 +233,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.emote("#channel", "content");
+    emote(state, "#channel", "content");
 
     immutable event1 = receiveOnly!IRCEvent;
     with (event1)
@@ -244,7 +244,7 @@ unittest
         assert(!target.nickname.length, target.nickname);
     }
 
-    state.emote("kameloso", "content");
+    emote(state, "kameloso", "content");
 
     immutable event2 = receiveOnly!IRCEvent;
     with (event2)
@@ -299,7 +299,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.mode("#channel", "+o", "content");
+    mode(state, "#channel", "+o", "content");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -348,7 +348,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.topic("#channel", "content");
+    topic(state, "#channel", "content");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -396,7 +396,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.invite("#channel", "kameloso");
+    invite(state, "#channel", "kameloso");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -445,7 +445,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.join("#channel");
+    join(state, "#channel");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -495,7 +495,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.kick("#channel", "kameloso", "content");
+    kick(state, "#channel", "kameloso", "content");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -544,7 +544,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.part("#channel", "reason");
+    part(state, "#channel", "reason");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -589,7 +589,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.quit("reason");
+    quit(state, "reason");
 
     try
     {
@@ -638,7 +638,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.whois("kameloso", true);
+    whois(state, "kameloso", true);
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -686,7 +686,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.raw("commands");
+    raw(state, "commands");
 
     immutable event = receiveOnly!IRCEvent;
     with (event)

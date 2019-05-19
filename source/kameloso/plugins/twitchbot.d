@@ -138,12 +138,12 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
     if (event.aux == "enable")
     {
         plugin.activeChannels[event.channel].enabled = true;
-        plugin.state.chan(event.channel, "Streamer bot enabled!");
+        chan(plugin.state, event.channel, "Streamer bot enabled!");
     }
     else /*if (event.aux == "disable")*/
     {
         plugin.activeChannels[event.channel].enabled = false;
-        plugin.state.chan(event.channel, "Streamer bot disabled.");
+        chan(plugin.state, event.channel, "Streamer bot disabled.");
     }
 }
 
@@ -186,12 +186,12 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 
         immutable delta = now - SysTime.fromUnixTime(broadcastStart);
 
-        plugin.state.chan(event.channel, "%s has been streaming for %s."
+        chan(plugin.state, event.channel, "%s has been streaming for %s."
             .format(nickname, delta));
     }
     else
     {
-        plugin.state.chan(event.channel, nickname ~ " is currently not streaming.");
+        chan(plugin.state, event.channel, nickname ~ " is currently not streaming.");
     }
 }
 
@@ -226,12 +226,12 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
             if (streamer.alias_.length) nickname = streamer.alias_;
         }
 
-        plugin.state.chan(event.channel, nickname ~ " is already streaming.");
+        chan(plugin.state, event.channel, nickname ~ " is already streaming.");
         return;
     }
 
     channel.broadcastStart = Clock.currTime.toUnixTime;
-    plugin.state.chan(event.channel, "Broadcast start registered!");
+    chan(plugin.state, event.channel, "Broadcast start registered!");
 }
 
 
@@ -258,7 +258,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channel.broadcastStart == 0L)
     {
-        plugin.state.chan(event.channel, "Broadcast was never registered as started...");
+        chan(plugin.state, event.channel, "Broadcast was never registered as started...");
         return;
     }
 
@@ -274,7 +274,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
         if (streamer.alias_.length) nickname = streamer.alias_;
     }
 
-    plugin.state.chan(event.channel, "Broadcast ended. %s streamed for %s."
+    chan(plugin.state, event.channel, "Broadcast ended. %s streamed for %s."
         .format(nickname, delta));
 }
 
@@ -307,13 +307,13 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channel.voteInstance > 0)
     {
-        plugin.state.chan(event.channel, "A vote is already in progress!");
+        chan(plugin.state, event.channel, "A vote is already in progress!");
         return;
     }
 
     if (event.content.count(' ') < 2)
     {
-        plugin.state.chan(event.channel, "Need one duration and at least two options.");
+        chan(plugin.state, event.channel, "Need one duration and at least two options.");
         return;
     }
 
@@ -326,13 +326,13 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     }
     catch (ConvException e)
     {
-        plugin.state.chan(event.channel, "Duration must be a positive number.");
+        chan(plugin.state, event.channel, "Duration must be a positive number.");
         return;
     }
 
     if (dur <= 0)
     {
-        plugin.state.chan(event.channel, "Duration must be a positive number.");
+        chan(plugin.state, event.channel, "Duration must be a positive number.");
         return;
     }
 
@@ -360,7 +360,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!voteChoices.length)
     {
-        plugin.state.chan(event.channel, "Need at least two unique vote choices.");
+        chan(plugin.state, event.channel, "Need at least two unique vote choices.");
         return;
     }
 
@@ -390,7 +390,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
             if (total > 0)
             {
-                plugin.state.chan(event.channel, "Voting complete, results:");
+                chan(plugin.state, event.channel, "Voting complete, results:");
 
                 auto sorted = voteChoices.byKeyValue.array.sort!((a,b) => a.value < b.value);
 
@@ -402,13 +402,13 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
                     immutable double voteRatio = cast(double)result.value / total;
                     immutable double votePercentage = 100 * voteRatio;
 
-                    plugin.state.chan(event.channel, "%s : %d %s (%.1f%%)"
+                    chan(plugin.state, event.channel, "%s : %d %s (%.1f%%)"
                         .format(origChoiceNames[result.key], result.value, noun, votePercentage));
                 }
             }
             else
             {
-                plugin.state.chan(event.channel, "Voting complete, no one voted.");
+                chan(plugin.state, event.channel, "Voting complete, no one voted.");
             }
 
             channel.voteInstance = 0;
@@ -454,7 +454,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-        plugin.state.chan(event.channel, "%d seconds!".format(thisFiber.payload));
+        chan(plugin.state, event.channel, "%d seconds!".format(thisFiber.payload));
     }
 
     if (plugin.twitchBotSettings.voteReminders)
@@ -477,7 +477,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         }
     }
 
-    plugin.state.chan(event.channel,
+    chan(plugin.state, event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
         .format(voteChoices.keys, dur));
 }
@@ -508,11 +508,11 @@ void onCommandAbortVote(TwitchBotPlugin plugin, const IRCEvent event)
     if (channel.voteInstance > 0)
     {
         channel.voteInstance = 0;
-        plugin.state.chan(event.channel, "Vote aborted.");
+        chan(plugin.state, event.channel, "Vote aborted.");
     }
     else
     {
-        plugin.state.chan(event.channel, "There is no ongoing vote.");
+        chan(plugin.state, event.channel, "There is no ongoing vote.");
     }
 }
 
@@ -537,7 +537,7 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        plugin.state.chan(event.channel, "Usage: %s%s [add|del] [trigger] [text]"
+        chan(plugin.state, event.channel, "Usage: %s%s [add|del] [trigger] [text]"
             .format(settings.prefix, event.aux));
         return;
     }
@@ -555,12 +555,12 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
             plugin.onelinersByChannel[event.channel][trigger] = slice;
             saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
 
-            plugin.state.chan(event.channel, "Oneliner %s%s added."
+            chan(plugin.state, event.channel, "Oneliner %s%s added."
                 .format(settings.prefix, trigger));
         }
         else
         {
-            plugin.state.chan(event.channel, "Usage: %s%s add [trigger] [text]"
+            chan(plugin.state, event.channel, "Usage: %s%s add [trigger] [text]"
                 .format(settings.prefix, event.aux));
         }
         return;
@@ -571,18 +571,18 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
             plugin.onelinersByChannel[event.channel].remove(slice);
             saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
 
-            plugin.state.chan(event.channel, "Oneliner %s%s removed."
+            chan(plugin.state, event.channel, "Oneliner %s%s removed."
                 .format(settings.prefix, slice));
         }
         else
         {
-            plugin.state.chan(event.channel, "Usage: %s%s del [trigger]"
+            chan(plugin.state, event.channel, "Usage: %s%s del [trigger]"
                 .format(settings.prefix, event.aux));
         }
         return;
 
     default:
-        plugin.state.chan(event.channel, "Usage: %s%s [add|del] [trigger] [text]"
+        chan(plugin.state, event.channel, "Usage: %s%s [add|del] [trigger] [text]"
             .format(settings.prefix, event.aux));
         break;
     }
@@ -607,12 +607,12 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channelOneliners && channelOneliners.length)
     {
-        plugin.state.chan(event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
+        chan(plugin.state, event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
             .format(channelOneliners.keys));
     }
     else
     {
-        plugin.state.chan(event.channel, "There are no commands available right now.");
+        chan(plugin.state, event.channel, "There are no commands available right now.");
     }
 }
 
@@ -643,7 +643,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length || (event.content.count(' ') > 1))
     {
-        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list] [nickname]"
+        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
         return;
     }
@@ -664,7 +664,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 
                 if ((*adminArray).canFind(nickname))
                 {
-                    plugin.state.chan(event.channel, slice ~ " is already a bot administrator.");
+                    chan(plugin.state, event.channel, slice ~ " is already a bot administrator.");
                     return;
                 }
                 else
@@ -680,11 +680,11 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
             }
 
             saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-            plugin.state.chan(event.channel, slice ~ " is now an administrator.");
+            chan(plugin.state, event.channel, slice ~ " is now an administrator.");
         }
         else
         {
-            plugin.state.chan(event.channel, "Usage: %s%s [add] [nickname]"
+            chan(plugin.state, event.channel, "Usage: %s%s [add] [nickname]"
                 .format(settings.prefix, event.aux));
         }
         break;
@@ -705,17 +705,17 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
                 {
                     *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
                     saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-                    plugin.state.chan(event.channel, "Administrator removed.");
+                    chan(plugin.state, event.channel, "Administrator removed.");
                 }
                 else
                 {
-                    plugin.state.chan(event.channel, "No such administrator: " ~ slice);
+                    chan(plugin.state, event.channel, "No such administrator: " ~ slice);
                 }
             }
         }
         else
         {
-            plugin.state.chan(event.channel, "Usage: %s%s [del] [nickname]"
+            chan(plugin.state, event.channel, "Usage: %s%s [del] [nickname]"
                 .format(settings.prefix, event.aux));
         }
         break;
@@ -724,17 +724,17 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
         if (const adminList = event.channel in plugin.adminsByChannel)
         {
             import std.format : format;
-            plugin.state.chan(event.channel, "Current administrators: %-(%s, %)"
+            chan(plugin.state, event.channel, "Current administrators: %-(%s, %)"
                 .format(*adminList));
         }
         else
         {
-            plugin.state.chan(event.channel, "There are no administrators registered for this channel.");
+            chan(plugin.state, event.channel, "There are no administrators registered for this channel.");
         }
         break;
 
     default:
-        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list] [nickname]"
+        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
         break;
     }
@@ -767,7 +767,7 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
         //import std.uni : toLower;
         if (const response = slice/*.toLower*/ in *channelOneliners)
         {
-            plugin.state.chan(event.channel, *response);
+            chan(plugin.state, event.channel, *response);
         }
     }
 }
