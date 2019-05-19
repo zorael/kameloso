@@ -373,19 +373,22 @@ import std.typecons : Flag, No, Yes;
 // populateFromJSON
 /++
  +  Recursively populates a passed associative or dynamic array with the
- +  contents of a `JSONValue`.
+ +  contents of a `std.json.JSONValue`.
  +
  +  This is used where we want to store information on disk but keep it in
- +  memory without the overhead of dealing with `JSONValue`s.
+ +  memory without the overhead of dealing with `std.json.JSONValue`s.
  +
- +  Note: This only works with `JSONValue`s that conform to arrays and associative
- +  arrays, not such that mix element/value types.
+ +  Note: This only works with `std.json.JSONValue`s that conform to arrays and
+ +  associative arrays, not such that mix element/value types.
  +
  +  Params:
  +      lowercaseValues = Whether or not to save final string values in lowercase.
  +      lowercaseKeys = Whether or not to save string keys in lowercase.
  +      target = Reference to target array or associative array to write to.
- +      json = Source `JSONValue` to sync the contents with.
+ +      json = Source `std.json.JSONValue` to sync the contents with.
+ +
+ +  Throws:
+ +      `Exception` if the passed `std.json.JSONValue` had unexpected types.
  +/
 void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValues,
     Flag!"lowercaseKeys" lowercaseKeys = No.lowercaseKeys, T)
