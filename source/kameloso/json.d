@@ -405,6 +405,7 @@ void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValue
         {
             const aggregate = json.arrayNoRef;
             alias V = ElementType!T;
+            target.reserve(aggregate.length);
         }
 
         foreach (ikey, const valJSON; aggregate)
