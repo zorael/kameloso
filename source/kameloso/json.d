@@ -398,12 +398,12 @@ void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValue
     {
         static if (isAssociativeArray!T)
         {
-            auto aggregate = json.objectNoRef;
+            const aggregate = json.objectNoRef;
             alias V = ValueType!T;
         }
         else static if (isArray!T)
         {
-            auto aggregate = json.arrayNoRef;
+            const aggregate = json.arrayNoRef;
             alias V = ElementType!T;
         }
 
