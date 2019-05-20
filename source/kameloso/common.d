@@ -1347,3 +1347,127 @@ auto getPlatform()
         return environment.get("TERM_PROGRAM", osName);
     }
 }
+
+
+import std.traits : isAssociativeArray;
+
+// pruneAA
+/++
+ +  Iterates an associative array and deletes invalid entries, either if the value
+ +  is in a default `.init` state or as per the optionally passed predicate.
+ +
+ +  It is supposedly undefined behaviour to remove an associative array's fields
+ +  when foreaching through it. So far we have been doing a simple mark-sweep
+ +  garbage collection whenever we encounter this use-case in the code, so why
+ +  not just make a generic solution instead and deduplicate code?
+ +
+ +  Params.
+ +      pred = Optional predicate if special logic is needed to determine whether
+ +          an entry is to be removed or not.
+ +      aa = The associative array to modify.
+ +/
+void pruneAA(alias pred = null, T)(ref T aa)
+if (isAssociativeArray!T)
+{
+    if (!aa.length) return;
+
+    string[] garbage;
+
+    // Mark
+    foreach (/*immutable*/ key, value; aa)
+    {
+        static if (!is(typeof(pred) == typeof(null)))
+        {
+            static if (__traits(compiles, pred(value)))
+            {
+                if (pred(value)) garbage ~= key;
+            }
+            else static if (__traits(compiles, pred(key, value)))
+            {
+                if (pred(key, value)) garbage ~= key;
+            }
+            else
+            {
+                static assert(0, "Unknown predicate type passed to pruneAA");
+            }
+        }
+        else
+        {
+            if (value == typeof(value).init)
+            {
+                garbage ~= key;
+            }
+        }
+    }
+
+    // Sweep
+    foreach (immutable key; garbage)
+    {
+        aa.remove(key);
+    }
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        auto aa =
+        [
+            "abc" : "def",
+            "ghi" : "jkl",
+            "mno" : string.init,
+            "pqr" : string.init,
+        ];
+
+        pruneAA!((a) => a == "def")(aa);
+        assert("abc" !in aa);
+
+        pruneAA!((a,b) => a == "pqr")(aa);
+        assert("pqr" !in aa);
+    }
+    {
+        struct Record
+        {
+            string name;
+            int id;
+        }
+
+        auto aa =
+        [
+            "rhubarb" : Record("rhubarb", 100),
+            "raspberry" : Record("raspberry", 80),
+            "blueberry" : Record("blueberry", 0),
+            "apples" : Record("green apples", 60),
+            "yakisoba"  : Record("yakisoba", 78),
+            "cabbage" : Record.init,
+        ];
+
+        pruneAA(aa);
+        assert("cabbage" !in aa);
+
+        pruneAA!((entry) => entry.id < 80)(aa);
+        assert("blueberry" !in aa);
+        assert("apples" !in aa);
+        assert("yakisoba" !in aa);
+        assert((aa.length == 2), aa.length.text);
+    }
+    {
+        import std.algorithm.searching : canFind;
+
+        string[][string] aa =
+        [
+            "abc" : [ "a", "b", "c" ],
+            "def" : [ "d", "e", "f" ],
+            "ghi" : [ "g", "h", "i" ],
+            "jkl" : [ "j", "k", "l" ],
+        ];
+
+        pruneAA(aa);
+        assert((aa.length == 4), aa.length.text);
+
+        pruneAA!((entry) => entry.canFind("a"))(aa);
+        assert("abc" !in aa);
+    }
+}
