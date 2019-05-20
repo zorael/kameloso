@@ -172,7 +172,6 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
-    import std.algorithm.searching : count;
     import std.format : format;
 
     string slice = event.content;  // mutable
@@ -181,10 +180,11 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
     switch (verb)
     {
     case "ban":
+    case "add":
         if (!slice.length)
         {
-            chan(plugin.state, event.channel, "Usage: %s%s ban [phrase or substring of phrase]"
-                .format(settings.prefix, event.aux));
+            chan(plugin.state, event.channel, "Usage: %s%s %s [phrase or substring of phrase]"
+                .format(settings.prefix, event.aux, verb));
             return;
         }
 
@@ -194,25 +194,58 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
         break;
 
     case "unban":
+    case "del":
         if (!slice.length)
         {
-            chan(plugin.state, event.channel, "Usage: %s%s unban [phrase or substring of phrase]"
-                .format(settings.prefix, event.aux));
+            chan(plugin.state, event.channel,
+                "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
+                .format(settings.prefix, event.aux, verb));
             return;
         }
 
         if (auto phrases = event.channel in plugin.bannedPhrasesByChannel)
         {
-            size_t[] garbage;
-            immutable originalNum = phrases.length;
+            import std.algorithm.iteration : splitter;
 
-            foreach (immutable i, immutable phrase; *phrases)
+            if (event.content == "*")
             {
-                if (phrase.contains(slice))
+                plugin.bannedPhrasesByChannel.remove(event.channel);
+                chan(plugin.state, event.channel, "All banned phrases removed.");
+                return;
+            }
+
+            size_t[] garbage;
+
+            foreach (immutable istr; event.content.splitter(" "))
+            {
+                import std.conv : ConvException, to;
+
+                try
                 {
-                    garbage ~= i;
+                    ptrdiff_t i = istr.to!size_t - 1;
+
+                    if ((i > 0) && (i < phrases.length))
+                    {
+                        garbage ~= i;
+                    }
+                    else
+                    {
+                        chan(plugin.state, event.channel, "Phrase index %d out of range. (max %d)"
+                            .format(i, phrases.length));
+                        return;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    chan(plugin.state, event.channel, "Invalid phrase index: " ~ istr);
+                    chan(plugin.state, event.channel,
+                        "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
+                        .format(settings.prefix, event.aux, verb));
+                    return;
                 }
             }
+
+            immutable originalNum = phrases.length;
 
             foreach_reverse (immutable i; garbage)
             {
@@ -222,7 +255,8 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 
             immutable numRemoved = (originalNum - phrases.length);
             saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-            chan(plugin.state, event.channel, "%d/%d phrase bans removed.".format(numRemoved, originalNum));
+            chan(plugin.state, event.channel, "%d / %d phrase bans removed."
+                .format(numRemoved, originalNum));
 
             if (!phrases.length) plugin.bannedPhrasesByChannel.remove(event.channel);
         }
@@ -238,20 +272,43 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
-            enum maxLineLength = 128;
+            enum maxLineLength = 64;
 
-            chan(plugin.state, event.channel, "Currently banned phrases (%d)".format(phrases.length));
+            ptrdiff_t start;
 
-            foreach (immutable i, const phrase; (*phrases)[0..min(phrases.length, toDisplay)])
+            if (slice.length)
+            {
+                import std.conv : ConvException, to;
+
+                try
+                {
+                    start = slice.to!ptrdiff_t - 1;
+
+                    if ((start < 0) || (start >= phrases.length))
+                    {
+                        chan(plugin.state, event.channel, "Invalid phrase index or out of bounds.");
+                        return;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    chan(plugin.state, event.channel,
+                        "Usage: %s%s list [optional starting position number]"
+                        .format(settings.prefix, event.aux));
+                    return;
+                }
+            }
+
+            size_t end = min(start+toDisplay, phrases.length);
+
+            chan(plugin.state, event.channel, "Currently banned phrases (%d-%d of %d)"
+                .format(start+1, end, phrases.length));
+
+            foreach (immutable i, const phrase; (*phrases)[start..end])
             {
                 immutable maxLen = min(phrase.length, maxLineLength);
                 chan(plugin.state, event.channel, "%d: %s%s"
-                    .format(i+1, phrase, (maxLen < phrase.length) ? "..." : string.init));
-            }
-
-            if (phrases.length > toDisplay)
-            {
-                chan(plugin.state, event.channel, "... and %d more.".format(phrases.length - toDisplay));
+                    .format(start+i+1, phrase, (maxLen < phrase.length) ? " ...  [truncated]" : string.init));
             }
         }
         else
