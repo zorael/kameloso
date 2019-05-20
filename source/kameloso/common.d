@@ -1361,7 +1361,7 @@ import std.traits : isAssociativeArray;
  +  garbage collection whenever we encounter this use-case in the code, so why
  +  not just make a generic solution instead and deduplicate code?
  +
- +  Params.
+ +  Params:
  +      pred = Optional predicate if special logic is needed to determine whether
  +          an entry is to be removed or not.
  +      aa = The associative array to modify.
