@@ -160,9 +160,10 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandPhrase
+// onCommandPhraseChan
 /++
  +  Bans, unbans, lists or clears banned phrases for the current channel.
+ +  `IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `twitchphrases.json` file.
  +/
@@ -171,8 +172,58 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
-@Description("Adds, removes, lists or clears phrases from the list of banned such.")
-void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
+@Description("Adds, removes, lists or clears phrases from the list of banned such. (Channel message wrapper)")
+void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    return handlePhraseCommand(plugin, event, event.channel);
+}
+
+
+// onCommandPhraseWhisper
+/++
+ +  Bans, unbans, lists or clears banned phrases for the specified target channel.
+ +  `IRCEvent.Type.WHISPER` wrapper.
+ +
+ +  Changes are persistently saved to the `twitchphrases.json` file.
+ +/
+@(IRCEvent.Type.WHISPER)
+@(PrivilegeLevel.admin)
+@BotCommand(PrefixPolicy.prefixed, "phrase")
+@Description("Adds, removes, lists or clears phrases from the list of banned such. (Whisper wrapper)")
+void onCommandPhraseWhisper(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : nom;
+    import std.format : format;
+    import std.typecons : Flag, No, Yes;
+
+    string slice = event.content;  // mutable
+    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
+
+    if (!targetChannel.length)
+    {
+        query(plugin.state, event.sender.nickname,
+            "Usage: %s%s [channel] [ban|unban|list|clear]"
+            .format(settings.prefix, event.aux));
+        return;
+    }
+
+    IRCEvent modifiedEvent = event;
+    modifiedEvent.content = slice;
+
+    return handlePhraseCommand(plugin, modifiedEvent, targetChannel);
+}
+
+
+// handlePhraseCommand
+/++
+ +  Bans, unbans, lists or clears banned phrases for the specified target channel.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      targetChannel = The channel we're handling phrase bans for.
+ +/
+void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 {
     import kameloso.string : contains, nom;
     import std.format : format;
@@ -186,40 +237,42 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
     case "add":
         if (!slice.length)
         {
-            chan(plugin.state, event.channel, "Usage: %s%s %s [phrase or substring of phrase]"
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s %s [phrase or substring of phrase]"
                 .format(settings.prefix, event.aux, verb));
             return;
         }
 
-        plugin.bannedPhrasesByChannel[event.channel] ~= slice;
+        plugin.bannedPhrasesByChannel[targetChannel] ~= slice;
         saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-        chan(plugin.state, event.channel, "New phrase ban added.");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "New phrase ban added.");
         break;
 
     case "unban":
     case "del":
         if (!slice.length)
         {
-            chan(plugin.state, event.channel,
+            privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
                 .format(settings.prefix, event.aux, verb));
             return;
         }
 
-        if (auto phrases = event.channel in plugin.bannedPhrasesByChannel)
+        if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
             import std.algorithm.iteration : splitter;
 
-            if (event.content == "*")
+            if (slice == "*")
             {
-                plugin.bannedPhrasesByChannel.remove(event.channel);
-                chan(plugin.state, event.channel, "All banned phrases removed.");
+                plugin.bannedPhrasesByChannel.remove(targetChannel);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "All banned phrases removed.");
                 return;
             }
 
             size_t[] garbage;
 
-            foreach (immutable istr; event.content.splitter(" "))
+            foreach (immutable istr; slice.splitter(" "))
             {
                 import std.conv : ConvException, to;
 
@@ -233,15 +286,17 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
                     }
                     else
                     {
-                        chan(plugin.state, event.channel, "Phrase index %d out of range. (max %d)"
-                            .format(i, phrases.length));
+                        privmsg(plugin.state, event.channel, event.sender.nickname,
+                            "Phrase index %s out of range. (max %d)"
+                            .format(istr, phrases.length));
                         return;
                     }
                 }
                 catch (ConvException e)
                 {
-                    chan(plugin.state, event.channel, "Invalid phrase index: " ~ istr);
-                    chan(plugin.state, event.channel,
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
+                        "Invalid phrase index: " ~ istr);
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
                         .format(settings.prefix, event.aux, verb));
                     return;
@@ -258,19 +313,20 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 
             immutable numRemoved = (originalNum - phrases.length);
             saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-            chan(plugin.state, event.channel, "%d / %d phrase bans removed."
-                .format(numRemoved, originalNum));
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "%d/%d phrase bans removed.".format(numRemoved, originalNum));
 
-            if (!phrases.length) plugin.bannedPhrasesByChannel.remove(event.channel);
+            if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
         }
         else
         {
-            chan(plugin.state, event.channel, "No banned phrases registered for this channel.");
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No banned phrases registered for this channel.");
         }
         break;
 
     case "list":
-        if (const phrases = event.channel in plugin.bannedPhrasesByChannel)
+        if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
             import std.algorithm.comparison : min;
 
@@ -289,13 +345,14 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 
                     if ((start < 0) || (start >= phrases.length))
                     {
-                        chan(plugin.state, event.channel, "Invalid phrase index or out of bounds.");
+                        privmsg(plugin.state, event.channel, event.sender.nickname,
+                            "Invalid phrase index or out of bounds.");
                         return;
                     }
                 }
                 catch (ConvException e)
                 {
-                    chan(plugin.state, event.channel,
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s%s list [optional starting position number]"
                         .format(settings.prefix, event.aux));
                     return;
@@ -304,31 +361,34 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 
             size_t end = min(start+toDisplay, phrases.length);
 
-            chan(plugin.state, event.channel, "Currently banned phrases (%d-%d of %d)"
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Currently banned phrases (%d-%d of %d)"
                 .format(start+1, end, phrases.length));
 
             foreach (immutable i, const phrase; (*phrases)[start..end])
             {
                 immutable maxLen = min(phrase.length, maxLineLength);
-                chan(plugin.state, event.channel, "%d: %s%s"
-                    .format(start+i+1, phrase, (maxLen < phrase.length) ? " ...  [truncated]" : string.init));
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "%d: %s%s".format(start+i+1, phrase, (maxLen < phrase.length) ?
+                    " ...  [truncated]" : string.init));
             }
         }
         else
         {
-            chan(plugin.state, event.channel, "No banned phrases registered for this channel.");
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No banned phrases registered for this channel.");
         }
         break;
 
     case "clear":
-        plugin.bannedPhrasesByChannel.remove(event.channel);
+        plugin.bannedPhrasesByChannel.remove(targetChannel);
         saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-        chan(plugin.state, event.channel, "All banned phrases cleared.");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "All banned phrases cleared.");
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [ban|unban|list|clear]"
-            .format(settings.prefix, event.aux));
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [ban|unban|list|clear]".format(settings.prefix, event.aux));
         break;
     }
 }
