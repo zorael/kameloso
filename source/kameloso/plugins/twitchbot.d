@@ -67,6 +67,9 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         stdout.flush();
     }
 
+    // Don't trigger on whispers
+    if (event.type == IRCEvent.Type.WHISPER) return;
+
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
         import kameloso.string : contains;
