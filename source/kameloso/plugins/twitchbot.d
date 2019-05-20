@@ -53,17 +53,49 @@ struct TwitchBotSettings
 @(Chainable)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.WHISPER)
+@(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onAnyMessage(TwitchBotPlugin plugin)
+void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.terminal : TerminalToken;
-    import std.stdio : stdout, write;
+    if (plugin.twitchBotSettings.bellOnMessage)
+    {
+        import kameloso.terminal : TerminalToken;
+        import std.stdio : stdout, write;
 
-    if (!plugin.twitchBotSettings.bellOnMessage) return;
+        write(cast(char)TerminalToken.bell);
+        stdout.flush();
+    }
 
-    write(cast(char)TerminalToken.bell);
-    stdout.flush();
+    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
+    {
+        import kameloso.string : contains;
+        import std.algorithm.searching : canFind;
+
+        if (const channelAdmins = event.channel in plugin.adminsByChannel)
+        {
+            if ((*channelAdmins).canFind(event.sender.nickname)) return;
+        }
+        else if ((event.sender.nickname == plugin.state.client.nickname) ||
+            plugin.state.client.admins.canFind(event.sender.nickname) ||
+            event.sender.badges.contains("moderator"))
+        {
+            return;
+        }
+
+        foreach (immutable phrase; *bannedPhrases)
+        {
+            if (event.content.contains(phrase))
+            {
+                import std.format : format;
+
+                chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
+                chan!(Yes.priority)(plugin.state, event.channel, ".timeout %s %d Banned phrase"
+                    .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
+                break;
+            }
+        }
+    }
 }
 
 
