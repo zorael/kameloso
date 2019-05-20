@@ -553,7 +553,7 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
             immutable trigger = slice.nom!(Yes.decode)(' ');
 
             plugin.onelinersByChannel[event.channel][trigger] = slice;
-            saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
+            saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
             chan(plugin.state, event.channel, "Oneliner %s%s added."
                 .format(settings.prefix, trigger));
@@ -569,7 +569,7 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
         if (slice.length)
         {
             plugin.onelinersByChannel[event.channel].remove(slice);
-            saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
+            saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
             chan(plugin.state, event.channel, "Oneliner %s%s removed."
                 .format(settings.prefix, slice));
@@ -679,7 +679,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
                 // Drop down for report
             }
 
-            saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+            saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
             chan(plugin.state, event.channel, slice ~ " is now an administrator.");
         }
         else
@@ -704,7 +704,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
                 if (index != -1)
                 {
                     *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
-                    saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+                    saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
                     chan(plugin.state, event.channel, "Administrator removed.");
                 }
                 else
@@ -797,65 +797,36 @@ void onEndOfMotd(TwitchBotPlugin plugin)
         //adminsByChannel.clear();
         adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
         adminsByChannel.rehash();
+
     }
 }
 
 
-// saveOneliners
+// saveResourceToDisk
 /++
- +  Saves the passed oneliner associative array to disk, but in `JSON` format.
+ +  Saves the passed resource to disk, but in `JSON` format.
  +
- +  This is a convenient way to serialise the array.
- +
- +  Example:
- +  ---
- +  plugin.onelinersByChannel["#channel"]["adl"] = "I thought what I'd do " ~
- +      "was, I'd pretend I was one of those deaf-mutes.";
- +
- +  saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
- +  ---
- +
- +  Params:
- +      onelinersByChannel = The associative array of oneliners to save.
- +      filename = Filename of the file to write to.
- +/
-void saveOneliners(const string[string][string] onelinersByChannel, const string filename)
-{
-    import std.json : JSONValue;
-    import std.stdio : File, writeln;
-
-    auto file = File(filename, "w");
-
-    file.writeln(JSONValue(onelinersByChannel).toPrettyString);
-}
-
-
-// saveAdmins
-/++
- +  Saves the passed admins associative array to disk, but in `JSON` format.
- +
- +  This is a convenient way to serialise the array.
+ +  This is used with the associative arrays for administrators, oneliners and
+ +  banned phrases.
  +
  +  Example:
  +  ---
  +  plugin.adminsByChannel["#channel"] ~= "kameloso";
  +  plugin.adminsByChannel["#channel"] ~= "hirrsteff";
  +
- +  saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+ +  saveResource(plugin.adminsByChannel, plugin.adminsFile);
  +  ---
  +
  +  Params:
- +      adminsByChannel = The associative array of admins to save.
+ +      resource = The `JSON`-convertible resource to save.
  +      filename = Filename of the file to write to.
  +/
-void saveAdmins(const string[][string] adminsByChannel, const string filename)
+void saveResourceToDisk(Resource)(const Resource resource, const string filename)
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    auto file = File(filename, "w");
-
-    file.writeln(JSONValue(adminsByChannel).toPrettyString);
+    File(filename, "w").writeln(JSONValue(resource).toPrettyString);
 }
 
 
