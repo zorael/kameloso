@@ -157,6 +157,123 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandPhrase
+/++
+ +  Bans, unbans, lists or clears banned phrases for the current channel.
+ +
+ +  Changes are persistently saved to the `twitchphrases.json` file.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "phrase")
+@Description("Adds, removes, lists or clears phrases from the list of banned such.")
+void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : contains, nom;
+    import std.algorithm.searching : count;
+    import std.format : format;
+
+    string slice = event.content;  // mutable
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "ban":
+        if (!slice.length)
+        {
+            chan(plugin.state, event.channel, "Usage: %s%s ban [phrase or substring of phrase]"
+                .format(settings.prefix, event.aux));
+            return;
+        }
+
+        plugin.bannedPhrasesByChannel[event.channel] ~= slice;
+        saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+        chan(plugin.state, event.channel, "New phrase ban added.");
+        break;
+
+    case "unban":
+        if (!slice.length)
+        {
+            chan(plugin.state, event.channel, "Usage: %s%s unban [phrase or substring of phrase]"
+                .format(settings.prefix, event.aux));
+            return;
+        }
+
+        if (auto phrases = event.channel in plugin.bannedPhrasesByChannel)
+        {
+            size_t[] garbage;
+            immutable originalNum = phrases.length;
+
+            foreach (immutable i, immutable phrase; *phrases)
+            {
+                if (phrase.contains(slice))
+                {
+                    garbage ~= i;
+                }
+            }
+
+            foreach_reverse (immutable i; garbage)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
+            }
+
+            immutable numRemoved = (originalNum - phrases.length);
+            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+            chan(plugin.state, event.channel, "%d/%d phrase bans removed.".format(numRemoved, originalNum));
+
+            if (!phrases.length) plugin.bannedPhrasesByChannel.remove(event.channel);
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "No banned phrases registered for this channel.");
+        }
+        break;
+
+    case "list":
+        if (const phrases = event.channel in plugin.bannedPhrasesByChannel)
+        {
+            import std.algorithm.comparison : min;
+
+            enum toDisplay = 10;
+            enum maxLineLength = 128;
+
+            chan(plugin.state, event.channel, "Currently banned phrases (%d)".format(phrases.length));
+
+            foreach (immutable i, const phrase; (*phrases)[0..min(phrases.length, toDisplay)])
+            {
+                immutable maxLen = min(phrase.length, maxLineLength);
+                chan(plugin.state, event.channel, "%d: %s%s"
+                    .format(i+1, phrase, (maxLen < phrase.length) ? "..." : string.init));
+            }
+
+            if (phrases.length > toDisplay)
+            {
+                chan(plugin.state, event.channel, "... and %d more.".format(phrases.length - toDisplay));
+            }
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "No banned phrases registered for this channel.");
+        }
+        break;
+
+    case "clear":
+        plugin.bannedPhrasesByChannel.remove(event.channel);
+        saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+        chan(plugin.state, event.channel, "All banned phrases cleared.");
+        break;
+
+    default:
+        chan(plugin.state, event.channel, "Usage: %s%s [ban|unban|list|clear]"
+            .format(settings.prefix, event.aux));
+        break;
+    }
+}
+
+
 // onCommandEnableDisable
 /++
  +  Toggles whether or not the bot should operate in this channel.
