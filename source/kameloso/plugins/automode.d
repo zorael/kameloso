@@ -571,20 +571,8 @@ void onEndOfMotd(AutomodePlugin plugin)
  +/
 void pruneChannels(ref string[string][string] automodes)
 {
-    string[] garbageKeys;
-
-    foreach (immutable channelName, channelAutomodes; automodes)
-    {
-        if (!channelAutomodes.length)
-        {
-            garbageKeys ~= channelName;
-        }
-    }
-
-    foreach (immutable key; garbageKeys)
-    {
-        automodes.remove(key);
-    }
+    import kameloso.common : pruneAA;
+    pruneAA(automodes);
 }
 
 

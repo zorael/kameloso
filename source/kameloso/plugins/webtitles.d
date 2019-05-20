@@ -828,35 +828,23 @@ string lookupReddit(const string url, const bool modified = false)
 
 // prune
 /++
- +  Garbage-collects old entries in a `T[string]` lookup cache.
+ +  Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
  +
  +  Params:
- +      cache = Cache of previous `T`s, `shared` so that it can be
- +          reused in further lookup (other threads).
+ +      cache = Cache of previous `TitleLookupResults`, `shared` so that it can
+ +          be reused in further lookup (other threads).
  +/
-void prune(T)(shared T[string] cache)
+void prune(shared TitleLookupResults[string] cache)
 {
+    import kameloso.common : pruneAA;
+    import std.datetime.systime : Clock;
+
     if (!cache.length) return;
 
     enum expireSeconds = 600;
+    immutable now = Clock.currTime.toUnixTime;
 
-    string[] garbage;
-
-    foreach (immutable key, const entry; cache)
-    {
-        import std.datetime.systime : Clock;
-        immutable now = Clock.currTime.toUnixTime;
-
-        if ((now - entry.when) > expireSeconds)
-        {
-            garbage ~= key;
-        }
-    }
-
-    foreach (immutable key; garbage)
-    {
-        cache.remove(key);
-    }
+    pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
 }
 
 
