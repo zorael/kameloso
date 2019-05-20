@@ -1172,7 +1172,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 else static if (!hasUDA!(fun, Chainable) &&
                     !hasUDA!(fun, Terminating) &&
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
-                    (eventTypeUDA == IRCEvent.Type.QUERY)))
+                    (eventTypeUDA == IRCEvent.Type.QUERY) ||
+                    (eventTypeUDA == IRCEvent.Type.WHISPER)))
                 {
                     import kameloso.conv : Enum;
                     import std.format : format;
@@ -1196,6 +1197,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         static assert(!((U == CHAN) ||
                             (U == QUERY) ||
+                            (U == WHISPER) ||
                             (U == EMOTE) ||
                             (U == JOIN) ||
                             (U == PART) ||
