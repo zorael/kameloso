@@ -798,6 +798,11 @@ void onEndOfMotd(TwitchBotPlugin plugin)
         adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
         adminsByChannel.rehash();
 
+        JSONStorage channelBannedPhrasesJSON;
+        channelBannedPhrasesJSON.load(bannedPhrasesFile);
+        //bannedPhrasesByChannel.clear();
+        bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
+        bannedPhrasesByChannel.rehash();
     }
 }
 
@@ -863,10 +868,22 @@ void initResources(TwitchBotPlugin plugin)
         throw new IRCPluginInitialisationException(plugin.adminsFile.baseName ~ " may be malformed.");
     }
 
+    JSONStorage bannedPhrasesJSON;
+
+    try
+    {
+        bannedPhrasesJSON.load(plugin.bannedPhrasesFile);
+    }
+    catch (JSONException e)
+    {
+        throw new IRCPluginInitialisationException(plugin.bannedPhrasesFile.baseName ~ " may be malformed.");
+    }
+
     // Let other Exceptions pass.
 
     onelinerJSON.save(plugin.onelinerFile);
     adminsJSON.save(plugin.adminsFile);
+    bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
 }
 
 
@@ -913,6 +930,12 @@ private:
 
     /// Filename of file with administrators.
     @Resource string adminsFile = "twitchadmins.json";
+
+    /// Associative array of banned phrases; phrases array keyed by channel.
+    string[][string] bannedPhrasesByChannel;
+
+    /// Filename of file with banned phrases.
+    @Resource string bannedPhrasesFile = "twitchphrases.json";
 
     /// All Twitch Bot plugin settings.
     @Settings TwitchBotSettings twitchBotSettings;
