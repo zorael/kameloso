@@ -69,7 +69,7 @@ install:
             }
         }
   - ps: SetUpDCompiler
-  - ps: Invoke-WebRequest https://github.com/dlang/dub/releases/download/v1.15.0/dub-v1.15.0-windows-x86_64.zip -OutFile dub.zip
+  - ps: Invoke-WebRequest https://github.com/dlang/dub/releases/download/v1.15.0/dub-v1.15.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
   - dub --version
