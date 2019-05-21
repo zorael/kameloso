@@ -183,7 +183,8 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
-@Description("Adds, removes, lists or clears phrases from the list of banned such. (Channel message wrapper)")
+@Description("Adds, removes, lists or clears phrases from the list of banned such.",
+    "$command [target channel if query] [ban|unban|list|clear]")
 void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handlePhraseCommand(plugin, event, event.channel);
@@ -200,7 +201,8 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
-@Description("Adds, removes, lists or clears phrases from the list of banned such. (Whisper wrapper)")
+@Description("Adds, removes, lists or clears phrases from the list of banned such.",
+    "$command [target channel if query] [ban|unban|list|clear]")
 void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : nom;
@@ -806,8 +808,7 @@ void onCommandAbortVote(TwitchBotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
-@Description("Adds or removes a oneliner command, or list all available.",
-    "$command [add|del] [text]")
+@Description("Adds or removes a oneliner command.", "$command [add|del] [text]")
 void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
