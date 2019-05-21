@@ -208,6 +208,7 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
+    import std.uni : toLower;
 
     string slice = event.content;  // mutable
     immutable targetChannel = slice.nom!(Yes.inherit)(' ');
@@ -222,7 +223,7 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
     IRCEvent modifiedEvent = event;
     modifiedEvent.content = slice;
 
-    return handlePhraseCommand(plugin, modifiedEvent, targetChannel);
+    return handlePhraseCommand(plugin, modifiedEvent, targetChannel.toLower);
 }
 
 
@@ -929,6 +930,7 @@ void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
+    import std.uni : toLower;
 
     string slice = event.content;  // mutable
     immutable targetChannel = slice.nom!(Yes.inherit)(' ');
@@ -943,7 +945,7 @@ void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
     IRCEvent modifiedEvent = event;
     modifiedEvent.content = slice;
 
-    return handleAdminCommand(plugin, modifiedEvent, targetChannel);
+    return handleAdminCommand(plugin, modifiedEvent, targetChannel.toLower);
 }
 
 
