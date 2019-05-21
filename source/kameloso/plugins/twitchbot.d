@@ -617,24 +617,72 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAdmin
+// onCommandAdminChan
 /++
- +  Adds, lists and removes administrators from a channel.
+ +  Adds, lists and removes administrators to/from the current channel.
  +
- +  * `!admin add nickname` adds `nickname` as an administrator.
- +  * `!admin del nickname` removes `nickname` as an administrator.
- +  * `!admin list` lists all administrators.
- +
- +  Only one nickname at a time. Only the current channel.
+ +  Merely passes the event onto `handleAdminCommand` with the current channel
+ +  as the target channel.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "admin")
-@Description("Adds or removes a Twitch administrator to/from the current channel.",
+@Description("Adds or removes a Twitch administrator to/from the current channel. (Channel message wrapper)",
     "$command [add|del|list] [nickname]")
-void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandAdminChan(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    return handleAdminCommand(plugin, event, event.channel);
+}
+
+
+// onCommandAdminWhisper
+/++
+ +  Adds, lists and removes administrators to/from the specified channel.
+ +
+ +  Merely passes the event onto `handleAdminCommand` with the specified channel
+ +  as the target channel.
+ +/
+@(IRCEvent.Type.WHISPER)
+@(PrivilegeLevel.admin)
+@BotCommand(PrefixPolicy.prefixed, "admin")
+@Description("Adds or removes a Twitch administrator to/from the current channel. (Whisper wrapper)",
+    "$command [add|del|list] [nickname]")
+void onCommandAdminWhisper(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : nom;
+    import std.format : format;
+    import std.typecons : Flag, No, Yes;
+
+    string slice = event.content;  // mutable
+    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
+
+    if (!targetChannel.length)
+    {
+        query(plugin.state, event.sender.nickname,
+            "Usage: %s%s [channel] [add|del|list] [nickname]"
+            .format(settings.prefix, event.aux));
+        return;
+    }
+
+    IRCEvent modifiedEvent = event;
+    modifiedEvent.content = slice;
+
+    return handleAdminCommand(plugin, modifiedEvent, targetChannel);
+}
+
+
+// handleAdminCommand
+/++
+ +  Implements adding, listing and removing administrators for a channel.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      targetChannel = The channel we're adding/listing/removing admnistrators to/from.
+ +/
+void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
 {
     import kameloso.string : contains, nom;
     import std.algorithm.searching : count;
@@ -643,7 +691,8 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length || (event.content.count(' ') > 1))
     {
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list] [nickname]"
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
         return;
     }
@@ -654,87 +703,93 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     switch (verb)
     {
     case "add":
-        if (slice.length)
+        if (!slice.length)
         {
-            immutable nickname = slice.toLower;
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s [add] [nickname]"
+                .format(settings.prefix, event.aux));
+            return;
+        }
 
-            if (auto adminArray = event.channel in plugin.adminsByChannel)
+        immutable nickname = slice.toLower;
+
+        if (auto adminArray = targetChannel in plugin.adminsByChannel)
+        {
+            import std.algorithm.searching : canFind;
+
+            if ((*adminArray).canFind(nickname))
             {
-                import std.algorithm.searching : canFind;
-
-                if ((*adminArray).canFind(nickname))
-                {
-                    chan(plugin.state, event.channel, slice ~ " is already a bot administrator.");
-                    return;
-                }
-                else
-                {
-                    *adminArray ~= nickname;
-                    // Drop down for report
-                }
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    slice ~ " is already a bot administrator.");
+                return;
             }
             else
             {
-                plugin.adminsByChannel[event.channel] ~= nickname;
+                *adminArray ~= nickname;
                 // Drop down for report
             }
-
-            saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
-            chan(plugin.state, event.channel, slice ~ " is now an administrator.");
         }
         else
         {
-            chan(plugin.state, event.channel, "Usage: %s%s [add] [nickname]"
-                .format(settings.prefix, event.aux));
+            plugin.adminsByChannel[targetChannel] ~= nickname;
+            // Drop down for report
         }
+
+        saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            slice ~ " is now an administrator.");
         break;
 
     case "del":
-        if (slice.length)
+        if (!slice.length)
         {
-            immutable nickname = slice.toLower;
-
-            if (auto adminArray = event.channel in plugin.adminsByChannel)
-            {
-                import std.algorithm.mutation : SwapStrategy, remove;
-                import std.algorithm.searching : countUntil;
-
-                immutable index = (*adminArray).countUntil(nickname);
-
-                if (index != -1)
-                {
-                    *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
-                    saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
-                    chan(plugin.state, event.channel, "Administrator removed.");
-                }
-                else
-                {
-                    chan(plugin.state, event.channel, "No such administrator: " ~ slice);
-                }
-            }
-        }
-        else
-        {
-            chan(plugin.state, event.channel, "Usage: %s%s [del] [nickname]"
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s [del] [nickname]"
                 .format(settings.prefix, event.aux));
+            return;
+        }
+
+        immutable nickname = slice.toLower;
+
+        if (auto adminArray = targetChannel in plugin.adminsByChannel)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+            import std.algorithm.searching : countUntil;
+
+            immutable index = (*adminArray).countUntil(nickname);
+
+            if (index != -1)
+            {
+                *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
+                saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "Administrator removed.");
+            }
+            else
+            {
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "No such administrator: " ~ slice);
+            }
         }
         break;
 
     case "list":
-        if (const adminList = event.channel in plugin.adminsByChannel)
+        if (const adminList = targetChannel in plugin.adminsByChannel)
         {
             import std.format : format;
-            chan(plugin.state, event.channel, "Current administrators: %-(%s, %)"
-                .format(*adminList));
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Current administrators: %-(%s, %)".format(*adminList));
         }
         else
         {
-            chan(plugin.state, event.channel, "There are no administrators registered for this channel.");
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "There are no administrators registered for this channel.");
         }
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list] [nickname]"
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
         break;
     }
