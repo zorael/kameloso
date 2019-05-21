@@ -1049,8 +1049,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            (((type == IRCEvent.Type.QUERY) || (type == IRCEvent.Type.WHISPER)) &&
-            (target.nickname == plugin.state.client.nickname)))
+            ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
@@ -1200,12 +1199,12 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             if (bright)
             {
-                typeColour = ((type == IRCEvent.Type.QUERY) || (type == IRCEvent.Type.WHISPER)) ?
+                typeColour = (type == IRCEvent.Type.QUERY) ?
                     DefaultBright.query : DefaultBright.type;
             }
             else
             {
-                typeColour =  ((type == IRCEvent.Type.QUERY) || (type == IRCEvent.Type.WHISPER)) ?
+                typeColour = (type == IRCEvent.Type.QUERY) ?
                     DefaultDark.query : DefaultDark.type;
             }
 
@@ -1472,8 +1471,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         sink.colour(TerminalForeground.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            (((type == IRCEvent.Type.QUERY) || (type == IRCEvent.Type.WHISPER)) &&
-            (target.nickname == plugin.state.client.nickname)))
+            ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);

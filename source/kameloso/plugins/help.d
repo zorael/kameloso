@@ -43,7 +43,7 @@ struct HelpSettings
  +  Once we have the list we format it nicely and send it back to the requester,
  +  which we remember since we saved the original `kameloso.irc.defs.IRCEvent`.
  +/
-@(IRCEvent.Type.WHISPER)
+@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.whitelist)
 @BotCommand(PrefixPolicy.nickname, "help")

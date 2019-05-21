@@ -55,7 +55,7 @@ struct TwitchBotSettings
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.WHISPER)
+@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
@@ -71,7 +71,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     // Don't trigger on whispers
-    if (event.type == IRCEvent.Type.WHISPER) return;
+    if (event.type == IRCEvent.Type.QUERY) return;
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
@@ -174,7 +174,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandPhraseChan
 /++
  +  Bans, unbans, lists or clears banned phrases for the current channel.
- +  `IRCEvent.Type.CHAN` wrapper.
+ +  `kameloso.irc.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `twitchphrases.json` file.
  +/
@@ -190,18 +190,18 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandPhraseWhisper
+// onCommandPhraseQuery
 /++
  +  Bans, unbans, lists or clears banned phrases for the specified target channel.
- +  `IRCEvent.Type.WHISPER` wrapper.
+ +  `kameloso.irc.defs.IRCEvent.Type.QUERY` wrapper.
  +
  +  Changes are persistently saved to the `twitchphrases.json` file.
  +/
-@(IRCEvent.Type.WHISPER)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such. (Whisper wrapper)")
-void onCommandPhraseWhisper(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : nom;
     import std.format : format;
@@ -920,19 +920,19 @@ void onCommandAdminChan(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAdminWhisper
+// onCommandAdminQuery
 /++
  +  Adds, lists and removes administrators to/from the specified channel.
  +
  +  Merely passes the event onto `handleAdminCommand` with the specified channel
  +  as the target channel.
  +/
-@(IRCEvent.Type.WHISPER)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(PrefixPolicy.prefixed, "admin")
 @Description("Adds or removes a Twitch administrator to/from the current channel. (Whisper wrapper)",
     "$command [add|del|list] [nickname]")
-void onCommandAdminWhisper(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : nom;
     import std.format : format;

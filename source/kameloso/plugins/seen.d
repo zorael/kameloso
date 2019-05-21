@@ -429,7 +429,7 @@ void onEndOfList(SeenPlugin plugin)
  +  * `direct`, where the raw command is expected without any bot prefix at all.
  +  * `prefixed`, where the message has to start with the command prefix (usually `!`)
  +  * `nickname`, where the message has to start with bot's nickname, except
- +     if it's in a `QUERY` or `WHISPER` message.<br>
+ +     if it's in a `QUERY` message.<br>
  +
  +  The plugin system will have made certain we only get messages starting with
  +  "`seen`", since we annotated this function with such a

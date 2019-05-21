@@ -451,7 +451,7 @@ enum PrefixPolicy
 {
     direct,   /// Message will be treated as-is without looking for prefixes.
     prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
-    nickname, /// Message should begin with the bot's name, except in `QUERY` and `WHISPER` events.
+    nickname, /// Message should begin with the bot's name, except in `QUERY` events.
 }
 
 
@@ -1172,8 +1172,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 else static if (!hasUDA!(fun, Chainable) &&
                     !hasUDA!(fun, Terminating) &&
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
-                    (eventTypeUDA == IRCEvent.Type.QUERY) ||
-                    (eventTypeUDA == IRCEvent.Type.WHISPER)))
+                    (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
                     import kameloso.conv : Enum;
                     import std.format : format;
@@ -1197,7 +1196,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         static assert(!((U == CHAN) ||
                             (U == QUERY) ||
-                            (U == WHISPER) ||
                             (U == EMOTE) ||
                             (U == JOIN) ||
                             (U == PART) ||
@@ -3105,7 +3103,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
         {
             content = content.stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
         }
-        else if ((type == IRCEvent.Type.QUERY) || (type == IRCEvent.Type.WHISPER))
+        else if (type == IRCEvent.Type.QUERY)
         {
             // Doesn't start with nickname but it's a private message; let pass
         }

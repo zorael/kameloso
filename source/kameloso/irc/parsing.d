@@ -631,6 +631,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case PRIVMSG:
+    case WHISPER:  // Twitch private message
         parser.onPRIVMSG(event, slice);
         break;
 
