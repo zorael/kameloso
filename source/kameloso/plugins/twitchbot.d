@@ -342,7 +342,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
-            enum maxLineLength = 64;
+            enum maxLineLength = 100;
 
             ptrdiff_t start;
 
@@ -380,8 +380,8 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
             {
                 immutable maxLen = min(phrase.length, maxLineLength);
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "%d: %s%s".format(start+i+1, phrase, (maxLen < phrase.length) ?
-                    " ...  [truncated]" : string.init));
+                    "%d: %s%s".format(start+i+1, phrase[0..maxLen],
+                    (phrase.length > maxLen) ? " ...  [truncated]" : string.init));
             }
         }
         else
