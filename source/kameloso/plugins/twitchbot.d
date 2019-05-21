@@ -91,7 +91,15 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
         foreach (immutable phrase; *bannedPhrases)
         {
-            if (event.content.contains(phrase))
+            import std.algorithm.comparison : equal;
+            import std.uni : asLowerCase;
+
+            // Try not to allocate two whole new strings
+            immutable match = plugin.twitchBotSettings.bannedPhrasesObeyCase ?
+                event.content.contains(phrase) :
+                event.content.asLowerCase.equal(phrase.asLowerCase);
+
+            if (match)
             {
                 import std.format : format;
 
