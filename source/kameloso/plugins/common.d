@@ -1055,25 +1055,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
 
                         import kameloso.string : strippedLeft;
+                        import std.algorithm.comparison : equal;
                         import std.typecons : No, Yes;
-
-                        string thisCommand;
+                        import std.uni : asLowerCase, toLower;
 
                         mutEvent.content = mutEvent.content.strippedLeft;
-
-                        if (mutEvent.content.contains!(Yes.decode)(' '))
-                        {
-                            thisCommand = mutEvent.content.nom!(Yes.decode)(' ');
-                        }
-                        else
-                        {
-                            // single word, not a prefix
-                            thisCommand = mutEvent.content;
-                            mutEvent.content = string.init;
-                        }
-
-                        import std.algorithm.comparison : equal;
-                        import std.uni : asLowerCase, toLower;
+                        immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
 
                         enum lowercaseUDAString = commandUDA.string_.toLower;
 
@@ -1123,23 +1110,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             // Reset between iterations
                             mutEvent = event;
-                            string thisCommand;
-
-                            if (mutEvent.content.contains!(Yes.decode)(' '))
-                            {
-                                thisCommand = mutEvent.content.nom!(Yes.decode)(' ');
-                            }
-                            else
-                            {
-                                // single word, not a prefix
-                                thisCommand = mutEvent.content;
-                                mutEvent.content = string.init;
-                            }
-
-                            import std.regex : matchFirst;
+                            immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
 
                             try
                             {
+                                import std.regex : matchFirst;
+
                                 immutable hits = thisCommand.matchFirst(regexUDA.engine);
 
                                 if (!hits.empty)
@@ -3280,7 +3256,6 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
     foreach (immutable line; customSettings)
     {
         string slice = line;
-        string pluginstring;
         string setting;
         string value;
 
@@ -3293,7 +3268,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         }
 
         import std.uni : toLower;
-        pluginstring = slice.nom!(Yes.decode)(".").toLower;
+        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
 
         if (slice.contains!(Yes.decode)("="))
         {

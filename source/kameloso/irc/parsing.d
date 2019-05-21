@@ -433,19 +433,9 @@ unittest
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import std.conv : ConvException, to;
+    import std.typecons : Flag, No, Yes;
 
-    string typestring;
-
-    if (slice.contains(' '))
-    {
-        typestring = slice.nom(' ');
-    }
-    else
-    {
-        typestring = slice;
-        // Simulate advancing slice to the end
-        slice = string.init;
-    }
+    immutable typestring = slice.nom!(Yes.inherit)(' ');
 
     if ((typestring[0] >= '0') && (typestring[0] <= '9'))
     {
@@ -1673,6 +1663,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.irc.common : IRCControlCharacter, isValidChannel;
+
     immutable target = slice.nom(" :");
     event.content = slice;
 
