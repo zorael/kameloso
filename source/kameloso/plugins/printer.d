@@ -1376,7 +1376,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     put(sink, `: "`);
                 }
 
-                content = mapEffects(content, fgBase);
+                if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch)
+                {
+                    // Twitch chat has no colours or effects, only emotes
+                    content = mapEffects(content, fgBase);
+                }
 
                 version(TwitchSupport)
                 {
