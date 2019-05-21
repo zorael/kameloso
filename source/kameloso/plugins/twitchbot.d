@@ -39,6 +39,9 @@ struct TwitchBotSettings
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
+    /// Whether or not to match ban phrases case-sensitively.
+    bool bannedPhrasesObeyCase = true;
+
     /// How long a user should be timed out if they send a banned phrase.
     int bannedPhraseTimeout = 60;
 }
