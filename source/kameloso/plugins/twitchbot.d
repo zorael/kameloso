@@ -210,7 +210,7 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
     string slice = event.content;  // mutable
     immutable targetChannel = slice.nom!(Yes.inherit)(' ');
 
-    if (!targetChannel.length)
+    if (!targetChannel.length || (targetChannel[0] != '#'))
     {
         query(plugin.state, event.sender.nickname,
             "Usage: %s%s [channel] [ban|unban|list|clear]"
@@ -941,7 +941,7 @@ void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
     string slice = event.content;  // mutable
     immutable targetChannel = slice.nom!(Yes.inherit)(' ');
 
-    if (!targetChannel.length)
+    if (!targetChannel.length || (targetChannel[0] != '#'))
     {
         query(plugin.state, event.sender.nickname,
             "Usage: %s%s [channel] [add|del|list] [nickname]"
