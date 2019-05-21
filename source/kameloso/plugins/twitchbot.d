@@ -38,6 +38,12 @@ struct TwitchBotSettings
 
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
+
+    /// Whether or not to match ban phrases case-sensitively.
+    bool bannedPhrasesObeyCase = true;
+
+    /// How long a user should be timed out if they send a banned phrase.
+    int bannedPhraseTimeout = 60;
 }
 
 
@@ -50,17 +56,60 @@ struct TwitchBotSettings
 @(Chainable)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.WHISPER)
+@(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onAnyMessage(TwitchBotPlugin plugin)
+void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.terminal : TerminalToken;
-    import std.stdio : stdout, write;
+    if (plugin.twitchBotSettings.bellOnMessage)
+    {
+        import kameloso.terminal : TerminalToken;
+        import std.stdio : stdout, write;
 
-    if (!plugin.twitchBotSettings.bellOnMessage) return;
+        write(cast(char)TerminalToken.bell);
+        stdout.flush();
+    }
 
-    write(cast(char)TerminalToken.bell);
-    stdout.flush();
+    // Don't trigger on whispers
+    if (event.type == IRCEvent.Type.WHISPER) return;
+
+    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
+    {
+        import kameloso.string : contains;
+        import std.algorithm.searching : canFind;
+
+        if (const channelAdmins = event.channel in plugin.adminsByChannel)
+        {
+            if ((*channelAdmins).canFind(event.sender.nickname)) return;
+        }
+        else if ((event.sender.nickname == plugin.state.client.nickname) ||
+            plugin.state.client.admins.canFind(event.sender.nickname) ||
+            event.sender.badges.contains("moderator"))
+        {
+            return;
+        }
+
+        foreach (immutable phrase; *bannedPhrases)
+        {
+            import std.algorithm.comparison : equal;
+            import std.uni : asLowerCase;
+
+            // Try not to allocate two whole new strings
+            immutable match = plugin.twitchBotSettings.bannedPhrasesObeyCase ?
+                event.content.contains(phrase) :
+                event.content.asLowerCase.equal(phrase.asLowerCase);
+
+            if (match)
+            {
+                import std.format : format;
+
+                chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
+                chan!(Yes.priority)(plugin.state, event.channel, ".timeout %s %d Banned phrase"
+                    .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
+                break;
+            }
+        }
+    }
 }
 
 
@@ -119,6 +168,240 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 {
     plugin.activeChannels.remove(event.channel);
+}
+
+
+// onCommandPhraseChan
+/++
+ +  Bans, unbans, lists or clears banned phrases for the current channel.
+ +  `IRCEvent.Type.CHAN` wrapper.
+ +
+ +  Changes are persistently saved to the `twitchphrases.json` file.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "phrase")
+@Description("Adds, removes, lists or clears phrases from the list of banned such. (Channel message wrapper)")
+void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    return handlePhraseCommand(plugin, event, event.channel);
+}
+
+
+// onCommandPhraseWhisper
+/++
+ +  Bans, unbans, lists or clears banned phrases for the specified target channel.
+ +  `IRCEvent.Type.WHISPER` wrapper.
+ +
+ +  Changes are persistently saved to the `twitchphrases.json` file.
+ +/
+@(IRCEvent.Type.WHISPER)
+@(PrivilegeLevel.admin)
+@BotCommand(PrefixPolicy.prefixed, "phrase")
+@Description("Adds, removes, lists or clears phrases from the list of banned such. (Whisper wrapper)")
+void onCommandPhraseWhisper(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : nom;
+    import std.format : format;
+    import std.typecons : Flag, No, Yes;
+
+    string slice = event.content;  // mutable
+    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
+
+    if (!targetChannel.length)
+    {
+        query(plugin.state, event.sender.nickname,
+            "Usage: %s%s [channel] [ban|unban|list|clear]"
+            .format(settings.prefix, event.aux));
+        return;
+    }
+
+    IRCEvent modifiedEvent = event;
+    modifiedEvent.content = slice;
+
+    return handlePhraseCommand(plugin, modifiedEvent, targetChannel);
+}
+
+
+// handlePhraseCommand
+/++
+ +  Bans, unbans, lists or clears banned phrases for the specified target channel.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      targetChannel = The channel we're handling phrase bans for.
+ +/
+void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+{
+    import kameloso.string : contains, nom;
+    import std.format : format;
+
+    string slice = event.content;  // mutable
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "ban":
+    case "add":
+        if (!slice.length)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s %s [phrase or substring of phrase]"
+                .format(settings.prefix, event.aux, verb));
+            return;
+        }
+
+        plugin.bannedPhrasesByChannel[targetChannel] ~= slice;
+        saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+        privmsg(plugin.state, event.channel, event.sender.nickname, "New phrase ban added.");
+        break;
+
+    case "unban":
+    case "del":
+        if (!slice.length)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
+                .format(settings.prefix, event.aux, verb));
+            return;
+        }
+
+        if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
+        {
+            import std.algorithm.iteration : splitter;
+
+            if (slice == "*")
+            {
+                plugin.bannedPhrasesByChannel.remove(targetChannel);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "All banned phrases removed.");
+                return;
+            }
+
+            size_t[] garbage;
+
+            foreach (immutable istr; slice.splitter(" "))
+            {
+                import std.conv : ConvException, to;
+
+                try
+                {
+                    ptrdiff_t i = istr.to!size_t - 1;
+
+                    if ((i > 0) && (i < phrases.length))
+                    {
+                        garbage ~= i;
+                    }
+                    else
+                    {
+                        privmsg(plugin.state, event.channel, event.sender.nickname,
+                            "Phrase index %s out of range. (max %d)"
+                            .format(istr, phrases.length));
+                        return;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
+                        "Invalid phrase index: " ~ istr);
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
+                        "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
+                        .format(settings.prefix, event.aux, verb));
+                    return;
+                }
+            }
+
+            immutable originalNum = phrases.length;
+
+            foreach_reverse (immutable i; garbage)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
+            }
+
+            immutable numRemoved = (originalNum - phrases.length);
+            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "%d/%d phrase bans removed.".format(numRemoved, originalNum));
+
+            if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
+        }
+        else
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No banned phrases registered for this channel.");
+        }
+        break;
+
+    case "list":
+        if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
+        {
+            import std.algorithm.comparison : min;
+
+            enum toDisplay = 10;
+            enum maxLineLength = 64;
+
+            ptrdiff_t start;
+
+            if (slice.length)
+            {
+                import std.conv : ConvException, to;
+
+                try
+                {
+                    start = slice.to!ptrdiff_t - 1;
+
+                    if ((start < 0) || (start >= phrases.length))
+                    {
+                        privmsg(plugin.state, event.channel, event.sender.nickname,
+                            "Invalid phrase index or out of bounds.");
+                        return;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
+                        "Usage: %s%s list [optional starting position number]"
+                        .format(settings.prefix, event.aux));
+                    return;
+                }
+            }
+
+            size_t end = min(start+toDisplay, phrases.length);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Currently banned phrases (%d-%d of %d)"
+                .format(start+1, end, phrases.length));
+
+            foreach (immutable i, const phrase; (*phrases)[start..end])
+            {
+                immutable maxLen = min(phrase.length, maxLineLength);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "%d: %s%s".format(start+i+1, phrase, (maxLen < phrase.length) ?
+                    " ...  [truncated]" : string.init));
+            }
+        }
+        else
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No banned phrases registered for this channel.");
+        }
+        break;
+
+    case "clear":
+        plugin.bannedPhrasesByChannel.remove(targetChannel);
+        saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+        privmsg(plugin.state, event.channel, event.sender.nickname, "All banned phrases cleared.");
+        break;
+
+    default:
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [ban|unban|list|clear]".format(settings.prefix, event.aux));
+        break;
+    }
 }
 
 
@@ -728,6 +1011,9 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
                 *adminArray ~= nickname;
                 // Drop down for report
             }
+
+            saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
+            chan(plugin.state, event.channel, slice ~ " is now an administrator.");
         }
         else
         {
@@ -853,6 +1139,11 @@ void onEndOfMotd(TwitchBotPlugin plugin)
         adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
         adminsByChannel.rehash();
 
+        JSONStorage channelBannedPhrasesJSON;
+        channelBannedPhrasesJSON.load(bannedPhrasesFile);
+        //bannedPhrasesByChannel.clear();
+        bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
+        bannedPhrasesByChannel.rehash();
     }
 }
 
@@ -918,10 +1209,22 @@ void initResources(TwitchBotPlugin plugin)
         throw new IRCPluginInitialisationException(plugin.adminsFile.baseName ~ " may be malformed.");
     }
 
+    JSONStorage bannedPhrasesJSON;
+
+    try
+    {
+        bannedPhrasesJSON.load(plugin.bannedPhrasesFile);
+    }
+    catch (JSONException e)
+    {
+        throw new IRCPluginInitialisationException(plugin.bannedPhrasesFile.baseName ~ " may be malformed.");
+    }
+
     // Let other Exceptions pass.
 
     onelinerJSON.save(plugin.onelinerFile);
     adminsJSON.save(plugin.adminsFile);
+    bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
 }
 
 
@@ -968,6 +1271,12 @@ private:
 
     /// Filename of file with administrators.
     @Resource string adminsFile = "twitchadmins.json";
+
+    /// Associative array of banned phrases; phrases array keyed by channel.
+    string[][string] bannedPhrasesByChannel;
+
+    /// Filename of file with banned phrases.
+    @Resource string bannedPhrasesFile = "twitchphrases.json";
 
     /// All Twitch Bot plugin settings.
     @Settings TwitchBotSettings twitchBotSettings;
