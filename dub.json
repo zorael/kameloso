@@ -9,6 +9,7 @@
     "sourcePaths": [ "source" ],
     "importPaths": [ "source" ],
     "libs-posix-dmd": [ "phobos2" ],
+    "dflags": [ "-dip25", "-dip1008" ],
     "-ddoxFilterArgs":
     [
         "--unittest-examples",
@@ -93,7 +94,6 @@
                 "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
-            "dflags": [ "-dip25", "-dip1008" ],
             "dependencies": { "requests": "~>1.0.8" }
         }
     ]
