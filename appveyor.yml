@@ -4,12 +4,12 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.084.0
+      DVersion: 2.086.0
       DSubversion:
-      DAppVeyorBuildJob: 84u3srj5gv90n0td
       arch: x64
     - DC: ldc
-      DVersion: 1.13.0
+      DVersion: 1.16.0
+      DSubversion: -beta1
       arch: x64
 
 skip_tags: true
@@ -17,14 +17,17 @@ branches:
   only:
     - master
     - stable
+    - /appveyor-.+/
 
 artifacts:
   - path: kameloso.exe
-    name: Normal build (debug mode)
+    name: Normal build
+  - path: kameloso-vanilla.exe
+    name: Colourless vanilla build
   - path: kameloso-twitch.exe
-    name: With Twitch bot (debug mode)
+    name: With Twitch bot
   - path: kameloso-dev.exe
-    name: All-inclusive dev build (debug mode)
+    name: All-inclusive dev build
 
 install:
   - ps: function SetUpDCompiler
@@ -41,13 +44,11 @@ install:
               $releasetype = $env:DReleaseType;
               $version = $env:DVersion;
               $subversion = $env:DSubversion;
-              $buildjob = $env:DAppVeyorBuildJob;
               Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\dmd.7z";
               echo "finished.";
               pushd c:\\;
               7z x dmd.7z > $null;
               popd;
-              Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/$($buildjob)/artifacts/src%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe";
             }
             elseif($env:DC -eq "ldc"){
               echo "downloading ...";
@@ -59,7 +60,8 @@ install:
               }
               $env:toolchain = "msvc";
               $version = $env:DVersion;
-              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)/ldc2-$($version)-windows-x64.7z" -OutFile "c:\ldc.7z";
+              $subversion = $env:DSubversion;
+              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-x64.7z" -OutFile "c:\ldc.7z";
               echo "finished.";
               pushd c:\\;
               7z x ldc.7z > $null;
@@ -67,7 +69,7 @@ install:
             }
         }
   - ps: SetUpDCompiler
-  - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.11.0-windows-x86.zip -OutFile dub.zip
+  - ps: Invoke-WebRequest https://github.com/dlang/dub/releases/download/v1.15.0/dub-v1.15.0-windows-x86_64.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
   - dub --version
@@ -86,7 +88,8 @@ before_build:
          }
          elseif($env:DC -eq "ldc"){
            $version = $env:DVersion;
-           $env:PATH += ";C:\ldc2-$($version)-windows-x64\bin";
+           $subversion = $env:DSubversion;
+           $env:PATH += ";C:\ldc2-$($version)$($subversion)-windows-x64\bin";
            $env:DC = "ldc2";
          }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
@@ -110,4 +113,5 @@ test_script:
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
  - mv kameloso.exe kameloso-twitch.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c vanilla
+ - mv kameloso.exe kameloso-vanilla.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c full
