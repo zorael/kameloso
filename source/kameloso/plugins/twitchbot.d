@@ -213,8 +213,7 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
     if (!targetChannel.length || (targetChannel[0] != '#'))
     {
         query(plugin.state, event.sender.nickname,
-            "Usage: %s%s [channel] [ban|unban|list|clear]"
-            .format(settings.prefix, event.aux));
+            "Usage: %s [channel] [ban|unban|list|clear]".format(event.aux));
         return;
     }
 
@@ -249,8 +248,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s %s [phrase or substring of phrase]"
-                .format(settings.prefix, event.aux, verb));
+                "Usage: %s [phrase]".format(verb));
             return;
         }
 
@@ -264,8 +262,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
-                .format(settings.prefix, event.aux, verb));
+                "Usage: %s [phrase num 1] [phrase num 2] [phrase num 3] ...".format(verb));
             return;
         }
 
@@ -308,8 +305,8 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Invalid phrase index: " ~ istr);
                     privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s%s %s [phrase num 1] [phrase num 2] [phrase num 3] ..."
-                        .format(settings.prefix, event.aux, verb));
+                        "Usage: %s [phrase num 1] [phrase num 2] [phrase num 3] [*]..."
+                        .format(verb));
                     return;
                 }
             }
@@ -364,8 +361,8 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
                 catch (ConvException e)
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s%s list [optional starting position number]"
-                        .format(settings.prefix, event.aux));
+                        "Usage: %s [optional starting position number]"
+                        .format(verb));
                     return;
                 }
             }
@@ -399,7 +396,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
     default:
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [ban|unban|list|clear]".format(settings.prefix, event.aux));
+            "Available actions: ban, unban, list, clear");
         break;
     }
 }
@@ -820,8 +817,7 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del] [trigger] [text]"
-            .format(settings.prefix, event.aux));
+        chan(plugin.state, event.channel, "Usage: [add|del] [trigger] [text]");
         return;
     }
 
@@ -831,42 +827,37 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     switch (verb)
     {
     case "add":
-        if (slice.contains!(Yes.decode)(' '))
+        if (!slice.contains!(Yes.decode)(' '))
         {
-            immutable trigger = slice.nom!(Yes.decode)(' ');
-
-            plugin.onelinersByChannel[event.channel][trigger] = slice;
-            saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
-
-            chan(plugin.state, event.channel, "Oneliner %s%s added."
-                .format(settings.prefix, trigger));
+            chan(plugin.state, event.channel, "Usage: %s [trigger] [text]".format(verb));
+            return;
         }
-        else
-        {
-            chan(plugin.state, event.channel, "Usage: %s%s add [trigger] [text]"
-                .format(settings.prefix, event.aux));
-        }
-        return;
+
+        immutable trigger = slice.nom!(Yes.decode)(' ');
+
+        plugin.onelinersByChannel[event.channel][trigger] = slice;
+        saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
+
+        chan(plugin.state, event.channel, "Oneliner %s%s added."
+            .format(settings.prefix, trigger));
+        break;
 
     case "del":
-        if (slice.length)
+        if (!slice.length)
         {
-            plugin.onelinersByChannel[event.channel].remove(slice);
-            saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
+            chan(plugin.state, event.channel, "Usage: %s [trigger]".format(verb));
+            return;
+        }
 
-            chan(plugin.state, event.channel, "Oneliner %s%s removed."
-                .format(settings.prefix, slice));
-        }
-        else
-        {
-            chan(plugin.state, event.channel, "Usage: %s%s del [trigger]"
-                .format(settings.prefix, event.aux));
-        }
-        return;
+        plugin.onelinersByChannel[event.channel].remove(slice);
+        saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
+
+        chan(plugin.state, event.channel, "Oneliner %s%s removed."
+            .format(settings.prefix, slice));
+        break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del] [trigger] [text]"
-            .format(settings.prefix, event.aux));
+        chan(plugin.state, event.channel, "Available actions: add, del");
         break;
     }
 }
@@ -944,8 +935,7 @@ void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
     if (!targetChannel.length || (targetChannel[0] != '#'))
     {
         query(plugin.state, event.sender.nickname,
-            "Usage: %s%s [channel] [add|del|list] [nickname]"
-            .format(settings.prefix, event.aux));
+            "Usage: %s [channel] [add|del|list] [nickname]".format(event.aux));
         return;
     }
 
@@ -975,8 +965,7 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
     if (!event.content.length || (event.content.count(' ') > 1))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [nickname]"
-            .format(settings.prefix, event.aux));
+            "Usage: [add|del|list] [nickname]");
         return;
     }
 
@@ -989,8 +978,7 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s [add] [nickname]"
-                .format(settings.prefix, event.aux));
+                "Usage: %s [nickname]".format(verb));
             return;
         }
 
@@ -1030,8 +1018,7 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s [del] [nickname]"
-                .format(settings.prefix, event.aux));
+                "Usage: %s [nickname]".format(verb));
             return;
         }
 
@@ -1075,8 +1062,7 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
 
     default:
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [nickname]"
-            .format(settings.prefix, event.aux));
+            "Available actions: add, del, list");
         break;
     }
 }
