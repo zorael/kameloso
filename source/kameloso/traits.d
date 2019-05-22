@@ -571,3 +571,66 @@ unittest
     static assert(!hasElaborateInit!NoDefaultValues);
     static assert(hasElaborateInit!HasDefaultValues);
 }
+
+
+// TakesParams
+/++
+ +  Given a function and a tuple of types, evaluates whether that function could
+ +  be called with that tuple as parameters. Qualifiers like `const` and
+ +  `immutable` are skipped, which may make it a poor choice if dealing with
+ +  functions that require such arguments.
+ +
+ +  It is merely syntactic sugar, using `std.meta` and `std.traits` behind the scenes.
+ +
+ +  Example:
+ +  ---
+ +  void noParams();
+ +  bool boolParam(bool);
+ +  string stringParam(string);
+ +  float floatParam(float);
+ +
+ +  static assert(TakesParams!(noParams));
+ +  static assert(TakesParams!(boolParam, bool));
+ +  static assert(TakesParams!(stringParam, string));
+ +  static assert(TakesParams!(floatParam, float));
+ +  ---
+ +
+ +  Params:
+ +      fun = Function to evaluate the parameters of.
+ +      P = Variadic list of types to compare `fun`'s function parameters with.
+ +/
+template TakesParams(alias fun, P...)
+{
+    import std.meta : AliasSeq;
+    import std.traits : Parameters, Unqual, staticMap;
+
+    alias FunParams = staticMap!(Unqual, Parameters!fun);
+    alias PassedParams = staticMap!(Unqual, P);
+
+    static if (is(FunParams : PassedParams))
+    {
+        enum TakesParams = true;
+    }
+    else
+    {
+        enum TakesParams = false;
+    }
+}
+
+///
+unittest
+{
+    void foo();
+    void foo1(string);
+    void foo2(string, int);
+    void foo3(bool, bool, bool);
+
+    static assert(TakesParams!(foo));//, AliasSeq!()));
+    static assert(TakesParams!(foo1, string));
+    static assert(TakesParams!(foo2, string, int));
+    static assert(TakesParams!(foo3, bool, bool, bool));
+
+    static assert(!TakesParams!(foo, string));
+    static assert(!TakesParams!(foo1, string, int));
+    static assert(!TakesParams!(foo2, bool, bool, bool));
+}
