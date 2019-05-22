@@ -317,7 +317,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAddChan
+// onCommandAddHome
 /++
  +  Adds a channel to the list of currently active home channels, in the
  +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
@@ -989,7 +989,7 @@ void onCommandResetTerminal()
 }
 
 
-// onCommandprintRaw
+// onCommandPrintRaw
 /++
  +  Toggles a flag to print all incoming events *raw*.
  +
@@ -1002,7 +1002,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printraw")
 @Description("[debug] Toggles a flag to print all incoming events raw.")
-void onCommandprintRaw(AdminPlugin plugin, const IRCEvent event)
+void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
 {
     import std.conv : text;
 
@@ -1101,7 +1101,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// joinPartImpl
+// onCommandJoinPart
 /++
  +  Joins or parts a supplied channel.
  +/
@@ -1189,7 +1189,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onAuthCommand
+// onCommandAuth
 /++
  +  Asks the `ConnectService` to (re-)authenticate to services.
  +/
@@ -1296,6 +1296,8 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+import kameloso.thread : Sendable;
+
 // onBusMessage
 /++
  +  Receives a passed `kameloso.thread.BusMessage` with the "`admin`" header,
@@ -1309,7 +1311,6 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
  +      header = String header describing the passed content payload.
  +      content = Message content.
  +/
-import kameloso.thread : Sendable;
 version(Posix)  // No need to compile this in on pipeline-less builds
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {

@@ -866,7 +866,7 @@ mixin MinimalAuthentication;
 public:
 
 
-// Webtitles
+// WebtitlesPlugin
 /++
  +  The Webtitles plugin catches HTTP URL links in an IRC channel, connects to
  +  its server and and streams the web page itself, looking for the web page's

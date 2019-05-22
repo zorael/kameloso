@@ -3565,6 +3565,8 @@ final class IRCPluginSettingsException : Exception
 }
 
 
+import std.traits : isSomeFunction;
+
 // WHOISFiberDelegate
 /++
  +  Functionality for catching WHOIS results and calling passed function aliases
@@ -3593,7 +3595,6 @@ final class IRCPluginSettingsException : Exception
  +      onFailure = Function alias to call when the server didn't respond with
  +          account information, or when the user is offline.
  +/
-import std.traits : isSomeFunction;
 mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {

@@ -102,7 +102,7 @@ struct PrinterSettings
 }
 
 
-// onAnyEvent
+// onPrintableEvent
 /++
  +  Prints an event to the local terminal.
  +

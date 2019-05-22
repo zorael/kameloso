@@ -1272,6 +1272,8 @@ private:
 
     mixin IRCPluginImpl;
 
+    import kameloso.plugins.common : FilterResult, PrivilegeLevel;
+
     /++
      +  Override `IRCPluginImpl.allow` and inject a user check, so we can support
      +  channel-specific admins.
@@ -1287,7 +1289,6 @@ private:
      +  Returns:
      +      `true` if the event should be allowed to trigger, `false` if not.
      +/
-    import kameloso.plugins.common : FilterResult, PrivilegeLevel;
     FilterResult allow(const IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
         with (PrivilegeLevel)

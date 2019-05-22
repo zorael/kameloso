@@ -512,12 +512,12 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
-// onSelfPart
+// onSelfpart
 /++
  +  Removes all recorded mode applications for a channel when leaving it.
  +/
 @(IRCEvent.Type.SELFPART)
-void onSelfPart(AutomodePlugin plugin, const IRCEvent event)
+void onSelfpart(AutomodePlugin plugin, const IRCEvent event)
 {
     plugin.appliedAutomodes.remove(event.channel);
 }

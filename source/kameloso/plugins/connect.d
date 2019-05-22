@@ -506,7 +506,7 @@ void onNickInUse(ConnectService service)
 }
 
 
-// onErroneousNickname
+// onBadNick
 /++
  +  Aborts a registration attempt and quits if the requested nickname is too
  +  long or contains invalid characters.
@@ -965,7 +965,7 @@ void negotiateNick(ConnectService service)
 }
 
 
-// initialise
+// start
 /++
  +  Registers with the server.
  +
@@ -982,6 +982,8 @@ void start(ConnectService service)
 }
 
 
+import kameloso.thread : BusMessage, Sendable;
+
 // onBusMessage
 /++
  +  Receives a passed `kameloso.thread.BusMessage` with the "`connect`" header,
@@ -994,7 +996,6 @@ void start(ConnectService service)
  +      header = String header describing the passed content payload.
  +      content = Message content.
  +/
-import kameloso.thread : BusMessage, Sendable;
 void onBusMessage(ConnectService service, const string header, shared Sendable content)
 {
     if (header != "connect") return;

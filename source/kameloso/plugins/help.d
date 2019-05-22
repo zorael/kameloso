@@ -262,7 +262,7 @@ mixin MinimalAuthentication;
 public:
 
 
-// Help
+// HelpPlugin
 /++
  +  The Help plugin serves the `help` command.
  +

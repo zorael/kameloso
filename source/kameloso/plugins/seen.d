@@ -858,6 +858,8 @@ void initResources(SeenPlugin plugin)
 }
 
 
+import kameloso.thread : Sendable;
+
 // onBusMessage
 /++
  +  Receives a passed `kameloso.thread.BusMessage` with the "`seen`" header,
@@ -871,9 +873,8 @@ void initResources(SeenPlugin plugin)
  +      header = String header describing the passed content payload.
  +      content = Message content.
  +/
-import kameloso.thread : Sendable;
-version(Posix)
 debug
+version(Posix)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;

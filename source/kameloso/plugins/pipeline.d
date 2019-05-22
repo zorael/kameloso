@@ -378,6 +378,8 @@ void teardown(PipelinePlugin plugin)
 }
 
 
+import kameloso.thread : Sendable;
+
 // onBusMessage
 /++
  +  Receives a passed `kameloso.thread.BusMessage` with the "`pipeline`" header,
@@ -390,7 +392,6 @@ void teardown(PipelinePlugin plugin)
  +      header = String header describing the passed content payload.
  +      content = Message content.
  +/
-import kameloso.thread : Sendable;
 void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;
