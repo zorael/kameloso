@@ -1289,12 +1289,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     if (settings.flush) stdout.flush();
                 }
 
-                static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                alias This = typeof(this);
+
+                static if (is(Params : AliasSeq!(This, IRCEvent)) ||
                     is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
                 {
                     fun(this, mutEvent);
                 }
-                else static if (is(Params : AliasSeq!(typeof(this))) ||
+                else static if (is(Params : AliasSeq!This) ||
                     is(Params : AliasSeq!IRCPlugin))
                 {
                     fun(this);
@@ -1453,7 +1455,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         static if (__traits(compiles, .initialise))
         {
-            .initialise(this);
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
+            if (!isEnabled) return;
+
+            alias Params = staticMap!(Unqual, Parameters!(.initialise));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!This))
+            {
+                .initialise(this);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".initialise");
+            }
         }
     }
 
@@ -1467,8 +1484,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .postprocess))
         {
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
             if (!isEnabled) return;
-            .postprocess(this, event);
+
+            alias Params = staticMap!(Unqual, Parameters!(.postprocess));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!(This, IRCEvent)))
+            {
+                .postprocess(this, event);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".postprocess");
+            }
         }
     }
 
@@ -1481,8 +1512,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
             if (!isEnabled) return;
-            .initResources(this);
+
+            alias Params = staticMap!(Unqual, Parameters!(.initResources));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!This))
+            {
+                .initResources(this);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".initResources");
+            }
         }
     }
 
@@ -1648,22 +1693,27 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            if (!isEnabled) return;
-
-            import std.datetime.systime : SysTime;
             import std.meta : AliasSeq, staticMap;
             import std.traits : Parameters, Unqual;
+            import std.datetime.systime : SysTime;
+
+            if (!isEnabled) return;
 
             alias Params = staticMap!(Unqual, Parameters!(.start));
+            alias This = typeof(this);
 
-            static if (is(Params : AliasSeq!(typeof(this), SysTime)))
+            static if (is(Params : AliasSeq!(This, SysTime)))
             {
                 import std.datetime.systime : Clock;
                 .start(this, Clock.currTime);
             }
-            else
+            else static if (is(Params : AliasSeq!This))
             {
                 .start(this);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".start");
             }
         }
     }
@@ -1677,8 +1727,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
             if (!isEnabled) return;
-            .teardown(this);
+
+            alias Params = staticMap!(Unqual, Parameters!(.teardown));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!This))
+            {
+                .teardown(this);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".teardown");
+            }
         }
     }
 
@@ -1793,9 +1857,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            if (now >= state.nextPeriodical)
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
+            alias Params = staticMap!(Unqual, Parameters!(.periodically));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!This))
             {
-                .periodically(this);
+                if (now >= state.nextPeriodical)
+                {
+                    .periodically(this);
+                }
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".periodically");
             }
         }
     }
@@ -1809,8 +1886,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
             if (!isEnabled) return;
-            .reload(this);
+
+            alias Params = staticMap!(Unqual, Parameters!(.reload));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!This))
+            {
+                .reload(this);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".reload");
+            }
         }
     }
 
