@@ -475,13 +475,20 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
  +/
 void pruneNotes(NotesPlugin plugin)
 {
+    string[] garbageKeys;
+
     foreach (immutable channel, channelNotes; plugin.notes.object)
     {
         if (!channelNotes.object.length)
         {
             // Dead channel
-            plugin.notes.object.remove(channel);
+            garbageKeys ~= channel;
         }
+    }
+
+    foreach (immutable key; garbageKeys)
+    {
+        plugin.notes.object.remove(key);
     }
 }
 
