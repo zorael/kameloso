@@ -18,56 +18,80 @@ install_deps() {
 }
 
 build() {
+    local A S
+
+    A="--compiler=$1"
+    S="--build-mode=singleFile"
+
     mkdir -p artifacts
-    ARGS="--compiler=$1 --build-mode=singleFile"
 
     ## test
-    dub test $ARGS # -c full # not needed, unittest already includes more
-    ARGS="$ARGS --nodeps --force"
-    #dub test $ARGS -c pluginless
-    dub test $ARGS -c vanilla
+    dub test $A $S
+    A="$A --nodeps --force"
+    #dub test $A $S -c pluginless
+    #dub test $A $S -c colours
+    dub test $A $S -c vanilla
 
 
     ## debug
-    dub build $ARGS -b debug -c full
+    dub build $A $S -b debug -c full
     mv kameloso artifacts/kameloso
 
-    dub build $ARGS -b debug -c twitch
+    dub build $A $S -b debug -c twitch
     mv kameloso artifacts/kameloso-twitch
 
-    #dub build $ARGS -b debug -c pluginless
+    #dub build $A -b debug -c pluginless
     #mv kameloso artifacts/kameloso-pluginless
 
-    dub build $ARGS -b debug -c vanilla
+    dub build $A -b debug -c colours
+    mv kameloso artifacts/kameloso-colours
+
+    dub build $A -b debug -c vanilla
     mv kameloso artifacts/kameloso-vanilla
 
 
     ## plain
-    dub build $ARGS -b plain -c full || true
-    mv kameloso artifacts/kameloso-plain || true
+    dub build $A -b plain -c full || true
+    mv kameloso artifacts/kameloso-plain || \
+        touch artifacts/kameloso-plain.failed
 
-    dub build $ARGS -b plain -c twitch || true
-    mv kameloso artifacts/kameloso-plain-twitch || true
+    dub build $A -b plain -c twitch || true
+    mv kameloso artifacts/kameloso-plain-twitch || \
+        touch artifacts/kameloso-plain-twitch.failed
 
-    #dub build $ARGS -b plain -c pluginless || true
-    #mv kameloso artifacts/kameloso-plain-pluginless || true
+    #dub build $A -b plain -c pluginless || true
+    #mv kameloso artifacts/kameloso-plain-pluginless || \
+        #touch artifacts/kameloso-plain-pluginless.failed
 
-    dub build $ARGS -b plain -c vanilla || true
-    mv kameloso artifacts/kameloso-plain-vanilla || true
+    dub build $A -b plain -c colours || true
+    mv kameloso artifacts/kameloso-plain-colours || \
+        touch artifacts/kameloso-plain-colours.failed
+
+    dub build $A -b plain -c vanilla || true
+    mv kameloso artifacts/kameloso-plain-vanilla || \
+        touch artifacts/kameloso-plain-vanilla.failed
 
 
     ## release
-    dub build $ARGS -b release -c full || true
-    mv kameloso artifacts/kameloso-release || true
+    dub build $A -b release -c full || true
+    mv kameloso artifacts/kameloso-release || \
+        touch artifacts/kameloso-release.failed
 
-    dub build $ARGS -b release -c twitch || true
-    mv kameloso artifacts/kameloso-release-twitch || true
+    dub build $A $S -b release -c twitch || true
+    mv kameloso artifacts/kameloso-release-twitch || \
+        touch artifacts/kameloso-release-twitch.failed
 
-    #dub build $ARGS -b release -c pluginless || true
-    #mv kameloso artifacts/kameloso-release-pluginless || true
+    #dub build $A -b release -c pluginless || true
+    #mv kameloso artifacts/kameloso-release-pluginless || \
+        #touch artifacts/kameloso-release-pluginless.failed
 
-    dub build $ARGS -b release -c vanilla || true
-    mv kameloso artifacts/kameloso-release-vanilla || true
+    dub build $A -b release -c colours || true
+    mv kameloso artifacts/kameloso-release-colours || \
+        touch artifacts/kameloso-release-colours.failed
+
+    dub build $A -b release -c vanilla || true
+    mv kameloso artifacts/kameloso-release-vanilla || \
+        touch artifacts/kameloso-release-vanilla.failed
 }
 
 # execution start
@@ -77,7 +101,7 @@ case "$1" in
         install_deps;
         ;;
     build)
-        build dmd;
+        time build dmd;
         #build ldc2;  # 0.14.0; too old
         ;;
     *)
