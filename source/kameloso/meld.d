@@ -512,40 +512,6 @@ unittest
 }
 
 
-import std.typecons : Flag;
-
-// meldInto
-/++
- +  Takes two structs or classes of the same type and melds them together,
- +  making the members a union of the two.
- +
- +  Deprecated compatibility version taking an `overwrite` flag. Please use the
- +  one taking a `MeldingStrategy` instead.
- +
- +  Params:
- +      overwrite = Whether or not the source object should overwrite set (non-`init`)
- +          values in the receiving object.
- +      meldThis = Struct to meld (source).
- +      intoThis = Reference to struct to meld (target).
- +/
-deprecated("Use meldInto!MeldingStrategy instead")
-void meldInto(Flag!"overwrite" overwrite, Thing)(Thing meldThis, ref Thing intoThis)
-if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
-    !is(intoThis == immutable)))
-{
-    static if (overwrite)
-    {
-        enum strategy = MeldingStrategy.aggressive;
-    }
-    else
-    {
-        enum strategy = MeldingStrategy.conservative;
-    }
-
-    return meldInto!(strategy, Thing)(meldThis, intoThis);
-}
-
-
 // meldInto (array)
 /++
  +  Takes two arrays and melds them together, making a union of the two.
