@@ -656,6 +656,9 @@ unittest
  +
  +  This is used to send messages of types for which there exist no helper functions.
  +
+ +  See_Also:
+ +      immediate
+ +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
@@ -693,6 +696,57 @@ unittest
     {
         assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
         assert((content == "commands"), content);
+    }
+}
+
+
+// immediate
+/++
+ +  Immediately sends text to the server, verbatim. Skips all queues.
+ +
+ +  This is used to send messages of types for which there exist no helper
+ +  functions, and where they must be sent at once.
+ +
+ +  See_Also:
+ +      raw
+ +
+ +  Params:
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      line = Raw IRC string to send to the server.
+ +/
+void immediate(IRCPluginState state, const string line)
+{
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend;
+
+    // The receiving loop has access to settings.hideOutgoing, so we don't need
+    // to pass a quiet bool.
+
+    state.mainThread.prioritySend(ThreadMessage.Immediateline(), line);
+}
+
+alias immediateline = immediate;
+
+///
+unittest
+{
+    import kameloso.conv : Enum;
+    import kameloso.thread : ThreadMessage;
+    import std.meta : AliasSeq;
+
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    immediate(state, "test");
+
+    try
+    {
+        receiveOnly!(AliasSeq!(ThreadMessage.Immediateline, string));
+    }
+    catch (Exception e)
+    {
+        assert(0, "Receiving an immediateline failed.");
     }
 }
 
