@@ -1455,21 +1455,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         static if (__traits(compiles, .initialise))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
             if (!isEnabled) return;
 
-            alias Params = staticMap!(Unqual, Parameters!(.initialise));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!This))
+            static if (TakesParams!(.initialise, typeof(this)))
             {
                 .initialise(this);
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".initialise");
+                static assert(0, "Invalid signature on " ~ module_ ~ ".initialise: " ~
+                    typeof(.initialise).stringof);
             }
         }
     }
@@ -1484,21 +1481,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .postprocess))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
             if (!isEnabled) return;
 
-            alias Params = staticMap!(Unqual, Parameters!(.postprocess));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!(This, IRCEvent)))
+            static if (TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
                 .postprocess(this, event);
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".postprocess");
+                static assert(0, "Invalid signature on " ~ module_ ~ ".postprocess: " ~
+                    typeof(.postprocess).stringof);
             }
         }
     }
@@ -1512,21 +1506,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
             if (!isEnabled) return;
 
-            alias Params = staticMap!(Unqual, Parameters!(.initResources));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!This))
+            static if (TakesParams!(.initResources, typeof(this)))
             {
                 .initResources(this);
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".initResources");
+                static assert(0, "Invalid signature on " ~ module_ ~ ".initResources: " ~
+                    typeof(.initResources).stringof);
             }
         }
     }
@@ -1693,27 +1684,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            import std.meta : AliasSeq, staticMap;
-            import std.traits : Parameters, Unqual;
+            import kameloso.traits : TakesParams;
             import std.datetime.systime : SysTime;
 
             if (!isEnabled) return;
 
-            alias Params = staticMap!(Unqual, Parameters!(.start));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!(This, SysTime)))
+            static if (TakesParams!(.start, typeof(this), SysTime))
             {
                 import std.datetime.systime : Clock;
                 .start(this, Clock.currTime);
             }
-            else static if (is(Params : AliasSeq!This))
+            else static if (TakesParams!(.start, typeof(this)))
             {
                 .start(this);
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".start");
+                static assert(0, "Invalid signature on " ~ module_ ~ ".start: " ~
+                    typeof(.start).stringof);
             }
         }
     }
@@ -1727,15 +1715,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
             if (!isEnabled) return;
 
-            alias Params = staticMap!(Unqual, Parameters!(.teardown));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!This))
+            static if (TakesParams!(.teardown, typeof(this)))
             {
                 .teardown(this);
             }
@@ -1857,13 +1841,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
-            alias Params = staticMap!(Unqual, Parameters!(.periodically));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!This))
+            static if (TakesParams!(.periodically, typeof(this)))
             {
                 if (now >= state.nextPeriodical)
                 {
@@ -1872,7 +1852,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".periodically");
+                static assert(0, "Invalid signature on " ~ module_ ~ ".periodically: " ~
+                    typeof(.periodically).stringof);
             }
         }
     }
@@ -1886,21 +1867,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
             if (!isEnabled) return;
 
-            alias Params = staticMap!(Unqual, Parameters!(.reload));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!This))
+            static if (TakesParams!(.reload, typeof(this)))
             {
                 .reload(this);
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".reload");
+                static assert(0, "Invalid signature on " ~ module_ ~ ".reload: " ~
+                    typeof(.reload).stringof);
             }
         }
     }
@@ -1916,17 +1894,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .onBusMessage))
         {
-            import std.meta : AliasSeq;
-            import std.traits : Parameters, Unqual, staticMap;
+            import kameloso.traits : TakesParams;
 
-            alias Params = staticMap!(Unqual, Parameters!(.onBusMessage));
-            alias This = typeof(this);
-
-            static if (is(Params : AliasSeq!(This, string, Sendable)))
+            static if (TakesParams!(.onBusMessage, typeof(this), string, Sendable))
             {
                 .onBusMessage(this, header, content);
             }
-            else static if (is(Params : AliasSeq!(This, string)))
+            else static if (TakesParams!(.onBusMessage, typeof(this), string))
             {
                 .onBusMessage(this, header);
             }
@@ -3625,7 +3599,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 {
     static assert((__traits(compiles, plugin) || __traits(compiles, service)),
         "WHOISFiberDelegate should be mixed into the context of an event handler. " ~
-        "(Could not access neither plugin nor service from " ~ __FUNCTION__ ~ ")");
+        `(Could not access variables named neither "plugin" nor "service" from within ` ~
+        __FUNCTION__ ~ ")");
 
     import std.conv : text;
 
