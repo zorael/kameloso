@@ -6,7 +6,7 @@ module kameloso.constants;
 /// Meta-information about the program.
 enum KamelosoInfo
 {
-    version_ = "1.1.3",
+    version_ = "1.1.4",
     built = __TIMESTAMP__,
     source = "https://github.com/zorael/kameloso",
 }
