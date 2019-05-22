@@ -148,6 +148,8 @@ unittest
 }
 
 
+import std.getopt : GetoptResult;
+
 // printHelp
 /++
  +  Prints the `getopt` `helpWanted` help table to screen.
@@ -171,7 +173,6 @@ unittest
  +  Params:
  +      results = Results from a `getopt` call, usually with `.helpWanted` true.
  +/
-import std.getopt : GetoptResult;
 void printHelp(GetoptResult results) @system
 {
     import kameloso.common : printVersionInfo, settings;

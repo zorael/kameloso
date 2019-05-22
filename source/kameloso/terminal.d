@@ -139,6 +139,8 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 }
 
 
+import std.range : isOutputRange;
+
 // colour
 /++
  +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
@@ -158,7 +160,6 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +      sink = Output range to write output to.
  +      codes = Variadic list of terminal format codes.
  +/
-import std.range : isOutputRange;
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))

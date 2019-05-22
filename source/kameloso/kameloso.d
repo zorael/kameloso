@@ -265,14 +265,15 @@ Next checkMessages(ref IRCBot bot)
         bot.writeConfigurationFile(settings.configFile);
     }
 
+    import kameloso.thread : CarryingFiber;
+    import kameloso.plugins.common : IRCPlugin;
+
     /++
      +  Attaches a reference to the main array of
      +  `kameloso.plugins.common.IRCPlugin`s (housing all plugins) to the
      +  payload member of the supplied `kameloso.common.CarryingFiber`, then
      +  invokes it.
      +/
-    import kameloso.thread : CarryingFiber;
-    import kameloso.plugins.common : IRCPlugin;
     void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber)
     {
         auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
@@ -704,8 +705,6 @@ Next mainLoop(ref IRCBot bot)
                 return Next.returnFailure;
 
             case error:
-                import kameloso.constants : Timeout;
-
                 if (attempt.bytesReceived == 0)
                 {
                     logger.errorf("Connection error: empty server response! (%s%s%s)",
@@ -853,6 +852,8 @@ Next mainLoop(ref IRCBot bot)
 }
 
 
+import kameloso.plugins.common : IRCPlugin;
+
 // handleFibers
 /++
  +  Processes the awaiting `core.thread.Fiber`s of an
@@ -864,7 +865,6 @@ Next mainLoop(ref IRCBot bot)
  +          iterate and process.
  +      event = The triggering `kameloso.irc.defs.IRCEvent`.
  +/
-import kameloso.plugins.common : IRCPlugin;
 void handleFibers(IRCPlugin plugin, const IRCEvent event)
 {
     import core.thread : Fiber;
@@ -1064,6 +1064,8 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
 }
 
 
+import kameloso.plugins.common : TriggerRequest;
+
 // whoisForTriggerRequestQueue
 /++
  +  Takes a queue of `TriggerRequest` objects and emits `WHOIS` requests for each one.
@@ -1072,7 +1074,6 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      reqs = Reference to an associative array of `TriggerRequest`s.
  +/
-import kameloso.plugins.common : TriggerRequest;
 void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] reqs)
 {
     // Walk through requests and call `WHOIS` on those that haven't been

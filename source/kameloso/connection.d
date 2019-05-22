@@ -15,7 +15,6 @@ import kameloso.constants;
 struct Connection
 {
 private:
-    import core.time : seconds;
     import std.socket : Socket, Address;
 
     /// Real IPv4 and IPv6 sockets to connect through.
@@ -65,6 +64,7 @@ public:
      +/
     void setOptions(Socket socketToSetup)
     {
+        import core.time : msecs, seconds;
         import std.socket : SocketOption, SocketOptionLevel;
 
         with (socketToSetup)
@@ -110,6 +110,7 @@ public:
         foreach (immutable string_; strings)
         {
             import std.algorithm.comparison : min;
+
             immutable thisLength = min(string_.length, remainingMaxLength);
             socket.send(string_[0..thisLength]);
             remainingMaxLength -= thisLength;
@@ -121,11 +122,12 @@ public:
 }
 
 
+import core.time : Duration;
+
 // ListenAttempt
 /++
  +  Embodies the state of a listening attempt.
  +/
-import core.time : Duration;
 struct ListenAttempt
 {
     /// At what state the listening process this attempt is currently at.

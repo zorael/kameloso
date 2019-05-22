@@ -512,6 +512,8 @@ unittest
 }
 
 
+import std.typecons : Flag;
+
 // meldInto
 /++
  +  Takes two structs or classes of the same type and melds them together,
@@ -526,7 +528,6 @@ unittest
  +      meldThis = Struct to meld (source).
  +      intoThis = Reference to struct to meld (target).
  +/
-import std.typecons : Flag;
 deprecated("Use meldInto!MeldingStrategy instead")
 void meldInto(Flag!"overwrite" overwrite, Thing)(Thing meldThis, ref Thing intoThis)
 if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&

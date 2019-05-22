@@ -11,7 +11,7 @@ version(Posix)
 {
     private import core.sys.posix.pthread : pthread_t;
 
-    // pthread_setname_-np
+    // pthread_setname_np
     /++
      +  Prototype to allow linking to `pthread`'s function for naming threads.
      +/
@@ -175,6 +175,8 @@ unittest
 }
 
 
+import core.thread : Fiber;
+
 // CarryingFiber
 /++
  +  A `core.thread.Fiber` carrying a payload of type `T`.
@@ -197,7 +199,6 @@ unittest
  +  Params:
  +      T = Type to embed into the `CarryingFiber` as payload.
  +/
-import core.thread : Fiber;
 final class CarryingFiber(T) : Fiber
 {
     /++
@@ -230,6 +231,8 @@ final class CarryingFiber(T) : Fiber
 }
 
 
+import core.time : Duration;
+
 // interruptibleSleep
 /++
  +  Sleep in small periods, checking the passed `abort` bool in between to see
@@ -249,7 +252,6 @@ final class CarryingFiber(T) : Fiber
  +      abort = Reference to the bool flag which, if set, means we should
  +          interrupt and return early.
  +/
-import core.time : Duration;
 void interruptibleSleep(const Duration dur, const ref bool abort) @system
 {
     import core.thread : Thread, msecs, seconds;
