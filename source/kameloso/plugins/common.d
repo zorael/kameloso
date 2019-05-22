@@ -793,7 +793,7 @@ unittest
 version(WithPlugins)
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
-    import core.thread : Fiber;
+    private import core.thread : Fiber;
 
     private enum hasIRCPluginImpl = true;
 
@@ -949,7 +949,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         pluginName.nom('.');
                     }
 
-                    return "[%s] %s (%s)".format(pluginName,__traits(identifier, fun),
+                    return "[%s] %s (%s)".format(pluginName, __traits(identifier, fun),
                         Enum!(IRCEvent.Type).toString(eventTypeUDA));
                 }();
 
@@ -1032,7 +1032,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                     {
-                        static assert(commandUDA.string_.length, name ~ " had an empty BotCommand string");
+                        static assert(commandUDA.string_.length, name ~ " has an empty BotCommand string");
 
                         static if (verbose)
                         {
@@ -1605,6 +1605,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
+    import std.array : Appender;
+
     // serialiseConfigInto
     /++
      +  Gathers the configuration text the plugin wants to contribute to the
@@ -1621,7 +1623,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      sink = Reference `std.array.Appender` to fill with plugin-specific
      +          settings text.
      +/
-    import std.array : Appender;
     public void serialiseConfigInto(ref Appender!string sink) const
     {
         import kameloso.config : serialise;
@@ -1695,7 +1696,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             import kameloso.string : contains, nom;
 
-            string moduleName = module_;
+            string moduleName = module_;  // mutable
 
             while (moduleName.contains('.'))
             {
@@ -1814,11 +1815,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
+    import kameloso.thread : Sendable;
+
     // onBusMessage
     /++
      +  Proxies a bus message to the plugin, to let it handle it (or not).
      +/
-    import kameloso.thread : Sendable;
     public void onBusMessage(const string header, shared Sendable content) @system
     {
         static if (__traits(compiles, .onBusMessage))
