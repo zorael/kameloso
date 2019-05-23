@@ -3445,11 +3445,13 @@ unittest
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 
     import std.conv : text;
+    import std.math : approxEqual;
+
     assert((ps.s == "abc def ghi"), ps.s);
     assert((ps.i == 42), ps.i.text);
-    assert((ps.f == 3.14f), ps.f.text);
+    assert(ps.f.approxEqual(3.14f), ps.f.text);
     assert(ps.b);
-    assert((ps.d == 99.99), ps.d.text);
+    assert(ps.d.approxEqual(99.99), ps.d.text);
 }
 
 
