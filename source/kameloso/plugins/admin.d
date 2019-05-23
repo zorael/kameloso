@@ -1389,15 +1389,9 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-            try
-            {
-                thisFiber.payload.applyCustomSettings([ slice ]);
-                logger.log("Setting changed.");
-            }
-            catch (ConvException e)
-            {
-                logger.error("Invalid setting.");
-            }
+            immutable success = thisFiber.payload.applyCustomSettings([ slice ]);
+            if (success) logger.log("Setting changed.");
+            // applyCustomSettings displays its own error messages
         }
 
         auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
