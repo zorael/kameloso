@@ -3413,6 +3413,56 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
     return noErrors;
 }
 
+///
+unittest
+{
+    struct MyPluginSettings
+    {
+        @Enabler bool enabled;
+
+        string s;
+        int i;
+        float f;
+        bool b;
+        double d;
+    }
+
+    final class MyPlugin : IRCPlugin
+    {
+        @Settings MyPluginSettings myPluginSettings;
+
+        string name() @property const
+        {
+            return "myplugin";
+        }
+
+        mixin IRCPluginImpl;
+    }
+
+    IRCPluginState state;
+    IRCPlugin plugin = new MyPlugin(state);
+
+    auto newSettings =
+    [
+        `myplugin.s="abc def ghi"`,
+        "myplugin.i=42",
+        "myplugin.f=3.14",
+        "myplugin.b=true",
+        "myplugin.d=99.99",
+    ];
+
+    applyCustomSettings([ plugin ], newSettings);
+
+    const ps = (cast(MyPlugin)plugin).myPluginSettings;
+
+    import std.conv : text;
+    assert((ps.s == "abc def ghi"), ps.s);
+    assert((ps.i == 42), ps.i.text);
+    assert((ps.f == 3.14f), ps.f.text);
+    assert(ps.b);
+    assert((ps.d == 99.99), ps.d.text);
+}
+
 
 // delayFiber
 /++
