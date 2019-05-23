@@ -845,7 +845,16 @@ Next mainLoop(ref IRCBot bot)
         }
 
         // Check concurrency messages to see if we should exit, else repeat
-        next = checkMessages(bot);
+        try
+        {
+            next = checkMessages(bot);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                logtint, e.msg, warningtint, e.file, e.line);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
     }
 
     return next;
