@@ -3323,11 +3323,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
     top:
     foreach (immutable line; customSettings)
     {
-        string slice = line;
-        string setting;
-        string value;
-
-        if (!slice.contains!(Yes.decode)("."))
+        if (!line.contains!(Yes.decode)('.'))
         {
             logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
                 logtint, warningtint, line);
@@ -3336,18 +3332,11 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         }
 
         import std.uni : toLower;
-        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
 
-        if (slice.contains!(Yes.decode)("="))
-        {
-            setting = slice.nom!(Yes.decode)("=");
-            value = slice;
-        }
-        else
-        {
-            setting = slice;
-            value = "true";
-        }
+        string slice = line;  // mutable
+        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
+        immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
+        immutable value = slice.length ? slice : "true";  // default setting if none given
 
         if (pluginstring == "core")
         {
