@@ -3303,6 +3303,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 {
     import kameloso.common : logger, settings;
     import kameloso.string : contains, nom;
+    import std.conv : ConvException;
 
     string logtint, warningtint;
 
@@ -3328,7 +3329,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
         if (!slice.contains!(Yes.decode)("."))
         {
-            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. ("%1$s%3$s%2$s")`,
+            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
                 logtint, warningtint, line);
             noErrors = false;
             continue;
@@ -3353,18 +3354,28 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
             import kameloso.common : initLogger, settings;
             import kameloso.objmanip : setMemberByName;
 
-            immutable success = settings.setMemberByName(setting, value);
-
-            if (!success)
+            try
             {
-                logger.warningf("No such %score%s setting: %1$s%3$s",
-                    logtint, warningtint, setting);
+                immutable success = settings.setMemberByName(setting, value);
+
+                if (!success)
+                {
+                    logger.warningf("No such %score%s setting: %1$s%3$s",
+                        logtint, warningtint, setting);
+                    noErrors = false;
+                }
+                else if ((setting == "monochrome") || (setting == "brightTerminal"))
+                {
+                    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+                }
+            }
+            catch (ConvException e)
+            {
+                logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
+                    logtint, warningtint, setting, value);
                 noErrors = false;
             }
-            else if ((setting == "monochrome") || (setting == "brightTerminal"))
-            {
-                initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
-            }
+
             continue top;
         }
         else
@@ -3373,12 +3384,21 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
             {
                 if (plugin.name != pluginstring) continue;
 
-                immutable success = plugin.setSettingByName(setting, value);
-
-                if (!success)
+                try
                 {
-                    logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
-                        logtint, plugin.name, warningtint, setting);
+                    immutable success = plugin.setSettingByName(setting, value);
+
+                    if (!success)
+                    {
+                        logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
+                            logtint, pluginstring, warningtint, setting);
+                        noErrors = false;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
+                        logtint, pluginstring, warningtint, setting, value);
                     noErrors = false;
                 }
 
