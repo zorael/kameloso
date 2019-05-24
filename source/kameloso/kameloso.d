@@ -757,7 +757,17 @@ Next mainLoop(ref IRCBot bot)
 
                 foreach (plugin; bot.plugins)
                 {
-                    plugin.postprocess(event);
+                    try
+                    {
+                        plugin.postprocess(event);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warningf("Exception %s.postprocess: %s%s",
+                            plugin.name, logtint, e.msg);
+                        printObject(event);
+                        version(PrintStacktraces) logger.trace(e.toString);
+                    }
 
                     if (plugin.state.client.updated)
                     {
