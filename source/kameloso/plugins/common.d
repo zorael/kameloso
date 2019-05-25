@@ -1114,10 +1114,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         foreach (immutable regexUDA; getUDAs!(fun, BotRegex))
                         {
-                            static assert((regexUDA.ending == Regex!char.init),
+                            import std.regex : Regex;
+
+                            static assert((regexUDA.engine != Regex!char.init),
                                 name ~ " has an incomplete BotRegex");
 
-                            if (!privateState.client.prefixPolicyMatches(regexUDA.policy, event))
+                            static if (verbose)
+                            {
+                                writeln("BotRegex: ", regexUDA.expression.length ?
+                                    regexUDA.expression : "(cannot get expression)");
+                                if (settings.flush) stdout.flush();
+                            }
+
+                            // Reset between iterations
+                            mutEvent = event;
+
+                            if (!privateState.client.prefixPolicyMatches(regexUDA.policy, mutEvent))
                             {
                                 static if (verbose)
                                 {
@@ -1128,19 +1140,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 continue;  // next BotRegex UDA
                             }
 
-                            // Reset between iterations
-                            mutEvent = event;
-                            immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
-
                             try
                             {
                                 import std.regex : matchFirst;
 
-                                immutable hits = thisCommand.matchFirst(regexUDA.engine);
+                                const hits = mutEvent.content.matchFirst(regexUDA.engine);
 
                                 if (!hits.empty)
                                 {
+                                    static if (verbose)
+                                    {
+                                        writeln("...expression matches!");
+                                        if (settings.flush) stdout.flush();
+                                    }
+
                                     mutEvent.aux = hits[0];
+                                    break;  // finish this BotRegex
                                 }
                             }
                             catch (Exception e)
@@ -1148,22 +1163,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 logger.warning("BotRegex exception: ", e.msg);
                                 continue;  // next BotRegex
                             }
-
-                            if (mutEvent.aux.length) continue udaloop;
                         }
                     }
                 }
 
                 static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
                 {
-                    // Bot{Command,Regex} exists but neither matched; skip
-                    static if (verbose)
+                    if (!mutEvent.aux.length)
                     {
-                        writeln("...neither BotCommand nor BotRegex matched; continue funloop");
-                        if (settings.flush) stdout.flush();
-                    }
+                        // Bot{Command,Regex} exists but neither matched; skip
+                        static if (verbose)
+                        {
+                            writeln("...neither BotCommand nor BotRegex matched; continue funloop");
+                            if (settings.flush) stdout.flush();
+                        }
 
-                    if (!mutEvent.aux.length) return Next.continue_; // next fun
+                        return Next.continue_; // next fun
+                    }
                 }
                 else static if (!hasUDA!(fun, Chainable) &&
                     !hasUDA!(fun, Terminating) &&
