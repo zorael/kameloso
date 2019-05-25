@@ -3234,11 +3234,12 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
     {
         if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.common : logger;
+            import kameloso.common : logger, printStacktrace;
             import kameloso.printing : printObject;
 
-            logger.warning("Tried to WHOIS on Twitch");
+            logger.warning(plugin.name ~ " tried to WHOIS on Twitch");
             printObject(event);
+            version(PrintStacktraces) printStacktrace();
             return;
         }
     }
