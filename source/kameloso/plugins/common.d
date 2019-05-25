@@ -3794,8 +3794,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         {
             if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
             {
-                import kameloso.common : logger;
+                import kameloso.common : logger, printStacktrace;
                 logger.warning("Tried to enqueue and WHOIS on Twitch");
+                version(PrintStacktraces) printStacktrace();
                 return;
             }
         }
