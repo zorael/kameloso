@@ -863,7 +863,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     private FilterResult allowImpl(const IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
-        return filterUser(event, privilegeLevel);
+        immutable result = filterUser(event, privilegeLevel);
+
+        version(TwitchSupport)
+        {
+            if (privateState.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                if ((privilegeLevel == PrivilegeLevel.anyone) && (result == FilterResult.whois))
+                {
+                    // We can't WHOIS on Twitch, and PrivilegeLevel.anyone is just
+                    // PrivilegeLevel.ignore with an extra WHOIS for good measure.
+                    return FilterResult.pass;
+                }
+            }
+        }
+
+        return result;
     }
 
 
