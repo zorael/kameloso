@@ -539,6 +539,9 @@ struct BotRegex
      +/
     Regex!char engine;
 
+    /// The regular expression in string form.
+    string expression;
+
     /// Creates a new `BotRegex` with the passed `policy` and regex `engine`.
     this(const PrefixPolicy policy, Regex!char engine) pure
     {
@@ -553,6 +556,7 @@ struct BotRegex
     {
         this.policy = policy;
         this.engine = expression.regex;
+        this.expression = expression;
     }
 
     /// Creates a new `BotRegex` with the passed regex `engine`.
@@ -567,6 +571,7 @@ struct BotRegex
     {
         this.policy = PrefixPolicy.prefixed;
         this.engine = expression.regex;
+        this.expression = expression;
     }
 }
 
