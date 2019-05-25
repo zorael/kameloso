@@ -1022,7 +1022,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         static if (verbose)
                         {
-                            writeln("...ignore invalid channel ", event.channel);
+                            writeln("...ignore non-home channel ", event.channel);
                             if (settings.flush) stdout.flush();
                         }
 
@@ -1051,7 +1051,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                     {
-                        static assert(commandUDA.string_.length, name ~ " has an empty BotCommand string");
+                        static assert(commandUDA.string_.length, name ~
+                            " has an empty BotCommand string");
 
                         static if (verbose)
                         {
@@ -1226,7 +1227,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         static if (verbose)
                         {
-                            writeln("... custom allow!");
+                            writeln("...custom allow!");
                             if (settings.flush) stdout.flush();
                         }
 
@@ -1236,7 +1237,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         static if (verbose)
                         {
-                            writeln("... built-in allow.");
+                            writeln("...built-in allow.");
                             if (settings.flush) stdout.flush();
                         }
 
@@ -1245,7 +1246,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (verbose)
                     {
-                        writeln("... result is ", Enum!FilterResult.toString(result));
+                        writeln("...result is ", Enum!FilterResult.toString(result));
                         if (settings.flush) stdout.flush();
                     }
 
