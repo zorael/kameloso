@@ -407,9 +407,7 @@ uint deepSizeof(T)(const T thing) pure @nogc @safe
 {
     import std.traits : isArray, isAssociativeArray;
 
-    uint total;
-
-    total += T.sizeof;
+    uint total = T.sizeof;
 
     static if (is(T == struct) || is(T == class))
     {
