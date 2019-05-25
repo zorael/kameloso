@@ -1471,3 +1471,19 @@ unittest
         assert("abc" !in aa);
     }
 }
+
+
+// printStacktrace
+/++
+ +  Prints the current stacktrace to the terminal.
+ +
+ +  This is so we can get the stacktrace even outside a thrown Exception.
+ +/
+version(PrintStacktraces)
+void printStacktrace() @system
+{
+    import core.runtime : defaultTraceHandler;
+    import std.stdio : writeln;
+
+    writeln(defaultTraceHandler);
+}
