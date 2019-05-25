@@ -955,24 +955,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import std.stdio : stdout, writeln, writefln;
             }
 
+            enum name = ()
+            {
+                import kameloso.conv : Enum;
+                import std.format : format;
+
+                string pluginName = module_;  // mutable
+                while (pluginName.contains('.'))
+                {
+                    pluginName.nom('.');
+                }
+
+                return "[%s] %s".format(pluginName, __traits(identifier, fun));
+            }();
+
             udaloop:
             foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
             {
-                enum name = ()
-                {
-                    import kameloso.conv : Enum;
-                    import std.format : format;
-
-                    string pluginName = module_;
-                    while (pluginName.contains('.'))
-                    {
-                        pluginName.nom('.');
-                    }
-
-                    return "[%s] %s (%s)".format(pluginName, __traits(identifier, fun),
-                        Enum!(IRCEvent.Type).toString(eventTypeUDA));
-                }();
-
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
                     // UDA is `ANY`, let pass
