@@ -2126,6 +2126,16 @@ public:
         return kameloso.messaging.quit!priority(privateState, reason, quiet);
     }
 
+    // whois
+    /++
+     +  Queries the server for `WHOIS` information about a user.
+     +/
+    void whois(Flag!"priority" priority = No.priority)(const string nickname,
+        const bool force = false, const bool quiet = kameloso.common.settings.hideOutgoing)
+    {
+        return kameloso.messaging.whois!priority(privateState, nickname, force, quiet);
+    }
+
     // raw
     /++
      +  Sends text to the server, verbatim.
@@ -2137,6 +2147,16 @@ public:
         const bool quiet = kameloso.common.settings.hideOutgoing)
     {
         return kameloso.messaging.raw!priority(privateState, line, quiet);
+    }
+
+    // immediate
+    /++
+     +  Sends raw text to the server, verbatim, bypassing all queues and
+     +  throttling delays.
+     +/
+    void immediate(const string line)
+    {
+        return kameloso.messaging.immediate(privateState, line);
     }
 
     // askToWriteln
