@@ -2001,8 +2001,8 @@ public:
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
-    static assert(__traits(compiles, this.hasIRCPluginImpl),
-        "MessagingProxy should be mixed into the context of a plugin or service.");
+    static assert(is(typeof(this) : IRCPlugin), "MessagingProxy should be " ~
+        "mixed into the context of a plugin or service.");
 
     enum hasMessagingProxy = true;
 
