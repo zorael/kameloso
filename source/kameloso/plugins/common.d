@@ -1583,7 +1583,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 if (symbol != T.init)
                 {
-                    // As above
+                    // This symbol has had configuration applied to it already
                     continue;
                 }
 
@@ -1800,6 +1800,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  time, then at runtime returns them alongside their `Description`s as an
      +  associative `Description[string]` array.
      +
+     +  Regular expression `BotRegex`es are not enumerated.
+     +
      +  Returns:
      +      Associative array of all `Descriptions`, keyed by
      +      `BotCommand.string_`s.
@@ -1858,7 +1860,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  `IRCPluginState`.
      +
      +  This is needed to have `state` be part of the `IRCPlugin` *interface*,
-     +  so `main.d` can access the property, albeit indirectly.
+     +  so `kameloso.d` can access the property, albeit indirectly.
      +/
     pragma(inline)
     public ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
@@ -1971,6 +1973,7 @@ unittest
     p.testSettings.enuubled = true;
     assert(p.isEnabled);
 }
+
 
 // MessagingProxy
 /++
@@ -2169,7 +2172,7 @@ public:
 }
 
 
-// MinimalAuthenticator
+// MinimalAuthentication
 /++
  +  Implements triggering of queued events in a plugin module.
  +
