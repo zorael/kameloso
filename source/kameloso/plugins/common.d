@@ -2113,7 +2113,7 @@ public:
     void part(Flag!"priority" priority = No.priority)(const string channel,
         const string reason = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
     {
-        return kameloso.messaging.quit!priority(privateState, channel, reason, quiet);
+        return kameloso.messaging.part!priority(privateState, channel, reason, quiet);
     }
 
     // quit
