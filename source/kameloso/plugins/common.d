@@ -3295,16 +3295,19 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event,
     PrivilegeLevel privilegeLevel, F fn)
 {
-    version(TwitchWarnings)
+    version(TwitchSupport)
     {
         if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.common : logger, printStacktrace;
-            import kameloso.printing : printObject;
+            version(TwitchWarnings)
+            {
+                import kameloso.common : logger, printStacktrace;
+                import kameloso.printing : printObject;
 
-            logger.warning(plugin.name ~ " tried to WHOIS on Twitch");
-            printObject(event);
-            version(PrintStacktraces) printStacktrace();
+                logger.warning(plugin.name, " tried to WHOIS on Twitch");
+                printObject(event);
+                version(PrintStacktraces) printStacktrace();
+            }
             return;
         }
     }
@@ -3855,13 +3858,16 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import core.thread : Fiber;
         import std.typecons : No, Yes;
 
-        version(TwitchWarnings)
+        version(TwitchSupport)
         {
             if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
             {
-                import kameloso.common : logger, printStacktrace;
-                logger.warning("Tried to enqueue and WHOIS on Twitch");
-                version(PrintStacktraces) printStacktrace();
+                version(TwitchWarnings)
+                {
+                    import kameloso.common : logger, printStacktrace;
+                    logger.warning("Tried to enqueue and WHOIS on Twitch");
+                    version(PrintStacktraces) printStacktrace();
+                }
                 return;
             }
         }
