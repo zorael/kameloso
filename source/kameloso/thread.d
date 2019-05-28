@@ -256,7 +256,7 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
 {
     import core.thread : Thread, msecs, seconds;
 
-    static immutable step = 250.msecs;
+    static immutable step = 100.msecs;
     static immutable nothing = 0.seconds;
 
     Duration left = dur;
