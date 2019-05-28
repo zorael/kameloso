@@ -1510,10 +1510,11 @@ int kamelosoMain(string[] args)
             import kameloso.terminal : TerminalForeground, colour;
             import kameloso.logger : KamelosoLogger;
 
-            immutable headertint = settings.brightTerminal ? TerminalForeground.black : TerminalForeground.white;
-            immutable defaulttint = TerminalForeground.default_;
-            pre = headertint.colour;
-            post = defaulttint.colour;
+            enum headertintColourBright = TerminalForeground.black.colour;
+            enum headertintColourDark = TerminalForeground.white.colour;
+            enum defaulttintColour = TerminalForeground.default_.colour;
+            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
+            post = defaulttintColour;
 
             infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;

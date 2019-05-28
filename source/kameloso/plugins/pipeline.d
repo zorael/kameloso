@@ -98,13 +98,17 @@ void pipereader(shared IRCPluginState newState, const string filename)
 
             if (settings.brightTerminal)
             {
-                infotint = DefaultColours.logcoloursBright[LogLevel.info].colour;
-                logtint = DefaultColours.logcoloursBright[LogLevel.all].colour;
+                enum infotintColourBright = DefaultColours.logcoloursBright[LogLevel.info].colour;
+                enum logtintColourBright = DefaultColours.logcoloursBright[LogLevel.all].colour;
+                infotint = infotintColourBright;
+                logtint = logtintColourBright;
             }
             else
             {
-                infotint = DefaultColours.logcoloursDark[LogLevel.info].colour;
-                logtint = DefaultColours.logcoloursDark[LogLevel.all].colour;
+                enum infotintColourDark = DefaultColours.logcoloursDark[LogLevel.info].colour;
+                enum logtintColourDark = DefaultColours.logcoloursDark[LogLevel.all].colour;
+                infotint = infotintColourDark;
+                logtint = logtintColourDark;
             }
         }
     }

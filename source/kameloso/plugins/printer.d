@@ -817,7 +817,8 @@ void onISUPPORT(PrinterPlugin plugin)
 
                 infotint = (cast(KamelosoLogger)logger).infotint;
                 logtint = (cast(KamelosoLogger)logger).logtint;
-                tintreset = TerminalReset.all.colour;
+                enum tintresetColour = TerminalReset.all.colour;
+                tintreset = tintresetColour;
             }
         }
 
