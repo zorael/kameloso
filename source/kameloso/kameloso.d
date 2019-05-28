@@ -933,9 +933,7 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                 {
                     if (!settings.monochrome)
                     {
-                        import kameloso.terminal : TerminalForeground, colour;
                         import kameloso.logger : KamelosoLogger;
-
                         logtint = (cast(KamelosoLogger)logger).logtint;
                     }
                 }
@@ -954,9 +952,7 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                 {
                     if (!settings.monochrome)
                     {
-                        import kameloso.terminal : TerminalForeground, colour;
                         import kameloso.logger : KamelosoLogger;
-
                         logtint = (cast(KamelosoLogger)logger).logtint;
                     }
                 }
@@ -1039,9 +1035,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
             {
                 if (!settings.monochrome)
                 {
-                    import kameloso.terminal : TerminalForeground, colour;
                     import kameloso.logger : KamelosoLogger;
-
                     logtint = (cast(KamelosoLogger)logger).logtint;
                 }
             }
@@ -1060,9 +1054,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
             {
                 if (!settings.monochrome)
                 {
-                    import kameloso.terminal : TerminalForeground, colour;
                     import kameloso.logger : KamelosoLogger;
-
                     logtint = (cast(KamelosoLogger)logger).logtint;
                 }
             }
