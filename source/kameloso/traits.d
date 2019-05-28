@@ -535,9 +535,13 @@ if (is(QualT == struct))
             {
                 alias memberType = typeof(member);
 
-                static if (!is(memberType == float) && (member != memberType.init))
+                static if (is(memberType == float) || is(memberType == double))
                 {
-                    // Comparing float.nan doesn't work out well; default to it being false
+                    import std.math : isNaN;
+                    match = !member.isNaN;
+                }
+                else static if (member != memberType.init)
+                {
                     match = true;
                 }
 
@@ -568,8 +572,26 @@ unittest
         float f;
     }
 
+    struct HasDefaultValuesToo
+    {
+        string s;
+        int i;
+        bool b;
+        float f = 3.14f;
+    }
+
+    struct HasDefaultValuesThree
+    {
+        string s;
+        int i;
+        bool b;
+        double d = 99.9;
+    }
+
     static assert(!hasElaborateInit!NoDefaultValues);
     static assert(hasElaborateInit!HasDefaultValues);
+    static assert(hasElaborateInit!HasDefaultValuesToo);
+    static assert(hasElaborateInit!HasDefaultValuesThree);
 }
 
 
