@@ -1081,7 +1081,7 @@ version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
 {
-    import kameloso.terminal : TerminalForeground, colour;
+    import kameloso.terminal : TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
     import kameloso.conv : Enum;
     import std.datetime : DateTime;
@@ -1174,24 +1174,24 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             }
             else
             {
-                sink.colour(colourByHash(user.isServer ? user.address : user.nickname));
+                sink.colourWith(colourByHash(user.isServer ? user.address : user.nickname));
             }
         }
         else
         {
-            sink.colour(colourByHash(user.isServer ? user.address : user.nickname));
+            sink.colourWith(colourByHash(user.isServer ? user.address : user.nickname));
         }
     }
 
     with (event)
     {
-        sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
+        sink.colourWith(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
         put(sink, '[', timestamp, ']');
 
         import kameloso.string : beginsWith;
         if (rawTypestring.beginsWith("ERR_"))
         {
-            sink.colour(bright ? DefaultBright.error : DefaultDark.error);
+            sink.colourWith(bright ? DefaultBright.error : DefaultDark.error);
         }
         else
         {
@@ -1208,7 +1208,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     DefaultDark.query : DefaultDark.type;
             }
 
-            sink.colour(typeColour);
+            sink.colourWith(typeColour);
         }
 
         import std.uni : asLowerCase;
@@ -1222,7 +1222,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (channel.length)
         {
-            sink.colour(bright ? DefaultBright.channel : DefaultDark.channel);
+            sink.colourWith(bright ? DefaultBright.channel : DefaultDark.channel);
             put(sink, '[', channel, "] ");
         }
 
@@ -1240,7 +1240,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (sender.class_ == IRCUser.Class.special)
                 {
-                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
                 }
 
@@ -1249,11 +1249,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (!sender.alias_.asLowerCase.equal(sender.nickname))
                 {
-                    sink.colour(TerminalForeground.default_);
+                    sink.colourWith(TerminalForeground.default_);
                     sink.put(" <");
                     colourUserTruecolour(sink, event.sender);
                     sink.put(sender.nickname);
-                    sink.colour(TerminalForeground.default_);
+                    sink.colourWith(TerminalForeground.default_);
                     sink.put('>');
                 }
             }
@@ -1264,7 +1264,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (sender.class_ == IRCUser.Class.special)
                 {
-                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
                 }
             }
@@ -1283,7 +1283,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                         break;
 
                     default:
-                        sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                        sink.colourWith(bright ? DefaultBright.badge : DefaultDark.badge);
                         put(sink, " [");
                         sink.abbreviateBadges(sender.badges);
                         put(sink, ']');
@@ -1295,7 +1295,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (target.nickname.length)
         {
             // No need to check isServer; target is never server
-            sink.colour(TerminalForeground.default_);
+            sink.colourWith(TerminalForeground.default_);
             sink.put(" (");
             colourUserTruecolour(sink, event.target);
 
@@ -1303,12 +1303,12 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             {
                 //put(sink, target.alias_, ')');
                 sink.put(target.alias_);
-                sink.colour(TerminalForeground.default_);
+                sink.colourWith(TerminalForeground.default_);
                 sink.put(')');
 
                 if (target.class_ == IRCUser.Class.special)
                 {
-                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
                 }
 
@@ -1317,23 +1317,23 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
-                    //sink.colour(TerminalForeground.default_);
+                    //sink.colourWith(TerminalForeground.default_);
                     sink.put(" <");
                     colourUserTruecolour(sink, event.target);
                     sink.put(target.nickname);
-                    sink.colour(TerminalForeground.default_);
+                    sink.colourWith(TerminalForeground.default_);
                     sink.put('>');
                 }
             }
             else
             {
                 sink.put(target.nickname);
-                sink.colour(TerminalForeground.default_);
+                sink.colourWith(TerminalForeground.default_);
                 sink.put(')');
 
                 if (target.class_ == IRCUser.Class.special)
                 {
-                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
                 }
             }
@@ -1342,7 +1342,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             {
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
-                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                    sink.colourWith(bright ? DefaultBright.badge : DefaultDark.badge);
 
                     put(sink, " [");
                     sink.abbreviateBadges(target.badges);
@@ -1363,7 +1363,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 (event.type == IRCEvent.Type.TWITCH_CHEER)) ? emoteFgBase : contentFgBase;
             immutable isEmote = (fgBase == emoteFgBase);
 
-            sink.colour(fgBase);  // Always grey colon and SASL +, prepare for emote
+            sink.colourWith(fgBase);  // Always grey colon and SASL +, prepare for emote
 
             if (sender.isServer || sender.nickname.length)
             {
@@ -1438,7 +1438,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 import kameloso.terminal : TerminalBackground;
 
                 // Reset the background to ward off bad backgrounds bleeding out
-                sink.colour(fgBase, TerminalBackground.default_);
+                sink.colourWith(fgBase, TerminalBackground.default_);
                 if (!isEmote) put(sink, '"');
             }
             else
@@ -1450,29 +1450,29 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (aux.length)
         {
-            sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
+            sink.colourWith(bright ? DefaultBright.aux : DefaultDark.aux);
             put(sink, " (", aux, ')');
         }
 
         if (count != 0)
         {
-            sink.colour(bright ? DefaultBright.count : DefaultDark.count);
+            sink.colourWith(bright ? DefaultBright.count : DefaultDark.count);
             sink.formattedWrite(" {%d}", count);
         }
 
         if (num > 0)
         {
-            sink.colour(bright ? DefaultBright.num : DefaultDark.num);
+            sink.colourWith(bright ? DefaultBright.num : DefaultDark.num);
             sink.formattedWrite(" (#%03d)", num);
         }
 
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
-            sink.colour(bright ? DefaultBright.error : DefaultDark.error);
+            sink.colourWith(bright ? DefaultBright.error : DefaultDark.error);
             put(sink, " !", errors, '!');
         }
 
-        sink.colour(TerminalForeground.default_);  // same for bright and dark
+        sink.colourWith(TerminalForeground.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
@@ -2012,7 +2012,7 @@ version(Colours)
 version(TwitchSupport)
 void highlightEmotes(ref IRCEvent event)
 {
-    import kameloso.terminal : colour;
+    import kameloso.terminal : colourWith;
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
     import kameloso.string : contains;
@@ -2042,7 +2042,7 @@ void highlightEmotes(ref IRCEvent event)
         if (event.tags.contains("emote-only=1"))
         {
             // Just highlight the whole line, don't worry about resetting to fgBase
-            sink.colour(highlight);
+            sink.colourWith(highlight);
             sink.put(event.content);
         }
         else
@@ -2055,7 +2055,7 @@ void highlightEmotes(ref IRCEvent event)
     case CHAN:
     case SELFCHAN:
         // Normal content, normal text, normal emotes
-        //sink.colour(contentFgBase);
+        //sink.colourWith(contentFgBase);
         event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase);
         break;
 
@@ -2132,15 +2132,15 @@ void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
 
     foreach (immutable i; 0..numHighlights)
     {
-        import kameloso.terminal : colour;
+        import kameloso.terminal : colourWith;
 
         immutable start = highlights[i].start;
         immutable end = highlights[i].end;
 
         sink.put(dline[pos..start]);
-        sink.colour(pre);
+        sink.colourWith(pre);
         sink.put(dline[start..end]);
-        sink.colour(post);
+        sink.colourWith(post);
 
         pos = end;
     }

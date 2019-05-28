@@ -134,7 +134,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     Appender!string sink;
     sink.reserve(16);
 
-    sink.colour(codes);
+    sink.colourWith(codes);
     return sink.data;
 }
 
@@ -151,9 +151,9 @@ import std.range : isOutputRange;
  +  Example:
  +  ---
  +  Appender!string sink;
- +  sink.colour(TerminalForeground.red, TerminalFormat.bold);
+ +  sink.colourWith(TerminalForeground.red, TerminalFormat.bold);
  +  sink.put("Foo");
- +  sink.colour(TerminalForeground.default_, TerminalReset.bold);
+ +  sink.colourWith(TerminalForeground.default_, TerminalReset.bold);
  +  ---
  +
  +  Params:
@@ -161,7 +161,7 @@ import std.range : isOutputRange;
  +      codes = Variadic list of terminal format codes.
  +/
 version(Colours)
-void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
+void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(TerminalToken.format);
@@ -208,9 +208,9 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     Appender!string sink;
     sink.reserve(text.length + 15);
 
-    sink.colour(codes);
+    sink.colourWith(codes);
     sink.put(text);
-    sink.colour(TerminalReset.all);
+    sink.colourWith(TerminalReset.all);
     return sink.data;
 }
 
@@ -456,7 +456,7 @@ unittest
  +  numFromHex("3C507D", r, g, b);
  +  sink.truecolour(r, g, b);
  +  sink.put("Foo");
- +  sink.colour(TerminalReset.all);
+ +  sink.colourWith(TerminalReset.all);
  +  writeln(sink);  // "Foo" in #3C507D
  +  ---
  +
@@ -536,7 +536,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
 
     sink.truecolour!normalise(r, g, b, bright);
     sink.put(word);
-    sink.colour(TerminalReset.all);
+    sink.colourWith(TerminalReset.all);
     return sink.data;
 }
 

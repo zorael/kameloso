@@ -701,7 +701,7 @@ unittest
 version(Colours)
 private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const string line)
 {
-    import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colour;
+    import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colourWith;
     import std.array : Appender, replace;
     import std.conv  : to;
     import std.regex : matchAll, regex;
@@ -741,7 +741,7 @@ private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const s
 
         default:
             //logger.warning("Unknown terminal effect code: ", TerminalFormatCode);
-            sink.colour(TerminalReset.all);
+            sink.colourWith(TerminalReset.all);
             break;
         }
 
@@ -753,7 +753,7 @@ private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const s
     sink.put(hits.post.replace(singleToken, terminalToken));
 
     // End tags and commit.
-    sink.colour(TerminalReset.all);
+    sink.colourWith(TerminalReset.all);
     return sink.data;
 }
 

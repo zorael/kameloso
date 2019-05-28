@@ -33,7 +33,7 @@ final class KamelosoLogger : Logger
 
     version(Colours)
     {
-        import kameloso.terminal : TerminalForeground, TerminalReset, colour;
+        import kameloso.terminal : TerminalForeground, TerminalReset, colourWith, colour;
         import kameloso.constants : DefaultColours;
 
         alias logcoloursBright = DefaultColours.logcoloursBright;
@@ -178,7 +178,7 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
-                sink.colour(brightTerminal ? TerminalForeground.black : TerminalForeground.white);
+                sink.colourWith(brightTerminal ? TerminalForeground.black : TerminalForeground.white);
             }
         }
 
@@ -190,7 +190,7 @@ final class KamelosoLogger : Logger
 
         version(Colours)
         {
-            sink.colour(brightTerminal ? logcoloursBright[logLevel] : logcoloursDark[logLevel]);
+            sink.colourWith(brightTerminal ? logcoloursBright[logLevel] : logcoloursDark[logLevel]);
         }
     }
 
@@ -225,7 +225,7 @@ final class KamelosoLogger : Logger
             if (!monochrome)
             {
                 // Reset.blink in case a fatal message was thrown
-                sink.colour(TerminalForeground.default_, TerminalReset.blink);
+                sink.colourWith(TerminalForeground.default_, TerminalReset.blink);
             }
         }
 
