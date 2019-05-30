@@ -328,9 +328,6 @@ void reloadClassifiersFromDisk(PersistenceService service)
 void initResources(PersistenceService service)
 {
     import kameloso.json : JSONStorage;
-    import std.algorithm.iteration : filter, uniq;
-    import std.algorithm.sorting : sort;
-    import std.array : array;
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
@@ -348,6 +345,22 @@ void initResources(PersistenceService service)
 
     // Let other Exceptions pass.
 
+    static auto deduplicate(JSONValue before)
+    {
+        import std.algorithm.iteration : filter, uniq;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
+
+        auto after = before
+            .array
+            .sort!((a,b) => a.str < b.str)
+            .uniq
+            .filter!((a) => a.str.length > 0)
+            .array;
+
+        return JSONValue(after);
+    }
+
     if ("whitelist" !in json)
     {
         json["whitelist"] = null;
@@ -355,13 +368,7 @@ void initResources(PersistenceService service)
     }
     else
     {
-        auto deduplicated = json["whitelist"].array
-            .sort!((a,b) => a.str < b.str)
-            .uniq
-            .filter!((a) => a.str.length > 0)
-            .array;
-
-        json["whitelist"] = JSONValue(deduplicated);
+        json["whitelist"] = deduplicate(json["whitelist"]);
     }
 
     if ("blacklist" !in json)
@@ -371,13 +378,7 @@ void initResources(PersistenceService service)
     }
     else
     {
-        auto deduplicated = json["blacklist"].array
-            .sort!((a,b) => a.str < b.str)
-            .uniq
-            .filter!((a) => a.str.length > 0)
-            .array;
-
-        json["blacklist"] = JSONValue(deduplicated);
+        json["blacklist"] = deduplicate(json["blacklist"]);
     }
 
     // Force whitelist to appear before blacklist in the .json
