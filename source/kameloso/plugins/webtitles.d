@@ -538,11 +538,14 @@ void reportReddit(TitleLookupRequest request)
  +/
 string[] findURLs(const string line) @safe pure
 {
-    import kameloso.string : contains;
+    import kameloso.string : contains, nom, strippedRight;
     import std.string : indexOf;
+    import std.typecons : Flag, No, Yes;
+
+    enum wordBoundaryTokens = ".,!?:";
 
     string[] hits;
-    string slice = line;
+    string slice = line;  // mutable
 
 	ptrdiff_t httpPos = slice.indexOf("http");
 
@@ -557,9 +560,11 @@ string[] findURLs(const string line) @safe pure
         }
 
         slice = slice[httpPos..$];
+
         if (slice.length < 11)
         {
-            break;  // "http://a.se".length
+            // Too short, minimum is "http://a.se".length
+            break;
         }
         else if ((slice[4] != ':') && (slice[4] != 's'))
         {
@@ -570,23 +575,17 @@ string[] findURLs(const string line) @safe pure
         {
             break;
         }
-
-        if (!slice.contains(' '))
+        else if (!slice.contains(' ') &&
+            (slice[10..$].contains("http://") ||
+            slice[10..$].contains("https://")))
         {
-            // Check if there's a second URL in the middle of this one
-            if (slice[10..$].indexOf("http") != -1) break;
-            // Line finishes with the URL
-            hits ~= slice;
+            // There is a second URL in the middle of this one
             break;
         }
-        else
-        {
-            import kameloso.string : nom;
-            // The URL is followed by a space
-            // Advance past this URL so we can look for the next
-            hits ~= slice.nom(' ');
-        }
 
+        // nom until the next space if there is one, otherwise just inherit slice
+        // Also strip away common punctuation
+        hits ~= slice.nom!(Yes.inherit)(' ').strippedRight(wordBoundaryTokens);
         httpPos = slice.indexOf("http");
     }
 
