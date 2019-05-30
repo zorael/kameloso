@@ -361,6 +361,16 @@ void initResources(PersistenceService service)
         return JSONValue(after);
     }
 
+    ///
+    unittest
+    {
+        auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
+        assert((users.array.length == 5), users.array.length.text);
+
+        users = deduplicated(users);
+        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
+    }
+
     if ("whitelist" !in json)
     {
         json["whitelist"] = null;
@@ -383,29 +393,6 @@ void initResources(PersistenceService service)
 
     // Force whitelist to appear before blacklist in the .json
     json.save(service.userFile, JSONStorage.KeyOrderStrategy.reverse);
-}
-
-unittest
-{
-    // Test of the logic of initResources, not the function itself.
-
-    import std.algorithm.iteration : uniq;
-    import std.algorithm.sorting : sort;
-    import std.array : array;
-    import std.conv : text;
-    import std.json : JSONValue;
-
-    auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
-    assert((users.array.length == 5), users.array.length.text);
-
-    auto deduplicated = users.array
-        .sort!((a,b) => a.str < b.str)
-        .uniq
-        .array;
-
-    users = JSONValue(deduplicated);
-
-    assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
 }
 
 
