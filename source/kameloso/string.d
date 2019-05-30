@@ -1178,26 +1178,7 @@ string strippedRight(const string line) pure nothrow @nogc
 {
     if (!line.length) return line;
 
-    size_t pos = line.length;
-
-    loop:
-    while (pos > 0)
-    {
-        switch (line[pos-1])
-        {
-        case ' ':
-        case '\n':
-        case '\r':
-        case '\t':
-            --pos;
-            break;
-
-        default:
-            break loop;
-        }
-    }
-
-    return line[0..pos];
+    return strippedRight(line, " \n\r\t");
 }
 
 ///
@@ -1234,19 +1215,25 @@ unittest
 // strippedRight
 /++
  +  Returns a slice of the passed string with any trailing passed characters.
+ +  Implementation capable of handling both individual characters and string of
+ +  tokens to strip.
  +
  +  Duplicates `std.string.stripRight`, which we can no longer trust not to
  +  assert on unexpected input.
  +
  +  Params:
  +      line = Line to strip the right side of.
- +      c = Character to strip away.
+ +      chaff = Character or string of characters to strip away.
  +
  +  Returns:
  +      The passed line without any trailing passed characters.
  +/
-string strippedRight(const string line, const char c) pure nothrow @nogc
+T strippedRight(T, C)(T line, C chaff)
+if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
+    import std.traits : isSomeString;
+    import std.range : hasLength;
+
     if (!line.length) return line;
 
     size_t pos = line.length;
@@ -1254,15 +1241,32 @@ string strippedRight(const string line, const char c) pure nothrow @nogc
     loop:
     while (pos > 0)
     {
-        switch (line[pos-1])
+        static if (isSomeString!C || hasLength!C)
         {
-        case c:
-            --pos;
-            break;
+            import std.string : representation;
 
-        default:
-            break loop;
+            immutable currentChar = line[pos-1];
+
+            foreach (immutable c; chaff.representation)
+            {
+                if (currentChar == c)
+                {
+                    // Found a char we should strip
+                    --pos;
+                    continue loop;
+                }
+            }
         }
+        else
+        {
+            if (line[pos-1] == chaff)
+            {
+                --pos;
+                continue loop;
+            }
+        }
+
+        break loop;
     }
 
     return line[0..pos];
@@ -1291,6 +1295,26 @@ unittest
         immutable stripped = trailing.strippedRight(' ');
         assert(!stripped.length, stripped);
     }
+    {
+        immutable trailing = "abc,!.-";
+        immutable stripped = trailing.strippedRight("-.!,");
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "abc!!!";
+        immutable stripped = trailing.strippedRight("!");
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "abc";
+        immutable stripped = trailing.strippedRight(" ABC");
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "";
+        immutable stripped = trailing.strippedRight(" ");
+        assert(!stripped.length, stripped);
+    }
 }
 
 
@@ -1312,26 +1336,7 @@ string strippedLeft(const string line) pure nothrow @nogc
 {
     if (!line.length) return line;
 
-    size_t pos;
-
-    loop:
-    while (pos < line.length)
-    {
-        switch (line[pos])
-        {
-        case ' ':
-        case '\n':
-        case '\r':
-        case '\t':
-            ++pos;
-            break;
-
-        default:
-            break loop;
-        }
-    }
-
-    return line[pos..$];
+    return strippedLeft(line, " \n\r\t");
 }
 
 ///
@@ -1368,20 +1373,25 @@ unittest
 // strippedLeft
 /++
  +  Returns a slice of the passed string with any preceding passed characters
- +  sliced off.
+ +  sliced off. Implementation capable of handling both individual characters
+ +  and strings of tokens to strip.
  +
  +  Duplicates `std.string.stripLeft`, which we can no longer trust not to
  +  assert on unexpected input.
  +
  +  Params:
  +      line = Line to strip the left side of.
- +      c = Character to strip away.
+ +      chaff = Character or string of characters to strip away.
  +
  +  Returns:
  +      The passed line without any preceding passed characters.
  +/
-string strippedLeft(const string line, const char c) pure nothrow @nogc
+T strippedLeft(T, C)(T line, C chaff)
+if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
+    import std.traits : isSomeString;
+    import std.range : hasLength;
+
     if (!line.length) return line;
 
     size_t pos;
@@ -1389,15 +1399,32 @@ string strippedLeft(const string line, const char c) pure nothrow @nogc
     loop:
     while (pos < line.length)
     {
-        switch (line[pos])
+        static if (isSomeString!C || hasLength!C)
         {
-        case c:
-            ++pos;
-            break;
+            import std.string : representation;
 
-        default:
-            break loop;
+            immutable currentChar = line[pos];
+
+            foreach (immutable c; chaff.representation)
+            {
+                if (currentChar == c)
+                {
+                    // Found a char we should strip
+                    ++pos;
+                    continue loop;
+                }
+            }
         }
+        else
+        {
+            if (line[pos] == chaff)
+            {
+                ++pos;
+                continue loop;
+            }
+        }
+
+        break loop;
     }
 
     return line[pos..$];
@@ -1426,6 +1453,26 @@ unittest
         immutable stripped = trailing.strippedLeft(' ');
         assert(!stripped.length, stripped);
     }
+    {
+        immutable trailing = ",abc";
+        immutable stripped = trailing.strippedLeft(",");
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "!!!abc";
+        immutable stripped = trailing.strippedLeft(",1!");
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "abc";
+        immutable stripped = trailing.strippedLeft(" ");
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "";
+        immutable stripped = trailing.strippedLeft(" ");
+        assert(!stripped.length, stripped);
+    }
 }
 
 
@@ -1444,7 +1491,7 @@ unittest
  +  Returns:
  +      The passed line, stripped of surrounding whitespace.
  +/
-string stripped(const string line) pure nothrow @nogc
+T stripped(T)(T line)
 {
     return line.strippedLeft.strippedRight;
 }
@@ -1483,7 +1530,8 @@ unittest
 // stripped
 /++
  +  Returns a slice of the passed string with any preceding or trailing
- +  passed characters sliced off.
+ +  passed characters sliced off. Implementation capable of handling both
+ +  individual characters and strings of tokens to strip.
  +
  +  It merely calls both `strippedLeft` and `strippedRight`. As such it
  +  duplicates `std.string.strip`, which we can no longer trust not to assert
@@ -1491,14 +1539,15 @@ unittest
  +
  +  Params:
  +      line = Line to strip both the right and left side of.
- +      c = Character to strip away.
+ +      chaff = Character or string of characters to strip away.
  +
  +  Returns:
  +      The passed line, stripped of surrounding passed characters.
  +/
-string stripped(const string line, const char c) pure nothrow @nogc
+T stripped(T, C)(T line, C chaff)
+if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
-    return line.strippedLeft(c).strippedRight(c);
+    return line.strippedLeft(chaff).strippedRight(chaff);
 }
 
 ///
@@ -1527,6 +1576,31 @@ unittest
     {
         immutable line = " \r\n  abc\r\n\r\n  ";
         immutable stripped_ = line.stripped(' ');
+        assert((stripped_ == "\r\n  abc\r\n\r\n"), stripped_);
+    }
+    {
+        immutable line = "   abc   ";
+        immutable stripped_ = line.stripped(" \t");
+        assert((stripped_ == "abc"), stripped_);
+    }
+    {
+        immutable line = "!,!!";
+        immutable stripped_ = line.stripped("!,");
+        assert((stripped_ == ""), stripped_);
+    }
+    {
+        immutable line = "";
+        immutable stripped_ = line.stripped("_");
+        assert((stripped_ == ""), stripped_);
+    }
+    {
+        immutable line = "abc";
+        immutable stripped_ = line.stripped("\t\r\n");
+        assert((stripped_ == "abc"), stripped_);
+    }
+    {
+        immutable line = " \r\n  abc\r\n\r\n  ";
+        immutable stripped_ = line.stripped(" _");
         assert((stripped_ == "\r\n  abc\r\n\r\n"), stripped_);
     }
 }
