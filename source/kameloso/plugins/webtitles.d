@@ -624,6 +624,15 @@ unittest
         const urls = findURLs("blahblah https://高所恐怖症。co.jp blhblah");
         assert(urls.length, urls.text);
     }
+    {
+        const urls = findURLs("nyaa is now at https://nyaa.si, https://nyaa.si? " ~
+            "https://nyaa.si. https://nyaa.si! and you should use it https://nyaa.si:");
+
+        foreach (immutable url; urls)
+        {
+            assert((url == "https://nyaa.si"), url);
+        }
+    }
 }
 
 
