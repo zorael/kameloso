@@ -371,6 +371,16 @@ void initResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
     }
 
+    /*if ("admin" !in json)
+    {
+        json["admin"] = null;
+        json["admin"].array = null;
+    }
+    else
+    {
+        json["admin"] = deduplicate(json["admin"]);
+    }*/
+
     if ("whitelist" !in json)
     {
         json["whitelist"] = null;
@@ -392,6 +402,9 @@ void initResources(PersistenceService service)
     }
 
     // Force whitelist to appear before blacklist in the .json
+    // Note: if we ever want support for admin definitions, we need to do something like:
+    //static immutable order = [ "admin", "whitelist", "blacklist" ];
+    //json.save(service.userFile, JSONStorage.KeyOrderStrategy.inGivenOrder, order);
     json.save(service.userFile, JSONStorage.KeyOrderStrategy.reverse);
 }
 
