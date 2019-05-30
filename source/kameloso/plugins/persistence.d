@@ -361,7 +361,7 @@ void initResources(PersistenceService service)
         return JSONValue(after);
     }
 
-    ///
+    /+
     unittest
     {
         auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
@@ -369,7 +369,7 @@ void initResources(PersistenceService service)
 
         users = deduplicated(users);
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
-    }
+    }+/
 
     /*if ("admin" !in json)
     {
