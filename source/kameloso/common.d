@@ -487,7 +487,9 @@ version(Colours)
 void printVersionInfo(TerminalForeground colourCode) @system
 {
     import kameloso.terminal : colour;
-    return printVersionInfo(colourCode.colour, TerminalForeground.default_.colour);
+
+    enum fgDefault = TerminalForeground.default_.colour;
+    return printVersionInfo(colourCode.colour, fgDefault);
 }
 
 
