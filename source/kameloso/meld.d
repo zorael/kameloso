@@ -111,7 +111,7 @@ if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
                 // source is clearly `.init`.
                 static if (strategy == MeldingStrategy.overwriting)
                 {
-                    static if (is(T == float))
+                    static if (is(T == float) || is(T == double))
                     {
                         import std.math : isNaN;
 
@@ -143,7 +143,7 @@ if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
                 // blindly overwrite struct bools.
                 else static if (strategy == MeldingStrategy.aggressive)
                 {
-                    static if (is(T == float))
+                    static if (is(T == float) || is(T == double))
                     {
                         import std.math : isNaN;
 
@@ -188,7 +188,7 @@ if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
                 // with non-`init` values.
                 else static if (strategy == MeldingStrategy.conservative)
                 {
-                    static if (is(T == float))
+                    static if (is(T == float) || is(T == double))
                     {
                         import std.math : isNaN;
 
@@ -277,6 +277,7 @@ unittest
         string def;
         int i;
         float f;
+        double d;
     }
 
     Foo f1; // = new Foo;
@@ -293,10 +294,13 @@ unittest
 
     with (f1)
     {
+        import std.math : isNaN;
+
         assert((abc == "ABC"), abc);
         assert((def == "DEF"), def);
         assert((i == 42), i.to!string);
         assert((f == 3.14f), f.to!string);
+        assert(d.isNaN, d.to!string);
     }
 
     Foo f3; // new Foo;
@@ -310,15 +314,19 @@ unittest
     f4.def = "OVERWRITTEN TOO";
     f4.i = 0;
     f4.f = 0.1f;
+    f4.d = 99.999;
 
     f4.meldInto!(MeldingStrategy.aggressive)(f3);
 
     with (f3)
     {
+        import std.math : approxEqual;
+
         assert((abc == "OVERWRITTEN"), abc);
         assert((def == "OVERWRITTEN TOO"), def);
         assert((i == 100_135), i.to!string); // 0 is int.init
         assert((f == 0.1f), f.to!string);
+        assert(d.approxEqual(99.999), d.to!string);
     }
 
     struct User
