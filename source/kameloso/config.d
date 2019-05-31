@@ -146,9 +146,7 @@ if (Things.length > 1)
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
-    import kameloso.uda : Separator, Unconfigurable, Quoted;
     import std.format : format, formattedWrite;
-    import std.range : hasLength;
     import std.traits : Unqual;
 
     static if (__traits(hasMember, Sink, "data"))
@@ -163,8 +161,9 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
     foreach (immutable i, member; thing.tupleof)
     {
+        import kameloso.uda : Separator, Unconfigurable;
         import kameloso.traits : isConfigurableVariable;
-        import std.traits : Unqual, hasUDA, isType;
+        import std.traits : hasUDA, isType;
 
         alias T = Unqual!(typeof(member));
 
@@ -179,17 +178,16 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
             static if (!isSomeString!T && isArray!T)
             {
-                import std.algorithm.iteration : map;
-                import std.array : replace;
-
                 // array, join it together
                 static assert (hasUDA!(thing.tupleof[i], Separator),
                     "%s.%s is not annotated with a Separator"
                     .format(Thing.stringof, memberstring));
 
                 import std.traits : getUDAs;
+
                 alias separators = getUDAs!(thing.tupleof[i], Separator);
                 enum separator = separators[0].token;
+
                 static assert(separator.length, "%s.%s has invalid Separator (empty)"
                     .format(Thing.stringof, memberstring));
 
@@ -201,6 +199,9 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
                     if (member.length)
                     {
+                        import std.algorithm.iteration : map;
+                        import std.array : replace;
+
                         enum escaped = '\\' ~ separator;
                         enum placeholder = "\0\0";  // anything really
 
@@ -237,6 +238,8 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 immutable value = member;
             }
 
+            import std.range : hasLength;
+
             static if (is(T == bool) || is(T == enum))
             {
                 enum comment = false;
@@ -247,7 +250,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 import std.math : isNaN;
                 immutable comment = member.to!T.isNaN;
             }
-            else static if (hasLength!T)
+            else static if (hasLength!T || isSomeString!T)
             {
                 immutable comment = !member.length;
             }
@@ -263,9 +266,11 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             }
             else
             {
-                static if (is(T == string) && hasUDA!(Thing.tupleof[i], Quoted))
+                import kameloso.uda : Quoted;
+
+                static if (isSomeString!T && hasUDA!(Thing.tupleof[i], Quoted))
                 {
-                    sink.formattedWrite("%s \"%s\"\n", __traits(identifier, thing.tupleof[i]), value);
+                    sink.formattedWrite("%s \"%s\"\n", memberstring, value);
                 }
                 else
                 {
