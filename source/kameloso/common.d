@@ -605,13 +605,15 @@ void writeToDisk(const string filename, const string configurationText,
 
     if (banner)
     {
+        import kameloso.constants : KamelosoInfo;
         import core.time : msecs;
         import std.datetime.systime : Clock;
 
         auto timestamp = Clock.currTime;
         timestamp.fracSecs = 0.msecs;
 
-        file.writefln("# kameloso bot config (%s)\n", timestamp);
+        file.writefln("# kameloso v%s configuration file (%s)\n",
+            cast(string)KamelosoInfo.version_, timestamp);
     }
 
     file.writeln(configurationText);
