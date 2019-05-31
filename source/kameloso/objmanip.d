@@ -178,12 +178,25 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                 {
                     try
                     {
-                        /*writefln("%s.%s = %s.to!%s", Thing.stringof,
-                            memberstring, valueToSet, T.stringof);*/
-                        thing.tupleof[i] = valueToSet
-                            .stripped
-                            .unquoted
-                            .to!T;
+                        static if (is(T == enum))
+                        {
+                            import kameloso.conv : Enum;
+
+                            immutable asString = valueToSet
+                                .stripped
+                                .unquoted;
+                            thing.tupleof[i] = Enum!T.fromString(asString);
+                        }
+                        else
+                        {
+                            /*writefln("%s.%s = %s.to!%s", Thing.stringof,
+                                memberstring, valueToSet, T.stringof);*/
+                            thing.tupleof[i] = valueToSet
+                                .stripped
+                                .unquoted
+                                .to!T;
+                        }
+
                         success = true;
                     }
                     catch (ConvException e)
@@ -298,6 +311,22 @@ unittest
     success = c.setMemberByName("def", "42");
     assert(success);
     assert((c.def == 42), c.def.to!string);
+
+    import kameloso.conv : Enum;
+
+    enum E { abc, def, ghi }
+
+    struct S
+    {
+        E e = E.ghi;
+    }
+
+    S s;
+
+    assert(s.e == E.ghi);
+    success = s.setMemberByName("e", "def");
+    assert(success);
+    assert((s.e == E.def), Enum!E.toString(s.e));
 }
 
 
