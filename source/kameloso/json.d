@@ -4,9 +4,6 @@
 module kameloso.json;
 
 
-@safe:
-
-
 // JSONStorage
 /++
  +  A wrapped `JSONValue` with helper functions.
@@ -47,7 +44,7 @@ struct JSONStorage
     /++
      +  Initialises and clears the `JSONValue`, preparing it for object storage.
      +/
-    void reset()
+    void reset() @safe
     {
         storage.object = null;
     }
@@ -67,7 +64,7 @@ struct JSONStorage
      +      `kameloso.common.FileTypeMismatchException` if the filename exists
      +      but is not a file.
      +/
-    void load(const string filename)
+    void load(const string filename) @safe
     {
         import kameloso.common : FileTypeMismatchException;
         import std.file : exists, getAttributes, isFile, readText;
@@ -345,7 +342,6 @@ struct JSONStorage
 }
 
 ///
-@system
 unittest
 {
     import std.conv : text;
@@ -392,7 +388,7 @@ import std.typecons : Flag, No, Yes;
  +/
 void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValues,
     Flag!"lowercaseKeys" lowercaseKeys = No.lowercaseKeys, T)
-    (ref T target, const JSONValue json)
+    (ref T target, const JSONValue json) @safe
 {
     import std.traits : isAssociativeArray, isArray, ValueType;
     import std.range :  ElementType;
