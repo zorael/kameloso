@@ -25,7 +25,7 @@ public:
      +  Pointer to the socket of the `std.socket.AddressFamily` we want to
      +  connect with.
      +/
-    Socket* socket;
+    Socket socket;
 
     /// IPs already resolved using `.resolveFiber`.
     Address[] ips;
@@ -46,7 +46,7 @@ public:
 
         socket4 = new TcpSocket;
         socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
-        socket = &socket4;
+        socket = socket4;
 
         setOptions(socket4);
         setOptions(socket6);
@@ -293,7 +293,6 @@ void listenFiber(Connection conn, ref bool abort)
 
         while (newline != -1)
         {
-            //yield((cast(char[])buffer[pos..pos+newline-1]).idup);
             attempt.state = State.hasString;
             attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;
             yield(attempt);
@@ -394,7 +393,7 @@ void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abo
             immutable isIPv6 = (ip.addressFamily == AddressFamily.INET6);
             if (isIPv6 && ipv6IsFailing) continue;  // Continue until IPv4 IP
 
-            conn.socket = isIPv6 ? &conn.socket6 : &conn.socket4;
+            conn.socket = isIPv6 ? conn.socket6 : conn.socket4;
 
             enum connectionRetries = 3;
 
