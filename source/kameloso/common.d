@@ -550,7 +550,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename) @system
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(2048);  // ~1756
+    sink.reserve(4096);  // ~2234
 
     with (bot.parser)
     {
