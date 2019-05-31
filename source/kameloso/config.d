@@ -8,13 +8,13 @@ import std.typecons : Flag, No, Yes;
 @safe:
 
 
-// configReader
+// configurationText
 /++
  +  Reads configuration file into a string.
  +
  +  Example:
  +  ---
- +  string configText = configReader("kameloso.conf");
+ +  string configText = "kameloso.conf".configurationText;
  +  ---
  +
  +  Params:
@@ -29,7 +29,7 @@ import std.typecons : Flag, No, Yes;
  +      `ConfigurationFileReadFailureException` if the reading and decoding of
  +      the configuration file failed.
  +/
-string configReader(const string configFile)
+string configurationText(const string configFile)
 {
     import kameloso.common : FileTypeMismatchException;
     import std.file : exists, getAttributes, isFile, readText;
@@ -89,7 +89,7 @@ string[][string] readConfigInto(T...)(const string configFile, ref T things)
     import std.algorithm.iteration : splitter;
 
     return configFile
-        .configReader
+        .configurationText
         .splitter("\n")
         .applyConfiguration(things);
 }
