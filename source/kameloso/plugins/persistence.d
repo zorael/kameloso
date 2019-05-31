@@ -404,8 +404,8 @@ void initResources(PersistenceService service)
     // Force whitelist to appear before blacklist in the .json
     // Note: if we ever want support for admin definitions, we need to do something like:
     //static immutable order = [ "admin", "whitelist", "blacklist" ];
-    //json.save(service.userFile, JSONStorage.KeyOrderStrategy.inGivenOrder, order);
-    json.save(service.userFile, JSONStorage.KeyOrderStrategy.reverse);
+    //json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
+    json.save!(JSONStorage.KeyOrderStrategy.reverse)(service.userFile);
 }
 
 

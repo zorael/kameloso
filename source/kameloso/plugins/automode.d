@@ -87,7 +87,7 @@ void initResources(AutomodePlugin plugin)
     // Let other Exceptions pass.
 
     // Adjust saved JSON layout to be more easily edited
-    json.save(plugin.automodeFile, JSONStorage.KeyOrderStrategy.adjusted);
+    json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.automodeFile);
 }
 
 

@@ -956,7 +956,7 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
         json[list] = json[list].array.remove!(SwapStrategy.unstable)(index);
     }
 
-    json.save(plugin.userFile, JSONStorage.KeyOrderStrategy.adjusted);
+    json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.userFile);
 
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
