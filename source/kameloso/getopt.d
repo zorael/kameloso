@@ -92,11 +92,20 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
         if (arg.contains('='))
         {
             import kameloso.string : nom;
-            import std.conv : to;
 
             immutable realWord = slice.nom('=');
             if (realWord != option) continue;
-            *ptr = slice.to!T;
+
+            static if (is(T == enum))
+            {
+                import kameloso.conv : Enum;
+                *ptr = Enum!T.fromString(slice);
+            }
+            else
+            {
+                import std.conv : to;
+                *ptr = slice.to!T;
+            }
         }
         else static if (is(T == bool))
         {
@@ -125,25 +134,32 @@ unittest
         "./kameloso", "--monochrome",
         "--server=irc.freenode.net",
         //"--nickname", "kameloso"  // Not supported under the current design
+        "--banana=def",
     ];
 
     struct S
     {
+        enum E { abc, def, ghi, }
         bool monochrome;
         string server;
         string nickname;
+        E banana;
     }
 
     S s;
 
     args.adjustGetopt(
-        //"--nickname", &s.nickname,
+        //"--nickname", s.nickname,
         "--server", &s.server,
         "--monochrome", &s.monochrome,
+        "--banana", &s.banana,
     );
+
+    import kameloso.conv : Enum;
 
     assert(s.monochrome);
     assert((s.server == "irc.freenode.net"), s.server);
+    assert((s.banana == S.E.def), Enum!(S.E).toString(s.banana));
     //assert((s.nickname == "kameloso"), s.nickname);
 }
 
