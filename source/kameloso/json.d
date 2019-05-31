@@ -102,18 +102,31 @@ struct JSONStorage
      +          the output file. Non-existent keys are represented as empty. Not
      +          specified keys are omitted.
      +/
-    void save(const string filename, KeyOrderStrategy strategy = KeyOrderStrategy.passthrough,
-        string[] givenOrder = string[].init) @system
+    void save(KeyOrderStrategy strategy = KeyOrderStrategy.passthrough)
+        (const string filename, const string[] givenOrder = string[].init)
     {
+        import kameloso.conv : Enum;
         import std.array : Appender;
         import std.json : JSONType;
         import std.stdio : File, writeln;
+
+        assert(((strategy != KeyOrderStrategy.inGivenOrder) || !givenOrder.length),
+            "Tried to save a JSONStorage with a " ~ Enum!KeyOrderStrategy.toString(strategy) ~
+            " while also supplying a given order, which is only relevant with " ~
+            "KeyOrderStrategy.inGivenOrder");
 
         Appender!string sink;
 
         if (storage.type == JSONType.object)
         {
-            saveObject(sink, strategy, givenOrder);
+            static if (strategy == KeyOrderStrategy.inGivenOrder)
+            {
+                serialiseInto!strategy(sink, givenOrder);
+            }
+            else
+            {
+                serialiseInto!strategy(sink);
+            }
         }
         else
         {
@@ -150,30 +163,28 @@ struct JSONStorage
 ]`), '\n' ~ sink.data);
     }
 
-    // saveObject
+
+    // serialiseInto
     /++
      +  Formats an object-type JSON storage into an output range sink.
      +
-     +  Top-level keys are sorted as per the passed `KeyOrderStrategy`.
+     +  Top-level keys are sorted as per the passed `KeyOrderStrategy`. This
+     +  overload is specialised for `KeyOrderStrategy.inGivenOrder`.
      +
      +  Params:
-     +      sink = Output sink to fill with formatted output.
      +      strategy = Order strategy in which to sort top-level keys.
+     +      sink = Output sink to fill with formatted output.
      +      givenOrder = The order in which object-type keys should be listed in
-     +          the output file, iff `strategy` is `KeyOrderStrategy.inGivenOrder`.
-     +          Non-existent keys are represented as empty. Not specified keys are omitted.
-     +
-     +  Throws:
-     +      `Exception` if `KeyOrderStrategy.givenOrder` was supplied yet no
-     +      order was given in `givenOrder`.
+     +          the output file. Non-existent keys are represented as empty.
+     +          Not specified keys are omitted.
      +/
-    private void saveObject(Sink)(auto ref Sink sink, KeyOrderStrategy strategy = KeyOrderStrategy.passthrough,
-        string[] givenOrder = string[].init) @system
+    private void serialiseInto(KeyOrderStrategy strategy : KeyOrderStrategy.inGivenOrder, Sink)
+        (auto ref Sink sink, const string[] givenOrder)
     {
         import kameloso.string : indent;
-        import std.array : array;
         import std.format : formattedWrite;
-        import std.range : retro;
+
+        assert(givenOrder.length, "Tried to serialise a JSONStorage in order given without a given order");
 
         if (storage.isNull)
         {
@@ -181,76 +192,103 @@ struct JSONStorage
             return;
         }
 
-        with (KeyOrderStrategy)
-        final switch (strategy)
+        sink.put("{\n");
+
+        foreach (immutable i, immutable key; givenOrder)
         {
-        case passthrough:
-            // Just pass through and save .toPrettyString; keep original behaviour.
-            sink.put(storage.toPrettyString);
-            return;
+            sink.formattedWrite("    \"%s\":\n", key);
 
-        case adjusted:
-            // adjusted can really just be saved as .toPrettyString, but if we want
-            // to make it look the same as reverse and inGivenOrder we have to
-            // manually iterate the keys, like they do.
-
-            auto range = storage.object.byKey.array.retro;
-            size_t i;
-
-            sink.put("{\n");
-
-            foreach(immutable key; range)
+            if (auto entry = key in storage)
             {
-                sink.formattedWrite("    \"%s\":\n", key);
-                sink.put(storage[key].toPrettyString.indent);
-                sink.put((++i < range.length) ? ",\n" : "\n");
+                sink.put(entry.toPrettyString.indent);
             }
-            break;
-
-        case reverse:
-            import std.algorithm.sorting : sort;
-
-            auto range = storage.object.byKey.array.sort.retro;
-            size_t i;
-
-            sink.put("{\n");
-
-            foreach(immutable key; range)
+            else
             {
-                sink.formattedWrite("    \"%s\":\n", key);
-                sink.put(storage[key].toPrettyString.indent);
-                sink.put((++i < range.length) ? ",\n" : "\n");
-            }
-            break;
-
-        case inGivenOrder:
-            if (!givenOrder.length)
-            {
-                throw new Exception("JSONStorage.save called with strategy " ~
-                    "inGivenOrder without any order given");
+                sink.put("{\n}".indent);
             }
 
-            sink.put("{\n");
-
-            foreach (immutable i, immutable key; givenOrder)
-            {
-                sink.formattedWrite("    \"%s\":\n", key);
-
-                if (auto entry = key in storage)
-                {
-                    sink.put(entry.toPrettyString.indent);
-                }
-                else
-                {
-                    sink.put("{\n}".indent);
-                }
-
-                sink.put((i+1 < givenOrder.length) ? ",\n" : "\n");
-            }
-            break;
+            sink.put((i+1 < givenOrder.length) ? ",\n" : "\n");
         }
 
         sink.put("}");
+    }
+
+
+    // serialiseInto
+    /++
+     +  Formats an object-type JSON storage into an output range sink.
+     +
+     +  Top-level keys are sorted as per the passed `KeyOrderStrategy`. This
+     +  overload is specialised for strategies other than `KeyOrderStrategy.inGivenOrder`,
+     +  and as such takes one parameter less.
+     +
+     +  Params:
+     +      strategy = Order strategy in which to sort top-level keys.
+     +      sink = Output sink to fill with formatted output.
+     +/
+    private void serialiseInto(KeyOrderStrategy strategy = KeyOrderStrategy.passthrough, Sink)
+        (auto ref Sink sink)
+    if (strategy != KeyOrderStrategy.inGivenOrder)
+    {
+        if (storage.isNull)
+        {
+            sink.put("{\n}");
+            return;
+        }
+
+        static if (strategy == KeyOrderStrategy.passthrough)
+        {
+            // Just pass through and save .toPrettyString; keep original behaviour.
+            sink.put(storage.toPrettyString);
+        }
+        else
+        {
+            import kameloso.string : indent;
+            import std.array : array;
+            import std.format : formattedWrite;
+            import std.range : retro;
+
+            static if (strategy == KeyOrderStrategy.adjusted)
+            {
+                // adjusted can really just be saved as .toPrettyString, but if we want
+                // to make it look the same as reverse and inGivenOrder we have to
+                // manually iterate the keys, like they do.
+
+                auto range = storage.object.byKey.array.retro;
+                size_t i;
+
+                sink.put("{\n");
+
+                foreach(immutable key; range)
+                {
+                    sink.formattedWrite("    \"%s\":\n", key);
+                    sink.put(storage[key].toPrettyString.indent);
+                    sink.put((++i < range.length) ? ",\n" : "\n");
+                }
+            }
+            else static if (strategy == KeyOrderStrategy.reverse)
+            {
+                import std.algorithm.sorting : sort;
+
+                auto range = storage.object.byKey.array.sort.retro;
+                size_t i;
+
+                sink.put("{\n");
+
+                foreach(immutable key; range)
+                {
+                    sink.formattedWrite("    \"%s\":\n", key);
+                    sink.put(storage[key].toPrettyString.indent);
+                    sink.put((++i < range.length) ? ",\n" : "\n");
+                }
+            }
+            else
+            {
+                static assert(0, "Invalid KeyOrderStrategy passed to serialiseObjectInto");
+            }
+
+            sink.put("}");
+        }
     }
 
     ///
@@ -279,7 +317,7 @@ struct JSONStorage
 }`);
 
         // KeyOrderStrategy.adjusted
-        this_.saveObject(sink, KeyOrderStrategy.adjusted);
+        this_.serialiseInto!(KeyOrderStrategy.adjusted)(sink);
         assert((sink.data ==
 `{
     "#abc":
@@ -296,7 +334,7 @@ struct JSONStorage
         sink.clear();
 
         // KeyOrderStrategy.reverse
-        this_.saveObject(sink, KeyOrderStrategy.reverse);
+        this_.serialiseInto!(KeyOrderStrategy.reverse)(sink);
         assert((sink.data ==
 `{
     "#def":
@@ -313,7 +351,7 @@ struct JSONStorage
         sink.clear();
 
         // KeyOrderStrategy.inGivenOrder
-        this_.saveObject(sink, KeyOrderStrategy.inGivenOrder, [ "#def", "#abc", "#foo" ]);
+        this_.serialiseInto!(KeyOrderStrategy.inGivenOrder)(sink, [ "#def", "#abc", "#foo" ]);
         assert((sink.data ==
 `{
     "#def":
@@ -334,7 +372,7 @@ struct JSONStorage
 
         // Empty JSONValue
         JSONStorage this2;
-        this2.saveObject(sink);
+        this2.serialiseInto(sink);
         assert((sink.data ==
 `{
 }`), '\n' ~ sink.data);
