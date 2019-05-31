@@ -631,15 +631,19 @@ naN     !"¤%&/`;
 auto justifiedConfigurationText(const string origLines)
 {
     import kameloso.string : stripped;
+    import std.algorithm.comparison : max;
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
+    enum decentReserve = 4096;
+
     Appender!(string[]) unjustified;
+    unjustified.reserve(decentReserve);
     size_t longestEntryLength;
 
     foreach (immutable rawline; origLines.splitter("\n"))
     {
-        string line = rawline.stripped;
+        immutable line = rawline.stripped;
 
         if (!line.length)
         {
@@ -651,10 +655,6 @@ auto justifiedConfigurationText(const string origLines)
         {
         case '#':
         case ';':
-            longestEntryLength = (line.length > longestEntryLength) ?
-                line.length : longestEntryLength;
-            goto case '[';
-
         case '[':
             // comment or section header
             unjustified.put(line);
@@ -664,9 +664,7 @@ auto justifiedConfigurationText(const string origLines)
             import std.format : format;
 
             immutable result = splitEntryValue(line);
-            longestEntryLength = (result.entry.length > longestEntryLength) ?
-                result.entry.length : longestEntryLength;
-
+            longestEntryLength = max(longestEntryLength, result.entry.length);
             unjustified.put("%s %s".format(result.entry, result.value));
             break;
         }
@@ -674,10 +672,9 @@ auto justifiedConfigurationText(const string origLines)
 
     import kameloso.common : getMultipleOf;
     import std.algorithm.iteration : joiner;
-    import std.algorithm.comparison : max;
 
     Appender!string justified;
-    justified.reserve(128);
+    justified.reserve(decentReserve);
 
     assert((longestEntryLength > 0), "No longest entry; is the struct empty?");
     assert((unjustified.data.length > 0), "Unjustified data is empty");
