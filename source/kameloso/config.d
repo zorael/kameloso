@@ -378,7 +378,6 @@ pipyon 3
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
     import kameloso.string : stripSuffix, stripped;
-    import kameloso.uda : CannotContainComments, Unconfigurable;
     import std.format : format;
 
     string section;
@@ -387,7 +386,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
     lineloop:
     foreach (const rawline; range)
     {
-        string line = rawline.stripped;
+        string line = rawline.stripped;  // mutable
         if (!line.length) continue;
 
         switch (line[0])
@@ -427,25 +426,31 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                 enum settingslessThing = Unqual!Things.stringof.stripSuffix("Settings");
                 // Early continue if there's only one Thing and we're in the wrong section
+
                 if (section != settingslessThing) continue lineloop;
             }
 
             immutable result = splitEntryValue(line);
             immutable entry = result.entry;
+
             if (!entry.length) continue;
+
             string value = result.value;  // mutable for later slicing
 
             thingloop:
             foreach (immutable i, thing; things)
             {
                 import std.traits : Unqual, hasUDA, isType;
-                alias T = Unqual!(typeof(thing));
 
+                alias T = Unqual!(typeof(thing));
                 enum settingslessT = T.stringof.stripSuffix("Settings");
+
                 if (section != settingslessT) continue thingloop;
 
                 static if (!is(T == enum))
                 {
+                    import kameloso.uda : CannotContainComments, Unconfigurable;
+
                     switch (entry)
                     {
                     static foreach (immutable n; 0..things[i].tupleof.length)
@@ -471,6 +476,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                     value = value.contains(';') ? value.nom(';') : value;
                                     things[i].setMemberByName(entry, value);
                                 }
+
                                 continue lineloop;
                         }
                     }}
@@ -560,10 +566,13 @@ naN     !"¤%&/`;
         assert((f == 3.14f), f.text);
         assert((fa == [ 0.0f, 1.1f, -2.2f, 3.3f ]), fa.text);
         assert((d == 99.9), d.text);
+
         // rounding errors with LDC on Windows
-        // assert((da == [ 99.9999, 0.0001, -1.0 ]), da.text);
-        assert(da[0]-99.999 < 0.001);
-        assert(da[1..$] == [ 0.0001, -1.0 ]);
+        import std.math : approxEqual;
+        assert(da[0].approxEqual(99.9999), da[0].text);
+        assert(da[1].approxEqual(0.0001), da[1].text);
+        assert(da[2].approxEqual(-1.0), da[2].text);
+
         with (Foo.Bar)
         {
             assert((bar == oorgle), b.text);
