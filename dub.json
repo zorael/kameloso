@@ -76,7 +76,7 @@
         },
         {
             "name": "full",
-            "versions": [ "WithPlugins", "Colours", "Web" ],
+            "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport" ],
             "dependencies": { "requests": "~>1.0.8" }
         },
         {
