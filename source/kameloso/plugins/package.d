@@ -74,6 +74,7 @@ version(WithPlugins)
     mixin(tryImportMixin("kameloso.plugins.automode", "AutomodePlugin"));
     mixin(tryImportMixin("kameloso.plugins.quotes", "QuotesPlugin"));
     mixin(tryImportMixin("kameloso.plugins.help", "HelpPlugin"));
+    mixin(tryImportMixin("kameloso.plugins.hi", "HelloPlugin"));
 
 
     version(Posix)
@@ -169,6 +170,7 @@ version(WithPlugins)
         QuotesPlugin,
         TwitchBotPlugin,
         HelpPlugin,
+        HelloPlugin,  // Generally not available
         EnabledWebPlugins,  // Automatically expands
         EnabledPosixPlugins,  // Ditto
     );
