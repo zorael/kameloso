@@ -7,21 +7,19 @@
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` on join for op)
 * logs
-* echoing titles of pasted web URLs
+* looking up and echoing titles of pasted URLs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
-* [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
-* user `quotes`
-* Twitch support, including basic [streamer bot](source/kameloso/plugins/twitchbot.d) (default disabled); see [notes on connecting](#twitch) below
-* piping text from the terminal to the server (Linux/OSX and other Posix platforms only)
-* mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
+* works on **Twitch**, including basic [streamer plugin](source/kameloso/plugins/twitchbot.d) (not compiled in by default)
+* IRC colour coding and text effects display properly in your terminal ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+* more random stuff and gimmicks
 
-All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible.
+All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [<25 lines of code](source/kameloso/plugins/hi.d) (6 effective).
 
 ## Current limitations:
 
-* the **dmd** and **ldc** compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
+* the **dmd** and **ldc** compilers may segfault in some cases if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
 * Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
 
@@ -48,6 +46,15 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 
 A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
 ```
+
+Minimal test:
+
+```bash
+$ dub build
+$ ./kameloso --channels "#d,#freenode,##linuxmint"
+```
+
+---
 
 # Table of contents
 
@@ -110,11 +117,11 @@ There are several configurations in which the bot may be built.
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
-* `web`, compiles in plugins with web lookup (`webtitles` and `bashquotes`)
-* `full`, includes both of the above
-* `twitch`, everything so far, plus the Twitch streamer bot (so far chat support is always included)
-* `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
-* `windows`, default on Windows, also equals `full`
+* `web`, compiles in extra plugins with web access (`webtitles` and `bashquotes`)
+* `full`, includes both of the above plus Twitch chat support
+* `twitch`, everything so far, plus the Twitch streamer bot
+* `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours` and `web`
+* `windows`, default on Windows, also equals `colours` and `web`
 * `polyglot`, development build equalling everything available, including things like more error messages
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
@@ -209,7 +216,7 @@ It can technically be any string and not just one character. It may include spac
 
 ## Twitch
 
-To connect to Twitch servers you must supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `full` or `twitch`. You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
 ```ini
 [IRCBot]
@@ -236,7 +243,7 @@ $ ./kameloso --set twitchbot.enabled=true --writeconfig
 
 Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`, `!enable`, `!disable`, `!phrase`
 
-Note: a dot `.` prefix will not work on Twitch, as it conflicts with Twitch's own commands.
+Note: a dot "`.`" prefix will not work on Twitch, as it conflicts with Twitch's own commands.
 
 Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
 
@@ -263,7 +270,7 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 ## Windows
 
-Web URL lookup, including the web titles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
+Plugins that access the web, including the webtitles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 
 Terminal colours may also not work, requiring a registry edit to make it display properly. This works for at least Windows 10.
 
