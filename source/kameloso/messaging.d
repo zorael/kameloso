@@ -726,8 +726,6 @@ void immediate(IRCPluginState state, const string line)
     state.mainThread.prioritySend(ThreadMessage.Immediateline(), line);
 }
 
-alias immediateline = immediate;
-
 ///
 unittest
 {
@@ -749,6 +747,9 @@ unittest
         assert(0, "Receiving an immediateline failed.");
     }
 }
+
+/// Merely an alias to `immediate`, because we use both terms at different places.
+alias immediateline = immediate;
 
 
 // askToLogImpl
