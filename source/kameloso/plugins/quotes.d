@@ -445,6 +445,9 @@ public:
 final class QuotesPlugin : IRCPlugin
 {
 private:
+    /// All Quotes plugin settings gathered.
+    @Settings QuotesSettings quotesSettings;
+
     /++
      +  The in-memory JSON storage of all user quotes.
      +
@@ -452,9 +455,6 @@ private:
      +  nickname of a user.
      +/
     JSONStorage quotes;
-
-    /// All Quotes plugin settings gathered.
-    @Settings QuotesSettings quotesSettings;
 
     /// Filename of file to save the quotes to.
     @Resource string quotesFile = "quotes.json";

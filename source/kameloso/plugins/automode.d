@@ -593,14 +593,14 @@ public:
 final class AutomodePlugin : IRCPlugin
 {
 private:
+    /// All Automode options gathered.
+    @Settings AutomodeSettings automodeSettings;
+
     /// Associative array of automodes.
     string[string][string] automodes;
 
     /// Records of applied automodes so we don't repeat ourselves.
     bool[string][string] appliedAutomodes;
-
-    /// All Automode options gathered.
-    @Settings AutomodeSettings automodeSettings;
 
     /// The file to read and save automode definitions from/to.
     @Resource string automodeFile = "automodes.json";

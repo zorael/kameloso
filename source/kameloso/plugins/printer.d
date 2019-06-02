@@ -2286,6 +2286,9 @@ public:
 final class PrinterPlugin : IRCPlugin
 {
 private:
+    /// All Printer plugin options gathered.
+    @Settings PrinterSettings printerSettings;
+
     /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
@@ -2294,9 +2297,6 @@ private:
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
-
-    /// All Printer plugin options gathered.
-    @Settings PrinterSettings printerSettings;
 
     /// Where to save logs.
     @Resource string logDirectory = "logs";

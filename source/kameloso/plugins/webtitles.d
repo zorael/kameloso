@@ -883,11 +883,11 @@ public:
 final class WebtitlesPlugin : IRCPlugin
 {
 private:
-    /// Cache of recently looked-up web titles.
-    shared TitleLookupResults[string] cache;
-
     /// All Webtitles options gathered.
     @Settings WebtitlesSettings webtitlesSettings;
+
+    /// Cache of recently looked-up web titles.
+    shared TitleLookupResults[string] cache;
 
     mixin IRCPluginImpl;
 }

@@ -246,14 +246,14 @@ public:
 final class SedReplacePlugin : IRCPlugin
 {
 private:
+    /// All sed-replace options gathered.
+    @Settings SedReplaceSettings sedReplaceSettings;
+
     /++
      +  A `Line[string]` 1-buffer of the previous line every user said, with
      +  with nickname as key.
      +/
     Line[string] prevlines;
-
-    /// All sed-replace options gathered.
-    @Settings SedReplaceSettings sedReplaceSettings;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;

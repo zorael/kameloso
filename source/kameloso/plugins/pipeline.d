@@ -428,14 +428,14 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
+    /// All Pipeline settings gathered.
+    @Settings PipelineSettings pipelineSettings;
+
     /// Thread ID of the thread reading the named pipe.
     Tid fifoThread;
 
     /// Filename of the created FIFO.
     string fifoFilename;
-
-    /// All Pipeline settings gathered.
-    @Settings PipelineSettings pipelineSettings;
 
     /// Whether or not the worker is running in the background.
     bool workerRunning;

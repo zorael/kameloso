@@ -1466,14 +1466,14 @@ public:
 final class AdminPlugin : IRCPlugin
 {
 private:
+    /// All Admin options gathered.
+    @Settings AdminSettings adminSettings;
+
     /// Snapshot of previous `IRCClient`.
     debug IRCClient previousClient;
 
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";
-
-    /// All Admin options gathered.
-    @Settings AdminSettings adminSettings;
 
     mixin IRCPluginImpl;
 }

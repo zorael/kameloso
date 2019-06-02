@@ -1248,6 +1248,9 @@ private:
         long broadcastStart;
     }
 
+    /// All Twitch Bot plugin settings.
+    @Settings TwitchBotSettings twitchBotSettings;
+
     /// Array of active bot channels' state.
     Channel[string] activeChannels;
 
@@ -1268,9 +1271,6 @@ private:
 
     /// Filename of file with banned phrases.
     @Resource string bannedPhrasesFile = "twitchphrases.json";
-
-    /// All Twitch Bot plugin settings.
-    @Settings TwitchBotSettings twitchBotSettings;
 
     mixin IRCPluginImpl;
 
