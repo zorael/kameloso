@@ -1961,6 +1961,17 @@ unittest
 {
     IRCPluginState state;
 
+    TestPlugin p = new TestPlugin(state);
+    assert(!p.isEnabled);
+
+    p.testSettings.enuubled = true;
+    assert(p.isEnabled);
+}
+
+version(unittest)
+{
+    // These need to be module-level.
+
     struct TestSettings
     {
         @Enabler bool enuubled = false;
@@ -1972,14 +1983,7 @@ unittest
 
         mixin IRCPluginImpl;
     }
-
-    TestPlugin p = new TestPlugin(state);
-    assert(!p.isEnabled);
-
-    p.testSettings.enuubled = true;
-    assert(p.isEnabled);
 }
-
 
 // MessagingProxy
 /++
@@ -3474,29 +3478,6 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 ///
 unittest
 {
-    struct MyPluginSettings
-    {
-        @Enabler bool enabled;
-
-        string s;
-        int i;
-        float f;
-        bool b;
-        double d;
-    }
-
-    final class MyPlugin : IRCPlugin
-    {
-        @Settings MyPluginSettings myPluginSettings;
-
-        string name() @property const
-        {
-            return "myplugin";
-        }
-
-        mixin IRCPluginImpl;
-    }
-
     IRCPluginState state;
     IRCPlugin plugin = new MyPlugin(state);
 
@@ -3521,6 +3502,34 @@ unittest
     assert(ps.f.approxEqual(3.14f), ps.f.text);
     assert(ps.b);
     assert(ps.d.approxEqual(99.99), ps.d.text);
+}
+
+version(unittest)
+{
+    // These need to be module-level.
+
+    struct MyPluginSettings
+    {
+        @Enabler bool enabled;
+
+        string s;
+        int i;
+        float f;
+        bool b;
+        double d;
+    }
+
+    final class MyPlugin : IRCPlugin
+    {
+        @Settings MyPluginSettings myPluginSettings;
+
+        string name() @property const
+        {
+            return "myplugin";
+        }
+
+        mixin IRCPluginImpl;
+    }
 }
 
 
