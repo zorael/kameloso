@@ -9,7 +9,7 @@
  +  `clearmodes`<br>
  +  `delmodes`<br>
  +  `printmodes`<br>
- +  `hello|op`
+ +  `op`
  +/
 module kameloso.plugins.automode;
 
@@ -465,7 +465,7 @@ void onCommandPrintModes(AutomodePlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "hello")
+//@BotCommand(PrefixPolicy.nickname, "hello")
 @BotCommand(PrefixPolicy.nickname, "op")
 @Description("Forces the bot to attempt to apply automodes.")
 void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
