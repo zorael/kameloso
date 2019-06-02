@@ -820,24 +820,30 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     private bool isEnabled() const @property pure nothrow @nogc
     {
-        import std.traits : Unqual, hasUDA;
+        import std.traits : Unqual, getSymbolsByUDA, hasUDA;
 
         bool retval = true;
 
-        top:
-        foreach (immutable i, immutable member; this.tupleof)
+        static if (getSymbolsByUDA!(typeof(this), Settings).length)
         {
-            static if (hasUDA!(this.tupleof[i], Settings))
+            top:
+            foreach (immutable i, immutable member; this.tupleof)
             {
-                foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
+                static if (hasUDA!(this.tupleof[i], Settings))
                 {
-                    static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
+                    static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
                     {
-                        static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
-                            Unqual!(typeof(this)).stringof ~ " has a non-bool Enabler");
+                        foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
+                        {
+                            static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
+                            {
+                                static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
+                                    Unqual!(typeof(this)).stringof ~ " has a non-bool Enabler");
 
-                        retval = submember;
-                        break top;
+                                retval = submember;
+                                break top;
+                            }
+                        }
                     }
                 }
             }
