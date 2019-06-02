@@ -166,7 +166,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             message = "%s | %s".format(nickname, endQuote);
         }
 
-        plugin.privmsg(event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     try
@@ -192,7 +192,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
                 message = "No quote on record for %s".format(replyUser.nickname);
             }
 
-            plugin.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
         void onFailure(const IRCUser failureUser)
@@ -306,7 +306,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
                     .format(id, plugin.quotes[id].array.length);
             }
 
-            plugin.privmsg(event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         catch (JSONException e)
         {
@@ -460,5 +460,4 @@ private:
     @Resource string quotesFile = "quotes.json";
 
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 }

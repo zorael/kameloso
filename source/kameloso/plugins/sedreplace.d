@@ -31,6 +31,7 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.irc.defs;
+import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
 
@@ -208,7 +209,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 import kameloso.messaging : chan;
                 import std.format : format;
 
-                plugin.chan(event.channel, "%s | %s".format(event.sender.nickname, result));
+                chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
                 plugin.prevlines.remove(event.sender.nickname);
             }
 
@@ -256,5 +257,4 @@ private:
     Line[string] prevlines;
 
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 }

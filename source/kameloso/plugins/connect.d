@@ -20,6 +20,7 @@ import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
+import kameloso.messaging;
 
 import std.format : format;
 import std.typecons : Flag, No, Yes;
@@ -154,6 +155,7 @@ void joinChannels(ConnectService service)
             }
         }
 
+        import kameloso.messaging : joinChannel = join;
         import kameloso.string : plurality;
         import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
@@ -169,8 +171,8 @@ void joinChannels(ConnectService service)
 
         // Join in two steps so homes don't get shoved away by the channels
         // FIXME: line should split if it reaches 512 characters
-        if (client.homes.length) service.join(homelist.join(","), string.init, true);
-        if (client.channels.length) service.join(chanlist.join(","), string.init, true);
+        if (client.homes.length) joinChannel(service.state, homelist.join(","), string.init, true);
+        if (client.channels.length) joinChannel(service.state, chanlist.join(","), string.init, true);
     }
 }
 
@@ -190,7 +192,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 {
     if (service.serverPinged) return;
 
-    service.raw(event.content);
+    raw(service.state, event.content);
 }
 
 
@@ -308,7 +310,7 @@ void tryAuth(ConnectService service)
                 return;
             }
 
-            service.query(serviceNick, "%s %s".format(verb, password), true);
+            query(service.state, serviceNick, "%s %s".format(verb, password), true);
             if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
             break;
 
@@ -325,13 +327,13 @@ void tryAuth(ConnectService service)
                 account = client.origNickname;
             }
 
-            service.query(serviceNick, "%s %s %s".format(verb, account, password), true);
+            query(service.state, serviceNick, "%s %s %s".format(verb, account, password), true);
             if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
         case rusnet:
             // Doesn't want a PRIVMSG
-            service.raw("NICKSERV IDENTIFY " ~ password, true);
+            raw(service.state, "NICKSERV IDENTIFY " ~ password, true);
             if (!settings.hideOutgoing) logger.trace("--> NICKSERV IDENTIFY hunter2");
             break;
 
@@ -406,7 +408,7 @@ void onEndOfMotd(ConnectService service)
                     .replace("$origserver", service.state.client.server.address)
                     .replace("$server", service.state.client.server.resolvedAddress);
 
-                service.raw(processed);
+                raw(service.state, processed);
             }
         }
 
@@ -501,7 +503,7 @@ void onNickInUse(ConnectService service)
         }
 
         service.state.client.updated = true;
-        service.raw("NICK " ~ service.state.client.nickname);
+        raw(service.state, "NICK " ~ service.state.client.nickname);
     }
 }
 
@@ -518,7 +520,7 @@ void onBadNick(ConnectService service)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters.");
-        service.quit("Invalid nickname");
+        quit(service.state, "Invalid nickname");
     }
 }
 
@@ -533,7 +535,7 @@ void onBadNick(ConnectService service)
 void onBanned(ConnectService service)
 {
     logger.error("You are banned!");
-    service.quit("Banned");
+    quit(service.state, "Banned");
 }
 
 
@@ -553,7 +555,7 @@ void onPasswordMismatch(ConnectService service)
     }
 
     logger.error("Password mismatch!");
-    service.quit("Incorrect password");
+    quit(service.state, "Incorrect password");
 }
 
 
@@ -584,7 +586,7 @@ void onInvite(ConnectService service, const IRCEvent event)
         return;
     }
 
-    service.join(event.channel);
+    join(service.state, event.channel);
 }
 
 
@@ -629,7 +631,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             {
             case "sasl":
                 if (!service.connectSettings.sasl || !service.state.client.password.length) continue;
-                service.raw("CAP REQ :sasl", true);
+                raw(service.state, "CAP REQ :sasl", true);
                 tryingSASL = true;
                 break;
 
@@ -668,7 +670,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                service.raw("CAP REQ :" ~ cap, true);
+                raw(service.state, "CAP REQ :" ~ cap, true);
                 break;
 
             default:
@@ -681,7 +683,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            service.raw("CAP END", true);
+            raw(service.state, "CAP END", true);
 
             if (service.capabilityNegotiation == Progress.started)
             {
@@ -697,7 +699,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         switch (event.content)
         {
         case "sasl":
-            service.raw("AUTHENTICATE PLAIN", true);
+            raw(service.state, "AUTHENTICATE PLAIN", true);
             break;
 
         default:
@@ -740,7 +742,7 @@ void onSASLAuthenticate(ConnectService service)
         immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
         immutable encoded = encode64(authToken);
 
-        service.raw("AUTHENTICATE " ~ encoded, true);
+        raw(service.state, "AUTHENTICATE " ~ encoded, true);
         if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
     }
 }
@@ -772,7 +774,7 @@ void onSASLSuccess(ConnectService service)
      +  Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    service.raw("CAP END", true);
+    raw(service.state, "CAP END", true);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
 }
@@ -791,7 +793,7 @@ void onSASLFailure(ConnectService service)
 {
     if (service.connectSettings.exitOnSASLFailure)
     {
-        service.quit("SASL Negotiation Failure");
+        quit(service.state, "SASL Negotiation Failure");
         return;
     }
 
@@ -800,7 +802,7 @@ void onSASLFailure(ConnectService service)
     service.authentication = Progress.finished;
 
     // See `onSASLSuccess` for info on `CAP END`
-    service.raw("CAP END", true);
+    raw(service.state, "CAP END", true);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
 }
@@ -866,7 +868,7 @@ void onISUPPORT(ConnectService service)
 {
     if (service.state.client.server.daemon == IRCServer.Daemon.rusnet)
     {
-        service.raw("CODEPAGE UTF-8", true);
+        raw(service.state, "CODEPAGE UTF-8", true);
     }
 }
 
@@ -904,11 +906,11 @@ void register(ConnectService service)
     with (service.state)
     {
         service.registration = Progress.started;
-        service.raw("CAP LS 302", true);
+        raw(service.state, "CAP LS 302", true);
 
         if (client.pass.length)
         {
-            service.raw("PASS " ~ client.pass, true);
+            raw(service.state, "PASS " ~ client.pass, true);
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
         else version(TwitchSupport)
@@ -917,7 +919,7 @@ void register(ConnectService service)
             {
                 // client.server.daemon is always Daemon.unset at this point
                 logger.error("You *need* a pass to join this server.");
-                service.quit("Authentication failure (missing pass)");
+                quit(service.state, "Authentication failure (missing pass)");
                 return;
             }
         }
@@ -959,9 +961,9 @@ void negotiateNick(ConnectService service)
 
     service.nickNegotiation = Progress.started;
 
-    service.raw("USER %s * 8 : %s".format(service.state.client.ident,
+    raw(service.state, "USER %s * 8 : %s".format(service.state.client.ident,
         service.state.client.realName));
-    service.raw("NICK " ~ service.state.client.nickname);
+    raw(service.state, "NICK " ~ service.state.client.nickname);
 }
 
 
@@ -1052,5 +1054,4 @@ private:
     bool sentAfterConnect;
 
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 }

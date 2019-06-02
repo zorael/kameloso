@@ -18,6 +18,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.irc.common : IRCControlCharacter;
+import kameloso.messaging;
 
 
 // onCTCPs
@@ -203,7 +204,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 
         with (IRCControlCharacter)
         {
-            service.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), true);
+            raw(service.state, ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), true);
         }
     }
 }
@@ -279,7 +280,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        service.raw(("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+        raw(service.state, ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
             .format(event.sender.nickname, allCTCPTypes));
     }
 }
@@ -302,7 +303,6 @@ final class CTCPService : IRCPlugin
 {
 private:
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 
     /++
      +  Override `IRCPluginImpl.onEvent` and inject a server check, so this

@@ -91,7 +91,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                         .format(senderName, note.sender, timestamp, note.line);
                 }
 
-                plugin.privmsg(channel, event.sender.nickname, message);
+                privmsg(plugin.state, channel, event.sender.nickname, message);
             }
             else
             {
@@ -108,7 +108,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     message = "%s! You have %d notes.".format(senderName, noteArray.length);
                 }
 
-                plugin.privmsg(channel, event.sender.nickname, message);
+                privmsg(plugin.state, channel, event.sender.nickname, message);
 
                 foreach (const note; noteArray)
                 {
@@ -126,7 +126,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                         report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
                     }
 
-                    plugin.privmsg(channel, event.sender.nickname, report);
+                    privmsg(plugin.state, channel, event.sender.nickname, report);
                 }
             }
 
@@ -228,7 +228,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 
     if (lowerNickname == plugin.state.client.nickname.toLower)
     {
-        plugin.privmsg(event.channel, event.sender.nickname,
+        privmsg(plugin.state, event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
         return;
     }
@@ -239,7 +239,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(lowerNickname, senderName, event.channel, line);
-        plugin.privmsg(event.channel, event.sender.nickname, "Note added.");
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
     catch (JSONException e)
@@ -616,5 +616,4 @@ private:
     @Resource string notesFile = "notes.json";
 
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 }
