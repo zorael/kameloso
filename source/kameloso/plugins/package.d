@@ -74,7 +74,7 @@ version(WithPlugins)
     mixin(tryImportMixin("kameloso.plugins.automode", "AutomodePlugin"));
     mixin(tryImportMixin("kameloso.plugins.quotes", "QuotesPlugin"));
     mixin(tryImportMixin("kameloso.plugins.help", "HelpPlugin"));
-    mixin(tryImportMixin("kameloso.plugins.hi", "HelloPlugin"));
+    mixin(tryImportMixin("kameloso.plugins.hello", "HelloPlugin"));
 
 
     version(Posix)
