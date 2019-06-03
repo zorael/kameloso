@@ -1347,11 +1347,8 @@ private:
             if (event.content.beginsWith(settings.prefix) &&
                 (event.content.length > settings.prefix.length))
             {
-                import std.uni : toLower;
-
-                // Prefixed command. Use .toLower for now
-                // We only need "enable"
-                if (event.content[settings.prefix.length..$].toLower == "enable")
+                // Specialcase prefixed "enable"
+                if (event.content[settings.prefix.length..$] == "enable")
                 {
                     // Always pass through
                     return onEventImpl(event);
