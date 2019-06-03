@@ -982,6 +982,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     // UDA is `ANY`, let pass
                 }
+                else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
+                {
+                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
+                        " is annotated IRCEvent.Type.PRIVMSG, which is not a valid event type. " ~
+                        "Use CHAN or QUERY (or both) instead");
+                }
+                else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
+                {
+                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
+                        " is annotated IRCEvent.Type.WHISPER, which is not a valid event type. " ~
+                        "Use QUERY instead");
+                }
                 else
                 {
                     if (eventTypeUDA != event.type)
