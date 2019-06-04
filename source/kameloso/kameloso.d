@@ -180,10 +180,8 @@ Next checkMessages(ref IRCBot bot)
             else
             {
                 import kameloso.irc.colours : stripEffects;
-
-                immutable noEffects = line.stripEffects;
-                logger.trace("--> ", noEffects);
-                bot.conn.sendline(noEffects);
+                logger.trace("--> ", line.stripEffects);
+                bot.conn.sendline(line);
             }
         }
         else
@@ -208,10 +206,8 @@ Next checkMessages(ref IRCBot bot)
             else
             {
                 import kameloso.irc.colours : stripEffects;
-
-                immutable noEffects = line.stripEffects;
-                logger.trace("--> ", noEffects);
-                bot.throttleline(noEffects);
+                logger.trace("--> ", line.stripEffects);
+                bot.throttleline(line);
             }
         }
         else
