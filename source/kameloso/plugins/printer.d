@@ -1049,7 +1049,8 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
-        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError &&
+            !plugin.printerSettings.silentErrors) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
             import kameloso.terminal : TerminalToken;
@@ -1475,7 +1476,8 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         sink.colourWith(TerminalForeground.default_);  // same for bright and dark
 
-        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError &&
+            !plugin.printerSettings.silentErrors) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
             import kameloso.terminal : TerminalToken;
