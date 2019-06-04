@@ -345,7 +345,7 @@ Next checkMessages(ref IRCBot bot)
         case EMOTE:
             alias I = IRCControlCharacter;
             immutable emoteTarget = target.nickname.length ? target.nickname : channel;
-            line = "PRIVMSG %s :%s%s%s".format(emoteTarget, cast(int)I.ctcp, content, cast(int)I.ctcp);
+            line = "PRIVMSG %s :%sACTION %s%2s".format(emoteTarget, cast(int)I.ctcp, content);
             break;
 
         case MODE:
