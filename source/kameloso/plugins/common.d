@@ -1236,8 +1236,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                 }
 
-                import std.meta   : AliasSeq, staticMap;
-                import std.traits : Parameters, Unqual, arity;
+                import kameloso.traits : TakesParams, stringofParams;
+                import std.meta : AliasSeq, staticMap;
+                import std.traits : Parameters, Unqual, arity, staticMap;
 
                 static if (hasUDA!(fun, PrivilegeLevel))
                 {
@@ -1259,13 +1260,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (__traits(hasMember, this, "allow") &&
                         isSomeFunction!(__traits(getMember, this, "allow")))
                     {
+                        static assert(TakesParams!(__traits(getMember, this, "allow"),
+                            IRCEvent, PrivilegeLevel),
+                            "Custom allow in " ~ module_ ~ '.' ~ typeof(this).stringof ~
+                            " has an invalid signature: " ~
+                            stringofParams!(__traits(getMember, this, "allow")));
+
                         static if (verbose)
                         {
                             writeln("...custom allow!");
                             if (settings.flush) stdout.flush();
                         }
 
-                        immutable result = allow(mutEvent, privilegeLevel);
+                        immutable result = this.allow(mutEvent, privilegeLevel);
                     }
                     else
                     {
@@ -1317,17 +1324,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
                         else static if (Filter!(isIRCPluginParam, Params).length)
                         {
-                            pragma(msg, name);
-                            pragma(msg, typeof(fun).stringof);
-                            pragma(msg, Params);
-                            static assert(0, "Function signature takes IRCPlugin instead of subclass plugin");
+                            static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
+                                " takes an IRCPlugin instead of subclass plugin: " ~
+                                typeof(fun).stringof);
                         }
                         else
                         {
-                            pragma(msg, name);
-                            pragma(msg, typeof(fun).stringof);
-                            pragma(msg, Params);
-                            static assert(0, "Unknown event handler function signature");
+                            static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
+                                " has an unsupported function signature: " ~
+                                typeof(fun).stringof);
                         }
 
                     case fail:
@@ -1365,10 +1370,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    pragma(msg, name);
-                    pragma(msg, typeof(fun).stringof);
-                    pragma(msg, Params);
-                    static assert(0, "Unknown event handler function signature");
+                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
+                        " has an unsupported function signature: " ~ typeof(fun).stringof);
                 }
 
                 static if (hasUDA!(fun, Chainable))
@@ -1519,8 +1522,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".initialise: " ~
-                    typeof(.initialise).stringof);
+                static assert(0, module_ ~ ".initialise has an unsupported " ~
+                    "function signature: " ~ typeof(.initialise).stringof);
             }
         }
     }
@@ -1545,8 +1548,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".postprocess: " ~
-                    typeof(.postprocess).stringof);
+                static assert(0, module_ ~ ".postprocess has an unsupported " ~
+                    "function signature: " ~ typeof(.postprocess).stringof);
             }
         }
     }
@@ -1570,8 +1573,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".initResources: " ~
-                    typeof(.initResources).stringof);
+                static assert(0, module_ ~ ".initResources has an unsupported " ~
+                    "function signature: " ~ typeof(.initResources).stringof);
             }
         }
     }
@@ -1754,8 +1757,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".start: " ~
-                    typeof(.start).stringof);
+                static assert(0, module_ ~ ".start has an unsupported " ~
+                    "function signature: " ~ typeof(.start).stringof);
             }
         }
     }
@@ -1779,7 +1782,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".teardown");
+                static assert(0, module_ ~ ".teardown has an unsupported " ~
+                    "function signature: " ~ typeof(.teardown).stringof);
             }
         }
     }
@@ -1914,8 +1918,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".periodically: " ~
-                    typeof(.periodically).stringof);
+                static assert(0, module_ ~ ".periodically has an unsupported " ~
+                    "function signature: " ~ typeof(.periodically).stringof);
             }
         }
     }
@@ -1939,8 +1943,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".reload: " ~
-                    typeof(.reload).stringof);
+                static assert(0, module_ ~ ".reload has an unsupported " ~
+                    "function signature: " ~ typeof(.reload).stringof);
             }
         }
     }
@@ -1968,7 +1972,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, "Invalid signature on " ~ module_ ~ ".onBusMessage");
+                static assert(0, module_ ~ ".onBusMessage has an unsupported " ~
+                    "function signature: " ~ typeof(.onBusMessage).stringof);
             }
         }
     }
@@ -3831,10 +3836,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else
             {
-                pragma(msg, typeof(onSuccess).stringof ~ "  " ~ __traits(identifier, onSuccess));
-                pragma(msg, Params);
                 static assert(0, "Unexpected signature of success function " ~
-                    "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__);
+                    "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__ ~
+                    ": " ~ typeof(onSuccess).stringof ~ " " ~ __traits(identifier, onSuccess));
             }
         }
         else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
@@ -3862,10 +3866,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
                 else
                 {
-                    pragma(msg, typeof(onFailure).stringof ~ "  " ~ __traits(identifier, onFailure));
-                    pragma(msg, Params);
                     static assert(0, "Unexpected signature of failure function " ~
-                        "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__);
+                        "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__ ~
+                        ": " ~ typeof(onFailure).stringof ~ " " ~ __traits(identifier, onFailure));
                 }
             }
         }
