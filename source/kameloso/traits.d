@@ -623,7 +623,6 @@ unittest
  +/
 template TakesParams(alias fun, P...)
 {
-    import std.meta : AliasSeq;
     import std.traits : Parameters, Unqual, staticMap;
 
     alias FunParams = staticMap!(Unqual, Parameters!fun);
@@ -655,4 +654,45 @@ unittest
     static assert(!TakesParams!(foo, string));
     static assert(!TakesParams!(foo1, string, int));
     static assert(!TakesParams!(foo2, bool, bool, bool));
+}
+
+
+// stringofParams
+/++
+ +  Produces a string of the unqualified parameters of the passed function alias.
+ +
+ +  Example:
+ +  ---
+ +  void foo(bool b, int i, string s) {}
+ +  static assert(stringofParams!foo == "bool, int, string");
+ +  ---
+ +
+ +  Params:
+ +      fun = A function alias to get the parameter string of.
+ +/
+template stringofParams(alias fun)
+{
+    import std.traits : Parameters, Unqual, staticMap;
+
+    alias FunParams = staticMap!(Unqual, staticMap!(Unqual, Parameters!fun));
+    enum stringofParams = FunParams.stringof[1..$-1];
+}
+
+//
+unittest
+{
+    void foo();
+    void foo1(string);
+    void foo2(string, int);
+    void foo3(bool, bool, bool);
+
+    enum ofFoo = stringofParams!foo;
+    enum ofFoo1 = stringofParams!foo1;
+    enum ofFoo2 = stringofParams!foo2;
+    enum ofFoo3 = stringofParams!foo3;
+
+    static assert(!ofFoo.length, ofFoo);
+    static assert((ofFoo1 == "string"), ofFoo1);
+    static assert((ofFoo2 == "string, int"), ofFoo2);
+    static assert((ofFoo3 == "bool, bool, bool"), ofFoo3);
 }
