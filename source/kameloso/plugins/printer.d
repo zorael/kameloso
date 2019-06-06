@@ -247,7 +247,11 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
 
     default:
+        import std.array : replace;
         import std.stdio : stdout;
+
+        // Strip bells so we don't get phantom noise
+        mutEvent.content = mutEvent.content.replace(cast(ubyte)3, string.init);
 
         bool printed;
 
