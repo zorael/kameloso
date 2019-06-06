@@ -251,7 +251,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         import std.stdio : stdout;
 
         // Strip bells so we don't get phantom noise
-        mutEvent.content = mutEvent.content.replace(cast(ubyte)3, string.init);
+        mutEvent.content = mutEvent.content.replace(cast(ubyte)7, string.init);
 
         bool printed;
 
