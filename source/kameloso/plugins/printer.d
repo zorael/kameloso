@@ -1068,6 +1068,67 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     }
 }
 
+///
+unittest
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+
+    IRCPluginState state;
+    PrinterPlugin plugin = new PrinterPlugin(state);
+
+    IRCEvent event;
+
+    with (event.sender)
+    {
+        nickname = "nickname";
+        address = "127.0.0.1";
+        alias_ = "Nickname";
+        //account = "n1ckn4m3";
+        class_ = IRCUser.Class.whitelist;
+    }
+
+    event.type = IRCEvent.Type.JOIN;
+    event.channel = "#channel";
+
+    plugin.formatMessageMonochrome(sink, event, false);
+    immutable joinLine = sink.data[11..$];
+    assert((joinLine == "[join] [#channel] Nickname"), joinLine);
+    sink = typeof(sink).init;
+
+    event.type = IRCEvent.Type.CHAN;
+    event.content = "Harbl snarbl";
+
+    plugin.formatMessageMonochrome(sink, event, false);
+    immutable chanLine = sink.data[11..$];
+    assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
+    sink = typeof(sink).init;
+
+    version(TwitchSupport)
+    {
+        event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
+        //colour = "#3c507d";
+
+        plugin.formatMessageMonochrome(sink, event, false);
+        immutable twitchLine = sink.data[11..$];
+        assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
+        sink = typeof(sink).init;
+        event.sender.badges = string.init;
+    }
+
+    event.type = IRCEvent.Type.ACCOUNT;
+    event.channel = string.init;
+    event.content = string.init;
+    event.sender.account = "n1ckn4m3";
+    event.aux = "n1ckn4m3";
+
+    plugin.formatMessageMonochrome(sink, event, false);
+    immutable accountLine = sink.data[11..$];
+    assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
+    //sink = typeof(sink).init;
+}
+
 
 // formatMessageColoured
 /++
