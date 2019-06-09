@@ -1203,15 +1203,15 @@ version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
 {
-    import kameloso.terminal : TerminalForeground, colourWith;
+    import kameloso.terminal : FG = TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
     import kameloso.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
 
-    alias DefaultBright = DefaultColours.EventPrintingBright;
-    alias DefaultDark = DefaultColours.EventPrintingDark;
+    alias Bright = DefaultColours.EventPrintingBright;
+    alias Dark = DefaultColours.EventPrintingDark;
 
     immutable timestamp = (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -1231,18 +1231,18 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
      +
      +  It gives each user a random yet consistent colour to their name.
      +/
-    TerminalForeground colourByHash(const string nickname)
+    FG colourByHash(const string nickname)
     {
         if (plugin.printerSettings.randomNickColours)
         {
             import std.algorithm.searching : countUntil;
             import std.traits : EnumMembers;
 
-            alias foregroundMembers = EnumMembers!TerminalForeground;
-            static immutable TerminalForeground[foregroundMembers.length] fg = [ foregroundMembers ];
+            alias foregroundMembers = EnumMembers!FG;
+            static immutable FG[foregroundMembers.length] fg = [ foregroundMembers ];
 
-            enum chancodeBright = fg[].countUntil(cast(int)DefaultBright.channel);
-            enum chancodeDark = fg[].countUntil(cast(int)DefaultDark.channel);
+            enum chancodeBright = fg[].countUntil(cast(int)Bright.channel);
+            enum chancodeDark = fg[].countUntil(cast(int)Dark.channel);
 
             // Range from 2 to 15, excluding black and white and manually changing
             // the code for bright/dark channel to black/white
@@ -1263,7 +1263,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         }
 
         // Don't differentiate between sender and target? Consistency?
-        return bright ? DefaultBright.sender : DefaultDark.sender;
+        return bright ? Bright.sender : Dark.sender;
     }
 
     /++
@@ -1309,7 +1309,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     {
         void putSender()
         {
-            colourUserTruecolour(sink, event.sender);
+            colourUserTruecolour(sink, sender);
 
             if (sender.isServer)
             {
@@ -1323,8 +1323,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     if (sender.class_ == IRCUser.Class.special)
                     {
-                        sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
-                        sink.put('*');
+                        .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
                     }
 
                     import std.algorithm.comparison : equal;
@@ -1332,12 +1331,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     if (!sender.alias_.asLowerCase.equal(sender.nickname))
                     {
-                        sink.colourWith(TerminalForeground.default_);
-                        sink.put(" <");
+                        .put!(Yes.colours)(sink, FG.default_, " <");
                         colourUserTruecolour(sink, event.sender);
-                        sink.put(sender.nickname);
-                        sink.colourWith(TerminalForeground.default_);
-                        sink.put('>');
+                        .put!(Yes.colours)(sink, sender.nickname, FG.default_, '>');
                     }
                 }
                 else if (sender.nickname.length)
@@ -1347,8 +1343,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     if (sender.class_ == IRCUser.Class.special)
                     {
-                        sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
-                        sink.put('*');
+                        .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
                     }
                 }
 
@@ -1366,10 +1361,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                             break;
 
                         default:
-                            sink.colourWith(bright ? DefaultBright.badge : DefaultDark.badge);
-                            put(sink, " [");
+                            .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
                             sink.abbreviateBadges(sender.badges);
-                            put(sink, ']');
+                            sink.put(']');
                         }
                     }
                 }
@@ -1379,21 +1373,16 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         void putTarget()
         {
             // No need to check isServer; target is never server
-            sink.colourWith(TerminalForeground.default_);
-            sink.put(" (");
+            .put!(Yes.colours)(sink, FG.default_, " (");
             colourUserTruecolour(sink, event.target);
 
             if (target.alias_.length)
             {
-                //put(sink, target.alias_, ')');
-                sink.put(target.alias_);
-                sink.colourWith(TerminalForeground.default_);
-                sink.put(')');
+                .put!(Yes.colours)(sink, target.alias_, FG.default_, ')');
 
                 if (target.class_ == IRCUser.Class.special)
                 {
-                    sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
-                    sink.put('*');
+                    .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
                 }
 
                 import std.algorithm.comparison : equal;
@@ -1401,24 +1390,19 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
-                    //sink.colourWith(TerminalForeground.default_);
+                    //sink.colourWith(FG.default_);
                     sink.put(" <");
                     colourUserTruecolour(sink, event.target);
-                    sink.put(target.nickname);
-                    sink.colourWith(TerminalForeground.default_);
-                    sink.put('>');
+                    .put!(Yes.colours)(sink, target.nickname, FG.default_, '>');
                 }
             }
             else
             {
-                sink.put(target.nickname);
-                sink.colourWith(TerminalForeground.default_);
-                sink.put(')');
+                .put!(Yes.colours)(sink, target.nickname, FG.default_, ')');
 
                 if (target.class_ == IRCUser.Class.special)
                 {
-                    sink.colourWith(bright ? DefaultBright.special : DefaultDark.special);
-                    sink.put('*');
+                    .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
                 }
             }
 
@@ -1426,21 +1410,17 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             {
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
-                    sink.colourWith(bright ? DefaultBright.badge : DefaultDark.badge);
-
-                    put(sink, " [");
+                    .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
                     sink.abbreviateBadges(target.badges);
-                    put(sink, ']');
+                    sink.put(']');
                 }
             }
         }
 
         void putContent()
         {
-            immutable TerminalForeground contentFgBase = bright ?
-                DefaultBright.content : DefaultDark.content;
-            immutable TerminalForeground emoteFgBase = bright ?
-                DefaultBright.emote : DefaultDark.emote;
+            immutable FG contentFgBase = bright ? Bright.content : Dark.content;
+            immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
 
             immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
                 (event.type == IRCEvent.Type.SELFEMOTE) ||
@@ -1453,11 +1433,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             {
                 if (isEmote)
                 {
-                    put(sink, ' ');
+                    sink.put(' ');
                 }
                 else
                 {
-                    put(sink, `: "`);
+                    sink.put(`: "`);
                 }
 
                 if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch)
@@ -1509,13 +1489,13 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     if (!match) goto default;
 
-                    put(sink, inverted);
+                    sink.put(inverted);
                     shouldBell = bellOnMention;
                     break;
 
                 default:
                     // Normal non-highlighting channel message
-                    put(sink, content);
+                    sink.put(content);
                     break;
                 }
 
@@ -1523,50 +1503,49 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 // Reset the background to ward off bad backgrounds bleeding out
                 sink.colourWith(fgBase, TerminalBackground.default_);
-                if (!isEmote) put(sink, '"');
+                if (!isEmote) sink.put('"');
             }
             else
             {
                 // PING or ERROR likely
-                put(sink, content);  // No need for indenting space
+                sink.put(content);  // No need for indenting space
             }
         }
 
-        sink.colourWith(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
-
-        put(sink, '[', timestamp, ']');
+        .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp,
+            '[', timestamp, ']');
 
         import kameloso.string : beginsWith;
 
         if (rawTypestring.beginsWith("ERR_"))
         {
-            sink.colourWith(bright ? DefaultBright.error : DefaultDark.error);
+            sink.colourWith(bright ? Bright.error : Dark.error);
         }
         else
         {
             if (bright)
             {
-                sink.colourWith((type == IRCEvent.Type.QUERY) ? DefaultBright.query : DefaultBright.type);
+                sink.colourWith((type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type);
             }
             else
             {
-                sink.colourWith((type == IRCEvent.Type.QUERY) ? DefaultDark.query : DefaultDark.type);
+                sink.colourWith((type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type);
             }
         }
 
         import std.uni : asLowerCase;
 
-        put(sink, " [");
+        sink.put(" [");
 
-        if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
-        else put(sink, typestring.asLowerCase);
+        if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
+        else sink.put(typestring.asLowerCase);
 
-        put(sink, "] ");
+        sink.put("] ");
 
         if (channel.length)
         {
-            sink.colourWith(bright ? DefaultBright.channel : DefaultDark.channel);
-            put(sink, '[', channel, "] ");
+            .put!(Yes.colours)(sink, bright ? Bright.channel : Dark.channel,
+                '[', channel, "] ");
         }
 
         putSender();
@@ -1577,29 +1556,28 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (aux.length)
         {
-            sink.colourWith(bright ? DefaultBright.aux : DefaultDark.aux);
-            put(sink, " (", aux, ')');
+            .put!(Yes.colours)(sink, Bright.aux, Dark.aux, " (", aux, ')');
         }
 
         if (count != 0)
         {
-            sink.colourWith(bright ? DefaultBright.count : DefaultDark.count);
+            sink.colourWith(bright ? Bright.count : Dark.count);
             sink.formattedWrite(" {%d}", count);
         }
 
         if (num > 0)
         {
-            sink.colourWith(bright ? DefaultBright.num : DefaultDark.num);
+            sink.colourWith(bright ? Bright.num : Dark.num);
             sink.formattedWrite(" (#%03d)", num);
         }
 
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
-            sink.colourWith(bright ? DefaultBright.error : DefaultDark.error);
-            put(sink, " !", errors, '!');
+            .put!(Yes.colours)(sink, bright ? Bright.error : Dark.error,
+                " !", errors, '!');
         }
 
-        sink.colourWith(TerminalForeground.default_);  // same for bright and dark
+        sink.colourWith(FG.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors) ||
