@@ -957,7 +957,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     if (!sender.alias_.asLowerCase.equal(sender.nickname))
                     {
-                        put(sink, " <", sender.nickname, '>');
+                        .put(sink, " <", sender.nickname, '>');
                     }
                 }
                 else if (sender.nickname.length)
@@ -981,9 +981,9 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                             break;
 
                         default:
-                            put(sink, " [");
+                            sink.put(" [");
                             sink.abbreviateBadges(sender.badges);
-                            put(sink, ']');
+                            sink.put(']');
                         }
                     }
                 }
@@ -996,18 +996,18 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             if (target.alias_.length)
             {
-                put(sink, target.alias_, ')');
+                .put(sink, target.alias_, ')');
 
                 if (target.class_ == IRCUser.Class.special) sink.put('*');
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
-                    put(sink, " <", target.nickname, '>');
+                    .put(sink, " <", target.nickname, '>');
                 }
             }
             else
             {
-                put(sink, target.nickname, ')');
+                .put(sink, target.nickname, ')');
                 if (target.class_ == IRCUser.Class.special) sink.put('*');
             }
 
@@ -1015,9 +1015,9 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             {
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
-                    put(sink, " [");
+                    sink.put(" [");
                     sink.abbreviateBadges(target.badges);
-                    put(sink, ']');
+                    sink.put(']');
                 }
             }
         }
@@ -1032,11 +1032,11 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (isEmote)
                 {
-                    put(sink, ' ');
+                    sink.put(' ');
                 }
                 else
                 {
-                    put(sink, `: "`);
+                    sink.put(`: "`);
                 }
 
                 with (IRCEvent.Type)
@@ -1057,26 +1057,26 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     break;
                 }
 
-                put(sink, content);
-                if (!isEmote) put(sink, '"');
+                sink.put(content);
+                if (!isEmote) sink.put('"');
             }
             else
             {
                 // PING or ERROR likely
-                put(sink, content);  // No need for indenting space
+                sink.put(content);  // No need for indenting space
             }
         }
 
         event.content = stripEffects(event.content);
 
-        put(sink, '[', timestamp, "] [");
+        .put(sink, '[', timestamp, "] [");
 
-        if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
-        else put(sink, typestring.asLowerCase);
+        if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
+        else sink.put(typestring.asLowerCase);
 
-        put(sink, "] ");
+        sink.put("] ");
 
-        if (channel.length) put(sink, '[', channel, "] ");
+        if (channel.length) .put(sink, '[', channel, "] ");
 
         putSender();
 
@@ -1084,7 +1084,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (content.length) putContent();
 
-        if (aux.length) put(sink, " (", aux, ')');
+        if (aux.length) .put(sink, " (", aux, ')');
 
         if (count != 0) sink.formattedWrite(" {%d}", count);
 
@@ -1092,7 +1092,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
-            put(sink, " !", errors, '!');
+            .put(sink, " !", errors, '!');
         }
 
         if (shouldBell || (errors.length && bellOnError &&
