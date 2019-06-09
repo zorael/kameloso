@@ -849,9 +849,7 @@ void onISUPPORT(PrinterPlugin plugin)
 void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 {
-    version(Colours) import kameloso.terminal : isAColourCode;
     import std.conv : to;
-    import std.range : put;
     import std.traits : Unqual;
 
     foreach (arg; args)
@@ -862,6 +860,8 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
 
         version(Colours)
         {
+            import kameloso.terminal : isAColourCode;
+
             static if (colours && isAColourCode!T)
             {
                 import kameloso.terminal : colourWith;
@@ -872,13 +872,13 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
 
         if (coloured) continue;
 
-        static if (!__traits(compiles, std.range.put(sink, T.init)))
+        static if (__traits(compiles, sink.put(T.init)) && !is(T == bool))
         {
-            put(sink, arg.to!string);
+            sink.put(arg);
         }
         else
         {
-            put(sink, arg);
+            sink.put(arg.to!string);
         }
     }
 }
