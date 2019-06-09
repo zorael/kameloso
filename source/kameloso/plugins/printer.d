@@ -1136,6 +1136,18 @@ unittest
     plugin.formatMessageMonochrome(sink, event, false, false);
     immutable accountLine = sink.data[11..$];
     assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
+    sink = typeof(sink).init;
+
+    event.errors = "DANGER WILL ROBINSON";
+    event.content = "Blah balah";
+    event.num = 666;
+    event.count = -42;
+    event.aux = string.init;
+    event.type = IRCEvent.Type.ERROR;
+
+    plugin.formatMessageMonochrome(sink, event, false, false);
+    immutable errorLine = sink.data[11..$];
+    assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) !DANGER WILL ROBINSON!`), errorLine);
     //sink = typeof(sink).init;
 }
 
