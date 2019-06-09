@@ -260,7 +260,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (!settings.monochrome)
             {
                 plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
-                    plugin.printerSettings.bellOnMention);
+                    plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
                 printed = true;
             }
         }
@@ -268,7 +268,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (!printed)
         {
             plugin.formatMessageMonochrome(stdout.lockingTextWriter, mutEvent,
-                plugin.printerSettings.bellOnMention);
+                plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
         }
 
         if (settings.flush) stdout.flush();
@@ -434,7 +434,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                     // Normal log
                     Appender!string sink;
                     sink.reserve(512);
-                    plugin.formatMessageMonochrome(sink, event, false);  // false bell on mention
+                    // false bell on mention and errors
+                    plugin.formatMessageMonochrome(sink, event, false, false);
                     buffer.lines ~= sink.data;
                 }
                 else
@@ -448,7 +449,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                     import std.stdio : File;
                     auto file = File(buffer.file, "a");
-                    plugin.formatMessageMonochrome(file.lockingTextWriter, event, false);
+                    plugin.formatMessageMonochrome(file.lockingTextWriter, event, false, false);
                 }
             }
             else
@@ -886,9 +887,10 @@ unittest
  +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
+ +      bellOnError = Whether or not to emite a terminal bell when an error occured.
  +/
 void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
-    IRCEvent event, const bool bellOnMention)
+    IRCEvent event, const bool bellOnMention, const bool bellOnError)
 {
     import kameloso.conv : Enum;
     import std.algorithm.comparison : equal;
@@ -1053,7 +1055,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
-        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError &&
+        if (shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
@@ -1092,7 +1094,7 @@ unittest
     event.type = IRCEvent.Type.JOIN;
     event.channel = "#channel";
 
-    plugin.formatMessageMonochrome(sink, event, false);
+    plugin.formatMessageMonochrome(sink, event, false, false);
     immutable joinLine = sink.data[11..$];
     assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     sink = typeof(sink).init;
@@ -1100,7 +1102,7 @@ unittest
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
 
-    plugin.formatMessageMonochrome(sink, event, false);
+    plugin.formatMessageMonochrome(sink, event, false, false);
     immutable chanLine = sink.data[11..$];
     assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     sink = typeof(sink).init;
@@ -1110,7 +1112,7 @@ unittest
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
-        plugin.formatMessageMonochrome(sink, event, false);
+        plugin.formatMessageMonochrome(sink, event, false, false);
         immutable twitchLine = sink.data[11..$];
         assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
         sink = typeof(sink).init;
@@ -1123,7 +1125,7 @@ unittest
     event.sender.account = "n1ckn4m3";
     event.aux = "n1ckn4m3";
 
-    plugin.formatMessageMonochrome(sink, event, false);
+    plugin.formatMessageMonochrome(sink, event, false, false);
     immutable accountLine = sink.data[11..$];
     assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     //sink = typeof(sink).init;
@@ -1143,10 +1145,11 @@ unittest
  +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
+ +      bellOnError = Whether or not to emite a terminal bell when an error occured.
  +/
 version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
-    IRCEvent event, const bool bellOnMention)
+    IRCEvent event, const bool bellOnMention, const bool bellOnError)
 {
     import kameloso.terminal : TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
@@ -1541,7 +1544,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         sink.colourWith(TerminalForeground.default_);  // same for bright and dark
 
-        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError &&
+        if (shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
