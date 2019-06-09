@@ -24,7 +24,7 @@ import kameloso.irc.colours;
 
 version(Colours) import kameloso.terminal : TerminalForeground;
 
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 
 // PrinterSettings
@@ -841,17 +841,38 @@ void onISUPPORT(PrinterPlugin plugin)
  +  Puts a variadic list of values into an output range sink.
  +
  +  Params:
+ +      colours = Whether or not to accept terminal colour tokens and use
+ +          them to tint the text.
  +      sink = Output range to sink items into.
  +      args = Variadic list of things to put into the output range.
  +/
-void put(Sink, Args...)(auto ref Sink sink, Args args)
+void put(Flag!"colours" colours = No.colours, Sink, Args...)
+    (auto ref Sink sink, Args args)
 {
-    import std.range : put;
+    version(Colours) import kameloso.terminal : isAColourCode;
     import std.conv : to;
+    import std.range : put;
+    import std.traits : Unqual;
 
     foreach (arg; args)
     {
-        static if (!__traits(compiles, std.range.put(sink, typeof(arg).init)))
+        alias T = Unqual!(typeof(arg));
+
+        bool coloured;
+
+        version(Colours)
+        {
+            static if (colours && isAColourCode!T)
+            {
+                import kameloso.terminal : colourWith;
+                sink.colourWith(arg);
+                coloured = true;
+            }
+        }
+
+        if (coloured) continue;
+
+        static if (!__traits(compiles, std.range.put(sink, T.init)))
         {
             put(sink, arg.to!string);
         }
@@ -871,6 +892,17 @@ unittest
 
     .put(sink, "abc", 123, "def", 456, true);
     assert((sink.data == "abc123def456true"), sink.data);
+
+    version(Colours)
+    {
+        import kameloso.terminal : TerminalBackground, TerminalForeground, TerminalReset;
+
+        sink = typeof(sink).init;
+
+        .put!(Yes.colours)(sink, "abc", TerminalForeground.white, "def",
+            TerminalBackground.red, "ghi", TerminalReset.all, "123");
+        assert((sink.data == "abc\033[97mdef\033[41mghi\033[0m123"), sink.data);
+    }
 }
 
 
