@@ -1092,7 +1092,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
-            .put(sink, " !", errors, '!');
+            .put(sink, " ! ", errors, " !");
         }
 
         if (shouldBell || (errors.length && bellOnError &&
@@ -1179,7 +1179,8 @@ unittest
 
     plugin.formatMessageMonochrome(sink, event, false, false);
     immutable errorLine = sink.data[11..$];
-    assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) !DANGER WILL ROBINSON!`), errorLine);
+    assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
+        "! DANGER WILL ROBINSON !"), errorLine);
     //sink = typeof(sink).init;
 }
 
@@ -1574,7 +1575,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
             .put!(Yes.colours)(sink, bright ? Bright.error : Dark.error,
-                " !", errors, '!');
+                " ! ", errors, " !");
         }
 
         sink.colourWith(FG.default_);  // same for bright and dark
