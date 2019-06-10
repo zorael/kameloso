@@ -131,6 +131,9 @@ interface IRCPlugin
     /// Executed when a bus message arrives from another plugin.
     import kameloso.thread : Sendable;
     void onBusMessage(const string, shared Sendable content) @system;
+
+    /// Returns whether or not the plugin is enabled in its configuration section.
+    bool isEnabled() const @property pure nothrow @nogc;
 }
 
 
@@ -818,7 +821,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      `true` if the plugin is deemed enabled (or cannot be disabled),
      +      `false` if not.
      +/
-    private bool isEnabled() const @property pure nothrow @nogc
+    public bool isEnabled() const @property pure nothrow @nogc
     {
         import std.traits : Unqual, getSymbolsByUDA, hasUDA;
 
