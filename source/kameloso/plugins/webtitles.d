@@ -194,11 +194,16 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     ulong delayMsecs, WebtitlesSettings webtitlesSettings, bool colouredOutgoing)
 {
+    import core.memory : GC;
+
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("webtitles");
     }
+
+    // This thread is short-lived so we can safely disable the GC.
+    GC.disable();
 
     if (delayMsecs > 0)
     {

@@ -76,20 +76,24 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
     import kameloso.irc.colours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
+    import core.memory : GC;
     import std.algorithm.iteration : splitter;
     import std.array : replace;
     import std.format : format;
-
-    auto state = cast()sState;
-
-    immutable url = !event.content.length ? "http://bash.org/?random" :
-        "http://bash.org/?" ~ event.content;
 
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("bashquotes");
     }
+
+    // This thread is short-lived so we can safely disable the GC.
+    GC.disable();
+
+    auto state = cast()sState;
+
+    immutable url = !event.content.length ? "http://bash.org/?random" :
+        "http://bash.org/?" ~ event.content;
 
     try
     {
