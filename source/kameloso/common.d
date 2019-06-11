@@ -18,8 +18,6 @@ version(Colours)
     private import kameloso.terminal : TerminalForeground;
 }
 
-version = RemovePluginsDisabledAtStartup;
-
 @safe:
 
 version(unittest)
@@ -332,9 +330,7 @@ struct IRCBot
 
         string[][string] allInvalidEntries;
 
-        version(RemovePluginsDisabledAtStartup) size_t[] disabledPlugins;
-
-        foreach (immutable i, plugin; plugins)
+        foreach (plugin; plugins)
         {
             auto theseInvalidEntries = plugin.deserialiseConfigFrom(settings.configFile);
 
@@ -344,15 +340,6 @@ struct IRCBot
                 theseInvalidEntries.meldInto(allInvalidEntries);
             }
 
-            version(RemovePluginsDisabledAtStartup)
-            {
-                if (!plugin.isEnabled)
-                {
-                    disabledPlugins ~= i;
-                    continue;
-                }
-            }
-
             if (plugin.state.nextPeriodical == 0)
             {
                 import kameloso.constants : Timeout;
@@ -360,22 +347,6 @@ struct IRCBot
                 // Schedule first periodical in `Timeout.initialPeriodical` for
                 // plugins that don't set a timestamp themselves in `initialise`
                 plugin.state.nextPeriodical = now + Timeout.initialPeriodical;
-            }
-        }
-
-        version(RemovePluginsDisabledAtStartup)
-        {
-            // Remove the disabled plugins.
-
-            foreach_reverse (immutable i; disabledPlugins)
-            {
-                import std.algorithm.mutation : SwapStrategy, remove;
-
-                // Store a reference, remove it from the plugins array, then
-                // destroy it via the reference.
-                auto plugin = plugins[i];
-                plugins = plugins.remove!(SwapStrategy.unstable)(i);
-                destroy!false(plugin);
             }
         }
 
