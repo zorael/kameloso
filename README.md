@@ -15,7 +15,7 @@
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
 
-All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [<25 lines of code](source/kameloso/plugins/hi.d) (6 effective).
+All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [<25 lines of code](source/kameloso/plugins/hello.d) (6 effective).
 
 ## Current limitations:
 
