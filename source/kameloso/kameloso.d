@@ -228,15 +228,6 @@ Next checkMessages(ref IRCBot bot)
         bot.throttleline("PONG :", target);
     }
 
-    /// Ask plugins to reload.
-    void reload(ThreadMessage.Reload)
-    {
-        foreach (plugin; bot.plugins)
-        {
-            plugin.reload();
-        }
-    }
-
     /// Quit the server with the supplied reason, or the default.
     void quitServer(ThreadMessage.Quit, string givenReason, bool hideOutgoing)
     {
