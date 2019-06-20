@@ -913,14 +913,17 @@ void register(ConnectService service)
             raw(service.state, "PASS " ~ client.pass, true);
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
-        else version(TwitchSupport)
+        else
         {
-            if (client.server.address.endsWith(".twitch.tv"))
+            version(TwitchSupport)
             {
-                // client.server.daemon is always Daemon.unset at this point
-                logger.error("You *need* a pass to join this server.");
-                quit(service.state, "Authentication failure (missing pass)");
-                return;
+                if (client.server.address.endsWith(".twitch.tv"))
+                {
+                    // client.server.daemon is always Daemon.unset at this point
+                    logger.error("You *need* a pass to join this server.");
+                    quit(service.state, "Authentication failure (missing pass)");
+                    return;
+                }
             }
         }
 

@@ -1124,7 +1124,7 @@ unittest
         df = defaultResourcePrefix;
         assert(df.beginsWith("/home/") && df.endsWith("/.local/share/kameloso"));
     }
-    else version (OSX)
+    else version(OSX)
     {
         immutable df = defaultResourcePrefix;
         assert(df.endsWith("Library/Application Support/kameloso"), df);
