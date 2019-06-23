@@ -796,12 +796,12 @@ if (isOutputRange!(Sink, string))
     {
         static if (abbreviate)
         {
-            if (hours) sink.put(' ');
+            if (hours || days) sink.put(' ');
             sink.formattedWrite("%dm", minutes);
         }
         else
         {
-            if (hours) sink.put(" and ");
+            if (hours || days) sink.put(" and ");
             sink.formattedWrite("%d %s", minutes, minutes.plurality("minute", "minutes"));
         }
     }
@@ -822,7 +822,7 @@ if (isOutputRange!(Sink, string))
 ///
 unittest
 {
-    import core.time : msecs, seconds;
+    import core.time;
     import std.array : Appender;
 
     Appender!(char[]) sink;
@@ -855,6 +855,16 @@ unittest
         sink.clear();
         sink.timeSince!(Yes.abbreviate)(dur);
         assert((sink.data == "59m"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 3.days + 35.minutes;
+        sink.timeSince(dur);
+        assert((sink.data == "3 days and 35 minutes"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "3d 35m"), sink.data);
         sink.clear();
     }
 }
