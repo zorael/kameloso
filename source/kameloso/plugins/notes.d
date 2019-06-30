@@ -217,16 +217,17 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
+    import std.algorithm.comparison : equal;
     import std.json : JSONException;
     import std.typecons : No, Yes;
-    import std.uni : toLower;
+    import std.uni : asLowerCase, toLower;
 
     if (!event.content.contains!(Yes.decode)(" ")) return;
 
     string slice = event.content;
     immutable lowerNickname = slice.nom!(Yes.decode)(" ").toLower;
 
-    if (lowerNickname == plugin.state.client.nickname.toLower)
+    if (lowerNickname.equal(plugin.state.client.nickname.asLowerCase))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
