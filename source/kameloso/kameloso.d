@@ -147,382 +147,391 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
 }
 
 
-// checkMessages
+// messageFiber
 /++
- +  Checks for concurrency messages and performs action based on what was received.
+ +  A Generator Fiber function that checks for concurrency messages and performs
+ +  action based on what was received.
  +
- +  The return value tells the caller whether the received action means the bot
- +  should exit or not.
+ +  The return value yielded to the caller tels it whether the received action
+ +  means the bot should exit or not.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +
- +  Returns:
- +      `kameloso.common.Next`.* depending on what course of action to take next.
  +/
-Next checkMessages(ref IRCBot bot)
+void messageFiber(ref IRCBot bot)
 {
-    Next next;
+    import std.concurrency : yield;
 
-    /// Send a message to the server bypassing throttling.
-    void immediateline(ThreadMessage.Immediateline, string line)
+    // The Generator we use this function with popFronts the first thing it does
+    // after being instantiated. We're not ready for that yet, so catch the next
+    // yield (which is upon messenger.call()).
+    yield(Next.init);
+
+    // Loop forever; we'll just terminate the Generator when we want to quit.
+    while (true)
     {
-        if (!settings.hideOutgoing)
-        {
-            version(Colours)
-            {
-                import kameloso.irc.colours : mapEffects;
-                import kameloso.terminal : TerminalForeground, TerminalBackground;
+        Next next;
 
-                logger.trace("--> ", line.mapEffects);
-                bot.conn.sendline(line);
+        /// Send a message to the server bypassing throttling.
+        void immediateline(ThreadMessage.Immediateline, string line) scope
+        {
+            if (!settings.hideOutgoing)
+            {
+                version(Colours)
+                {
+                    import kameloso.irc.colours : mapEffects;
+                    import kameloso.terminal : TerminalForeground, TerminalBackground;
+
+                    logger.trace("--> ", line.mapEffects);
+                    bot.conn.sendline(line);
+                }
+                else
+                {
+                    import kameloso.irc.colours : stripEffects;
+                    logger.trace("--> ", line.stripEffects);
+                    bot.conn.sendline(line);
+                }
             }
             else
             {
-                import kameloso.irc.colours : stripEffects;
-                logger.trace("--> ", line.stripEffects);
                 bot.conn.sendline(line);
             }
         }
-        else
-        {
-            bot.conn.sendline(line);
-        }
-    }
 
-    /// Echo a line to the terminal and send it to the server.
-    void sendline(ThreadMessage.Sendline, string line)
-    {
-        if (!settings.hideOutgoing)
+        /// Echo a line to the terminal and send it to the server.
+        void sendline(ThreadMessage.Sendline, string line) scope
         {
-            version(Colours)
+            if (!settings.hideOutgoing)
             {
-                import kameloso.irc.colours : mapEffects;
-                import kameloso.terminal : TerminalForeground, TerminalBackground;
+                version(Colours)
+                {
+                    import kameloso.irc.colours : mapEffects;
+                    import kameloso.terminal : TerminalForeground, TerminalBackground;
 
-                logger.trace("--> ", line.mapEffects);
-                bot.throttleline(line);
+                    logger.trace("--> ", line.mapEffects);
+                    bot.throttleline(line);
+                }
+                else
+                {
+                    import kameloso.irc.colours : stripEffects;
+                    logger.trace("--> ", line.stripEffects);
+                    bot.throttleline(line);
+                }
             }
             else
             {
-                import kameloso.irc.colours : stripEffects;
-                logger.trace("--> ", line.stripEffects);
                 bot.throttleline(line);
             }
         }
-        else
+
+        /// Send a line to the server without echoing it.
+        void quietline(ThreadMessage.Quietline, string line) scope
         {
             bot.throttleline(line);
         }
-    }
 
-    /// Send a line to the server without echoing it.
-    void quietline(ThreadMessage.Quietline, string line)
-    {
-        bot.throttleline(line);
-    }
-
-    /// Respond to `PING` with `PONG` to the supplied text as target.
-    void pong(ThreadMessage.Pong, string target)
-    {
-        bot.throttleline("PONG :", target);
-    }
-
-    /// Quit the server with the supplied reason, or the default.
-    void quitServer(ThreadMessage.Quit, string givenReason, bool hideOutgoing)
-    {
-        // This will automatically close the connection.
-        // Set quit to yes to propagate the decision up the stack.
-        immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
-        if (!hideOutgoing) logger.trace("--> QUIT :", reason);
-        bot.conn.sendline("QUIT :", reason);
-        next = Next.returnSuccess;
-    }
-
-    /// Disconnects from and reconnects to the server.
-    void reconnect(ThreadMessage.Reconnect)
-    {
-        bot.conn.sendline("QUIT :Reconnecting.");
-        next = Next.retry;
-    }
-
-    /// Saves current configuration to disk.
-    void save(ThreadMessage.Save)
-    {
-        bot.writeConfigurationFile(settings.configFile);
-    }
-
-    import kameloso.thread : CarryingFiber;
-    import kameloso.plugins.common : IRCPlugin;
-
-    /++
-     +  Attaches a reference to the main array of
-     +  `kameloso.plugins.common.IRCPlugin`s (housing all plugins) to the
-     +  payload member of the supplied `kameloso.common.CarryingFiber`, then
-     +  invokes it.
-     +/
-    void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber)
-    {
-        auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
-        assert(fiber, "Peeking Fiber was null!");
-        fiber.payload = bot.plugins;  // Make it visible from within the Fiber
-        fiber.call();
-    }
-
-    /// Reloads all plugins.
-    void reloadPlugins(ThreadMessage.Reload)
-    {
-        foreach (plugin; bot.plugins)
+        /// Respond to `PING` with `PONG` to the supplied text as target.
+        void pong(ThreadMessage.Pong, string target) scope
         {
-            plugin.reload();
+            bot.throttleline("PONG :", target);
         }
-    }
 
-    /// Passes a bus message to each plugin.
-    import kameloso.thread : Sendable;
-    void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content)
-    {
-        foreach (plugin; bot.plugins)
+        /// Quit the server with the supplied reason, or the default.
+        void quitServer(ThreadMessage.Quit, string givenReason, bool hideOutgoing) scope
         {
-            plugin.onBusMessage(header, content);
+            // This will automatically close the connection.
+            // Set quit to yes to propagate the decision up the stack.
+            immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
+            if (!hideOutgoing) logger.trace("--> QUIT :", reason);
+            bot.conn.sendline("QUIT :", reason);
+            next = Next.returnSuccess;
         }
-    }
 
-    /// Passes an empty header-only bus message to each plugin.
-    void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header)
-    {
-        foreach (plugin; bot.plugins)
+        /// Disconnects from and reconnects to the server.
+        void reconnect(ThreadMessage.Reconnect) scope
         {
-            shared Sendable content;
-            plugin.onBusMessage(header, content);
+            bot.conn.sendline("QUIT :Reconnecting.");
+            next = Next.retry;
         }
-    }
 
-    /// Reverse-formats an event and sends it to the server.
-    void eventToServer(IRCEvent event)
-    {
-        import kameloso.string : splitOnWord;
-        import std.format : format;
-
-        enum maxIRCLineLength = 512;
-
-        string line;
-        string prelude;
-        string[] lines;
-
-        with (IRCEvent.Type)
-        with (event)
-        with (bot)
-        switch (event.type)
+        /// Saves current configuration to disk.
+        void save(ThreadMessage.Save) scope
         {
-        case CHAN:
-            prelude = "PRIVMSG %s :".format(channel);
-            lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
-            break;
+            bot.writeConfigurationFile(settings.configFile);
+        }
 
-        case QUERY:
-            version(TwitchSupport)
+        import kameloso.thread : CarryingFiber;
+        import kameloso.plugins.common : IRCPlugin;
+
+        /++
+        +  Attaches a reference to the main array of
+        +  `kameloso.plugins.common.IRCPlugin`s (housing all plugins) to the
+        +  payload member of the supplied `kameloso.common.CarryingFiber`, then
+        +  invokes it.
+        +/
+        void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber) scope
+        {
+            auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
+            assert(fiber, "Peeking Fiber was null!");
+            fiber.payload = bot.plugins;  // Make it visible from within the Fiber
+            fiber.call();
+        }
+
+        /// Reloads all plugins.
+        void reloadPlugins(ThreadMessage.Reload) scope
+        {
+            foreach (plugin; bot.plugins)
             {
-                if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                plugin.reload();
+            }
+        }
+
+        /// Passes a bus message to each plugin.
+        import kameloso.thread : Sendable;
+        void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
+        {
+            foreach (plugin; bot.plugins)
+            {
+                plugin.onBusMessage(header, content);
+            }
+        }
+
+        /// Passes an empty header-only bus message to each plugin.
+        void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header) scope
+        {
+            foreach (plugin; bot.plugins)
+            {
+                shared Sendable content;
+                plugin.onBusMessage(header, content);
+            }
+        }
+
+        /// Reverse-formats an event and sends it to the server.
+        void eventToServer(IRCEvent event) scope
+        {
+            import kameloso.string : splitOnWord;
+            import std.format : format;
+
+            enum maxIRCLineLength = 512;
+
+            string line;
+            string prelude;
+            string[] lines;
+
+            with (IRCEvent.Type)
+            with (event)
+            with (bot)
+            switch (event.type)
+            {
+            case CHAN:
+                prelude = "PRIVMSG %s :".format(channel);
+                lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
+                break;
+
+            case QUERY:
+                version(TwitchSupport)
                 {
-                    prelude = "PRIVMSG #%s :.w %s ".format(bot.parser.client.nickname, target.nickname);
+                    if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    {
+                        prelude = "PRIVMSG #%s :.w %s ".format(bot.parser.client.nickname, target.nickname);
+                    }
                 }
-            }
 
-            if (!prelude.length) prelude = "PRIVMSG %s :".format(target.nickname);
-            lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
-            break;
+                if (!prelude.length) prelude = "PRIVMSG %s :".format(target.nickname);
+                lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
+                break;
 
-        case EMOTE:
-            alias I = IRCControlCharacter;
-            immutable emoteTarget = target.nickname.length ? target.nickname : channel;
-            line = "PRIVMSG %s :%sACTION %s%2s".format(emoteTarget, cast(int)I.ctcp, content);
-            break;
+            case EMOTE:
+                alias I = IRCControlCharacter;
+                immutable emoteTarget = target.nickname.length ? target.nickname : channel;
+                line = "PRIVMSG %s :%sACTION %s%2s".format(emoteTarget, cast(int)I.ctcp, content);
+                break;
 
-        case MODE:
-            line = "MODE %s %s %s".format(channel, aux, content);
-            break;
+            case MODE:
+                line = "MODE %s %s %s".format(channel, aux, content);
+                break;
 
-        case TOPIC:
-            line = "TOPIC %s :%s".format(channel, content);
-            break;
+            case TOPIC:
+                line = "TOPIC %s :%s".format(channel, content);
+                break;
 
-        case INVITE:
-            line = "INVITE %s %s".format(channel, target.nickname);
-            break;
+            case INVITE:
+                line = "INVITE %s %s".format(channel, target.nickname);
+                break;
 
-        case JOIN:
-            if (aux.length)
-            {
-                line = channel ~ " " ~ aux;
-            }
-            else
-            {
-                prelude = "JOIN ";
-                lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
-            }
-            break;
-
-        case KICK:
-            immutable reason = content.length ? " :" ~ content : string.init;
-            line = "KICK %s%s".format(channel, reason);
-            break;
-
-        case PART:
-            immutable reason = content.length ? " :" ~ content : string.init;
-            line = "PART %s%s".format(channel, reason);
-            break;
-
-        case QUIT:
-            return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.special));
-
-        case NICK:
-            line = "NICK %s".format(target.nickname);
-            break;
-
-        case PRIVMSG:
-            if (channel.length) goto case CHAN;
-            else goto case QUERY;
-
-        case RPL_WHOISACCOUNT:
-            import kameloso.constants : Timeout;
-            import std.datetime.systime : Clock;
-
-            immutable now = Clock.currTime.toUnixTime;
-
-            if (num > 0)
-            {
-                // Force
-                line = "WHOIS " ~ target.nickname;
-                bot.previousWhoisTimestamps[target.nickname] = now;
-            }
-            else
-            {
-                // Copy/paste from whoisForTriggerRequestQueue
-                immutable then = bot.previousWhoisTimestamps.get(target.nickname, 0);
-
-                if ((now - then) > Timeout.whoisRetry)
+            case JOIN:
+                if (aux.length)
                 {
+                    line = channel ~ " " ~ aux;
+                }
+                else
+                {
+                    prelude = "JOIN ";
+                    lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
+                }
+                break;
+
+            case KICK:
+                immutable reason = content.length ? " :" ~ content : string.init;
+                line = "KICK %s%s".format(channel, reason);
+                break;
+
+            case PART:
+                immutable reason = content.length ? " :" ~ content : string.init;
+                line = "PART %s%s".format(channel, reason);
+                break;
+
+            case QUIT:
+                return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.special));
+
+            case NICK:
+                line = "NICK %s".format(target.nickname);
+                break;
+
+            case PRIVMSG:
+                if (channel.length) goto case CHAN;
+                else goto case QUERY;
+
+            case RPL_WHOISACCOUNT:
+                import kameloso.constants : Timeout;
+                import std.datetime.systime : Clock;
+
+                immutable now = Clock.currTime.toUnixTime;
+
+                if (num > 0)
+                {
+                    // Force
                     line = "WHOIS " ~ target.nickname;
                     bot.previousWhoisTimestamps[target.nickname] = now;
                 }
+                else
+                {
+                    // Copy/paste from whoisForTriggerRequestQueue
+                    immutable then = bot.previousWhoisTimestamps.get(target.nickname, 0);
+
+                    if ((now - then) > Timeout.whoisRetry)
+                    {
+                        line = "WHOIS " ~ target.nickname;
+                        bot.previousWhoisTimestamps[target.nickname] = now;
+                    }
+                }
+                break;
+
+            case UNSET:
+                line = content;
+                break;
+
+            default:
+                import kameloso.conv : Enum;
+
+                // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
+                logger.warning("No outgoing event case for type ",
+                    Enum!(IRCEvent.Type).toString(type));
+                line = content;
+                break;
             }
-            break;
 
-        case UNSET:
-            line = content;
-            break;
-
-        default:
-            import kameloso.conv : Enum;
-
-            // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
-            logger.warning("No outgoing event case for type ",
-                Enum!(IRCEvent.Type).toString(type));
-            line = content;
-            break;
-        }
-
-        void appropriateline(const string finalLine)
-        {
-            if (event.target.class_ == IRCUser.Class.special)
+            void appropriateline(const string finalLine)
             {
-                quietline(ThreadMessage.Quietline(), finalLine);
+                if (event.target.class_ == IRCUser.Class.special)
+                {
+                    quietline(ThreadMessage.Quietline(), finalLine);
+                }
+                else
+                {
+                    sendline(ThreadMessage.Sendline(), finalLine);
+                }
             }
-            else
+
+            if (lines.length)
             {
-                sendline(ThreadMessage.Sendline(), finalLine);
+                foreach (immutable i, immutable splitLine; lines)
+                {
+                    appropriateline(prelude ~ splitLine);
+                }
+            }
+            else if (line.length)
+            {
+                appropriateline(line);
             }
         }
 
-        if (lines.length)
+        /// Proxies the passed message to the `logger`.
+        void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
         {
-            foreach (immutable i, immutable splitLine; lines)
+            with (ThreadMessage.TerminalOutput)
+            final switch (logLevel)
             {
-                appropriateline(prelude ~ splitLine);
+            case writeln:
+                import std.stdio : writeln;
+                writeln(message);
+                break;
+
+            case trace:
+                logger.trace(message);
+                break;
+
+            case log:
+                logger.log(message);
+                break;
+
+            case info:
+                logger.info(message);
+                break;
+
+            case warning:
+                logger.warning(message);
+                break;
+
+            case error:
+                logger.error(message);
+                break;
             }
         }
-        else if (line.length)
+
+        import core.time : seconds;
+        import std.datetime.systime : Clock;
+
+        /// Did the concurrency receive catch something?
+        bool receivedSomething;
+
+        /// Timestamp of when the loop started.
+        immutable loopStartTime = Clock.currTime;
+
+        static immutable instant = 0.seconds;
+        static immutable oneSecond = 1.seconds;
+
+        do
         {
-            appropriateline(line);
+            import std.concurrency : receiveTimeout;
+            import std.variant : Variant;
+
+            receivedSomething = receiveTimeout(instant,
+                &sendline,
+                &quietline,
+                &immediateline,
+                &pong,
+                &eventToServer,
+                &proxyLoggerMessages,
+                &quitServer,
+                &save,
+                &reloadPlugins,
+                &peekPlugins,
+                &reconnect,
+                &dispatchBusMessage,
+                &dispatchEmptyBusMessage,
+                (Variant v) scope
+                {
+                    // Caught an unhandled message
+                    logger.warning("Main thread received unknown Variant: ", v);
+                }
+            );
         }
+        while (receivedSomething && (next == Next.continue_) &&
+            ((Clock.currTime - loopStartTime) <= oneSecond));
+
+        yield(next);
     }
-
-    /// Proxies the passed message to the `logger`.
-    void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message)
-    {
-        with (ThreadMessage.TerminalOutput)
-        final switch (logLevel)
-        {
-        case writeln:
-            import std.stdio : writeln;
-            writeln(message);
-            break;
-
-        case trace:
-            logger.trace(message);
-            break;
-
-        case log:
-            logger.log(message);
-            break;
-
-        case info:
-            logger.info(message);
-            break;
-
-        case warning:
-            logger.warning(message);
-            break;
-
-        case error:
-            logger.error(message);
-            break;
-        }
-    }
-
-    import core.time : seconds;
-    import std.datetime.systime : Clock;
-
-    /// Did the concurrency receive catch something?
-    bool receivedSomething;
-
-    /// Timestamp of when the loop started.
-    immutable loopStartTime = Clock.currTime;
-
-    static immutable instant = 0.seconds;
-    static immutable oneSecond = 1.seconds;
-
-    do
-    {
-        import std.concurrency : receiveTimeout;
-        import std.variant : Variant;
-
-        receivedSomething = receiveTimeout(instant,
-            &sendline,
-            &quietline,
-            &immediateline,
-            &pong,
-            &eventToServer,
-            &proxyLoggerMessages,
-            &quitServer,
-            &save,
-            &reloadPlugins,
-            &peekPlugins,
-            &reconnect,
-            &dispatchBusMessage,
-            &dispatchEmptyBusMessage,
-            (Variant v)
-            {
-                // Caught an unhandled message
-                logger.warning("Main thread received unknown Variant: ", v);
-            }
-        );
-    }
-    while (receivedSomething && (next == Next.continue_) &&
-        ((Clock.currTime - loopStartTime) <= oneSecond));
-
-    return next;
 }
 
 
@@ -582,6 +591,9 @@ Next mainLoop(ref IRCBot bot)
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(bot.conn, *bot.abort));
+
+    auto messenger = new Generator!Next(() =>
+        messageFiber(bot));
 
     /// How often to check for timed `core.thread.Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
@@ -842,15 +854,17 @@ Next mainLoop(ref IRCBot bot)
         }
 
         // Check concurrency messages to see if we should exit, else repeat
-        try
+        messenger.call();
+
+        if (messenger.state == Fiber.State.HOLD)
         {
-            next = checkMessages(bot);
+            next = messenger.front;
         }
-        catch (Exception e)
+        else
         {
-            logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                logtint, e.msg, warningtint, e.file, e.line);
-            version(PrintStacktraces) logger.trace(e.toString);
+            logger.warningf("Internal error, thread messenger Fiber ended abruptly.");
+            version(PrintStacktraces) printStacktrace();
+            next = Next.returnFailure;
         }
     }
 
