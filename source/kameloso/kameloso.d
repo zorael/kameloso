@@ -532,6 +532,8 @@ void messageFiber(ref IRCBot bot)
 
         yield(next);
     }
+
+    assert(0, "while (true) loop break in messageFiber");
 }
 
 
