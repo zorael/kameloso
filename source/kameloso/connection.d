@@ -453,7 +453,7 @@ void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abo
                     //case "Unable to connect socket: Network is unreachable":
                     default:
                         // Don't delay for retrying on the last retry, drop down below
-                        if (retry < (connectionRetries - 1))
+                        if (retry+1 < connectionRetries)
                         {
                             attempt.state = State.delayThenReconnect;
                             yield(attempt);
