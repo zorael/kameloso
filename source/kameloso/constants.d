@@ -14,6 +14,15 @@ enum KamelosoInfo
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';
 
+/// How many times to attempt to connect to an IP before moving on to the next one.
+enum connectionRetries = 4;
+
+/// By what to multiply the connect timeout after failing an attempt.
+enum connectionDelayIncrementMultiplier = 1.5;
+
+/// The maximum amount of time to wait between connection attempts.
+enum connectionDelayCap = 10*60;  // seconds
+
 /// Buffer sizes in bytes.
 enum BufferSize
 {
