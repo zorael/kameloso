@@ -1221,15 +1221,15 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 Next tryConnect(ref IRCBot bot)
 {
     import kameloso.connection : ConnectionAttempt, connectFiber;
-    import kameloso.constants : Timeout;
+    import kameloso.constants : Timeout, connectionDelayCap,
+        connectionDelayIncrementMultiplier, connectionRetries;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
 
     alias State = ConnectionAttempt.State;
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(bot.conn,  settings.endlesslyConnect, *bot.abort));
+        connectFiber(bot.conn,  settings.endlesslyConnect, connectionRetries, *bot.abort));
     uint incrementedRetryDelay = Timeout.retry;
-    enum incrementMultiplier = 1.5;
 
     string infotint, logtint;
 
@@ -1283,9 +1283,9 @@ Next tryConnect(ref IRCBot bot)
             interruptibleSleep(incrementedRetryDelay.seconds, *abort);
             if (*abort) return Next.returnFailure;
 
-            enum delayCap = 10*60;  // seconds
-            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
-            incrementedRetryDelay = (incrementedRetryDelay < delayCap) ? incrementedRetryDelay : delayCap;
+            import std.algorithm.comparison : min;
+            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * connectionDelayIncrementMultiplier);
+            incrementedRetryDelay = min(incrementedRetryDelay, connectionDelayCap);
             continue;
 
         case delayThenNextIP:

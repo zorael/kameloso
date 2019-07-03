@@ -366,10 +366,13 @@ struct ConnectionAttempt
  +  Params:
  +      conn = Reference to the current, unconnected `Connection`.
  +      endlesslyConnect = Whether or not to endlessly try connecting.
+ +      connectionRetries = How many times to attempt to connect before signaling
+ +          that we should move on to the next IP.
  +      abort = Reference to the current `abort` flag, which -- if set -- should
  +          make the function return.
  +/
-void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abort)
+void connectFiber(ref Connection conn, const bool endlesslyConnect,
+    const uint connectionRetries, ref bool abort)
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, Socket, SocketException;
@@ -394,8 +397,6 @@ void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abo
             if (isIPv6 && ipv6IsFailing) continue;  // Continue until IPv4 IP
 
             conn.socket = isIPv6 ? conn.socket6 : conn.socket4;
-
-            enum connectionRetries = 3;
 
             foreach (immutable retry; 0..connectionRetries)
             {
