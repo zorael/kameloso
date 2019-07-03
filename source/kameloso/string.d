@@ -383,7 +383,7 @@ unittest
  +
  +  Params:
  +      token = Token character to strip away.
- +  	line = String line to remove any enclosing tokens from.
+ +      line = String line to remove any enclosing tokens from.
  +
  +  Returns:
  +      A slice of the passed string line without enclosing tokens.

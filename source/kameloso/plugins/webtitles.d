@@ -552,7 +552,7 @@ string[] findURLs(const string line) @safe pure
     string[] hits;
     string slice = line;  // mutable
 
-	ptrdiff_t httpPos = slice.indexOf("http");
+    ptrdiff_t httpPos = slice.indexOf("http");
 
     while (httpPos != -1)
     {

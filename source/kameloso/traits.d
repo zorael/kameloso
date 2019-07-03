@@ -521,7 +521,7 @@ if (is(QualT == struct))
 {
     alias T = Unqual!QualT;
 
-	enum hasElaborateInit = ()
+    enum hasElaborateInit = ()
     {
         bool match;
 
