@@ -464,7 +464,7 @@ void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abo
                 }
             }
 
-            if (i+1 < conn.ips.length)
+            if (i+1 <= conn.ips.length)
             {
                 // Not last IP
                 attempt.state = State.delayThenNextIP;
