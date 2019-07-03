@@ -152,7 +152,7 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
  +  A Generator Fiber function that checks for concurrency messages and performs
  +  action based on what was received.
  +
- +  The return value yielded to the caller tels it whether the received action
+ +  The return value yielded to the caller tells it whether the received action
  +  means the bot should exit or not.
  +
  +  Params:
