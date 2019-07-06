@@ -864,7 +864,7 @@ Next mainLoop(ref IRCBot bot)
         }
         else
         {
-            logger.warningf("Internal error, thread messenger Fiber ended abruptly.");
+            logger.errorf("Internal error, thread messenger Fiber ended abruptly.");
             version(PrintStacktraces) printStacktrace();
             next = Next.returnFailure;
         }
