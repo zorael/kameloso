@@ -629,7 +629,6 @@ Next mainLoop(ref IRCBot bot)
         if (listener.state == Fiber.State.TERM)
         {
             // Listening Generator disconnected by itself; reconnect
-            listener.reset();
             return Next.retry;
         }
 
