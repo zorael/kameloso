@@ -1503,6 +1503,15 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         }
     }
 
+    if (event.target.nickname == "*")
+    {
+        // Some events have an asterisk in what we consider the target nickname field. Sometimes.
+        // [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
+        // Clear it if so, since it conveys no information we care about.
+        // It does not appear to be wholly reproducible, suggesting there's more to it.
+        event.target.nickname = string.init;
+    }
+
     if (!sink.data.length) return;
 
     event.errors = sink.data;
