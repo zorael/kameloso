@@ -42,24 +42,24 @@
             "name": "posix",
             "platforms": [ "posix" ],
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         },
         {
             "name": "windows",
             "platforms": [ "windows" ],
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         },
         {
             "name": "twitch",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         },
         {
             "name": "polyglot",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin",
                 "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         },
         {
             "name": "vanilla",
@@ -72,12 +72,12 @@
         {
             "name": "web",
             "versions": [ "WithPlugins", "Web" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         },
         {
             "name": "full",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         },
         {
             "name": "pluginless",
@@ -94,7 +94,7 @@
                 "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
-            "dependencies": { "requests": "~>1.0.8" }
+            "dependencies": { "requests": "~>1.0.9" }
         }
     ]
 }
