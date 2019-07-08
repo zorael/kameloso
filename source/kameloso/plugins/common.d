@@ -3609,9 +3609,8 @@ version(unittest)
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
  +  appending it to `timedFibers`.
  +
- +  It only supports a precision of a *worst* case of
- +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
- +  than that. See the main loop for more information.
+ +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
+ +  when to process the array of `core.thread.Fiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -3625,6 +3624,7 @@ void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 
     immutable time = Clock.currTime.toUnixTime + secs;
     plugin.state.timedFibers ~= labeled(fiber, time);
+    plugin.updateNextFiberTimestamp();
 }
 
 
