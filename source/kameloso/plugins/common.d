@@ -134,6 +134,12 @@ interface IRCPlugin
 
     /// Returns whether or not the plugin is enabled in its configuration section.
     bool isEnabled() const @property pure nothrow @nogc;
+
+    /// Returns the UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
+    long nextFiberTimestamp() const @property pure nothrow @nogc;
+
+    /// Updates the saved UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
+    void updateNextFiberTimestamp() pure nothrow @nogc;
 }
 
 
@@ -809,6 +815,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     /// This plugin's `IRCPluginState` structure. Has to be public for some things to work.
     public IRCPluginState privateState;
+
+    /// The timestamp of when the next timed Fiber should be triggered.
+    private long privateNextFiberTimestamp;
 
     /++
      +  Introspects the current plugin, looking for a `Settings`-annotated struct
@@ -1895,6 +1904,43 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
     {
         return this.privateState;
+    }
+
+
+    // nextFiberTimestamp
+    /++
+     +  Accessor, returns the UNIX timestamp of when the next timed `core.thread.Fiber`
+     +  should be triggered.
+     +
+     +  Returns:
+     +      A UNIX timestamp, or `long.max` if there is no Fibers waiting.
+     +/
+    pragma(inline)
+    public long nextFiberTimestamp() const @property pure nothrow @nogc
+    {
+        return privateNextFiberTimestamp;
+    }
+
+
+    // updateNextFiberTimestamp
+    /++
+     +  Updates the saved UNIX timestamp of when the next `core.thread.Fiber`
+     +  should be triggered.
+     +/
+    public void updateNextFiberTimestamp() pure nothrow @nogc
+    {
+        // Reset the next timestamp to an invalid value, then update it as we
+        // iterate the fibers' labels.
+
+        privateNextFiberTimestamp = long.max;
+
+        foreach (const timedFiber; privateState.timedFibers)
+        {
+            if (timedFiber.id < privateNextFiberTimestamp)
+            {
+                privateNextFiberTimestamp = timedFiber.id;
+            }
+        }
     }
 
 
