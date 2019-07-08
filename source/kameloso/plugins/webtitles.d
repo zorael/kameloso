@@ -245,8 +245,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             request.url = rewriteDirectImgurURL(request.url);
         }
         else if (webtitlesSettings.youtubeLookup &&
-            request.url.contains("youtube.com/watch?v=") ||
-            request.url.contains("youtu.be/"))
+            (request.url.contains("youtube.com/watch?v=") ||
+            request.url.contains("youtu.be/")))
         {
             // Do our own slicing instead of using regexes, because footprint.
             string slice = request.url;
