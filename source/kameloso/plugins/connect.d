@@ -910,6 +910,17 @@ void register(ConnectService service)
 
     with (service.state)
     {
+        version(TwitchSupport)
+        {
+            if (!client.pass.length && client.server.address.endsWith(".twitch.tv"))
+            {
+                // client.server.daemon is always Daemon.unset at this point
+                logger.error("You *need* a pass to join this server.");
+                quit(service.state, "Authentication failure (missing pass)");
+                return;
+            }
+        }
+
         service.registration = Progress.started;
         raw(service.state, "CAP LS 302", true);
 
@@ -917,19 +928,6 @@ void register(ConnectService service)
         {
             raw(service.state, "PASS " ~ client.pass, true);
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
-        }
-        else
-        {
-            version(TwitchSupport)
-            {
-                if (client.server.address.endsWith(".twitch.tv"))
-                {
-                    // client.server.daemon is always Daemon.unset at this point
-                    logger.error("You *need* a pass to join this server.");
-                    quit(service.state, "Authentication failure (missing pass)");
-                    return;
-                }
-            }
         }
 
         // Nick negotiation after CAP END
