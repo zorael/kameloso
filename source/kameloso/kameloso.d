@@ -768,7 +768,7 @@ Next mainLoop(ref IRCBot bot)
                         plugin.onEvent(event);
 
                         // Go through Fibers awaiting IRCEvent.Types
-                        plugin.handleFibers(event);
+                        plugin.handleAwaitingFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
                         bot.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue);
@@ -857,7 +857,7 @@ Next mainLoop(ref IRCBot bot)
 
 import kameloso.plugins.common : IRCPlugin;
 
-// handleFibers
+// handleAwaitingFibers
 /++
  +  Processes the awaiting `core.thread.Fiber`s of an
  +  `kameloso.plugins.common.IRCPlugin`.
@@ -868,7 +868,7 @@ import kameloso.plugins.common : IRCPlugin;
  +          iterate and process.
  +      event = The triggering `kameloso.irc.defs.IRCEvent`.
  +/
-void handleFibers(IRCPlugin plugin, const IRCEvent event)
+void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
     import core.thread : Fiber;
 
