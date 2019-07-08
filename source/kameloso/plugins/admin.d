@@ -253,8 +253,7 @@ debug
 void onCommandShowUsers(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
-    import kameloso.objmanip : deepSizeof;
-    import std.stdio : stdout, writefln, writeln;
+    import std.stdio : stdout, writeln;
 
     foreach (immutable name, const user; plugin.state.users)
     {
@@ -262,10 +261,7 @@ void onCommandShowUsers(AdminPlugin plugin)
         printObject(user);
     }
 
-    writefln("%d bytes from %d users (deep size %d bytes)",
-        (IRCUser.sizeof * plugin.state.users.length), plugin.state.users.length,
-        plugin.state.users.deepSizeof);
-
+    writeln(plugin.state.users.length, " users.");
     if (settings.flush) stdout.flush();
 }
 
