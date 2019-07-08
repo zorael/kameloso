@@ -574,7 +574,10 @@ string[] findURLs(const string line) @safe pure
         else if ((slice[4] != ':') && (slice[4] != 's'))
         {
             // Not http or https, something else
-            break;
+            // But could still be another link after this
+            slice = slice[5..$];
+            httpPos = slice.indexOf("http");
+            continue;
         }
         else if (!slice[8..$].contains('.'))
         {
@@ -637,6 +640,10 @@ unittest
         {
             assert((url == "https://nyaa.si"), url);
         }
+    }
+    {
+        const urls = findURLs("https://google.se httpx://google.se https://google.se");
+        assert((urls == [ "https://google.se", "https://google.se" ]), urls.text);
     }
 }
 
