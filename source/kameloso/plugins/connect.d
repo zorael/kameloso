@@ -113,7 +113,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        if (!client.channels.canFind(event.channel) && !client.homes.canFind(event.channel))
+        if (!client.homes.canFind(event.channel) && !client.channels.canFind(event.channel))
         {
             // Track new channel in the channels array
             client.channels ~= event.channel;
