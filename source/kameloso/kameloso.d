@@ -597,15 +597,6 @@ Next mainLoop(ref IRCBot bot)
     auto messenger = new Generator!Next(() =>
         messageFiber(bot));
 
-    /// How often to check for timed `core.thread.Fiber`s, multiples of `Timeout.receive`.
-    enum checkTimedFibersEveryN = 3;
-
-    /++
-     +  How many more receive passes until it should next check for timed
-     +  `core.thread.Fiber`s.
-     +/
-    int timedFiberCheckCounter = checkTimedFibersEveryN;
-
     string logtint, errortint, warningtint;
 
     version(Colours)
@@ -640,6 +631,17 @@ Next mainLoop(ref IRCBot bot)
             plugin.periodically(nowInUnix);
         }
 
+        foreach (plugin; bot.plugins)
+        {
+            if (!plugin.state.timedFibers.length) continue;
+
+            if (plugin.nextFiberTimestamp <= nowInUnix)
+            {
+                plugin.handleTimedFibers(nowInUnix);
+                plugin.updateNextFiberTimestamp();
+            }
+        }
+
         // Once every 24h (24*3600s), clear the `previousWhoisTimestamps` AA.
         // That should be enough to stop it from being a memory leak.
         if ((nowInUnix % 86_400) == 0)
@@ -654,26 +656,6 @@ Next mainLoop(ref IRCBot bot)
         foreach (const attempt; listener)
         {
             if (*bot.abort) return Next.returnFailure;
-
-            // Go through Fibers awaiting a point in time, regardless of whether
-            // something was read or not.
-
-            /++
-             +  At a cadence of once every `checkTimedFibersEveryN`, walk the
-             +  array of plugins and see if they have timed `core.thread.Fiber`s
-             +  to call.
-             +/
-            if (--timedFiberCheckCounter <= 0)
-            {
-                // Reset counter
-                timedFiberCheckCounter = checkTimedFibersEveryN;
-
-                foreach (plugin; bot.plugins)
-                {
-                    if (!plugin.state.timedFibers.length) continue;
-                    plugin.handleTimedFibers(timedFiberCheckCounter, nowInUnix);
-                }
-            }
 
             // Handle the attempt; switch on its state
             with (State)
@@ -991,31 +973,16 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The `kameloso.plugins.common.IRCPlugin` whose timed
  +          `core.thread.Fiber`s to iterate and process.
- +      timedFiberCheckCounter = The ref timestamp at which to next check for
- +          timed fibers to process.
  +      nowInUnix = Current UNIX timestamp to compare the timed
  +          `core.thread.Fiber`'s timestamp with.
  +/
-void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const long nowInUnix)
+void handleTimedFibers(IRCPlugin plugin, const long nowInUnix)
 {
     size_t[] toRemove;
 
     foreach (immutable i, ref fiber; plugin.state.timedFibers)
     {
-        if (fiber.id > nowInUnix)
-        {
-            import kameloso.constants : Timeout;
-            import std.algorithm.comparison : min;
-
-            // This Fiber shouldn't yet be triggered.
-            // Lower timedFiberCheckCounter to fire earlier, in
-            // case the time-to-fire is lower than the current
-            // counter value. This gives it more precision.
-
-            immutable nextTime = cast(int)(fiber.id - nowInUnix) / Timeout.receive;
-            timedFiberCheckCounter = min(timedFiberCheckCounter, nextTime);
-            continue;
-        }
+        if (fiber.id > nowInUnix) continue;
 
         try
         {
