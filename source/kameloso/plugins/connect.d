@@ -214,19 +214,6 @@ void onPing(ConnectService service, const IRCEvent event)
 
     immutable target = event.content.length ? event.content : event.sender.address;
     service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
-
-    version(TwitchSupport)
-    {
-        if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-    }
-
-    if (!service.joinedChannels && (service.authentication == Progress.started))
-    {
-        logger.log("Auth timed out.");
-        service.authentication = Progress.finished;
-        service.joinChannels();
-        service.joinedChannels = true;
-    }
 }
 
 
@@ -744,6 +731,24 @@ void onSASLAuthenticate(ConnectService service)
 
         raw(service.state, "AUTHENTICATE " ~ encoded, true);
         if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+
+        // If we're still authenticating by the next PING, abort and join channels.
+
+        void dg()
+        {
+            if (!service.joinedChannels && (service.authentication == Progress.started))
+            {
+                logger.log("Auth timed out.");
+                service.authentication = Progress.finished;
+                service.joinChannels();
+                service.joinedChannels = true;
+            }
+        }
+
+        import core.thread : Fiber;
+
+        Fiber fiber = new Fiber(&dg);
+        service.awaitEvent(fiber, IRCEvent.Type.PING);
     }
 }
 
