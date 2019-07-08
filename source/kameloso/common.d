@@ -642,6 +642,9 @@ public:
     /// The label applied to the wrapped item.
     Label id;
 
+    /// Alias to `id` because it makes sense.
+    alias label = id;
+
     /// Create a new `Labeled` struct with the passed `id` identifier.
     this(Thing thing, Label id) pure nothrow @nogc @safe
     {
