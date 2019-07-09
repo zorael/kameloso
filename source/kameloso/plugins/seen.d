@@ -344,11 +344,11 @@ void onQuit(SeenPlugin plugin, const IRCEvent event)
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +
- +  Like `QUIT`, `NICK` event don't carry a channel, so we can't annotate it `ChannelPolicy.home`;
- +  all we know is that the user is in one or more channels we're currently in.
- +  We can't tell whether it's in a home or not. As such, only update if the user
- +  has already been observed at least once, which should always be the case for
- +  home channels (provided `RPL_NAMREPLY` lists on join).
+ +  Like `QUIT`, `NICK` events don't carry a channel, so we can't annotate it
+ +  `ChannelPolicy.home`; all we know is that the user is in one or more channels
+ +  we're currently in. We can't tell whether it's in a home or not. As such,
+ +  only update if the user has already been observed at least once, which should
+ +  always be the case (provided `RPL_NAMREPLY` lists on join).
  +/
 @(Chainable)
 @(IRCEvent.Type.NICK)
