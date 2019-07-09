@@ -660,7 +660,7 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
 }
 
 
-// updateAllUsers
+// updateAllObservedUsers
 /++
  +  Updates all currently observed users.
  +
@@ -670,7 +670,7 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
  +  Params:
  +      plugin = Current `SeenPlugin`.
  +/
-void updateAllUsers(SeenPlugin plugin)
+void updateAllObservedUsers(SeenPlugin plugin)
 {
     bool[string] uniqueUsers;
 
@@ -810,7 +810,7 @@ void periodically(SeenPlugin plugin)
 
     if (plugin.isEnabled)
     {
-        plugin.updateAllUsers();
+        plugin.updateAllObservedUsers();
         plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
     }
 }
@@ -823,7 +823,7 @@ void periodically(SeenPlugin plugin)
  +/
 void teardown(SeenPlugin plugin)
 {
-    plugin.updateAllUsers();
+    plugin.updateAllObservedUsers();
     plugin.seenUsers.saveSeen(plugin.seenFile);
 }
 
@@ -901,7 +901,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
         break;
 
     case "save":
-        plugin.updateAllUsers();
+        plugin.updateAllObservedUsers();
         plugin.seenUsers.saveSeen(plugin.seenFile);
         logger.info("Seen users saved to disk.");
         break;
