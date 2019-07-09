@@ -419,9 +419,6 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
             nickname = nickname.nom('!');
         }
 
-        nickname = plugin.state.client.server.stripModesign(nickname);
-        if (nickname == plugin.state.client.nickname) continue;
-
         plugin.updateUser(nickname, now);
     }
 }
@@ -684,6 +681,7 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
     immutable nickname = plugin.state.client.server.stripModesign(signed);
+    if (nickname == plugin.state.client.nickname) return;
     plugin.seenUsers[nickname] = time;
 }
 
