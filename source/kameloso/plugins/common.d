@@ -134,6 +134,12 @@ interface IRCPlugin
 
     /// Returns whether or not the plugin is enabled in its configuration section.
     bool isEnabled() const @property pure nothrow @nogc;
+
+    /// Returns the UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
+    long nextFiberTimestamp() const @property pure nothrow @nogc;
+
+    /// Updates the saved UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
+    void updateNextFiberTimestamp() pure nothrow @nogc;
 }
 
 
@@ -809,6 +815,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     /// This plugin's `IRCPluginState` structure. Has to be public for some things to work.
     public IRCPluginState privateState;
+
+    /// The timestamp of when the next timed Fiber should be triggered.
+    private long privateNextFiberTimestamp;
 
     /++
      +  Introspects the current plugin, looking for a `Settings`-annotated struct
@@ -1895,6 +1904,43 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
     {
         return this.privateState;
+    }
+
+
+    // nextFiberTimestamp
+    /++
+     +  Accessor, returns the UNIX timestamp of when the next timed `core.thread.Fiber`
+     +  should be triggered.
+     +
+     +  Returns:
+     +      A UNIX timestamp, or `long.max` if there is no Fibers waiting.
+     +/
+    pragma(inline)
+    public long nextFiberTimestamp() const @property pure nothrow @nogc
+    {
+        return privateNextFiberTimestamp;
+    }
+
+
+    // updateNextFiberTimestamp
+    /++
+     +  Updates the saved UNIX timestamp of when the next `core.thread.Fiber`
+     +  should be triggered.
+     +/
+    public void updateNextFiberTimestamp() pure nothrow @nogc
+    {
+        // Reset the next timestamp to an invalid value, then update it as we
+        // iterate the fibers' labels.
+
+        privateNextFiberTimestamp = long.max;
+
+        foreach (const timedFiber; privateState.timedFibers)
+        {
+            if (timedFiber.id < privateNextFiberTimestamp)
+            {
+                privateNextFiberTimestamp = timedFiber.id;
+            }
+        }
     }
 
 
@@ -3563,9 +3609,8 @@ version(unittest)
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
  +  appending it to `timedFibers`.
  +
- +  It only supports a precision of a *worst* case of
- +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
- +  than that. See the main loop for more information.
+ +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
+ +  when to process the array of `core.thread.Fiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -3579,6 +3624,7 @@ void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 
     immutable time = Clock.currTime.toUnixTime + secs;
     plugin.state.timedFibers ~= labeled(fiber, time);
+    plugin.updateNextFiberTimestamp();
 }
 
 
