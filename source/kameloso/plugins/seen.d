@@ -269,9 +269,6 @@ struct SeenSettings
  +  anywhere goes. For events that don't correspond to a channel (such as
  +  `kameloso.irc.defs.IRCEvent.Type.QUERY`) the setting is ignored.
  +
- +  Not all events relate to a particular channel, such as `QUIT` (quitting
- +  leaves every channel).
- +
  +  The `kameloso.plugins.common.PrivilegeLevel` annotation dictates who is
  +  authorised to trigger the function. It has three policies; `anyone`,
  +  `whitelist` and `admin`.
@@ -301,7 +298,6 @@ struct SeenSettings
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.PART)
-@(IRCEvent.Type.QUIT)  // ChannelPolicy does not apply
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
@@ -310,11 +306,34 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
         Updates the user's timestamp to the current time.
 
         This will, as such, be automatically called on `EMOTE`, `QUERY`, `CHAN`,
-        `JOIN`, `PART` and `QUIT` events. Furthermore, it will only trigger if
-        it took place in a home channel, in the case of all but `QUIT` (which
-        as noted is global and not associated with a channel).
+        `JOIN`, and `PART` events. Furthermore, it will only trigger if it took
+        place in a home channel.
      +/
     plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
+}
+
+
+// onQuit
+/++
+ +  When someone quits, update their entry with the current timestamp iff they
+ +  already have an entry.
+ +
+ +  `QUIT` events don't carry a channel. Users bleed into the seen users database
+ +  by quitting unless we somehow limit it to only accept quits from those in
+ +  home channels. Users in home channels should always have an entry, provided
+ +  that `RPL_NAMREPLY` lists were given when joining one, which seems to (largely?)
+ +  be the case.
+ +
+ +  Do nothing if an entry was not found.
+ +/
+@(IRCEvent.Type.QUIT)
+@(PrivilegeLevel.ignore)
+void onQuit(SeenPlugin plugin, const IRCEvent event)
+{
+    if (event.sender.nickname in plugin.seenUsers)
+    {
+        plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
+    }
 }
 
 
@@ -324,14 +343,23 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
  +  the new nickname, and remove the old one.
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
+ +
+ +  Like `QUIT`, `NICK` event don't carry a channel, so we can't annotate it `ChannelPolicy.home`;
+ +  all we know is that the user is in one or more channels we're currently in.
+ +  We can't tell whether it's in a home or not. As such, only update if the user
+ +  has already been observed at least once, which should always be the case for
+ +  home channels (provided `RPL_NAMREPLY` lists on join).
  +/
 @(Chainable)
 @(IRCEvent.Type.NICK)
 @(PrivilegeLevel.ignore)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
-    plugin.seenUsers[event.target.nickname] = Clock.currTime.toUnixTime;
-    plugin.seenUsers.remove(event.sender.nickname);
+    if (event.sender.nickname in plugin.seenUsers)
+    {
+        plugin.seenUsers[event.target.nickname] = Clock.currTime.toUnixTime;
+        plugin.seenUsers.remove(event.sender.nickname);
+    }
 }
 
 
