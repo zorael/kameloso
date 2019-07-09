@@ -4,12 +4,12 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.086.0
+      DVersion: 2.087.0
       DSubversion:
       arch: x64
     - DC: ldc
       DVersion: 1.16.0
-      DSubversion: -beta1
+      DSubversion:
       arch: x64
 
 skip_tags: true
