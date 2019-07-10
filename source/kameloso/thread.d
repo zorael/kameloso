@@ -228,6 +228,14 @@ final class CarryingFiber(T) : Fiber
         // fn is a pointer
         super(fn, args);
     }
+
+    /++
+     +  Resets the payload to its initial value.
+     +/
+    void resetPayload()
+    {
+        payload = T.init;
+    }
 }
 
 
