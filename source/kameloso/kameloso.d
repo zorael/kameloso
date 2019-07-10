@@ -731,6 +731,13 @@ Next mainLoop(ref IRCBot bot)
                 {
                     event = bot.parser.toIRCEvent(sanitize(attempt.line));
                 }
+                catch (Exception e)
+                {
+                    // If we should, print a stack trace so we know what happened,
+                    // then rethrow to the scopeguard.
+                    version(PrintStacktraces) logger.trace(e.toString);
+                    throw e;
+                }
 
                 if (bot.parser.client.updated)
                 {
@@ -1713,15 +1720,16 @@ int kamelosoMain(string[] args)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
                 logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
+            version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
         }
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("The %s%s%s plugin failed to load its resources.%c",
-                logtint, e.file.baseName, warningtint, TerminalToken.bell);
-            logger.trace(e.message);
+            logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
+                logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
+            version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
         }
@@ -1739,6 +1747,16 @@ int kamelosoMain(string[] args)
         {
             logger.warningf("A plugin failed to start: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 logtint, e.msg, warningtint, e.file, e.line);
+            version(PrintStacktraces) logger.trace(e.info);
+            retval = 1;
+            break outerloop;
+        }
+        catch (Exception e)
+        {
+            logger.warningf("An error occured while starting a plugin: %s%s%s " ~
+                "(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                logtint, e.msg, warningtint, e.file, e.line);
+            version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
         }
