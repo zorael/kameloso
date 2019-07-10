@@ -1831,9 +1831,11 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
             infotint, section, logtint, infotint, sectionEntries);
     }
 
-    logger.logf("They are either malformed or no longer in use. " ~
-        "Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
+    logger.log("They are either malformed, no longer in use or belong to " ~
+        "plugins not currently compiled in.");
+    logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
         infotint, logtint, settings.configFile);
+    logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
 }
 
 
