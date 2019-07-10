@@ -1836,7 +1836,6 @@ void complainAboutMissingConfiguration(const string[] args)
 
     logger.warning("Warning: No administrators nor home channels configured!");
 
-    immutable configFileExists = settings.configFile.exists;
     string infotint, logtint;
 
     version(Colours)
@@ -1850,7 +1849,7 @@ void complainAboutMissingConfiguration(const string[] args)
         }
     }
 
-    if (configFileExists)
+    if (settings.configFile.exists)
     {
         logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
             infotint, settings.configFile, logtint);
