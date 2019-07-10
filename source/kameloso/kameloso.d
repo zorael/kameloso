@@ -679,6 +679,8 @@ Next mainLoop(ref IRCBot bot)
 
                 logger.warningf("Connection error! (%s%s%s)", logtint,
                     attempt.lastSocketError_, warningtint);
+
+                // Sleep briefly so it won't flood the screen on chains of errors
                 Thread.sleep(1.seconds);
                 break listenerloop;
 
@@ -1425,6 +1427,9 @@ int kamelosoMain(string[] args)
     settings.configFile = buildNormalizedPath(defaultConfigurationPrefix, "kameloso.conf");
     settings.resourceDirectory = defaultResourcePrefix;
 
+    // Some environments require us to flush standard out after writing to it,
+    // or else nothing will appear on screen (until it gets automatically flushed
+    // at an indeterminate point in the future).
     immutable platform = getPlatform();
     if ((platform == "Cygwin") || (platform == "vscode"))
     {
@@ -1496,10 +1501,10 @@ int kamelosoMain(string[] args)
     printVersionInfo(pre, post);
     writeln();
 
-    // Print the current settings to show what's going on.
     import kameloso.printing : printObjects;
     import kameloso.string : contains;
 
+    // Print the current settings to show what's going on.
     printObjects(bot.parser.client, bot.parser.client.server);
 
     if (!bot.parser.client.homes.length && !bot.parser.client.admins.length)
@@ -1514,7 +1519,8 @@ int kamelosoMain(string[] args)
 
         if (!bot.parser.client.nickname.isValidNickname(conservativeServer))
         {
-            logger.error("Invalid nickname!");  // No need to print it, visible from printObjects
+            // No need to print the nickname, visible from printObjects preivously
+            logger.error("Invalid nickname!");
             return 1;
         }
 
@@ -1545,10 +1551,10 @@ int kamelosoMain(string[] args)
         return 1;
     }
 
-    // Resolve and create the resource directory
     import std.file : exists;
     import std.path : dirName;
 
+    // Resolve and create the resource directory
     settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
         "server", bot.parser.client.server.address);
     settings.configDirectory = settings.configFile.dirName;
