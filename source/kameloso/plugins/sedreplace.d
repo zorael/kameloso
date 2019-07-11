@@ -271,7 +271,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
     immutable stripped_ = event.content.stripped;
 
-    if (stripped_.beginsWith("s") && (stripped_.length > 2))
+    if (stripped_.beginsWith("s") && (stripped_.length >= 5))
     {
         switch (stripped_[1])
         {
