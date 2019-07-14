@@ -38,11 +38,6 @@ import std.typecons : Flag, No, Yes;
 /// Lifetime of a `Line` in `prevlines`, in seconds.
 enum replaceTimeoutSeconds = 3600;
 
-/// Regex patterns to find lines like `s/foo/bar/`.
-enum sedPattern  = `^s/([^/]+)/([^/]*)/(g?)$`;
-enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
-enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
-
 
 // SedReplaceSettings
 /++
@@ -73,7 +68,7 @@ struct Line
 /++
  +  `sed`-replaces a line with a substitution string.
  +
- +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar'`.
+ +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar/'`.
  +
  +  Example:
  +  ---
@@ -89,58 +84,23 @@ struct Line
  +  Returns:
  +      Original line with the changes the replace pattern incurred.
  +/
-string sedReplace(const string originalLine, const string expression) @safe
+string sedReplace(const string line, const string expr) @safe pure nothrow
 {
-    import std.regex : matchAll, regex;
+    if (expr.length < 5) return line;
 
-    static string doReplace(T)(T matches, const string originalLine) @safe
-    {
-        import std.array : replace;
-        import std.regex : replaceAll, replaceFirst, regex;
-        string result = originalLine;  // need mutable
-
-        result = result
-            .replace(`\[`, `\\[`)
-            .replace(`\]`, `\\]`);
-
-        foreach (const hit; matches)
-        {
-            const changeThis = hit[1];
-            const toThis = hit[2];
-            immutable globalFlag = (hit[3].length > 0);
-
-            if (globalFlag)
-            {
-                result = result.replaceAll(changeThis.regex, toThis);
-            }
-            else
-            {
-                // We only care about the first result
-                return result.replaceFirst(changeThis.regex, toThis);
-            }
-        }
-
-        return result;
-    }
-
-    assert((expression.length > 2), originalLine);
-
-    switch (expression[1])
+    switch (expr[1])
     {
     case '/':
-        static engine1 = sedPattern.regex;
-        return doReplace(expression.matchAll(engine1), originalLine);
-
-    case '#':
-        static engine2 = sedPattern2.regex;
-        return doReplace(expression.matchAll(engine2), originalLine);
+        return line.sedReplaceImpl!'/'(expr);
 
     case '|':
-        static engine3 = sedPattern3.regex;
-        return doReplace(expression.matchAll(engine3), originalLine);
+        return line.sedReplaceImpl!'|'(expr);
+
+    case '#':
+        return line.sedReplaceImpl!'#'(expr);
 
     default:
-        return string.init;
+        return line;
     }
 }
 
@@ -167,6 +127,131 @@ unittest
         immutable after = before.sedReplace("s/高所/閉所/");
         assert((after == "閉所恐怖症"), after);
     }
+    {
+        enum before = "asdf/fdsa";
+        immutable after = before.sedReplace("s/\\//-/");
+        assert((after == "asdf-fdsa"), after);
+    }
+    {
+        enum before = "HARBL";
+        immutable after = before.sedReplace("s/A/_/");
+        assert((after == "H_RBL"), after);
+    }
+}
+
+
+// sedReplaceImpl
+/++
+ +  Private sed-replace implementation.
+ +
+ +  Works on any given character deliminator. Works with escapes.
+ +
+ +  Params:
+ +      char_ = Deliminator character, usually '/'.
+ +      line = Original line to apply the replacement expression to.
+ +      expr = Replacement expression to apply.
+ +
+ +  Returns:
+ +      The passed line with the relevant bits replaced, or as is if the expression
+ +      was invalid or didn't apply.
+ +/
+string sedReplaceImpl(char char_)(const string line, const string expr)
+{
+    import std.algorithm.searching : startsWith;
+    import std.array : replace;
+    import std.string : indexOf;
+
+    static ptrdiff_t getNextUnescaped(const string lineWithChar)
+    {
+        string slice = lineWithChar;  // mutable
+        ptrdiff_t offset;
+        ptrdiff_t charPos = slice[offset..$].indexOf(char_);
+
+        while (charPos != -1)
+        {
+            if (charPos == 0) return offset;
+            else if (slice[charPos-1] == '\\')
+            {
+                slice = slice[charPos+1..$];
+                offset += (charPos + 1);
+                charPos = slice.indexOf(char_);
+                continue;
+            }
+            else
+            {
+                return (offset + charPos);
+            }
+        }
+
+        return -1;
+    }
+
+    if (!expr.startsWith("s" ~ char_)) return line;
+
+    string slice = expr;  // mutable
+    slice = slice[2..$];  // nom 's' ~ char_
+
+    bool global;
+
+    if (slice[$-1] == 'g')
+    {
+        slice = slice[0..$-1];
+        global = true;
+    }
+
+    if (slice[$-1] != char_) return line;
+
+    immutable firstSlashPos = getNextUnescaped(slice);
+    if (firstSlashPos == -1) return line;
+
+    immutable replaceThis = slice[0..firstSlashPos].replace("\\" ~ char_, "" ~ char_);
+    slice = slice[firstSlashPos+1..$];
+
+    immutable secondSlashPos = getNextUnescaped(slice);
+    if (secondSlashPos == -1) return line;
+    else if (secondSlashPos+1 != slice.length) return line;
+
+    immutable withThis = slice[0..$-1];
+
+    if (global)
+    {
+        return line.replace(replaceThis, withThis);
+    }
+    else
+    {
+        immutable replaceThisPos = line.indexOf(replaceThis);
+        if (replaceThisPos == -1) return line;  // This can happen, I *think*.
+        return line.replace(replaceThisPos, replaceThisPos+replaceThis.length, withThis);
+    }
+}
+
+///
+unittest
+{
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C/");
+        assert((replaced == "Hullo C"), replaced);
+    }
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g");
+        assert((replaced == "HeLLo D"), replaced);
+    }
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/");
+        assert((replaced == "HeLlo D"), replaced);
+    }
+    {
+        immutable replaced = "I am a fish".sedReplaceImpl!'|'("s|fish|snek|g");
+        assert((replaced == "I am a snek"), replaced);
+    }
+    {
+        immutable replaced = "This is /a/a space".sedReplaceImpl!'/'("s/a\\//_/g");
+        assert((replaced == "This is /_a space"), replaced);
+    }
+    {
+        immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g");
+        assert((replaced == "This is INVALID"), replaced);
+    }
 }
 
 
@@ -186,7 +271,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
     immutable stripped_ = event.content.stripped;
 
-    if (stripped_.beginsWith("s") && (stripped_.length > 2))
+    if (stripped_.beginsWith("s") && (stripped_.length >= 5))
     {
         switch (stripped_[1])
         {
