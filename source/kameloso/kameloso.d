@@ -1718,8 +1718,9 @@ int kamelosoMain(string[] args)
         catch (IRCPluginInitialisationException e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
-                logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
+            logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%3$s " ~
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
@@ -1727,8 +1728,10 @@ int kamelosoMain(string[] args)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
-                logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
+            logger.warningf("An error occured while initialising the %s%s%s " ~
+                "plugin's resources: %1$s%4$s%3$s " ~
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
@@ -1745,17 +1748,20 @@ int kamelosoMain(string[] args)
         }
         catch (IRCPluginInitialisationException e)
         {
-            logger.warningf("A plugin failed to start: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                logtint, e.msg, warningtint, e.file, e.line);
+            import kameloso.terminal : TerminalToken;
+            logger.warningf("The %s%s%s plugin failed to start up: %1$s%4$s%3$s " ~
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
         }
         catch (Exception e)
         {
-            logger.warningf("An error occured while starting a plugin: %s%s%s " ~
-                "(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                logtint, e.msg, warningtint, e.file, e.line);
+            import kameloso.terminal : TerminalToken;
+            logger.warningf("An error occured while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
