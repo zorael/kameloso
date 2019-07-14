@@ -707,6 +707,7 @@ Next mainLoop(ref IRCBot bot)
 
             scope(failure)
             {
+                // Something asserted
                 logger.error("scopeguard tripped.");
                 printObject(event);
             }
@@ -733,8 +734,8 @@ Next mainLoop(ref IRCBot bot)
                 }
                 catch (Exception e)
                 {
-                    // If we should, print a stack trace so we know what happened,
-                    // then rethrow to the scopeguard.
+                    // Print, then rethrow down.
+                    logger.errorf("Exception toIRCEvent: %s%s", logtint, e.msg);
                     version(PrintStacktraces) logger.trace(e.toString);
                     throw e;
                 }
