@@ -11,9 +11,12 @@
  +  do then is to parse this type, and interpret the arguments following as
  +  befits the type.
  +
- +  This translates to large `switch`es, which can't be helped.
+ +  This translates to large switches, which can't be helped. There's simply
+ +  too may variations, which switches lend themselves well to. You could make
+ +  it into long if...else if chains, but it would just be the same thing in a
+ +  different form.
  +
- +  See the `tests/` directory for example parses.
+ +  See the `/tests` directory for example parses.
  +/
 module kameloso.irc.parsing;
 
@@ -63,7 +66,7 @@ version(AsAnApplication)
  +  Returns:
  +      A finished `kameloso.irc.defs.IRCEvent`.
  +
- +  Throws: `IRCParseException` if an empty string was passed.
+ +  Throws: `kameloso.irc.common.IRCParseException` if an empty string was passed.
  +/
 IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
@@ -91,7 +94,7 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
             // @badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type= :asdcsa!asdcss@asdcsd.tmi.twitch.tv PRIVMSG #lirik :lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL
 
             // Get rid of the prepended @
-            auto newRaw = event.raw[1..$];
+            string newRaw = event.raw[1..$];
             immutable tags = newRaw.nom(' ');
             event = parser.toIRCEvent(newRaw);
             event.tags = tags;
@@ -104,7 +107,7 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
         }
     }
 
-    auto slice = event.raw[1..$]; // advance past first colon
+    string slice = event.raw[1..$]; // advance past first colon
 
     // First pass: prefixes. This is the sender
     parser.parsePrefix(event, slice);
@@ -178,7 +181,7 @@ unittest
  +      parser = Reference to the current `IRCParser`.
  +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working on.
  +
- +  Throws: `IRCParseException` if an unknown type was encountered.
+ +  Throws: `kameloso.irc.common.IRCParseException` if an unknown type was encountered.
  +/
 void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 {
@@ -238,8 +241,8 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         break;
 
     case "AUTHENTICATE":
-        event.content = slice;
         event.type = SASL_AUTHENTICATE;
+        event.content = slice;
         break;
 
     default:
@@ -321,7 +324,7 @@ unittest
  +/
 void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    auto prefix = slice.nom(' ');
+    string prefix = slice.nom(' ');
 
     with (event.sender)
     {
@@ -401,7 +404,7 @@ unittest
     with (e4.sender)
     {
         raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
-        string slice4 = raw[1..$];
+        string slice4 = raw[1..$];  // mutable
         parser.parsePrefix(e4, slice4);
         assert((nickname == "Q"), nickname);
         assert((ident == "TheQBot"), ident);
@@ -427,7 +430,7 @@ unittest
  +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
- +  Throws: `IRCParseException` if conversion from typestring to
+ +  Throws: `kameloso.irc.common.IRCParseException` if conversion from typestring to
  +      `kameloso.irc.defs.IRCEvent.Type` or typestring to a number failed.
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
@@ -499,7 +502,7 @@ unittest
     with (e3)
     {
         raw = /*":zorael!~NaN@ns3363704.ip-94-23-253.eu */"PRIVMSG kameloso^ :test test content";
-        string slice = raw;
+        string slice = raw;  // mutable
         parser.parseTypestring(e3, slice);
         assert((type == IRCEvent.Type.PRIVMSG), Enum!(IRCEvent.Type).toString(type));
     }
@@ -508,7 +511,7 @@ unittest
     with (e4)
     {
         raw = /*`:zorael!~NaN@ns3363704.ip-94-23-253.eu */`PART #flerrp :"WeeChat 1.6"`;
-        string slice = raw;
+        string slice = raw;  // mutable
         parser.parseTypestring(e4, slice);
         assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
     }
@@ -533,7 +536,7 @@ unittest
  +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
- +  Throws: `IRCParseException` if an unknown to-connect-type event was
+ +  Throws: `kameloso.irc.common.IRCParseException` if an unknown to-connect-type event was
  +      encountered, or if the event was not recognised at all, as neither a
  +      normal type nor a numeric.
  +/
@@ -590,7 +593,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             // Seen on GameSurge
             if (slice.beginsWith(':')) slice = slice[1..$];
-
             event.channel = slice;
         }
         break;
@@ -1068,13 +1070,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // TRIED TO NOM TOO MUCH:':You are banned from this server- Your irc client seems broken and is flooding lots of channels. Banned for 240 min, if in error, please contact kline@freenode.net. (2017/12/1 21.08)' with ' :'
         string misc = slice.nom(" :");
         event.content = slice;
-
-        if (misc.contains(' '))
-        {
-            misc.nom(' ');
-            event.aux = misc;
-        }
-
+        if (misc.contains(' ')) misc.nom(' ');
+        event.aux = misc;
         break;
 
     case RPL_UMODEIS:
@@ -1930,7 +1927,7 @@ unittest
  +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
- +  Throws: `IRCParseException` if something could not be parsed or converted.
+ +  Throws: `kameloso.irc.common.IRCParseException` if something could not be parsed or converted.
  +/
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
