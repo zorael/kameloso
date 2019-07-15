@@ -1444,7 +1444,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(128);
+    // The sink will very rarely be used; treat it as an edge case and don't reserve
 
     if (event.target.nickname.contains(' ') || event.channel.contains(' '))
     {
