@@ -3443,7 +3443,7 @@ void rehashUsers(IRCPlugin plugin)
  +  Returns:
  +      `true` if no setting name mismatches occured, `false` if it did.
  +/
-bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
+bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
 {
     import kameloso.common : logger, settings;
     import kameloso.string : contains, nom;

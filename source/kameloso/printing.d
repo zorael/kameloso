@@ -111,7 +111,7 @@ alias printObject = printObjects;
  +/
 void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
-    (auto ref Sink sink, const bool bright, Things things) @trusted
+    (auto ref Sink sink, const bool bright, Things things)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.comparison : max;
@@ -516,7 +516,7 @@ if (isOutputRange!(Sink, char[]))
  +/
 string formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
-    (const bool bright, Things things) @trusted
+    (const bool bright, Things things)
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
     import std.array : Appender;
