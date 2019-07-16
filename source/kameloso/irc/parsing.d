@@ -24,7 +24,7 @@ import kameloso.irc.defs;
 import kameloso.irc.common : IRCClient, IRCParseException;
 import kameloso.string : contains, nom;
 
-public:
+package:
 
 @safe:
 
@@ -2243,6 +2243,8 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     }
 }
 
+
+public:
 
 // IRCParser
 /++
