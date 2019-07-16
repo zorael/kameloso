@@ -3,11 +3,8 @@
  +  and repeating text, as well as providing an "online help", sending a list of
  +  all the available bot verbs to the querying nickname.
  +
- +  It has a few commands:
- +
- +  `say`|`echo`<br>
- +  `8ball`<br>
- +  `help`
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
  +
  +  It is very optional.
  +/

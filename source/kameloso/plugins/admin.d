@@ -8,29 +8,8 @@
  +  and removing homes on-the-fly, whitelisting or de-whitelisting account
  +  names, joining or leaving channels, as well as plain quitting.
  +
- +  It has a few command, whose names should be fairly self-explanatory:
- +
- +  `user` (debug)<br>
- +  `save` | `writeconfig`<br>
- +  `users` (debug)<br>
- +  `sudo` (debug)<br>
- +  `quit`<br>
- +  `addhome`<br>
- +  `delhome`<br>
- +  `whitelist`<br>
- +  `dewhitelist`<br>
- +  `blacklist`<br>
- +  `deblacklist`<br>
- +  `resetterm`<br>
- +  `printraw` (debug)<br>
- +  `printbytes` (debug)<br>
- +  `printasserts` (debug)<br>
- +  `join`<br>
- +  `part`<br>
- +  `set`<br>
- +  `auth`<br>
- +  `status` (debug)<br>
- +  `bus` (debug)
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#admin
  +
  +  It is optional if you don't intend to be controlling the bot from another
  +  client or via the terminal.

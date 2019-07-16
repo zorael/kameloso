@@ -3,11 +3,8 @@
  +  in a channel (or to a private query). It can fetch a random one or one
  +  by quote ID.
  +
- +  It has one command:
- +
- +  `bash`
- +
- +  It requires version `Web`.
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#bashquotes
  +/
 module kameloso.plugins.bashquotes;
 

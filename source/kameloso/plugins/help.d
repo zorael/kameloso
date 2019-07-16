@@ -1,5 +1,8 @@
 /++
  +  The Help plugin serves the `help` command, and nothing else at this point.
+ +
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#help
  +/
 module kameloso.plugins.help;
 

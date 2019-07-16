@@ -3,13 +3,8 @@
  +  channel. The common use-case is to have someone be automatically set to `+o`
  +  (operator) when joining.
  +
- +  Commands:
- +
- +  `addmode`<br>
- +  `clearmodes`<br>
- +  `delmodes`<br>
- +  `printmodes`<br>
- +  `op`
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#automode
  +/
 module kameloso.plugins.automode;
 

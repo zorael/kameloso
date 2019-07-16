@@ -2,12 +2,8 @@
  +  The Notes plugin allows for storing notes to offline users, to be replayed
  +  when they next log in.
  +
- +  It has a few commands:
- +
- +  `note`<br>
- +  `printnotes`<br>
- +  `reloadnotes`<br>
- +  `fakejoin`
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#notes
  +
  +  It is very optional.
  +/

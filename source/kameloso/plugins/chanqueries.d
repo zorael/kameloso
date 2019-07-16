@@ -4,8 +4,6 @@
  +  shortly after having joined a channel, as a service to all other plugins,
  +  so they don't each repeat it themselves.
  +
- +  It has no commands.
- +
  +  It is qualified as a service, so while it is not technically mandatory, it
  +  is highly recommended if you plan on mixing in
  +  `kameloso.plugins.common.ChannelAwareness` in your plugins.

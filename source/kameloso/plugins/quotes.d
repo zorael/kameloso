@@ -5,12 +5,8 @@
  +  of "`botname: addquote`" or "`!addquote`" (assuming a prefix of "`!`"). A
  +  random one can then be replayed by use of the "`quote [nickname]`" command.
  +
- +  It has a few commands:
- +
- +  `quote`<br>
- +  `addquote`<br>
- +  `printquotes`<br>
- +  `reloadquotes`
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
  +
  +  It is very optional.
  +/

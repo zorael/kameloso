@@ -24,6 +24,9 @@
  +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds. Compared to
  +  using `kameloso.irc.defs.IRCEvent` triggers they are expensive, in a
  +  micro-optimising sense.
+ +
+ +  See the GitHub wiki for more information about available commands:
+ +  https://github.com/zorael/kameloso/wiki/Current-plugins#seen
  +/
 module kameloso.plugins.seen;
 
