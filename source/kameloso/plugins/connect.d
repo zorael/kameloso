@@ -902,6 +902,86 @@ void onReconnect(ConnectService service)
 }
 
 
+// onHostStart
+/++
+ +  On Twitch host start, join the hosted channel.
+ +/
+version(TwitchSupport)
+@(IRCEvent.Type.TWITCH_HOSTSTART)
+@(ChannelPolicy.any)
+void onHostStart(ConnectService service, const IRCEvent event)
+{
+    if (!service.connectSettings.joinOnInvite) return;
+
+    import kameloso.messaging : join;
+    import std.algorithm.searching : canFind;
+
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+        }
+    }
+
+    if (service.followedTwitchHosts.byValue.canFind(event.channel))
+    {
+        // It's a hosted channel that's hosting something; don't recurse
+        logger.log("Not following the host since it originated from a hosted channel.");
+        return;
+    }
+
+    immutable hostedChannel = '#' ~ event.content;
+    logger.logf("Following the host; joining %s%s%s ...", infotint, hostedChannel, logtint);
+    service.followedTwitchHosts[event.channel] = hostedChannel;
+    join(service.state, hostedChannel);
+}
+
+
+// onHostEnd
+/++
+ +  When a Twitch host ends, leave the channel if we joined it because it was hosted.
+ +/
+version(TwitchSupport)
+@(IRCEvent.Type.TWITCH_HOSTEND)
+@(ChannelPolicy.any)
+void onHostEnd(ConnectService service, const IRCEvent event)
+{
+    if (!service.connectSettings.joinOnInvite) return;
+
+    import kameloso.messaging : part;
+
+    // If there's an entry for the triggering channel hosting another channel,
+    // leave that channel and remove the entry from the associative array.
+
+    if (const hostedChannel = event.channel in service.followedTwitchHosts)
+    {
+        string infotint, logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.log("Leaving %s%s%s as we joined it by following a host.",
+            infotint, *hostedChannel, logtint);
+        part(service.state, *hostedChannel);
+        service.followedTwitchHosts.remove(event.channel);
+    }
+}
+
+
 // register
 /++
  +  Registers with/logs onto an IRC server.
@@ -1063,6 +1143,12 @@ private:
 
     /// Whether or not the bot has sent configured commands after connect.
     bool sentAfterConnect;
+
+    version(TwitchSupport)
+    {
+        /// Channels joined by channel originating that we joined because of Twitch hosts.
+        string[string] followedTwitchHosts;
+    }
 
     mixin IRCPluginImpl;
 }
