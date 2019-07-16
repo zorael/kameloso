@@ -215,7 +215,7 @@ auto typenumsOf(const IRCServer.Daemon daemon) pure nothrow @nogc
  +  the `kameloso.plugins.printer.PrinterPlugin` output.
  +
  +  Params:
- +      parser = Reference to the current `IRCParser`.
+ +      parser = Reference to the current `kameloso.irc.parsing.IRCParser`.
  +      event =  `kameloso.irc.defs.IRCEvent` to examine.
  +
  +  Returns:
@@ -452,7 +452,7 @@ unittest
  +  ---
  +
  +  Params:
- +      parser = Reference to the current `IRCParser`.
+ +      parser = Reference to the current `kameloso.irc.parsing.IRCParser`.
  +      event = `kameloso.irc.defs.IRCEvent` to examine.
  +
  +  Returns:
@@ -1694,7 +1694,7 @@ struct IRCClient
 
 // matchesByMask
 /++
- +  Compares this `IRCUser` with a second one, treating fields with
+ +  Compares this `kameloso.irc.defs.IRCUser` with a second one, treating fields with
  +  asterisks as glob wildcards, mimicking `*!*@*` mask matching.
  +
  +  Example:
@@ -1720,13 +1720,13 @@ struct IRCClient
  +  ---
  +
  +  Params:
- +      this_ = `IRCUser` to compare.
- +      that = `IRCUser` to compare `this_` with.
- +      caseMapping = `IRCServer.CaseMapping` with which to translate
+ +      this_ = `kameloso.irc.defs.IRCUser` to compare.
+ +      that = `kameloso.irc.defs.IRCUser` to compare `this_` with.
+ +      caseMapping = `kameloso.irc.defs.IRCServer.CaseMapping` with which to translate
  +          the nicknames in the relevant masks to lowercase.
  +
  +  Returns:
- +      `true` if the `IRCUser`s are deemed to match, `false` if not.
+ +      `true` if the `kameloso.irc.defs.IRCUser`s are deemed to match, `false` if not.
  +/
 auto matchesByMask(const IRCUser this_, const IRCUser that,
     IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) pure nothrow

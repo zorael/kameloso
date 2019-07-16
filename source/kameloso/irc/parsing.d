@@ -57,7 +57,7 @@ version(AsAnApplication)
  +  Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them, in order.
  +
- +  See the files in `tests/` for unittest examples.
+ +  See the files in `/tests` for unittest examples.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
@@ -135,10 +135,10 @@ unittest
 {
     IRCParser parser;
 
-    // parser.toIRCEvent technically calls IRCParser.toIRCEvent, but it in turn
-    // just passes on to this .toIRCEvent
+    // `parser.toIRCEvent` technically calls `IRCParser.toIRCEvent`, but it in turn
+    // just passes on to this `.toIRCEvent`
 
-    // See tests/events.d for more
+    // See the files in `/tests` for more
 
     {
         immutable event = parser.toIRCEvent(":adams.freenode.net 001 kameloso^ " ~
@@ -1432,7 +1432,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +  `kameloso.irc.defs.IRCEvent`, complains about all of them and corrects some.
  +
  +  If version `PrintSanityFailures` it will print warning messages to the
- +  screen, otherwise it will throw an `IRCParseException` instead. It will save
+ +  screen, otherwise it will throw an `kameloso.irc.common.IRCParseException` instead. It will save
  +  the error messages in `event.errors` in either case.
  +
  +  Params:
@@ -1664,7 +1664,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
- +  Throws: `IRCParseException` on unknown CTCP types.
+ +  Throws: `kameloso.irc.common.IRCParseException` on unknown CTCP types.
  +/
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -2254,10 +2254,10 @@ struct IRCParser
 
     alias Daemon = IRCServer.Daemon;
 
-    /// The current `IRCClient` with all the state needed for parsing.
+    /// The current `kameloso.irc.common.IRCClient` with all the state needed for parsing.
     IRCClient client;
 
-    /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric lookups.
+    /// An `kameloso.irc.defs.IRCEvent.Type[1024]` reverse lookup table for fast numeric lookups.
     IRCEvent.Type[1024] typenums = Typenums.base;
 
     // toIRCEvent
@@ -2270,14 +2270,14 @@ struct IRCParser
      +      raw = Raw IRC string as received from a server.
      +
      +  Returns:
-     +      A complete `IRCEvent`.
+     +      A complete `kameloso.irc.defs.IRCEvent`.
      +/
     IRCEvent toIRCEvent(const string raw)
     {
         return .toIRCEvent(this, raw);
     }
 
-    /// Create a new `IRCParser` with the passed `IRCClient` as base.
+    /// Create a new `IRCParser` with the passed `kameloso.irc.common.IRCClient` as base.
     this(IRCClient client) pure
     {
         this.client = client;
