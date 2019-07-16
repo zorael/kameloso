@@ -50,6 +50,8 @@ static if (__VERSION__ == 2079L)
 }
 
 
+public:
+
 // IRCPlugin
 /++
  +  Interface that all `IRCPlugin`s must adhere to.
@@ -185,7 +187,7 @@ abstract class TriggerRequest
  +      F = Some function type.
  +      Payload = Optional payload type.
  +/
-final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerRequest
+private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerRequest
 {
 @safe:
     /// Stored function pointer/delegate.
@@ -339,48 +341,6 @@ unittest
 }
 
 
-// triggerRequest
-/++
- +  Convenience function that returns a `TriggerRequestImpl` of the right type,
- +  *with* a payload attached.
- +
- +  Params:
- +      payload = Payload to attach to the `TriggerRequest`.
- +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
- +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
- +      fn = Function/delegate pointer to call upon receiving the results.
- +
- +  Returns:
- +      A `TriggerRequest` with template parameters inferred from the arguments
- +      passed to this function.
- +/
-TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
-    PrivilegeLevel privilegeLevel, F fn) @safe
-{
-    return new TriggerRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
-}
-
-
-// triggerRequest
-/++
- +  Convenience function that returns a `TriggerRequestImpl` of the right type,
- +  *without* a payload attached.
- +
- +  Params:
- +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
- +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
- +      fn = Function/delegate pointer to call upon receiving the results.
- +
- +  Returns:
- +      A `TriggerRequest` with template parameters inferred from the arguments
- +      passed to this function.
- +/
-TriggerRequest triggerRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
-{
-    return new TriggerRequestImpl!F(event, privilegeLevel, fn);
-}
-
-
 // IRCPluginState
 /++
  +  An aggregate of all variables that make up the common state of plugins.
@@ -436,6 +396,218 @@ struct IRCPluginState
 }
 
 
+// applyCustomSettings
+/++
+ +  Changes a setting of a plugin, given both the names of the plugin and the
+ +  setting, in string form.
+ +
+ +  This merely iterates the passed `plugins` and calls their `setSettingByName` methods.
+ +
+ +  Params:
+ +      plugins = Array of all `IRCPlugin`s.
+ +      customSettings = Array of custom settings to apply to plugins' own
+ +          setting, in the string forms of "`plugin.setting=value`".
+ +
+ +  Returns:
+ +      `true` if no setting name mismatches occured, `false` if it did.
+ +/
+bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
+{
+    import kameloso.common : logger, settings;
+    import kameloso.string : contains, nom;
+    import std.conv : ConvException;
+
+    string logtint, warningtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
+        }
+    }
+
+    bool noErrors = true;
+
+    top:
+    foreach (immutable line; customSettings)
+    {
+        if (!line.contains!(Yes.decode)('.'))
+        {
+            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
+                logtint, warningtint, line);
+            noErrors = false;
+            continue;
+        }
+
+        import std.uni : toLower;
+
+        string slice = line;  // mutable
+        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
+        immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
+        immutable value = slice.length ? slice : "true";  // default setting if none given
+
+        if (pluginstring == "core")
+        {
+            import kameloso.common : initLogger, settings;
+            import kameloso.objmanip : setMemberByName;
+
+            try
+            {
+                immutable success = settings.setMemberByName(setting, value);
+
+                if (!success)
+                {
+                    logger.warningf("No such %score%s setting: %1$s%3$s",
+                        logtint, warningtint, setting);
+                    noErrors = false;
+                }
+                else if ((setting == "monochrome") || (setting == "brightTerminal"))
+                {
+                    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+                }
+            }
+            catch (ConvException e)
+            {
+                logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
+                    logtint, warningtint, setting, value);
+                noErrors = false;
+            }
+
+            continue top;
+        }
+        else
+        {
+            foreach (plugin; plugins)
+            {
+                if (plugin.name != pluginstring) continue;
+
+                try
+                {
+                    immutable success = plugin.setSettingByName(setting, value);
+
+                    if (!success)
+                    {
+                        logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
+                            logtint, pluginstring, warningtint, setting);
+                        noErrors = false;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
+                        logtint, pluginstring, warningtint, setting, value);
+                    noErrors = false;
+                }
+
+                continue top;
+            }
+        }
+
+        logger.warning("Invalid plugin: ", logtint, pluginstring);
+        noErrors = false;
+    }
+
+    return noErrors;
+}
+
+///
+unittest
+{
+    IRCPluginState state;
+    IRCPlugin plugin = new MyPlugin(state);
+
+    auto newSettings =
+    [
+        `myplugin.s="abc def ghi"`,
+        "myplugin.i=42",
+        "myplugin.f=3.14",
+        "myplugin.b=true",
+        "myplugin.d=99.99",
+    ];
+
+    applyCustomSettings([ plugin ], newSettings);
+
+    const ps = (cast(MyPlugin)plugin).myPluginSettings;
+
+    import std.conv : text;
+    import std.math : approxEqual;
+
+    assert((ps.s == "abc def ghi"), ps.s);
+    assert((ps.i == 42), ps.i.text);
+    assert(ps.f.approxEqual(3.14f), ps.f.text);
+    assert(ps.b);
+    assert(ps.d.approxEqual(99.99), ps.d.text);
+}
+
+version(unittest)
+{
+    // These need to be module-level.
+
+    struct MyPluginSettings
+    {
+        @Enabler bool enabled;
+
+        string s;
+        int i;
+        float f;
+        bool b;
+        double d;
+    }
+
+    final class MyPlugin : IRCPlugin
+    {
+        @Settings MyPluginSettings myPluginSettings;
+
+        string name() @property const
+        {
+            return "myplugin";
+        }
+
+        mixin IRCPluginImpl;
+    }
+}
+
+
+// IRCPluginInitialisationException
+/++
+ +  Exception thrown when an IRC plugin failed to initialise itself or its resources.
+ +
+ +  A normal `Exception`, which only differs in the sense that we can deduce
+ +  what went wrong by its type.
+ +/
+final class IRCPluginInitialisationException : Exception
+{
+    /// Wraps normal Exception constructors.
+    this(const string message, const string file = __FILE__, const int line = __LINE__)
+    {
+        super(message, file, line);
+    }
+}
+
+
+// IRCPluginSettingsException
+/++
+ +  Exception thrown when an IRC plugin failed to have its settings set.
+ +
+ +  A normal `Exception`, which only differs in the sense that we can deduce
+ +  what went wrong by its type.
+ +/
+final class IRCPluginSettingsException : Exception
+{
+    /// Wraps normal Exception constructors.
+    this(const string message, const string file = __FILE__, const int line = __LINE__)
+    {
+        super(message, file, line);
+    }
+}
+
+
+package:
+
 /++
  +  The tristate results from comparing a username with the admin or whitelist lists.
  +/
@@ -486,6 +658,48 @@ enum PrivilegeLevel
     registered = 2,  /// Anyone registered with services may trigger this event.
     whitelist = 3, /// Only those of the `whitelist` class may trigger this event.
     admin = 4, /// Only the administrators may trigger this event.
+}
+
+
+// triggerRequest
+/++
+ +  Convenience function that returns a `TriggerRequestImpl` of the right type,
+ +  *with* a payload attached.
+ +
+ +  Params:
+ +      payload = Payload to attach to the `TriggerRequest`.
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
+ +      fn = Function/delegate pointer to call upon receiving the results.
+ +
+ +  Returns:
+ +      A `TriggerRequest` with template parameters inferred from the arguments
+ +      passed to this function.
+ +/
+TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
+    PrivilegeLevel privilegeLevel, F fn) @safe
+{
+    return new TriggerRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
+}
+
+
+// triggerRequest
+/++
+ +  Convenience function that returns a `TriggerRequestImpl` of the right type,
+ +  *without* a payload attached.
+ +
+ +  Params:
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
+ +      fn = Function/delegate pointer to call upon receiving the results.
+ +
+ +  Returns:
+ +      A `TriggerRequest` with template parameters inferred from the arguments
+ +      passed to this function.
+ +/
+TriggerRequest triggerRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
+{
+    return new TriggerRequestImpl!F(event, privilegeLevel, fn);
 }
 
 
@@ -2078,7 +2292,7 @@ public:
     static assert(is(typeof(this) : IRCPlugin), "MessagingProxy should be " ~
         "mixed into the context of a plugin or service.");
 
-    enum hasMessagingProxy = true;
+    private enum hasMessagingProxy = true;
 
     pragma(inline):
 
@@ -2294,7 +2508,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     }
     else
     {
-        enum hasMinimalAuthentication = true;
+        private enum hasMinimalAuthentication = true;
     }
 
     // onMinimalAuthenticationAccountInfoTargetMixin
@@ -2481,7 +2695,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        enum hasUserAwareness = true;
+        private enum hasUserAwareness = true;
     }
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
@@ -2724,7 +2938,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
     else
     {
-        enum hasChannelAwareness = true;
+        private enum hasChannelAwareness = true;
     }
 
 
@@ -3151,7 +3365,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        enum hasTwitchAwareness = true;
+        private enum hasTwitchAwareness = true;
     }
 
 
@@ -3212,7 +3426,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        enum hasTwitchAwareness = true;
+        private enum hasTwitchAwareness = true;
     }
 }
 
@@ -3428,182 +3642,6 @@ void rehashUsers(IRCPlugin plugin)
 }
 
 
-// applyCustomSettings
-/++
- +  Changes a setting of a plugin, given both the names of the plugin and the
- +  setting, in string form.
- +
- +  This merely iterates the passed `plugins` and calls their `setSettingByName` methods.
- +
- +  Params:
- +      plugins = Array of all `IRCPlugin`s.
- +      customSettings = Array of custom settings to apply to plugins' own
- +          setting, in the string forms of "`plugin.setting=value`".
- +
- +  Returns:
- +      `true` if no setting name mismatches occured, `false` if it did.
- +/
-bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
-{
-    import kameloso.common : logger, settings;
-    import kameloso.string : contains, nom;
-    import std.conv : ConvException;
-
-    string logtint, warningtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-        }
-    }
-
-    bool noErrors = true;
-
-    top:
-    foreach (immutable line; customSettings)
-    {
-        if (!line.contains!(Yes.decode)('.'))
-        {
-            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
-                logtint, warningtint, line);
-            noErrors = false;
-            continue;
-        }
-
-        import std.uni : toLower;
-
-        string slice = line;  // mutable
-        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
-        immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
-        immutable value = slice.length ? slice : "true";  // default setting if none given
-
-        if (pluginstring == "core")
-        {
-            import kameloso.common : initLogger, settings;
-            import kameloso.objmanip : setMemberByName;
-
-            try
-            {
-                immutable success = settings.setMemberByName(setting, value);
-
-                if (!success)
-                {
-                    logger.warningf("No such %score%s setting: %1$s%3$s",
-                        logtint, warningtint, setting);
-                    noErrors = false;
-                }
-                else if ((setting == "monochrome") || (setting == "brightTerminal"))
-                {
-                    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
-                }
-            }
-            catch (ConvException e)
-            {
-                logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
-                    logtint, warningtint, setting, value);
-                noErrors = false;
-            }
-
-            continue top;
-        }
-        else
-        {
-            foreach (plugin; plugins)
-            {
-                if (plugin.name != pluginstring) continue;
-
-                try
-                {
-                    immutable success = plugin.setSettingByName(setting, value);
-
-                    if (!success)
-                    {
-                        logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
-                            logtint, pluginstring, warningtint, setting);
-                        noErrors = false;
-                    }
-                }
-                catch (ConvException e)
-                {
-                    logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
-                        logtint, pluginstring, warningtint, setting, value);
-                    noErrors = false;
-                }
-
-                continue top;
-            }
-        }
-
-        logger.warning("Invalid plugin: ", logtint, pluginstring);
-        noErrors = false;
-    }
-
-    return noErrors;
-}
-
-///
-unittest
-{
-    IRCPluginState state;
-    IRCPlugin plugin = new MyPlugin(state);
-
-    auto newSettings =
-    [
-        `myplugin.s="abc def ghi"`,
-        "myplugin.i=42",
-        "myplugin.f=3.14",
-        "myplugin.b=true",
-        "myplugin.d=99.99",
-    ];
-
-    applyCustomSettings([ plugin ], newSettings);
-
-    const ps = (cast(MyPlugin)plugin).myPluginSettings;
-
-    import std.conv : text;
-    import std.math : approxEqual;
-
-    assert((ps.s == "abc def ghi"), ps.s);
-    assert((ps.i == 42), ps.i.text);
-    assert(ps.f.approxEqual(3.14f), ps.f.text);
-    assert(ps.b);
-    assert(ps.d.approxEqual(99.99), ps.d.text);
-}
-
-version(unittest)
-{
-    // These need to be module-level.
-
-    struct MyPluginSettings
-    {
-        @Enabler bool enabled;
-
-        string s;
-        int i;
-        float f;
-        bool b;
-        double d;
-    }
-
-    final class MyPlugin : IRCPlugin
-    {
-        @Settings MyPluginSettings myPluginSettings;
-
-        string name() @property const
-        {
-            return "myplugin";
-        }
-
-        mixin IRCPluginImpl;
-    }
-}
-
-
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
@@ -3741,40 +3779,6 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 }
 
 
-// IRCPluginInitialisationException
-/++
- +  Exception thrown when an IRC plugin failed to initialise itself or its resources.
- +
- +  A normal `Exception`, which only differs in the sense that we can deduce
- +  what went wrong by its type.
- +/
-final class IRCPluginInitialisationException : Exception
-{
-    /// Wraps normal Exception constructors.
-    this(const string message, const string file = __FILE__, const int line = __LINE__)
-    {
-        super(message, file, line);
-    }
-}
-
-
-// IRCPluginSettingsException
-/++
- +  Exception thrown when an IRC plugin failed to have its settings set.
- +
- +  A normal `Exception`, which only differs in the sense that we can deduce
- +  what went wrong by its type.
- +/
-final class IRCPluginSettingsException : Exception
-{
-    /// Wraps normal Exception constructors.
-    this(const string message, const string file = __FILE__, const int line = __LINE__)
-    {
-        super(message, file, line);
-    }
-}
-
-
 import std.traits : isSomeFunction;
 
 // WHOISFiberDelegate
@@ -3815,7 +3819,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     import std.conv : text;
 
-    enum carriedVariableName = text("_carriedNickname", hashOf(__FUNCTION__) % 100);
+    private enum carriedVariableName = text("_carriedNickname", hashOf(__FUNCTION__) % 100);
     mixin("string " ~ carriedVariableName ~ ';');
 
     /// Reusable mixin that catches WHOIS results.
