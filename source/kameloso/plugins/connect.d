@@ -34,7 +34,12 @@ struct ConnectSettings
 {
     import kameloso.uda : CannotContainComments, Separator;
 
-    /// Whether or not to join channels upon being invited to them.
+    /++
+     +  Whether or not to join channels upon being invited to them.
+     +
+     +  If version TwitchSupport and on Twitch servers, instead follows hosts
+     +  by joining hosted channels as hosts start, and leaving them as they end.
+     +/
     bool joinOnInvite = true;
 
     /// Whether to use SASL authentication or not.
