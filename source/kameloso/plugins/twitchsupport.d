@@ -149,6 +149,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 break;
 
             case "subgift":
+            case "anonsubgift":
+            case "submysterygift":
                 // [21:33:48] msg-param-recipient-display-name = 'emilypiee'
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
@@ -189,6 +191,11 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 event.type = Type.TWITCH_RAID;
                 break;
 
+            case "unraid":
+                // Presumably same parameters as case "raid"
+                event.type = Type.TWITCH_UNRAID;
+                break;
+
             case "charity":
                 //msg-id = charity
                 //msg-param-charity-days-remaining = 11
@@ -199,6 +206,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 //msg-param-total = 135770
                 // Too much to store in a single IRCEvent...
                 event.type = Type.TWITCH_CHARITY;
+                break;
+
+            case "giftpaidupgrade":
+            case "anongiftpaidupgrade":
+                event.type = Type.TWITCH_GIFTUPGRADE;
+                break;
+
+            case "bitsbadgetier":
+                // User just earned a badge for a tier of bits
+                event.type = Type.TWITCH_BITSBADGETIER;
                 break;
 
             /*case "bad_ban_admin":
@@ -356,14 +373,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 // Generic Twitch server reply.
                 event.type = Type.TWITCH_NOTICE;
                 event.aux = value;
-                break;
-
-            case "submysterygift":
-                event.type = Type.TWITCH_SUBGIFT;
-                break;
-
-            case "giftpaidupgrade":
-                event.type = Type.TWITCH_GIFTUPGRADE;
                 break;
 
             default:
@@ -599,6 +608,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // Total amount donated to this charity
         case "msg-param-cumulative-months":
             // Total number of months subscribed, over time. Replaces msg-param-months
+        case "msg-param-threshold":
+            // (Sent only on bitsbadgetier) The tier of the bits badge the user just earned; e.g. 100, 1000, 10000.
             import std.conv : to;
             event.count = value.to!int;
             break;

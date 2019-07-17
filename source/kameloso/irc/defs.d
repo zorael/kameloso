@@ -117,9 +117,11 @@ struct IRCEvent
         TWITCH_SUBGIFT,   /// Twitch subscription gift event.
         TWITCH_HOSTSTART, /// Twitch channel hosting start.
         TWITCH_HOSTEND,   /// Twitch channel hosting end.
+        TWITCH_BITSBADGETIER, /// Twitch event, unsure of its meaning.
 
         // These might be worth removing.
         TWITCH_RAID,      /// Twitch raid.
+        TWITCH_UNRAID,    /// End of a Twitch raid.
         TWITCH_RITUAL,    /// Twitch Ritual event.
         TWITCH_REWARDGIFT,/// Twitch "reward gift".
         TWITCH_PURCHASE,  /// Twitch purchase(?).
