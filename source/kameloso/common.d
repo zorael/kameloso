@@ -396,6 +396,12 @@ struct IRCBot
             try
             {
                 plugin.teardown();
+
+                if (plugin.state.client.updated)
+                {
+                    parser.client = plugin.state.client;
+                    propagateClient(parser.client);
+                }
             }
             catch (ErrnoException e)
             {

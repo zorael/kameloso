@@ -1075,6 +1075,38 @@ void start(ConnectService service)
 }
 
 
+// teardown
+/++
+ +  Upon teardown, remove channels that we only joined because of following Twitch hosts
+ +  from the channels array, so that we don't rejoin them as normal unhosted
+ +  channels if we're reconnecting.
+ +
+ +  Without this, hosted channels become permanent ones between reconnects.
+ +/
+version(TwitchSupport)
+void teardown(ConnectService service)
+{
+    import std.algorithm.searching : countUntil;
+    import std.algorithm.mutation : SwapStrategy, remove;
+
+    if (!service.followedTwitchHosts.length) return;
+
+    foreach (immutable hostedChannel; service.followedTwitchHosts)
+    {
+        immutable channelIndex = service.state.client.channels.countUntil(hostedChannel);
+
+        // We may be out of sync of another plugin did the same as we're doing
+        if (channelIndex == -1) continue;  // Should never happen
+
+        service.state.client.channels = service.state.client.channels
+            .remove!(SwapStrategy.unstable)(channelIndex);
+    }
+
+    // We made changes to the client, let it be known
+    service.state.client.updated = true;
+}
+
+
 import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
