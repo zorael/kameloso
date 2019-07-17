@@ -974,7 +974,7 @@ void onHostEnd(ConnectService service, const IRCEvent event)
             }
         }
 
-        logger.log("Leaving %s%s%s as we joined it by following a host.",
+        logger.logf("Leaving %s%s%s as we joined it by following a host.",
             infotint, *hostedChannel, logtint);
         part(service.state, *hostedChannel);
         service.followedTwitchHosts.remove(event.channel);
