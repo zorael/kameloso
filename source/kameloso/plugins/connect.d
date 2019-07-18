@@ -961,22 +961,28 @@ void onHostEnd(ConnectService service, const IRCEvent event)
 
     if (const hostedChannel = event.channel in service.followedTwitchHosts)
     {
-        string infotint, logtint;
+        import std.algorithm.searching : canFind;
 
-        version(Colours)
+        if (service.state.client.channels.canFind(*hostedChannel))
         {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
+            string infotint, logtint;
 
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+
+                    infotint = (cast(KamelosoLogger)logger).infotint;
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
             }
+
+            logger.logf("Leaving %s%s%s as we joined it by following a host.",
+                infotint, *hostedChannel, logtint);
+            part(service.state, *hostedChannel);
         }
 
-        logger.logf("Leaving %s%s%s as we joined it by following a host.",
-            infotint, *hostedChannel, logtint);
-        part(service.state, *hostedChannel);
         service.followedTwitchHosts.remove(event.channel);
     }
 }
