@@ -483,8 +483,9 @@ void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
 
         if (colouredOutput)
         {
-            line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold,
-                results.youtubeTitle, results.youtubeAuthor.ircBold);
+            import kameloso.irc.colours : ircColourByHash;
+            line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold, results.youtubeTitle,
+                colouredOutput ? results.youtubeAuthor.ircColourByHash : results.youtubeAuthor.ircBold);
         }
         else
         {
