@@ -209,18 +209,18 @@ unittest
 }
 
 
-// ircColourNick
+// ircColourByHash
 /++
  +  Returns the passed string coloured with an IRC colour depending on the hash
  +  of the string, making for good random nick colours in IRC messages.
  +
  +  Params:
- +      nickname = String nickname to tint.
+ +      nickname = String to tint.
  +
  +  Returns:
- +      The passed nickname encased within IRC colour coding.
+ +      The passed string encased within IRC colour coding.
  +/
-string ircColourNick(const string nickname) pure
+string ircColourByHash(const string nickname) pure
 {
     if (!nickname.length) return string.init;
 
@@ -240,21 +240,24 @@ unittest
     // Colour based on hash
 
     {
-        immutable actual = "kameloso".ircColourNick;
+        immutable actual = "kameloso".ircColourByHash;
         immutable expected = I.colour ~ "01kameloso" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "kameloso^".ircColourNick;
+        immutable actual = "kameloso^".ircColourByHash;
         immutable expected = I.colour ~ "09kameloso^" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "kameloso^11".ircColourNick;
+        immutable actual = "kameloso^11".ircColourByHash;
         immutable expected = I.colour ~ "05kameloso^11" ~ I.colour;
         assert((actual == expected), actual);
     }
 }
+
+deprecated("Use ircColourByHash instead")
+alias ircColourNick = ircColourByHash;
 
 
 // ircBold

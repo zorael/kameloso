@@ -26,7 +26,7 @@ private:
 import kameloso.common : logger, settings;
 import kameloso.plugins.common;
 import kameloso.irc.common : IRCClient;
-import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourNick;
+import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.irc.defs;
 import kameloso.messaging;
 
@@ -525,7 +525,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
 
                 if (settings.colouredOutgoing)
                 {
-                    message = "%sed %s.".format(list, id.ircColourNick.ircBold);
+                    message = "%sed %s.".format(list, id.ircColourByHash.ircBold);
                 }
                 else
                 {
@@ -543,7 +543,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
 
                 if (settings.colouredOutgoing)
                 {
-                    message = "Account %s already %sed.".format(id.ircColourNick.ircBold, list);
+                    message = "Account %s already %sed.".format(id.ircColourByHash.ircBold, list);
                 }
                 else
                 {
@@ -712,7 +712,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
 
             if (settings.colouredOutgoing)
             {
-                message = "No such account %s to de%s.".format(account.ircColourNick.ircBold, list);
+                message = "No such account %s to de%s.".format(account.ircColourByHash.ircBold, list);
             }
             else
             {
@@ -727,7 +727,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
 
             if (settings.colouredOutgoing)
             {
-                message = "de%sed %s.".format(list, account.ircColourNick.ircBold);
+                message = "de%sed %s.".format(list, account.ircColourByHash.ircBold);
             }
             else
             {

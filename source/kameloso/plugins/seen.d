@@ -43,7 +43,7 @@ import kameloso.plugins.common;
 import kameloso.irc.defs;
 
 // `kameloso.irc.colours` for some IRC colouring and formatting.
-import kameloso.irc.colours : ircBold, ircColourNick;
+import kameloso.irc.colours : ircBold, ircColourByHash;
 
 // `kameloso.common` for some globals.
 import kameloso.common : logger, settings;
@@ -582,7 +582,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
                 if (settings.colouredOutgoing)
                 {
-                    message = event.content.ircColourNick.ircBold ~ line;
+                    message = event.content.ircColourByHash.ircBold ~ line;
                 }
                 else
                 {
@@ -605,7 +605,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
             if (settings.colouredOutgoing)
             {
-                message = "I have never seen %s.".format(event.content.ircColourNick.ircBold);
+                message = "I have never seen %s.".format(event.content.ircColourByHash.ircBold);
             }
             else
             {
@@ -623,7 +623,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
         if (settings.colouredOutgoing)
         {
-            message = "I last saw %s %s ago.".format(event.content.ircColourNick.ircBold, elapsed);
+            message = "I last saw %s %s ago.".format(event.content.ircColourByHash.ircBold, elapsed);
         }
         else
         {

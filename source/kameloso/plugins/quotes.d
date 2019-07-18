@@ -20,7 +20,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common : logger, settings;
-import kameloso.irc.colours : ircBold, ircColourNick;
+import kameloso.irc.colours : ircBold, ircColourByHash;
 import kameloso.json : JSONStorage;
 import kameloso.messaging;
 
@@ -155,7 +155,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         if (settings.colouredOutgoing)
         {
-            message = "%s | %s".format(nickname.ircColourNick.ircBold, endQuote);
+            message = "%s | %s".format(nickname.ircColourByHash.ircBold, endQuote);
         }
         else
         {
@@ -181,7 +181,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
             if (settings.colouredOutgoing)
             {
-                message = "No quote on record for %s".format(replyUser.nickname.ircColourNick.ircBold);
+                message = "No quote on record for %s".format(replyUser.nickname.ircColourByHash.ircBold);
             }
             else
             {
@@ -293,7 +293,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
             {
                 import std.conv : text;
                 message = "Quote for %s saved (%s on record)"
-                    .format(id.ircColourNick.ircBold,
+                    .format(id.ircColourByHash.ircBold,
                     plugin.quotes[id].array.length.text.ircBold);
             }
             else

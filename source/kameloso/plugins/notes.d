@@ -17,7 +17,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common;
-import kameloso.irc.colours : ircBold, ircColourNick;
+import kameloso.irc.colours : ircBold, ircColourByHash;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
@@ -78,7 +78,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 if (settings.colouredOutgoing)
                 {
                     message = "%s! %s left note %s ago: %s"
-                        .format(senderName.ircBold, note.sender.ircColourNick.ircBold,
+                        .format(senderName.ircBold, note.sender.ircColourByHash.ircBold,
                         timestamp.ircBold, note.line);
                 }
                 else
@@ -115,7 +115,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
                     if (settings.colouredOutgoing)
                     {
-                        report = "%s %s ago: %s".format(note.sender.ircColourNick.ircBold, timestamp, note.line);
+                        report = "%s %s ago: %s".format(note.sender.ircColourByHash.ircBold, timestamp, note.line);
                     }
                     else
                     {

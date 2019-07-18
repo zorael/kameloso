@@ -16,7 +16,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common : logger, settings;
-import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourNick;
+import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 
 import std.typecons : No, Yes;
@@ -319,9 +319,9 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
         if (settings.colouredOutgoing)
         {
             immutable maybeAccount = (specified != id) ?
-                " (" ~ id.ircColourNick.ircBold ~ ')' : string.init;
+                " (" ~ id.ircColourByHash.ircBold ~ ')' : string.init;
             message = "Automode %s! %s%s on %s: +%s"
-                .format(verb, specified.ircColourNick.ircBold,
+                .format(verb, specified.ircColourByHash.ircBold,
                 maybeAccount, channelName.ircBold, mode.ircBold);
         }
         else
@@ -399,7 +399,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
         if (settings.colouredOutgoing)
         {
             message = "Automode cleared: %s on %s"
-                .format(account.ircColourNick.ircBold, channelName.ircBold);
+                .format(account.ircColourByHash.ircBold, channelName.ircBold);
         }
         else
         {
