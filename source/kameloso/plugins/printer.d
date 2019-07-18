@@ -1236,35 +1236,14 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     {
         if (plugin.printerSettings.randomNickColours)
         {
-            import std.algorithm.searching : countUntil;
-            import std.traits : EnumMembers;
-
-            alias foregroundMembers = EnumMembers!FG;
-            static immutable FG[foregroundMembers.length] fg = [ foregroundMembers ];
-
-            enum chancodeBright = fg[].countUntil(cast(int)Bright.channel);
-            enum chancodeDark = fg[].countUntil(cast(int)Dark.channel);
-
-            // Range from 2 to 15, excluding black and white and manually changing
-            // the code for bright/dark channel to black/white
-            size_t colourIndex = (hashOf(nickname) % 14) + 2;
-
-            if (bright)
-            {
-                // Index is bright channel code, set to black
-                if (colourIndex == chancodeBright) colourIndex = 1;  // black
-            }
-            else
-            {
-                // Index is dark channel code, set to white
-                if (colourIndex == chancodeDark) colourIndex = 16; // white
-            }
-
-            return fg[colourIndex];
+            import kameloso.terminal : colourByHash;
+            return nickname.colourByHash;
         }
-
-        // Don't differentiate between sender and target? Consistency?
-        return bright ? Bright.sender : Dark.sender;
+        else
+        {
+            // Don't differentiate between sender and target? Consistency?
+            return bright ? Bright.sender : Dark.sender;
+        }
     }
 
     /++
