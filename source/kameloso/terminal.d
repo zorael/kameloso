@@ -810,3 +810,81 @@ unittest
         assert((line == expected), line);
     }
 }
+
+
+// colourByHash
+/++
+ +  Hashes the passed string and picks a `TerminalForeground` colour by modulo.
+ +
+ +  Example:
+ +  ---
+ +  immutable colouredNick = "kameloso".colourByHash;
+ +  immutable colouredNickBright = "kameloso".colourByHash(Yes.bright);
+ +  ---
+ +
+ +  Params:
+ +      word = String to hash and base colour on.
+ +      bright = Whether or not the colour should be appropriate for a bright terminal background.
+ +
+ +  Returns:
+ +      A `TerminalColour` based on the passed string.
+ +/
+version(Colours)
+TerminalForeground colourByHash(const string word, const Flag!"bright" bright = No.bright) pure @nogc nothrow
+{
+    import kameloso.constants : DefaultColours;
+    import std.algorithm.searching : countUntil;
+    import std.traits : EnumMembers;
+
+    alias Bright = DefaultColours.EventPrintingBright;
+    alias Dark = DefaultColours.EventPrintingDark;
+    alias foregroundMembers = EnumMembers!TerminalForeground;
+
+    static immutable TerminalForeground[foregroundMembers.length] fg = [ foregroundMembers ];
+
+    enum chancodeBright = fg[].countUntil(cast(int)Bright.channel);
+    enum chancodeDark = fg[].countUntil(cast(int)Dark.channel);
+
+    // Range from 2 to 15, excluding black and white and manually changing
+    // the code for bright/dark channel to black/white
+    size_t colourIndex = (hashOf(word) % 14) + 2;
+
+    if (bright)
+    {
+        // Index is bright channel code, set to black
+        if (colourIndex == chancodeBright) colourIndex = 1;  // black
+    }
+    else
+    {
+        // Index is dark channel code, set to white
+        if (colourIndex == chancodeDark) colourIndex = 16; // white
+    }
+
+    return fg[colourIndex];
+}
+
+///
+version(Colours)
+unittest
+{
+    import kameloso.conv : Enum;
+
+    alias FG = TerminalForeground;
+
+    {
+        immutable hash = "kameloso".colourByHash;
+        assert((hash == FG.lightgreen), Enum!FG.toString(hash));
+    }
+    {
+        immutable hash = "kameloso^".colourByHash;
+        assert((hash == FG.lightcyan), Enum!FG.toString(hash));
+    }
+    {
+        immutable hash = "zorael".colourByHash;
+        assert((hash == FG.cyan), Enum!FG.toString(hash));
+    }
+    {
+        immutable hash = "NO".colourByHash;
+        assert((hash == FG.lightred), Enum!FG.toString(hash));
+    }
+}
