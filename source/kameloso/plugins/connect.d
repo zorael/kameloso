@@ -40,7 +40,7 @@ struct ConnectSettings
      +  If version TwitchSupport and on Twitch servers, instead follows hosts
      +  by joining hosted channels as hosts start, and leaving them as they end.
      +/
-    bool joinOnInvite = true;
+    bool joinOnInvite = false;
 
     /// Whether to use SASL authentication or not.
     bool sasl = true;
