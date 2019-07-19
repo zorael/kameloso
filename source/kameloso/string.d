@@ -1805,3 +1805,201 @@ unittest
         assert(splitLines[0] == rawLine);
     }
 }
+
+
+// escapeControlCharacters
+/++
+ +  Replaces the control characters '\n', '\t', '\r' and '\0' with escaped
+ +  "\\n", "\\t", "\\r" and "\\0".
+ +
+ +  Overload that takes an output range sink to save the output into.
+ +
+ +  If `Yes.remove` is passed, instead exclude the characters from the output.
+ +
+ +  Params:
+ +      remove = Whether or not to remove said characters and not replace them
+ +          with escaped variants.
+ +      sink = Output range sink to store the output into.
+ +      line = String line to escape characters in.
+ +/
+void escapeControlCharacters(Flag!"remove" remove = No.remove, Sink)
+    (auto ref Sink sink, const string line)
+{
+    import std.string : representation;
+
+    foreach (immutable c; line.representation)
+    {
+        switch (c)
+        {
+        case '\n':
+            static if (!remove) sink.put("\\n");
+            break;
+
+        case '\t':
+            static if (!remove) sink.put("\\t");
+            break;
+
+        case '\r':
+            static if (!remove) sink.put("\\r");
+            break;
+
+        case '\0':
+            static if (!remove) sink.put("\\0");
+            break;
+
+        default:
+            sink.put(c);
+            break;
+        }
+    }
+}
+
+///
+unittest
+{
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
+    {
+        immutable line = "abc\ndef";
+        immutable expected = "abc\\ndef";
+        escapeControlCharacters(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+    {
+        immutable line = "\n\t\r\0";
+        immutable expected = "\\n\\t\\r\\0";
+        escapeControlCharacters(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        escapeControlCharacters(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+    {
+        immutable line = "nothing to escape";
+        immutable expected = "nothing to escape";
+        escapeControlCharacters(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable line = "abc\ndef";
+        immutable expected = "abcdef";
+        escapeControlCharacters!(Yes.remove)(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+    {
+        immutable line = "\n\t\r\0";
+        immutable expected = "";
+        escapeControlCharacters!(Yes.remove)(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        escapeControlCharacters!(Yes.remove)(sink, line);
+        assert((sink.data == expected), sink.data);
+        sink.clear();
+    }
+    {
+        immutable line = "nothing to escape";
+        immutable expected = "nothing to escape";
+        escapeControlCharacters!(Yes.remove)(sink, line);
+        assert((sink.data == expected), sink.data);
+        //sink.clear();
+    }
+}
+
+
+// escapeControlCharacters
+/++
+ +  Replaces the control characters '\n', '\t', '\r' and '\0' with escaped
+ +  "\\n", "\\t", "\\r" and "\\0".
+ +
+ +  Overload that doesn't take an output range and just constructs its own string.
+ +
+ +  If `Yes.remove` is passed, instead exclude the characters from the output.
+ +
+ +  Params:
+ +      remove = Whether or not to remove said characters and not replace them
+ +          with escaped variants.
+ +      line = String line to escape characters in.
+ +
+ +  Returns:
+ +      A new string with no such control characters, either due to replacements
+ +      or due to removal.
+ +/
+string escapeControlCharacters(Flag!"remove" remove = No.remove)(const string line)
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(line.length + 8);  // Just in case
+
+    escapeControlCharacters!remove(sink, line);
+    return sink.data;
+}
+
+///
+unittest
+{
+    {
+        immutable line = "abc\ndef";
+        immutable expected = "abc\\ndef";
+        immutable actual = escapeControlCharacters(line);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "\n\t\r\0";
+        immutable expected = "\\n\\t\\r\\0";
+        immutable actual = escapeControlCharacters(line);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        immutable actual = escapeControlCharacters(line);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "nothing to escape";
+        immutable expected = "nothing to escape";
+        immutable actual = escapeControlCharacters(line);
+        assert((actual == expected), actual);
+    }
+
+    {
+        immutable line = "abc\ndef";
+        immutable expected = "abcdef";
+        immutable actual = escapeControlCharacters!(Yes.remove)(line);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "\n\t\r\0";
+        immutable expected = "";
+        immutable actual = escapeControlCharacters!(Yes.remove)(line);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        immutable actual = escapeControlCharacters!(Yes.remove)(line);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "nothing to escape";
+        immutable expected = "nothing to escape";
+        immutable actual = escapeControlCharacters!(Yes.remove)(line);
+        assert((actual == expected), actual);
+    }
+}
