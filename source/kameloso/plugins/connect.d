@@ -37,8 +37,8 @@ struct ConnectSettings
     /++
      +  Whether or not to join channels upon being invited to them.
      +
-     +  If version TwitchSupport and on Twitch servers, instead follows hosts
-     +  by joining hosted channels as hosts start, and leaving them as they end.
+     +  If version TwitchSupport and on Twitch servers, instead follows raids
+     +  by joining channels as raids start, and leaving them as they end.
      +/
     bool joinOnInvite = false;
 
@@ -902,16 +902,16 @@ void onReconnect(ConnectService service)
 }
 
 
-// onHostStart
+// onTwitchRaid
 /++
- +  On Twitch host start, join the hosted channel.
+ +  On Twitch raid start, join the raided channel.
  +
  +  Don't join if we're already in it.
  +/
 version(TwitchSupport)
-@(IRCEvent.Type.TWITCH_HOSTSTART)
+@(IRCEvent.Type.TWITCH_RAID)
 @(ChannelPolicy.any)
-void onHostStart(ConnectService service, const IRCEvent event)
+void onTwitchRaid(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite) return;
 
@@ -931,42 +931,45 @@ void onHostStart(ConnectService service, const IRCEvent event)
         }
     }
 
-    if (service.followedTwitchHosts.byValue.canFind(event.channel))
+    immutable raidingChannel = '#' ~ event.sender.account;
+
+    if (service.followedTwitchRaids.byValue.canFind(raidingChannel))
     {
-        // It's a hosted channel that's hosting something; don't recurse
-        logger.log("Not following the host since it originated from a hosted channel.");
+        // It's a raided channel that's raiding something; don't recurse
+        logger.log("Not following the raid since it originated from a raided channel.");
         return;
     }
 
-    immutable hostedChannel = '#' ~ event.content;
-    service.followedTwitchHosts[event.channel] = hostedChannel;
+    service.followedTwitchRaids[raidingChannel] = event.channel;
 
-    if (!service.state.client.channels.canFind(hostedChannel))
+    if (!service.state.client.channels.canFind(event.channel))
     {
-        logger.logf("Following the host; joining %s%s%s ...", infotint, hostedChannel, logtint);
-        join(service.state, hostedChannel);
+        logger.logf("Following the raid; joining %s%s%s ...", infotint, event.channel, logtint);
+        join(service.state, event.channel);
     }
 }
 
 
-// onHostEnd
+// onTwitchUnraid
 /++
- +  When a Twitch host ends, leave the channel if we joined it because it was hosted.
+ +  When a Twitch raid ends on a channel, leave it if we joined it because of a raid.
  +
- +  Don't leave if there are duplicate hosts and one or more still remain.
+ +  Don't leave if there are duplicate raids and one or more still remain.
  +/
 version(TwitchSupport)
-@(IRCEvent.Type.TWITCH_HOSTEND)
+@(IRCEvent.Type.TWITCH_UNRAID)
 @(ChannelPolicy.any)
-void onHostEnd(ConnectService service, const IRCEvent event)
+void onTwitchUnraid(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite) return;
 
-    // If there's an entry for the triggering channel hosting another channel,
+    // If there's an entry for the triggering channel raiding another channel,
     // leave that channel and remove the entry from the associative array.
-    // Don't leave if another channel is also hosting it.
+    // Don't leave if another channel is also raiding it.
 
-    if (const hostedChannel = event.channel in service.followedTwitchHosts)
+    immutable raidingChannel = '#' ~ event.sender.account;
+
+    if (const raidedChannel = raidingChannel in service.followedTwitchRaids)
     {
         import kameloso.messaging : part;
         import std.algorithm.iteration : filter;
@@ -977,13 +980,13 @@ void onHostEnd(ConnectService service, const IRCEvent event)
         // occur before the filtering, but the channel not being there is such
         // a rare case there's no point.
 
-        immutable numDuplicateHosts = service.followedTwitchHosts
+        immutable numDuplicateRaids = service.followedTwitchRaids
             .byValue
-            .filter!(channel => channel == *hostedChannel)
+            .filter!(value => value == *raidedChannel)
             .array
             .length;
 
-        if (service.state.client.channels.canFind(*hostedChannel) && (numDuplicateHosts == 1))
+        if (service.state.client.channels.canFind(*raidedChannel) && (numDuplicateRaids == 1))
         {
             string infotint, logtint;
 
@@ -998,12 +1001,12 @@ void onHostEnd(ConnectService service, const IRCEvent event)
                 }
             }
 
-            logger.logf("Leaving %s%s%s as we joined it by following a host.",
-                infotint, *hostedChannel, logtint);
-            part(service.state, *hostedChannel);
+            logger.logf("Leaving %s%s%s as we joined it by following a raid.",
+                infotint, *raidedChannel, logtint);
+            part(service.state, *raidedChannel);
         }
 
-        service.followedTwitchHosts.remove(event.channel);
+        service.followedTwitchRaids.remove(raidingChannel);
     }
 }
 
@@ -1103,11 +1106,11 @@ void start(ConnectService service)
 
 // teardown
 /++
- +  Upon teardown, remove channels that we only joined because of following Twitch hosts
- +  from the channels array, so that we don't rejoin them as normal unhosted
+ +  Upon teardown, remove channels that we only joined because of following Twitch raids
+ +  from the channels array, so that we don't rejoin them as normal unraided
  +  channels if we're reconnecting.
  +
- +  Without this, hosted channels become permanent ones between reconnects.
+ +  Without this, temporarily raided channels become permanent ones between reconnects.
  +/
 version(TwitchSupport)
 void teardown(ConnectService service)
@@ -1115,13 +1118,13 @@ void teardown(ConnectService service)
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
 
-    if (!service.followedTwitchHosts.length) return;
+    if (!service.followedTwitchRaids.length) return;
 
-    foreach (immutable hostedChannel; service.followedTwitchHosts)
+    foreach (immutable raidedChannel; service.followedTwitchRaids)
     {
-        immutable channelIndex = service.state.client.channels.countUntil(hostedChannel);
+        immutable channelIndex = service.state.client.channels.countUntil(raidedChannel);
 
-        // Another host may have already made us leave this channel
+        // Another raid may have already made us leave this channel
         if (channelIndex == -1) continue;
 
         service.state.client.channels = service.state.client.channels
@@ -1204,8 +1207,8 @@ private:
 
     version(TwitchSupport)
     {
-        /// Channels joined by channel originating that we joined because of Twitch hosts.
-        string[string] followedTwitchHosts;
+        /// Channels raided by channels raiding.
+        string[string] followedTwitchRaids;
     }
 
     mixin IRCPluginImpl;
