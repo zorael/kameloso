@@ -971,47 +971,86 @@ void onTwitchUnraid(ConnectService service, const IRCEvent event)
 
     if (const raidedChannel = raidingChannel in service.followedTwitchRaids)
     {
-        import kameloso.messaging : part;
-        import std.algorithm.iteration : filter;
-        import std.algorithm.searching : canFind;
-        import std.array : array;
-        import std.format : format;
+        leaveRaidedChannel(service, raidingChannel, *raidedChannel);
+    }
+}
 
-        assert((*raidedChannel == event.channel), "Raid channel mismatch! %s != %s"
-            .format(*raidedChannel, event.channel));
 
-        // We could introduce an extra indentation and make the channels.canFind
-        // occur before the filtering, but the channel not being there is such
-        // a rare case there's no point.
+// onPart
+/++
+ +  Upon leaving a channel manually, also leave any channels this channel is raiding.
+ +/
+version(TwitchSupport)
+@(IRCEvent.Type.PART)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.any)
+void onPart(ConnectService service, const IRCEvent event)
+{
+    import std.algorithm.iteration : filter;
+    import std.array : array;
+    import std.format : format;
 
-        immutable numDuplicateRaids = service.followedTwitchRaids
-            .byValue
-            .filter!(value => value == *raidedChannel)
-            .array
-            .length;
+    if (const raidedChannel = event.channel in service.followedTwitchRaids)
+    {
+        // The channel is raiding someone; remove the raid entry and leave the
+        // channel if there are no other raids toward it.
+        leaveRaidedChannel(service, event.channel, *raidedChannel);
+    }
 
-        if (service.state.client.channels.canFind(*raidedChannel) && (numDuplicateRaids == 1))
+    // Maybe the channel is being raided and was manually left. Remove all raid
+    // entries of raiding channels raiding it if so.
+
+    auto raidingChannels = service.followedTwitchRaids
+        .byKeyValue
+        .filter!(keyval => keyval.value == event.channel)
+        .array;  // So we can mutate service.followedTwitchRaids while iterating
+
+    foreach (const raidChannelPair; raidingChannels)
+    {
+        service.followedTwitchRaids.remove(raidChannelPair.key);
+    }
+}
+
+
+// leaveRaidedChannel
+/++
+ +  Common code to leave a raided channel while giving a message saying so.
+ +
+ +  Additionally, remove the raiding channel's entry in the raid AA.
+ +/
+version(TwitchSupport)
+void leaveRaidedChannel(ConnectService service, const string raidingChannel, const string raidedChannel)
+{
+    import std.algorithm.iteration : filter;
+    import std.algorithm.searching : canFind;
+    import std.range.primitives : walkLength;
+
+    immutable numDuplicateRaids = service.followedTwitchRaids
+        .byValue
+        .filter!(value => value == raidedChannel)
+        .walkLength;
+
+    if (service.state.client.channels.canFind(raidedChannel) && (numDuplicateRaids == 1))
+    {
+        string infotint, logtint;
+
+        version(Colours)
         {
-            string infotint, logtint;
-
-            version(Colours)
+            if (!settings.monochrome)
             {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
+                import kameloso.logger : KamelosoLogger;
 
-                    infotint = (cast(KamelosoLogger)logger).infotint;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
             }
-
-            logger.logf("Leaving %s%s%s as we joined it by following a raid.",
-                infotint, *raidedChannel, logtint);
-            part(service.state, *raidedChannel);
         }
 
-        service.followedTwitchRaids.remove(raidingChannel);
+        logger.logf("Leaving %s%s%s as we joined it by following a raid.",
+            infotint, raidedChannel, logtint);
+        part(service.state, raidedChannel);
     }
+
+    service.followedTwitchRaids.remove(raidingChannel);
 }
 
 
