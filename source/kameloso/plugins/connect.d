@@ -975,6 +975,10 @@ void onTwitchUnraid(ConnectService service, const IRCEvent event)
         import std.algorithm.iteration : filter;
         import std.algorithm.searching : canFind;
         import std.array : array;
+        import std.format : format;
+
+        assert((*raidedChannel == event.channel), "Raid channel mismatch! %s != %s"
+            .format(*raidedChannel, event.channel));
 
         // We could introduce an extra indentation and make the channels.canFind
         // occur before the filtering, but the channel not being there is such
