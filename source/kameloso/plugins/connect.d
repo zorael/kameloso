@@ -1121,8 +1121,8 @@ void teardown(ConnectService service)
     {
         immutable channelIndex = service.state.client.channels.countUntil(hostedChannel);
 
-        // We may be out of sync of another plugin did the same as we're doing
-        if (channelIndex == -1) continue;  // Should never happen
+        // Another host may have already made us leave this channel
+        if (channelIndex == -1) continue;
 
         service.state.client.channels = service.state.client.channels
             .remove!(SwapStrategy.unstable)(channelIndex);
