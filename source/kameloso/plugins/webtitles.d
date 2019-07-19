@@ -381,11 +381,6 @@ TitleLookupResults lookupTitle(const string url)
     import arsd.dom : Document;
     import std.array : Appender;
 
-    TitleLookupResults results;
-    auto doc = new Document;
-    Appender!(ubyte[]) sink;
-    sink.reserve(BufferSize.titleLookup);
-
     Request req;
     req.useStreaming = true;
     req.keepAlive = false;
@@ -399,6 +394,10 @@ TitleLookupResults lookupTitle(const string url)
         import std.conv : text;
         throw new Exception(res.code.text ~ " fetching URL " ~ url);
     }
+
+    Document doc = new Document;
+    Appender!(ubyte[]) sink;
+    sink.reserve(BufferSize.titleLookup);
 
     auto stream = res.receiveAsRange();
 
@@ -414,6 +413,7 @@ TitleLookupResults lookupTitle(const string url)
         throw new Exception("No title tag found");
     }
 
+    TitleLookupResults results;
     results.title = decodeTitle(doc.title);
     results.domain = res.finalURI.original_host;  // thanks to ikod
 
