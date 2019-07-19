@@ -213,6 +213,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 event.type = Type.TWITCH_GIFTUPGRADE;
                 break;
 
+            case "primepaidupgrade":
+                event.type = Type.TWITCH_SUBUPGRADE;
+                break;
+
             case "bitsbadgetier":
                 // User just earned a badge for a tier of bits
                 event.type = Type.TWITCH_BITSBADGETIER;
