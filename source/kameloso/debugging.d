@@ -477,6 +477,18 @@ void generateAsserts(ref IRCBot bot) @system
         string input;
         IRCClient old = parser.client;
 
+        import kameloso.plugins;
+
+        IRCPlugin[] plugins;
+        IRCPluginState state;
+        state.client = parser.client;
+
+        // Instantiate all plugins so that we can invoke postprocess
+        foreach (Plugin; EnabledPlugins)
+        {
+            plugins ~= new Plugin(state);
+        }
+
         while ((input = readln()) !is null)
         {
             import kameloso.irc.common : IRCParseException;
@@ -510,7 +522,9 @@ void generateAsserts(ref IRCBot bot) @system
 
             try
             {
-                immutable event = parser.toIRCEvent(raw);
+                IRCEvent event = parser.toIRCEvent(raw);
+                foreach (plugin; plugins) plugin.postprocess(event);
+
                 writeln();
 
                 stdout.lockingTextWriter.formatEventAssertBlock(event);
@@ -519,6 +533,7 @@ void generateAsserts(ref IRCBot bot) @system
                 if (parser.client.updated)
                 {
                     parser.client.updated = false;
+                    foreach (plugin; plugins) plugin.state.client = parser.client;
 
                     /+writeln("/*");
                     /*writeln("with (parser.client)");
