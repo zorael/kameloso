@@ -905,6 +905,8 @@ void onReconnect(ConnectService service)
 // onHostStart
 /++
  +  On Twitch host start, join the hosted channel.
+ +
+ +  Don't join if we're already in it.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.TWITCH_HOSTSTART)
@@ -937,15 +939,21 @@ void onHostStart(ConnectService service, const IRCEvent event)
     }
 
     immutable hostedChannel = '#' ~ event.content;
-    logger.logf("Following the host; joining %s%s%s ...", infotint, hostedChannel, logtint);
     service.followedTwitchHosts[event.channel] = hostedChannel;
-    join(service.state, hostedChannel);
+
+    if (!service.state.client.channels.canFind(hostedChannel))
+    {
+        logger.logf("Following the host; joining %s%s%s ...", infotint, hostedChannel, logtint);
+        join(service.state, hostedChannel);
+    }
 }
 
 
 // onHostEnd
 /++
  +  When a Twitch host ends, leave the channel if we joined it because it was hosted.
+ +
+ +  Don't leave if there are duplicate hosts and one or more still remain.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.TWITCH_HOSTEND)
@@ -954,16 +962,28 @@ void onHostEnd(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite) return;
 
-    import kameloso.messaging : part;
-
     // If there's an entry for the triggering channel hosting another channel,
     // leave that channel and remove the entry from the associative array.
+    // Don't leave if another channel is also hosting it.
 
     if (const hostedChannel = event.channel in service.followedTwitchHosts)
     {
+        import kameloso.messaging : part;
+        import std.algorithm.iteration : filter;
         import std.algorithm.searching : canFind;
+        import std.array : array;
 
-        if (service.state.client.channels.canFind(*hostedChannel))
+        // We could introduce an extra indentation and make the channels.canFind
+        // occur before the filtering, but the channel not being there is such
+        // a rare case there's no point.
+
+        immutable numDuplicateHosts = service.followedTwitchHosts
+            .byValue
+            .filter!(channel => channel == *hostedChannel)
+            .array
+            .length;
+
+        if (service.state.client.channels.canFind(*hostedChannel) && (numDuplicateHosts == 1))
         {
             string infotint, logtint;
 
