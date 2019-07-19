@@ -450,8 +450,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // The moderator’s reason for the timeout or ban.
             // system-msg: The message printed in chat along with this notice.
-            import kameloso.string : strippedRight;
-            if (!event.content.length) event.content = decodeIRCv3String(value).strippedRight;
+            import kameloso.string : escapeControlCharacters, strippedRight;
+            import std.typecons : No, Yes;
+
+            if (!event.content.length)
+            {
+                event.content = value
+                    .decodeIRCv3String
+                    .strippedRight
+                    .escapeControlCharacters!(Yes.remove);
+            }
             break;
 
         case "emote-only":
