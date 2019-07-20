@@ -1250,7 +1250,7 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
     {
         logger.info("Sending bus message.");
         writeln("Header: ", event.content);
-        writeln("Cotent: (empty)");
+        writeln("Content: (empty)");
         if (settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
@@ -1262,7 +1262,7 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 
         logger.info("Sending bus message.");
         writeln("Header: ", header);
-        writeln("Cotent: ", slice);
+        writeln("Content: ", slice);
         if (settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(),
@@ -1291,7 +1291,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 {
     if (header != "admin") return;
 
-    // Don't return if disabled, as it blocks us from reenabling with verb set
+    // Don't return if disabled, as it blocks us from re-enabling with verb set
 
     import kameloso.printing : printObject;
     import kameloso.string : contains, nom, strippedRight;

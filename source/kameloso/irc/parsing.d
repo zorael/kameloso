@@ -1,7 +1,7 @@
 /++
  +  Functions related to parsing IRC events.
  +
- +  IRC events come in very heterogenous forms along the lines of:
+ +  IRC events come in very heterogeneous forms along the lines of:
  +      `:sender.address.tld TYPE [args...] :content`
  +
  +  The number and syntax of arguments for a type vary wildly. As such, one
@@ -12,7 +12,7 @@
  +  befits the type.
  +
  +  This translates to large switches, which can't be helped. There's simply
- +  too may variations, which switches lend themselves well to. You could make
+ +  too many variations, which switches lend themselves well to. You could make
  +  it into long if...else if chains, but it would just be the same thing in a
  +  different form.
  +

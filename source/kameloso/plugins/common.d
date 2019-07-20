@@ -409,7 +409,7 @@ struct IRCPluginState
  +          setting, in the string forms of "`plugin.setting=value`".
  +
  +  Returns:
- +      `true` if no setting name mismatches occured, `false` if it did.
+ +      `true` if no setting name mismatches occurred, `false` if it did.
  +/
 bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
 {

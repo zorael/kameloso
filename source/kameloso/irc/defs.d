@@ -84,7 +84,7 @@ struct IRCEvent
         CTCP_FINGER,/// Someone requested miscellaneous info about the bot.
         CTCP_LAG,   /// Something requested LAG info?
         CTCP_AVATAR,/// Someone requested an avatar image.
-        CTCP_SLOTS, /// Someone broadcasted their file transfer slots.
+        CTCP_SLOTS, /// Someone broadcast their file transfer slots.
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
         AUTH_CHALLENGE,   /// Authentication challenge.

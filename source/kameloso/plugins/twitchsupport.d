@@ -772,7 +772,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // without creating a new type, but even then information is lost
             // unless we fall back to auxes of "1000 streak 3".
         case "msg-param-months":
-            // DEPRECATED in favor of msg-param-cumulative-months.
+            // DEPRECATED in favour of msg-param-cumulative-months.
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
 

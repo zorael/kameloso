@@ -91,7 +91,7 @@ struct PrinterSettings
     /// Whether or not to log errors.
     bool logErrors = true;
 
-    /// Whether ot not to log server messages.
+    /// Whether or not to log server messages.
     bool logServer = false;
 
     /// Whether or not to log raw events.
@@ -294,14 +294,14 @@ struct LogLineBuffer
     /// Basename directory this buffer will be saved to.
     string dir;
 
-    /// Fully qualifed filename this buffer will be saved to.
+    /// Fully qualified filename this buffer will be saved to.
     string file;
 
     /// Buffered lines that will be saved to `file`, in `dir`.
     Appender!(string[]) lines;
 
     /++
-     +  Contructor taking a `std.datetime.sytime.SysTime`, to save as the date
+     +  Constructor taking a `std.datetime.sytime.SysTime`, to save as the date
      +  the buffer was created.
      +/
     this(const string dir, const SysTime now)
@@ -733,7 +733,7 @@ void commitAllLogs(PrinterPlugin plugin)
 /++
  +  Writes a single log buffer to disk.
  +
- +  This is a way of queueing writes so that they can be committed seldomly and
+ +  This is a way of queuing writes so that they can be committed seldomly and
  +  in bulk, supposedly being nicer to the hardware at the cost of the risk of
  +  losing uncommitted lines in a catastrophical crash.
  +
@@ -919,7 +919,7 @@ unittest
  +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
- +      bellOnError = Whether or not to emite a terminal bell when an error occured.
+ +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
  +/
 void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
@@ -1198,7 +1198,7 @@ unittest
  +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
- +      bellOnError = Whether or not to emite a terminal bell when an error occured.
+ +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
  +/
 version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,

@@ -391,7 +391,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
                 }
                 catch (Base64Exception e)
                 {
-                    noteArray[i].line = "(An error occured and the note could not be read)";
+                    noteArray[i].line = "(An error occurred and the note could not be read)";
                 }
             }
         }

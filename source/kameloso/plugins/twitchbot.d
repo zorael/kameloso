@@ -958,7 +958,7 @@ void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      event = The triggering `kameloso.irc.defs.IRCEvent`.
- +      targetChannel = The channel we're adding/listing/removing admnistrators to/from.
+ +      targetChannel = The channel we're adding/listing/removing administrators to/from.
  +/
 void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
 {
@@ -1365,7 +1365,7 @@ private:
             }
             else
             {
-                // Normal non-command channnel message
+                // Normal non-command channel message
                 return onEventImpl(event);
             }
         }
