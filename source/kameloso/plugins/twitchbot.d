@@ -1304,7 +1304,13 @@ private:
             return allowImpl(event, privilegeLevel);
 
         case admin:
-            // Let pass if the sender is in `adminsByChannel[event.channel]`
+            // The owner/broadcaster of a channel is always admin there.
+            if (event.channel.length && event.sender.account.length)
+            {
+                if (event.channel == event.sender.account) return FilterResult.pass;
+            }
+
+            // Also let pass if the sender is in `adminsByChannel[event.channel]`
             if (const channelAdmins = event.channel in adminsByChannel)
             {
                 import std.algorithm.searching : canFind;
