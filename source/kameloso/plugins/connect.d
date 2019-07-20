@@ -34,12 +34,7 @@ struct ConnectSettings
 {
     import kameloso.uda : CannotContainComments, Separator;
 
-    /++
-     +  Whether or not to join channels upon being invited to them.
-     +
-     +  If version TwitchSupport and on Twitch servers, instead follows raids
-     +  by joining channels as raids start, and leaving them as they end.
-     +/
+    /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 
     /// Whether to use SASL authentication or not.
@@ -902,158 +897,6 @@ void onReconnect(ConnectService service)
 }
 
 
-// onTwitchRaid
-/++
- +  On Twitch raid start, join the raided channel.
- +
- +  Don't join if we're already in it.
- +/
-version(TwitchSupport)
-@(IRCEvent.Type.TWITCH_RAID)
-@(ChannelPolicy.any)
-void onTwitchRaid(ConnectService service, const IRCEvent event)
-{
-    if (!service.connectSettings.joinOnInvite) return;
-
-    import kameloso.messaging : join;
-    import std.algorithm.searching : canFind;
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
-    immutable raidingChannel = '#' ~ event.sender.account;
-
-    if (service.followedTwitchRaids.byValue.canFind(raidingChannel))
-    {
-        // It's a raided channel that's raiding something; don't recurse
-        logger.log("Not following the raid since it originated from a raided channel.");
-        return;
-    }
-
-    service.followedTwitchRaids[raidingChannel] = event.channel;
-
-    if (!service.state.client.channels.canFind(event.channel))
-    {
-        logger.logf("Following the raid; joining %s%s%s ...", infotint, event.channel, logtint);
-        join(service.state, event.channel);
-    }
-}
-
-
-// onTwitchUnraid
-/++
- +  When a Twitch raid ends on a channel, leave it if we joined it because of a raid.
- +
- +  Don't leave if there are duplicate raids and one or more still remain.
- +/
-version(TwitchSupport)
-@(IRCEvent.Type.TWITCH_UNRAID)
-@(ChannelPolicy.any)
-void onTwitchUnraid(ConnectService service, const IRCEvent event)
-{
-    if (!service.connectSettings.joinOnInvite) return;
-
-    // If there's an entry for the triggering channel raiding another channel,
-    // leave that channel and remove the entry from the associative array.
-    // Don't leave if another channel is also raiding it.
-
-    immutable raidingChannel = '#' ~ event.sender.account;
-
-    if (const raidedChannel = raidingChannel in service.followedTwitchRaids)
-    {
-        leaveRaidedChannel(service, raidingChannel, *raidedChannel);
-    }
-}
-
-
-// onPart
-/++
- +  Upon leaving a channel manually, also leave any channels this channel is raiding.
- +/
-version(TwitchSupport)
-@(IRCEvent.Type.PART)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.any)
-void onPart(ConnectService service, const IRCEvent event)
-{
-    import std.algorithm.iteration : filter;
-    import std.array : array;
-    import std.format : format;
-
-    if (const raidedChannel = event.channel in service.followedTwitchRaids)
-    {
-        // The channel is raiding someone; remove the raid entry and leave the
-        // channel if there are no other raids toward it.
-        leaveRaidedChannel(service, event.channel, *raidedChannel);
-    }
-
-    // Maybe the channel is being raided and was manually left. Remove all raid
-    // entries of raiding channels raiding it if so.
-
-    auto raidingChannels = service.followedTwitchRaids
-        .byKeyValue
-        .filter!(keyval => keyval.value == event.channel)
-        .array;  // So we can mutate service.followedTwitchRaids while iterating
-
-    foreach (const raidChannelPair; raidingChannels)
-    {
-        service.followedTwitchRaids.remove(raidChannelPair.key);
-    }
-}
-
-
-// leaveRaidedChannel
-/++
- +  Common code to leave a raided channel while giving a message saying so.
- +
- +  Additionally, remove the raiding channel's entry in the raid AA.
- +/
-version(TwitchSupport)
-void leaveRaidedChannel(ConnectService service, const string raidingChannel, const string raidedChannel)
-{
-    import std.algorithm.iteration : filter;
-    import std.algorithm.searching : canFind;
-    import std.range.primitives : walkLength;
-
-    immutable numDuplicateRaids = service.followedTwitchRaids
-        .byValue
-        .filter!(value => value == raidedChannel)
-        .walkLength;
-
-    if (service.state.client.channels.canFind(raidedChannel) && (numDuplicateRaids == 1))
-    {
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
-        logger.logf("Leaving %s%s%s as we joined it by following a raid.",
-            infotint, raidedChannel, logtint);
-        part(service.state, raidedChannel);
-    }
-
-    service.followedTwitchRaids.remove(raidingChannel);
-}
-
-
 // register
 /++
  +  Registers with/logs onto an IRC server.
@@ -1147,38 +990,6 @@ void start(ConnectService service)
 }
 
 
-// teardown
-/++
- +  Upon teardown, remove channels that we only joined because of following Twitch raids
- +  from the channels array, so that we don't rejoin them as normal unraided
- +  channels if we're reconnecting.
- +
- +  Without this, temporarily raided channels become permanent ones between reconnects.
- +/
-version(TwitchSupport)
-void teardown(ConnectService service)
-{
-    import std.algorithm.searching : countUntil;
-    import std.algorithm.mutation : SwapStrategy, remove;
-
-    if (!service.followedTwitchRaids.length) return;
-
-    foreach (immutable raidedChannel; service.followedTwitchRaids)
-    {
-        immutable channelIndex = service.state.client.channels.countUntil(raidedChannel);
-
-        // Another raid may have already made us leave this channel
-        if (channelIndex == -1) continue;
-
-        service.state.client.channels = service.state.client.channels
-            .remove!(SwapStrategy.unstable)(channelIndex);
-    }
-
-    // We made changes to the client, let it be known
-    service.state.client.updated = true;
-}
-
-
 import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
@@ -1247,12 +1058,6 @@ private:
 
     /// Whether or not the bot has sent configured commands after connect.
     bool sentAfterConnect;
-
-    version(TwitchSupport)
-    {
-        /// Channels raided by channels raiding.
-        string[string] followedTwitchRaids;
-    }
 
     mixin IRCPluginImpl;
 }
