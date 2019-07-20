@@ -178,7 +178,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
         import kameloso.thread : busMessage;
         import core.time : seconds;
 
-        static immutable instant = 0.seconds;
+        static immutable instant = (-1).seconds;
         bool halt;
 
         receiveTimeout(instant,

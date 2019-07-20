@@ -498,7 +498,7 @@ void messageFiber(ref IRCBot bot)
         /// Timestamp of when the loop started.
         immutable loopStartTime = Clock.currTime;
 
-        static immutable instant = 0.seconds;
+        static immutable instant = (-1).seconds;
         static immutable oneSecond = 1.seconds;
 
         do

@@ -830,7 +830,7 @@ unittest
         import std.conv : text;
         import std.variant : Variant;
 
-        receiveTimeout(0.seconds,
+        receiveTimeout((-1).seconds,
             (ThreadMessage.TerminalOutput logLevel, string message)
             {
                 assert((logLevel == expectedLevels[i]), logLevel.text);
