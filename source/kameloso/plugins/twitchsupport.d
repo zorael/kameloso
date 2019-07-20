@@ -93,8 +93,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         user.class_ = IRCUser.Class.unset;
     }
 
+    auto tagRange = event.tags.splitter(";");
+
     with (IRCEvent)
-    foreach (tag; event.tags.splitter(";"))
+    foreach (tag; tagRange)
     {
         import kameloso.string : contains, nom;
         immutable key = tag.nom("=");
@@ -397,9 +399,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
                 version(TwitchWarnings)
                 {
+                    import kameloso.common : logger, settings;
+                    import kameloso.printing : printObject;
                     import kameloso.terminal : TerminalToken;
-                    import kameloso.common : logger;
+                    import std.algorithm.iteration : joiner;
+                    import std.stdio : stdout, writeln;
+
                     logger.warning("Unknown Twitch msg-id: ", value, cast(char)TerminalToken.bell);
+                    printObject(event);
+                    writeln(tagRange.joiner("\n"));
+                    if (settings.flush) stdout.flush();
                 }
                 break;
             }
@@ -777,9 +786,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         default:
             version(TwitchWarnings)
             {
+                import kameloso.common : logger, settings;
+                import kameloso.printing : printObject;
                 import kameloso.terminal : TerminalToken;
-                import kameloso.common : logger;
+                import std.algorithm.iteration : joiner;
+                import std.stdio : stdout, writeln;
+
                 logger.warningf("Unknown Twitch tag: %s = %s%c", key, value, cast(char)TerminalToken.bell);
+                printObject(event);
+                writeln(tagRange.joiner("\n"));
+                if (settings.flush) stdout.flush();
             }
             break;
         }
