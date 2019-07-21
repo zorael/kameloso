@@ -1,12 +1,11 @@
 /++
  +  This is an example Twitch streamer bot. It supports basic authentication,
- +  allowing for administrators that are not necessarily in the whitelist nor are
- +  Twitch moderators, querying uptime or how long a streamer has been streaming,
- +  as well as custom (non-hardcoded) oneliner commands.
+ +  allowing for channel-specific administrators that are not necessarily in the
+ +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
+ +  has been streaming, custom (non-hardcoded) oneliner commands, and banned phrases.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
- +  message has too many capital letters, contains banned words, etc. There is
- +  no protection from spam yet either.
+ +  message has too many capital letters, etc. There is no protection from spam yet.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
