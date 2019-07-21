@@ -746,7 +746,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
-            .format(thisFiber.payload, voteChoices.keys));
+            .format(thisFiber.payload, voteChoices.byKey));
     }
 
     if (plugin.twitchBotSettings.voteReminders)
@@ -771,7 +771,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     chan(plugin.state, event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
-        .format(voteChoices.keys, dur));
+        .format(voteChoices.byKey, dur));
 }
 
 
@@ -893,7 +893,7 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
     if (channelOneliners && channelOneliners.length)
     {
         chan(plugin.state, event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
-            .format(channelOneliners.keys));
+            .format(channelOneliners.byKey));
     }
     else
     {
