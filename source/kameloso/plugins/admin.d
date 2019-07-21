@@ -6,7 +6,7 @@
  +
  +  It also offers some less debug-y, more administrative functions, like adding
  +  and removing homes on-the-fly, whitelisting or de-whitelisting account
- +  names, joining or leaving channels, as well as plain quitting.
+ +  names, joining or leaving channels, and such.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
@@ -79,7 +79,7 @@ struct AdminSettings
  +  If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
  +  prints all incoming server strings byte per byte.
  +
- +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandprintRaw`,
+ +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
  +  prints all incoming events as assert statements, for use in generating source
  +  code `unittest` blocks.
  +/

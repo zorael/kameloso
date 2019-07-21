@@ -7,6 +7,9 @@
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, contains banned words, etc. There is
  +  no protection from spam yet either.
+ +
+ +  See the GitHub wiki for more information about available commands:
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
  +/
 module kameloso.plugins.twitchbot;
 
