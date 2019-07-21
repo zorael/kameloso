@@ -42,6 +42,9 @@ struct TwitchBotSettings
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
+    /// Whether or not moderators are implicitly administrators.
+    bool modsAreAdmins = true;
+
     /// Whether or not to match ban phrases case-sensitively.
     bool bannedPhrasesObeyCase = true;
 
