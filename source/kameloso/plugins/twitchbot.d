@@ -1315,7 +1315,15 @@ private:
             // The owner/broadcaster of a channel is always admin there.
             if (event.channel.length && event.sender.account.length)
             {
+                // Faster than searching for "broadcaster" in event.sender.badges
                 if (event.channel == event.sender.account) return FilterResult.pass;
+            }
+
+            // Moderators are too if the settings say so.
+            if (twitchBotSettings.modsAreAdmins)
+            {
+                import std.algorithm.searching : canFind;
+                if (event.sender.badges.canFind("mode"/*rator*/)) return FilterResult.pass;
             }
 
             // Also let pass if the sender is in `adminsByChannel[event.channel]`
