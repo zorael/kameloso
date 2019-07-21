@@ -31,8 +31,11 @@ struct AutomodeSettings
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
-    /// Toggles whether or not the `hello` command always forces a WHOIS.
-    bool helloForcesWhois = true;
+    /++
+     +  Toggles whether or not the `op` command always forces a WHOIS, regardless
+     +  of queues and throttling.
+     +/
+    bool opForcesWhois = false;
 }
 
 
@@ -449,7 +452,7 @@ void onCommandPrintModes(AutomodePlugin plugin)
 }
 
 
-// onCommandHello
+// onCommandOp
 /++
  +  Triggers a WHOIS of the user invoking it with bot commands.
  +
@@ -460,10 +463,9 @@ void onCommandPrintModes(AutomodePlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-//@BotCommand(PrefixPolicy.nickname, "hello")
 @BotCommand(PrefixPolicy.nickname, "op")
 @Description("Forces the bot to attempt to apply automodes.")
-void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
+void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 {
     if (event.sender.account.length)
     {
@@ -472,7 +474,7 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
     else
     {
         import kameloso.messaging : whois;
-        whois(plugin.state, event.sender.nickname, plugin.automodeSettings.helloForcesWhois);
+        whois(plugin.state, event.sender.nickname, plugin.automodeSettings.opForcesWhois);
     }
 }
 
