@@ -1289,7 +1289,9 @@ private:
      +      privilegeLevel = `PrivilegeLevel` of the handler in question.
      +
      +  Returns:
-     +      `true` if the event should be allowed to trigger, `false` if not.
+     +      `FilterResult.pass` if the event should be allowed to trigger,
+     +      `FilterResult.whois` if a WHOIS query is needed to tell, and
+     +      `FilterResult.fail` if the user is known to not be allowed to trigger it.
      +/
     FilterResult allow(const IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
