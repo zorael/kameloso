@@ -6,17 +6,49 @@
  +
  +  The number and syntax of arguments for a type vary wildly. As such, one
  +  common parsing routine can't be used; there are simply too many exceptions.
- +  The beginning `:sender.address` is almost always the same form, and it's
+ +  The beginning `:sender.address` is *almost* always the same form, and it's
  +  always followed by the type, either in name or in numeric form. What we can
  +  do then is to parse this type, and interpret the arguments following as
- +  befits the type.
+ +  befits it.
  +
  +  This translates to large switches, which can't be helped. There's simply
  +  too many variations, which switches lend themselves well to. You could make
  +  it into long if...else if chains, but it would just be the same thing in a
  +  different form.
  +
- +  See the `/tests` directory for example parses.
+ +  ---
+ +  IRCParser parser;
+ +
+ +  string fromServer = ":zorael!~NaN@address.tld MODE #channel +v nickname";
+ +  IRCEvent event = parser.toIRCEvent(fromServer);
+ +
+ +  with (event)
+ +  {
+ +      assert(type == IRCEvent.Type.MODE);
+ +      assert(sender.nickname == "zorael");
+ +      assert(sender.ident == "NaN");
+ +      assert(sender.address == "address.tld");
+ +      assert(channel == "#channel");
+ +      assert(aux = "+v");
+ +  }
+ +
+ +  string alsoFromServer = ":cherryh.freenode.net 435 oldnick newnick #d " ~
+ +      ":Cannot change nickname while banned on channel";
+ +  IRCEvent event2 = parser.toIRCEvent(alsoFromServer);
+ +
+ +  with (event2)
+ +  {
+ +      assert(type == IRCEvent.TYpe.ERR_BANONCHAN);
+ +      assert(sender.address == "cherryh.freenode.net");
+ +      assert(channel == "#d");
+ +      assert(target.nickname == "oldnick");
+ +      assert(content == "Cannot change nickname while banned on channel");
+ +      assert(aux == "newnick");
+ +      assert(num == 435);
+ +  }
+ +  ---
+ +
+ +  See the `/tests` directory for more example parses.
  +/
 module kameloso.irc.parsing;
 
