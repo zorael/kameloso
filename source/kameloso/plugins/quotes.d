@@ -6,7 +6,7 @@
  +  random one can then be replayed by use of the "`quote [nickname]`" command.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
  +
  +  It is very optional.
  +/

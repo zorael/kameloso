@@ -26,7 +26,7 @@
  +  micro-optimising sense.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#seen
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
  +/
 module kameloso.plugins.seen;
 

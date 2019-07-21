@@ -774,7 +774,7 @@ void onSASLSuccess(ConnectService service)
      +  Clients that support capabilities but do not wish to enter negotiation
      +  SHOULD send CAP END upon connection to the server.
      +
-     +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
+     +  - http://ircv3.net/specs/core/capability-negotiation-3.1.html
      +
      +  Notes: Some servers don't ignore post-registration CAP.
      +/

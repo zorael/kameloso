@@ -33,8 +33,8 @@ struct IRCEvent
      +
      +  Taken from https://tools.ietf.org/html/rfc1459 with many additions.
      +
-     +  https://www.alien.net.au/irc/irc2numerics.html
-     +  https://defs.ircdocs.horse
+     +  - https://www.alien.net.au/irc/irc2numerics.html
+     +  - https://defs.ircdocs.horse
      +
      +  Some are outright fabrications of ours, like `CHAN` and `QUERY`, to make
      +  things easier for plugins. These are not prefixed with `RPL_` and `ERR_`
@@ -1704,7 +1704,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers running the `UnrealIRCd` daemon.
      +
-     +  https://www.unrealircd.org
+     +  - https://www.unrealircd.org
      +/
     static immutable Type[975] unreal =
     [
@@ -1768,7 +1768,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers running the `ircu` (Undernet) daemon.
      +
-     +  http://coder-com.undernet.org
+     +  - http://coder-com.undernet.org
      +/
     static immutable Type[569] ircu =
     [
@@ -1846,7 +1846,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers adhering to the `RFC1459` draft.
      +
-     +  https://tools.ietf.org/html/rfc1459
+     +  - https://tools.ietf.org/html/rfc1459
      +/
     static immutable Type[502] rfc1459 =
     [
@@ -1862,7 +1862,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers adhering to the `RFC2812` draft.
      +
-     +  https://tools.ietf.org/html/rfc2812
+     +  - https://tools.ietf.org/html/rfc2812
      +/
     static immutable Type[485] rfc2812 =
     [
@@ -1880,7 +1880,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers running the `IRCD-Hybrid` daemon.
      +
-     +  http://www.ircd-hybrid.org
+     +  - http://www.ircd-hybrid.org
      +/
     static immutable Type[716] hybrid =
     [
@@ -1915,7 +1915,7 @@ struct Typenums
      +  Delta typenum mappings for servers running the `Bahamut` daemon
      +  (DALnet).
      +
-     +  https://www.dal.net/?page=bahamut
+     +  - https://www.dal.net/?page=bahamut
      +/
     static immutable Type[621] bahamut =
     [
@@ -1955,7 +1955,7 @@ struct Typenums
      +  Delta typenum mappings for servers running the `snircd` daemon
      +  (QuakeNet), based on `ircu`.
      +
-     +  https://development.quakenet.org
+     +  - https://development.quakenet.org
      +/
     static immutable Type[554] snircd =
     [
@@ -1975,8 +1975,8 @@ struct Typenums
      +  Delta typenum mappings for servers running the `Nefarious` or
      +  `Nefarious2` daemons, based on `ircu`.
      +
-     +  https://github.com/evilnet/nefarious
-     +  https://github.com/evilnet/nefarious2
+     +  - https://github.com/evilnet/nefarious
+     +  - https://github.com/evilnet/nefarious2
      +/
     static immutable Type[976] nefarious =
     [
@@ -2000,7 +2000,7 @@ struct Typenums
      +  Delta typenum mappings for `RusNet` servers. Unsure of what daemon they
      +  run.
      +
-     +  http://www.rus-net.org
+     +  - http://www.rus-net.org
      +/
     static immutable Type[501] rusnet =
     [
@@ -2019,7 +2019,7 @@ struct Typenums
      +  Delta typenum mappings for `Rizon` network servers. Supposedly they use
      +  a mixture of Hybrid typenums, plus a few of their own.
      +
-     +  https://www.rizon.net
+     +  - https://www.rizon.net
      +/
     static immutable Type[716] rizon =
     [
@@ -2031,7 +2031,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for `austHex` AUSTNet Development servers.
      +
-     +  https://sourceforge.net/projects/austhex
+     +  - https://sourceforge.net/projects/austhex
      +/
     static immutable Type[521] austHex =
     [
@@ -2056,7 +2056,7 @@ struct Typenums
      +  Delta typenum mappings for the `IRCnet` network of servers. Unsure of
      +  what server daemon they run.
      +
-     +  http://www.ircnet.org
+     +  - http://www.ircnet.org
      +/
     static immutable Type[489] ircNet =
     [
@@ -2073,7 +2073,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers running the `PTlink` daemon.
      +
-     +  https://sourceforge.net/projects/ptlinksoft
+     +  - https://sourceforge.net/projects/ptlinksoft
      +/
     static immutable Type[616] ptlink =
     [
@@ -2086,7 +2086,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers running the `InspIRCd` daemon.
      +
-     +  http://www.inspircd.org
+     +  - http://www.inspircd.org
      +/
     static immutable Type[976] inspIRCd =
     [
@@ -2127,7 +2127,7 @@ struct Typenums
     /++
      +  Delta typenum mappings extending `ircu` typenums, for UnderNet.
      +
-     +  https://github.com/UndernetIRC/ircu2
+     +  - https://github.com/UndernetIRC/ircu2
      +/
     static immutable Type[490] undernet =
     [
@@ -2140,7 +2140,7 @@ struct Typenums
      +  Delta typenum mapping for servers running the `ratbox` daemon. It is
      +  primarily used on EFnet.
      +
-     +  https://www.ratbox.org
+     +  - https://www.ratbox.org
      +/
     static immutable Type[716] ratBox =
     [
@@ -2154,7 +2154,7 @@ struct Typenums
     /++
      +  Delta typenum mappings for servers running the `charybdis` daemon.
      +
-     +  https://github.com/charybdis-ircd/charybdis
+     +  - https://github.com/charybdis-ircd/charybdis
      +/
     static immutable Type[495] charybdis =
     [
@@ -2166,7 +2166,7 @@ struct Typenums
      +  Delta typenum mappings for servers running the `sorircd` daemon
      +  (SorceryNet).
      +
-     +  http://www.nongnu.org/snservices/sorircd.html
+     +  - http://www.nongnu.org/snservices/sorircd.html
      +/
     static immutable Type[326] sorircd =
     [

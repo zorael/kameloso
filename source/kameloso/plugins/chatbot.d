@@ -4,7 +4,7 @@
  +  all the available bot verbs to the querying nickname.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
  +
  +  It is very optional.
  +/

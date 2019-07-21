@@ -4,7 +4,7 @@
  +  (operator) when joining.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#automode
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#automode
  +/
 module kameloso.plugins.automode;
 

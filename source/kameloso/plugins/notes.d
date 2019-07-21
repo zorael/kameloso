@@ -3,7 +3,7 @@
  +  when they next log in.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#notes
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#notes
  +
  +  It is very optional.
  +/

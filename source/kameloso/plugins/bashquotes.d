@@ -4,7 +4,7 @@
  +  by quote ID.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#bashquotes
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#bashquotes
  +/
 module kameloso.plugins.bashquotes;
 

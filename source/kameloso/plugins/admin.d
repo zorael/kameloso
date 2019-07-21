@@ -9,7 +9,7 @@
  +  names, joining or leaving channels, as well as plain quitting.
  +
  +  See the GitHub wiki for more information about available commands:
- +  https://github.com/zorael/kameloso/wiki/Current-plugins#admin
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
  +
  +  It is optional if you don't intend to be controlling the bot from another
  +  client or via the terminal.

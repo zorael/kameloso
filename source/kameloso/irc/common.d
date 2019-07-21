@@ -340,7 +340,7 @@ string decodeIRCv3String(const string line)
     import std.string : representation;
 
     /++
-     +  http://ircv3.net/specs/core/message-tags-3.2.html
+     +  - http://ircv3.net/specs/core/message-tags-3.2.html
      +
      +  If a lone \ exists at the end of an escaped value (with no escape
      +  character following it), then there SHOULD be no output character.
@@ -623,7 +623,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
      +  (^G or ASCII 7), or a comma (',' which is used as a list item
      +  separator by the protocol).
      +
-     +  https://tools.ietf.org/html/rfc1459.html
+     +  - https://tools.ietf.org/html/rfc1459.html
      +/
     if ((line.length < 2) || (line.length > server.maxChannelLength))
     {
