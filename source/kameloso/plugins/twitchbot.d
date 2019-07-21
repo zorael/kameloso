@@ -746,7 +746,8 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-        chan(plugin.state, event.channel, "%d seconds!".format(thisFiber.payload));
+        chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
+            .format(thisFiber.payload, voteChoices.keys));
     }
 
     if (plugin.twitchBotSettings.voteReminders)
