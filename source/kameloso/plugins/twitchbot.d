@@ -88,9 +88,10 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         {
             if ((*channelAdmins).canFind(event.sender.nickname)) return;
         }
-        else if ((event.sender.nickname == plugin.state.client.nickname) ||
+
+        if ((event.sender.nickname == plugin.state.client.nickname) ||
             plugin.state.client.admins.canFind(event.sender.nickname) ||
-            event.sender.badges.contains("moderator"))
+            event.sender.badges.contains("mode"/*rator*/))
         {
             return;
         }
