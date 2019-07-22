@@ -596,8 +596,17 @@ pragma(inline)
 bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @nogc
 if (isSomeString!T)
 {
-    // All strings begin with an empty string
-    if (!needles.length) return true;
+    version(Windows)
+    {
+        // Windows workaround for memchr segfault
+        // See https://forum.dlang.org/post/qgzznkhvvozadnagzudu@forum.dlang.org
+        if ((needles.ptr is null) || !needles.length) return true;
+    }
+    else
+    {
+        // All strings begin with an empty string
+        if (!needles.length) return true;
+    }
 
     // An empty line begins with nothing
     if (!haystack.length) return false;
