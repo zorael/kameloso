@@ -909,7 +909,7 @@ unittest
  +  Returns:
  +      A string with the passed duration expressed in natural English language.
  +/
-auto timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
+string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {
     import std.array : Appender;
 
