@@ -58,6 +58,8 @@ pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator,
     const string callingFile = __FILE__, const size_t callingLine = __LINE__) pure
 if (isMutable!T && isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+in { static if (is(C : T)) assert(separator.length, "Tried to nom with no separator given"); }
+do
 {
     static if (decode || is(T : dstring) || is(T : wstring))
     {

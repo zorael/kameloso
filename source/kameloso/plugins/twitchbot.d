@@ -586,6 +586,8 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "poll")
 @Description("Starts a vote.", "$command [seconds] [choice1] [choice2] ...")
 void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
+in ((event.channel in plugin.activeChannels), "Tried to start a vote in what is probably a non-home channel")
+do
 {
     import kameloso.string : contains, nom;
     import std.algorithm.iteration : splitter;
@@ -594,7 +596,6 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     import std.uni : toLower;
 
     auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to start a vote in what is probably a non-home channel");
 
     if (channel.voteInstance > 0)
     {
@@ -793,9 +794,10 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "abortpoll")
 @Description("Aborts an ongoing vote.")
 void onCommandAbortVote(TwitchBotPlugin plugin, const IRCEvent event)
+in ((event.channel in plugin.activeChannels), "Tried to abort a vote in what is probably a non-home channel")
+do
 {
     auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to abort a vote in what is probably a non-home channel");
 
     if (channel.voteInstance > 0)
     {
