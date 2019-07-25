@@ -58,7 +58,15 @@ pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator,
     const string callingFile = __FILE__, const size_t callingLine = __LINE__) pure
 if (isMutable!T && isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
-in { static if (is(C : T)) assert(separator.length, "Tried to nom with no separator given"); }
+in
+{
+    static if (is(C : T))
+    {
+        import std.format : format;
+        assert(separator.length, "Tried to nom with no separator given (at %s:%d)"
+            .format(callingFile, callingLine));
+    }
+}
 do
 {
     static if (decode || is(T : dstring) || is(T : wstring))
@@ -271,7 +279,15 @@ T nom(Flag!"inherit" inherit, Flag!"decode" decode = No.decode, T, C)
     (ref T line, const C separator, const string callingFile = __FILE__,
     const size_t callingLine = __LINE__) pure
 if (isMutable!T && isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
-in { static if (is(C : T)) assert(separator.length, "Tried to nom with no separator given"); }
+in
+{
+    static if (is(C : T))
+    {
+        import std.format : format;
+        assert(separator.length, "Tried to nom with no separator given (at %s:%d)"
+            .format(callingFile, callingLine));
+    }
+}
 do
 {
     static if (inherit)
@@ -1731,8 +1747,13 @@ unittest
  +/
 T[] splitOnWord(T, C)(const T line, const C separator, const size_t maxLength)
 if (isSomeString!T && (is(C : ElementType!T) || is(C : ElementEncodingType!T)))
-in { static if (is(C : T)) assert(separator.length,
-    "Tried to split on word but no word was given"); }
+in
+{
+    static if (is(C : T))
+    {
+        assert(separator.length, "Tried to split on word but no word was given");
+    }
+}
 do
 {
     string[] lines;
