@@ -1056,6 +1056,8 @@ string indent(uint numTabs = 1)(const string string_)
     import std.array : Appender;
 
     Appender!string sink;
+    sink.reserve(string_.length + 4*numTabs);
+
     string_.indented!numTabs(sink);
     return sink.data;
 }
