@@ -194,6 +194,9 @@ struct ListenAttempt
  +      `ListenAttempt`s with information about the line receieved in its member values.
  +/
 void listenFiber(Connection conn, ref bool abort)
+in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
+in (!abort, "Tried to set up a listening fiber when the abort flag was set")
+do
 {
     import core.time : seconds;
     import std.concurrency : yield;
@@ -373,6 +376,9 @@ struct ConnectionAttempt
  +/
 void connectFiber(ref Connection conn, const bool endlesslyConnect,
     const uint connectionRetries, ref bool abort)
+in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
+in (!abort, "Tried to set up a connecting fiber when the abort flag was set")
+do
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, Socket, SocketException;
@@ -524,7 +530,11 @@ struct ResolveAttempt
  +      abort = Reference bool which, if set, should make us abort and return.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
-    const bool useIPv6, const int resolveAttempts, ref bool abort)
+    const bool useIPv6, const uint resolveAttempts, ref bool abort)
+in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
+in (address.length, "Tried to set up a resolving fiber on an empty address")
+in (!abort, "Tried to set up a resolving fiber when the abort flag was set")
+do
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, SocketException, getAddress;

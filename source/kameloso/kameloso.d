@@ -987,6 +987,8 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +          `core.thread.Fiber`'s timestamp with.
  +/
 void handleTimedFibers(IRCPlugin plugin, const long nowInUnix)
+in ((nowInUnix > 0), "Tried to handle timed fibers with an unset timestamp")
+do
 {
     size_t[] toRemove;
 

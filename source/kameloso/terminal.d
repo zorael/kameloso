@@ -7,6 +7,7 @@
 module kameloso.terminal;
 
 import std.meta : allSatisfy;
+import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -139,8 +140,6 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 }
 
 
-import std.range : isOutputRange;
-
 // colour
 /++
  +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
@@ -162,7 +161,7 @@ import std.range : isOutputRange;
  +/
 version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
-if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))
+if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(TerminalToken.format);
     sink.put('[');
@@ -472,7 +471,7 @@ unittest
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b, const bool bright = false)
-if (isOutputRange!(Sink, string))
+if (isOutputRange!(Sink, char[]))
 {
     import std.format : formattedWrite;
 
@@ -831,6 +830,8 @@ unittest
  +/
 version(Colours)
 TerminalForeground colourByHash(const string word, const Flag!"bright" bright = No.bright) pure @nogc nothrow
+in (word.length, "Tried to colour by hash but no word was given")
+do
 {
     import kameloso.constants : DefaultColours;
     import std.algorithm.searching : countUntil;

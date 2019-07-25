@@ -43,6 +43,8 @@ public import kameloso.meld;
  +      `std.conv.to` failed to convert a string into wanted type T.
  +/
 bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
+in (memberToSet.length, "Tried to set member by name but no member string was given")
+do
 {
     import kameloso.string : stripSuffix, stripped, unquoted;
     import std.conv : ConvException, to;
@@ -281,8 +283,8 @@ unittest
     success = foo.setMemberByName("invalid", "oekwpo");
     assert(!success);
 
-    success = foo.setMemberByName("", "true");
-    assert(!success);
+    /*success = foo.setMemberByName("", "true");
+    assert(!success);*/
 
     success = foo.setMemberByName("matey", "hirr steff\\ stuff staff\\|stirf hooo");
     assert(success);
@@ -342,6 +344,8 @@ unittest
  +/
 void zeroMembers(string emptyToken = "-", Thing)(ref Thing thing)
 if (is(Thing == struct))
+in (emptyToken.length, "Tried to zero members with no empty token given")
+do
 {
     import std.traits : isArray, isSomeString;
 

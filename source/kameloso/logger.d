@@ -5,6 +5,7 @@
 module kameloso.logger;
 
 import std.experimental.logger : Logger;
+import std.range.primitives : isOutputRange;
 
 @safe:
 
@@ -171,6 +172,7 @@ final class KamelosoLogger : Logger
         string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
         Tid threadId, SysTime timestamp, Logger logger) const
+    if (isOutputRange!(Sink, char[]))
     {
         import std.datetime : DateTime;
 
@@ -205,6 +207,7 @@ final class KamelosoLogger : Logger
 
     /// Outputs the message part of a logger message; the content.
     protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
+    if (isOutputRange!(Sink, char[]))
     {
         sink.put(msg);
     }
@@ -219,6 +222,7 @@ final class KamelosoLogger : Logger
 
     /// Outputs the tail of a logger message.
     protected void finishLogMsg(Sink)(auto ref Sink sink) const
+    if (isOutputRange!(Sink, char[]))
     {
         version(Colours)
         {

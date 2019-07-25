@@ -12,6 +12,8 @@ module kameloso.irc.defs;
 
 import kameloso.uda;
 
+import std.range.primitives : isOutputRange;
+
 final:
 @safe:
 pure:
@@ -1178,6 +1180,7 @@ struct IRCUser
      +      sink = Reference to the output range to write the string to.
      +/
     void toString(Sink)(auto ref Sink sink) const
+    if (isOutputRange!(Sink, char[]))
     {
         import std.format : formattedWrite;
 
@@ -2288,6 +2291,7 @@ struct IRCChannel
          +      sink = Reference to the output range to write the string to.
          +/
         void toString(Sink)(auto ref Sink sink) const
+        if (isOutputRange!(Sink, char[]))
         {
             import std.format : formattedWrite;
 
@@ -2387,7 +2391,8 @@ struct IRCChannel
      +  Params:
      +      sink = Reference to the output range to write the string to.
      +/
-    void toString(Sink)(auto ref Sink sink)
+    void toString(Sink)(auto ref Sink sink) const
+    if (isOutputRange!(Sink, char[]))
     {
         import std.format : formattedWrite;
 

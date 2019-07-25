@@ -38,6 +38,8 @@ version(unittest)
  +/
 void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string content, bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to send a channel message but no channel was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -86,6 +88,8 @@ unittest
  +/
 void query(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string nickname, const string content, const bool quiet = settings.hideOutgoing)
+in (nickname.length, "Tried to send a private query but no nickname was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -139,6 +143,8 @@ unittest
  +/
 void privmsg(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const string content, const bool quiet = settings.hideOutgoing)
+in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -205,6 +211,8 @@ unittest
  +/
 void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string emoteTarget, const string content, const bool quiet = settings.hideOutgoing)
+in (emoteTarget.length, "Tried to send an emote but no target was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -278,6 +286,8 @@ unittest
 void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string modes, const string content = string.init,
     const bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to set a mode but no channel was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -328,6 +338,8 @@ unittest
  +/
 void topic(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string content, const bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to set a topic but no channel was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -376,6 +388,9 @@ unittest
  +/
 void invite(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to send an invite but no channel was given")
+in (nickname.length, "Tried to send an invite but no nickname was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -425,6 +440,8 @@ unittest
 void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string key = string.init,
     const bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to join a channel but no channel was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -474,6 +491,9 @@ unittest
 void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const string reason = string.init,
     const bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to kick someone but no channel was given")
+in (nickname.length, "Tried to kick someone but no nickname was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -524,6 +544,8 @@ unittest
  +/
 void part(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string reason = string.init, const bool quiet = settings.hideOutgoing)
+in (channel.length, "Tried to part a channel but no channel was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -618,6 +640,8 @@ unittest
  +/
 void whois(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string nickname, const bool force = false, const bool quiet = settings.hideOutgoing)
+in (nickname.length, "Tried to WHOIS but no nickname was given")
+do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 

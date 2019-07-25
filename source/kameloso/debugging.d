@@ -8,6 +8,7 @@ import kameloso.common : IRCBot;
 import kameloso.irc.common : IRCClient;
 import kameloso.irc.defs;
 
+import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -32,6 +33,7 @@ debug:
  +      client = `kameloso.irc.common.IRCClient` to simulate the assignment of.
  +/
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
+if (isOutputRange!(Sink, char[]))
 {
     sink.put("IRCParser parser;\n\n");
     sink.put("with (parser.client)\n");
@@ -97,7 +99,7 @@ with (parser.client)
 void formatDelta(Flag!"asserts" asserts = No.asserts, Sink, QualThing)
     (auto ref Sink sink, QualThing before, QualThing after,
     const uint indents = 0, const string submember = string.init)
-if (is(QualThing == struct))
+if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
 {
     import std.traits : Unqual;
 
@@ -319,6 +321,7 @@ assert((c == '#'), c.to!string);
  +      event = `kameloso.irc.defs.IRCEvent` to construct assert statements for.
  +/
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
+if (isOutputRange!(Sink, char[]))
 {
     import kameloso.string : tabs;
     import std.format : format, formattedWrite;

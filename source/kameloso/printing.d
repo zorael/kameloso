@@ -7,7 +7,7 @@ module kameloso.printing;
 
 private:
 
-import std.range : isOutputRange;
+import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 public:

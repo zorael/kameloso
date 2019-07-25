@@ -707,6 +707,8 @@ unittest
  +      `true` if the nickname string is judged to be a nickname, `false` if not.
  +/
 bool isValidNickname(const string nickname, const IRCServer server) pure nothrow @nogc
+in (nickname.length, "Tried to determine whether a nickname was valid but no nickname was given")
+do
 {
     import std.string : representation;
 
@@ -745,7 +747,7 @@ unittest
 
     immutable invalidNicknames =
     [
-        "",
+        //"",
         "X".repeat(s.maxNickLength+1).to!string,
         "åäöÅÄÖ",
         "\n",

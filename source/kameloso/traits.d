@@ -5,7 +5,7 @@ module kameloso.traits;
 
 import kameloso.uda;
 
-import std.traits : Unqual, isArray, isAssociativeArray, isType;
+import std.traits : Unqual, isArray, isAssociativeArray, isFunction, isType;
 import std.typecons : Flag, No, Yes;
 
 
@@ -622,6 +622,7 @@ unittest
  +      P = Variadic list of types to compare `fun`'s function parameters with.
  +/
 template TakesParams(alias fun, P...)
+if (isFunction!fun)
 {
     import std.traits : Parameters, Unqual, staticMap;
 

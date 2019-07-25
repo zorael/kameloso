@@ -10,6 +10,7 @@
 module kameloso.irc.colours;
 
 import kameloso.irc.common : IRCControlCharacter;
+import std.range.primitives : isOutputRange;
 
 version(Colours)
 {
@@ -56,6 +57,9 @@ enum IRCColour
  +/
 void ircColour(Sink)(auto ref Sink sink, const string line, const IRCColour fg,
     const IRCColour bg = IRCColour.unset) pure
+if (isOutputRange!(Sink, char[]))
+in (line.length, "Tried to apply IRC colours to a string but no string was given")
+do
 {
     import std.conv : to;
     import std.format : formattedWrite;
@@ -107,6 +111,8 @@ unittest
  +      The passed line, encased within IRC colour tags.
  +/
 string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
+in (line.length, "Tried to apply IRC colours to a string but no string was given")
+do
 {
     if (!line.length) return string.init;
 

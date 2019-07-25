@@ -269,6 +269,8 @@ T nom(Flag!"inherit" inherit, Flag!"decode" decode = No.decode, T, C)
     (ref T line, const C separator, const string callingFile = __FILE__,
     const size_t callingLine = __LINE__) pure
 if (isMutable!T && isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+in { static if (is(C : T)) assert(separator.length, "Tried to nom with no separator given"); }
+do
 {
     static if (inherit)
     {
@@ -693,6 +695,8 @@ unittest
  +/
 string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure
+in (prefix.length, "Tried to strip separated prefix but no prefix was given")
+do
 {
     import std.algorithm.searching : skipOver, startsWith;
     import std.meta : AliasSeq;
@@ -735,8 +739,8 @@ unittest
     immutable sudoquit = "sudo quit :derp".stripSeparatedPrefix("sudo");
     assert((sudoquit == "quit :derp"), sudoquit);
 
-    immutable eightball = "8ball predicate?".stripSeparatedPrefix("");
-    assert((eightball == "8ball predicate?"), eightball);
+    /*immutable eightball = "8ball predicate?".stripSeparatedPrefix("");
+    assert((eightball == "8ball predicate?"), eightball);*/
 
     immutable isnotabot = "kamelosois a bot".stripSeparatedPrefix("kameloso");
     assert((isnotabot == "kamelosois a bot"), isnotabot);
@@ -874,8 +878,8 @@ unittest
     immutable n4 = sharedDomains("www.google.se", "www.google.co.uk");
     assert((n4 == 0), n4.text);
 
-    immutable n5 = sharedDomains("", string.init);
-    assert((n5 == 0), n5.text);
+    /*immutable n5 = sharedDomains("", string.init);
+    assert((n5 == 0), n5.text);*/
 
     immutable n6 = sharedDomains("irc.rizon.net", "rizon.net");
     assert((n6 == 2), n6.text);
@@ -911,12 +915,13 @@ unittest
  +      Whitespace equalling (`num` * `spaces`) spaces.
  +/
 auto tabs(uint spaces = 4)(const int num) pure nothrow @nogc
+in ((num >= 0), "Negative number of tabs")
+do
 {
     import std.range : repeat, takeExactly;
     import std.algorithm.iteration : joiner;
     import std.array : array;
 
-    assert((num >= 0), "Negative number of tabs");
 
     enum char[spaces] tab = ' '.repeat.takeExactly(spaces).array;
 
@@ -964,6 +969,7 @@ unittest
  +      sink = Output range to fill with the indented lines.
  +/
 void indented(uint numTabs = 1, Sink)(const string string_, auto ref Sink sink)
+if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
 
@@ -1723,6 +1729,9 @@ unittest
  +/
 T[] splitOnWord(T, C)(const T line, const C separator, const size_t maxLength)
 if (isSomeString!T && (is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+in { static if (is(C : T)) assert(separator.length,
+    "Tried to split on word but no word was given"); }
+do
 {
     string[] lines;
 
@@ -1833,6 +1842,7 @@ unittest
  +/
 void escapeControlCharacters(Flag!"remove" remove = No.remove, Sink)
     (auto ref Sink sink, const string line)
+if (isOutputRange!(Sink, char[]))
 {
     import std.string : representation;
 

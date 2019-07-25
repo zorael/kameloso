@@ -3,6 +3,7 @@
  +/
 module kameloso.config;
 
+import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -114,7 +115,7 @@ string[][string] readConfigInto(T...)(const string configFile, ref T things)
  +      things = Variadic list of objects to serialise.
  +/
 void serialise(Sink, Things...)(ref Sink sink, Things things)
-if (Things.length > 1)
+if ((Things.length > 1) && isOutputRange!(Sink, char[]))
 {
     foreach (const thing; things)
     {
@@ -144,6 +145,7 @@ if (Things.length > 1)
  +      thing = Object to serialise.
  +/
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
+if (isOutputRange!(Sink, char[]))
 {
     import kameloso.string : stripSuffix;
     import std.format : format, formattedWrite;

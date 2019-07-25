@@ -7,7 +7,7 @@ module kameloso.common;
 import kameloso.irc.common : IRCClient;
 import kameloso.uda;
 
-import core.time : Duration;
+import core.time : Duration, seconds;
 
 import std.experimental.logger : Logger;
 import std.range.primitives : isOutputRange;
@@ -64,6 +64,8 @@ Logger logger;
 void initLogger(const bool monochrome = settings.monochrome,
     const bool bright = settings.brightTerminal,
     const bool flush = settings.flush)
+out (; (logger !is null), "Failed to initialise logger")
+do
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
@@ -160,12 +162,12 @@ struct CoreSettings
  +  Returns:
  +      The multiple of `n` that reaches and possibly overshoots `num`.
  +/
-auto getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
+Number getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     (const Number num, const int n)
+in ((n > 0), "Cannot get multiple of 0 or negatives")
+in ((num >= 0), "Cannot get multiples for a negative number")
+do
 {
-    assert((n > 0), "Cannot get multiple of 0 or negatives");
-    assert((num >= 0), "Cannot get multiples for a negative number");
-
     if (num == 0) return 0;
 
     if (num == n)
@@ -763,7 +765,9 @@ unittest
  +/
 void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
     (auto ref Sink sink, const Duration duration) pure
-if (isOutputRange!(Sink, string))
+if (isOutputRange!(Sink, char[]))
+in ((duration >= 0.seconds), "Cannot call timeSince on a negative duration")
+do
 {
     import kameloso.string : plurality;
     import std.format : formattedWrite;
@@ -1168,6 +1172,11 @@ unittest
  +      client = Reference to the `kameloso.irc.common.IRCClient` to complete.
  +/
 void completeClient(ref IRCClient client)
+out (; (client.nickname.length), "Empty client nickname")
+out (; (client.user.length), "Empty client usern ame")
+out (; (client.ident.length), "Empty client ident")
+out (; (client.realName.length), "Empty client GECOS/real name")
+do
 {
     // If no client.nickname set, generate a random guest name.
     if (!client.nickname.length)

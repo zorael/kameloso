@@ -3,6 +3,8 @@
  +/
 module kameloso.json;
 
+import std.range.primitives : isOutputRange;
+
 
 // JSONStorage
 /++
@@ -65,6 +67,8 @@ struct JSONStorage
      +      but is not a file.
      +/
     void load(const string filename) @safe
+    in (filename.length, "Tried to load an empty filename into a JSON storage")
+    do
     {
         import kameloso.common : FileTypeMismatchException;
         import std.file : exists, getAttributes, isFile, readText;
@@ -104,6 +108,8 @@ struct JSONStorage
      +/
     void save(KeyOrderStrategy strategy = KeyOrderStrategy.passthrough)
         (const string filename, const string[] givenOrder = string[].init)
+    in (filename.length, "Tried to save a JSON storage to an empty filename")
+    do
     {
         import kameloso.conv : Enum;
         import std.array : Appender;
@@ -180,11 +186,12 @@ struct JSONStorage
      +/
     private void serialiseInto(KeyOrderStrategy strategy : KeyOrderStrategy.inGivenOrder, Sink)
         (auto ref Sink sink, const string[] givenOrder)
+    if (isOutputRange!(Sink, char[]))
+    in (givenOrder.length, "Tried to serialise a JSON storage in order given without a given order")
+    do
     {
         import kameloso.string : indent;
         import std.format : formattedWrite;
-
-        assert(givenOrder.length, "Tried to serialise a JSONStorage in order given without a given order");
 
         if (storage.isNull)
         {
@@ -228,7 +235,7 @@ struct JSONStorage
      +/
     private void serialiseInto(KeyOrderStrategy strategy = KeyOrderStrategy.passthrough, Sink)
         (auto ref Sink sink)
-    if (strategy != KeyOrderStrategy.inGivenOrder)
+    if ((strategy != KeyOrderStrategy.inGivenOrder) && isOutputRange!(Sink, char[]))
     {
         if (storage.isNull)
         {
