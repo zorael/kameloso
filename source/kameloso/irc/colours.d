@@ -394,6 +394,8 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
 
     alias I = IRCControlCharacter;
 
+    if (!origLine.length) return string.init;
+
     string line = origLine;
 
     if (line.contains(I.colour))
@@ -642,6 +644,8 @@ string stripColours(const string line)
     import std.array : replace;
     import std.regex : matchAll, regex;
 
+    if (!line.length) return string.init;
+
     alias I = IRCControlCharacter;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
@@ -724,6 +728,8 @@ private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const s
     import std.array : Appender, replace;
     import std.conv  : to;
     import std.regex : matchAll, regex;
+
+    if (!line.length) return string.init;
 
     alias I = IRCControlCharacter;
 
