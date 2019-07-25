@@ -772,6 +772,8 @@ do
     import kameloso.string : plurality;
     import std.format : formattedWrite;
 
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
+
     int days, hours, minutes, seconds;
     duration.split!("days", "hours", "minutes", "seconds")(days, hours, minutes, seconds);
 

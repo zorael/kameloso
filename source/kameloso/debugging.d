@@ -35,6 +35,8 @@ debug:
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 if (isOutputRange!(Sink, char[]))
 {
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
+
     sink.put("IRCParser parser;\n\n");
     sink.put("with (parser.client)\n");
     sink.put("{\n");
@@ -325,6 +327,8 @@ if (isOutputRange!(Sink, char[]))
 {
     import kameloso.string : tabs;
     import std.format : format, formattedWrite;
+
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
 
     immutable raw = event.tags.length ?
         "@%s %s".format(event.tags, event.raw) : event.raw;

@@ -116,6 +116,8 @@ if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.comparison : max;
 
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
+
     static if (coloured)
     {
         import kameloso.terminal : TerminalForeground, colour;

@@ -151,6 +151,8 @@ if (isOutputRange!(Sink, char[]))
     import std.format : format, formattedWrite;
     import std.traits : Unqual;
 
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
+
     static if (__traits(hasMember, Sink, "data"))
     {
         // Sink is not empty, place a newline between current content and new

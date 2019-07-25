@@ -64,6 +64,8 @@ do
     import std.conv : to;
     import std.format : formattedWrite;
 
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
+
     assert((fg != IRCColour.unset), "Tried to IRC colour with an unset colour");
 
     sink.put(cast(char)IRCControlCharacter.colour);
