@@ -1055,8 +1055,6 @@ string indent(uint numTabs = 1)(const string string_)
 {
     import std.array : Appender;
 
-    static assert((numTabs >= 0), "Can't indent with negative number of tabs");
-
     Appender!string sink;
     string_.indented!numTabs(sink);
     return sink.data;
