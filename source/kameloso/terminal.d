@@ -603,8 +603,8 @@ string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
         TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
 
     Appender!string sink;
-    sink.reserve(512);  // Maximum IRC message length by spec
-    string slice = line;
+    sink.reserve(line.length + 16);
+    string slice = line;  // mutable
 
     uint i;
 
