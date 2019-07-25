@@ -604,13 +604,15 @@ unittest
  +  ---
  +
  +  Params:
- +      line = String of a potential channel name.
+ +      channel = String of a potential channel name.
  +      server = The current `kameloso.irc.defs.IRCServer` with all its settings.
  +
  +  Returns:
  +      `true` if the string content is judged to be a channel, `false` if not.
  +/
-bool isValidChannel(const string line, const IRCServer server) pure @nogc
+bool isValidChannel(const string channel, const IRCServer server) pure @nogc
+in (channel.length, "Tried to determine whether a channel was valid but no channel was given")
+do
 {
     import kameloso.string : beginsWithOneOf;
     import std.string : representation;
@@ -625,30 +627,30 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
      +
      +  - https://tools.ietf.org/html/rfc1459.html
      +/
-    if ((line.length < 2) || (line.length > server.maxChannelLength))
+    if ((channel.length < 2) || (channel.length > server.maxChannelLength))
     {
-        // Too short or too long a line
+        // Too short or too long a word
         return false;
     }
 
-    if (!line.beginsWithOneOf(server.chantypes)) return false;
+    if (!channel.beginsWithOneOf(server.chantypes)) return false;
 
-    if (line.contains(' ') ||
-        line.contains(',') ||
-        line.contains(7))
+    if (channel.contains(' ') ||
+        channel.contains(',') ||
+        channel.contains(7))
     {
         // Contains spaces, commas or byte 7
         return false;
     }
 
-    if (line.length == 2) return !line[1].beginsWithOneOf(server.chantypes);
-    else if (line.length == 3) return !line[2].beginsWithOneOf(server.chantypes);
-    else if (line.length > 3)
+    if (channel.length == 2) return !channel[1].beginsWithOneOf(server.chantypes);
+    else if (channel.length == 3) return !channel[2].beginsWithOneOf(server.chantypes);
+    else if (channel.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
         foreach (immutable chansign; server.chantypes.representation)
         {
-            if (line[2..$].contains(chansign)) return false;
+            if (channel[2..$].contains(chansign)) return false;
         }
         return true;
     }
@@ -671,7 +673,7 @@ unittest
     assert(!"#not a channel".isValidChannel(s));
     assert(!"notAChannelEither".isValidChannel(s));
     assert(!"#".isValidChannel(s));
-    assert(!"".isValidChannel(s));
+    //assert(!"".isValidChannel(s));
     assert(!"##".isValidChannel(s));
     assert(!"&&".isValidChannel(s));
     assert("#d".isValidChannel(s));
@@ -680,7 +682,7 @@ unittest
     assert(!"#a#".isValidChannel(s));
     assert(!"a".isValidChannel(s));
     assert(!" ".isValidChannel(s));
-    assert(!"".isValidChannel(s));
+    //assert(!"".isValidChannel(s));
 }
 
 

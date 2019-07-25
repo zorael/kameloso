@@ -223,21 +223,23 @@ unittest
  +  of the string, making for good random nick colours in IRC messages.
  +
  +  Params:
- +      nickname = String to tint.
+ +      word = String to tint.
  +
  +  Returns:
  +      The passed string encased within IRC colour coding.
  +/
-string ircColourByHash(const string nickname) pure
+string ircColourByHash(const string word) pure
+in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
+do
 {
-    if (!nickname.length) return string.init;
+    if (!word.length) return string.init;
 
     import std.format : format;
 
     alias I = IRCControlCharacter;
 
-    immutable colourIndex = hashOf(nickname) % 16;
-    return "%c%02d%s%c".format(cast(char)I.colour, colourIndex, nickname, cast(char)I.colour);
+    immutable colourIndex = hashOf(word) % 16;
+    return "%c%02d%s%c".format(cast(char)I.colour, colourIndex, word, cast(char)I.colour);
 }
 
 ///
@@ -270,17 +272,19 @@ alias ircColourNick = ircColourByHash;
 
 // ircBold
 /++
- +  Returns the passed string wrapped in between IRC bold control characters.
+ +  Returns the passed string wrapped inbetween IRC bold control characters.
  +
  +  Params:
- +      line = String line to make IRC bold.
+ +      word = String word to make IRC bold.
  +
  +  Returns:
- +      The passed line, in IRC bold.
+ +      The passed string, in IRC bold.
  +/
-string ircBold(const string line) pure
+string ircBold(const string word) pure
+in (word.length, "Tried to apply IRC bold to a string but no string was given")
+do
 {
-    return IRCControlCharacter.bold ~ line ~ IRCControlCharacter.bold;
+    return IRCControlCharacter.bold ~ word ~ IRCControlCharacter.bold;
 }
 
 ///
@@ -296,17 +300,19 @@ unittest
 
 // ircItalics
 /++
- +  Returns the passed string wrapped in between IRC italics control characters.
+ +  Returns the passed string wrapped inbetween IRC italics control characters.
  +
  +  Params:
- +      line = String line to make IRC italics.
+ +      word = String word to make IRC italics.
  +
  +  Returns:
- +      The passed line, in IRC italics.
+ +      The passed string, in IRC italics.
  +/
-string ircItalics(const string line) pure
+string ircItalics(const string word) pure
+in (word.length, "Tried to apply IRC italics to a string but no string was given")
+do
 {
-    return IRCControlCharacter.italics ~ line ~ IRCControlCharacter.italics;
+    return IRCControlCharacter.italics ~ word ~ IRCControlCharacter.italics;
 }
 
 ///
@@ -322,17 +328,19 @@ unittest
 
 // ircUnderlined
 /++
- +  Returns the passed string wrapped in between IRC underlined control characters.
+ +  Returns the passed string wrapped inbetween IRC underlined control characters.
  +
  +  Params:
- +      line = String line to make IRC italics.
+ +      word = String word to make IRC italics.
  +
  +  Returns:
- +      The passed line, in IRC italics.
+ +      The passed string, in IRC italics.
  +/
-string ircUnderlined(const string line) pure
+string ircUnderlined(const string word) pure
+in (word.length, "Tried to apply IRC underlined to a string but no string was given")
+do
 {
-    return IRCControlCharacter.underlined ~ line ~ IRCControlCharacter.underlined;
+    return IRCControlCharacter.underlined ~ word ~ IRCControlCharacter.underlined;
 }
 
 ///
