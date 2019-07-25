@@ -148,18 +148,18 @@ unittest
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
-    {
+    /*{
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
-    }
-    {
+    }*/
+    /*{
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom!(Yes.decode)("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
-    }
+    }*/
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom("Lorem ipsum");
