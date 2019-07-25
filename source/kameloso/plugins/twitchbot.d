@@ -30,7 +30,7 @@ import std.typecons : Flag, No, Yes;
 struct TwitchBotSettings
 {
     /// Whether or not this plugin should react to any events.
-    @Enabler bool enabled = false;
+    @Enabler bool enabled = true;
 
     /// Whether or not to bell on every message.
     bool bellOnMessage = false;
