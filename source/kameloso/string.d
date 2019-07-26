@@ -306,7 +306,7 @@ do
     }
     else
     {
-        // Not inheriting due to argumet No.iherit, so just pass onto original nom
+        // Not inheriting due to argument No.inherit, so just pass onto original nom
         return line.nom!decode(separator, callingFile, callingLine);
     }
 }
