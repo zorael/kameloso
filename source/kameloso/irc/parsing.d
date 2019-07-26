@@ -4,17 +4,21 @@
  +  IRC events come in very heterogeneous forms along the lines of:
  +      `:sender.address.tld TYPE [args...] :content`
  +
- +  The number and syntax of arguments for a type vary wildly. As such, one
+ +  The number and syntax of arguments for types vary wildly. As such, one
  +  common parsing routine can't be used; there are simply too many exceptions.
- +  The beginning `:sender.address` is *almost* always the same form, and it's
- +  always followed by the type, either in name or in numeric form. What we can
- +  do then is to parse this type, and interpret the arguments following as
- +  befits it.
+ +  The beginning `:sender.address` is *almost* always the same form, but only
+ +  almost. It's guaranteed to be followed by the type however, which come either in
+ +  alphanumeric name (e.g. `PRIVMSG`, `INVITE`, `MODE`, ...), or in numeric form
+ +  of 001 to 999 inclusive.
  +
- +  This translates to large switches, which can't be helped. There's simply
+ +  What we can do then is to parse this type, and interpret the arguments following
+ +  as befits it.
+ +
+ +  This translates to large switches, which can't be helped. There are simply
  +  too many variations, which switches lend themselves well to. You could make
  +  it into long if...else if chains, but it would just be the same thing in a
- +  different form.
+ +  different form. Likewise a nested function is not essentially different from
+ +  a switch case.
  +
  +  ---
  +  IRCParser parser;
