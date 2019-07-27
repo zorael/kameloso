@@ -7,10 +7,10 @@
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` on join for op)
 * logs
-* looking up and echoing titles of pasted URLs
+* echoing titles of pasted URLs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
-* works on **Twitch**, including basic [streamer plugin](source/kameloso/plugins/twitchbot.d) (not compiled in by default)
+* works on **Twitch**, including basic [streamer assistant plugin](source/kameloso/plugins/twitchbot.d) (not compiled in by default)
 * IRC colour coding and text effects display properly in your terminal ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
@@ -51,7 +51,7 @@ Minimal test:
 
 ```bash
 $ dub build
-$ ./kameloso --channels "#d,#freenode,##linuxmint"
+$ ./kameloso --channels "#d,#freenode"
 ```
 
 ---
@@ -71,7 +71,7 @@ $ ./kameloso --channels "#d,#freenode,##linuxmint"
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
   * [Twitch](#twitch)
-    * [Twitch bot](#twitch-bot)
+    * [Streamer assistant bot](#streamer-assistant-bot)
   * [Use as a library](#use-as-a-library)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
@@ -232,7 +232,7 @@ port                6667
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
-### Twitch bot
+### Streamer assistant bot
 
 The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. (Configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.)
 
