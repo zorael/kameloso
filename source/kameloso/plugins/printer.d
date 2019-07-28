@@ -241,6 +241,10 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
                 goto default;
             }
         }
+        else
+        {
+            goto default;
+        }
 
     case USERSTATE: // Insanely spammy, once every sent message
     case PING:
