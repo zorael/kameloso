@@ -309,9 +309,14 @@ struct LogLineBuffer
     {
         import std.datetime.date : Date;
 
+        static string yyyyMMOf(const SysTime date)
+        {
+            // Cut the day from the date string, keep YYYY-MM
+            return (cast(Date)date).toISOExtString[0..7];
+        }
+
         this.dir = dir;
-        // Cut the day from the date string, keep YYYY-MM
-        this.file = buildNormalizedPath(this.dir, (cast(Date)now).toISOExtString[0..7] ~ ".log");
+        this.file = buildNormalizedPath(this.dir, yyyyMMOf(now) ~ ".log");
     }
 
     /++
