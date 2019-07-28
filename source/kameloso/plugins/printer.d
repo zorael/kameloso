@@ -24,6 +24,7 @@ import kameloso.irc.colours;
 
 version(Colours) import kameloso.terminal : TerminalForeground;
 
+import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
@@ -848,6 +849,7 @@ void onISUPPORT(PrinterPlugin plugin)
  +/
 void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
+if (isOutputRange!(Sink, char[]))
 {
     import std.conv : to;
     import std.traits : Unqual;
@@ -923,6 +925,7 @@ unittest
  +/
 void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
+if (isOutputRange!(Sink, char[]))
 {
     import kameloso.conv : Enum;
     import std.algorithm.comparison : equal;
@@ -1203,6 +1206,7 @@ unittest
 version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
+if (isOutputRange!(Sink, char[]))
 {
     import kameloso.terminal : FG = TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
@@ -1254,6 +1258,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
      +  By catching it we can honour the setting by tinting users accordingly.
      +/
     void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
+    if (isOutputRange!(Sink, char[]))
     {
         bool coloured;
 
@@ -1711,6 +1716,7 @@ unittest
  +/
 version(TwitchSupport)
 void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
+if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
@@ -2169,6 +2175,7 @@ void highlightEmotes(ref IRCEvent event)
 version(Colours)
 void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
     const string emotes, const TerminalForeground pre, const TerminalForeground post)
+if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
     import std.conv : to;
