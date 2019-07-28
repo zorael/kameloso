@@ -2129,10 +2129,6 @@ void highlightEmotes(ref IRCEvent event)
 
     immutable TerminalForeground highlight = settings.brightTerminal ?
         DefaultBright.highlight : DefaultDark.highlight;
-    immutable TerminalForeground contentFgBase = settings.brightTerminal ?
-        DefaultBright.content : DefaultDark.content;
-    immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
-        DefaultBright.emote : DefaultDark.emote;
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -2149,6 +2145,8 @@ void highlightEmotes(ref IRCEvent event)
         else
         {
             // Emote but mixed text and emotes
+            immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
+                DefaultBright.emote : DefaultDark.emote;
             event.content.highlightEmotesImpl(sink, event.emotes, highlight, emoteFgBase);
         }
         break;
@@ -2157,6 +2155,8 @@ void highlightEmotes(ref IRCEvent event)
     case SELFCHAN:
         // Normal content, normal text, normal emotes
         //sink.colourWith(contentFgBase);
+        immutable TerminalForeground contentFgBase = settings.brightTerminal ?
+            DefaultBright.content : DefaultDark.content;
         event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase);
         break;
 
