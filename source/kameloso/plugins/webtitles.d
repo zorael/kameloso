@@ -118,33 +118,32 @@ struct TitleLookupRequest
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : logger, settings;
-    import kameloso.string : beginsWith, contains;
+    import kameloso.string : beginsWith, contains, nom;
 
     if (event.content.beginsWith(settings.prefix)) return;
 
+    auto urls = findURLs(event.content);  // mutable
+    if (!urls.length) return;
+
     string infotint;
 
-    foreach (immutable i, url; findURLs(event.content))
+    version(Colours)
     {
-        version(Colours)
-        {
-            import kameloso.common : settings;
+        import kameloso.common : settings;
 
-            if (!settings.monochrome && !infotint.length)
-            {
-                import kameloso.logger : KamelosoLogger;
-                infotint = (cast(KamelosoLogger)logger).infotint;
-            }
-        }
-
-        if (url.contains!(Yes.decode)('#'))
+        if (!settings.monochrome && !infotint.length)
         {
-            import kameloso.string : nom;
-            // URL contains an octothorpe fragment identifier, like
-            // https://www.google.com/index.html#this%20bit
-            // Strip that.
-            url = url.nom!(Yes.decode)('#');
+            import kameloso.logger : KamelosoLogger;
+            infotint = (cast(KamelosoLogger)logger).infotint;
         }
+    }
+
+    foreach (immutable i, url; urls)
+    {
+        // If the URL contains an octothorpe fragment identifier, like
+        // https://www.google.com/index.html#this%20bit
+        // then strip that.
+        url = url.nom!(Yes.inherit, Yes.decode)('#');
 
         logger.log("Caught URL: ", infotint, url);
 
@@ -155,7 +154,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         prune(plugin.cache);
 
-        if (auto cachedResult = url in plugin.cache)
+        if (const cachedResult = url in plugin.cache)
         {
             logger.log("Found cached lookup.");
             request.results = *cachedResult;
