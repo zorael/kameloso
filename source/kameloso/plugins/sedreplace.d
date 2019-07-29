@@ -86,24 +86,25 @@ struct Line
  +  Params:
  +      originalLine = Line to apply the `sed`-replace pattern to.
  +      expression = Replacement pattern to apply.
+ +      relaxSyntax = Whether or not to require the expression to end with the delimeter.
  +
  +  Returns:
  +      Original line with the changes the replace pattern incurred.
  +/
-string sedReplace(const string line, const string expr) @safe pure nothrow
+string sedReplace(const string line, const string expr, const bool relaxSyntax) @safe pure nothrow
 {
     if (expr.length < 5) return line;
 
     switch (expr[1])
     {
     case '/':
-        return line.sedReplaceImpl!'/'(expr);
+        return line.sedReplaceImpl!'/'(expr, relaxSyntax);
 
     case '|':
-        return line.sedReplaceImpl!'|'(expr);
+        return line.sedReplaceImpl!'|'(expr, relaxSyntax);
 
     case '#':
-        return line.sedReplaceImpl!'#'(expr);
+        return line.sedReplaceImpl!'#'(expr, relaxSyntax);
 
     default:
         return line;
@@ -115,32 +116,32 @@ unittest
 {
     {
         enum before = "abc 123 def 456";
-        immutable after = before.sedReplace("s/123/789/");
+        immutable after = before.sedReplace("s/123/789/", false);
         assert((after == "abc 789 def 456"), after);
     }
     {
         enum before = "I am a fish";
-        immutable after = before.sedReplace("s|a|e|g");
+        immutable after = before.sedReplace("s|a|e|g", false);
         assert((after == "I em e fish"), after);
     }
     {
         enum before = "Lorem ipsum dolor sit amet";
-        immutable after = before.sedReplace("s###g");
+        immutable after = before.sedReplace("s###g", false);
         assert((after == "Lorem ipsum dolor sit amet"), after);
     }
     {
         enum before = "高所恐怖症";
-        immutable after = before.sedReplace("s/高所/閉所/");
+        immutable after = before.sedReplace("s/高所/閉所/", false);
         assert((after == "閉所恐怖症"), after);
     }
     {
         enum before = "asdf/fdsa";
-        immutable after = before.sedReplace("s/\\//-/");
+        immutable after = before.sedReplace("s/\\//-/", false);
         assert((after == "asdf-fdsa"), after);
     }
     {
         enum before = "HARBL";
-        immutable after = before.sedReplace("s/A/_/");
+        immutable after = before.sedReplace("s/A/_/", false);
         assert((after == "H_RBL"), after);
     }
 }
@@ -156,16 +157,20 @@ unittest
  +      char_ = Deliminator character, usually '/'.
  +      line = Original line to apply the replacement expression to.
  +      expr = Replacement expression to apply.
+ +      relaxSyntax = Whether or not to require the expression to end with the delimeter.
  +
  +  Returns:
  +      The passed line with the relevant bits replaced, or as is if the expression
  +      was invalid or didn't apply.
  +/
-string sedReplaceImpl(char char_)(const string line, const string expr)
+string sedReplaceImpl(char char_)(const string line, const string expr, const bool relaxSyntax)
 {
     import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.string : indexOf;
+
+    enum charAsString = "" ~ char_;
+    enum escapedChar = "\\" ~ char_;
 
     static ptrdiff_t getNextUnescaped(const string lineWithChar)
     {
@@ -199,25 +204,47 @@ string sedReplaceImpl(char char_)(const string line, const string expr)
 
     bool global;
 
-    if (slice[$-1] == 'g')
+    if ((slice[$-2] == char_) && (slice[$-1] == 'g'))
     {
         slice = slice[0..$-1];
         global = true;
     }
 
-    if (slice[$-1] != char_) return line;
+    immutable openEnd = slice[$-1] != char_;
+    if (openEnd && !relaxSyntax) return line;
 
-    immutable firstSlashPos = getNextUnescaped(slice);
-    if (firstSlashPos == -1) return line;
+    immutable delimPos = getNextUnescaped(slice);
+    if (delimPos == -1) return line;
 
-    immutable replaceThis = slice[0..firstSlashPos].replace("\\" ~ char_, "" ~ char_);
-    slice = slice[firstSlashPos+1..$];
+    immutable replaceThis = slice[0..delimPos].replace(escapedChar, charAsString);
+    slice = slice[delimPos+1..$];
 
-    immutable secondSlashPos = getNextUnescaped(slice);
-    if (secondSlashPos == -1) return line;
-    else if (secondSlashPos+1 != slice.length) return line;
+    immutable endDelimPos = getNextUnescaped(slice);
 
-    immutable withThis = slice[0..$-1];
+    if (relaxSyntax)
+    {
+        if ((endDelimPos == -1) || (endDelimPos+1 == slice.length))
+        {
+            // Either there were no more delimeters or there was one at the very end
+            // Syntax is relaxed; continue
+        }
+        else
+        {
+            // Found extra delimeters, expression is malformed; abort
+            return line;
+        }
+    }
+    else
+    {
+        if ((endDelimPos == -1) || (endDelimPos+1 != slice.length))
+        {
+            // Either there were no more delimeters or one was found before the end
+            // Syntax is strict; abort
+            return line;
+        }
+    }
+
+    immutable withThis = openEnd ? slice : slice[0..$-1];
 
     if (global)
     {
@@ -235,27 +262,47 @@ string sedReplaceImpl(char char_)(const string line, const string expr)
 unittest
 {
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C/");
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C/", false);
         assert((replaced == "Hullo C"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g");
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g", false);
         assert((replaced == "HeLLo D"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/");
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/", false);
         assert((replaced == "HeLlo D"), replaced);
     }
     {
-        immutable replaced = "I am a fish".sedReplaceImpl!'|'("s|fish|snek|g");
+        immutable replaced = "I am a fish".sedReplaceImpl!'|'("s|fish|snek|g", false);
         assert((replaced == "I am a snek"), replaced);
     }
     {
-        immutable replaced = "This is /a/a space".sedReplaceImpl!'/'("s/a\\//_/g");
+        immutable replaced = "This is /a/a space".sedReplaceImpl!'/'("s/a\\//_/g", false);
         assert((replaced == "This is /_a space"), replaced);
     }
     {
-        immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g");
+        immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g", false);
+        assert((replaced == "This is INVALID"), replaced);
+    }
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C", true);
+        assert((replaced == "Hullo C"), replaced);
+    }
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g", true);
+        assert((replaced == "HeLLo D"), replaced);
+    }
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L", true);
+        assert((replaced == "HeLlo D"), replaced);
+    }
+    {
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/", true);
+        assert((replaced == "HeLlo D"), replaced);
+    }
+    {
+        immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#INVALID#valid##", true);
         assert((replaced == "This is INVALID"), replaced);
     }
 }
@@ -303,7 +350,9 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                     return;
                 }
 
-                immutable result = line.content.sedReplace(event.content);
+                immutable result = line.content.sedReplace(event.content,
+                    plugin.sedReplaceSettings.relaxSyntax);
+
                 if ((result == event.content) || !result.length) return;
 
                 import kameloso.common : settings;
