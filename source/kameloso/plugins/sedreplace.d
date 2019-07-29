@@ -271,6 +271,14 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
     immutable stripped_ = event.content.stripped;
 
+    static void recordLineAsLast(SedReplacePlugin plugin, const string sender, const string string_)
+    {
+        Line line;
+        line.content = string_;
+        line.timestamp = Clock.currTime.toUnixTime;
+        plugin.prevlines[sender] = line;
+    }
+
     if (stripped_.beginsWith("s") && (stripped_.length >= 5))
     {
         immutable delimeter = stripped_[1];
@@ -297,7 +305,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 import std.format : format;
 
                 chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
-                plugin.prevlines.remove(event.sender.nickname);
+                recordLineAsLast(plugin, event.sender.nickname, result);
             }
 
             // Processed a sed-replace command (successfully or not); return
@@ -312,11 +320,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
     // We're either here because !stripped_.beginsWith("s") *or* stripped_[1]
     // is not '/', '|' nor '#'
     // --> normal message, store as previous line
-
-    Line line;
-    line.content = stripped_;
-    line.timestamp = Clock.currTime.toUnixTime;
-    plugin.prevlines[event.sender.nickname] = line;
+    recordLineAsLast(plugin, event.sender.nickname, stripped_);
 }
 
 
