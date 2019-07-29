@@ -199,7 +199,8 @@ string sedReplaceImpl(char char_)(const string line, const string expr, const bo
         return -1;
     }
 
-    if (!expr.startsWith("s" ~ char_)) return line;
+    // No need to test for this, sedReplace only calls us if this is already true
+    //if (!expr.startsWith("s" ~ char_)) return line;
 
     string slice = expr;  // mutable
     slice = slice[2..$];  // nom 's' ~ char_
