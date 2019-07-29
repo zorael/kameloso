@@ -273,7 +273,9 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
     if (stripped_.beginsWith("s") && (stripped_.length >= 5))
     {
-        switch (stripped_[1])
+        immutable delimeter = stripped_[1];
+
+        switch (delimeter)
         {
         case '/':
         case '|':
