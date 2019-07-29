@@ -95,7 +95,9 @@ string sedReplace(const string line, const string expr, const bool relaxSyntax) 
 {
     if (expr.length < 5) return line;
 
-    switch (expr[1])
+    immutable delimeter = expr[1];
+
+    switch (delimeter)
     {
     case '/':
         return line.sedReplaceImpl!'/'(expr, relaxSyntax);
