@@ -152,7 +152,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         request.event = event;
         request.url = url;
 
-        prune(plugin.cache);
+        if (plugin.cache.length) prune(plugin.cache);
 
         if (const cachedResult = url in plugin.cache)
         {
@@ -864,7 +864,10 @@ void prune(shared TitleLookupResults[string] cache)
     enum expireSeconds = 600;
     immutable now = Clock.currTime.toUnixTime;
 
-    pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
+    synchronized
+    {
+        pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
+    }
 }
 
 
