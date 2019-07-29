@@ -47,6 +47,12 @@ struct SedReplaceSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /++
+     +  Toggles whether or not replacement expressions have to properly end with
+     +  the delimeter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
+     +/
+    bool relaxSyntax = true;
 }
 
 
