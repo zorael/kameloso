@@ -349,6 +349,16 @@ unittest
         assert((verb == "verb"), verb);
         assert(!slice.length, slice);
     }
+    {
+        string url = "https://google.com/index.html#fragment-identifier";
+        url = url.nom!(Yes.inherit)('#');
+        assert((url == "https://google.com/index.html"), url);
+    }
+    {
+        string url = "https://google.com/index.html";
+        url = url.nom!(Yes.inherit)('#');
+        assert((url == "https://google.com/index.html"), url);
+    }
 }
 
 
