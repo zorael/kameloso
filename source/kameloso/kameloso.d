@@ -1406,6 +1406,91 @@ Next tryResolve(ref IRCBot bot)
 }
 
 
+// complainAboutInvalidConfigurationEntries
+/++
+ +  Prints some information about invalid configuration entries to the local terminal.
+ +
+ +  Params:
+ +      invalidEntries = A `string[][string]` associative array of dynamic
+ +          `string[]` arrays, keyed by strings. These contain invalid settings.
+ +/
+void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
+{
+    if (!invalidEntries.length) return;
+
+    logger.log("Found invalid configuration entries:");
+
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+        }
+    }
+
+    foreach (immutable section, const sectionEntries; invalidEntries)
+    {
+        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+            infotint, section, logtint, infotint, sectionEntries);
+    }
+
+    logger.log("They are either malformed, no longer in use or belong to " ~
+        "plugins not currently compiled in.");
+    logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
+        infotint, logtint, settings.configFile);
+    logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+}
+
+
+// complainAboutMissingConfiguration
+/++
+ +  Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
+ +
+ +  It assumes such information is missing, and that the check has been done at
+ +  the calling site.
+ +
+ +  Params:
+ +      args = The command-line arguments passed to the program at start.
+ +/
+void complainAboutMissingConfiguration(const string[] args)
+{
+    import std.file : exists;
+    import std.path : baseName;
+
+    logger.warning("Warning: No administrators nor home channels configured!");
+
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+        }
+    }
+
+    if (settings.configFile.exists)
+    {
+        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
+            infotint, settings.configFile, logtint);
+        complainAboutIncompleteConfiguration();
+    }
+    else
+    {
+        logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+            infotint, args[0].baseName, logtint);
+    }
+}
+
+
 public:
 
 
@@ -1804,89 +1889,4 @@ int kamelosoMain(string[] args)
     }
 
     return retval;
-}
-
-
-// complainAboutInvalidConfigurationEntries
-/++
- +  Prints some information about invalid configuration entries to the local terminal.
- +
- +  Params:
- +      invalidEntries = A `string[][string]` associative array of dynamic
- +          `string[]` arrays, keyed by strings. These contain invalid settings.
- +/
-void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
-{
-    if (!invalidEntries.length) return;
-
-    logger.log("Found invalid configuration entries:");
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
-    foreach (immutable section, const sectionEntries; invalidEntries)
-    {
-        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
-            infotint, section, logtint, infotint, sectionEntries);
-    }
-
-    logger.log("They are either malformed, no longer in use or belong to " ~
-        "plugins not currently compiled in.");
-    logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-        infotint, logtint, settings.configFile);
-    logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
-}
-
-
-// complainAboutMissingConfiguration
-/++
- +  Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
- +
- +  It assumes such information is missing, and that the check has been done at
- +  the calling site.
- +
- +  Params:
- +      args = The command-line arguments passed to the program at start.
- +/
-void complainAboutMissingConfiguration(const string[] args)
-{
-    import std.file : exists;
-    import std.path : baseName;
-
-    logger.warning("Warning: No administrators nor home channels configured!");
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
-    if (settings.configFile.exists)
-    {
-        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            infotint, settings.configFile, logtint);
-        complainAboutIncompleteConfiguration();
-    }
-    else
-    {
-        logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-            infotint, args[0].baseName, logtint);
-    }
 }
