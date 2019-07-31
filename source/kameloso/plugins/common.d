@@ -3537,16 +3537,12 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
     {
         if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
         {
-            import std.datetime.systime : Clock;
-
             // There's no need to meld Twitch users, they never change.
-            if (/*auto user =*/ newUser.nickname in plugin.state.users)
+
+            if (newUser.nickname !in plugin.state.users)
             {
-                // Why update this on every single event? We don't even use it
-                //user.lastWhois = Clock.currTime.toUnixTime;
-            }
-            else
-            {
+                import std.datetime.systime : Clock;
+
                 newUser.lastWhois = Clock.currTime.toUnixTime;
                 plugin.state.users[newUser.nickname] = newUser;
             }

@@ -1421,12 +1421,21 @@ version(OmniscientAdmin)
 {
     mixin UserAwareness!(ChannelPolicy.any);
     mixin ChannelAwareness!(ChannelPolicy.any);
-    mixin TwitchAwareness!(ChannelPolicy.any);
+
+    version(TwitchSupport)
+    {
+        mixin TwitchAwareness!(ChannelPolicy.any);
+    }
 }
 else
 {
     mixin UserAwareness;
     mixin ChannelAwareness;
+
+    version(TwitchSupport)
+    {
+        mixin TwitchAwareness;
+    }
 }
 
 public:
