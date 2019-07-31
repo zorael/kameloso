@@ -463,8 +463,10 @@ void messageFiber(ref IRCBot bot)
             final switch (logLevel)
             {
             case writeln:
-                import std.stdio : writeln;
+                import std.stdio : writeln, stdout;
+
                 writeln(message);
+                if (settings.flush) stdout.flush();
                 break;
 
             case trace:
