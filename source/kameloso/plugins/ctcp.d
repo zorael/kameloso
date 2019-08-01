@@ -17,7 +17,6 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.irc.defs;
-import kameloso.irc.common : IRCControlCharacter;
 import kameloso.messaging;
 
 
@@ -199,6 +198,8 @@ void onCTCPs(CTCPService service, const IRCEvent event)
     }
     else
     {
+        import kameloso.irc.common : IRCControlCharacter;
+
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
 
@@ -237,6 +238,7 @@ unittest
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 {
+    import kameloso.irc.common : IRCControlCharacter;
     import std.format : format;
 
     /*  This metadata query returns a list of the CTCP messages that this
