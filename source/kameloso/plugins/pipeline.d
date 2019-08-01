@@ -212,6 +212,12 @@ void pipereader(shared IRCPluginState newState, const string filename)
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
         }
+        catch (Exception e)
+        {
+            state.askToError("Pipeline plugin saw unexpected exception");
+            state.askToTrace(e.toString);
+            break toploop;
+        }
     }
 }
 
