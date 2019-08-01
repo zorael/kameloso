@@ -88,7 +88,20 @@ void onPing(ChanQueriesService service)
 
             if (!(service.channelStates[channelName] & ChannelState.topicKnown))
             {
+                import kameloso.thread : ThreadMessage, busMessage;
+                import std.concurrency : send;
+
                 raw(service.state, "TOPIC " ~ channelName, true);
+
+                version(WithPrinterPlugin)
+                {
+                    // The Printer plugin will display the topic response, to
+                    // the user for seemingly no reason.
+                    // Tell it to ignore the next such event
+                    service.state.mainThread.send(ThreadMessage.BusMessage(),
+                        "printer", busMessage("squelch topic"));
+                }
+
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
                 service.delayFiber(service.secondsBetween);

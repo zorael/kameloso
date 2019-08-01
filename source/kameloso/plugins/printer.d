@@ -246,6 +246,15 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             goto default;
         }
 
+    case RPL_TOPIC:
+    case RPL_NOTOPIC:
+        if (plugin.squelchTopic)
+        {
+            plugin.squelchTopic = false;
+            if (plugin.printerSettings.filterMost) return;
+        }
+        goto default;
+
     case USERSTATE: // Insanely spammy, once every sent message
     case PING:
     case PONG:
@@ -2370,6 +2379,31 @@ void teardown(PrinterPlugin plugin)
 }
 
 
+import kameloso.thread : Sendable;
+
+// onBusMessage
+/++
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`printer`" header,
+ +  listening for cues to ignore the next `RPL_TOPIC` or `RPL_NOTOPIC` event.
+ +
+ +  Params:
+ +      plugin = The current `PrinterPlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
+ +/
+void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
+{
+    import kameloso.thread : BusMessage;
+
+    if (header != "printer") return;
+
+    auto message = cast(BusMessage!string)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    plugin.squelchTopic = (message.payload == "squelch topic");
+}
+
+
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
 
@@ -2395,6 +2429,9 @@ private:
 
     /// Whether or not we have printed daemon-network information.
     bool printedISUPPORT;
+
+    /// Whether or not we should omit the next `RPL_TOPIC` or `RPL_NOTOPIC` event.
+    bool squelchTopic;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
