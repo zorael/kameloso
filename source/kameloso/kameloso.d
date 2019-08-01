@@ -1863,6 +1863,7 @@ int kamelosoMain(string[] args)
         // Start the main loop
         next = bot.mainLoop();
         firstConnect = false;
+        bot.conn.connected = false;
     }
     while (!*bot.abort && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
