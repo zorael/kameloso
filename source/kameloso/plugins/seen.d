@@ -19,11 +19,10 @@
  +  the function(s) annotated with its type.
  +
  +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
- +  process on incoming events, or timed with a worst-case precision of roughly
- +  `kameloso.constants.Timeout.receive` *
- +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds. Compared to
- +  using `kameloso.irc.defs.IRCEvent` triggers they are expensive, in a
- +  micro-optimising sense.
+ +  process on incoming events, or timed with a worst-case precision of
+ +  `kameloso.constants.Timeout.receive` + up to
+ +  `kameloso.plugins.package.EnabledPlugins``.length` plugins' event handling
+ +  execution time. Generally the latter is insignificant.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
