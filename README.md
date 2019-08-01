@@ -165,11 +165,11 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently valid setting, so settings that relate to plugins *that are currently not built in* are silently removed, as are comments.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently available setting, so settings that relate to plugins *that are currently not built in* are silently removed.
 
 ### Display settings
 
-If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
+If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
 If you are on Windows and you're seeing `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a permanent fix.
 
@@ -272,13 +272,13 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 Plugins that access the web, including the webtitles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 
-Terminal colours may also not work, requiring a registry edit to make it display properly. This works for at least Windows 10.
+Terminal colours may also not work in a `cmd` console, requiring a registry edit to make them display properly. The following works for at least Windows 10:
 
 * In `regedit` under `HKEY_CURRENT_USER\Console`, create a `DWORD` named `VirtualTerminalLevel` and give it a value of `1`.
-* Alternatively in Powershell: `Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1`
-* Alternatively in a `cmd` console: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
+* In Powershell: `Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1`
+* In a `cmd` console: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
 
-Otherwise use the `--monochrome` setting to disable colours, or compile a non-`colours` configuration.
+Otherwise use the `--monochrome` setting to disable colours, or compile a non-coloured configuration.
 
 When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command.
 
