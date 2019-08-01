@@ -8,7 +8,7 @@
  +  array to disk when closing the program and read it from file when starting
  +  it, as well as saving occasionally once every few (configurable) hours.
  +
- +  We will rely on the `ChanQueriesPlugin` (in `chanqueries.d`) to query
+ +  We will rely on the `kameloso.plugins.chanqueries.ChanQueriesPlugin` to query
  +  channels for full lists of users upon joining new channels, including the
  +  ones we join upon connecting. Elsewise, a completely silent user will never
  +  be recorded as having been seen, as they would never be triggering any of

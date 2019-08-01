@@ -305,7 +305,7 @@ struct IRCBot
      +      keyed by `string` plugin names.
      +
      +  Throws:
-     +      `IRCPluginSettingsException` on failure to apply custom settings.
+     +      `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
      +/
     string[][string] initPlugins(string[] customSettings) @system
     {
@@ -323,8 +323,7 @@ struct IRCBot
 
         plugins.reserve(EnabledPlugins.length);
 
-        // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
-        // `kameloso.plugins.package`
+        // Instantiate all plugin types in `kameloso.plugins.package.EnabledPlugins`
         foreach (Plugin; EnabledPlugins)
         {
             plugins ~= new Plugin(state);
@@ -964,7 +963,8 @@ unittest
  +
  +  It assumes that the client's `admins` and `homes` are both empty.
  +
- +  Used in both `kameloso.getopt` and `kameloso.main`, so place it here.
+ +  Used in both `kameloso.getopt` and `kameloso.kameloso.kamelosoMain`,
+ +  so place it here.
  +/
 void complainAboutIncompleteConfiguration() @system
 {

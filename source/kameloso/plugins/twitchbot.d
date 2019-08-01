@@ -1286,7 +1286,7 @@ private:
     import kameloso.plugins.common : FilterResult, PrivilegeLevel;
 
     /++
-     +  Override `IRCPluginImpl.allow` and inject a user check, so we can support
+     +  Override `kameloso.plugins.common.IRCPluginImpl.allow` and inject a user check, so we can support
      +  channel-specific admins.
      +
      +  It is also possible to leverage the whitelist for this, but it would
@@ -1295,12 +1295,12 @@ private:
      +
      +  Params:
      +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
-     +      privilegeLevel = `PrivilegeLevel` of the handler in question.
+     +      privilegeLevel = `kameloso.plugins.common.PrivilegeLevel` of the handler in question.
      +
      +  Returns:
-     +      `FilterResult.pass` if the event should be allowed to trigger,
-     +      `FilterResult.whois` if a WHOIS query is needed to tell, and
-     +      `FilterResult.fail` if the user is known to not be allowed to trigger it.
+     +      `kameloso.plugins.common.FilterResult.pass` if the event should be allowed to trigger,
+     +      `kameloso.plugins.common.FilterResult.whois` if a WHOIS query is needed to tell, and
+     +      `kameloso.plugins.common.FilterResult.fail` if the user is known to not be allowed to trigger it.
      +/
     FilterResult allow(const IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
@@ -1345,15 +1345,16 @@ private:
     }
 
     /++
-     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does nothing on non-Twitch servers. Also filters `IRCEvent.Type.CHAN`
+     +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
+     +  plugin does nothing on non-Twitch servers. Also filters `kameloso.irc.defs.IRCEvent.Type.CHAN`
      +  events to only trigger on active channels (that have its `Channel.enabled`
      +  set to true).
      +
-     +  The function to call is `IRCPluginImpl.onEventImpl`.
+     +  The function to call is `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/
     public void onEvent(const IRCEvent event)

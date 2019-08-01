@@ -860,12 +860,13 @@ private:
     mixin IRCPluginImpl;
 
     /++
-     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
+     +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
      +  service does nothing on non-Twitch servers. The function to call is
-     +  `IRCPluginImpl.onEventImpl`.
+     +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +          `kameloso.plugins.common.onEventImpl`
      +          after verifying we're on a Twitch server.
      +/
     public void onEvent(const IRCEvent event)

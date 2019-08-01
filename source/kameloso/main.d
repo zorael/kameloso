@@ -20,7 +20,7 @@ else
 /++
  +  Entry point of the program.
  +
- +  Technically it just passes on execution to `kameloso.kameloso.main`.
+ +  Technically it just passes on execution to `kameloso.kameloso.kamelosoMain`.
  +
  +  Params:
  +      args = Command-line arguments passed to the program.

@@ -3620,7 +3620,7 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 // rehashUsers
 /++
  +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
- +  associative array and the ones in each `IRCChannel.users` associative arrays.
+ +  associative array and the ones in each `kameloso.irc.defs.IRCChannel.users` associative arrays.
  +
  +  This optimises lookup and should be done every so often,
  +

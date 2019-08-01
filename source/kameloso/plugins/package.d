@@ -11,7 +11,7 @@ public import kameloso.plugins.common;
 // tryImportMixin
 /++
  +  String mixin. If a module is available, import it. If it isn't available,
- +  alias the passed `alias_` to an empty `AliasSeq`.
+ +  alias the passed `alias_` to an empty `std.meta.AliasSeq`.
  +
  +  This allows us to import modules if they exist but otherwise silently still
  +  let it work without them.
@@ -28,7 +28,7 @@ public import kameloso.plugins.common;
  +
  +  Params:
  +      module_ = Fully qualified string name of the module to evaluate and potentially import.
- +      alias_ = Name of the symbol to create that points to an empty `AliasSeq`
+ +      alias_ = Name of the symbol to create that points to an empty `std.meta.AliasSeq`
  +          iff the module was not imported.
  +
  +  Returns:

@@ -1454,7 +1454,7 @@ private:
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
 
-    /// Snapshot of previous `IRCClient`.
+    /// Snapshot of the previous `kameloso.irc.common.IRCClient`.
     debug IRCClient previousClient;
 
     /// File with user definitions. Must be the same as in persistence.d.

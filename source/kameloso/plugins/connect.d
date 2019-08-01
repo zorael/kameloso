@@ -865,8 +865,8 @@ void onWelcome(ConnectService service, const IRCEvent event)
  +  Requests an UTF-8 codepage after we've figured out that the server supports changing such.
  +
  +  Currently only RusNet is known to support codepages. If more show up,
- +  consider creating an `IRCServer.hasCodepages` bool and set it if `CODEPAGES`
- +  is included in `RPL_MYINFO`.
+ +  consider creating an `kameloso.irc.defs.IRCServer``.hasCodepages` bool and set
+ +  it if `CODEPAGES` is included in `RPL_MYINFO`.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(ConnectService service)
