@@ -1168,6 +1168,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Asks the `ConnectService` to (re-)authenticate to services.
  +/
+version(WithConnectService)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
