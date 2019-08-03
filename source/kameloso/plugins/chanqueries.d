@@ -76,7 +76,9 @@ void onPing(ChanQueriesService service)
         foreach (immutable i, immutable channelName; querylist)
         {
             import kameloso.messaging : raw;
+            import kameloso.thread : ThreadMessage, busMessage;
             import core.thread : Fiber;
+            import std.concurrency : send;
             import std.string : representation;
 
             if (i > 0)
@@ -88,9 +90,6 @@ void onPing(ChanQueriesService service)
 
             if (!(service.channelStates[channelName] & ChannelState.topicKnown))
             {
-                import kameloso.thread : ThreadMessage, busMessage;
-                import std.concurrency : send;
-
                 raw(service.state, "TOPIC " ~ channelName, true);
 
                 version(WithPrinterPlugin)
@@ -125,7 +124,18 @@ void onPing(ChanQueriesService service)
                 service.delayFiber(service.secondsBetween * 2);
                 Fiber.yield();  // delay
 
+
                 raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
+
+                version(WithPrinterPlugin)
+                {
+                    // It's very common to get ERR_CHANOPRIVSNEEDED when querying
+                    // channels for specific modes.
+                    // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
+                    // Ask the Printer to squelch those messages too.
+                    service.state.mainThread.send(ThreadMessage.BusMessage(),
+                        "printer", busMessage("squelch chanoprivsneeded"));
+                }
             }
 
             // Overwrite state with `ChannelState.queried`;
