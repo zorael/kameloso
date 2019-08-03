@@ -3108,7 +3108,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        plugin.state.channels[event.channel].topic = event.content;
+        // It's possible to get the topic of channels we're not in, so only update
+        // the channel entry if there is one already (and avoid a range error)
+        if (auto channel = event.channel in plugin.state.channels)
+        {
+            channel.topic = event.content;
+        }
     }
 
 
