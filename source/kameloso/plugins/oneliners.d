@@ -117,6 +117,12 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
             chan(plugin.state, event.channel, "Usage: %s [trigger]".format(verb));
             return;
         }
+        else if (slice !in plugin.onelinersByChannel[event.channel])
+        {
+            chan(plugin.state, event.channel, "No such trigger: %s%s"
+                .format(settings.prefix, slice));
+            return;
+        }
 
         plugin.onelinersByChannel[event.channel].remove(slice);
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
