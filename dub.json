@@ -28,6 +28,7 @@
         "WithCTCPService",
         "WithHelpPlugin",
         "WithNotesPlugin",
+        "WithOnelinersPlugin",
         "WithPersistenceService",
         "WithPipelinePlugin",
         "WithPrinterPlugin",

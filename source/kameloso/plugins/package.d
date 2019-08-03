@@ -75,6 +75,7 @@ version(WithPlugins)
     mixin(tryImportMixin("kameloso.plugins.quotes", "QuotesPlugin"));
     mixin(tryImportMixin("kameloso.plugins.help", "HelpPlugin"));
     mixin(tryImportMixin("kameloso.plugins.hello", "HelloPlugin"));
+    mixin(tryImportMixin("kameloso.plugins.oneliners", "OnelinersPlugin"));
 
 
     version(Posix)
@@ -171,6 +172,7 @@ version(WithPlugins)
         TwitchBotPlugin,
         HelpPlugin,
         HelloPlugin,  // Generally not available
+        OnelinersPlugin,
         EnabledWebPlugins,  // Automatically expands
         EnabledPosixPlugins,  // Ditto
     );
