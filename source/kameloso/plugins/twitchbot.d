@@ -2,7 +2,7 @@
  +  This is an example Twitch streamer bot. It supports basic authentication,
  +  allowing for channel-specific administrators that are not necessarily in the
  +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
- +  has been streaming, custom (non-hardcoded) oneliner commands, and banned phrases.
+ +  has been streaming, and banned phrases.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, etc. There is no protection from spam yet.
@@ -169,7 +169,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 /++
  +  Removes a channel's corresponding `TwitchBotPlugin.Channel` when we leave it.
  +
- +  This resets all that channel's state, except for oneliners and administrators.
+ +  This resets all that channel's state, except for administrators.
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.home)
@@ -811,99 +811,6 @@ do
 }
 
 
-// onCommandModifyOneliner
-/++
- +  Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "oneliner")
-@Description("Adds or removes a oneliner command.", "$command [add|del] [text]")
-void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import kameloso.string : contains, nom;
-    import std.algorithm.searching : count;
-    import std.format : format;
-    import std.typecons : No, Yes;
-
-    if (!event.content.length)
-    {
-        chan(plugin.state, event.channel, "Usage: [add|del] [trigger] [text]");
-        return;
-    }
-
-    string slice = event.content;
-    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
-
-    switch (verb)
-    {
-    case "add":
-        if (!slice.contains!(Yes.decode)(' '))
-        {
-            chan(plugin.state, event.channel, "Usage: %s [trigger] [text]".format(verb));
-            return;
-        }
-
-        immutable trigger = slice.nom!(Yes.decode)(' ');
-
-        plugin.onelinersByChannel[event.channel][trigger] = slice;
-        saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
-
-        chan(plugin.state, event.channel, "Oneliner %s%s added."
-            .format(settings.prefix, trigger));
-        break;
-
-    case "del":
-        if (!slice.length)
-        {
-            chan(plugin.state, event.channel, "Usage: %s [trigger]".format(verb));
-            return;
-        }
-
-        plugin.onelinersByChannel[event.channel].remove(slice);
-        saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
-
-        chan(plugin.state, event.channel, "Oneliner %s%s removed."
-            .format(settings.prefix, slice));
-        break;
-
-    default:
-        chan(plugin.state, event.channel, "Available actions: add, del");
-        break;
-    }
-}
-
-
-// onCommandCommands
-/++
- +  Sends a list of the current oneliners to the channel.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "commands")
-@Description("Lists all available oneliners.")
-void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import std.format : format;
-
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;
-
-    if (channelOneliners && channelOneliners.length)
-    {
-        chan(plugin.state, event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
-            .format(channelOneliners.byKey));
-    }
-    else
-    {
-        chan(plugin.state, event.channel, "There are no commands available right now.");
-    }
-}
-
-
 // onCommandAdminChan
 /++
  +  Adds, lists and removes administrators to/from the current channel.
@@ -1082,41 +989,10 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
 }
 
 
-// onOneliner
-/++
- +  Responds to oneliners.
- +
- +  Responses are stored in `TwitchBotPlugin.onelinersByChannel`.
- +/
-@(Chainable)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import kameloso.string : beginsWith, contains, nom;
-
-    if (!event.content.beginsWith(settings.prefix)) return;
-
-    string slice = event.content;
-    slice.nom(settings.prefix);
-
-    if (const channelOneliners = event.channel in plugin.onelinersByChannel)
-    {
-        // Insert .toLower here if we want case-insensitive oneliners
-        //import std.uni : toLower;
-        if (const response = slice/*.toLower*/ in *channelOneliners)
-        {
-            chan(plugin.state, event.channel, *response);
-        }
-    }
-}
-
-
 // onEndOfMotd
 /++
- +  Populate the oneliners array after we have successfully logged onto the server.
+ +  Populate the administrators and phrases array after we have successfully
+ +  logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -1127,12 +1003,6 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     with (plugin)
     {
-        JSONStorage channelOnelinerJSON;
-        channelOnelinerJSON.load(onelinerFile);
-        //onelinersByChannel.clear();
-        onelinersByChannel.populateFromJSON(channelOnelinerJSON);
-        onelinersByChannel.rehash();
-
         JSONStorage channelAdminsJSON;
         channelAdminsJSON.load(adminsFile);
         //adminsByChannel.clear();
@@ -1152,8 +1022,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 /++
  +  Saves the passed resource to disk, but in `JSON` format.
  +
- +  This is used with the associative arrays for administrators, oneliners and
- +  banned phrases.
+ +  This is used with the associative arrays for administrator and banned phrases.
  +
  +  Example:
  +  ---
@@ -1178,7 +1047,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
 
 // initResources
 /++
- +  Reads and writes the file of oneliners and administrators to disk, ensuring
+ +  Reads and writes the file of administrators and phrases to disk, ensuring
  +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
@@ -1186,17 +1055,6 @@ void initResources(TwitchBotPlugin plugin)
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
     import std.path : baseName;
-
-    JSONStorage onelinerJSON;
-
-    try
-    {
-        onelinerJSON.load(plugin.onelinerFile);
-    }
-    catch (JSONException e)
-    {
-        throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
-    }
 
     JSONStorage adminsJSON;
 
@@ -1222,7 +1080,6 @@ void initResources(TwitchBotPlugin plugin)
 
     // Let other Exceptions pass.
 
-    onelinerJSON.save(plugin.onelinerFile);
     adminsJSON.save(plugin.adminsFile);
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
 }
@@ -1262,12 +1119,6 @@ private:
 
     /// Array of active bot channels' state.
     Channel[string] activeChannels;
-
-    /// Associative array of oneliners, keyed by trigger word keyed by channel name.
-    string[string][string] onelinersByChannel;
-
-    /// Filename of file with oneliners.
-    @Resource string onelinerFile = "twitchliners.json";
 
     /// Associative array of administrators; nickname array keyed by channel.
     string[][string] adminsByChannel;
