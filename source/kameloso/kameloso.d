@@ -1446,6 +1446,7 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
     logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
         infotint, logtint, settings.configFile);
     logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+    logger.trace("---");
 }
 
 
