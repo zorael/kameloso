@@ -1,5 +1,9 @@
 /++
- +  FIXME
+ +  The Oneliners plugin serves to provide custom commands, like !vods, !youtube,
+ +  and any other static-reply !command (provided a prefix of "!").
+ +
+ +  More advanced commands that do more than just repeat the preset line of text
+ +  will have to be written separately.
  +/
 module kameloso.plugins.oneliners;
 
