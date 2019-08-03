@@ -6,8 +6,6 @@
  +  and private query messages for things that look like links.
  +
  +  It requires version `Web` for obvious reasons.
- +
- +  It is optional.
  +/
 module kameloso.plugins.webtitles;
 

@@ -7,8 +7,6 @@
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
- +
- +  It is very optional.
  +/
 module kameloso.plugins.quotes;
 

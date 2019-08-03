@@ -19,8 +19,6 @@
  +  $ echo "foo bar baz" | sed "s#bar#qux#g"
  +  $ echo "foo bar baz" | sed "s|bar|qux|g"
  +  ---
- +
- +  It is very optional.
  +/
 module kameloso.plugins.sedreplace;
 

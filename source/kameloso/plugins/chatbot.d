@@ -5,8 +5,6 @@
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
- +
- +  It is very optional.
  +/
 module kameloso.plugins.chatbot;
 

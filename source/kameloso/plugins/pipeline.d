@@ -8,8 +8,6 @@
  +
  +  This requires version `Posix`, which is true for UNIX-like systems (like
  +  Linux and OSX).
- +
- +  It is very optional.
  +/
 module kameloso.plugins.pipeline;
 
