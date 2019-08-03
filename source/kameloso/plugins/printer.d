@@ -118,6 +118,28 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     IRCEvent mutEvent = event; // need a mutable copy
 
+    /++
+     +  Update the squelchstamp and return whether or not the current event
+     +  should be squelched.
+     +/
+    static bool updateSquelchstamp(PrinterPlugin plugin)
+    {
+        import std.datetime.systime : Clock;
+
+        if (plugin.squelchstamp == 0L) return false;
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        if ((now - plugin.squelchstamp) <= plugin.squelchTimeout)
+        {
+            plugin.squelchstamp = now;
+            return true;
+        }
+
+        plugin.squelchstamp = 0L;
+        return false;
+    }
+
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -170,44 +192,25 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_WHOWASUSER:
     case RPL_WHOWAS_TIME:
     case RPL_ENDOFWHOWAS:
+    case RPL_WHOISSERVER:
     case RPL_CHARSET:
         if (!plugin.printerSettings.filterWhois) goto default;
         break;
 
     case RPL_NAMREPLY:
+    case RPL_ENDOFNAMES:
     case RPL_YOURHOST:
     case RPL_ISUPPORT:
-    case RPL_TOPICWHOTIME:
-    //case RPL_WHOISSECURE:
     case RPL_LUSERCLIENT:
     case RPL_LUSEROP:
     case RPL_LUSERCHANNELS:
     case RPL_LUSERME:
     case RPL_LUSERUNKNOWN:
-    case RPL_WHOISSERVER:
-    //case RPL_ENDOFWHOIS:
-    case RPL_ENDOFNAMES:
     case RPL_GLOBALUSERS:
     case RPL_LOCALUSERS:
     case RPL_STATSCONN:
-    case RPL_CREATED:
-    case RPL_CREATIONTIME:
     case RPL_MYINFO:
-    case RPL_ENDOFWHO:
-    case RPL_WHOREPLY:
-    case RPL_CHANNELMODEIS:
-    case RPL_BANLIST:
-    case RPL_ENDOFBANLIST:
-    case RPL_QUIETLIST:
-    case RPL_ENDOFQUIETLIST:
-    case RPL_INVITELIST:
-    case RPL_ENDOFINVITELIST:
-    case RPL_EXCEPTLIST:
-    case RPL_ENDOFEXCEPTLIST:
-    case SPAMFILTERLIST:
-    case ENDOFSPAMFILTERLIST:
     case CAP:
-    case ERR_CHANOPRIVSNEEDED:
     case GLOBALUSERSTATE:
     //case USERSTATE:
     case ROOMSTATE:
@@ -246,14 +249,40 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             goto default;
         }
 
+    case RPL_WHOREPLY:
+    case RPL_ENDOFWHO:
+    case RPL_TOPICWHOTIME:
+    case RPL_CHANNELMODEIS:
+    case RPL_CREATED:
+    case RPL_CREATIONTIME:
+    case RPL_BANLIST:
+    case RPL_QUIETLIST:
+    case RPL_INVITELIST:
+    case RPL_EXCEPTLIST:
+    case SPAMFILTERLIST:
+    case RPL_ENDOFBANLIST:
+    case RPL_ENDOFQUIETLIST:
+    case RPL_ENDOFINVITELIST:
+    case RPL_ENDOFEXCEPTLIST:
+    case ENDOFSPAMFILTERLIST:
+    case ERR_CHANOPRIVSNEEDED:
+        immutable shouldSquelch = updateSquelchstamp(plugin);
+        if (shouldSquelch) return;
+        else
+        {
+            // Obey normal filterMost rules for unsquelched
+            goto case RPL_NAMREPLY;
+        }
+
     case RPL_TOPIC:
     case RPL_NOTOPIC:
-        if (plugin.squelchTopic)
+        immutable shouldSquelch = updateSquelchstamp(plugin);
+        if (shouldSquelch) return;
+        else
         {
-            plugin.squelchTopic = false;
-            if (plugin.printerSettings.filterMost) return;
+            // Always display unsquelched
+            goto default;
         }
-        goto default;
 
     case USERSTATE: // Insanely spammy, once every sent message
     case PING:
@@ -2401,17 +2430,13 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
     immutable verb = message.payload;
 
-    switch (verb)
+    if (verb == "squelch")
     {
-    case "squelch topic":
-        plugin.squelchTopic = true;
-        break;
-
-    case "squelch chanoprivsneeded":
-        plugin.squelchChanPrivsNeeded = true;
-        break;
-
-    default:
+        import std.datetime.systime : Clock;
+        plugin.squelchstamp = Clock.currTime.toUnixTime;
+    }
+    else
+    {
         assert(0, "Printer caught unknown bus message verb: " ~ verb);
     }
 }
@@ -2437,17 +2462,21 @@ private:
     /// All Printer plugin options gathered.
     @Settings PrinterSettings printerSettings;
 
+    /// How many seconds before a request to squelch list events times out.
+    enum squelchTimeout = 10;  // seconds
+
     /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
     /// Whether or not we have printed daemon-network information.
     bool printedISUPPORT;
 
-    /// Whether or not we should omit the next `RPL_TOPIC` or `RPL_NOTOPIC` event.
-    bool squelchTopic;
-
-    /// Whether or not we should omit the following `ERR_CHANOPRIVSNEEDED`.
-    bool squelchChanPrivsNeeded;
+    /++
+     +  UNIX timestamp of when to expect squelchable list events.
+     +
+     +  Note: repeated list events refresh the timer.
+     +/
+    long squelchstamp;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;

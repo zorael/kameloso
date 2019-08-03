@@ -90,21 +90,23 @@ void onPing(ChanQueriesService service)
 
             if (!(service.channelStates[channelName] & ChannelState.topicKnown))
             {
-                raw(service.state, "TOPIC " ~ channelName, true);
-
                 version(WithPrinterPlugin)
                 {
-                    // The Printer plugin will display the topic response, to
-                    // the user for seemingly no reason.
-                    // Tell it to ignore the next such event
                     service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage("squelch topic"));
+                        "printer", busMessage("squelch"));
                 }
 
+                raw(service.state, "TOPIC " ~ channelName, true);
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
                 service.delayFiber(service.secondsBetween);
                 Fiber.yield();  // delay
+            }
+
+            version(WithPrinterPlugin)
+            {
+                service.state.mainThread.send(ThreadMessage.BusMessage(),
+                    "printer", busMessage("squelch"));
             }
 
             raw(service.state, "WHO " ~ channelName, true);
@@ -112,6 +114,12 @@ void onPing(ChanQueriesService service)
 
             service.delayFiber(service.secondsBetween);
             Fiber.yield();  // delay
+
+            version(WithPrinterPlugin)
+            {
+                service.state.mainThread.send(ThreadMessage.BusMessage(),
+                    "printer", busMessage("squelch"));
+            }
 
             raw(service.state, "MODE " ~ channelName, true);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
@@ -124,9 +132,6 @@ void onPing(ChanQueriesService service)
                 service.delayFiber(service.secondsBetween * 2);
                 Fiber.yield();  // delay
 
-
-                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
-
                 version(WithPrinterPlugin)
                 {
                     // It's very common to get ERR_CHANOPRIVSNEEDED when querying
@@ -134,8 +139,10 @@ void onPing(ChanQueriesService service)
                     // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                     // Ask the Printer to squelch those messages too.
                     service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage("squelch chanoprivsneeded"));
+                        "printer", busMessage("squelch"));
                 }
+
+                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
             }
 
             // Overwrite state with `ChannelState.queried`;
