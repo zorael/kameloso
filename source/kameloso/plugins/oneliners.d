@@ -257,7 +257,7 @@ public:
 final class OnelinersPlugin : IRCPlugin
 {
     /// All Oneliners plugin settings.
-    OnelinersPlugin onelinersSettings;
+    OnelinersSettings onelinersSettings;
 
     /// Associative array of oneliners; oneliners array keyed by channel.
     string[string][string] onelinersByChannel;
