@@ -2924,6 +2924,10 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  list information about users and what channels they're in.
  +
  +  Channel awareness needs user awareness, or things won't work.
+ +
+ +  Note: It's possible to get the topic, WHO, NAMES, modes, creation time etc of
+ +  channels we're not in, so only update the channel entry if there is one
+ +  already (and avoid range errors).
  +/
 version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
@@ -3108,8 +3112,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // It's possible to get the topic of channels we're not in, so only update
-        // the channel entry if there is one already (and avoid a range error)
         if (auto channel = event.channel in plugin.state.channels)
         {
             channel.topic = event.content;
@@ -3127,8 +3129,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.conv : to;
-        plugin.state.channels[event.channel].created = event.aux.to!long;
+        if (auto channel = event.channel in plugin.state.channels)
+        {
+            import std.conv : to;
+            channel.created = event.aux.to!long;
+        }
     }
 
 
@@ -3145,8 +3150,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc.common : setMode;
-        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.client.server);
+        if (auto channel = event.channel in plugin.state.channels)
+        {
+            import kameloso.irc.common : setMode;
+            (*channel).setMode(event.aux, event.content, plugin.state.client.server);
+        }
     }
 
 
@@ -3166,6 +3174,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         import std.string : representation;
 
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
         // User awareness bits add the IRCUser
         if (event.aux.length)
         {
@@ -3180,15 +3191,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
-                    plugin.state.channels[event.channel].setMode(modestring,
-                        event.target.nickname, plugin.state.client.server);
+                    (*channel).setMode(modestring, event.target.nickname, plugin.state.client.server);
                 }
             }
         }
 
         if (event.target.nickname == plugin.state.client.nickname) return;
-
-        auto channel = event.channel in plugin.state.channels;
 
         if (event.target.nickname in channel.users)
         {
@@ -3219,6 +3227,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         import std.algorithm.iteration : splitter;
 
         if (!event.content.length) return;
+
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
 
         auto names = event.content.splitter(" ");
 
@@ -3255,8 +3266,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     import kameloso.irc.common : setMode;
                     import std.conv : to;
                     immutable modestring = (*modechar).to!string;
-                    plugin.state.channels[event.channel]
-                        .setMode(modestring, nickname, plugin.state.client.server);
+                    (*channel).setMode(modestring, nickname, plugin.state.client.server);
                 }
                 else
                 {
@@ -3265,8 +3275,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             }
 
             if (nickname == plugin.state.client.nickname) continue;
-
-            auto channel = event.channel in plugin.state.channels;
 
             if (nickname in channel.users)
             {
@@ -3304,6 +3312,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
         // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
 
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
         with (IRCEvent.Type)
         {
             // Map known list types to their modechars
@@ -3316,8 +3327,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 RPL_QUIETLIST : 'q',
             ];
 
-            plugin.state.channels[event.channel]
-                .setMode((cast(char)modecharsByType[event.type]).to!string,
+            (*channel).setMode((cast(char)modecharsByType[event.type]).to!string,
                 event.content, plugin.state.client.server);
         }
     }
@@ -3335,8 +3345,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         import kameloso.irc.common : setMode;
 
-        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.client.server);
+        if (auto channel = event.channel in plugin.state.channels)
+        {
+            // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+            (*channel).setMode(event.aux, event.content, plugin.state.client.server);
+        }
     }
 }
 
