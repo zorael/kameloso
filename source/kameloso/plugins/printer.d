@@ -2433,6 +2433,9 @@ private:
     /// Whether or not we should omit the next `RPL_TOPIC` or `RPL_NOTOPIC` event.
     bool squelchTopic;
 
+    /// Whether or not we should omit the following `ERR_CHANOPRIVSNEEDED`.
+    bool squelchChanPrivsNeeded;
+
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
 
