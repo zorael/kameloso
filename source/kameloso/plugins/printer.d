@@ -2399,8 +2399,21 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+    immutable verb = message.payload;
 
-    plugin.squelchTopic = (message.payload == "squelch topic");
+    switch (verb)
+    {
+    case "squelch topic":
+        plugin.squelchTopic = true;
+        break;
+
+    case "squelch chanoprivsneeded":
+        plugin.squelchChanPrivsNeeded = true;
+        break;
+
+    default:
+        assert(0, "Printer caught unknown bus message verb: " ~ verb);
+    }
 }
 
 
