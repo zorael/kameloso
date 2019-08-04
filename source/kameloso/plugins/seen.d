@@ -102,11 +102,12 @@ public:
  +     the server by way of concurrency messages, but it is usually not something
  +     you will have to deal with directly.
  +
- +  * `users` is an associative array keyed with users' nicknames. The value to
- +     that key is an `kameloso.irc.defs.IRCUser` representing that user in terms
- +     of nickname, address, ident, and services account name. This is a way to
- +     keep track of users by more than merely their name. It is however not
- +     saved at the end of the program; it is merely state and transient.
+ +  * `kameloso.plugins.common.IRCPluginState.users` is an associative array
+ +     keyed with users' nicknames. The value to that key is an
+ +     `kameloso.irc.defs.IRCUser` representing that user in terms of nickname,
+ +     address, ident, and services account name. This is a way to keep track of
+ +     users by more than merely their name. It is however not saved at the end
+ +     of the program; it is merely state and transient.
  +
  +  * `kameloso.plugins.common.IRCPluginState.channels` is another associative
  +     array, this one with all the known channels keyed by their names. This
