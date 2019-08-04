@@ -187,7 +187,7 @@ import std.getopt : GetoptResult;
  +  ---
  +
  +  Params:
- +      results = Results from a `getopt` call, usually with `.helpWanted` true.
+ +      results = Results from a `std.getopt.getopt` call, usually with `.helpWanted` true.
  +/
 void printHelp(GetoptResult results) @system
 {

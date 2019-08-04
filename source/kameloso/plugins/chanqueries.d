@@ -43,8 +43,8 @@ enum ChannelState : ubyte
 /++
  +  Queries channels for information about them and their users.
  +
- +  Checks an internal list of channels once every `PING`, and if one we inhabit
- +  hasn't been queried, queries it.
+ +  Checks an internal list of channels once every `kameloso.irc.defs.IRCEvent.Type.PING`,
+ +  and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
 void onPing(ChanQueriesService service)

@@ -367,9 +367,9 @@ void setRequestHeaders(ref Request req)
  +      url = URL string to look up.
  +
  +  Returns:
- +      A finished `TitleLookup`.
+ +      A finished `TitleLookupResults`.
  +
- +  Throws: `Exception` if URL could not be fetched, or if no title could be
+ +  Throws: `object.Exception` if URL could not be fetched, or if no title could be
  +      divined from it.
  +/
 TitleLookupResults lookupTitle(const string url)
@@ -651,7 +651,7 @@ unittest
  +  Takes a direct imgur link (one that points to an image) and rewrites it to
  +  instead point to the image's page.
  +
- +  Images (jpg, png, ...) can naturally not have titles, but the normal pages can.
+ +  Images (`jpg`, `png`, ...) can naturally not have titles, but the normal pages can.
  +
  +  Params:
  +      url = String link to rewrite.
@@ -694,7 +694,7 @@ unittest
 }
 
 
-/// getYouTubeInfo
+// getYouTubeInfo
 /++
  +  Fetches the JSON description of a YouTube video link, allowing us to report
  +  it the page's title without having to actually fetch the video page.
@@ -710,11 +710,11 @@ unittest
  +      url = A YouTube video link string.
  +
  +  Returns:
- +      A `JSONValue` with fields describing the looked-up video.
+ +      A `std.json.JSONValue` with fields describing the looked-up video.
  +
  +  Throws:
- +      `Exception` if the YouTube ID was invalid and could not be queried.
- +      `JSONException` if the JSON response could not be parsed.
+ +      `core.Exception` if the YouTube ID was invalid and could not be queried.
+ +      `std.json.JSONException` if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
 {
@@ -788,7 +788,7 @@ unittest
  +  Given an URL, looks it up on Reddit to see if it has been posted there.
  +
  +  Params:
- +      state = The current plugin instance's `kameloso.plugin.common.IRCPluginState`,
+ +      state = The current plugin instance's `kameloso.plugins.common.IRCPluginState`,
  +          for use to send text to the local terminal.
  +      url = URL to query Reddit for.
  +      modified = Whether the URL has been modified to add an extra slash at

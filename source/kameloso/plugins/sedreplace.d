@@ -33,7 +33,7 @@ import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
 
-/// Lifetime of a `Line` in `prevlines`, in seconds.
+/// Lifetime of a `Line` in `SedReplacePlugin.prevlines`, in seconds.
 enum replaceTimeoutSeconds = 3600;
 
 

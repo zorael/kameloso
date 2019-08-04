@@ -1031,11 +1031,11 @@ unittest
 
 // setMode
 /++
- +  Sets a new or removes a `Mode`.
+ +  Sets a new or removes a `kameloso.irc.defs.Mode`.
  +
- +  `Mode`s that are merely a character in `modechars` are simply removed if
+ +  `kameloso.irc.defs.Mode`s that are merely a character in `modechars` are simply removed if
  +   the *sign* of the mode change is negative, whereas a more elaborate
- +  `Mode` in the `modes` array are only replaced or removed if they match a
+ +  `kameloso.irc.defs.Mode` in the `modes` array are only replaced or removed if they match a
  +   comparison test.
  +
  +  Several modes can be specified at once, including modes that take a
@@ -1526,7 +1526,7 @@ unittest
 /++
  +  IRC Parsing Exception, thrown when there were errors parsing.
  +
- +  It is a normal `Exception` but with an attached `kameloso.irc.defs.IRCEvent`.
+ +  It is a normal `object.Exception` but with an attached `kameloso.irc.defs.IRCEvent`.
  +/
 final class IRCParseException : Exception
 {

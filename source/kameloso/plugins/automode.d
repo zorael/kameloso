@@ -456,8 +456,8 @@ void onCommandPrintModes(AutomodePlugin plugin)
 /++
  +  Triggers a WHOIS of the user invoking it with bot commands.
  +
- +  The `PrivilegeLevel.anyone` annotation is is to force the bot to evaluate
- +  whether an automode should be applied or not.
+ +  The `kameloso.plugins.common.PrivilegeLevel.anyone` annotation is is to
+ +  force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)

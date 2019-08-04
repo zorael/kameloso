@@ -40,7 +40,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
     import kameloso.constants : KamelosoInfo;
     import std.format : format;
 
-    /// https://modern.ircdocs.horse/ctcp.html
+    // https://modern.ircdocs.horse/ctcp.html
 
     string line;
 
@@ -298,8 +298,8 @@ public:
  +  the client itself and its capabilities.
  +
  +  Information about these were gathered from the following sites:
- +      https://modern.ircdocs.horse/ctcp.html
- +      http://www.irchelp.org/protocol/ctcpspec.html
+ +      - https://modern.ircdocs.horse/ctcp.html
+ +      - http://www.irchelp.org/protocol/ctcpspec.html
  +/
 final class CTCPService : IRCPlugin
 {

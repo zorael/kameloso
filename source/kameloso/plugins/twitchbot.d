@@ -1020,7 +1020,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
 // saveResourceToDisk
 /++
- +  Saves the passed resource to disk, but in `JSON` format.
+ +  Saves the passed resource to disk, but in JSON format.
  +
  +  This is used with the associative arrays for administrator and banned phrases.
  +
@@ -1033,7 +1033,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
  +  ---
  +
  +  Params:
- +      resource = The `JSON`-convertible resource to save.
+ +      resource = The JSON-convertible resource to save.
  +      filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(Resource)(const Resource resource, const string filename)
@@ -1142,7 +1142,7 @@ private:
      +
      +  It is also possible to leverage the whitelist for this, but it would
      +  block much of the bot from being used by those who fall under the
-     +  `anyone` category.
+     +  `kameloso.plugins.common.PrivilegeLevel.anyone` category.
      +
      +  Params:
      +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.

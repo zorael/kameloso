@@ -8,7 +8,7 @@ import std.range.primitives : isOutputRange;
 
 // JSONStorage
 /++
- +  A wrapped `JSONValue` with helper functions.
+ +  A wrapped `std.json.JSONValue` with helper functions.
  +
  +  This deduplicates some code currently present in more than one plugin.
  +
@@ -28,7 +28,7 @@ struct JSONStorage
 {
     import std.json : JSONValue, parseJSON;
 
-    /// The underlying `JSONValue` storage of this `JSONStorage`.
+    /// The underlying `std.json.JSONValue` storage of this `JSONStorage`.
     JSONValue storage;
 
     alias storage this;
@@ -44,7 +44,7 @@ struct JSONStorage
 
     // reset
     /++
-     +  Initialises and clears the `JSONValue`, preparing it for object storage.
+     +  Initialises and clears the `std.json.JSONValue`, preparing it for object storage.
      +/
     void reset() @safe
     {
@@ -56,7 +56,7 @@ struct JSONStorage
      +  Loads JSON from disk.
      +
      +  In the case where the file doesn't exist or is otherwise invalid, then
-     +  `JSONValue` is initialised to null (by way of `reset`).
+     +  `std.json.JSONValue` is initialised to null (by way of `reset`).
      +
      +  Params:
      +      filename = Filename of file to read from.
@@ -95,7 +95,7 @@ struct JSONStorage
     /++
      +  Saves the JSON storage to disk.
      +
-     +  Non-object types are saved as their `JSONValue.toPrettyString` strings
+     +  Non-object types are saved as their `std.json.JSONValue.toPrettyString` strings
      +  whereas object-types are formatted as specified by the passed
      +  `KeyOrderStrategy` argument.
      +
@@ -429,7 +429,7 @@ import std.typecons : Flag, No, Yes;
  +      json = Source `std.json.JSONValue` to sync the contents with.
  +
  +  Throws:
- +      `Exception` if the passed `std.json.JSONValue` had unexpected types.
+ +      `object.Exception` if the passed `std.json.JSONValue` had unexpected types.
  +/
 void populateFromJSON(Flag!"lowercaseValues" lowercaseValues = No.lowercaseValues,
     Flag!"lowercaseKeys" lowercaseKeys = No.lowercaseKeys, T)

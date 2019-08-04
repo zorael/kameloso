@@ -18,7 +18,7 @@ version = CtTints;
 
 // KamelosoLogger
 /++
- +  Modified `Logger` to print timestamped and coloured logging messages.
+ +  Modified `std.experimental.logger.Logger` to print timestamped and coloured logging messages.
  +
  +  It is thread-local so instantiate more if you're threading.
  +
@@ -57,7 +57,8 @@ final class KamelosoLogger : Logger
 
     // tint
     /++
-     +  Returns the corresponding `TerminalForeground` for the supplied `LogLevel`,
+     +  Returns the corresponding `kameloso.terminal.TerminalForeground` for the
+     +  supplied `std.experimental.logger.LogLevel`,
      +  taking into account whether the terminal is said to be bright or not.
      +
      +  This is merely a convenient wrapping for `logcoloursBright` and
@@ -70,12 +71,12 @@ final class KamelosoLogger : Logger
      +  ---
      +
      +  Params:
-     +      level = The `LogLevel` of the colour we want to scry.
+     +      level = The `std.experimental.logger.LogLevel` of the colour we want to scry.
      +      bright = Whether the colour should be for a bright terminal
      +          background or a dark one.
      +
      +  Returns:
-     +      A `TerminalForeground` of the right colour. Use with
+     +      A `kameloso.terminal.TerminalForeground` of the right colour. Use with
      +      `kameloso.terminal.colour` to get a string.
      +/
     version(Colours)
@@ -113,7 +114,7 @@ final class KamelosoLogger : Logger
      +  making easy aliases for the log level.
      +
      +  Params:
-     +      level = Compile-time `LogLevel`.
+     +      level = Compile-time `std.experimental.logger.LogLevel`.
      +
      +  Returns:
      +      A tint string.

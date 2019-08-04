@@ -828,7 +828,7 @@ unittest
  +      bright = Whether or not the colour should be appropriate for a bright terminal background.
  +
  +  Returns:
- +      A `TerminalColour` based on the passed string.
+ +      A `TerminalForeground` based on the passed string.
  +/
 version(Colours)
 TerminalForeground colourByHash(const string word, const Flag!"bright" bright = No.bright) pure @nogc nothrow

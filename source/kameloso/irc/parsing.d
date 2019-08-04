@@ -8,8 +8,10 @@
  +  common parsing routine can't be used; there are simply too many exceptions.
  +  The beginning `:sender.address` is *almost* always the same form, but only
  +  almost. It's guaranteed to be followed by the type however, which come either in
- +  alphanumeric name (e.g. `PRIVMSG`, `INVITE`, `MODE`, ...), or in numeric form
- +  of 001 to 999 inclusive.
+ +  alphanumeric name (e.g. `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`,
+ +  `kameloso.irc.defs.IRCEvent.Type.INVITE`,
+ +  `kameloso.irc.defs.IRCEvent.Type.MODE`, ...), or in numeric form of 001 to
+ +  999 inclusive.
  +
  +  What we can do then is to parse this type, and interpret the arguments following
  +  as befits it.
@@ -205,8 +207,9 @@ unittest
 
 // parseBasic
 /++
- +  Parses the most basic of IRC events; `PING`, `ERROR`, `PONG`, `NOTICE`
- +  (plus `NOTICE AUTH`), and `AUTHENTICATE`.
+ +  Parses the most basic of IRC events; `kameloso.irc.defs.IRCEvent.Type.PING`,
+ +  `kameloso.irc.defs.IRCEvent.Type.ERROR`, `kameloso.irc.defs.IRCEvent.Type.PONG`,
+ +  `kameloso.irc.defs.IRCEvent.Type.NOTICE` (plus `NOTICE AUTH`), and `AUTHENTICATE`.
  +
  +  They syntactically differ from other events in that they are not prefixed
  +  by their sender.
@@ -456,8 +459,9 @@ unittest
  +  `kameloso.irc.defs.IRCEvent` struct.
  +
  +  This function only focuses on the *typestring*; the part that tells what
- +  kind of event happened, like `PRIVMSG` or `MODE` or `NICK` or `KICK`, etc;
- +  in string format.
+ +  kind of event happened, like `kameloso.irc.defs.IRCEvent.Type.PRIVMSG` or
+ +  `kameloso.irc.defs.IRCEvent.Type.MODE` or `kameloso.irc.defs.IRCEvent.Type.NICK`
+ +  or `kameloso.irc.defs.IRCEvent.Type.KICK`, etc; in string format.
  +
  +  The `kameloso.irc.defs.IRCEvent` is not finished at the end of this function.
  +
@@ -1568,7 +1572,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 
 // onNotice
 /++
- +  Handle `NOTICE` events.
+ +  Handle `kameloso.irc.defs.IRCEvent.Type.NOTICE` events.
  +
  +  These are all(?) sent by the server and/or services. As such they often
  +  convey important `special` things, so parse those.
@@ -1686,7 +1690,8 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
 // onPRIVMSG
 /++
- +  Handle `QUERY` and `CHAN` messages (`PRIVMSG`).
+ +  Handle `kameloso.irc.defs.IRCEvent.Type.QUERY` and `kameloso.irc.defs.IRCEvent.Type.CHAN`
+ +  messages (`kameloso.irc.defs.IRCEvent.Type.PRIVMSG`).
  +
  +  Whether or not it is a private query message or a channel message is only obvious
  +  by looking at the target field of it; if it starts with a `#`, it is a
@@ -1816,7 +1821,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
 // onMode
 /++
- +  Handles `MODE` changes.
+ +  Handle `kameloso.irc.defs.IRCEvent.Type.MODE` changes.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.

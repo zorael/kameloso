@@ -70,7 +70,7 @@ struct AdminSettings
  +  Prints all incoming events to the local terminal, in forms depending on
  +  which flags have been set with bot commands.
  +
- +  If `AdminPlugin.printRaw` is set by way of invoking `onCommandprintRaw`,
+ +  If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
  +  prints all incoming server strings.
  +
  +  If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
@@ -264,7 +264,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandQuit
 /++
- +  Sends a `QUIT` event to the server.
+ +  Sends a `kameloso.irc.defs.IRCEvent.Type.QUIT` event to the server.
  +
  +  If any extra text is following the "`quit`" prefix, it uses that as the quit
  +  reason, otherwise it falls back to the default as specified in the configuration file.
@@ -470,7 +470,9 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
  +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
+ +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
+ +  `kameloso.plugins.common.PrivilegeLevel.admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -776,7 +778,8 @@ void delist(AdminPlugin plugin, const string account, const string list,
  +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  This is on a `whitelist` level, as opposed to `admin`.
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
+ +  opposed to `kameloso.plugins.common.PrivilegeLevel.admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -795,9 +798,11 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 // onCommandBlacklist
 /++
  +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
- +  even on actions annotated `PrivilegeLevel.anyone`.
+ +  even on actions annotated `kameloso.plugins.common.PrivilegeLevel.anyone`.
  +
- +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
+ +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
+ +  `kameloso.plugins.common.PrivilegeLevel.admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -817,7 +822,8 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Removes a nickname from the list of users who may not trigger the bot whatsoever.
  +
- +  This is on a `whitelist` level, as opposed to `admin`.
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
+ +  opposed to `kameloso.plugins.common.PrivilegeLevel.admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -1163,7 +1169,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandAuth
 /++
- +  Asks the `ConnectService` to (re-)authenticate to services.
+ +  Asks the `kamloso.plugins.connect.ConnectService` to (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEvent.Type.CHAN)
@@ -1441,7 +1447,7 @@ public:
 
 // AdminPlugin
 /++
- +  The `AdminPlugin` is a plugin aimed for adḿinistrative use and debugging.
+ +  The Admin plugin is a plugin aimed for adḿinistrative use and debugging.
  +
  +  It was historically part of the `kameloso.plugins.chatbot.ChatbotPlugin`.
  +/

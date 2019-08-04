@@ -3,8 +3,7 @@
  +  they are parsed but before they are sent to the plugins for handling, and
  +  deals with Twitch-specifics. Those include extracting the colour someone's
  +  name should be printed in, their alias/"display name" (generally their
- +  nickname capitalised), converting the event to some event types unique to
- +  Twitch, etc.
+ +  nickname cased), converting the event to some event types unique to Twitch, etc.
  +
  +  It has no bot commands and no event handlers; it only post-processes events.
  +
@@ -33,7 +32,8 @@ version(Colours)
 // postprocess
 /++
  +  Handle Twitch specifics, modifying the `kameloso.irc.defs.IRCEvent` to add
- +  things like `colour` and differentiate between temporary and permanent bans.
+ +  things like `kameloso.irc.defs.IRCEvent.colour` and differentiate between
+ +  temporary and permanent bans.
  +/
 void postprocess(TwitchSupportService service, ref IRCEvent event)
 {

@@ -47,7 +47,7 @@ version(Posix)
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server `PONG` event.
+    /// Concurrency message type asking for a to-server `kameloso.irc.defs.IRCEvent.Type.PONG` event.
     struct Pong {}
 
     /// Concurrency message type asking to verbosely send a line to the server.

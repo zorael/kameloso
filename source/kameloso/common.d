@@ -36,11 +36,12 @@ shared static this()
  +  coloured logging.
  +
  +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
- +  and `fatal`. It is not global, so instantiate a thread-local `Logger` if threading.
+ +  and `fatal`. It is not global, so instantiate a thread-local
+ +  `std.experimental.logger.Logger` if threading.
  +
  +  Having this here is unfortunate; ideally plugins should not use variables
  +  from other modules, but unsure of any way to fix this other than to have
- +  each plugin keep their own `Logger`.
+ +  each plugin keep their own `std.experimental.logger.Logger`.
  +/
 Logger logger;
 
@@ -505,7 +506,7 @@ void printVersionInfo(TerminalForeground colourCode) @system
  +  Prints out the bot banner with the version number and GitHub URL, optionally
  +  with passed colouring in string format.
  +
- +  Overload that does not rely on `TerminalForeground` being available, yet
+ +  Overload that does not rely on `kameloso.terminal.TerminalForeground` being available, yet
  +  takes the necessary parameters to allow the other overload to reuse this one.
  +
  +  Example:
@@ -1237,7 +1238,7 @@ unittest
 /++
  +  Exception, to be thrown when an executed command returns an error value.
  +
- +  It is a normal `Exception` but with an attached command and return value.
+ +  It is a normal `object.Exception` but with an attached command and return value.
  +/
 final class ReturnValueException : Exception
 {
@@ -1278,7 +1279,7 @@ final class ReturnValueException : Exception
  +  Exception, to be thrown when attempting to create a file or directory and
  +  finding that one already exists with the same name.
  +
- +  It is a normal `Exception` but with an attached filename string.
+ +  It is a normal `object.Exception` but with an attached filename string.
  +/
 final class FileExistsException : Exception
 {
@@ -1306,7 +1307,7 @@ final class FileExistsException : Exception
  +  Exception, to be thrown when attempting to access a file or directory and
  +  finding that something with the that name exists, but is of an unexpected type.
  +
- +  It is a normal `Exception` but with an embedded filename string, and an uint
+ +  It is a normal `object.Exception` but with an embedded filename string, and an uint
  +  representing the existing file's type (file, directory, symlink, ...).
  +/
 final class FileTypeMismatchException : Exception

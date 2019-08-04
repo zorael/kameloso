@@ -52,7 +52,7 @@ import std.typecons : Flag, No, Yes;
  +      The string `line` from the start up to the separator token. The original
  +      variable is advanced to after the token.
  +
- +  Throws: `Exception` if the separator could not be found in the string.
+ +  Throws: `object.Exception` if the separator could not be found in the string.
  +/
 pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator,
@@ -386,7 +386,7 @@ unittest
  +      plural = The noun in plural form.
  +
  +  Returns:
- +      The singular string if num is 1 or -1, otherwise the plural string.
+ +      The singular string if num is `1` or `-1`, otherwise the plural string.
  +/
 pragma(inline)
 T plurality(Num, T)(const Num num, const T singular, const T plural) pure nothrow @nogc
@@ -1663,7 +1663,7 @@ unittest
  +      An encoded Base64 string.
  +
  +  See_Also:
- +      https://en.wikipedia.org/wiki/Base64
+ +      - https://en.wikipedia.org/wiki/Base64
  +/
 string encode64(const string line) pure nothrow
 {
@@ -1703,7 +1703,7 @@ unittest
  +      A decoded normal string.
  +
  +  See_Also:
- +      https://en.wikipedia.org/wiki/Base64
+ +      - https://en.wikipedia.org/wiki/Base64
  +/
 string decode64(const string encoded) pure
 {

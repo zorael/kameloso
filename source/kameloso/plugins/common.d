@@ -84,8 +84,8 @@ interface IRCPlugin
     /// Executed during setup to let plugins read settings from disk.
     string[][string] deserialiseConfigFrom(const string);
 
-    /// Executed when gathering things to put in the configuration file.
     import std.array : Appender;
+    /// Executed when gathering things to put in the configuration file.
     void serialiseConfigInto(ref Appender!string) const;
 
     /++
@@ -130,8 +130,8 @@ interface IRCPlugin
     /// Reloads the plugin, where such is applicable.
     void reload() @system;
 
-    /// Executed when a bus message arrives from another plugin.
     import kameloso.thread : Sendable;
+    /// Executed when a bus message arrives from another plugin.
     void onBusMessage(const string, shared Sendable content) @system;
 
     /// Returns whether or not the plugin is enabled in its configuration section.
@@ -576,7 +576,7 @@ version(unittest)
 /++
  +  Exception thrown when an IRC plugin failed to initialise itself or its resources.
  +
- +  A normal `Exception`, which only differs in the sense that we can deduce
+ +  A normal `object.Exception`, which only differs in the sense that we can deduce
  +  what went wrong by its type.
  +/
 final class IRCPluginInitialisationException : Exception
@@ -593,7 +593,7 @@ final class IRCPluginInitialisationException : Exception
 /++
  +  Exception thrown when an IRC plugin failed to have its settings set.
  +
- +  A normal `Exception`, which only differs in the sense that we can deduce
+ +  A normal `object.Exception`, which only differs in the sense that we can deduce
  +  what went wrong by its type.
  +/
 final class IRCPluginSettingsException : Exception
@@ -632,7 +632,11 @@ enum PrefixPolicy
 {
     direct,   /// Message will be treated as-is without looking for prefixes.
     prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
-    nickname, /// Message should begin with the bot's name, except in `QUERY` events.
+    /++
+     +  Message should begin with the bot's name, except in
+     +  `kameloso.irc.defs.IRCEvent.Type.QUERY` events.
+     +/
+    nickname,
 }
 
 
@@ -656,7 +660,11 @@ enum PrivilegeLevel
     ignore = 0, /// Override privilege checks.
     anyone = 1, /// Anyone may trigger this event.
     registered = 2,  /// Anyone registered with services may trigger this event.
-    whitelist = 3, /// Only those of the `whitelist` class may trigger this event.
+    /++
+     +  Only those of the `kameloso.irc.common.IRCClient.Class.whitelist`
+     +  class may trigger this event.
+     +/
+    whitelist = 3,
     admin = 4, /// Only the administrators may trigger this event.
 }
 
@@ -1204,7 +1212,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
-                    // UDA is `ANY`, let pass
+                    // UDA is `kameloso.irc.defs.IRCEvent.Type.ANY`, let pass
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
@@ -1240,7 +1248,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    // Default policy if none given is `home`
+                    // Default policy if none given is `ChannelPolicy.home`
                     enum policy = ChannelPolicy.home;
                 }
 
@@ -1258,7 +1266,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     if (!event.channel.length)
                     {
-                        // it is a non-channel event, like a `QUERY`
+                        // it is a non-channel event, like a `kameloso.irc.defs.IRCEvent.Type.QUERY`
                     }
                     else if (!privateState.client.homes.canFind(event.channel))
                     {
@@ -2322,7 +2330,7 @@ public:
      +  the arguments passed to it.
      +
      +  This reflects how channel messages and private messages are both the
-     +  underlying same type; `PRIVMSG`.
+     +  underlying same type; `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -2518,8 +2526,9 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
      +  `kameloso.irc.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
-     +  `RPL_ENDOFWHOIS` is also handled, to cover the case where a user without
-     +  an account triggering `anyone`- or `ignored`-level commands.
+     +  `kameloso.irc.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
+     +  cover the case where a user without an account triggering `PrivilegeLevel.anyone`-
+     +  or `PrivilegeLevel.ignored`-level commands.
      +
      +  This function was part of `UserAwareness` but triggering queued requests
      +  is too common to conflate with it.
@@ -2878,8 +2887,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  Rehash the internal `IRCPluginState.users` associative array of
      +  `kameloso.irc.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
      +
-     +  We ride the periodicity of `PING` to get a natural cadence without
-     +  having to resort to timed `core.thread.Fiber`s.
+     +  We ride the periodicity of `kameloso.irc.defs.IRCEvent.Type.PING` to get
+     +  a natural cadence without having to resort to timed `core.thread.Fiber`s.
      +
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.
@@ -3057,9 +3066,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  `IRCPluginState.users` associative array point to the new nickname.
      +
      +  Does *not* add a new entry if one doesn't exits, to counter the fact
-     +  that `NICK` events don't belong to a channel, and as such can't be
-     +  regulated with `ChannelPolicy` annotations. This way the user will only
-     +  be moved if it was already added elsewhere. Else we'll leak users.
+     +  that `kameloso.irc.defs.IRCEvent.Type.NICK` events don't belong to a channel,
+     +  and as such can't be regulated with `ChannelPolicy` annotations. This way
+     +  the user will only be moved if it was already added elsewhere. Else we'll leak users.
      +
      +  Removes the old entry after assigning it to the new key.
      +/
@@ -3433,7 +3442,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 version(TwitchSupport) {}
 else
 /++
- +  No-op mixin of version !TwitchSupport TwitchAwareness.
+ +  No-op mixin of version `!TwitchSupport` TwitchAwareness.
  +/
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
@@ -3659,7 +3668,7 @@ void rehashUsers(IRCPlugin plugin)
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
- +  appending it to `timedFibers`.
+ +  appending it to `plugin.state.timedFibers`.
  +
  +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
  +  when to process the array of `core.thread.Fiber`s.
@@ -3683,9 +3692,9 @@ void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
- +  appending it to `timedFibers`.
+ +  appending it to `plugin.state.timedFibers`.
  +
- +  Overload that implicitly queues `Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -3728,7 +3737,7 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
  +
- +  Overload that implicitly queues `Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -3776,7 +3785,7 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
  +
- +  Overload that implicitly queues `Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -3941,8 +3950,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
 
     /++
-     +  Constructs a `CarryingFiber!IRCEvent` and enqueues it into the
-     +  `awaitingFibers` associative array, then issues a `WHOIS` call.
+     +  Constructs a `kameloso.thread.CarryingFiber!(kameloso.irc.defs.IRCEvent)`
+     +  and enqueues it into the `awaitingFibers` associative array, then issues
+     +  a `WHOIS` call.
      +
      +  Params:
      +      nickname = Nickname to issue a `WHOIS` query for.
@@ -4008,7 +4018,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
  +  Returns either the nickname or the alias of a user, depending on whether the
  +  alias is known or not.
  +
- +  If not version TwitchSupport then it always returns the nickname.
+ +  If not version `TwitchSupport` then it always returns the nickname.
  +
  +  Params:
  +      user = `kameloso.irc.defs.IRCUser` to examine.

@@ -128,7 +128,7 @@ unittest
  +  the arguments passed to it.
  +
  +  This reflects how channel messages and private messages are both the
- +  underlying same type; `PRIVMSG`.
+ +  underlying same type; `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,

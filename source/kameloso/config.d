@@ -141,7 +141,7 @@ if ((Things.length > 1) && isOutputRange!(Sink, char[]))
  +  ---
  +
  +  Params:
- +      sink = Reference output range to write to, usually an `Appender!string`.
+ +      sink = Reference output range to write to, usually an `std.array.Appender!string`.
  +      thing = Object to serialise.
  +/
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
@@ -817,7 +817,7 @@ naN                     !"#¤%&/`;
  +  Exception, to be thrown when the specified configuration file could not be
  +  read, for whatever reason.
  +
- +  It is a normal `Exception` but with an attached filename string.
+ +  It is a normal `object.Exception` but with an attached filename string.
  +/
 final class ConfigurationFileReadFailureException : Exception
 {
@@ -868,7 +868,7 @@ final class ConfigurationFileParsingException : Exception
 /++
  +  Splits a line into an entry and a value component.
  +
- +  This drop-in-replaces the regex: r"^(?P<entry>[^ \t]+)[ \t]+(?P<value>.+)".
+ +  This drop-in-replaces the regex: `"^(?P<entry>[^ \t]+)[ \t]+(?P<value>.+)"`.
  +
  +  Params:
  +      line = String to split up.

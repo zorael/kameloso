@@ -37,7 +37,8 @@ struct HelpSettings
  +  `kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
  +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated functions.
  +
- +  To work around this we construct a `CarryingFiber!(IRCPlugin[])` and send it
+ +  To work around this we construct a
+ +  `kameloso.thread.CarryingFiber!(kameloso.plugins.common.IRCPlugin[])` and send it
  +  to the main thread. It will attach the client-global `plugins` array of
  +  `kameloso.plugins.common.IRCPlugin`s to it, and invoke the Fiber.
  +  The delegate inside will then process the list as if it had taken the array

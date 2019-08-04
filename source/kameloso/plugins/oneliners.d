@@ -1,8 +1,8 @@
 /++
- +  The Oneliners plugin serves to provide custom commands, like !vods, !youtube,
- +  and any other static-reply !command (provided a prefix of "!").
+ +  The Oneliners plugin serves to provide custom commands, like `!vods`, `!youtube`,
+ +  and any other static-reply `!command` (provided a prefix of "`!`").
  +
- +  More advanced commands that do more than just repeat the preset line of text
+ +  More advanced commands that do more than just repeat the preset lines of text
  +  will have to be written separately.
  +/
 module kameloso.plugins.oneliners;
@@ -190,7 +190,7 @@ void onEndOfMotd(OnelinersPlugin plugin)
 
 // saveResourceToDisk
 /++
- +  Saves the passed resource to disk, but in `JSON` format.
+ +  Saves the passed resource to disk, but in JSON format.
  +
  +  This is used with the associative arrays for oneliners.
  +
@@ -203,7 +203,7 @@ void onEndOfMotd(OnelinersPlugin plugin)
  +  ---
  +
  +  Params:
- +      aa = The `JSON`-convertible resource to save.
+ +      aa = The JSON-convertible resource to save.
  +      filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(const string[string][string] aa, const string filename)
@@ -258,7 +258,7 @@ public:
 // OnelinersPlugin
 /++
  +  The Oneliners plugin serves to listen to custom commands that can be added
- +  at runtime. Think !command.
+ +  at runtime. Think `!info`.
  +/
 final class OnelinersPlugin : IRCPlugin
 {

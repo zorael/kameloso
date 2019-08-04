@@ -1211,7 +1211,7 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
  +
  +  Returns:
  +      `kameloso.common.Next.continue_` if connection succeeded,
- +      `kameloso.common.Next.returnFaillure` if connection failed and the
+ +      `kameloso.common.Next.returnFailure` if connection failed and the
  +      program should exit.
  +/
 Next tryConnect(ref IRCBot bot)

@@ -377,15 +377,16 @@ struct LogLineBuffer
 /++
  +  Logs an event to disk.
  +
- +  It is set to `ChannelPolicy.any`, and configuration dictates whether or not non-home
- +  events should be logged. Likewise whether or not raw events should be logged.
+ +  It is set to `kameloso.plugins.common.ChannelPolicy.any`, and configuration
+ +  dictates whether or not non-home events should be logged. Likewise whether
+ +  or not raw events should be logged.
  +
  +  Lines will either be saved immediately to disk, opening a `std.stdio.File`
  +  with appending privileges for each event as they occur, or buffered by
  +  populating arrays of lines to be written in bulk, once in a while.
  +
  +  See_Also:
- +      commitAllLogs
+ +      `commitAllLogs`
  +/
 @(Chainable)
 @(ChannelPolicy.any)
@@ -757,7 +758,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
  +      plugin = The current `PrinterPlugin`.
  +
  +  See_Also:
- +      commitLog
+ +      `commitLog`
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -789,7 +790,7 @@ void commitAllLogs(PrinterPlugin plugin)
  +      buffer = `LogLineBuffer` whose lines to commit to disk.
  +
  +  See_Also:
- +      commitAllLogs
+ +      `commitAllLogs`
  +/
 void commitLog(ref LogLineBuffer buffer)
 {
@@ -837,7 +838,7 @@ void commitLog(ref LogLineBuffer buffer)
 // onISUPPORT
 /++
  +  Prints information about the current server as we gain details of it from an
- +  `RPL_ISUPPORT` event.
+ +  `kameloso.irc.defs.IRCEvent.Type.RPL_ISUPPORT` event.
  +
  +  Set a flag so we only print this information once; (ISUPPORTS can/do stretch
  +  across several events.)
@@ -1754,8 +1755,8 @@ unittest
  +
  +  The result is a string with the passed badges abbreviated, one character per
  +  badge, separated into minor and major badges. Minor ones are ones that end
- +  with "_1", which seem to be contextual to a channel's game theme, like
- +  overwatch_league_insider_1, firewatch_1, cuphead_1, H1Z1_1, eso_1, ...
+ +  with "`_1`", which seem to be contextual to a channel's game theme, like
+ +  `overwatch_league_insider_1`, `firewatch_1`, `cuphead_1`, `H1Z1_1`, `eso_1`, ...
  +
  +  Params:
  +      sink = Output range to store the abbreviated values in.
@@ -2142,7 +2143,7 @@ unittest
  +  Tints emote strings and highlights Twitch emotes in a ref
  +  `kameloso.irc.defs.IRCEvent`'s `content` member.
  +
- +  Wraps `higlightEmotesImpl`.
+ +  Wraps `highlightEmotesImpl`.
  +
  +  Params:
  +      event = `kameloso.irc.defs.IRCEvent` whose content text to highlight.
@@ -2413,7 +2414,9 @@ import kameloso.thread : Sendable;
 // onBusMessage
 /++
  +  Receives a passed `kameloso.thread.BusMessage` with the "`printer`" header,
- +  listening for cues to ignore the next `RPL_TOPIC` or `RPL_NOTOPIC` event.
+ +  listening for cues to ignore the next events caused by the
+ +  `kameloso.plugins.chanqueries.ChanQueriesService` querying current channel
+ +  for information on the channels and their users.
  +
  +  Params:
  +      plugin = The current `PrinterPlugin`.

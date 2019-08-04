@@ -1,7 +1,7 @@
 /++
  +  The Connect service handles logging onto IRC servers after having connected,
  +  as well as managing authentication to services. It also manages responding
- +  to `PING` requests.
+ +  to `kameloso.irc.defs.IRCEvent.Type.PING` requests.
  +
  +  It has no commands; everything in it is reactionary, with no special
  +  awareness mixed in.
@@ -179,11 +179,12 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
- +  Responds to `ERR_NEEDPONG` events by sending the text supplied as content in
- +  the `kameloso.irc.defs.IRCEvent` to the server.
+ +  Responds to `kameloso.irc.defs.IRCEvent.Type.ERR_NEEDPONG` events by sending
+ +  the text supplied as content in the `kameloso.irc.defs.IRCEvent` to the server.
  +
- +  "Also known as `ERR_NEEDPONG` (Unreal/Ultimate) for use during registration,
- +  however it's not used in Unreal (and might not be used in Ultimate either)."
+ +  "Also known as `kameloso.irc.defs.IRCEvent.Type.ERR_NEEDPONG` (Unreal/Ultimate)
+ +  for use during registration, however it's not used in Unreal (and might not
+ +  be used in Ultimate either)."
  +
  +  Encountered at least once, on a private server.
  +/
@@ -198,11 +199,12 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 
 // onPing
 /++
- +  Pongs the server upon `PING`.
+ +  Pongs the server upon `kameloso.irc.defs.IRCEvent.Type.PING`.
  +
  +  We make sure to ping with the sender as target, and not the necessarily
  +  the server as saved in the `kameloso.irc.defs.IRCServer` struct. For
- +  example, `ERR_BADPING` (or is it `ERR_NEEDPONG`?) generally wants you to
+ +  example, `kameloso.irc.defs.IRCEvent.Type.ERR_BADPING` (or is it
+ +  `kameloso.irc.defs.IRCEvent.Type.ERR_NEEDPONG`?) generally wants you to
  +  ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
@@ -588,8 +590,8 @@ void onInvite(ConnectService service, const IRCEvent event)
 @(IRCEvent.Type.CAP)
 void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 {
-    /// http://ircv3.net/irc
-    /// https://blog.irccloud.com/ircv3
+    // - http://ircv3.net/irc
+    // - https://blog.irccloud.com/ircv3
 
     if (service.registration == Progress.finished)
     {
@@ -755,7 +757,8 @@ void onSASLAuthenticate(ConnectService service)
 
 // onSASLSuccess
 /++
- +  On SASL authentication success, calls a `CAP END` to finish the `CAP` negotiations.
+ +  On SASL authentication success, calls a `CAP END` to finish the
+ +  `kameloso.irc.defs.IRCEvent.Type.CAP` negotiations.
  +
  +  Flags the client as having finished registering and authing, allowing the
  +  main loop to pick it up and propagate it to all other plugins.
@@ -787,8 +790,8 @@ void onSASLSuccess(ConnectService service)
 
 // onSASLFailure
 /++
- +  On SASL authentication failure, calls a `CAP END` to finish the `CAP`
- +  negotiations and finish registration.
+ +  On SASL authentication failure, calls a `CAP END` to finish the
+ +  `kameloso.irc.defs.IRCEvent.Type.CAP` negotiations and finish registration.
  +
  +  Flags the client as having finished registering, allowing the main loop to
  +  pick it up and propagate it to all other plugins.
@@ -831,7 +834,8 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
 
 // onWelcome
 /++
- +  Marks registration as completed upon `RPL_WELCOME` (numeric 001).
+ +  Marks registration as completed upon `kameloso.irc.defs.IRCEvent.Type.RPL_WELCOME`
+ +  (numeric `001`).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service, const IRCEvent event)
@@ -866,7 +870,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
  +
  +  Currently only RusNet is known to support codepages. If more show up,
  +  consider creating an `kameloso.irc.defs.IRCServer``.hasCodepages` bool and set
- +  it if `CODEPAGES` is included in `RPL_MYINFO`.
+ +  it if `CODEPAGES` is included in `kameloso.irc.defs.IRCEvent.Type.RPL_MYINFO`.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(ConnectService service)
@@ -885,7 +889,7 @@ void onISUPPORT(ConnectService service)
  +  This is a "benign" disconnect. We need to reconnect preemptively instead of
  +  waiting for the server to disconnect us, as it would otherwise constitute
  +  an error and the program would exit if
- +  `kameloso.common.CoreSettings.exitOnFailure` is set.
+ +  `kameloso.common.CoreSettings.endlesslyConnect` isn't set.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)
@@ -979,8 +983,8 @@ void negotiateNick(ConnectService service)
  +
  +  This initialisation event fires immediately after a successful connect, and
  +  so instead of waiting for something from the server to trigger our
- +  registration procedure (notably `NOTICE`s about our `IDENT` and hostname),
- +  we preemptively register.
+ +  registration procedure (notably `kameloso.irc.defs.IRCEvent.Type.NOTICE`s
+ +  about our `IDENT` and hostname), we preemptively register.
  +
  +  It seems to work.
  +/
@@ -1047,7 +1051,7 @@ private:
     /// At what step we're currently at with regards to nick negotiation.
     Progress nickNegotiation;
 
-    /// Whether or not the server has sent at least one `PING`.
+    /// Whether or not the server has sent at least one `kameloso.irc.defs.IRCEvent.Type.PING`.
     bool serverPinged;
 
     /// Whether or not the bot has renamed itself during registration.
