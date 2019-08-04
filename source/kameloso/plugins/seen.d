@@ -21,7 +21,7 @@
  +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
  +  process on incoming events, or timed with a worst-case precision of
  +  `kameloso.constants.Timeout.receive` + up to
- +  `kameloso.plugins.package.EnabledPlugins``.length` plugins' event handling
+ +  `kameloso.plugins.package.EnabledPlugins.length` plugins' event handling
  +  execution time. Generally the latter is insignificant.
  +
  +  See the GitHub wiki for more information about available commands:
@@ -94,12 +94,13 @@ public:
  +  }
  +  ---
  +
- +  * `client` houses information about the client itself, and the server you're
- +     connected to.
+ +  * `kameloso.plugins.common.IRCPluginState.client` houses information about
+ +     the client itself, and the server you're connected to.
  +
- +  * `mainThread` is the *thread ID* of the thread running the main loop. We
- +     indirectly use it to send strings to the server by way of concurrency
- +     messages, but it is usually not something you will have to deal with directly.
+ +  * `kameloso.plugins.common.IRCPluginState.mainThread` is the *thread ID* of
+ +     the thread running the main loop. We indirectly use it to send strings to
+ +     the server by way of concurrency messages, but it is usually not something
+ +     you will have to deal with directly.
  +
  +  * `users` is an associative array keyed with users' nicknames. The value to
  +     that key is an `kameloso.irc.defs.IRCUser` representing that user in terms
@@ -107,32 +108,35 @@ public:
  +     keep track of users by more than merely their name. It is however not
  +     saved at the end of the program; it is merely state and transient.
  +
- +  * `channels` is another associative array, this one with all the known
- +     channels keyed by their names. This way we can access detailed
- +     information about any given channel, knowing only their name.
+ +  * `kameloso.plugins.common.IRCPluginState.channels` is another associative
+ +     array, this one with all the known channels keyed by their names. This
+ +     way we can access detailed information about any given channel, knowing
+ +     only their name.
  +
- +  * `triggerRequestQueue` is also an associative array into which we place
- +    `kameloso.plugins.common.TriggerRequest`s. The main loop will pick up on
- +     these and call `WHOIS` on the nickname in the key. A
- +     `kameloso.plugins.common.TriggerRequest` is otherwise just an
+ +  * `kameloso.plugins.common.IRCPluginState.triggerRequestQueue` is also an
+ +     associative array into which we place `kameloso.plugins.common.TriggerRequest`s.
+ +     The main loop will pick up on these and call `WHOIS` on the nickname in the key-
+ +     A `kameloso.plugins.common.TriggerRequest` is otherwise just an
  +     `kameloso.irc.defs.IRCEvent` to be played back when the `WHOIS` results
  +     return, as well as a function pointer to call with that event. This is
  +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
  +     queue management handled behind the scenes.
  +
- +  * `awaitingFibers` is an associative array of `core.thread.Fiber`s keyed by
- +     `kameloso.ircdefs.IRCEvent.Type`s. Fibers in the array of a particular
- +     event type will be executed the next time such an event is incoming.
- +     Think of it as Fiber callbacks.
+ +  * `kameloso.plugins.common.IRCPluginState.awaitingFibers` is an associative
+ +     array of `core.thread.Fiber`s keyed by `kameloso.ircdefs.IRCEvent.Type`s.
+ +     Fibers in the array of a particular event type will be executed the next
+ +     time such an event is incoming. Think of it as Fiber callbacks.
  +
- +  * `timedFibers` is also an array of `core.thread.Fiber`s, but not an
- +     associative one keyed on event types. Instead they are wrapped in a
- +     `kameloso.common.Labeled` template and marked with a UNIX timestamp of
- +     when they should be run. Use `kameloso.plugins.common.delayFiber` to enqueue.
+ +  * `kameloso.plugins.common.IRCPluginState.timedFibers` is also an array of
+ +     `core.thread.Fiber`s, but not an associative one keyed on event types.
+ +     Instead they are wrapped in a `kameloso.common.Labeled` template and
+ +     marked with a UNIX timestamp of when they should be run. Use
+ +     `kameloso.plugins.common.delayFiber` to enqueue.
  +
- +  * `nextPeriodical` is a UNIX timestamp of when the `periodical(IRCPlugin)`
- +     function should be run next. It is a way of automating occasional tasks,
- +     in our case the saving of the seen users to disk.
+ +  * `kameloso.plugins.common.IRCPluginState.nextPeriodical` is a UNIX timestamp
+ +     of when the `periodical(IRCPlugin)` function should be run next. It is a
+ +     way of automating occasional tasks, in our case the saving of the seen
+ +     users to disk.
  +/
 final class SeenPlugin : IRCPlugin
 {
@@ -200,8 +204,8 @@ private:  // Module-level private.
     // mixin MessagingProxy
     /++
      +  This mixin adds shorthand functions to proxy calls to
-     +  `kameloso.messaging` functions, *curried* with the main thread ID, so
-     +  they can easily be called with knowledge only of the plugin symbol.
+     +  `kameloso.messaging` functions, *partially applied* with the main thread ID,
+     +  so they can easily be called with knowledge only of the plugin symbol.
      +
      +  ---
      +  plugin.chan("#d", "Hello world!");
