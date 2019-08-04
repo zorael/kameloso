@@ -163,8 +163,7 @@ struct ListenAttempt
 
 // listenFiber
 /++
- +  A `std.socket.Socket`-reading `std.concurrency.Generator`
- +  `core.thread.Fiber`.
+ +  A `std.socket.Socket`-reading `std.concurrency.Generator`.
  +
  +  It maintains its own buffer into which it receives from the server, though
  +  not necessarily full lines. It thus keeps filling the buffer until it
@@ -511,7 +510,7 @@ struct ResolveAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// The number of retries so far towards his `address`.
+    /// The number of retries so far towards this address.
     uint retryNum;
 }
 
@@ -519,12 +518,12 @@ struct ResolveAttempt
 // resolveFiber
 /++
  +  Given an address and a port, resolves these and builds an array of unique
- +  `Address` IPs.
+ +  `std.socket.Address` IPs.
  +
  +  Params:
  +      conn = Reference to the current `Connection`.
  +      address = String address to look up.
- +      port = Remote port build into the `Address`.
+ +      port = Remote port build into the `std.socket.Address`.
  +      useIPv6 = Whether to include resolved IPv6 addresses or not.
  +      resolveAttempts = How many times to try resolving before giving up.
  +      abort = Reference bool which, if set, should make us abort and return.
