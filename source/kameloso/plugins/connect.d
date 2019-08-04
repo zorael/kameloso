@@ -526,14 +526,14 @@ void onBanned(ConnectService service)
 }
 
 
-// onPasswordMismatch
+// onPassMismatch
 /++
- +  Quits the program if we supplied a bad `pass`.
+ +  Quits the program if we supplied a bad `kameloso.irc.IRCClient.pass`.
  +
  +  There's no point in reconnecting.
  +/
 @(IRCEvent.Type.ERR_PASSWDMISMATCH)
-void onPasswordMismatch(ConnectService service)
+void onPassMismatch(ConnectService service)
 {
     if (service.registration != Progress.started)
     {
@@ -541,8 +541,8 @@ void onPasswordMismatch(ConnectService service)
         return;
     }
 
-    logger.error("Password mismatch!");
-    quit(service.state, "Incorrect password");
+    logger.error("Pass mismatch!");
+    quit(service.state, "Incorrect pass");
 }
 
 
