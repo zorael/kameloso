@@ -614,25 +614,31 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             //msg-param-bits-amount = '199'
         case "msg-param-crateCount":
             // PURCHASE, no idea
-        case "msg-param-sender-count":
-            // Number of gift subs a user has given in the channel, on a SUBGIFT event
+        case "msg-param-mass-gift-count":
+            // Number of subs being gifted
+        case "msg-param-total":
+            // Total amount donated to this charity
+        case "msg-param-threshold":
+            // (Sent only on bitsbadgetier) The tier of the bits badge the user just earned; e.g. 100, 1000, 10000.
+        case "msg-param-streak-months":
+        case "msg-param-streak-tenure-months":
+            import std.conv : to;
+            event.count = value.to!int;
+            break;
+
         case "msg-param-selected-count":
             // REWARDGIFT; of interest?
         case "msg-param-min-cheer-amount":
             // REWARDGIFT; of interest?
             // msg-param-min-cheer-amount = '150'
-        case "msg-param-mass-gift-count":  // Collides with something else
-            // Number of subs being gifted
         case "msg-param-promo-gift-total":
             // Number of total gifts this promotion
-        case "msg-param-total":
-            // Total amount donated to this charity
+        case "msg-param-sender-count":
+            // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-cumulative-months":
             // Total number of months subscribed, over time. Replaces msg-param-months
-        case "msg-param-threshold":
-            // (Sent only on bitsbadgetier) The tier of the bits badge the user just earned; e.g. 100, 1000, 10000.
             import std.conv : to;
-            event.count = value.to!int;
+            event.altcount = value.to!int;
             break;
 
         case "badge-info":
@@ -765,8 +771,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // Ongoing number of subscriptions (in a row)
         case "msg-param-should-share-streak-tenure":
         case "msg-param-should-share-streak":
-        case "msg-param-streak-months":
-        case "msg-param-streak-tenure-months":
             // Streak resubs
             // There's no extra field in which to place streak sub numbers
             // without creating a new type, but even then information is lost
