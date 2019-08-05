@@ -856,6 +856,9 @@ struct IRCEvent
     /// A count, an amount or "times" modifier, where such are applicable.
     int count;
 
+    /// A secondary count, for where `count` by itself is insufficient.
+    int altcount;
+
     /// A timestamp of when the event transpired.
     long time;
 
