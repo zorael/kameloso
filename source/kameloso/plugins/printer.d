@@ -1137,7 +1137,20 @@ if (isOutputRange!(Sink, char[]))
 
         if (aux.length) .put(sink, " (", aux, ')');
 
-        if (count != 0) sink.formattedWrite(" {%d}", count);
+        if ((count != 0) || (altcount != 0))
+        {
+            sink.put(" {");
+            if (count != 0)
+            {
+                .put(sink, count);
+            }
+            if (altcount != 0)
+            {
+                if (count != 0) .put(sink, ':');
+                .put(sink, altcount);
+            }
+            sink.put('}');
+        }
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
@@ -1592,10 +1605,21 @@ if (isOutputRange!(Sink, char[]))
             .put!(Yes.colours)(sink, Bright.aux, Dark.aux, " (", aux, ')');
         }
 
-        if (count != 0)
+        if ((count != 0) || (altcount != 0))
         {
             sink.colourWith(bright ? Bright.count : Dark.count);
-            sink.formattedWrite(" {%d}", count);
+
+            sink.put(" {");
+            if (count != 0)
+            {
+                .put(sink, count);
+            }
+            if (altcount != 0)
+            {
+                if (count != 0) .put(sink, ':');
+                .put(sink, altcount);
+            }
+            sink.put('}');
         }
 
         if (num > 0)
