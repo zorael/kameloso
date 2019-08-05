@@ -128,6 +128,7 @@ struct IRCEvent
         TWITCH_GIFTUPGRADE,/// Twitch "continuing the gift sub"
         TWITCH_SUBUPGRADE,/// Twitch, someone paying to upgrade their subscription.
         TWITCH_CHARITY,   /// Twitch charity donation.
+        TWITCH_BULKGIFT,  /// Twitch no-target multiple gift event.
 
         RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
