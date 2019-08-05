@@ -152,11 +152,14 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
             case "subgift":
             case "anonsubgift":
-            case "submysterygift":
                 // [21:33:48] msg-param-recipient-display-name = 'emilypiee'
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
                 event.type = Type.TWITCH_SUBGIFT;
+                break;
+
+            case "submysterygift":
+                event.type = Type.TWITCH_BULKGIFT;
                 break;
 
             case "ritual":
