@@ -174,17 +174,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 event.type = Type.TWITCH_REWARDGIFT;
                 break;
 
-            case "purchase":
-                //msg-param-asin = 'B07DBTZZTH'
-                //msg-param-channelID = '17337557'
-                //msg-param-crateCount = '0'
-                //msg-param-imageURL = 'https://images-na.ssl-images-amazon.com/images/I/31PzvL+AidL.jpg'
-                //msg-param-title = 'Speed\s&\sMomentum\sCrate\s(Steam\sVersion)'
-                //msg-param-userID = '182815893'
-                //[usernotice] tmi.twitch.tv [#drdisrespectlive]: "Purchased Speed & Momentum Crate (Steam Version) in channel."
-                event.type = Type.TWITCH_PURCHASE;
-                break;
-
             case "raid":
                 //display-name=VHSGlitch
                 //login=vhsglitch
@@ -503,7 +492,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-login":
         case "login":
             // RAID; real sender nickname and thus raiding channel lowercased
-            // also PURCHASE. The sender's user login (real nickname)
             // CLEARMSG, SUBGIFT, lots
             event.sender.nickname = value;
             resetUser(event.sender);
@@ -574,11 +562,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             event.emotes = value;
             break;
 
-        case "msg-param-title":
-            //msg-param-title = 'Speed\s&\sMomentum\sCrate\s(Steam\sVersion)'
-            event.aux = decodeIRCv3String(value);
-            break;
-
         case "msg-param-charity-name":
             //msg-param-charity-name = Direct\sRelief
             immutable decoded = decodeIRCv3String(value);
@@ -615,8 +598,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // msg-param-viewerCount = '9'
         case "msg-param-bits-amount":
             //msg-param-bits-amount = '199'
-        case "msg-param-crateCount":
-            // PURCHASE, no idea
         case "msg-param-mass-gift-count":
             // Number of subs being gifted
         case "msg-param-total":
@@ -668,15 +649,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             event.id = value;
             break;
 
-        case "msg-param-asin":
-            // PURCHASE
-            //msg-param-asin = 'B07DBTZZTH'
-        case "msg-param-channelID":
-            // PURCHASE
-            //msg-param-channelID = '17337557'
-        case "msg-param-imageURL":
-            // PURCHASE
-            //msg-param-imageURL = 'https://images-na.ssl-images-amazon.com/images/I/31PzvL+AidL.jpg'
         case "msg-param-sub-plan-name":
             // The display name of the subscription plan. This may be a default
             // name or one created by the channel owner.

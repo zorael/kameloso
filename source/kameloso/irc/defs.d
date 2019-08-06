@@ -124,7 +124,6 @@ struct IRCEvent
         TWITCH_UNRAID,    /// End of a Twitch raid.
         TWITCH_RITUAL,    /// Twitch Ritual event.
         TWITCH_REWARDGIFT,/// Twitch "reward gift".
-        TWITCH_PURCHASE,  /// Twitch purchase(?).
         TWITCH_GIFTCHAIN, /// Twitch "continuing the gift sub"
         TWITCH_SUBUPGRADE,/// Twitch, someone paying to upgrade their subscription.
         TWITCH_CHARITY,   /// Twitch charity donation.
