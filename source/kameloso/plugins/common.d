@@ -3438,6 +3438,38 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
         plugin.catchUser(event.sender);
     }
+
+
+    // onTwitchAwarenessTargetCarryingEvent
+    /++
+     +  Catch targets from normal Twitch events.
+     +
+     +  This has to be done on certain Twitch channels whose participants are
+     +  not enumerated upon joining it, nor joins or parts announced. By
+     +  listening for any message with targets and catching that user that way
+     +  we ensure we do our best to scrape the channels.
+     +
+     +  See_Also:
+     +      `onTwitchAwarenessSenderCarryingEvent`
+     +/
+    @(Awareness.early)
+    @(Chainable)
+    @(IRCEvent.Type.TWITCH_BAN)
+    @(IRCEvent.Type.TWITCH_SUBGIFT)
+    @channelPolicy
+    void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const IRCEvent event)
+    {
+        if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+
+        auto channel = event.channel in plugin.state.channels;
+
+        if (event.target.nickname !in channel.users)
+        {
+            channel.users[event.target.nickname] = true;
+        }
+
+        plugin.catchUser(event.target);
+    }
 }
 
 
