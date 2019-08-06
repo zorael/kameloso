@@ -222,8 +222,64 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 //msg-param-charity-learn-more = https://link.twitch.tv/blizzardofbits
                 //msg-param-charity-name = Direct\sRelief
                 //msg-param-total = 135770
-                // Too much to store in a single IRCEvent...
+                // Charity has too many fields to fit an IRCEvent as they are currently
+                // Cram as much into aux as possible
+                import kameloso.string : beginsWith;
+                import std.algorithm.iteration : filter;
+                import std.conv : to;
+                import std.typecons : Flag, No, Yes;
+
                 event.type = Type.TWITCH_CHARITY;
+
+                string[string] charityAA;
+                auto charityTags = tagRange
+                    .filter!(tagline => tagline.beginsWith("msg-param-charity"));
+
+                foreach (immutable tagline; charityTags)
+                {
+                    string slice = tagline;  // mutable
+                    immutable charityKey = slice.nom('=');
+                    charityAA[charityKey] = slice;
+                }
+
+                if (auto charityName = "msg-param-charity-name" in charityAA)
+                {
+                    import kameloso.string : escapeControlCharacters, strippedRight;
+
+                    event.aux = (*charityName)
+                        .decodeIRCv3String
+                        .strippedRight
+                        .escapeControlCharacters!(Yes.remove);
+                }
+
+                if (auto charityLink = "msg-param-charity-learn-more" in charityAA)
+                {
+                    if (event.aux.length) event.aux ~= " (" ~ *charityLink ~ ')';
+                    else
+                    {
+                        event.aux = *charityLink;
+                    }
+                }
+
+                if (auto charityHashtag = "msg-param-charity-hashtag" in charityAA)
+                {
+                    if (event.aux.length) event.aux ~= ' ' ~ *charityHashtag;
+                    else
+                    {
+                        event.aux = *charityHashtag;
+                    }
+                }
+
+                if (auto charityTotal = "msg-param-total" in charityAA)
+                {
+                    event.count = (*charityTotal).to!int;
+                }
+
+                if (auto charityRemaining = "msg-param-charity-hours-remaining" in charityAA)
+                {
+                    event.altcount = (*charityRemaining).to!int;
+                }
+
                 break;
 
             case "giftpaidupgrade":
@@ -604,33 +660,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             event.emotes = value;
             break;
 
-        case "msg-param-charity-name":
-            //msg-param-charity-name = Direct\sRelief
-            immutable decoded = decodeIRCv3String(value);
-            if (event.aux.length)
-            {
-                import std.format : format;
-                event.aux = "%s: %s".format(decoded, event.aux);
-            }
-            else
-            {
-                event.aux = decoded;
-            }
-            break;
-
-        case "msg-param-charity-learn-more":
-            //msg-param-charity-learn-more = https://link.twitch.tv/blizzardofbits
-            if (event.aux.length)
-            {
-                import std.format : format;
-                event.aux = "%s: %s".format(event.aux, value);
-            }
-            else
-            {
-                event.aux = value;
-            }
-            break;
-
         case "ban-duration":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // (Optional) Duration of the timeout, in seconds. If omitted,
@@ -673,8 +702,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-cumulative-months":
             // Total number of months subscribed, over time. Replaces msg-param-months
-        //case "msg-param-charity-days-remaining":
-            // Number of days remaining in a charity
         case "msg-param-charity-hours-remaining":
             // Number of hours remaining in a charity
             import std.conv : to;
@@ -792,8 +819,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-origin-id":
             // msg-param-origin-id = 6e\s15\s70\s6d\s34\s2a\s7e\s5b\sd9\s45\sd3\sd2\sce\s20\sd3\s4b\s9c\s07\s49\sc4
             // [subgift] [#savjz] sender [SP] (target): "sender gifted a Tier 1 sub to target! This is their first Gift Sub in the channel!" (1000) {1}
-        case "msg-param-charity-hashtag":
-            // charity hashtag
         case "msg-param-fun-string":
             // msg-param-fun-string = FunStringTwo
             // [subgift] [#waifugate] AnAnonymousGifter (Asdf): "An anonymous user gifted a Tier 1 sub to Asdf!" (1000) {1}
@@ -816,6 +841,13 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // DEPRECATED in favour of msg-param-cumulative-months.
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
+        case "msg-param-charity-days-remaining":
+            // Number of days remaining in a charity
+        case "msg-param-charity-name":
+            //msg-param-charity-name = Direct\sRelief
+        case "msg-param-charity-learn-more":
+            //msg-param-charity-learn-more = https://link.twitch.tv/blizzardofbits
+            // Do nothing; everything is done at msg-id charity
 
             // Ignore these events.
             break;
