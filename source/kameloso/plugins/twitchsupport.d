@@ -621,6 +621,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-cumulative-months":
             // Total number of months subscribed, over time. Replaces msg-param-months
+        //case "msg-param-charity-days-remaining":
+            // Number of days remaining in a charity
+        case "msg-param-charity-hours-remaining":
+            // Number of hours remaining in a charity
             import std.conv : to;
             event.altcount = value.to!int;
             break;
@@ -726,10 +730,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-origin-id":
             // msg-param-origin-id = 6e\s15\s70\s6d\s34\s2a\s7e\s5b\sd9\s45\sd3\sd2\sce\s20\sd3\s4b\s9c\s07\s49\sc4
             // [subgift] [#savjz] sender [SP] (target): "sender gifted a Tier 1 sub to target! This is their first Gift Sub in the channel!" (1000) {1}
-        case "msg-param-charity-days-remaining":
-            // Number of days remaining in a charity
-        case "msg-param-charity-hours-remaining":
-            // Number of hours remaining in a charity
         case "msg-param-charity-hashtag":
             // charity hashtag
         case "msg-param-fun-string":
