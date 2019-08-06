@@ -215,7 +215,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
             case "giftpaidupgrade":
             case "anongiftpaidupgrade":
-                event.type = Type.TWITCH_GIFTUPGRADE;
+                event.type = Type.TWITCH_GIFTCHAIN;
                 break;
 
             case "primepaidupgrade":
@@ -485,13 +485,13 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
         case "msg-param-recipient-display-name":
         case "msg-param-sender-name":
-            // In a GIFTUPGRADE the display name of the one who started the gift sub train?
+            // In a GIFTCHAIN the display name of the one who started the gift sub train?
             event.target.alias_ = value;
             break;
 
         case "msg-param-recipient-user-name":
         case "msg-param-sender-login":
-            // In a GIFTUPGRADE the one who started the gift sub train?
+            // In a GIFTCHAIN the one who started the gift sub train?
             event.target.nickname = value;
             break;
 

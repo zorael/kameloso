@@ -3417,7 +3417,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.TWITCH_SUB)
     @(IRCEvent.Type.TWITCH_SUBGIFT)
     @(IRCEvent.Type.TWITCH_REWARDGIFT)
-    @(IRCEvent.Type.TWITCH_GIFTUPGRADE)
+    @(IRCEvent.Type.TWITCH_GIFTCHAIN)
     @(IRCEvent.Type.TWITCH_CHEER)
     @(IRCEvent.Type.TWITCH_PURCHASE)
     @(IRCEvent.Type.TWITCH_RAID)
