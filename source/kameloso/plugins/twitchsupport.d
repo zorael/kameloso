@@ -99,8 +99,32 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
     foreach (tag; tagRange)
     {
         import kameloso.string : contains, nom;
+
         immutable key = tag.nom("=");
         immutable value = tag;
+
+        version(TwitchWarnings)
+        {
+            import kameloso.common : logger;
+            import std.conv : to;
+
+            static void printTags(typeof(tagRange) tagRange, const string highlight = string.init)
+            {
+                foreach (immutable tagline; tagRange)
+                {
+                    import kameloso.common : settings;
+                    import std.stdio : stdout, writef, writeln;
+
+                    string slice = tagline;  // mutable
+                    immutable key = slice.nom('=');
+
+                    writef(`%-35s"%s"`, key, slice);
+                    writeln((highlight.length && (slice == highlight)) ? " <-- !" : string.init);
+
+                    if (settings.flush) stdout.flush();
+                }
+            }
+        }
 
         switch (key)
         {
@@ -391,16 +415,14 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
                 version(TwitchWarnings)
                 {
-                    import kameloso.common : logger, settings;
+                    import kameloso.common : logger;
                     import kameloso.printing : printObject;
                     import kameloso.terminal : TerminalToken;
                     import std.algorithm.iteration : joiner;
-                    import std.stdio : stdout, writeln;
 
                     logger.warning("Unknown Twitch msg-id: ", value, cast(char)TerminalToken.bell);
                     printObject(event);
-                    writeln(tagRange.joiner("\n"));
-                    if (settings.flush) stdout.flush();
+                    printTags(tagRange);
                 }
                 break;
             }
@@ -525,6 +547,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             */
             import std.conv : to;
             event.type = Type.TWITCH_CHEER;
+
+            version(TwitchWarnings)
+            {
+                if (event.count != 0)
+                {
+                    logger.warning(key, " overwrote a count: ", event.count);
+                    printTags(tagRange, event.count.to!string);
+                }
+            }
+
             event.count = value.to!int;
             break;
 
@@ -540,6 +572,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-promo-name":
             // Promotion name
             // msg-param-promo-name = Subtember
+
+            version(TwitchWarnings)
+            {
+                if (event.aux.length)
+                {
+                    logger.warning(key, " overwrote an aux: ", event.aux);
+                    printTags(tagRange, event.aux);
+                }
+            }
+
             event.aux = value;
             break;
 
@@ -607,6 +649,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-streak-months":
         case "msg-param-streak-tenure-months":
             import std.conv : to;
+
+            version(TwitchWarnings)
+            {
+                if (event.count != 0)
+                {
+                    logger.warning(key, " overwrote a count: ", event.count);
+                    printTags(tagRange, event.count.to!string);
+                }
+            }
+
             event.count = value.to!int;
             break;
 
@@ -626,6 +678,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-charity-hours-remaining":
             // Number of hours remaining in a charity
             import std.conv : to;
+
+            version(TwitchWarnings)
+            {
+                if (event.altcount != 0)
+                {
+                    logger.warning(key, " overwrote an altcount: ", event.altcount);
+                    printTags(tagRange, event.altcount.to!string);
+                }
+            }
+
             event.altcount = value.to!int;
             break;
 
@@ -765,16 +827,14 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         default:
             version(TwitchWarnings)
             {
-                import kameloso.common : logger, settings;
+                import kameloso.common : logger;
                 import kameloso.printing : printObject;
                 import kameloso.terminal : TerminalToken;
                 import std.algorithm.iteration : joiner;
-                import std.stdio : stdout, writeln;
 
                 logger.warningf("Unknown Twitch tag: %s = %s%c", key, value, cast(char)TerminalToken.bell);
                 printObject(event);
-                writeln(tagRange.joiner("\n"));
-                if (settings.flush) stdout.flush();
+                printTags(tagRange);
             }
             break;
         }
