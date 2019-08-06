@@ -3403,12 +3403,10 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  This has to be done on certain Twitch channels whose participants are
      +  not enumerated upon joining it, nor joins or parts announced. By
      +  listening for any message and catching the user that way we ensure we
-     +  scrape the channel for everyone that's actively chatting.
+     +  do our best to scrape the channels.
      +
-     +  The users array will only grow and grow. Special care has to be manually
-     +  taken to prune old users, ideally by periodically comparing their
-     +  `kameloso.irc.defs.IRCUser.lastWhois` timestamps and removing those that
-     +  are too old.
+     +  See_Also:
+     +      `onTwitchAwarenessTargetCarryingEvent`
      +/
     @(Awareness.early)
     @(Chainable)
