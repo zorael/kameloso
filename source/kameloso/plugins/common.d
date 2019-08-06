@@ -3462,6 +3462,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
+        if (!event.target.nickname) return;
+
         auto channel = event.channel in plugin.state.channels;
 
         if (event.target.nickname !in channel.users)
