@@ -112,7 +112,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
     }
 
     import std.format : format;
-    state.askToLog("Pipe text to the [%s%s%s] file to send raw commands to the server."
+    state.askToLog("Pipe text to the %s%s%s file to send raw commands to the server."
         .format(infotint, filename, logtint));
 
     // Creating the File struct blocks, so do it after reporting.
