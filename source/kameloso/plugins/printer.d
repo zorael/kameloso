@@ -226,7 +226,9 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case CTCP_TIME:
     case CTCP_USERINFO:
     case CTCP_VERSION:
-        // These event types are spammy; ignore if we're configured to
+    case SELFMODE:
+        // These event types are spammy and/or have low signal-to-noise ratio;
+        // ignore if we're configured to
         if (!plugin.printerSettings.filterMost) goto default;
         break;
 
