@@ -583,6 +583,8 @@ unittest
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : beginsWith;
+    import std.conv : to;
+    import std.typecons : Flag, No, Yes;
 
     with (parser)
     with (IRCEvent.Type)
@@ -970,7 +972,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_TRACEUSER: // 205
-        import std.conv : to;
         // :wolfe.freenode.net 205 kameloso^ User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16 :536
         slice.nom(" User "); // bot nickname
         event.aux = slice.nom(' '); // "class"
@@ -979,7 +980,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_LINKS: // 364
-        import std.conv : to;
         // :rajaniemi.freenode.net 364 kameloso^ rajaniemi.freenode.net rajaniemi.freenode.net :0 Helsinki, FI, EU
         slice.nom(' '); // bot nickname
         slice.nom(' '); // "mask"
@@ -1024,8 +1024,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     version(TwitchSupport)
     {
-        import std.conv : to;
-
         case HOSTTARGET:
             if (slice.contains(" :-"))
             {
