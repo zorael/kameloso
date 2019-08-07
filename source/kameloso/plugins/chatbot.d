@@ -74,6 +74,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "8ball")
+@BotCommand(PrefixPolicy.prefixed, "eightball")
 @Description("Implements 8ball. Randomises a vague yes/no response.")
 void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
