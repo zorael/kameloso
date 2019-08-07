@@ -3140,8 +3140,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         if (auto channel = event.channel in plugin.state.channels)
         {
-            import std.conv : to;
-            channel.created = event.aux.to!long;
+            channel.created = event.count;
         }
     }
 
