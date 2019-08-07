@@ -139,7 +139,8 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#garderoben"), channel);
             assert((content == "harbl!snarbl@*"), content);
-            assert((aux == "kameloso!~NaN@194.117.188.126 1515418362"), aux);
+            assert((aux == "kameloso!~NaN@194.117.188.126"), aux);
+            assert((count == 1515418362), count.to!string);
             assert((num == 344), num.to!string);
         }
     }

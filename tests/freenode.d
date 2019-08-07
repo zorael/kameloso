@@ -520,7 +520,7 @@ unittest
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "IRC Operators online"), content);
-            assert((aux == "31"), aux);
+            assert((count == 31), count.to!string);
             assert((num == 252), num.to!string);
         }
     }
@@ -532,7 +532,7 @@ unittest
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "unknown connection(s)"), content);
-            assert((aux == "13"), aux);
+            assert((count == 13), count.to!string);
             assert((num == 253), num.to!string);
         }
     }
@@ -544,7 +544,7 @@ unittest
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "channels formed"), content);
-            assert((aux == "54541"), aux);
+            assert((count == 54541), count.to!string);
             assert((num == 254), num.to!string);
         }
     }
@@ -580,7 +580,8 @@ unittest
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "Current local users 6500, max 11061"), content);
-            assert((aux == "6500 11061"), aux);
+            assert((count == 6500), count.to!string);
+            assert((altcount == 11_061), altcount.to!string);
             assert((num == 265), num.to!string);
         }
     }
@@ -918,8 +919,8 @@ unittest
             assert((sender.address == "rajaniemi.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((target.nickname == "zorael"), target.nickname);
-            assert((content == "0"), content);
-            assert((aux == "1510219961"), aux);
+            assert((count == 0), count.to!string);
+            assert((altcount == 1510219961), altcount.to!string);
             assert((num == 317), num.to!string);
         }
     }
@@ -932,7 +933,8 @@ unittest
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "Current global users 85267, max 92341"), content);
-            assert((aux == "85267 92341"), aux);
+            assert((count == 85267), count.to!string);
+            assert((altcount == 92341), altcount.to!string);
             assert((num == 266), num.to!string);
         }
     }
@@ -945,7 +947,8 @@ unittest
             assert((sender.address == "weber.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "Current local users 3385, max 6820"), content);
-            assert((aux == "3385 6820"), aux);
+            assert((count == 3385), count.to!string);
+            assert((altcount == 6820), altcount.to!string);
             assert((num == 265), num.to!string);
         }
     }
@@ -958,7 +961,8 @@ unittest
             assert((sender.address == "weber.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((content == "Current global users 87056, max 93012"), content);
-            assert((aux == "87056 93012"), aux);
+            assert((count == 87056), count.to!string);
+            assert((altcount == 93012), altcount.to!string);
             assert((num == 266), num.to!string);
         }
     }
@@ -1344,7 +1348,7 @@ unittest
             assert((sender.address == "kornbluth.freenode.net"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#flerrp"), channel);
-            assert((aux == "1512995737"), aux);
+            assert((count == 1512995737), count.to!string);
             assert((num == 329), num.to!string);
         }
     }
@@ -1359,7 +1363,8 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#flerrp"), "channel is " ~ channel);
             assert((content == "harbl!harbl@snarbl.com"), content);
-            assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1513899521"), aux);
+            assert((aux == "zorael!~NaN@2001:41d0:2:80b4::"), aux);
+            assert((count == 1513899521), count.to!string);
             assert((num == 367), num.to!string);
         }
     }
@@ -1402,7 +1407,8 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#flerrp"), channel);
             assert((content == "qqqq!*@asdf.net"), content);
-            assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1514405101"), aux);
+            assert((aux == "zorael!~NaN@2001:41d0:2:80b4::"), aux);
+            assert((count == 1514405101), count.to!string);
             assert((num == 728), num.to!string);
         }
     }

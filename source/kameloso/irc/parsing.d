@@ -775,7 +775,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' ');  // bot nickname
         event.channel = slice.contains(" q ") ? slice.nom(" q ") : slice.nom(' ');
         event.content = slice.nom(' ');
-        event.aux = slice;
+        event.aux = slice.nom(' ');
+        event.count = slice.to!int;
         break;
 
     case RPL_WHOISHOST: // 378
@@ -808,8 +809,9 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :rajaniemi.freenode.net 317 kameloso zorael 0 1510219961 :seconds idle, signon time
         slice.nom(' ');  // bot nickname
         event.target.nickname = slice.nom(' ');
-        event.content = slice.nom(' ');
-        event.aux = slice.nom(" :");
+        event.count = slice.nom(' ').to!int;
+        event.altcount = slice.nom(" :").to!int;
+        event.aux = slice;
         break;
 
     case RPL_LUSEROP: // 252
@@ -836,8 +838,30 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         if (slice.contains(" :"))
         {
-            event.aux = slice.nom(" :");
+            import std.uni : isNumber;
+
+            string midfield = slice.nom(" :");
             event.content = slice;
+
+            immutable first = midfield.nom!(Yes.inherit)(' ');
+            immutable second = midfield;
+
+            if (first.length)
+            {
+                if (first[0].isNumber)
+                {
+                    event.count = first.to!int;
+
+                    if (second.length && second[0].isNumber)
+                    {
+                        event.altcount = second.to!int;
+                    }
+                }
+                else
+                {
+                    event.aux = first;
+                }
+            }
         }
         else
         {
@@ -1149,7 +1173,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :kornbluth.freenode.net 329 kameloso #flerrp 1512995737
         slice.nom(' ');
         event.channel = slice.nom(' ');
-        event.aux = slice;
+        event.count = slice.to!int;
         break;
 
     case RPL_LIST: // 322
@@ -1164,7 +1188,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
          */
         slice.nom(' '); // bot nickname
         event.channel = slice.nom(' ');
-        event.aux = slice.nom(" :");
+        event.count = slice.nom(" :").to!int;
         event.content = slice;
         break;
 
@@ -1219,8 +1243,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' '); // bot nickname
         event.channel = slice.nom(' ');
         event.content = slice.nom(' ');
-        slice.nom(' ');  // nickname that set the mode. no appropriate field.
-        event.aux = slice;
+        event.aux = slice.nom(' ');  // nickname that set the mode
+        event.count = slice.to!int;
         break;
 
     default:

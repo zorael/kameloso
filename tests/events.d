@@ -51,7 +51,7 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#gameofthrones"), channel);
             assert((content == "[+ntTGfB]"), content);
-            assert((aux == "1"), aux);
+            assert((count == 1), count.to!string);
             assert((num == 322), num.to!string);
         }
     }
@@ -65,7 +65,7 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((channel == "#radioclick"), channel);
             assert((content == "[+ntr]  Bun venit pe #Radioclick! Site oficial www.radioclick.ro sau servere irc.romaniachat.eu, irc.radioclick.ro"), content);
-            assert((aux == "63"), aux);
+            assert((count == 63), count.to!string);
             assert((num == 322), num.to!string);
         }
     }
