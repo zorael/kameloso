@@ -2222,11 +2222,18 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
 
     case CHAN:
     case SELFCHAN:
-        // Normal content, normal text, normal emotes
-        //sink.colourWith(contentFgBase);
-        immutable TerminalForeground contentFgBase = settings.brightTerminal ?
-            DefaultBright.content : DefaultDark.content;
-        event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase, colourful);
+        if (!colourful && event.tags.contains("emote-only=1"))
+        {
+            // Emote only channel message, treat the same as an emote-only emote
+            goto case EMOTE;
+        }
+        else
+        {
+            // Normal content, normal text, normal emotes
+            immutable TerminalForeground contentFgBase = settings.brightTerminal ?
+                DefaultBright.content : DefaultDark.content;
+            event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase, colourful);
+        }
         break;
 
     default:

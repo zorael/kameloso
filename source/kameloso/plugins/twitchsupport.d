@@ -546,8 +546,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             break;
 
         case "emote-only":
-            if (value == "0") break;
-            if (event.type == Type.CHAN) event.type = Type.EMOTE;
+            /*if (value == "0") break;
+            if (event.type == Type.CHAN) event.type = Type.EMOTE;*/
             break;
 
         case "msg-param-recipient-display-name":
