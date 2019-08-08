@@ -175,12 +175,30 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 break;
 
             case "subgift":
-            case "anonsubgift":
                 // [21:33:48] msg-param-recipient-display-name = 'emilypiee'
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
                 event.type = Type.TWITCH_SUBGIFT;
                 break;
+
+            case "anonsubgift":
+                // "We added the msg-id “anonsubgift” to the user-notice which
+                // defaults the sender to the channel owner"
+                version(TwitchWarnings)
+                {
+                    import kameloso.printing : printObject;
+
+                    printObject(event);
+                    printTags(tagRange);
+                }
+
+                if (event.sender.nickname == event.channel)
+                {
+                    // It is indeed defaulting to the channel owner
+                    event.sender.nickname = string.init;
+                    event.sender.address = "tmi.twitch.tv";
+                }
+                goto case "subgift";
 
             case "submysterygift":
                 event.type = Type.TWITCH_BULKGIFT;
@@ -283,9 +301,25 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 break;
 
             case "giftpaidupgrade":
-            case "anongiftpaidupgrade":
                 event.type = Type.TWITCH_GIFTCHAIN;
                 break;
+
+            case "anongiftpaidupgrade":
+                version(TwitchWarnings)
+                {
+                    import kameloso.printing : printObject;
+
+                    printObject(event);
+                    printTags(tagRange);
+                }
+
+                if (event.sender.nickname == event.channel)
+                {
+                    // It is indeed defaulting to the channel owner
+                    event.sender.nickname = string.init;
+                    event.sender.address = "tmi.twitch.tv";
+                }
+                goto case "giftpaidupgrade";
 
             case "primepaidupgrade":
                 event.type = Type.TWITCH_SUBUPGRADE;
