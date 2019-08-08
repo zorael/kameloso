@@ -786,120 +786,127 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             event.id = value;
             break;
 
-        case "msg-param-sub-plan-name":
-            // The display name of the subscription plan. This may be a default
-            // name or one created by the channel owner.
-        case "broadcaster-lang":
-            // The chat language when broadcaster language mode is enabled;
-            // otherwise, empty. Examples: en (English), fi (Finnish), es-MX
-            // (Mexican variant of Spanish).
-        case "subs-only":
-            // Subscribers-only mode. If enabled, only subscribers and
-            // moderators can chat. Valid values: 0 (disabled) or 1 (enabled).
-        case "r9k":
-            // R9K mode. If enabled, messages with more than 9 characters must
-            // be unique. Valid values: 0 (disabled) or 1 (enabled).
-        case "emote-sets":
-            // A comma-separated list of emotes, belonging to one or more emote
-            // sets. This always contains at least 0. Get Chat Emoticons by Set
-            // gets a subset of emoticons.
-        case "mercury":
-            // ?
-        case "followers-only":
-            // Probably followers only.
-        case "room-id":
-            // The channel ID.
-        case "slow":
-            // The number of seconds chatters without moderator privileges must
-            // wait between sending messages.
-        case "sent-ts":
-            // ?
-        case "tmi-sent-ts":
-            // ?
-        case "user":
-            // The name of the user who sent the notice.
-        case "msg-param-userID":
-        case "user-id":
-        case "user-ID":
-            // The user’s ID.
-        case "target-user-id":
-            // The target's user ID
-        case "rituals":
-            /++
-                "Rituals makes it easier for you to celebrate special moments
-                that bring your community together. Say a viewer is checking out
-                a new channel for the first time. After a minute, she’ll have
-                the choice to signal to the rest of the community that she’s new
-                to the channel. Twitch will break the ice for her in Chat, and
-                maybe she’ll make some new friends.
+        // We only need set cases for every known tag if we want to be alerted
+        // when we come across unknown ones, which is version TwitchWarnings.
+        // As such, version away all the cases from normal builds, and just let
+        // them fall to the default.
+        version(TwitchWarnings)
+        {
+            case "msg-param-sub-plan-name":
+                // The display name of the subscription plan. This may be a default
+                // name or one created by the channel owner.
+            case "broadcaster-lang":
+                // The chat language when broadcaster language mode is enabled;
+                // otherwise, empty. Examples: en (English), fi (Finnish), es-MX
+                // (Mexican variant of Spanish).
+            case "subs-only":
+                // Subscribers-only mode. If enabled, only subscribers and
+                // moderators can chat. Valid values: 0 (disabled) or 1 (enabled).
+            case "r9k":
+                // R9K mode. If enabled, messages with more than 9 characters must
+                // be unique. Valid values: 0 (disabled) or 1 (enabled).
+            case "emote-sets":
+                // A comma-separated list of emotes, belonging to one or more emote
+                // sets. This always contains at least 0. Get Chat Emoticons by Set
+                // gets a subset of emoticons.
+            case "mercury":
+                // ?
+            case "followers-only":
+                // Probably followers only.
+            case "room-id":
+                // The channel ID.
+            case "slow":
+                // The number of seconds chatters without moderator privileges must
+                // wait between sending messages.
+            case "sent-ts":
+                // ?
+            case "tmi-sent-ts":
+                // ?
+            case "user":
+                // The name of the user who sent the notice.
+            case "msg-param-userID":
+            case "user-id":
+            case "user-ID":
+                // The user’s ID.
+            case "target-user-id":
+                // The target's user ID
+            case "rituals":
+                /++
+                    "Rituals makes it easier for you to celebrate special moments
+                    that bring your community together. Say a viewer is checking out
+                    a new channel for the first time. After a minute, she’ll have
+                    the choice to signal to the rest of the community that she’s new
+                    to the channel. Twitch will break the ice for her in Chat, and
+                    maybe she’ll make some new friends.
 
-                Rituals will help you build a more vibrant community when it
-                launches in November."
+                    Rituals will help you build a more vibrant community when it
+                    launches in November."
 
-                spotted in the wild as = 0
-             +/
-        case "msg-param-recipient-id":
-            // sub gifts
-        case "target-msg-id":
-            // banphrase
-        case "msg-param-profileImageURL":
-            // URL link to profile picture.
-        case "flags":
-            // Unsure.
-            // flags =
-            // flags = 4-11:P.5,40-46:P.6
-        case "msg-param-domain":
-            // msg-param-domain = owl2018
-            // [rewardgift] [#overwatchleague] Asdf [bits]: "A Cheer shared Rewards to 35 others in Chat!" {35}
-            // Unsure.
-        case "mod":
-        case "subscriber":
-        case "turbo":
-            // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
-            // Deprecated, use badges instead.
-        case "user-type":
-            // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
-            // Deprecated, use badges instead.
-        case "msg-param-origin-id":
-            // msg-param-origin-id = 6e\s15\s70\s6d\s34\s2a\s7e\s5b\sd9\s45\sd3\sd2\sce\s20\sd3\s4b\s9c\s07\s49\sc4
-            // [subgift] [#savjz] sender [SP] (target): "sender gifted a Tier 1 sub to target! This is their first Gift Sub in the channel!" (1000) {1}
-        case "msg-param-fun-string":
-            // msg-param-fun-string = FunStringTwo
-            // [subgift] [#waifugate] AnAnonymousGifter (Asdf): "An anonymous user gifted a Tier 1 sub to Asdf!" (1000) {1}
-            // Unsure.
-        case "message-id":
-            // message-id = 3
-            // WHISPER, rolling number enumerating messages
-        case "thread-id":
-            // thread-id = 22216721_404208264
-            // WHISPER, private message session?
-        case "msg-param-cumulative-tenure-months":
-            // Ongoing number of subscriptions (in a row)
-        case "msg-param-should-share-streak-tenure":
-        case "msg-param-should-share-streak":
-            // Streak resubs
-            // There's no extra field in which to place streak sub numbers
-            // without creating a new type, but even then information is lost
-            // unless we fall back to auxes of "1000 streak 3".
-        case "msg-param-months":
-            // DEPRECATED in favour of msg-param-cumulative-months.
-            // The number of consecutive months the user has subscribed for,
-            // in a resub notice.
-        case "msg-param-charity-days-remaining":
-            // Number of days remaining in a charity
-        case "msg-param-charity-name":
-            //msg-param-charity-name = Direct\sRelief
-        case "msg-param-charity-learn-more":
-            //msg-param-charity-learn-more = https://link.twitch.tv/blizzardofbits
-            // Do nothing; everything is done at msg-id charity
+                    spotted in the wild as = 0
+                +/
+            case "msg-param-recipient-id":
+                // sub gifts
+            case "target-msg-id":
+                // banphrase
+            case "msg-param-profileImageURL":
+                // URL link to profile picture.
+            case "flags":
+                // Unsure.
+                // flags =
+                // flags = 4-11:P.5,40-46:P.6
+            case "msg-param-domain":
+                // msg-param-domain = owl2018
+                // [rewardgift] [#overwatchleague] Asdf [bits]: "A Cheer shared Rewards to 35 others in Chat!" {35}
+                // Unsure.
+            case "mod":
+            case "subscriber":
+            case "turbo":
+                // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
+                // Deprecated, use badges instead.
+            case "user-type":
+                // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
+                // Deprecated, use badges instead.
+            case "msg-param-origin-id":
+                // msg-param-origin-id = 6e\s15\s70\s6d\s34\s2a\s7e\s5b\sd9\s45\sd3\sd2\sce\s20\sd3\s4b\s9c\s07\s49\sc4
+                // [subgift] [#savjz] sender [SP] (target): "sender gifted a Tier 1 sub to target! This is their first Gift Sub in the channel!" (1000) {1}
+            case "msg-param-fun-string":
+                // msg-param-fun-string = FunStringTwo
+                // [subgift] [#waifugate] AnAnonymousGifter (Asdf): "An anonymous user gifted a Tier 1 sub to Asdf!" (1000) {1}
+                // Unsure.
+            case "message-id":
+                // message-id = 3
+                // WHISPER, rolling number enumerating messages
+            case "thread-id":
+                // thread-id = 22216721_404208264
+                // WHISPER, private message session?
+            case "msg-param-cumulative-tenure-months":
+                // Ongoing number of subscriptions (in a row)
+            case "msg-param-should-share-streak-tenure":
+            case "msg-param-should-share-streak":
+                // Streak resubs
+                // There's no extra field in which to place streak sub numbers
+                // without creating a new type, but even then information is lost
+                // unless we fall back to auxes of "1000 streak 3".
+            case "msg-param-months":
+                // DEPRECATED in favour of msg-param-cumulative-months.
+                // The number of consecutive months the user has subscribed for,
+                // in a resub notice.
+            case "msg-param-charity-days-remaining":
+                // Number of days remaining in a charity
+            case "msg-param-charity-name":
+                //msg-param-charity-name = Direct\sRelief
+            case "msg-param-charity-learn-more":
+                //msg-param-charity-learn-more = https://link.twitch.tv/blizzardofbits
+                // Do nothing; everything is done at msg-id charity
+            case "message":
+                // The message.
+            case "number-of-viewers":
+                // (Optional) Number of viewers watching the host.
 
-            // Ignore these events.
-            break;
+                // Ignore these events.
+                break;
+        }
 
-        case "message":
-            // The message.
-        case "number-of-viewers":
-            // (Optional) Number of viewers watching the host.
         default:
             version(TwitchWarnings)
             {
