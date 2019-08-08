@@ -1142,18 +1142,17 @@ if (isOutputRange!(Sink, char[]))
 
         if (aux.length) .put(sink, " (", aux, ')');
 
-        if ((count != 0) || (altcount != 0))
+        if (count != 0)
         {
             sink.put(" {");
-            if (count != 0)
-            {
-                .put(sink, count);
-            }
-            if (altcount != 0)
-            {
-                if (count != 0) .put(sink, " | ");
-                .put(sink, altcount);
-            }
+            .put(sink, count);
+            sink.put('}');
+        }
+
+        if (altcount != 0)
+        {
+            sink.put(" {");
+            .put(sink, altcount);
             sink.put('}');
         }
 
@@ -1610,20 +1609,19 @@ if (isOutputRange!(Sink, char[]))
             .put!(Yes.colours)(sink, Bright.aux, Dark.aux, " (", aux, ')');
         }
 
-        if ((count != 0) || (altcount != 0))
+        if (count != 0)
         {
             sink.colourWith(bright ? Bright.count : Dark.count);
-
             sink.put(" {");
-            if (count != 0)
-            {
-                .put(sink, count);
-            }
-            if (altcount != 0)
-            {
-                if (count != 0) .put(sink, " | ");
-                .put(sink, altcount);
-            }
+            .put(sink, count);
+            sink.put('}');
+        }
+
+        if (altcount != 0)
+        {
+            sink.colourWith(bright ? Bright.altcount : Dark.altcount);
+            sink.put(" {");
+            .put(sink, altcount);
             sink.put('}');
         }
 
