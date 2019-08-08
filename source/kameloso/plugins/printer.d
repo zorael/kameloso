@@ -1148,7 +1148,7 @@ if (isOutputRange!(Sink, char[]))
             }
             if (altcount != 0)
             {
-                if (count != 0) .put(sink, ':');
+                if (count != 0) .put(sink, " | ");
                 .put(sink, altcount);
             }
             sink.put('}');
@@ -1618,7 +1618,7 @@ if (isOutputRange!(Sink, char[]))
             }
             if (altcount != 0)
             {
-                if (count != 0) .put(sink, ':');
+                if (count != 0) .put(sink, " | ");
                 .put(sink, altcount);
             }
             sink.put('}');
