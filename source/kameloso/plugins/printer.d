@@ -53,6 +53,9 @@ struct PrinterSettings
     {
         /// Whether or not to display (abbreviated) Twitch badges.
         bool twitchBadges = true;
+
+        /// Whether or not emotes should be highlit in colours.
+        bool colourfulEmotes = true;
     }
 
     /++
