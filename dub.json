@@ -59,7 +59,8 @@
         {
             "name": "polyglot",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin",
-                "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
+                "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay",
+                "ProfileGC" ],
             "dependencies": { "requests": "~>1.0.9" }
         },
         {
@@ -92,7 +93,8 @@
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin",
-                "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay" ],
+                "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay",
+                "ProfileGC" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dependencies": { "requests": "~>1.0.9" }

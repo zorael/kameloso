@@ -9,6 +9,20 @@ import kameloso.irc.defs;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 
+version(ProfileGC)
+{
+    /++
+     +  Set some flags to tune the garbage collector and have it print profiling
+     +  information at program exit, iff version `ProfileGC`.
+     +/
+    extern(C)
+    __gshared string[] rt_options =
+    [
+        "gcopt=profile:1 gc:precise",
+        "scanDataSeg=precise",
+    ];
+}
+
 version(Windows)
 shared static this()
 {
