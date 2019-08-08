@@ -184,6 +184,16 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "anonsubgift":
                 // "We added the msg-id “anonsubgift” to the user-notice which
                 // defaults the sender to the channel owner"
+                /+
+                    For anything anonomous
+                    The channel ID and Channel name are set as normal
+                    The Recipienet is set as normal
+                    The person giving the gift is anonomous
+
+                    https://discuss.dev.twitch.tv/t/msg-id-purchase/22067/8
+                 +/
+                // Confusing.
+
                 version(TwitchWarnings)
                 {
                     import kameloso.printing : printObject;
