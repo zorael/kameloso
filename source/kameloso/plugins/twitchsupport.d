@@ -745,10 +745,8 @@ user-type                          ""
             {
                 if (event.count != 0)
                 {
-                    import kameloso.printing : printObject;
-
                     logger.warning(key, " overwrote a count: ", event.count);
-                    printObject(event);
+                    logger.trace(event.raw);
                     printTags(tagRange, event.count.to!string);
                 }
             }
@@ -774,10 +772,8 @@ user-type                          ""
             {
                 if (event.aux.length)
                 {
-                    import kameloso.printing : printObject;
-
                     logger.warning(key, " overwrote an aux: ", event.aux);
-                    printObject(event);
+                    logger.trace(event.raw);
                     printTags(tagRange, event.aux);
                 }
             }
