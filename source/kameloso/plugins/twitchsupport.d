@@ -368,10 +368,11 @@ user-type                          ""
                     }
                 }
 
-                if (auto charityTotal = "msg-param-total" in charityAA)
+                // Doesn't start with msg-param-charity but it will be set later down
+                /*if (auto charityTotal = "msg-param-total" in charityAA)
                 {
                     event.count = (*charityTotal).to!int;
-                }
+                }*/
 
                 if (auto charityRemaining = "msg-param-charity-hours-remaining" in charityAA)
                 {
