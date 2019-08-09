@@ -967,12 +967,18 @@ void negotiateNick(ConnectService service)
     if ((service.registration == Progress.finished) ||
         (service.nickNegotiation != Progress.notStarted)) return;
 
+    import std.algorithm.searching : endsWith;
     import std.format : format;
 
     service.nickNegotiation = Progress.started;
 
-    raw(service.state, "USER %s * 8 : %s".format(service.state.client.ident,
-        service.state.client.realName));
+    if (!service.state.client.server.address.endsWith(".twitch.tv"))
+    {
+        // Twitch doesn't require USER, only PASS and NICK
+        raw(service.state, "USER %s * 8 : %s".format(service.state.client.ident,
+            service.state.client.realName));
+    }
+
     raw(service.state, "NICK " ~ service.state.client.nickname);
 }
 
