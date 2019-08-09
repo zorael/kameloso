@@ -409,6 +409,30 @@ user-type                          ""
                 event.type = Type.TWITCH_BITSBADGETIER;
                 break;
 
+            case "extendsub":
+/+
+badge-info                         "subscriber/1"
+badges                             "subscriber/0,bits-charity/1"
+color                              "#FF0000"
+display-name                       "ensqa473"
+emotes                             ""
+flags                              ""
+id                                 "4abc1a50-51b3-4659-8c12-e1d8c3652963"
+login                              "ensqa473"
+mod                                "0"
+msg-id                             "extendsub"
+msg-param-sub-benefit-end-month    "9"
+msg-param-sub-plan                 "1000"
+room-id                            "17337557"
+subscriber                         "1"
+system-msg                         "ensqa473\sextended\stheir\sTier\s1\ssubscription\sthrough\sSeptember!"
+tmi-sent-ts                        "1565384774599"
+user-id                            "237654991"
+user-type
++/
+                event.type = Type.TWITCH_EXTENDSUB;
+                break;
+
             /*case "bad_ban_admin":
             case "bad_ban_anon":
             case "bad_ban_broadcaster":
@@ -817,6 +841,8 @@ user-type                          ""
             // (Sent only on bitsbadgetier) The tier of the bits badge the user just earned; e.g. 100, 1000, 10000.
         case "msg-param-streak-months":
         case "msg-param-streak-tenure-months":
+        case "msg-param-sub-benefit-end-month":
+            /// "...extended their Tier 1 sub to {month}"
             import std.conv : to;
 
             version(TwitchWarnings)
