@@ -613,6 +613,9 @@ user-type                          ""
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
             import kameloso.string : strippedRight;
+
+            if (!value.length) break;
+
             immutable alias_ = value.contains('\\') ? decodeIRCv3String(value).strippedRight : value;
 
             if ((event.type == Type.USERSTATE) || (event.type == Type.GLOBALUSERSTATE))
