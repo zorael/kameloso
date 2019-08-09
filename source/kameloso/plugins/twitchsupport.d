@@ -672,6 +672,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "msg-param-promo-name":
             // Promotion name
             // msg-param-promo-name = Subtember
+        case "msg-param-domain":
+            // msg-param-domain = owl2018
+            // [rewardgift] [#overwatchleague] Asdf [bits]: "A Cheer shared Rewards to 35 others in Chat!" {35}
+            // Name of the context?
 
             version(TwitchWarnings)
             {
@@ -736,10 +740,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             break;
 
         case "msg-param-selected-count":
-            // REWARDGIFT; of interest?
-        case "msg-param-min-cheer-amount":
-            // REWARDGIFT; of interest?
-            // msg-param-min-cheer-amount = '150'
+            // REWARDGIFT; how many users "the Cheer shared Rewards" with
+            // "A Cheer shared Rewards to 20 others in Chat!"
         case "msg-param-promo-gift-total":
             // Number of total gifts this promotion
         case "msg-param-sender-count":
@@ -854,10 +856,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 // Unsure.
                 // flags =
                 // flags = 4-11:P.5,40-46:P.6
-            case "msg-param-domain":
-                // msg-param-domain = owl2018
-                // [rewardgift] [#overwatchleague] Asdf [bits]: "A Cheer shared Rewards to 35 others in Chat!" {35}
-                // Unsure.
             case "mod":
             case "subscriber":
             case "turbo":
@@ -902,6 +900,9 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 // The message.
             case "number-of-viewers":
                 // (Optional) Number of viewers watching the host.
+            case "msg-param-min-cheer-amount":
+                // REWARDGIFT; of interest?
+                // msg-param-min-cheer-amount = '150'
 
                 // Ignore these events.
                 break;
