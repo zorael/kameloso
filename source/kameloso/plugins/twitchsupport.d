@@ -934,6 +934,7 @@ user-type
             break;
 
         case "emote-only":
+            // We don't conflate ACTION emotes and emote-only messages anymore
             /*if (value == "0") break;
             if (event.type == Type.CHAN) event.type = Type.EMOTE;*/
             break;
