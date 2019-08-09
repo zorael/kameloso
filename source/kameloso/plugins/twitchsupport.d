@@ -419,7 +419,26 @@ user-type                          ""
                 break;
 
             case "giftpaidupgrade":
-            //case "anongiftpaidupgrade":
+/+
+user-type                          ""
+msg-param-sender-name              "blamebruce"
+display-name                       "LouCmusic_"
+id                                 "23c5ff34-778b-47fa-935a-beedbe0c598c"
+mod                                "0"
+tmi-sent-ts                        "1565043295367"
+user-id                            "149718683"
+login                              "loucmusic_"
+badge-info                         "subscriber/1"
+flags                              ""
+emotes                             ""
+color                              "#FF69B4"
+msg-id                             "giftpaidupgrade"
+msg-param-sender-login             "blamebruce"
+system-msg                         "LouCmusic_\sis\scontinuing\sthe\sGift\sSub\sthey\sgot\sfrom\sblamebruce!"
+subscriber                         "1"
+badges                             "subscriber/0,premium/1"
+room-id                            "60056333"
++/
                 event.type = Type.TWITCH_GIFTCHAIN;
 
                 if (event.sender.nickname == "ananonymousgifter")
@@ -429,6 +448,14 @@ user-type                          ""
                     event.sender.alias_ = string.init;
                 }
                 break;
+
+            case "anongiftpaidupgrade":
+                version(TwitchWarnings)
+                {
+                    logger.trace(event.raw);
+                    printTags(tagRange);
+                }
+                goto case "giftpaidupgrade";
 
             case "primepaidupgrade":
                 event.type = Type.TWITCH_SUBUPGRADE;
