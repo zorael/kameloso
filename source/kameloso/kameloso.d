@@ -665,6 +665,10 @@ Next mainLoop(ref IRCBot bot)
             bot.previousWhoisTimestamps = typeof(bot.previousWhoisTimestamps).init;
         }
 
+        /// The maximum number of consecutive reads before we force a message check.
+        enum maxConsecutiveReads = 3;
+        uint consecutiveReads;
+
         // Call the generator, query it for event lines
         listener.call();
 
@@ -860,7 +864,11 @@ Next mainLoop(ref IRCBot bot)
 
                 version(PrintStacktraces) logger.trace(e.toString);
             }
+
+            if (++consecutiveReads >= maxConsecutiveReads) break;
         }
+
+        consecutiveReads = 0;
 
         // Check concurrency messages to see if we should exit, else repeat
         messenger.call();
