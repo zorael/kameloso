@@ -652,7 +652,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             {
                 if (event.count != 0)
                 {
+                    import kameloso.printing : printObject;
+
                     logger.warning(key, " overwrote a count: ", event.count);
+                    printObject(event);
                     printTags(tagRange, event.count.to!string);
                 }
             }
@@ -681,7 +684,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             {
                 if (event.aux.length)
                 {
+                    import kameloso.printing : printObject;
+
                     logger.warning(key, " overwrote an aux: ", event.aux);
+                    printObject(event);
                     printTags(tagRange, event.aux);
                 }
             }
@@ -731,7 +737,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             {
                 if (event.count != 0)
                 {
+                    import kameloso.printing : printObject;
+
                     logger.warning(key, " overwrote a count: ", event.count);
+                    printObject(event);
                     printTags(tagRange, event.count.to!string);
                 }
             }
@@ -756,7 +765,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             {
                 if (event.altcount != 0)
                 {
+                    import kameloso.printing : printObject;
+
                     logger.warning(key, " overwrote an altcount: ", event.altcount);
+                    printObject(event);
                     printTags(tagRange, event.altcount.to!string);
                 }
             }
