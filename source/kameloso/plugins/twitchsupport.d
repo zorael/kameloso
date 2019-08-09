@@ -174,14 +174,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 event.type = Type.TWITCH_SUB;
                 break;
 
+            //case "anonsubgift":
             case "subgift":
-                // [21:33:48] msg-param-recipient-display-name = 'emilypiee'
-                // [21:33:48] msg-param-recipient-id = '125985061'
-                // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
-                event.type = Type.TWITCH_SUBGIFT;
-                break;
-
-            case "anonsubgift":
                 // "We added the msg-id “anonsubgift” to the user-notice which
                 // defaults the sender to the channel owner"
                 /+
@@ -192,23 +186,62 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
                     https://discuss.dev.twitch.tv/t/msg-id-purchase/22067/8
                  +/
-                // Confusing.
+                // Inconsistent answers. Solution: throw money at it.
+/+
+[21:00:40] [subgift] [#beardageddon] AnAnonymousGifter (dolochild): "An anonymous user gifted a Tier 1 sub to dolochild!" (1000)
+-- IRCEvent
+     Type type                    TWITCH_SUBGIFT
+   string raw                    ":tmi.twitch.tv USERNOTICE #beardageddon"(39)
+  IRCUser sender                 <struct>
+   string channel                "#beardageddon"(13)
+  IRCUser target                 <struct>
+   string content                "An anonymous user gifted a Tier 1 sub to dolochild!"(51)
+   string aux                    "1000"(4)
+   string tags                   "badge-info=;badges=;color=;display-name=AnAnonymousGifter;emotes=;flags=;id=30f00e1d-0724-4c30-b265-0c8695c5e748;login=ananonymousgifter;mod=0;msg-id=subgift;msg-param-fun-string=FunStringOne;msg-param-months=2;msg-param-origin-id=da\s39\sa3\see\s5e\s6b\s4b\s0d\s32\s55\sbf\sef\s95\s60\s18\s90\saf\sd8\s07\s09;msg-param-recipient-disp
+lay-name=dolochild;msg-param-recipient-id=124388477;msg-param-recipient-user-name=dolochild;msg-param-sub-plan-name=Channel\sSubscription\s(beardageddon);msg-param-sub-plan=1000;room-i
+d=74488574;subscriber=0;system-msg=An\sanonymous\suser\sgifted\sa\sTier\s1\ssub\sto\sdolochild!\s;tmi-sent-ts=1565377240017;user-id=274598607;user-type="(670)
+     uint num                     0
+      int count                   0
+      int altcount                0
+     long time                    1565377240
+   string errors                  ""(0)
+   string emotes                  ""(0)
+   string id                     "30f00e1d-0724-4c30-b265-0c8695c5e748"(36)
 
-                version(TwitchWarnings)
+badge-info                         ""
+badges                             ""
+color                              ""
+display-name                       "AnAnonymousGifter"
+emotes                             ""
+flags                              ""
+id                                 "30f00e1d-0724-4c30-b265-0c8695c5e748"
+login                              "ananonymousgifter"
+mod                                "0"
+msg-id                             "subgift"
+msg-param-fun-string               "FunStringOne"
+msg-param-months                   "2"
+msg-param-origin-id                "da\s39\sa3\see\s5e\s6b\s4b\s0d\s32\s55\sbf\sef\s95\s60\s18\s90\saf\sd8\s07\s09"
+msg-param-recipient-display-name   "dolochild"
+msg-param-recipient-id             "124388477"
+msg-param-recipient-user-name      "dolochild"
+msg-param-sub-plan-name            "Channel\sSubscription\s(beardageddon)"
+msg-param-sub-plan                 "1000"
+room-id                            "74488574"
+subscriber                         "0"
+system-msg                         "An\sanonymous\suser\sgifted\sa\sTier\s1\ssub\sto\sdolochild!\s"
+tmi-sent-ts                        "1565377240017"
+user-id                            "274598607"
+user-type                          ""
++/
+                event.type = Type.TWITCH_SUBGIFT;
+
+                if (event.sender.nickname == "ananonymousgifter")
                 {
-                    import kameloso.printing : printObject;
-
-                    printObject(event);
-                    printTags(tagRange);
-                }
-
-                if (event.sender.nickname == event.channel)
-                {
-                    // It is indeed defaulting to the channel owner
+                    // Make anonymous gifts detectable by no nickname.
                     event.sender.nickname = string.init;
-                    event.sender.address = "tmi.twitch.tv";
+                    event.sender.alias_ = string.init;
                 }
-                goto case "subgift";
+                break;
 
             case "submysterygift":
                 event.type = Type.TWITCH_BULKGIFT;
@@ -220,9 +253,46 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 break;
 
             case "rewardgift":
-                //msg-param-bits-amount = '199'
-                //msg-param-min-cheer-amount = '150'
-                //msg-param-selected-count = '60'
+/+
+-- IRCEvent
+     Type type                    TWITCH_REWARDGIFT                                                                                                                                        string raw                    ":tmi.twitch.tv USERNOTICE #overwatchleague :A Cheer shared Rewards to 20 others in Chat!"(88)                                                           IRCUser sender                 <struct>
+   string channel                "#overwatchleague"(16)
+  IRCUser target                 <struct> (init)
+   string content                "A Cheer shared Rewards to 20 others in Chat!"(44)
+   string aux                     ""(0)
+   string tags                   "badge-info=;badges=subscriber/0,bits/1000;color=#DAA520;display-name=Gerath94;emotes=;flags=;id=9d7e2298-9ee4-4e43-abb5-328ffae83a31;login=gerath94;mo
+d=0;msg-id=rewardgift;msg-param-bits-amount=500;msg-param-domain=owl2019;msg-param-min-cheer-amount=300;msg-param-selected-count=20;room-id=137512364;subscriber=1;system-msg=reward;tmi
+-sent-ts=1565309265716;user-id=81251937;user-type="(384)
+     uint num                     0
+      int count                   0
+      int altcount                0
+     long time                    1565309300
+   string errors                  ""(0)
+   string emotes                  ""(0)
+   string id                     "9d7e2298-9ee4-4e43-abb5-328ffae83a31"(36)
+
+badge-info                         ""
+badges                             "subscriber/0,bits/1000"
+color                              "#DAA520"
+display-name                       "Gerath94"
+emotes                             ""
+flags                              ""
+id                                 "9d7e2298-9ee4-4e43-abb5-328ffae83a31"
+login                              "gerath94"
+mod                                "0"
+msg-id                             "rewardgift"
+msg-param-bits-amount              "500"
+msg-param-domain                   "owl2019"
+msg-param-min-cheer-amount         "300"
+msg-param-selected-count           "20"
+room-id                            "137512364"
+subscriber                         "1"
+system-msg                         "reward"
+tmi-sent-ts                        "1565309265716"
+user-id                            "81251937"
+user-type                          ""
+[02:08:20] msg-param-selected-count overwrote an altcount: 300
++/
                 event.type = Type.TWITCH_REWARDGIFT;
                 break;
 
@@ -308,13 +378,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                     event.altcount = (*charityRemaining).to!int;
                 }
 
-                break;
-
-            case "giftpaidupgrade":
-                event.type = Type.TWITCH_GIFTCHAIN;
-                break;
-
-            case "anongiftpaidupgrade":
                 version(TwitchWarnings)
                 {
                     import kameloso.printing : printObject;
@@ -322,14 +385,19 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                     printObject(event);
                     printTags(tagRange);
                 }
+                break;
 
-                if (event.sender.nickname == event.channel)
+            case "giftpaidupgrade":
+            //case "anongiftpaidupgrade":
+                event.type = Type.TWITCH_GIFTCHAIN;
+
+                if (event.sender.nickname == "ananonymousgifter")
                 {
-                    // It is indeed defaulting to the channel owner
+                    // Make anonymous gifts detectable by no nickname.
                     event.sender.nickname = string.init;
-                    event.sender.address = "tmi.twitch.tv";
+                    event.sender.alias_ = string.init;
                 }
-                goto case "giftpaidupgrade";
+                break;
 
             case "primepaidupgrade":
                 event.type = Type.TWITCH_SUBUPGRADE;
@@ -882,7 +950,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "msg-param-fun-string":
                 // msg-param-fun-string = FunStringTwo
                 // [subgift] [#waifugate] AnAnonymousGifter (Asdf): "An anonymous user gifted a Tier 1 sub to Asdf!" (1000) {1}
-                // Unsure.
+                // Unsure. Useless.
             case "message-id":
                 // message-id = 3
                 // WHISPER, rolling number enumerating messages
