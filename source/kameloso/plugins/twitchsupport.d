@@ -662,6 +662,17 @@ user-type                          ""
             import kameloso.string : escapeControlCharacters, strippedRight;
             import std.typecons : No, Yes;
 
+            if (!value.length) break;
+
+            if (event.type == Type.TWITCH_RITUAL)
+            {
+                event.aux = value
+                    .decodeIRCv3String
+                    .strippedRight
+                    .escapeControlCharacters!(Yes.remove);
+                break;
+            }
+
             if (!event.content.length)
             {
                 event.content = value
@@ -751,9 +762,6 @@ user-type                          ""
             // 1000, 2000, and 3000 refer to the first, second, and third
             // levels of paid subscriptions, respectively (currently $4.99,
             // $9.99, and $24.99).
-        case "msg-param-ritual-name":
-            // msg-param-ritual-name = 'new_chatter'
-            // [ritual] tmi.twitch.tv [#couragejd]: "@callmejosh15 is new here. Say hello!"
         case "msg-param-promo-name":
             // Promotion name
             // msg-param-promo-name = Subtember
@@ -997,6 +1005,8 @@ user-type                          ""
             case "msg-param-min-cheer-amount":
                 // REWARDGIFT; of interest?
                 // msg-param-min-cheer-amount = '150'
+            case "msg-param-ritual-name":
+                // msg-param-ritual-name = 'new_chatter'
 
                 // Ignore these events.
                 break;
