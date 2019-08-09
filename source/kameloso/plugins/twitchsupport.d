@@ -171,6 +171,30 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             {
             case "sub":
             case "resub":
+/+
+badge-info                         "subscriber/3"
+badges                             "subscriber/3,premium/1"
+color                              "#008000"
+display-name                       "krufster"
+emotes                             ""
+flags                              ""
+id                                 "b97b13a2-8966-4d18-b634-61a04aefcb92"
+login                              "krufster"
+mod                                "0"
+msg-id                             "resub"
+msg-param-cumulative-months        "3"
+msg-param-months                   "0"
+msg-param-should-share-streak      "1"
+msg-param-streak-months            "2"
+msg-param-sub-plan-name            "Dr\sDisRespect"
+msg-param-sub-plan                 "Prime"
+room-id                            "17337557"
+subscriber                         "1"
+system-msg                         "krufster\ssubscribed\swith\sTwitch\sPrime.\sThey've\ssubscribed\sfor\s3\smonths,\scurrently\son\sa\s2\smonth\sstreak!"
+tmi-sent-ts                        "1565380381758"
+user-id                            "83176999"
+user-type                          ""
++/
                 event.type = Type.TWITCH_SUB;
                 break;
 
@@ -274,11 +298,68 @@ user-type                          ""
                 goto case "subgift";
 
             case "submysterygift":
+/+
+badge-info                         "subscriber/8"
+badges                             "subscriber/6,sub-gifter/1000"
+color                              ""
+display-name                       "kinghaua35"
+emotes                             ""
+flags                              ""
+id                                 "fbf4e664-95f4-4205-919b-a71268bb71a6"
+login                              "kinghaua35"
+mod                                "0"
+msg-id                             "submysterygift"
+msg-param-mass-gift-count          "50"
+msg-param-origin-id                "27\s3f\sc2\s0d\sde\s69\sa2\sb7\s06\sba\sb3\sb4\s9b\s4e\sd1\s2b\s8c\s65\s83\s27"
+msg-param-sender-count             "2230"
+msg-param-sub-plan                 "1000"
+room-id                            "17337557"
+subscriber                         "1"
+system-msg                         "kinghaua35\sis\sgifting\s50\sTier\s1\sSubs\sto\sDrDisrespect's\scommunity!\sThey've\sgifted\sa\stotal\sof\s2230\sin\sthe\schannel!"
+tmi-sent-ts                        "1565381426467"
+user-id                            "215907614"
+user-type                          ""
++/
                 event.type = Type.TWITCH_BULKGIFT;
                 break;
 
             case "ritual":
-                // unhandled message: ritual
+/+
+-- IRCEvent
+     Type type                    TWITCH_RITUAL
+   string raw                    ":tmi.twitch.tv USERNOTICE #rdulive :VoHiYo"(42)
+  IRCUser sender                 <struct>
+   string channel                "#rdulive"(8)
+  IRCUser target                 <struct> (init)
+   string content                "VoHiYo"(6)
+   string aux                     ""(0)
+   string tags                   (below)
+     uint num                     0
+      int count                   0
+      int altcount                0
+     long time                    1565380797
+   string errors                  ""(0)
+   string emotes                 "81274:0-5"(9)
+   string id                     "5f8659bc-646f-407d-9d75-25dbfc6745ff"(36)
+
+badge-info                         ""
+badges                             ""
+color                              "#00FF7F"
+display-name                       "VNXL"
+emotes                             "81274:0-5"
+flags                              ""
+id                                 "5f8659bc-646f-407d-9d75-25dbfc6745ff"
+login                              "vnxl"
+mod                                "0"
+msg-id                             "ritual"
+msg-param-ritual-name              "new_chatter"
+room-id                            "59965916"
+subscriber                         "0"
+system-msg                         "@VNXL\sis\snew\shere.\sSay\shello!"
+tmi-sent-ts                        "1565380719028"
+user-id                            "81266025"
+user-type                          ""
++/
                 event.type = Type.TWITCH_RITUAL;
                 break;
 
@@ -290,9 +371,7 @@ user-type                          ""
   IRCUser target                 <struct> (init)
    string content                "A Cheer shared Rewards to 20 others in Chat!"(44)
    string aux                     ""(0)
-   string tags                   "badge-info=;badges=subscriber/0,bits/1000;color=#DAA520;display-name=Gerath94;emotes=;flags=;id=9d7e2298-9ee4-4e43-abb5-328ffae83a31;login=gerath94;mo
-d=0;msg-id=rewardgift;msg-param-bits-amount=500;msg-param-domain=owl2019;msg-param-min-cheer-amount=300;msg-param-selected-count=20;room-id=137512364;subscriber=1;system-msg=reward;tmi
--sent-ts=1565309265716;user-id=81251937;user-type="(384)
+   string tags                   (below)
      uint num                     0
       int count                   0
       int altcount                0
@@ -321,24 +400,76 @@ system-msg                         "reward"
 tmi-sent-ts                        "1565309265716"
 user-id                            "81251937"
 user-type                          ""
-[02:08:20] msg-param-selected-count overwrote an altcount: 300
+
+badge-info                         ""
+badges                             "subscriber/0,bits/100"
+color                              "#0000FF"
+display-name                       "Flori_DE"
+emotes                             ""
+flags                              ""
+id                                 "4d4953ce-b9a6-460c-aec1-4bfdaaae342b"
+login                              "flori_de"
+mod                                "0"
+msg-id                             "rewardgift"
+msg-param-bits-amount              "300"
+msg-param-domain                   "owl2019"
+msg-param-min-cheer-amount         "300"
+msg-param-selected-count           "10"
+room-id                            "137512364"
+subscriber                         "1"
+system-msg                         "reward"
+tmi-sent-ts                        "1565381918616"
+user-id                            "170554786"
+user-type                          ""
 +/
                 event.type = Type.TWITCH_REWARDGIFT;
                 break;
 
             case "raid":
-                //display-name=VHSGlitch
-                //login=vhsglitch
-                //msg-id=raid
-                //msg-param-displayName=VHSGlitch
-                //msg-param-login=vhsglitch
-                //msg-param-viewerCount=9
-                //system-msg=9\sraiders\sfrom\sVHSGlitch\shave\sjoined\n!
+/+
+badge-info                         ""
+badges                             ""
+color                              "#FF0000"
+display-name                       "Not_A_Banana"
+emotes                             ""
+flags                              ""
+id                                 "28d76102-e05b-4185-a30e-80ee88572d50"
+login                              "not_a_banana"
+mod                                "0"
+msg-id                             "raid"
+msg-param-displayName              "Not_A_Banana"
+msg-param-login                    "not_a_banana"
+msg-param-profileImageURL          "https://static-cdn.jtvnw.net/jtv_user_pictures/not_a_banana-profile_image-fee36a93a752bf70-70x70.jpeg"
+msg-param-viewerCount              "3"
+room-id                            "57292293"
+subscriber                         "0"
+system-msg                         "3\sraiders\sfrom\sNot_A_Banana\shave\sjoined!"
+tmi-sent-ts                        "1565387919848"
+user-id                            "50143288"
+user-type                          ""
++/
                 event.type = Type.TWITCH_RAID;
                 break;
 
             case "unraid":
-                // Presumably same parameters as case "raid"
+/+
+user-type                          ""
+display-name                       "dakotaz"
+id                                 "55245012-9790-4599-b51c-90b1cac0ced7"
+mod                                "0"
+tmi-sent-ts                        "1565104791674"
+user-id                            "39298218"
+login                              "dakotaz"
+badge-info                         "subscriber/71"
+flags                              ""
+emotes                             ""
+color                              "#AA79EB"
+msg-id                             "unraid"
+system-msg                         "The\sraid\shas\sbeen\scancelled."
+subscriber                         "1"
+badges                             "broadcaster/1,subscriber/60,sub-gifter/1000"
+room-id                            "39298218"
++/
                 event.type = Type.TWITCH_UNRAID;
                 break;
 
@@ -458,11 +589,50 @@ room-id                            "60056333"
                 goto case "giftpaidupgrade";
 
             case "primepaidupgrade":
+/+
+user-type                          ""
+display-name                       "luton9"
+id                                 "d851692c-2987-4534-b58f-95cb0fc5b630"
+mod                                "0"
+tmi-sent-ts                        "1565036616388"
+user-id                            "430838491"
+login                              "luton9"
+badge-info                         "subscriber/2"
+flags                              ""
+emotes                             ""
+msg-param-sub-plan                 "1000"
+color                              ""
+msg-id                             "primepaidupgrade"
+system-msg                         "luton9\sconverted\sfrom\sa\sTwitch\sPrime\ssub\sto\sa\sTier\s1\ssub!"
+subscriber                         "1"
+badges                             "subscriber/0,premium/1"
+room-id                            "12875057"
++/
                 event.type = Type.TWITCH_SUBUPGRADE;
                 break;
 
             case "bitsbadgetier":
                 // User just earned a badge for a tier of bits
+/+
+[12:31:59] [bitsbadgetier] [#mrfreshasian] blasterdark9000 [SC]: "new badge hype :)" {1000}
+user-type                          ""
+display-name                       "blasterdark9000"
+id                                 "0f454461-251a-4fad-a2b4-bc12fa776206"
+mod                                "0"
+msg-param-threshold                "1000"
+tmi-sent-ts                        "1565086861733"
+user-id                            "123361548"
+login                              "blasterdark9000"
+badge-info                         "subscriber/7"
+flags                              ""
+emotes                             "1:15-16"
+color                              "#DAA520"
+msg-id                             "bitsbadgetier"
+system-msg                         "bits\sbadge\stier\snotification"
+subscriber                         "1"
+badges                             "subscriber/6,bits/1000"
+room-id                            "38594688"
++/
                 event.type = Type.TWITCH_BITSBADGETIER;
                 break;
 
@@ -819,6 +989,24 @@ user-type
                   1000-4999, purple for 100-999, gray for 1-99
                 * size – A digit between 1 and 4
             */
+/+
+[01:30:29] [cheer] [#pace22] Jay_027 [SC] Cheer100 Cheer100 what mouse do you use for SOT? {200}
+user-type           ""
+display-name        "Jay_027"
+id                  "6a4098be-c959-4803-9e9d-2480edad577e"
+mod                 "0"
+tmi-sent-ts         "1564961429282"
+user-id             "82203804"
+turbo               "0"
+badge-info          "subscriber/6"
+flags               ""
+emotes              ""
+bits                "200"
+color               "#E4FF00"
+subscriber          "1"
+badges              "subscriber/6,bits/1000"
+room-id             "31457014"
++/
             import std.conv : to;
             event.type = Type.TWITCH_CHEER;
 
