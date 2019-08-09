@@ -174,7 +174,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 event.type = Type.TWITCH_SUB;
                 break;
 
-            //case "anonsubgift":
             case "subgift":
                 // "We added the msg-id “anonsubgift” to the user-notice which
                 // defaults the sender to the channel owner"
@@ -186,7 +185,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 
                     https://discuss.dev.twitch.tv/t/msg-id-purchase/22067/8
                  +/
-                // Inconsistent answers. Solution: throw money at it.
+                // Solution: throw money at it.
 /+
 [21:00:40] [subgift] [#beardageddon] AnAnonymousGifter (dolochild): "An anonymous user gifted a Tier 1 sub to dolochild!" (1000)
 -- IRCEvent
@@ -197,9 +196,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
   IRCUser target                 <struct>
    string content                "An anonymous user gifted a Tier 1 sub to dolochild!"(51)
    string aux                    "1000"(4)
-   string tags                   "badge-info=;badges=;color=;display-name=AnAnonymousGifter;emotes=;flags=;id=30f00e1d-0724-4c30-b265-0c8695c5e748;login=ananonymousgifter;mod=0;msg-id=subgift;msg-param-fun-string=FunStringOne;msg-param-months=2;msg-param-origin-id=da\s39\sa3\see\s5e\s6b\s4b\s0d\s32\s55\sbf\sef\s95\s60\s18\s90\saf\sd8\s07\s09;msg-param-recipient-disp
-lay-name=dolochild;msg-param-recipient-id=124388477;msg-param-recipient-user-name=dolochild;msg-param-sub-plan-name=Channel\sSubscription\s(beardageddon);msg-param-sub-plan=1000;room-i
-d=74488574;subscriber=0;system-msg=An\sanonymous\suser\sgifted\sa\sTier\s1\ssub\sto\sdolochild!\s;tmi-sent-ts=1565377240017;user-id=274598607;user-type="(670)
+   string tags                   (below)
      uint num                     0
       int count                   0
       int altcount                0
@@ -232,6 +229,31 @@ system-msg                         "An\sanonymous\suser\sgifted\sa\sTier\s1\ssub
 tmi-sent-ts                        "1565377240017"
 user-id                            "274598607"
 user-type                          ""
+
+badge-info                         "subscriber/2"
+badges                             "subscriber/0,sub-gifter/1"
+color                              "#DAA520"
+display-name                       "Kraltic"
+emotes                             ""
+flags                              ""
+id                                 "eaac38a6-da95-4f22-b6bd-52faedc65b79"
+login                              "kraltic"
+mod                                "0"
+msg-id                             "subgift"
+msg-param-months                   "1"
+msg-param-origin-id                "da\s39\sa3\see\s5e\s6b\s4b\s0d\s32\s55\sbf\sef\s95\s60\s18\s90\saf\sd8\s07\s09"
+msg-param-recipient-display-name   "daveeedpistolass"
+msg-param-recipient-id             "245630631"
+msg-param-recipient-user-name      "daveeedpistolass"
+msg-param-sender-count             "2"
+msg-param-sub-plan-name            "Dr\sDisRespect"
+msg-param-sub-plan                 "1000"
+room-id                            "17337557"
+subscriber                         "1"
+system-msg                         "Kraltic\sgifted\sa\sTier\s1\ssub\sto\sdaveeedpistolass!\sThey\shave\sgiven\s2\sGift\sSubs\sin\sthe\schannel!"
+tmi-sent-ts                        "1565380535752"
+user-id                            "98897370"
+user-type                          ""
 +/
                 event.type = Type.TWITCH_SUBGIFT;
 
@@ -242,6 +264,14 @@ user-type                          ""
                     event.sender.alias_ = string.init;
                 }
                 break;
+
+            case "anonsubgift":
+                version(TwitchWarnings)
+                {
+                    logger.trace(event.raw);
+                    printTags(tagRange);
+                }
+                goto case "subgift";
 
             case "submysterygift":
                 event.type = Type.TWITCH_BULKGIFT;
