@@ -569,6 +569,16 @@ user-type                          ""
             default:
                 import kameloso.string : beginsWith;
 
+                version(TwitchWarnings)
+                {
+                    if (event.aux.length)
+                    {
+                        logger.warning("msg-id ", value, " overwrote an aux: ", event.aux);
+                        logger.trace(event.raw);
+                        printTags(tagRange, event.aux);
+                    }
+                }
+
                 event.aux = value;
 
                 if (value.beginsWith("bad_"))
