@@ -304,7 +304,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
                 {
                     ptrdiff_t i = istr.to!size_t - 1;
 
-                    if ((i > 0) && (i < phrases.length))
+                    if ((i > 0) && (i <= phrases.length))
                     {
                         garbage ~= i;
                     }
