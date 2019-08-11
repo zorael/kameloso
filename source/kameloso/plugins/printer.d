@@ -1101,6 +1101,7 @@ if (isOutputRange!(Sink, char[]))
                 case CHAN:
                 case EMOTE:
                 case TWITCH_CHEER:
+                case TWITCH_SUBGIFT:
                     import kameloso.irc.common : containsNickname;
                     if (content.containsNickname(plugin.state.client.nickname))
                     {
