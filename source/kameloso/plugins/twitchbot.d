@@ -271,7 +271,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
  +  Bans, unbans, lists or clears banned phrases for the current channel.
  +  `kameloso.irc.defs.IRCEvent.Type.CHAN` wrapper.
  +
- +  Changes are persistently saved to the `twitchphrases.json` file.
+ +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -291,7 +291,7 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
  +  Bans, unbans, lists or clears banned phrases for the specified target channel.
  +  `kameloso.irc.defs.IRCEvent.Type.QUERY` wrapper.
  +
- +  Changes are persistently saved to the `twitchphrases.json` file.
+ +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
