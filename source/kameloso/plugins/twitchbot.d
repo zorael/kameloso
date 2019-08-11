@@ -210,21 +210,22 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
     void dg()
     {
-        ulong lastMessageCount;
-        long lastTimestamp;
+        import std.datetime.systime : Clock;
+
+        const channel = channelName in plugin.activeChannels;
+
+        immutable creation = Clock.currTime.toUnixTime;
+        ulong lastMessageCount = channel.messageCount;
+        long lastTimestamp = creation;
 
         while (true)
         {
-            const channel = channelName in plugin.activeChannels;
-            assert(channel, "Orphan timer Fiber for channel " ~ channelName);
-
             if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
             {
                 Fiber.yield();
                 continue;
             }
 
-            import std.datetime.systime : Clock;
             immutable now = Clock.currTime.toUnixTime;
 
             if (((now - lastTimestamp) < timerDef.timeThreshold) ||
