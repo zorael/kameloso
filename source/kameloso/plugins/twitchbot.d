@@ -801,7 +801,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 
         immutable delta = now - SysTime.fromUnixTime(broadcastStart);
 
-        chan(plugin.state, event.channel, "%s has been streaming for %s."
+        chan(plugin.state, event.channel, "%s has been live for %s."
             .format(nickname, delta));
     }
     else
@@ -841,7 +841,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
             if (streamer.alias_.length) nickname = streamer.alias_;
         }
 
-        chan(plugin.state, event.channel, nickname ~ " is already streaming.");
+        chan(plugin.state, event.channel, nickname ~ " is already live.");
         return;
     }
 
