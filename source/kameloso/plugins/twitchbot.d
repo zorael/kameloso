@@ -1461,7 +1461,7 @@ void periodically(TwitchBotPlugin plugin)
         {
             if (!timer || (timer.state != Fiber.State.HOLD))
             {
-                logger.error("Dead or busy announcer Fiber in channel ", channelName);
+                logger.error("Dead or busy timer Fiber in channel ", channelName);
                 continue;
             }
 
