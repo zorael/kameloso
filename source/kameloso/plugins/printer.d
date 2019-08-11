@@ -1163,9 +1163,14 @@ if (isOutputRange!(Sink, char[]))
             .put(sink, " ! ", errors, " !");
         }
 
-        if (shouldBell || (errors.length && bellOnError &&
-            !plugin.printerSettings.silentErrors) ||
-            ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
+        shouldBell = shouldBell || ((target.nickname == plugin.state.client.nickname) &&
+            ((event.type == IRCEvent.Type.QUERY) ||
+            (event.type == IRCEvent.Type.TWITCH_CHEER) ||
+            (event.type == IRCEvent.Type.TWITCH_SUBGIFT)));
+        shouldBell = shouldBell || (errors.length && bellOnError &&
+            !plugin.printerSettings.silentErrors);
+
+        if (shouldBell)
         {
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
@@ -1640,9 +1645,14 @@ if (isOutputRange!(Sink, char[]))
 
         sink.colourWith(FG.default_);  // same for bright and dark
 
-        if (shouldBell || (errors.length && bellOnError &&
-            !plugin.printerSettings.silentErrors) ||
-            ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
+        shouldBell = shouldBell || ((target.nickname == plugin.state.client.nickname) &&
+            ((event.type == IRCEvent.Type.QUERY) ||
+            (event.type == IRCEvent.Type.TWITCH_CHEER) ||
+            (event.type == IRCEvent.Type.TWITCH_SUBGIFT)));
+        shouldBell = shouldBell || (errors.length && bellOnError &&
+            !plugin.printerSettings.silentErrors);
+
+        if (shouldBell)
         {
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
