@@ -2,7 +2,9 @@
  +  This is an example Twitch streamer bot. It supports basic authentication,
  +  allowing for channel-specific administrators that are not necessarily in the
  +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
- +  has been streaming, and banned phrases.
+ +  has been live, banned phrases and timered announcements. If run in a
+ +  local terminal it can also emit some terminal bells on certain events, to
+ +  draw attention.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, etc. There is no protection from spam yet.
