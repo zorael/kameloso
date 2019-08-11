@@ -1510,6 +1510,7 @@ if (isOutputRange!(Sink, char[]))
                 case CHAN:
                 case EMOTE:
                 case TWITCH_CHEER:
+                case TWITCH_SUBGIFT:
                 //case SELFCHAN:
                     import kameloso.terminal : invert;
                     import kameloso.irc.common : containsNickname;
