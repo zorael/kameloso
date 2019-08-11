@@ -1083,8 +1083,7 @@ if (isOutputRange!(Sink, char[]))
             if (sender.isServer || sender.nickname.length)
             {
                 immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
-                    (event.type == IRCEvent.Type.SELFEMOTE) ||
-                    (event.type == IRCEvent.Type.TWITCH_CHEER);
+                    (event.type == IRCEvent.Type.SELFEMOTE);
 
                 if (isEmote)
                 {
@@ -1100,7 +1099,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                 case CHAN:
                 case EMOTE:
-                case TWITCH_CHEER:
                 case TWITCH_SUBGIFT:
                     import kameloso.irc.common : containsNickname;
                     if (content.containsNickname(plugin.state.client.nickname))
@@ -1166,7 +1164,6 @@ if (isOutputRange!(Sink, char[]))
 
         shouldBell = shouldBell || ((target.nickname == plugin.state.client.nickname) &&
             ((event.type == IRCEvent.Type.QUERY) ||
-            (event.type == IRCEvent.Type.TWITCH_CHEER) ||
             (event.type == IRCEvent.Type.TWITCH_SUBGIFT)));
         shouldBell = shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors);
@@ -1479,8 +1476,7 @@ if (isOutputRange!(Sink, char[]))
             immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
 
             immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
-                (event.type == IRCEvent.Type.SELFEMOTE) ||
-                (event.type == IRCEvent.Type.TWITCH_CHEER)) ? emoteFgBase : contentFgBase;
+                (event.type == IRCEvent.Type.SELFEMOTE)) ? emoteFgBase : contentFgBase;
             immutable isEmote = (fgBase == emoteFgBase);
 
             sink.colourWith(fgBase);  // Always grey colon and SASL +, prepare for emote
@@ -1515,7 +1511,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                 case CHAN:
                 case EMOTE:
-                case TWITCH_CHEER:
                 case TWITCH_SUBGIFT:
                 //case SELFCHAN:
                     import kameloso.terminal : invert;
@@ -1648,7 +1643,6 @@ if (isOutputRange!(Sink, char[]))
 
         shouldBell = shouldBell || ((target.nickname == plugin.state.client.nickname) &&
             ((event.type == IRCEvent.Type.QUERY) ||
-            (event.type == IRCEvent.Type.TWITCH_CHEER) ||
             (event.type == IRCEvent.Type.TWITCH_SUBGIFT)));
         shouldBell = shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors);
@@ -2214,7 +2208,6 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     {
     case EMOTE:
     case SELFEMOTE:
-    case TWITCH_CHEER:
         if (!colourful && event.tags.contains("emote-only=1"))
         {
             // Just highlight the whole line, don't worry about resetting to fgBase
