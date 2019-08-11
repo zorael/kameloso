@@ -1664,7 +1664,7 @@ private:
      +  How often to check whether timers should fire, in seconds. A smaller
      +  number means better precision.
      +/
-    enum timerPeriodicity = 30;
+    enum timerPeriodicity = 10;
 
     mixin IRCPluginImpl;
 
