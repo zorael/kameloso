@@ -967,8 +967,11 @@ user-type
         case "login":
             // RAID; real sender nickname and thus raiding channel lowercased
             // CLEARMSG, SUBGIFT, lots
-            event.sender.nickname = value;
-            resetUser(event.sender);
+            if (value != "ananonymousgifter")
+            {
+                event.sender.nickname = value;
+                resetUser(event.sender);
+            }
             break;
 
         case "color":
