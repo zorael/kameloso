@@ -370,10 +370,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
             if (slice == "*")
             {
-                plugin.bannedPhrasesByChannel.remove(targetChannel);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "All banned phrases removed.");
-                return;
+                goto case "clear";
             }
 
             size_t[] garbage;
@@ -626,11 +623,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
             if (slice == "*")
             {
-                plugin.timerDefsByChannel.remove(targetChannel);
-                channel.timers = typeof(channel.timers).init;
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "All timers removed.");
-                return;
+                goto case "clear";
             }
 
             import std.conv : ConvException, to;
