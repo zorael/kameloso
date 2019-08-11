@@ -235,12 +235,17 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 continue;
             }
 
-            import std.array : replace;
+            if (channel.enabled)
+            {
+                import std.array : replace;
 
-            immutable line = timerDef.line
-                .replace("$streamer", nickname)
-                .replace("$channel", channelName[1..$]);
-            chan(plugin.state, channelName, line);
+                immutable line = timerDef.line
+                    .replace("$streamer", nickname)
+                    .replace("$channel", channelName[1..$]);
+                chan(plugin.state, channelName, line);
+            }
+
+            // If channel is disabled, silently fizzle but keep updating counts
 
             lastMessageCount = channel.messageCount;
             lastTimestamp = now;
