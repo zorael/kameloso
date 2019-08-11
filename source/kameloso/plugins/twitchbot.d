@@ -1445,6 +1445,14 @@ void periodically(TwitchBotPlugin plugin)
 
     immutable now = Clock.currTime.toUnixTime;
 
+    if ((plugin.state.client.server.daemon != IRCServer.Daemon.unset) &&
+        (plugin.state.client.server.daemon != IRCServer.Daemon.twitch))
+    {
+        // Known to not be a Twitch server
+        plugin.state.nextPeriodical = now + 315_569_260L;
+        return;
+    }
+
     foreach (immutable channelName, channel; plugin.activeChannels)
     {
         if (!channel.timers.length) continue;
