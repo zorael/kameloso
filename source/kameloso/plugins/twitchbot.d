@@ -730,6 +730,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
         break;
 
     case "clear":
+        plugin.activeChannels[targetChannel].timers.length = 0;
         plugin.timerDefsByChannel.remove(targetChannel);
         plugin.timersToJSON.save(plugin.timersFile);
         privmsg(plugin.state, event.channel, event.sender.nickname, "All timers cleared.");
