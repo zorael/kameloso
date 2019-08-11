@@ -382,7 +382,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
                 try
                 {
-                    ptrdiff_t i = istr.to!size_t - 1;
+                    ptrdiff_t i = istr.to!ptrdiff_t - 1;
 
                     if ((i >= 0) && (i < phrases.length))
                     {
@@ -641,9 +641,9 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
             try
             {
-                ptrdiff_t i = slice.to!size_t - 1;
+                ptrdiff_t i = slice.to!ptrdiff_t - 1;
 
-                if ((i > 0) && (i <= channel.timers.length))
+                if ((i >= 0) && (i < channel.timers.length))
                 {
                     import std.algorithm.mutation : SwapStrategy, remove;
                     *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
