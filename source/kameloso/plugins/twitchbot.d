@@ -720,10 +720,11 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
             foreach (immutable i, const timer; (*timers)[start..end])
             {
-                immutable maxLen = min(timers.length, maxLineLength);
+                immutable maxLen = min(timer.line.length, maxLineLength);
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "%d: %s%s".format(start+i+1, timers[0..maxLen],
-                    (timers.length > maxLen) ? " ...  [truncated]" : string.init));
+                    "%d: %s%s (%d:%d:%d)".format(start+i+1, timer.line[0..maxLen],
+                    (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
+                    timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
             }
         }
         else
