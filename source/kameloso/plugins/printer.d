@@ -2232,6 +2232,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
 
     case CHAN:
     case SELFCHAN:
+    case TWITCH_RITUAL:
         if (!colourful && event.tags.contains("emote-only=1"))
         {
             // Emote only channel message, treat the same as an emote-only emote
