@@ -227,7 +227,8 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
             import std.datetime.systime : Clock;
             immutable now = Clock.currTime.toUnixTime;
 
-            if ((now - lastTimestamp) < timerDef.timeThreshold)
+            if (((now - lastTimestamp) < timerDef.timeThreshold) ||
+                ((now - creation) < timerDef.stagger))
             {
                 Fiber.yield();
                 continue;
@@ -576,11 +577,11 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
         import std.algorithm.searching : count;
         import std.conv : ConvException, to;
 
-        if (slice.count(' ') < 2)
+        if (slice.count(' ') < 3)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: add [message threshold] [time threshold] [text]");
-            //                                 1                2
+                "Usage: add [message threshold] [time threshold] [stagger seconds] [text]");
+            //                                 1                2                 3
             return;
         }
 
@@ -588,15 +589,25 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
         try
         {
-            timerDef.messageCountThreshold = slice.nom(' ').to!uint;
-            timerDef.timeThreshold = slice.nom(' ').to!long;
+            timerDef.messageCountThreshold = slice.nom(' ').to!int;
+            timerDef.timeThreshold = slice.nom(' ').to!int;
+            timerDef.stagger = slice.nom(' ').to!int;
             timerDef.line = slice;
         }
         catch (ConvException e)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid parameters.");
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: add [message threshold] [time threshold] [text]");
+                "Usage: add [message threshold] [time threshold] [stagger time] [text]");
+            return;
+        }
+
+        if ((timerDef.messageCountThreshold <= 0) ||
+            (timerDef.timeThreshold <= 0) || (timerDef.stagger <= 0))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Arguments for message count threshold, timer threshold and stagger " ~
+                "must all be positive numbers.");
             return;
         }
 
@@ -1528,8 +1539,9 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
             TimerDefinition timer;
 
             timer.line = timerArrayEntry["line"].str;
-            timer.messageCountThreshold = timerArrayEntry["messageCountThreshold"].integer.to!uint;
-            timer.timeThreshold = timerArrayEntry["timeThreshold"].integer;
+            timer.messageCountThreshold = timerArrayEntry["messageCountThreshold"].integer.to!int;
+            timer.timeThreshold = timerArrayEntry["timeThreshold"].integer.to!int;
+            timer.stagger = timerArrayEntry["stagger"].integer.to!int;
 
             plugin.timerDefsByChannel[channel] ~= timer;
         }
@@ -1564,6 +1576,8 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
             value["line"] = timer.line;
             value["messageCountThreshold"] = timer.messageCountThreshold;
             value["timeThreshold"] = timer.timeThreshold;
+            value["stagger"] = timer.stagger;
+            json[channelName].array = null;
             json[channelName].array ~= value;
         }
     }
