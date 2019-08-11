@@ -1470,30 +1470,23 @@ void start(TwitchBotPlugin plugin)
  +/
 struct TimerDefinition
 {
+    /// The timered line to send to the channel.
     string line;
 
-    uint messageCountThreshold;
+    /++
+     +  How many messages must have been sent since the last announce before we
+     +  will allow another one.
+     +/
+    int messageCountThreshold;
 
-    long timeThreshold;
+    /++
+     +  How many seconds must have passed since the last announce before we will
+     +  allow another one.
+     +/
+    int timeThreshold;
 
-    this(const string stringForm)
-    {
-        import kameloso.string : nom;
-        import std.conv : ConvException, to;
-
-        string slice = stringForm;  // mutable
-
-        try
-        {
-            messageCountThreshold = slice.nom(' ').to!uint;
-            timeThreshold = slice.nom(' ').to!long;
-            line = slice;
-        }
-        catch (ConvException e)
-        {
-            logger.error(e.msg);
-        }
-    }
+    /// Delay in seconds before the timer comes into effect.
+    int stagger;
 }
 
 
