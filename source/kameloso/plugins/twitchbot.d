@@ -393,66 +393,45 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [phrase num 1] [phrase num 2] [phrase num 3] ...".format(verb));
+                "Usage: %s [phrase index]".format(verb));
             return;
         }
 
         if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.iteration : splitter;
+            import std.conv : ConvException, to;
 
-            if (slice == "*")
+            if (slice == "*") goto case "clear";
+
+            try
             {
-                goto case "clear";
-            }
+                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
 
-            size_t[] garbage;
-
-            foreach (immutable istr; slice.splitter(" "))
-            {
-                import std.conv : ConvException, to;
-
-                try
+                if ((i >= 0) && (i < phrases.length))
                 {
-                    ptrdiff_t i = istr.to!ptrdiff_t - 1;
-
-                    if ((i >= 0) && (i < phrases.length))
-                    {
-                        garbage ~= i;
-                    }
-                    else
-                    {
-                        privmsg(plugin.state, event.channel, event.sender.nickname,
-                            "Phrase index %s out of range. (max %d)"
-                            .format(istr, phrases.length));
-                        return;
-                    }
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
                 }
-                catch (ConvException e)
+                else
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Invalid phrase index: " ~ istr);
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s [phrase num 1] [phrase num 2] [phrase num 3] [*]..."
-                        .format(verb));
+                        "Phrase ban index %s out of range. (max %d)"
+                        .format(slice, phrases.length));
                     return;
                 }
             }
-
-            immutable originalNum = phrases.length;
-
-            foreach_reverse (immutable i; garbage)
+            catch (ConvException e)
             {
-                import std.algorithm.mutation : SwapStrategy, remove;
-                *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "Invalid phrase ban index: " ~ slice);
+                return;
             }
 
-            immutable numRemoved = (originalNum - phrases.length);
             saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "%d/%d phrase bans removed.".format(numRemoved, originalNum));
-
             if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Phrase ban removed.");
         }
         else
         {
@@ -464,6 +443,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
     case "list":
         if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -477,7 +457,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
                 try
                 {
-                    start = slice.to!ptrdiff_t - 1;
+                    start = slice.stripped.to!ptrdiff_t - 1;
 
                     if ((start < 0) || (start >= phrases.length))
                     {
@@ -634,12 +614,18 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
             return;
         }
 
-        if ((timerDef.messageCountThreshold <= 0) ||
-            (timerDef.timeThreshold <= 0) || (timerDef.stagger <= 0))
+        if ((timerDef.messageCountThreshold < 0) ||
+            (timerDef.timeThreshold < 0) || (timerDef.stagger < 0))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Arguments for message count threshold, timer threshold and stagger " ~
                 "must all be positive numbers.");
+            return;
+        }
+        else if ((timerDef.messageCountThreshold == 0) && (timerDef.timeThreshold == 0))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "A timer cannot have a message *and* a time threshold of zero.");
             return;
         }
 
@@ -653,27 +639,23 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "del":
         if (!slice.length)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: del [timer index]");
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Usage: del [timer index]");
             return;
         }
 
         if (auto timerDefs = targetChannel in plugin.timerDefsByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.iteration : splitter;
+            import std.conv : ConvException, to;
 
             auto channel = targetChannel in plugin.activeChannels;
 
-            if (slice == "*")
-            {
-                goto case "clear";
-            }
-
-            import std.conv : ConvException, to;
+            if (slice == "*") goto case "clear";
 
             try
             {
-                ptrdiff_t i = slice.to!ptrdiff_t - 1;
+                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
 
                 if ((i >= 0) && (i < channel.timers.length))
                 {
@@ -693,16 +675,12 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid timer index: " ~ slice);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Usage: del [timer index]");
                 return;
             }
 
             plugin.timersToJSON.save(plugin.timersFile);
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Timer removed.");
-
             if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
         }
         else
         {
@@ -714,6 +692,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "list":
         if (const timers = targetChannel in plugin.timerDefsByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -727,7 +706,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
                 try
                 {
-                    start = slice.to!ptrdiff_t - 1;
+                    start = slice.stripped.to!ptrdiff_t - 1;
 
                     if ((start < 0) || (start >= timers.length))
                     {
@@ -744,7 +723,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
                 }
             }
 
-            size_t end = min(start+toDisplay, timers.length);
+            immutable end = min(start+toDisplay, timers.length);
 
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Current timers (%d-%d of %d)"
