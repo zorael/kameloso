@@ -443,6 +443,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
     case "list":
         if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -456,7 +457,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
                 try
                 {
-                    start = slice.to!ptrdiff_t - 1;
+                    start = slice.stripped.to!ptrdiff_t - 1;
 
                     if ((start < 0) || (start >= phrases.length))
                     {
@@ -639,6 +640,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
         if (auto timerDefs = targetChannel in plugin.timerDefsByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.iteration : splitter;
 
             auto channel = targetChannel in plugin.activeChannels;
@@ -652,7 +654,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
             try
             {
-                ptrdiff_t i = slice.to!ptrdiff_t - 1;
+                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
 
                 if ((i >= 0) && (i < channel.timers.length))
                 {
@@ -693,6 +695,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "list":
         if (const timers = targetChannel in plugin.timerDefsByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -706,7 +709,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
                 try
                 {
-                    start = slice.to!ptrdiff_t - 1;
+                    start = slice.stripped.to!ptrdiff_t - 1;
 
                     if ((start < 0) || (start >= timers.length))
                     {
