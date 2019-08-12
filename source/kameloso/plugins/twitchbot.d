@@ -717,7 +717,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
                 }
             }
 
-            size_t end = min(start+toDisplay, timers.length);
+            immutable end = min(start+toDisplay, timers.length);
 
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Current timers (%d-%d of %d)"
