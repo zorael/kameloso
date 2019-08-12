@@ -614,12 +614,18 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
             return;
         }
 
-        if ((timerDef.messageCountThreshold <= 0) ||
-            (timerDef.timeThreshold <= 0) || (timerDef.stagger <= 0))
+        if ((timerDef.messageCountThreshold < 0) ||
+            (timerDef.timeThreshold < 0) || (timerDef.stagger < 0))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Arguments for message count threshold, timer threshold and stagger " ~
                 "must all be positive numbers.");
+            return;
+        }
+        else if ((timerDef.messageCountThreshold == 0) && (timerDef.timeThreshold == 0))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "A timer cannot have a message *and* a time threshold of zero.");
             return;
         }
 
