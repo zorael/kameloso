@@ -63,7 +63,14 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 if (stored)
                 {
                     import kameloso.meld : MeldingStrategy, meldInto;
+
+                    // Twitch bot postprocess is run before this postprocess is.
+                    // If it changes the user class, have it persist past our
+                    // own melding here.
+
+                    immutable origClass = user.class_;
                     (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
+                    if (origClass > stored.class_) stored.class_ = origClass;
                 }
                 else
                 {
