@@ -1,6 +1,6 @@
 /++
  +  This is an example Twitch streamer bot. It supports basic authentication,
- +  allowing for channel-specific administrators that are not necessarily in the
+ +  allowing for channel-specific regulars that are not necessarily in the
  +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
  +  has been live, banned phrases and timered announcements. If run in a
  +  local terminal it can also emit some terminal bells on certain events, to
@@ -44,8 +44,8 @@ struct TwitchBotSettings
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
-    /// Whether or not moderators are implicitly administrators.
-    bool modsAreAdmins = true;
+    /// Whether or not regulars are impliictly whitelisted.
+    bool regularsAreWhitelisted = true;
 
     /// Whether or not to match ban phrases case-sensitively.
     bool bannedPhrasesObeyCase = true;
@@ -93,9 +93,9 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         import kameloso.string : contains;
         import std.algorithm.searching : canFind;
 
-        if (const channelAdmins = event.channel in plugin.adminsByChannel)
+        if (const channelRegulars = event.channel in plugin.regularsByChannel)
         {
-            if ((*channelAdmins).canFind(event.sender.nickname)) return;
+            if ((*channelRegulars).canFind(event.sender.nickname)) return;
         }
 
         if ((event.sender.nickname == plugin.state.client.nickname) ||
@@ -289,7 +289,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 /++
  +  Removes a channel's corresponding `TwitchBotPlugin.Channel` when we leave it.
  +
- +  This resets all that channel's state, except for administrators.
+ +  This resets all that channel's transient state.
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.home)
@@ -1178,39 +1178,39 @@ do
 }
 
 
-// onCommandAdminChan
+// onCommandRegularChan
 /++
- +  Adds, lists and removes administrators to/from the current channel.
+ +  Adds, lists and removes regulars to/from the current channel.
  +
- +  Merely passes the event onto `handleAdminCommand` with the current channel
+ +  Merely passes the event onto `handleRegularCommand` with the current channel
  +  as the target channel.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "admin")
-@Description("Adds or removes a Twitch administrator to/from the current channel. (Channel message wrapper)",
+@BotCommand(PrefixPolicy.prefixed, "regular")
+@Description("Adds or removes a Twitch regulars to/from the current channel. (Channel message wrapper)",
     "$command [add|del|list] [nickname]")
-void onCommandAdminChan(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandRegularChan(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    return handleAdminCommand(plugin, event, event.channel);
+    return handleRegularCommand(plugin, event, event.channel);
 }
 
 
-// onCommandAdminQuery
+// onCommandRegularQuery
 /++
- +  Adds, lists and removes administrators to/from the specified channel.
+ +  Adds, lists and removes regulars to/from the specified channel.
  +
- +  Merely passes the event onto `handleAdminCommand` with the specified channel
+ +  Merely passes the event onto `handleRegularCommand` with the specified channel
  +  as the target channel.
  +/
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
-@BotCommand(PrefixPolicy.prefixed, "admin")
-@Description("Adds or removes a Twitch administrator to/from the current channel. (Whisper wrapper)",
+@BotCommand(PrefixPolicy.prefixed, "regular")
+@Description("Adds or removes a Twitch regulars to/from the current channel. (Whisper wrapper)",
     "$command [add|del|list] [nickname]")
-void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : nom;
     import std.format : format;
@@ -1230,20 +1230,20 @@ void onCommandAdminQuery(TwitchBotPlugin plugin, const IRCEvent event)
     IRCEvent modifiedEvent = event;
     modifiedEvent.content = slice;
 
-    return handleAdminCommand(plugin, modifiedEvent, targetChannel.toLower);
+    return handleRegularCommand(plugin, modifiedEvent, targetChannel.toLower);
 }
 
 
-// handleAdminCommand
+// handleRegularCommand
 /++
- +  Implements adding, listing and removing administrators for a channel.
+ +  Implements adding, listing and removing regulars for a channel.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      event = The triggering `kameloso.irc.defs.IRCEvent`.
- +      targetChannel = The channel we're adding/listing/removing administrators to/from.
+ +      targetChannel = The channel we're adding/listing/removing regulars to/from.
  +/
-void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
+void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
 {
     import kameloso.string : contains, nom;
     import std.algorithm.searching : count;
@@ -1272,34 +1272,34 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
 
         immutable nickname = slice.toLower;
 
-        if (auto adminArray = targetChannel in plugin.adminsByChannel)
+        if (auto regularArray = targetChannel in plugin.regularsByChannel)
         {
             import std.algorithm.searching : canFind;
 
-            if ((*adminArray).canFind(nickname))
+            if ((*regularArray).canFind(nickname))
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    slice ~ " is already a bot administrator.");
+                    slice ~ " is already a channel regular.");
                 return;
             }
             else
             {
-                *adminArray ~= nickname;
+                *regularArray ~= nickname;
                 // Drop down for report
             }
 
-            saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
-            chan(plugin.state, event.channel, slice ~ " is now an administrator.");
+            saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
+            chan(plugin.state, event.channel, slice ~ " is now a regular.");
         }
         else
         {
-            plugin.adminsByChannel[targetChannel] ~= nickname;
+            plugin.regularsByChannel[targetChannel] ~= nickname;
             // Drop down for report
         }
 
-        saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
+        saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            slice ~ " is now an administrator.");
+            slice ~ " is now a regular.");
         break;
 
     case "del":
@@ -1312,39 +1312,39 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
 
         immutable nickname = slice.toLower;
 
-        if (auto adminArray = targetChannel in plugin.adminsByChannel)
+        if (auto regularArray = targetChannel in plugin.regularsByChannel)
         {
             import std.algorithm.mutation : SwapStrategy, remove;
             import std.algorithm.searching : countUntil;
 
-            immutable index = (*adminArray).countUntil(nickname);
+            immutable index = (*regularArray).countUntil(nickname);
 
             if (index != -1)
             {
-                *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
-                saveResourceToDisk(plugin.adminsByChannel, plugin.adminsFile);
+                *regularArray = (*regularArray).remove!(SwapStrategy.unstable)(index);
+                saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Administrator removed.");
+                    "Regular removed.");
             }
             else
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "No such administrator: " ~ slice);
+                    "No such regular: " ~ slice);
             }
         }
         break;
 
     case "list":
-        if (const adminList = targetChannel in plugin.adminsByChannel)
+        if (const regularList = targetChannel in plugin.regularsByChannel)
         {
             import std.format : format;
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current administrators: %-(%s, %)".format(*adminList));
+                "Current regulars: %-(%s, %)".format(*regularList));
         }
         else
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "There are no administrators registered for this channel.");
+                "There are no regulars registered for this channel.");
         }
         break;
 
@@ -1358,7 +1358,7 @@ void handleAdminCommand(TwitchBotPlugin plugin, const IRCEvent event, string tar
 
 // onEndOfMotd
 /++
- +  Populate the administrators and phrases array after we have successfully
+ +  Populate the regulars and phrases array after we have successfully
  +  logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1370,10 +1370,10 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     with (plugin)
     {
-        JSONStorage channelAdminsJSON;
-        channelAdminsJSON.load(adminsFile);
-        adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
-        adminsByChannel.rehash();
+        JSONStorage channelRegularsJSON;
+        channelRegularsJSON.load(regularsFile);
+        regularsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelRegularsJSON);
+        regularsByChannel.rehash();
 
         JSONStorage channelBannedPhrasesJSON;
         channelBannedPhrasesJSON.load(bannedPhrasesFile);
@@ -1390,14 +1390,14 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 /++
  +  Saves the passed resource to disk, but in JSON format.
  +
- +  This is used with the associative arrays for administrator and banned phrases.
+ +  This is used with the associative arrays for regulars and banned phrases.
  +
  +  Example:
  +  ---
- +  plugin.adminsByChannel["#channel"] ~= "kameloso";
- +  plugin.adminsByChannel["#channel"] ~= "hirrsteff";
+ +  plugin.regularsByChannel["#channel"] ~= "kameloso";
+ +  plugin.regularsByChannel["#channel"] ~= "hirrsteff";
  +
- +  saveResource(plugin.adminsByChannel, plugin.adminsFile);
+ +  saveResource(plugin.regularsByChannel, plugin.regularsFile);
  +  ---
  +
  +  Params:
@@ -1415,7 +1415,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
 
 // initResources
 /++
- +  Reads and writes the file of administrators, phrases and timers to disk, ensuring
+ +  Reads and writes the file of regulars, phrases and timers to disk, ensuring
  +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
@@ -1424,15 +1424,15 @@ void initResources(TwitchBotPlugin plugin)
     import std.json : JSONException;
     import std.path : baseName;
 
-    JSONStorage adminsJSON;
+    JSONStorage regularsJSON;
 
     try
     {
-        adminsJSON.load(plugin.adminsFile);
+        regularsJSON.load(plugin.regularsFile);
     }
     catch (JSONException e)
     {
-        throw new IRCPluginInitialisationException(plugin.adminsFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(plugin.regularsFile.baseName ~ " may be malformed.");
     }
 
     JSONStorage bannedPhrasesJSON;
@@ -1459,7 +1459,7 @@ void initResources(TwitchBotPlugin plugin)
 
     // Let other Exceptions pass.
 
-    adminsJSON.save(plugin.adminsFile);
+    regularsJSON.save(plugin.regularsFile);
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
     timersJSON.save(plugin.timersFile);
 }
@@ -1673,11 +1673,11 @@ private:
     /// Array of active bot channels' state.
     Channel[string] activeChannels;
 
-    /// Associative array of administrators; nickname array keyed by channel.
-    string[][string] adminsByChannel;
+    /// Associative array of regulars; nickname array keyed by channel.
+    string[][string] regularsByChannel;
 
-    /// Filename of file with administrators.
-    @Resource string adminsFile = "twitchadmins.json";
+    /// Filename of file with regulars.
+    @Resource string regularsFile = "twitchregulars.json";
 
     /// Associative array of banned phrases; phrases array keyed by channel.
     string[][string] bannedPhrasesByChannel;
@@ -1703,7 +1703,7 @@ private:
 
     /++
      +  Override `kameloso.plugins.common.IRCPluginImpl.allow` and inject a user check, so we can support
-     +  channel-specific admins.
+     +  channel-specific regulars.
      +
      +  It is also possible to leverage the whitelist for this, but it would
      +  block much of the bot from being used by those who fall under the
@@ -1731,7 +1731,7 @@ private:
             return allowImpl(event, privilegeLevel);
 
         case admin:
-            // The owner/broadcaster of a channel is always admin there.
+            // The owner/broadcaster of a channel is always a regular there.
             if (event.channel.length && event.sender.account.length)
             {
                 // Faster than searching for "broadcaster" in event.sender.badges
@@ -1739,18 +1739,18 @@ private:
             }
 
             // Moderators are too if the settings say so.
-            if (twitchBotSettings.modsAreAdmins)
+            if (twitchBotSettings.modsAreRegulars)
             {
                 import std.algorithm.searching : canFind;
                 if (event.sender.badges.canFind("mode"/*rator*/)) return FilterResult.pass;
             }
 
-            // Also let pass if the sender is in `adminsByChannel[event.channel]`
-            if (const channelAdmins = event.channel in adminsByChannel)
+            // Also let pass if the sender is in `regularsByChannel[event.channel]`
+            if (const channelRegulars = event.channel in regularsByChannel)
             {
                 import std.algorithm.searching : canFind;
 
-                return ((*channelAdmins).canFind(event.sender.nickname)) ?
+                return ((*channelRegulars).canFind(event.sender.nickname)) ?
                     FilterResult.pass : allowImpl(event, privilegeLevel);
             }
             else
