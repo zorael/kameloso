@@ -2,7 +2,9 @@
  +  This is an example Twitch streamer bot. It supports basic authentication,
  +  allowing for channel-specific administrators that are not necessarily in the
  +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
- +  has been streaming, and banned phrases.
+ +  has been live, banned phrases and timered announcements. If run in a
+ +  local terminal it can also emit some terminal bells on certain events, to
+ +  draw attention.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, etc. There is no protection from spam yet.
@@ -23,6 +25,7 @@ import kameloso.irc.defs;
 import kameloso.messaging;
 import kameloso.common : logger, settings;
 
+import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
 
@@ -57,6 +60,8 @@ struct TwitchBotSettings
  +  Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
  +
  +  This is useful with small audiences, so you don't miss messages.
+ +
+ +  Also bump the message counter for the channel, to be used by timers.
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
@@ -77,6 +82,11 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     // Don't trigger on whispers
     if (event.type == IRCEvent.Type.QUERY) return;
+
+    if (auto channel = event.channel in plugin.activeChannels)
+    {
+        ++channel.messageCount;
+    }
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
@@ -158,15 +168,120 @@ void onImportant(TwitchBotPlugin plugin)
 /++
  +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
  +  always a state struct available.
+ +
+ +  Creates the timer `core.thread.Fiber`s that there are definitions for in
+ +  `TwitchBotPlugin.timerDefsByChannel`.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
 void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (event.channel !in plugin.activeChannels)
+    if (event.channel in plugin.activeChannels) return;
+
+    plugin.activeChannels[event.channel] = TwitchBotPlugin.Channel.init;
+    auto channel = event.channel in plugin.activeChannels;
+
+    const timerDefs = event.channel in plugin.timerDefsByChannel;
+    if (!timerDefs || !(*timerDefs).length) return;
+
+    foreach (const timerDef; *timerDefs)
     {
-        plugin.activeChannels[event.channel] = TwitchBotPlugin.Channel.init;
+        channel.timers ~= plugin.createTimerFiber(timerDef, event.channel);
     }
+}
+
+
+// createTimerFiber
+/++
+ +  Given a `TimerDefinition` and a string channel name, creates a
+ +  `core.thread.Fiber` that implements the timer.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      timerDef = Definition of the timer to apply.
+ +      channelName = String channel to which the timer belongs.
+ +/
+Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
+    const string channelName)
+{
+    string nickname = channelName[1..$];
+    if (const streamer = nickname in plugin.state.users)
+    {
+        if (streamer.alias_.length) nickname = streamer.alias_;
+    }
+
+    void dg()
+    {
+        import std.datetime.systime : Clock;
+
+        const channel = channelName in plugin.activeChannels;
+
+        /// When this timer Fiber was created.
+        immutable creation = Clock.currTime.toUnixTime;
+
+        /// The channel message count at last successful trigger.
+        ulong lastMessageCount = channel.messageCount;
+
+        /// The timestamp at the last successful trigger.
+        long lastTimestamp = creation;
+
+        /// Whether or not stagger has passed, so we don't evaluate it every single time.
+        bool staggerDone;
+
+        while (true)
+        {
+            if (!staggerDone)
+            {
+                immutable now = Clock.currTime.toUnixTime;
+
+                if ((now - creation) < timerDef.stagger)
+                {
+                    // Reset counters so it starts fresh after stagger
+                    lastMessageCount = channel.messageCount;
+                    lastTimestamp = now;
+                    Fiber.yield();
+                    continue;
+                }
+            }
+
+            // Avoid evaluating current unix time after stagger is done
+            staggerDone = true;
+
+            if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
+            {
+                Fiber.yield();
+                continue;
+            }
+
+            immutable now = Clock.currTime.toUnixTime;
+
+            if ((now - lastTimestamp) < timerDef.timeThreshold)
+            {
+                Fiber.yield();
+                continue;
+            }
+
+            if (channel.enabled)
+            {
+                import std.array : replace;
+
+                immutable line = timerDef.line
+                    .replace("$streamer", nickname)
+                    .replace("$channel", channelName[1..$]);
+                chan(plugin.state, channelName, line);
+            }
+
+            // If channel is disabled, silently fizzle but keep updating counts
+
+            lastMessageCount = channel.messageCount;
+            lastTimestamp = now;
+
+            Fiber.yield();
+            //continue;
+        }
+    }
+
+    return new Fiber(&dg);
 }
 
 
@@ -189,7 +304,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
  +  Bans, unbans, lists or clears banned phrases for the current channel.
  +  `kameloso.irc.defs.IRCEvent.Type.CHAN` wrapper.
  +
- +  Changes are persistently saved to the `twitchphrases.json` file.
+ +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -209,7 +324,7 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
  +  Bans, unbans, lists or clears banned phrases for the specified target channel.
  +  `kameloso.irc.defs.IRCEvent.Type.QUERY` wrapper.
  +
- +  Changes are persistently saved to the `twitchphrases.json` file.
+ +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -288,10 +403,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
             if (slice == "*")
             {
-                plugin.bannedPhrasesByChannel.remove(targetChannel);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "All banned phrases removed.");
-                return;
+                goto case "clear";
             }
 
             size_t[] garbage;
@@ -302,9 +414,9 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
                 try
                 {
-                    ptrdiff_t i = istr.to!size_t - 1;
+                    ptrdiff_t i = istr.to!ptrdiff_t - 1;
 
-                    if ((i > 0) && (i < phrases.length))
+                    if ((i >= 0) && (i < phrases.length))
                     {
                         garbage ~= i;
                     }
@@ -418,6 +530,257 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 }
 
 
+// onCommandTimerChan
+/++
+ +  Adds, deletes, lists or clears timers for the specified target channel.
+ +  `kameloso.irc.defs.IRCEvent.Type.CHAN` wrapper.
+ +
+ +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "timer")
+@Description("Adds, removes, lists or clears timered lines.",
+    "$command [target channel if query] [add|del|list|clear]")
+void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    return handleTimerCommand(plugin, event, event.channel);
+}
+
+
+// onCommandTimerQuery
+/++
+ +  Adds, deletes, lists or clears timers for the specified target channel.
+ +  `kameloso.irc.defs.IRCEvent.Type.QUERY` wrapper.
+ +
+ +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
+ +/
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@BotCommand(PrefixPolicy.prefixed, "timer")
+@Description("Adds, removes, lists or clears timered lines.",
+    "$command [target channel if query] [add|del|list|clear]")
+void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : nom;
+    import std.format : format;
+    import std.typecons : Flag, No, Yes;
+    import std.uni : toLower;
+
+    string slice = event.content;  // mutable
+    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
+
+    if (!targetChannel.length || (targetChannel[0] != '#'))
+    {
+        query(plugin.state, event.sender.nickname,
+            "Usage: %s [channel] [add|del|list|clear]".format(event.aux));
+        return;
+    }
+
+    IRCEvent modifiedEvent = event;
+    modifiedEvent.content = slice;
+
+    return handleTimerCommand(plugin, modifiedEvent, targetChannel.toLower);
+}
+
+
+// handleTimerCommand
+/++
+ +  Adds, deletes, lists or clears timers for the specified target channel.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      targetChannels = The channel we're handling timers for.
+ +/
+void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+{
+    import kameloso.string : contains, nom;
+    import std.format : format;
+
+    string slice = event.content;  // mutable
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "add":
+        import std.algorithm.searching : count;
+        import std.conv : ConvException, to;
+
+        if (slice.count(' ') < 3)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: add [message threshold] [time threshold] [stagger seconds] [text]");
+            //                                 1                2                 3
+            return;
+        }
+
+        TimerDefinition timerDef;
+
+        try
+        {
+            timerDef.messageCountThreshold = slice.nom(' ').to!int;
+            timerDef.timeThreshold = slice.nom(' ').to!int;
+            timerDef.stagger = slice.nom(' ').to!int;
+            timerDef.line = slice;
+        }
+        catch (ConvException e)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid parameters.");
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: add [message threshold] [time threshold] [stagger time] [text]");
+            return;
+        }
+
+        if ((timerDef.messageCountThreshold <= 0) ||
+            (timerDef.timeThreshold <= 0) || (timerDef.stagger <= 0))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Arguments for message count threshold, timer threshold and stagger " ~
+                "must all be positive numbers.");
+            return;
+        }
+
+        plugin.timerDefsByChannel[targetChannel] ~= timerDef;
+        plugin.timersToJSON.save(plugin.timersFile);
+        plugin.activeChannels[targetChannel].timers ~=
+            plugin.createTimerFiber(timerDef, targetChannel);
+        privmsg(plugin.state, event.channel, event.sender.nickname, "New timer added.");
+        break;
+
+    case "del":
+        if (!slice.length)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: del [timer index]");
+            return;
+        }
+
+        if (auto timerDefs = targetChannel in plugin.timerDefsByChannel)
+        {
+            import std.algorithm.iteration : splitter;
+
+            auto channel = targetChannel in plugin.activeChannels;
+
+            if (slice == "*")
+            {
+                goto case "clear";
+            }
+
+            import std.conv : ConvException, to;
+
+            try
+            {
+                ptrdiff_t i = slice.to!ptrdiff_t - 1;
+
+                if ((i >= 0) && (i < channel.timers.length))
+                {
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
+                    channel.timers = channel.timers.remove!(SwapStrategy.unstable)(i);
+                }
+                else
+                {
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
+                        "Timer index %s out of range. (max %d)"
+                        .format(slice, channel.timers.length));
+                    return;
+                }
+            }
+            catch (ConvException e)
+            {
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "Invalid timer index: " ~ slice);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "Usage: del [timer index]");
+                return;
+            }
+
+            plugin.timersToJSON.save(plugin.timersFile);
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Timer removed.");
+
+            if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
+        }
+        else
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No timers registered for this channel.");
+        }
+        break;
+
+    case "list":
+        if (const timers = targetChannel in plugin.timerDefsByChannel)
+        {
+            import std.algorithm.comparison : min;
+
+            enum toDisplay = 10;
+            enum maxLineLength = 100;
+
+            ptrdiff_t start;
+
+            if (slice.length)
+            {
+                import std.conv : ConvException, to;
+
+                try
+                {
+                    start = slice.to!ptrdiff_t - 1;
+
+                    if ((start < 0) || (start >= timers.length))
+                    {
+                        privmsg(plugin.state, event.channel, event.sender.nickname,
+                            "Invalid timer index or out of bounds.");
+                        return;
+                    }
+                }
+                catch (ConvException e)
+                {
+                    privmsg(plugin.state, event.channel, event.sender.nickname,
+                        "Usage: list [optional starting position number]");
+                    return;
+                }
+            }
+
+            size_t end = min(start+toDisplay, timers.length);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Current timers (%d-%d of %d)"
+                .format(start+1, end, timers.length));
+
+            foreach (immutable i, const timer; (*timers)[start..end])
+            {
+                immutable maxLen = min(timer.line.length, maxLineLength);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "%d: %s%s (%d:%d:%d)".format(start+i+1, timer.line[0..maxLen],
+                    (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
+                    timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
+            }
+        }
+        else
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No timers registered for this channel.");
+        }
+        break;
+
+    case "clear":
+        plugin.activeChannels[targetChannel].timers.length = 0;
+        plugin.timerDefsByChannel.remove(targetChannel);
+        plugin.timersToJSON.save(plugin.timersFile);
+        privmsg(plugin.state, event.channel, event.sender.nickname, "All timers cleared.");
+        break;
+
+    default:
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Available actions: add, del, list, clear");
+        break;
+    }
+}
+
+
 // onCommandEnableDisable
 /++
  +  Toggles whether or not the bot should operate in this channel.
@@ -482,7 +845,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 
         immutable delta = now - SysTime.fromUnixTime(broadcastStart);
 
-        chan(plugin.state, event.channel, "%s has been streaming for %s."
+        chan(plugin.state, event.channel, "%s has been live for %s."
             .format(nickname, delta));
     }
     else
@@ -522,7 +885,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
             if (streamer.alias_.length) nickname = streamer.alias_;
         }
 
-        chan(plugin.state, event.channel, nickname ~ " is already streaming.");
+        chan(plugin.state, event.channel, nickname ~ " is already live.");
         return;
     }
 
@@ -662,7 +1025,6 @@ do
     }
 
     import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
     import std.format : format;
     import std.random : uniform;
 
@@ -1010,15 +1372,16 @@ void onEndOfMotd(TwitchBotPlugin plugin)
     {
         JSONStorage channelAdminsJSON;
         channelAdminsJSON.load(adminsFile);
-        //adminsByChannel.clear();
         adminsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelAdminsJSON);
         adminsByChannel.rehash();
 
         JSONStorage channelBannedPhrasesJSON;
         channelBannedPhrasesJSON.load(bannedPhrasesFile);
-        //bannedPhrasesByChannel.clear();
         bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
         bannedPhrasesByChannel.rehash();
+
+        // Timers use a specialised function
+        plugin.populateTimers(plugin.timersFile);
     }
 }
 
@@ -1052,7 +1415,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
 
 // initResources
 /++
- +  Reads and writes the file of administrators and phrases to disk, ensuring
+ +  Reads and writes the file of administrators, phrases and timers to disk, ensuring
  +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
@@ -1083,10 +1446,184 @@ void initResources(TwitchBotPlugin plugin)
         throw new IRCPluginInitialisationException(plugin.bannedPhrasesFile.baseName ~ " may be malformed.");
     }
 
+    JSONStorage timersJSON;
+
+    try
+    {
+        timersJSON.load(plugin.timersFile);
+    }
+    catch (JSONException e)
+    {
+        throw new IRCPluginInitialisationException(plugin.timersFile.baseName ~ " may be malformed.");
+    }
+
     // Let other Exceptions pass.
 
     adminsJSON.save(plugin.adminsFile);
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
+    timersJSON.save(plugin.timersFile);
+}
+
+
+// periodically
+/++
+ +  Periodically calls timer `core.thread.Fiber`s with a periodicity of
+ +  `TwitchBotPlugin.timerPeriodicity`.
+ +/
+void periodically(TwitchBotPlugin plugin)
+{
+    import std.datetime.systime : Clock;
+
+    immutable now = Clock.currTime.toUnixTime;
+
+    if ((plugin.state.client.server.daemon != IRCServer.Daemon.unset) &&
+        (plugin.state.client.server.daemon != IRCServer.Daemon.twitch))
+    {
+        // Known to not be a Twitch server
+        plugin.state.nextPeriodical = now + 315_569_260L;
+        return;
+    }
+
+    foreach (immutable channelName, channel; plugin.activeChannels)
+    {
+        if (!channel.timers.length) continue;
+
+        foreach (timer; channel.timers)
+        {
+            if (!timer || (timer.state != Fiber.State.HOLD))
+            {
+                logger.error("Dead or busy timer Fiber in channel ", channelName);
+                continue;
+            }
+
+            timer.call();
+        }
+    }
+
+    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
+}
+
+
+// start
+/++
+ +  Starts the plugin after successful connect, rescheduling the next
+ +  `.periodical` to trigger after hardcoded 60 seconds.
+ +/
+void start(TwitchBotPlugin plugin)
+{
+    import std.datetime.systime : Clock;
+    plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
+}
+
+
+// TimerDefinition
+/++
+ +  Definitions of a Twitch timer.
+ +/
+struct TimerDefinition
+{
+    /// The timered line to send to the channel.
+    string line;
+
+    /++
+     +  How many messages must have been sent since the last announce before we
+     +  will allow another one.
+     +/
+    int messageCountThreshold;
+
+    /++
+     +  How many seconds must have passed since the last announce before we will
+     +  allow another one.
+     +/
+    int timeThreshold;
+
+    /// Delay in seconds before the timer comes into effect.
+    int stagger;
+}
+
+
+// populateTimers
+/++
+ +  Populates the `TwitchBotPlugin.timerDefsByChannel` associative array with
+ +  the timer definitions in the passed JSON file.
+ +
+ +  This reads the JSON values from disk and creates the `TimerDefinition`s
+ +  appropriately.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      filename = Filename of the JSON file to read definitions from.
+ +/
+void populateTimers(TwitchBotPlugin plugin, const string filename)
+{
+    import std.conv : to;
+    import std.format : format;
+    import std.json : JSONType;
+
+    JSONStorage timersJSON;
+    timersJSON.load(filename);
+
+    foreach (immutable channel, const channelTimersJSON; timersJSON.object)
+    {
+        assert((channelTimersJSON.type == JSONType.array),
+            "Invalid channel timers list type for %s: %s"
+            .format(channel, channelTimersJSON.type));
+
+        plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
+
+        foreach (timerArrayEntry; channelTimersJSON.array)
+        {
+            assert((timerArrayEntry.type == JSONType.object),
+                "Invalid timer type for %s: %s"
+                .format(channel, timerArrayEntry.type));
+
+            TimerDefinition timer;
+
+            timer.line = timerArrayEntry["line"].str;
+            timer.messageCountThreshold = timerArrayEntry["messageCountThreshold"].integer.to!int;
+            timer.timeThreshold = timerArrayEntry["timeThreshold"].integer.to!int;
+            timer.stagger = timerArrayEntry["stagger"].integer.to!int;
+
+            plugin.timerDefsByChannel[channel] ~= timer;
+        }
+    }
+}
+
+
+import kameloso.json : JSONStorage;
+
+// timersToJSON
+/++
+ +  Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
+ +  in JSON form, for easier saving to and loading from disk.
+ +
+ +  Using `std.json.JSONValue` directly fails with an error.
+ +/
+JSONStorage timersToJSON(TwitchBotPlugin plugin)
+{
+    import std.json : JSONType, JSONValue;
+
+    JSONStorage json;
+    json.reset();
+
+    foreach (immutable channelName, channelTimers; plugin.timerDefsByChannel)
+    {
+        json[channelName] = null;  // quirk to initialise it as a JSONType.object
+
+        foreach (const timer; channelTimers)
+        {
+            JSONValue value;
+            value = null;  // as above
+            value["line"] = timer.line;
+            value["messageCountThreshold"] = timer.messageCountThreshold;
+            value["timeThreshold"] = timer.timeThreshold;
+            value["stagger"] = timer.stagger;
+            json[channelName].array = null;
+            json[channelName].array ~= value;
+        }
+    }
+
+    return json;
 }
 
 
@@ -1117,6 +1654,17 @@ private:
 
         /// UNIX timestamp of when broadcasting started.
         long broadcastStart;
+
+        /++
+         +  A counter of how many messages we have seen in the channel.
+         +
+         +  Used by timers to know when enough activity has passed to warrant
+         +  re-announcing timers.
+         +/
+        ulong messageCount;
+
+        /// Timer `core.thread.Fiber`s.
+        Fiber[] timers;
     }
 
     /// All Twitch Bot plugin settings.
@@ -1136,6 +1684,18 @@ private:
 
     /// Filename of file with banned phrases.
     @Resource string bannedPhrasesFile = "twitchphrases.json";
+
+    /// Timer definition arrays, keyed by channel string.
+    TimerDefinition[][string] timerDefsByChannel;
+
+    /// Filename of file with timer definitions.
+    @Resource string timersFile = "twitchtimers.json";
+
+    /++
+     +  How often to check whether timers should fire, in seconds. A smaller
+     +  number means better precision.
+     +/
+    enum timerPeriodicity = 10;
 
     mixin IRCPluginImpl;
 

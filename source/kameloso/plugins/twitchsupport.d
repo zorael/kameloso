@@ -57,6 +57,13 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
         // displayed name/alias is sent separately as a "display-name" IRCv3 tag
         event.sender.account = event.sender.nickname;
     }
+    else if (event.sender.alias_.length)
+    {
+        // If no nickname yet an alias, it may be an anonymous subgift/bulkgift
+        // where the msg-id appeared before the display-name in the tags.
+        // Clear it.
+        event.sender.alias_ = string.init;
+    }
 }
 
 
@@ -960,8 +967,11 @@ user-type
         case "login":
             // RAID; real sender nickname and thus raiding channel lowercased
             // CLEARMSG, SUBGIFT, lots
-            event.sender.nickname = value;
-            resetUser(event.sender);
+            if (value != "ananonymousgifter")
+            {
+                event.sender.nickname = value;
+                resetUser(event.sender);
+            }
             break;
 
         case "color":
