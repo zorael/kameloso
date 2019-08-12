@@ -1627,6 +1627,47 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
 }
 
 
+// postprocess
+/++
+ +  Postprocesses `kameloso.irc.defs.IRCEvent`s, changing the user classes to
+ +  reflect whether or not a user is a regular.
+ +
+ +  The Persistence service doesn't have access to `TwitchBotPlugin.regularsByChannel`
+ +  and so cannot set a user's class to `IRCUser.Class.whitelist` if it's in there.
+ +  So we do it as a postprocessing step *before* Persistence.
+ +
+ +  Special care has to be taken inside Persistence to not make it overwrite this
+ +  change with whatever it has stored for this particular user.
+ +/
+void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
+{
+    import std.algorithm.searching : canFind;
+
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+    if (!event.sender.nickname.length) return;
+
+    if (event.sender.nickname == event.channel)
+    {
+        event.sender.class_ = IRCUser.Class.admin;
+    }
+    else if (event.sender.badges.canFind("mode"/*rator*/))
+    {
+        event.sender.class_ = IRCUser.Class.admin;
+    }
+    else if (plugin.twitchBotSettings.regularsAreWhitelisted)
+    {
+        if (const channelRegulars = event.channel in plugin.regularsByChannel)
+        {
+            if ((*channelRegulars).canFind(event.sender.nickname))
+            {
+                event.sender.class_ = plugin.state.client.admins.canFind(event.sender.nickname) ?
+                    IRCUser.Class.admin : IRCUser.Class.whitelist;
+            }
+        }
+    }
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
