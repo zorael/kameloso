@@ -393,66 +393,45 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [phrase num 1] [phrase num 2] [phrase num 3] ...".format(verb));
+                "Usage: %s [phrase index]".format(verb));
             return;
         }
 
         if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
+            import kameloso.string : stripped;
             import std.algorithm.iteration : splitter;
+            import std.conv : ConvException, to;
 
-            if (slice == "*")
+            if (slice == "*") goto case "clear";
+
+            try
             {
-                goto case "clear";
-            }
+                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
 
-            size_t[] garbage;
-
-            foreach (immutable istr; slice.splitter(" "))
-            {
-                import std.conv : ConvException, to;
-
-                try
+                if ((i >= 0) && (i < phrases.length))
                 {
-                    ptrdiff_t i = istr.to!ptrdiff_t - 1;
-
-                    if ((i >= 0) && (i < phrases.length))
-                    {
-                        garbage ~= i;
-                    }
-                    else
-                    {
-                        privmsg(plugin.state, event.channel, event.sender.nickname,
-                            "Phrase index %s out of range. (max %d)"
-                            .format(istr, phrases.length));
-                        return;
-                    }
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
                 }
-                catch (ConvException e)
+                else
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Invalid phrase index: " ~ istr);
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s [phrase num 1] [phrase num 2] [phrase num 3] [*]..."
-                        .format(verb));
+                        "Phrase ban index %s out of range. (max %d)"
+                        .format(slice, phrases.length));
                     return;
                 }
             }
-
-            immutable originalNum = phrases.length;
-
-            foreach_reverse (immutable i; garbage)
+            catch (ConvException e)
             {
-                import std.algorithm.mutation : SwapStrategy, remove;
-                *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    "Invalid phrase ban index: " ~ slice);
+                return;
             }
 
-            immutable numRemoved = (originalNum - phrases.length);
             saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "%d/%d phrase bans removed.".format(numRemoved, originalNum));
-
             if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Phrase ban removed.");
         }
         else
         {
