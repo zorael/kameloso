@@ -1642,26 +1642,31 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
 void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
+    import std.range : only;
 
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-    if (!event.sender.nickname.length) return;
+    if (!event.sender.nickname.length && !event.target.nickname.length) return;
+    if (event.channel.length && (event.channel !in plugin.activeChannels)) return;
 
-    if (event.sender.nickname == event.channel)
+    foreach (user; only(&event.sender, &event.target))
     {
-        event.sender.class_ = IRCUser.Class.admin;
-    }
-    else if (event.sender.badges.canFind("mode"/*rator*/))
-    {
-        event.sender.class_ = IRCUser.Class.admin;
-    }
-    else if (plugin.twitchBotSettings.regularsAreWhitelisted)
-    {
-        if (const channelRegulars = event.channel in plugin.regularsByChannel)
+        if (user.nickname == event.channel)
         {
-            if ((*channelRegulars).canFind(event.sender.nickname))
+            user.class_ = IRCUser.Class.admin;
+        }
+        else if (user.badges.canFind("mode"/*rator*/))
+        {
+            user.class_ = IRCUser.Class.admin;
+        }
+        else if (plugin.twitchBotSettings.regularsAreWhitelisted)
+        {
+            if (const channelRegulars = event.channel in plugin.regularsByChannel)
             {
-                event.sender.class_ = plugin.state.client.admins.canFind(event.sender.nickname) ?
-                    IRCUser.Class.admin : IRCUser.Class.whitelist;
+                if ((*channelRegulars).canFind(user.nickname))
+                {
+                    user.class_ = plugin.state.client.admins.canFind(user.nickname) ?
+                        IRCUser.Class.admin : IRCUser.Class.whitelist;
+                }
             }
         }
     }
