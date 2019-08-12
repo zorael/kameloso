@@ -216,8 +216,13 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
         const channel = channelName in plugin.activeChannels;
 
+        /// When this timer Fiber was created.
         immutable creation = Clock.currTime.toUnixTime;
+
+        /// The channel message count at last successful trigger.
         ulong lastMessageCount = channel.messageCount;
+
+        /// The timestamp at the last successful trigger.
         long lastTimestamp = creation;
 
         while (true)
