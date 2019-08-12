@@ -1740,66 +1740,6 @@ private:
 
     mixin IRCPluginImpl;
 
-    import kameloso.plugins.common : FilterResult, PrivilegeLevel;
-
-    /++
-     +  Override `kameloso.plugins.common.IRCPluginImpl.allow` and inject a user check, so we can support
-     +  channel-specific regulars.
-     +
-     +  It is also possible to leverage the whitelist for this, but it would
-     +  block much of the bot from being used by those who fall under the
-     +  `kameloso.plugins.common.PrivilegeLevel.anyone` category.
-     +
-     +  Params:
-     +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
-     +      privilegeLevel = `kameloso.plugins.common.PrivilegeLevel` of the handler in question.
-     +
-     +  Returns:
-     +      `kameloso.plugins.common.FilterResult.pass` if the event should be allowed to trigger,
-     +      `kameloso.plugins.common.FilterResult.whois` if a WHOIS query is needed to tell, and
-     +      `kameloso.plugins.common.FilterResult.fail` if the user is known to not be allowed to trigger it.
-     +/
-    FilterResult allow(const IRCEvent event, const PrivilegeLevel privilegeLevel)
-    {
-        with (PrivilegeLevel)
-        final switch (privilegeLevel)
-        {
-        case ignore:
-        case anyone:
-        case registered:
-        case whitelist:
-            // Fallback to original, unchanged behaviour
-            return allowImpl(event, privilegeLevel);
-
-        case admin:
-            // The owner/broadcaster of a channel is always a regular there.
-            if (event.channel.length && event.sender.account.length)
-            {
-                // Faster than searching for "broadcaster" in event.sender.badges
-                if (event.channel == event.sender.account) return FilterResult.pass;
-            }
-
-            // Moderators are too if the settings say so.
-            if (twitchBotSettings.modsAreRegulars)
-            {
-                import std.algorithm.searching : canFind;
-                if (event.sender.badges.canFind("mode"/*rator*/)) return FilterResult.pass;
-            }
-
-            // Also let pass if the sender is in `regularsByChannel[event.channel]`
-            if (const channelRegulars = event.channel in regularsByChannel)
-            {
-                import std.algorithm.searching : canFind;
-
-                return ((*channelRegulars).canFind(event.sender.nickname)) ?
-                    FilterResult.pass : allowImpl(event, privilegeLevel);
-            }
-            else
-            {
-                goto case whitelist;
-            }
-        }
-    }
 
     /++
      +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
