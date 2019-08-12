@@ -130,7 +130,7 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
             if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
             {
                 k = -1.0;
-                burst = 0.0;
+                burst = 0.5;
             }
         }
 
