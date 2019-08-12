@@ -633,8 +633,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "del":
         if (!slice.length)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: del [timer index]");
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Usage: del [timer index]");
             return;
         }
 
@@ -642,15 +641,11 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
         {
             import kameloso.string : stripped;
             import std.algorithm.iteration : splitter;
+            import std.conv : ConvException, to;
 
             auto channel = targetChannel in plugin.activeChannels;
 
-            if (slice == "*")
-            {
-                goto case "clear";
-            }
-
-            import std.conv : ConvException, to;
+            if (slice == "*") goto case "clear";
 
             try
             {
@@ -674,16 +669,12 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid timer index: " ~ slice);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Usage: del [timer index]");
                 return;
             }
 
             plugin.timersToJSON.save(plugin.timersFile);
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Timer removed.");
-
             if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
         }
         else
         {
