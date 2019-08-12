@@ -225,8 +225,28 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         /// The timestamp at the last successful trigger.
         long lastTimestamp = creation;
 
+        /// Whether or not stagger has passed, so we don't evaluate it every single time.
+        bool staggerDone;
+
         while (true)
         {
+            if (!staggerDone)
+            {
+                immutable now = Clock.currTime.toUnixTime;
+
+                if ((now - creation) < timerDef.stagger)
+                {
+                    // Reset counters so it starts fresh after stagger
+                    lastMessageCount = channel.messageCount;
+                    lastTimestamp = now;
+                    Fiber.yield();
+                    continue;
+                }
+            }
+
+            // Avoid evaluating current unix time after stagger is done
+            staggerDone = true;
+
             if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
             {
                 Fiber.yield();
@@ -235,8 +255,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
             immutable now = Clock.currTime.toUnixTime;
 
-            if (((now - lastTimestamp) < timerDef.timeThreshold) ||
-                ((now - creation) < timerDef.stagger))
+            if ((now - lastTimestamp) < timerDef.timeThreshold)
             {
                 Fiber.yield();
                 continue;
