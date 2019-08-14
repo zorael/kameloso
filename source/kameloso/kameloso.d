@@ -129,60 +129,34 @@ void messageFiber(ref IRCBot bot)
                 version(Colours)
                 {
                     import kameloso.irc.colours : mapEffects;
-                    import kameloso.terminal : TerminalForeground, TerminalBackground;
-
                     logger.trace("--> ", line.mapEffects);
-                    bot.conn.sendline(line);
                 }
                 else
                 {
                     import kameloso.irc.colours : stripEffects;
                     logger.trace("--> ", line.stripEffects);
-                    bot.conn.sendline(line);
                 }
             }
-            else
-            {
-                bot.conn.sendline(line);
-            }
+
+            bot.conn.sendline(line);
         }
 
         /// Echo a line to the terminal and send it to the server.
         void sendline(ThreadMessage.Sendline, string line) scope
         {
-            if (!settings.hideOutgoing)
-            {
-                version(Colours)
-                {
-                    import kameloso.irc.colours : mapEffects;
-                    import kameloso.terminal : TerminalForeground, TerminalBackground;
-
-                    logger.trace("--> ", line.mapEffects);
-                    bot.throttleline(line);
-                }
-                else
-                {
-                    import kameloso.irc.colours : stripEffects;
-                    logger.trace("--> ", line.stripEffects);
-                    bot.throttleline(line);
-                }
-            }
-            else
-            {
-                bot.throttleline(line);
-            }
+            bot.outbuffer.put(OutgoingLine(line, settings.hideOutgoing));
         }
 
         /// Send a line to the server without echoing it.
         void quietline(ThreadMessage.Quietline, string line) scope
         {
-            bot.throttleline(line);
+            bot.outbuffer.put(OutgoingLine(line, true));
         }
 
         /// Respond to `PING` with `PONG` to the supplied text as target.
         void pong(ThreadMessage.Pong, string target) scope
         {
-            bot.throttleline("PONG :", target);
+            bot.outbuffer.put(OutgoingLine("PONG :" ~ target, true));
         }
 
         /// Quit the server with the supplied reason, or the default.
@@ -191,15 +165,14 @@ void messageFiber(ref IRCBot bot)
             // This will automatically close the connection.
             // Set quit to yes to propagate the decision up the stack.
             immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
-            if (!hideOutgoing) logger.trace("--> QUIT :", reason);
-            bot.conn.sendline("QUIT :", reason);
+            bot.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
             next = Next.returnSuccess;
         }
 
         /// Disconnects from and reconnects to the server.
         void reconnect(ThreadMessage.Reconnect) scope
         {
-            bot.conn.sendline("QUIT :Reconnecting.");
+            bot.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", false));
             next = Next.retry;
         }
 
@@ -1042,8 +1015,7 @@ void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] 
 
         if ((now - then) > Timeout.whoisRetry)
         {
-            if (!settings.hideOutgoing) logger.trace("--> WHOIS ", nickname);
-            bot.throttleline("WHOIS ", nickname);
+            bot.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, settings.hideOutgoing));
             bot.previousWhoisTimestamps[nickname] = now;
         }
     }
