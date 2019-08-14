@@ -1675,3 +1675,25 @@ unittest
         assert(buf.buf == [ string.init, string.init, string.init, string.init ]);
     }
 }
+
+
+// OutgoingLine
+/++
+ +  A string to be sent to the IRC server, along with whether or not the message
+ +  should be sent quietly or if it should be displayed in the terminal.
+ +/
+struct OutgoingLine
+{
+    /// String line to send.
+    string line;
+
+    /// Whether or not this message should be sent quietly or verbosely.
+    bool quiet;
+
+    /// Constructor.
+    this(const string line, const bool quiet = false)
+    {
+        this.line = line;
+        this.quiet = quiet;
+    }
+}
