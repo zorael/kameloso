@@ -1695,6 +1695,10 @@ int kamelosoMain(string[] args)
             // Exhaust leftover queued messages
             exhaustMessages();
 
+            // Clear outgoing messages
+            bot.outbuffer.clear();
+            bot.priorityBuffer.clear();
+
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
             if (*bot.abort) break outerloop;
