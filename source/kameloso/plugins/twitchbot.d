@@ -429,8 +429,8 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
                 return;
             }
 
-            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
             if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
+            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
             privmsg(plugin.state, event.channel, event.sender.nickname, "Phrase ban removed.");
         }
         else
@@ -678,8 +678,8 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
                 return;
             }
 
-            plugin.timersToJSON.save(plugin.timersFile);
             if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
+            plugin.timersToJSON.save(plugin.timersFile);
             privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
         }
         else
