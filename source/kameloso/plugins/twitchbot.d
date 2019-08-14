@@ -1545,7 +1545,7 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
     foreach (immutable channel, const channelTimersJSON; timersJSON.object)
     {
         assert((channelTimersJSON.type == JSONType.array),
-            "Invalid channel timers list type for %s: %s"
+            "Twitch timer json file malformed! Invalid channel timers list type for %s: %s"
             .format(channel, channelTimersJSON.type));
 
         plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
@@ -1553,7 +1553,7 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
         foreach (timerArrayEntry; channelTimersJSON.array)
         {
             assert((timerArrayEntry.type == JSONType.object),
-                "Invalid timer type for %s: %s"
+                "Twitch timer json file malformed! Invalid timer type for %s: %s"
                 .format(channel, timerArrayEntry.type));
 
             TimerDefinition timer;
