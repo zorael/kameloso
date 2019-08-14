@@ -1587,6 +1587,8 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
 
     foreach (immutable channelName, channelTimers; plugin.timerDefsByChannel)
     {
+        if (!channelTimers.length) continue;
+
         json[channelName] = null;  // quirk to initialise it as a JSONType.object
 
         foreach (const timer; channelTimers)
