@@ -226,7 +226,9 @@ unittest
  +/
 struct IRCBot
 {
+    import kameloso.common : OutgoingLine;
     import kameloso.connection : Connection;
+    import kameloso.constants : BufferSize;
     import kameloso.irc.parsing : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
@@ -286,8 +288,112 @@ struct IRCBot
      +/
     __gshared bool* abort;
 
+    /++
+     +  Buffer of outgoing message strings.
+     +
+     +  The buffer size is "how many string pointers", now how many bytes. So
+     +  we can comfortably keep it arbitrarily high.
+     +/
+    Buffer!(OutgoingLine, BufferSize.outbuffer) outbuffer;
+
+    /++
+     +  Buffer of outgoing priority message strings.
+     +
+     +  The buffer size is "how many string pointers", now how many bytes. So
+     +  we can comfortably keep it arbitrarily high.
+     +/
+    Buffer!(OutgoingLine, BufferSize.priorityBuffer) priorityBuffer;
+
     /// Never copy this.
     @disable this(this);
+
+
+    // throttleline
+    /++
+     +  Takes one or more lines from the passed buffer and sends them to the server.
+     +
+     +  Sends to the server in a throttled fashion, based on a simple
+     +  `y = k*x + m` graph.
+     +
+     +  This is so we don't get kicked by the server for spamming, if a lot of
+     +  lines are to be sent at once.
+     +
+     +  Params:
+     +      Buffer = Buffer type, generally `Buffer`.
+     +      buffer = `Buffer` instance.
+     +
+     +  Returns:
+     +      The time remaining until the next message may be sent, so that we
+     +      can reschedule the next server read timeout to happen earlier.
+     +/
+    double throttleline(Buffer)(ref Buffer buffer)
+    {
+        while (!buffer.empty)
+        {
+            with (throttling)
+            {
+                import std.datetime.systime : Clock;
+
+                immutable now = Clock.currTime;
+                if (t0 == SysTime.init) t0 = now;
+
+                version(TwitchSupport)
+                {
+                    import kameloso.irc.defs : IRCServer;
+
+                    double k = throttling.k;
+                    double burst = throttling.burst;
+
+                    if (parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    {
+                        k = -1.0;
+                        burst = 0.5;
+                    }
+                }
+
+                double x = (now - t0).total!"msecs"/1000.0;
+                double y = k * x + m;
+
+                if (y < 0)
+                {
+                    t0 = now;
+                    m = 0;
+                    x = 0;
+                    y = 0;
+                }
+
+                if (y >= burst)
+                {
+                    import std.stdio : writeln;
+                    x = (Clock.currTime - t0).total!"msecs"/1000.0;
+                    y = k*x + m;
+                    return y;
+                }
+
+                if (!buffer.front.quiet)
+                {
+                    version(Colours)
+                    {
+                        import kameloso.irc.colours : mapEffects;
+                        logger.trace("--> ", buffer.front.line.mapEffects);
+                    }
+                    else
+                    {
+                        import kameloso.irc.colours : stripEffects;
+                        logger.trace("--> ", buffer.front.line.stripEffects);
+                    }
+                }
+
+                conn.sendline(buffer.front.line);
+                buffer.popFront();
+
+                m = y + increment;
+                t0 = Clock.currTime;
+            }
+        }
+
+        return 0.0;
+    }
 
 
     // initPlugins
