@@ -535,6 +535,8 @@ Next mainLoop(ref IRCBot bot)
         }
     }
 
+    bool readWasShortened;
+
     while (next == Next.continue_)
     {
         import core.thread : Fiber;
@@ -790,6 +792,40 @@ Next mainLoop(ref IRCBot bot)
             logger.errorf("Internal error, thread messenger Fiber ended abruptly.");
             version(PrintStacktraces) printStacktrace();
             next = Next.returnFailure;
+        }
+
+        if (!bot.outbuffer.empty || !bot.priorityBuffer.empty)
+        {
+            // There are messages to send.
+
+            import kameloso.constants : Timeout;
+            import core.time : msecs, seconds;
+            import std.socket : SocketOption, SocketOptionLevel;
+            import std.stdio : writeln, writefln;
+
+            double untilNext;
+            if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
+            else untilNext = bot.throttleline(bot.outbuffer);
+
+            with (bot.conn.socket)
+            with (SocketOption)
+            with (SocketOptionLevel)
+            {
+                if (untilNext > 0)
+                {
+                    if ((untilNext < bot.throttling.burst) &&
+                        (untilNext < Timeout.receive))
+                    {
+                        setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
+                        readWasShortened = true;
+                    }
+                }
+                else if (readWasShortened)
+                {
+                    setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
+                    readWasShortened = false;
+                }
+            }
         }
     }
 
