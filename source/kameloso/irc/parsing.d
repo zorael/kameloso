@@ -1132,7 +1132,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // TRIED TO NOM TOO MUCH:':You are banned from this server- Your irc client seems broken and is flooding lots of channels. Banned for 240 min, if in error, please contact kline@freenode.net. (2017/12/1 21.08)' with ' :'
         string misc = slice.nom(" :");
         event.content = slice;
-        if (misc.contains(' ')) misc.nom(' ');
+        misc.nom!(Yes.inherit)(' ');
         event.aux = misc;
         break;
 
