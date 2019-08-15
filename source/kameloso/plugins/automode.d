@@ -272,32 +272,18 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (!channelName.isValidChannel(plugin.state.client.server))
     {
-        string message;
-
-        if (settings.colouredOutgoing)
-        {
-            message = "Invalid channel: " ~ channelName.ircColour(IRCColour.red).ircBold;
-        }
-        else
-        {
-            message = "Invalid channel: " ~ channelName;
-        }
+        immutable message = settings.colouredOutgoing ?
+            "Invalid channel: " ~ channelName.ircColour(IRCColour.red).ircBold :
+            "Invalid channel: " ~ channelName;
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
     {
-        string message;
-
-        if (settings.colouredOutgoing)
-        {
-            message = "Invalid account or nickname: " ~ specified.ircColour(IRCColour.red).ircBold;
-        }
-        else
-        {
-            message = "Invalid account or nickname: " ~ specified;
-        }
+        immutable message = settings.colouredOutgoing ?
+            "Invalid account or nickname: " ~ specified.ircColour(IRCColour.red).ircBold :
+            "Invalid account or nickname: " ~ specified;
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -397,33 +383,22 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
     if (auto channelAutomodes = channelName in plugin.automodes)
     {
         (*channelAutomodes).remove(account);
-        string message;
 
-        if (settings.colouredOutgoing)
-        {
-            message = "Automode cleared: %s on %s"
-                .format(account.ircColourByHash.ircBold, channelName.ircBold);
-        }
-        else
-        {
-            message = "Automode cleared: %s on %s".format(account, channelName);
-        }
+        enum pattern = "Automode cleared: %s on %s";
+
+        immutable message = settings.colouredOutgoing ?
+
+            pattern.format(account.ircColourByHash.ircBold, channelName.ircBold) :
+            pattern.format(account, channelName);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
     else
     {
-        string message;
-
-        if (settings.colouredOutgoing)
-        {
-            message = "No automodes defined for channel " ~ channelName.ircBold;
-        }
-        else
-        {
-            message = "No automodes defined for channel " ~ channelName;
-        }
+        immutable message = settings.colouredOutgoing ?
+            "No automodes defined for channel " ~ channelName.ircBold :
+            "No automodes defined for channel " ~ channelName;
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }

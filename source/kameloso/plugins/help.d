@@ -86,20 +86,11 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                     if (auto description = specifiedCommand in p.commands)
                     {
-                        string message;
+                        enum pattern = "[%s] %s: %s";
 
-                        if (settings.colouredOutgoing)
-                        {
-                            message = "[%s] %s: %s"
-                                .format(p.name.ircBold, specifiedCommand.ircBold, description.string_);
-                        }
-                        else
-                        {
-                            message = "[%s] %s: %s"
-                                .format(p.name, specifiedCommand, description.string_);
-                        }
-
-                        query(plugin.state, sender.nickname, message);
+                        immutable message = settings.colouredOutgoing ?
+                            pattern.format(p.name.ircBold, specifiedCommand.ircBold, description.string_) :
+                            pattern.format(p.name, specifiedCommand, description.string_);
 
                         if (description.syntax.length)
                         {
@@ -114,34 +105,21 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             immutable prefixedSyntax = description.syntax.beginsWith("$nickname") ?
                                 udaSyntax : settings.prefix ~ udaSyntax;
 
-                            string syntax;
+                            immutable syntax = settings.colouredOutgoing ?
+                                "Usage".ircBold ~ ": " ~ prefixedSyntax :
+                                "Usage: " ~ prefixedSyntax;
 
-                            if (settings.colouredOutgoing)
-                            {
-                                syntax = "Usage".ircBold ~ ": " ~ prefixedSyntax;
-                            }
-                            else
-                            {
-                                syntax = "Usage: " ~ prefixedSyntax;
-                            }
-
+                            query(plugin.state, sender.nickname, message);
                             query(plugin.state, sender.nickname, syntax);
                         }
                     }
                     else
                     {
-                        string message;
+                        enum pattern = "No help available for command %s of plugin %s";
 
-                        if (settings.colouredOutgoing)
-                        {
-                            message = "No help available for command %s of plugin %s"
-                                .format(specifiedCommand.ircBold, specifiedPlugin.ircBold);
-                        }
-                        else
-                        {
-                            message = "No help available for command %s of plugin %s"
-                                .format(specifiedCommand, specifiedPlugin);
-                        }
+                        immutable message = settings.colouredOutgoing ?
+                            pattern.format(specifiedCommand.ircBold, specifiedPlugin.ircBold) :
+                            pattern.format(specifiedCommand, specifiedPlugin);
 
                         query(plugin.state, sender.nickname, message);
                     }
@@ -149,16 +127,9 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     return;
                 }
 
-                string message;
-
-                if (settings.colouredOutgoing)
-                {
-                    message = "No such plugin: " ~ specifiedPlugin.ircBold;
-                }
-                else
-                {
-                    message = "No such plugin: " ~ specifiedPlugin;
-                }
+                immutable message = settings.colouredOutgoing ?
+                    "No such plugin: " ~ specifiedPlugin.ircBold :
+                    "No such plugin: " ~ specifiedPlugin;
 
                 query(plugin.state, sender.nickname, message);
             }
@@ -171,32 +142,17 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
 
-                    string message;
-
-                    if (settings.colouredOutgoing)
-                    {
-                        // FIXME: Can we bold the commands too?
-                        message = pattern.format(width, p.name.ircBold, p.commands.keys.sort());
-                    }
-                    else
-                    {
-                        message = pattern.format(width, p.name, p.commands.keys.sort());
-                    }
+                    immutable message = settings.colouredOutgoing ?
+                        pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
+                        pattern.format(width, p.name, p.commands.keys.sort());
 
                     query(plugin.state, sender.nickname, message);
                     return;
                 }
 
-                string message;
-
-                if (settings.colouredOutgoing)
-                {
-                    message = "No such plugin: " ~ content.ircBold;
-                }
-                else
-                {
-                    message = "No such plugin: " ~ content;
-                }
+                immutable message = settings.colouredOutgoing ?
+                    "No such plugin: " ~ content.ircBold :
+                    "No such plugin: " ~ content;
 
                 query(plugin.state, sender.nickname, message);
             }
@@ -224,32 +180,18 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
 
-                string message;
-
-                if (settings.colouredOutgoing)
-                {
-                    // FIXME: Can we bold the commands too?
-                    message = pattern.format(width, p.name.ircBold, p.commands.keys.sort());
-                }
-                else
-                {
-                    message = pattern.format(width, p.name, p.commands.keys.sort());
-                }
+                immutable message = settings.colouredOutgoing ?
+                    pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
+                    pattern.format(width, p.name, p.commands.keys.sort());
 
                 query(plugin.state, sender.nickname, message);
             }
 
-            string message;
+            enum pattern = "Use %s [%s] [%s] for information about a command.";
 
-            if (settings.colouredOutgoing)
-            {
-                message = "Use %s [%s] [%s] for information about a command."
-                    .format("help".ircBold, "plugin".ircBold, "command".ircBold);
-            }
-            else
-            {
-                message = "Use help [plugin] [command] for information about a command.";
-            }
+            immutable message = settings.colouredOutgoing ?
+                pattern.format("help".ircBold, "plugin".ircBold, "command".ircBold) :
+                "Use help [plugin] [command] for information about a command.";
 
             query(plugin.state, sender.nickname, message);
             query(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");

@@ -174,16 +174,9 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
         }
         else
         {
-            string message;
-
-            if (settings.colouredOutgoing)
-            {
-                message = "No such user: " ~ username.ircColour(IRCColour.red).ircBold;
-            }
-            else
-            {
-                message = "No such user: " ~ username;
-            }
+            immutable message = settings.colouredOutgoing ?
+                "No such user: " ~ username.ircColour(IRCColour.red).ircBold :
+                "No such user: " ~ username;
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -441,16 +434,11 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     {
         import std.format : format;
 
-        string message;
+        enum pattern = "Channel %s was not listed as a home.";
 
-        if (settings.colouredOutgoing)
-        {
-            message = "Channel %s was not listed as a home.".format(channel.ircBold);
-        }
-        else
-        {
-            message = "Channel %s was not listed as a home.".format(channel);
-        }
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(channel.ircBold) :
+            pattern.format(channel);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -520,16 +508,11 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
             final switch (result)
             {
             case success:
-                string message;
+                enum pattern = "%sed %s.";
 
-                if (settings.colouredOutgoing)
-                {
-                    message = "%sed %s.".format(list, id.ircColourByHash.ircBold);
-                }
-                else
-                {
-                    message = "%sed %s.".format(list, id);
-                }
+                immutable message = settings.colouredOutgoing ?
+                    pattern.format(list, id.ircColourByHash.ircBold) :
+                    pattern.format(list, id);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -538,16 +521,11 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
                 assert(0, "Invalid delist-only AlterationResult passed to report()");
 
             case alreadyInList:
-                string message;
+                enum pattern = "Account %s already %sed.";
 
-                if (settings.colouredOutgoing)
-                {
-                    message = "Account %s already %sed.".format(id.ircColourByHash.ircBold, list);
-                }
-                else
-                {
-                    message = "Account %s already %sed.".format(id, list);
-                }
+                immutable message = settings.colouredOutgoing ?
+                    pattern.format(id.ircColourByHash.ircBold, list) :
+                    pattern.format(id, list);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -601,16 +579,9 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
         {
             // IRC report
 
-            string message;
-
-            if (settings.colouredOutgoing)
-            {
-                message = "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold;
-            }
-            else
-            {
-                message = "Invalid nickname/account: " ~ specified;
-            }
+            immutable message = settings.colouredOutgoing ?
+                "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold :
+                "Invalid nickname/account: " ~ specified;
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -707,31 +678,21 @@ void delist(AdminPlugin plugin, const string account, const string list,
             assert(0, "Invalid enlist-only AlterationResult returned to delist()");
 
         case noSuchAccount:
-            string message;
+            enum pattern = "No such account %s to de%s.";
 
-            if (settings.colouredOutgoing)
-            {
-                message = "No such account %s to de%s.".format(account.ircColourByHash.ircBold, list);
-            }
-            else
-            {
-                message = "No such account %s to de%s".format(account, list);
-            }
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(account.ircColourByHash.ircBold, list) :
+                pattern.format(account, list);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
-            string message;
+            enum pattern = "de%sed %s.";
 
-            if (settings.colouredOutgoing)
-            {
-                message = "de%sed %s.".format(list, account.ircColourByHash.ircBold);
-            }
-            else
-            {
-                message = "de%sed %s".format(list, account);
-            }
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(list, account.ircColourByHash.ircBold) :
+                pattern.format(list, account);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
@@ -986,16 +947,9 @@ void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
-    string message;
-
-    if (settings.colouredOutgoing)
-    {
-        message = "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold;
-    }
-    else
-    {
-        message = "Printing all: " ~ plugin.adminSettings.printRaw.text;
-    }
+    immutable message = settings.colouredOutgoing ?
+        "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold :
+        "Printing all: " ~ plugin.adminSettings.printRaw.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
@@ -1020,16 +974,9 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
-    string message;
-
-    if (settings.colouredOutgoing)
-    {
-        message = "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold;
-    }
-    else
-    {
-        message = "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
-    }
+    immutable message = settings.colouredOutgoing ?
+        "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold :
+        "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
@@ -1055,16 +1002,9 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 
     plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
 
-    string message;
-
-    if (settings.colouredOutgoing)
-    {
-        message = "Printing asserts: " ~ plugin.adminSettings.printAsserts.text.ircBold;
-    }
-    else
-    {
-        message = "Printing asserts: " ~ plugin.adminSettings.printAsserts.text;
-    }
+    immutable message = settings.colouredOutgoing ?
+        "Printing asserts: " ~ plugin.adminSettings.printAsserts.text.ircBold :
+        "Printing asserts: " ~ plugin.adminSettings.printAsserts.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 

@@ -563,18 +563,9 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         else if (!event.content.isValidNickname(plugin.state.client.server))
         {
             // Nickname contained a space
-            string message;
-
-            if (settings.colouredOutgoing)
-            {
-                privmsg(event.channel, event.sender.nickname,
-                    "Invalid user: " ~ event.content.ircBold);
-            }
-            else
-            {
-                privmsg(event.channel, event.sender.nickname,
-                    "Invalid user: " ~ event.content);
-            }
+            immutable message = settings.colouredOutgoing ?
+                "Invalid user: " ~ event.content.ircBold :
+                "Invalid user: " ~ event.content;
 
             privmsg(event.channel, event.sender.nickname, message);
             return;
@@ -598,16 +589,10 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             {
                 immutable line = event.channel.length && (channel.name == event.channel) ?
                     " is here right now!" : " is online right now.";
-                string message;
 
-                if (settings.colouredOutgoing)
-                {
-                    message = event.content.ircColourByHash.ircBold ~ line;
-                }
-                else
-                {
-                    message = event.content ~ line;
-                }
+                immutable message = settings.colouredOutgoing ?
+                    event.content.ircColourByHash.ircBold ~ line :
+                    event.content ~ line;
 
                 privmsg(event.channel, event.sender.nickname, message);
                 return;
@@ -620,35 +605,25 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
         if (!userTimestamp)
         {
-            // No matches for nickname `event.content` in `plugin.seenUsers`.
-            string message;
+            enum pattern = "I have never seen %s.";
 
-            if (settings.colouredOutgoing)
-            {
-                message = "I have never seen %s.".format(event.content.ircColourByHash.ircBold);
-            }
-            else
-            {
-                message = "I have never seen %s.".format(event.content);
-            }
+            // No matches for nickname `event.content` in `plugin.seenUsers`.
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(event.content.ircColourByHash.ircBold) :
+                pattern.format(event.content);
 
             privmsg(event.channel, event.sender.nickname, message);
             return;
         }
 
+        enum pattern =  "I last saw %s %s ago.";
+
         const timestamp = SysTime.fromUnixTime(*userTimestamp);
         immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-        string message;
-
-        if (settings.colouredOutgoing)
-        {
-            message = "I last saw %s %s ago.".format(event.content.ircColourByHash.ircBold, elapsed);
-        }
-        else
-        {
-            message = "I last saw %s %s ago.".format(event.content, elapsed);
-        }
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(event.content.ircColourByHash.ircBold, elapsed) :
+            pattern.format(event.content, elapsed);
 
         privmsg(event.channel, event.sender.nickname, message);
     }

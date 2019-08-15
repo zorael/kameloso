@@ -131,16 +131,11 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
-        string message;
+        enum pattern = `"%s" is not a valid account or nickname.`;
 
-        if (settings.colouredOutgoing)
-        {
-            message = `"%s" is not a valid account or nickname.`.format(specified.ircBold);
-        }
-        else
-        {
-            message = `"%s" is not a valid account or nickname.`.format(specified);
-        }
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(specified.ircBold) :
+            pattern.format(specified);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -149,16 +144,11 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     /// Report success to IRC
     void report(const string nickname, const string endQuote)
     {
-        string message;
+        enum pattern = "%s | %s";
 
-        if (settings.colouredOutgoing)
-        {
-            message = "%s | %s".format(nickname.ircColourByHash.ircBold, endQuote);
-        }
-        else
-        {
-            message = "%s | %s".format(nickname, endQuote);
-        }
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(nickname.ircColourByHash.ircBold, endQuote) :
+            pattern.format(nickname, endQuote);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -175,16 +165,11 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
                 return report(endAccount, quote);
             }
 
-            string message;
+            enum pattern = "No quote on record for %s";
 
-            if (settings.colouredOutgoing)
-            {
-                message = "No quote on record for %s".format(replyUser.nickname.ircColourByHash.ircBold);
-            }
-            else
-            {
-                message = "No quote on record for %s".format(replyUser.nickname);
-            }
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(replyUser.nickname.ircColourByHash.ircBold) :
+                pattern.format(replyUser.nickname);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -263,16 +248,11 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
-        string message;
+        enum pattern = `"%s" is not a valid account or nickname.`;
 
-        if (settings.colouredOutgoing)
-        {
-            message = `"%s" is not a valid account or nickname.`.format(specified.ircBold);
-        }
-        else
-        {
-            message = `"%s" is not a valid account or nickname.`.format(specified);
-        }
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(specified.ircBold) :
+            pattern.format(specified);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -282,23 +262,17 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         try
         {
+            import std.conv : text;
+
             plugin.addQuote(id, slice);
             plugin.quotes.save(plugin.quotesFile);
 
-            string message;
+            enum pattern = "Quote for %s saved (%s on record)";
 
-            if (settings.colouredOutgoing)
-            {
-                import std.conv : text;
-                message = "Quote for %s saved (%s on record)"
-                    .format(id.ircColourByHash.ircBold,
-                    plugin.quotes[id].array.length.text.ircBold);
-            }
-            else
-            {
-                message = "Quote for %s saved (%d on record)"
-                    .format(id, plugin.quotes[id].array.length);
-            }
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(id.ircColourByHash.ircBold,
+                    plugin.quotes[id].array.length.text.ircBold) :
+                pattern.format(id, plugin.quotes[id].array.length);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }

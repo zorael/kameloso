@@ -71,36 +71,24 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                string message;
+                enum pattern = "%s! %s left note %s ago: %s";
 
-                if (settings.colouredOutgoing)
-                {
-                    message = "%s! %s left note %s ago: %s"
-                        .format(senderName.ircBold, note.sender.ircColourByHash.ircBold,
-                        timestamp.ircBold, note.line);
-                }
-                else
-                {
-                    message = "%s! %s left note %s ago: %s"
-                        .format(senderName, note.sender, timestamp, note.line);
-                }
+                immutable message = settings.colouredOutgoing ?
+                    pattern.format(senderName.ircBold,
+                        note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
+                    pattern.format(senderName, note.sender, timestamp, note.line);
 
                 privmsg(plugin.state, channel, event.sender.nickname, message);
             }
             else
             {
-                string message;
+                import std.conv : text;
 
-                if (settings.colouredOutgoing)
-                {
-                    import std.conv : text;
-                    message = "%s! You have %s notes."
-                        .format(senderName.ircBold, noteArray.length.text.ircBold);
-                }
-                else
-                {
-                    message = "%s! You have %d notes.".format(senderName, noteArray.length);
-                }
+                enum pattern = "%s! You have %s notes.";
+
+                immutable message = settings.colouredOutgoing ?
+                    pattern.format(senderName.ircBold, noteArray.length.text.ircBold) :
+                    pattern.format(senderName, noteArray.length);
 
                 privmsg(plugin.state, channel, event.sender.nickname, message);
 
@@ -109,16 +97,12 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     immutable timestamp = (Clock.currTime - note.when)
                         .timeSince!(Yes.abbreviate);
 
-                    string report;
+                    enum entryPattern = "%s %s ago: %s";
 
-                    if (settings.colouredOutgoing)
-                    {
-                        report = "%s %s ago: %s".format(note.sender.ircColourByHash.ircBold, timestamp, note.line);
-                    }
-                    else
-                    {
-                        report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
-                    }
+                    immutable report = settings.colouredOutgoing ?
+                        entryPattern.format(note.sender.ircColourByHash.ircBold,
+                            timestamp, note.line) :
+                        entryPattern.format(note.sender, timestamp, note.line);
 
                     privmsg(plugin.state, channel, event.sender.nickname, report);
                 }
