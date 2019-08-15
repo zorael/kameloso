@@ -515,6 +515,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
 }
 
 ///
+version(WithPlugins)
 unittest
 {
     IRCPluginState state;
@@ -543,6 +544,7 @@ unittest
     assert(ps.d.approxEqual(99.99), ps.d.text);
 }
 
+version(WithPlugins)
 version(unittest)
 {
     // These need to be module-level.
@@ -2260,6 +2262,7 @@ unittest
     assert(p.isEnabled);
 }
 
+version(WithPlugins)
 version(unittest)
 {
     // These need to be module-level.
