@@ -1680,6 +1680,17 @@ struct Buffer(T, size_t bufferSize = 128)
     }
 
     /++
+     +  Implements `buf ~= someT` (appending) by wrapping `put`.
+     +
+     +  Params:
+     +      more = Item to add.
+     +/
+    void opOpAssign(string op : "~")(const T more)
+    {
+        return put(more);
+    }
+
+    /++
      +  Fetches the item at the current position of the buffer.
      +
      +  Returns:
@@ -1779,6 +1790,18 @@ unittest
         assert(buf.buf == [ "MNO", "def", "ghi", "JKL" ]);
         buf.clear();
         assert(buf.buf == [ string.init, string.init, string.init, string.init ]);
+    }
+    {
+        Buffer!(char, 64) buf;
+        buf ~= 'a';
+        buf ~= 'b';
+        buf ~= 'c';
+        assert(buf.buf[0..3] == "abc".dup);
+
+        foreach (char_; buf)
+        {
+            assert((char_ == 'a') || (char_ == 'b') || (char_ == 'c'));
+        }
     }
 }
 
