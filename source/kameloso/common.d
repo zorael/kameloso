@@ -1683,6 +1683,7 @@ struct Buffer(T, size_t bufferSize = 128)
      +  Implements `buf ~= someT` (appending) by wrapping `put`.
      +
      +  Params:
+     +      op = Op type, here specialised to "`~`".
      +      more = Item to add.
      +/
     void opOpAssign(string op : "~")(const T more)
