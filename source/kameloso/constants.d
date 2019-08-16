@@ -30,6 +30,8 @@ enum BufferSize
     socketOptionSend = 1024,
     socketReceive = 2048,
     titleLookup = 8192,
+    outbuffer = 512,
+    priorityBuffer = 64,
 }
 
 /// Various timeouts in seconds.

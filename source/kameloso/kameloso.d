@@ -96,71 +96,6 @@ void signalHandler(int sig) nothrow @nogc @system
 }
 
 
-// throttleline
-/++
- +  Send a string to the server in a throttled fashion, based on a simple
- +  `y = k*x + m` line.
- +
- +  This is so we don't get kicked by the server for spamming, if a lot of lines
- +  are to be sent at once.
- +
- +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      strings = Variadic list of strings to send.
- +/
-void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
-{
-    import kameloso.thread : interruptibleSleep;
-    import core.thread : Thread;
-    import core.time : seconds, msecs;
-    import std.datetime.systime : Clock, SysTime;
-
-    if (*bot.abort) return;
-
-    with (bot.throttling)
-    {
-        immutable now = Clock.currTime;
-        if (t0 == SysTime.init) t0 = now;
-
-        version(TwitchSupport)
-        {
-            double k = bot.throttling.k;
-            double burst = bot.throttling.burst;
-
-            if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
-            {
-                k = -1.0;
-                burst = 0.5;
-            }
-        }
-
-        double x = (now - t0).total!"msecs"/1000.0;
-        auto y = k * x + m;
-
-        if (y < 0)
-        {
-            t0 = now;
-            m = 0;
-            x = 0;
-            y = 0;
-        }
-
-        while (y >= burst)
-        {
-            x = (Clock.currTime - t0).total!"msecs"/1000.0;
-            y = k*x + m;
-            interruptibleSleep(100.msecs, *bot.abort);
-            if (*bot.abort) return;
-        }
-
-        bot.conn.sendline(strings);
-
-        m = y + increment;
-        t0 = Clock.currTime;
-    }
-}
-
-
 // messageFiber
 /++
  +  A Generator Fiber function that checks for concurrency messages and performs
@@ -194,60 +129,34 @@ void messageFiber(ref IRCBot bot)
                 version(Colours)
                 {
                     import kameloso.irc.colours : mapEffects;
-                    import kameloso.terminal : TerminalForeground, TerminalBackground;
-
                     logger.trace("--> ", line.mapEffects);
-                    bot.conn.sendline(line);
                 }
                 else
                 {
                     import kameloso.irc.colours : stripEffects;
                     logger.trace("--> ", line.stripEffects);
-                    bot.conn.sendline(line);
                 }
             }
-            else
-            {
-                bot.conn.sendline(line);
-            }
+
+            bot.conn.sendline(line);
         }
 
         /// Echo a line to the terminal and send it to the server.
         void sendline(ThreadMessage.Sendline, string line) scope
         {
-            if (!settings.hideOutgoing)
-            {
-                version(Colours)
-                {
-                    import kameloso.irc.colours : mapEffects;
-                    import kameloso.terminal : TerminalForeground, TerminalBackground;
-
-                    logger.trace("--> ", line.mapEffects);
-                    bot.throttleline(line);
-                }
-                else
-                {
-                    import kameloso.irc.colours : stripEffects;
-                    logger.trace("--> ", line.stripEffects);
-                    bot.throttleline(line);
-                }
-            }
-            else
-            {
-                bot.throttleline(line);
-            }
+            bot.outbuffer.put(OutgoingLine(line, settings.hideOutgoing));
         }
 
         /// Send a line to the server without echoing it.
         void quietline(ThreadMessage.Quietline, string line) scope
         {
-            bot.throttleline(line);
+            bot.outbuffer.put(OutgoingLine(line, true));
         }
 
         /// Respond to `PING` with `PONG` to the supplied text as target.
         void pong(ThreadMessage.Pong, string target) scope
         {
-            bot.throttleline("PONG :", target);
+            bot.outbuffer.put(OutgoingLine("PONG :" ~ target, true));
         }
 
         /// Quit the server with the supplied reason, or the default.
@@ -256,15 +165,14 @@ void messageFiber(ref IRCBot bot)
             // This will automatically close the connection.
             // Set quit to yes to propagate the decision up the stack.
             immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
-            if (!hideOutgoing) logger.trace("--> QUIT :", reason);
-            bot.conn.sendline("QUIT :", reason);
+            bot.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
             next = Next.returnSuccess;
         }
 
         /// Disconnects from and reconnects to the server.
         void reconnect(ThreadMessage.Reconnect) scope
         {
-            bot.conn.sendline("QUIT :Reconnecting.");
+            bot.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", false));
             next = Next.retry;
         }
 
@@ -627,6 +535,8 @@ Next mainLoop(ref IRCBot bot)
         }
     }
 
+    bool readWasShortened;
+
     while (next == Next.continue_)
     {
         import core.thread : Fiber;
@@ -883,6 +793,40 @@ Next mainLoop(ref IRCBot bot)
             version(PrintStacktraces) printStacktrace();
             next = Next.returnFailure;
         }
+
+        if (!bot.outbuffer.empty || !bot.priorityBuffer.empty)
+        {
+            // There are messages to send.
+
+            import kameloso.constants : Timeout;
+            import core.time : msecs, seconds;
+            import std.socket : SocketOption, SocketOptionLevel;
+            import std.stdio : writeln, writefln;
+
+            double untilNext;
+            if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
+            else untilNext = bot.throttleline(bot.outbuffer);
+
+            with (bot.conn.socket)
+            with (SocketOption)
+            with (SocketOptionLevel)
+            {
+                if (untilNext > 0)
+                {
+                    if ((untilNext < bot.throttling.burst) &&
+                        (untilNext < Timeout.receive))
+                    {
+                        setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
+                        readWasShortened = true;
+                    }
+                }
+                else if (readWasShortened)
+                {
+                    setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
+                    readWasShortened = false;
+                }
+            }
+        }
     }
 
     return next;
@@ -1107,8 +1051,7 @@ void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] 
 
         if ((now - then) > Timeout.whoisRetry)
         {
-            if (!settings.hideOutgoing) logger.trace("--> WHOIS ", nickname);
-            bot.throttleline("WHOIS ", nickname);
+            bot.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, settings.hideOutgoing));
             bot.previousWhoisTimestamps[nickname] = now;
         }
     }
@@ -1751,6 +1694,10 @@ int kamelosoMain(string[] args)
 
             // Exhaust leftover queued messages
             exhaustMessages();
+
+            // Clear outgoing messages
+            bot.outbuffer.clear();
+            bot.priorityBuffer.clear();
 
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);

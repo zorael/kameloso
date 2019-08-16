@@ -429,8 +429,8 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
                 return;
             }
 
-            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
             if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
+            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
             privmsg(plugin.state, event.channel, event.sender.nickname, "Phrase ban removed.");
         }
         else
@@ -678,8 +678,8 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
                 return;
             }
 
-            plugin.timersToJSON.save(plugin.timersFile);
             if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
+            plugin.timersToJSON.save(plugin.timersFile);
             privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
         }
         else
@@ -1545,7 +1545,7 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
     foreach (immutable channel, const channelTimersJSON; timersJSON.object)
     {
         assert((channelTimersJSON.type == JSONType.array),
-            "Invalid channel timers list type for %s: %s"
+            "Twitch timer json file malformed! Invalid channel timers list type for %s: %s"
             .format(channel, channelTimersJSON.type));
 
         plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
@@ -1553,7 +1553,7 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
         foreach (timerArrayEntry; channelTimersJSON.array)
         {
             assert((timerArrayEntry.type == JSONType.object),
-                "Invalid timer type for %s: %s"
+                "Twitch timer json file malformed! Invalid timer type for %s: %s"
                 .format(channel, timerArrayEntry.type));
 
             TimerDefinition timer;
@@ -1587,6 +1587,8 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
 
     foreach (immutable channelName, channelTimers; plugin.timerDefsByChannel)
     {
+        if (!channelTimers.length) continue;
+
         json[channelName] = null;  // quirk to initialise it as a JSONType.object
 
         foreach (const timer; channelTimers)
