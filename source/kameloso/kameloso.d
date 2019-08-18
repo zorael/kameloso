@@ -761,6 +761,39 @@ Next mainLoop(ref IRCBot bot)
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
                 }
+
+                with (IRCEvent.Type)
+                switch (event.type)
+                {
+                case SELFCHAN:
+                case SELFEMOTE:
+                case SELFQUERY:
+                    // Treat self-events as if we sent them ourselves, to properly
+                    // rate-limit the account itself. This stops Twitch from
+                    // giving spam warnings. We can easily tell whether it's a channel
+                    // we're the broadcaster in, but no such luck with whether
+                    // we're a moderator.
+                    // FIXME: Revisit with a better solution that's broken out of throttleline.
+                    version(TwitchSupport)
+                    {
+                        if (event.channel.length && (event.channel[1..$] == bot.parser.client.nickname))
+                        {
+                            bot.throttleline(bot.fastbuffer, true, true);
+                        }
+                        else
+                        {
+                            bot.throttleline(bot.outbuffer, true);
+                        }
+                    }
+                    else
+                    {
+                        bot.throttleline(bot.outbuffer, true);
+                    }
+                    break;
+
+                default:
+                    break;
+                }
             }
             catch (IRCParseException e)
             {
