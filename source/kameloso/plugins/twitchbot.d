@@ -1300,9 +1300,6 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
                 *regularArray ~= nickname;
                 // Drop down for report
             }
-
-            saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
-            chan(plugin.state, event.channel, slice ~ " is now a regular.");
         }
         else
         {
