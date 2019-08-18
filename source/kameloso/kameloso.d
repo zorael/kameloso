@@ -371,7 +371,9 @@ void messageFiber(ref IRCBot bot)
                     if ((bot.parser.client.server.daemon == IRCServer.Daemon.twitch) && fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
-                        bot.fastbuffer.put(OutgoingLine(finalLine, settings.hideOutgoing));
+                        immutable quiet = settings.hideOutgoing ||
+                            (event.target.class_ == IRCUser.Class.special);
+                        bot.fastbuffer.put(OutgoingLine(finalLine, quiet));
                         return;
                     }
                 }
