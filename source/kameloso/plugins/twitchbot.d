@@ -1596,7 +1596,7 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
             JSONValue value;
             value = null;  // as above
 
-            if ((channelName !in json) || (json[channelName].type != JSONType.array))
+            if (json[channelName].type != JSONType.array)
             {
                 json[channelName].array = null;
             }
