@@ -1776,6 +1776,11 @@ int kamelosoMain(string[] args)
             bot.outbuffer.clear();
             bot.priorityBuffer.clear();
 
+            version(TwitchSupport)
+            {
+                bot.fastbuffer.clear();
+            }
+
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
             if (*bot.abort) break outerloop;
