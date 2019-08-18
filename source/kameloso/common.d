@@ -234,12 +234,12 @@ struct IRCBot
 
     import std.datetime.systime : SysTime;
 
-    // ThrottleValues
+    // Throttle
     /++
      +  Aggregate of values and state needed to throttle messages without
      +  polluting namespace too much.
      +/
-    private struct ThrottleValues
+    private struct Throttle
     {
         /// Graph constant modifier (inclination, MUST be negative).
         enum k = -1.2;
@@ -280,7 +280,7 @@ struct IRCBot
     IRCParser parser;
 
     /// Values and state needed to throttle sending messages.
-    ThrottleValues throttling;
+    Throttle throttle;
 
     /++
      +  When this is set by signal handlers, the program should exit. Other
@@ -333,7 +333,7 @@ struct IRCBot
      +      Buffer = Buffer type, generally `Buffer`.
      +      buffer = `Buffer` instance.
      +      onlyIncrement = Whether or not to send anything or just do a dry run,
-     +          incrementing the graph by `throttling.increment`.
+     +          incrementing the graph by `throttle.increment`.
      +      sendFaster = On Twitch, whether or not we should throttle less and
      +          send messages faster. Useful in some situations when rate-limiting
      +          is more lax.
@@ -345,7 +345,7 @@ struct IRCBot
     double throttleline(Buffer)(ref Buffer buffer, const bool onlyIncrement = false,
         bool sendFaster = false)
     {
-        with (throttling)
+        with (throttle)
         {
             import std.datetime.systime : Clock;
 
@@ -356,8 +356,8 @@ struct IRCBot
             {
                 import kameloso.irc.defs : IRCServer;
 
-                double k = throttling.k;
-                double burst = throttling.burst;
+                double k = throttle.k;
+                double burst = throttle.burst;
 
                 if (parser.client.server.daemon == IRCServer.Daemon.twitch)
                 {

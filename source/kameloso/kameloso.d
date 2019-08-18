@@ -890,7 +890,7 @@ Next mainLoop(ref IRCBot bot)
             {
                 if (untilNext > 0)
                 {
-                    if ((untilNext < bot.throttling.burst) &&
+                    if ((untilNext < bot.throttle.burst) &&
                         (untilNext < Timeout.receive))
                     {
                         setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
@@ -1784,7 +1784,7 @@ int kamelosoMain(string[] args)
             bot.initPlugins(customSettings);
 
             // Reset throttling, in case there were queued messages.
-            bot.throttling = typeof(bot.throttling).init;
+            bot.throttle = typeof(bot.throttle).init;
         }
 
         scope(exit)
