@@ -363,6 +363,7 @@ struct IRCBot
                 {
                     if (sendFaster)
                     {
+                        // FIXME: Tweak numbers.
                         k = -3.0;
                         burst = 10.0;
                     }
@@ -394,30 +395,27 @@ struct IRCBot
                     return y;
                 }
 
-                if (!onlyIncrement)
-                {
-                    if (!buffer.front.quiet)
-                    {
-                        version(Colours)
-                        {
-                            import kameloso.irc.colours : mapEffects;
-                            logger.trace("--> ", buffer.front.line.mapEffects);
-                        }
-                        else
-                        {
-                            import kameloso.irc.colours : stripEffects;
-                            logger.trace("--> ", buffer.front.line.stripEffects);
-                        }
-                    }
-
-                    conn.sendline(buffer.front.line);
-                    buffer.popFront();
-                }
-
                 m = y + increment;
                 t0 = now;
 
                 if (onlyIncrement) break;
+
+                if (!buffer.front.quiet)
+                {
+                    version(Colours)
+                    {
+                        import kameloso.irc.colours : mapEffects;
+                        logger.trace("--> ", buffer.front.line.mapEffects);
+                    }
+                    else
+                    {
+                        import kameloso.irc.colours : stripEffects;
+                        logger.trace("--> ", buffer.front.line.stripEffects);
+                    }
+                }
+
+                conn.sendline(buffer.front.line);
+                buffer.popFront();
             }
 
             return 0.0;
