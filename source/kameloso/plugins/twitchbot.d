@@ -1595,11 +1595,16 @@ JSONStorage timersToJSON(TwitchBotPlugin plugin)
         {
             JSONValue value;
             value = null;  // as above
+
+            if ((channelName !in json) || (json[channelName].type != JSONType.array))
+            {
+                json[channelName].array = null;
+            }
+
             value["line"] = timer.line;
             value["messageCountThreshold"] = timer.messageCountThreshold;
             value["timeThreshold"] = timer.timeThreshold;
             value["stagger"] = timer.stagger;
-            json[channelName].array = null;
             json[channelName].array ~= value;
         }
     }
