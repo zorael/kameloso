@@ -32,13 +32,13 @@ version(unittest)
  +          to the server.
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
- +      channel = Channel in which to send the message.
+ +      channelName = Channel in which to send the message.
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string content, bool quiet = settings.hideOutgoing)
-in (channel.length, "Tried to send a channel message but no channel was given")
+    const string channelName, const string content, bool quiet = settings.hideOutgoing)
+in (channelName.length, "Tried to send a channel message but no channel was given")
 do
 {
     static if (priority) import std.concurrency : send = prioritySend;
@@ -46,8 +46,29 @@ do
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
     if (quiet) event.target.class_ = IRCUser.Class.special;
-    event.channel = channel;
+    event.channel = channelName;
     event.content = content;
+
+    version(TwitchSupport)
+    {
+        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            if (channelName[1..$] == state.client.nickname)
+            {
+                // User is broadcaster
+                event.aux = "fast";
+            }
+            else if (auto channel = channelName in state.channels)
+            {
+                import std.algorithm.searching : canFind;
+
+                if ((*channel).ops.canFind(state.client.nickname))
+                {
+                    event.aux = "fast";
+                }
+            }
+        }
+    }
 
     state.mainThread.send(event);
 }

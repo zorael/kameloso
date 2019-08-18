@@ -236,6 +236,11 @@ void messageFiber(ref IRCBot bot)
 
             enum maxIRCLineLength = 512;
 
+            version(TwitchSupport)
+            {
+                bool fast;
+            }
+
             string line;
             string prelude;
             string[] lines;
@@ -246,6 +251,12 @@ void messageFiber(ref IRCBot bot)
             switch (event.type)
             {
             case CHAN:
+                version(TwitchSupport)
+                {
+                    fast = (bot.parser.client.server.daemon == IRCServer.Daemon.twitch) &&
+                        (event.aux.length > 0);
+                }
+
                 prelude = "PRIVMSG %s :".format(channel);
                 lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
                 break;
@@ -355,6 +366,16 @@ void messageFiber(ref IRCBot bot)
 
             void appropriateline(const string finalLine)
             {
+                version(TwitchSupport)
+                {
+                    if ((bot.parser.client.server.daemon == IRCServer.Daemon.twitch) && fast)
+                    {
+                        // Send a line via the fastbuffer, faster than normal sends.
+                        bot.fastbuffer.put(OutgoingLine(finalLine, settings.hideOutgoing));
+                        return;
+                    }
+                }
+
                 if (event.target.class_ == IRCUser.Class.special)
                 {
                     quietline(ThreadMessage.Quietline(), finalLine);
@@ -794,7 +815,14 @@ Next mainLoop(ref IRCBot bot)
             next = Next.returnFailure;
         }
 
-        if (!bot.outbuffer.empty || !bot.priorityBuffer.empty)
+        bool bufferHasMessages = (!bot.outbuffer.empty || !bot.priorityBuffer.empty);
+
+        version(TwitchSupport)
+        {
+            bufferHasMessages |= !bot.fastbuffer.empty;
+        }
+
+        if (bufferHasMessages)
         {
             // There are messages to send.
 
@@ -804,8 +832,24 @@ Next mainLoop(ref IRCBot bot)
             import std.stdio : writeln, writefln;
 
             double untilNext;
-            if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
-            else untilNext = bot.throttleline(bot.outbuffer);
+
+            version(TwitchSupport)
+            {
+                if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
+                else if (!bot.fastbuffer.empty) untilNext = bot.throttleline(bot.fastbuffer, false, true);
+                else
+                {
+                    untilNext = bot.throttleline(bot.outbuffer);
+                }
+            }
+            else
+            {
+                if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
+                else
+                {
+                    untilNext = bot.throttleline(bot.outbuffer);
+                }
+            }
 
             with (bot.conn.socket)
             with (SocketOption)

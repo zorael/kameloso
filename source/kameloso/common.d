@@ -334,12 +334,16 @@ struct IRCBot
      +      buffer = `Buffer` instance.
      +      onlyIncrement = Whether or not to send anything or just do a dry run,
      +          incrementing the graph by `throttling.increment`.
+     +      sendFaster = On Twitch, whether or not we should throttle less and
+     +          send messages faster. Useful in some situations when rate-limiting
+     +          is more lax.
      +
      +  Returns:
      +      The time remaining until the next message may be sent, so that we
      +      can reschedule the next server read timeout to happen earlier.
      +/
-    double throttleline(Buffer)(ref Buffer buffer, const bool onlyIncrement = false)
+    double throttleline(Buffer)(ref Buffer buffer, const bool onlyIncrement = false,
+        bool sendFaster = false)
     {
         with (throttling)
         {
@@ -357,8 +361,16 @@ struct IRCBot
 
                 if (parser.client.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    k = -1.0;
-                    burst = 0.5;
+                    if (sendFaster)
+                    {
+                        k = -3.0;
+                        burst = 10.0;
+                    }
+                    else
+                    {
+                        k = -1.0;
+                        burst = 1.0;
+                    }
                 }
             }
 
