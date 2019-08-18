@@ -321,78 +321,84 @@ struct IRCBot
      +  Params:
      +      Buffer = Buffer type, generally `Buffer`.
      +      buffer = `Buffer` instance.
+     +      onlyIncrement = Whether or not to send anything or just do a dry run,
+     +          incrementing the graph by `throttling.increment`.
      +
      +  Returns:
      +      The time remaining until the next message may be sent, so that we
      +      can reschedule the next server read timeout to happen earlier.
      +/
-    double throttleline(Buffer)(ref Buffer buffer)
+    double throttleline(Buffer)(ref Buffer buffer, const bool onlyIncrement = false)
     {
-        while (!buffer.empty)
+        with (throttling)
         {
-            with (throttling)
+            import std.datetime.systime : Clock;
+
+            immutable now = Clock.currTime;
+            if (t0 == SysTime.init) t0 = now;
+
+            version(TwitchSupport)
             {
-                import std.datetime.systime : Clock;
+                import kameloso.irc.defs : IRCServer;
 
-                immutable now = Clock.currTime;
-                if (t0 == SysTime.init) t0 = now;
+                double k = throttling.k;
+                double burst = throttling.burst;
 
-                version(TwitchSupport)
+                if (parser.client.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    import kameloso.irc.defs : IRCServer;
-
-                    double k = throttling.k;
-                    double burst = throttling.burst;
-
-                    if (parser.client.server.daemon == IRCServer.Daemon.twitch)
-                    {
-                        k = -1.0;
-                        burst = 0.5;
-                    }
+                    k = -1.0;
+                    burst = 0.5;
                 }
+            }
 
+            while (!buffer.empty || onlyIncrement)
+            {
                 double x = (now - t0).total!"msecs"/1000.0;
                 double y = k * x + m;
 
-                if (y < 0)
+                if (y < 0.0)
                 {
                     t0 = now;
-                    m = 0;
-                    x = 0;
-                    y = 0;
+                    x = 0.0;
+                    y = 0.0;
+                    m = 0.0;
                 }
 
                 if (y >= burst)
                 {
-                    import std.stdio : writeln;
-                    x = (Clock.currTime - t0).total!"msecs"/1000.0;
+                    x = (now - t0).total!"msecs"/1000.0;
                     y = k*x + m;
                     return y;
                 }
 
-                if (!buffer.front.quiet)
+                if (!onlyIncrement)
                 {
-                    version(Colours)
+                    if (!buffer.front.quiet)
                     {
-                        import kameloso.irc.colours : mapEffects;
-                        logger.trace("--> ", buffer.front.line.mapEffects);
+                        version(Colours)
+                        {
+                            import kameloso.irc.colours : mapEffects;
+                            logger.trace("--> ", buffer.front.line.mapEffects);
+                        }
+                        else
+                        {
+                            import kameloso.irc.colours : stripEffects;
+                            logger.trace("--> ", buffer.front.line.stripEffects);
+                        }
                     }
-                    else
-                    {
-                        import kameloso.irc.colours : stripEffects;
-                        logger.trace("--> ", buffer.front.line.stripEffects);
-                    }
+
+                    conn.sendline(buffer.front.line);
+                    buffer.popFront();
                 }
 
-                conn.sendline(buffer.front.line);
-                buffer.popFront();
-
                 m = y + increment;
-                t0 = Clock.currTime;
-            }
-        }
+                t0 = now;
 
-        return 0.0;
+                if (onlyIncrement) break;
+            }
+
+            return 0.0;
+        }
     }
 
 
