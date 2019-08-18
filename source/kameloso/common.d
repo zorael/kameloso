@@ -304,6 +304,17 @@ struct IRCBot
      +/
     Buffer!(OutgoingLine, BufferSize.priorityBuffer) priorityBuffer;
 
+    version(TwitchSupport)
+    {
+        /++
+         +  Buffer of outgoing fast message strings.
+         +
+         +  The buffer size is "how many string pointers", now how many bytes. So
+         +  we can comfortably keep it arbitrarily high.
+         +/
+        Buffer!(OutgoingLine, BufferSize.outbuffer*2) fastbuffer;
+    }
+
     /// Never copy this.
     @disable this(this);
 
