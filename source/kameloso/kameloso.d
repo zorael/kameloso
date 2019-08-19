@@ -776,20 +776,22 @@ Next mainLoop(ref IRCBot bot)
                     // we're the broadcaster in, but no such luck with whether
                     // we're a moderator.
                     // FIXME: Revisit with a better solution that's broken out of throttleline.
+                    import std.typecons : Flag, No, Yes;
+
                     version(TwitchSupport)
                     {
                         if (event.channel.length && (event.channel[1..$] == bot.parser.client.nickname))
                         {
-                            bot.throttleline(bot.fastbuffer, true, true);
+                            bot.throttleline(bot.fastbuffer, Yes.onlyIncrement, Yes.sendFaster);
                         }
                         else
                         {
-                            bot.throttleline(bot.outbuffer, true);
+                            bot.throttleline(bot.outbuffer, Yes.onlyIncrement);
                         }
                     }
                     else
                     {
-                        bot.throttleline(bot.outbuffer, true);
+                        bot.throttleline(bot.outbuffer, Yes.onlyIncrement);
                     }
                     break;
 
@@ -864,14 +866,15 @@ Next mainLoop(ref IRCBot bot)
             import kameloso.constants : Timeout;
             import core.time : msecs, seconds;
             import std.socket : SocketOption, SocketOptionLevel;
-            import std.stdio : writeln, writefln;
+            import std.typecons : Flag, No, Yes;
 
             double untilNext;
 
             version(TwitchSupport)
             {
                 if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
-                else if (!bot.fastbuffer.empty) untilNext = bot.throttleline(bot.fastbuffer, false, true);
+                else if (!bot.fastbuffer.empty) untilNext =
+                    bot.throttleline(bot.fastbuffer, No.onlyIncrement, Yes.sendFaster);
                 else
                 {
                     untilNext = bot.throttleline(bot.outbuffer);

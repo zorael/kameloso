@@ -342,8 +342,9 @@ struct IRCBot
      +      The time remaining until the next message may be sent, so that we
      +      can reschedule the next server read timeout to happen earlier.
      +/
-    double throttleline(Buffer)(ref Buffer buffer, const bool onlyIncrement = false,
-        bool sendFaster = false)
+    double throttleline(Buffer)(ref Buffer buffer,
+        const Flag!"onlyIncrement" onlyIncrement = No.onlyIncrement,
+        const Flag!"sendFaster" sendFaster = No.sendFaster)
     {
         with (throttle)
         {
