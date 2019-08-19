@@ -311,9 +311,10 @@ struct SeenSettings
  +  `kameloso.plugins.common.PrivilegeLevel.ignore`.
  +/
 @(Chainable)
-@(IRCEvent.Type.EMOTE)
-@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.EMOTE)
+@(IRCEvent.Type.SELFCHAN)
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.PART)
 @(PrivilegeLevel.ignore)
@@ -509,6 +510,7 @@ void onEndOfList(SeenPlugin plugin)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "seen")
@@ -638,6 +640,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printseen")

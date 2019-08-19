@@ -41,6 +41,7 @@ struct BashQuotesSettings
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "bash")

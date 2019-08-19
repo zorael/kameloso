@@ -41,6 +41,7 @@ struct ChatbotSettings
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "say")
@@ -71,6 +72,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "8ball")
