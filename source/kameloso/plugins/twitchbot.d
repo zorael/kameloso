@@ -664,7 +664,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
         }
 
         plugin.timerDefsByChannel[targetChannel] ~= timerDef;
-        plugin.timersToJSON.save(plugin.timersFile);
+        plugin.timerDefsToJSON.save(plugin.timersFile);
         plugin.activeChannels[targetChannel].timers ~=
             plugin.createTimerFiber(timerDef, targetChannel);
         privmsg(plugin.state, event.channel, event.sender.nickname, "New timer added.");
@@ -713,7 +713,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
             }
 
             if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
-            plugin.timersToJSON.save(plugin.timersFile);
+            plugin.timerDefsToJSON.save(plugin.timersFile);
             privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
         }
         else
@@ -782,7 +782,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "clear":
         plugin.activeChannels[targetChannel].timers.length = 0;
         plugin.timerDefsByChannel.remove(targetChannel);
-        plugin.timersToJSON.save(plugin.timersFile);
+        plugin.timerDefsToJSON.save(plugin.timersFile);
         privmsg(plugin.state, event.channel, event.sender.nickname, "All timers cleared.");
         break;
 
@@ -1602,14 +1602,14 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
 
 import kameloso.json : JSONStorage;
 
-// timersToJSON
+// timerDefsToJSON
 /++
  +  Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
  +  in JSON form, for easier saving to and loading from disk.
  +
  +  Using `std.json.JSONValue` directly fails with an error.
  +/
-JSONStorage timersToJSON(TwitchBotPlugin plugin)
+JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 {
     import std.json : JSONType, JSONValue;
 
