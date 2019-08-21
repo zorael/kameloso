@@ -489,6 +489,44 @@ void onEndOfMotd(AutomodePlugin plugin)
 }
 
 
+// onMode
+/++
+ +  Applies automodes in a channel upon being given operator privileges.
+ +/
+@(IRCEvent.Type.MODE)
+@(ChannelPolicy.home)
+void onMode(AutomodePlugin plugin, const IRCEvent event)
+{
+    import kameloso.irc.common : containsNickname;
+    import std.algorithm.searching : canFind;
+
+    if (!event.content.containsNickname(plugin.state.client.nickname)) return;
+
+    if (!plugin.state.channels[event.channel].ops
+        .canFind(plugin.state.client.nickname)) return;
+
+    auto accountmodes = event.channel in plugin.automodes;
+    if (!accountmodes) return;
+
+    foreach (immutable account; accountmodes.byKey)
+    {
+        import std.algorithm.iteration : filter;
+        import std.array : array;
+
+        auto usersWithThatAccount = plugin.state.users
+            .byValue
+            .filter!(user => user.account == account);
+
+        if (usersWithThatAccount.empty) continue;
+
+        foreach (immutable user; usersWithThatAccount)
+        {
+            plugin.applyAutomodes(event.channel, user.nickname, user.account);
+        }
+    }
+}
+
+
 // pruneChannels
 /++
  +  Prunes empty channels in the automodes definitions associative array.
