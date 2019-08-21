@@ -137,75 +137,89 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         assert(0, "Invalid IRCEvent annotation on " ~ __FUNCTION__);
     }
 
-    plugin.applyAutomodes(nickname, account);
+    foreach (immutable channelName, const accountmodes; plugin.automodes)
+    {
+        if (account in accountmodes)
+        {
+            plugin.applyAutomodes(channelName, nickname, account);
+        }
+    }
 }
 
 
 // applyAutomodes
 /++
- +  Applies automodes for a specific user.
- +
- +  It applies any and all defined modestrings for said user, in any and all
- +  channels the bot is operator in.
+ +  Applies automodes for a specific user in a specific channel.
  +
  +  Params:
  +      plugin = The current `AutomodePlugin`
+ +      channelName = String channel to apply the modes in.
  +      nickname = String nickname of the user to apply modes to.
  +      account = String account of the user, to look up definitions for.
  +/
-void applyAutomodes(AutomodePlugin plugin, const string nickname, const string account)
+void applyAutomodes(AutomodePlugin plugin, const string channelName,
+    const string nickname, const string account)
 {
-    import kameloso.messaging : raw;
     import std.algorithm.searching : canFind;
-    import std.array : join;
-    import std.format : format;
-    import std.range : repeat;
 
-    foreach (immutable channelName, const channelaccounts; plugin.appliedAutomodes)
+    auto accountmodes = channelName in plugin.automodes;
+    if (!accountmodes) return;
+
+    const modes = account in *accountmodes;
+    if (!modes || !modes.length) return;
+
+    auto channel = channelName in plugin.state.channels;
+    if (!channel) return;
+
+    // We could check aux for `+o` to see if we were made op, but the syntax differs
+    // on some servers. Moreover, more than one modechar (like `+ov`) and more than
+    // one target (like `+oo kameloso zorael`) are valid use-cases.
+    if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        const appliedAccounts = channelName in plugin.appliedAutomodes;
+        string infotint, logtint;
 
-        if (appliedAccounts && nickname in *appliedAccounts)
+        version(Colours)
         {
-            logger.log("Already applied modes to ", nickname);
-            return;
+            import kameloso.common : settings;
+
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.log("Could not apply this automode because we are not an operator in the channel:");
+        logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
+            infotint, channel.name, logtint, *modes, nickname);
+        return;
+    }
+
+    import std.string : representation;
+
+    char[] missingModes;
+
+    foreach (const mode; (*modes).representation)
+    {
+        if (auto usersWithThisMode = cast(char)mode in channel.mods)
+        {
+            if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(account))
+            {
+                missingModes ~= mode;
+            }
+        }
+        else
+        {
+            // No one has this mode
+            missingModes ~= mode;
         }
     }
 
-    foreach (immutable channelName, const channelaccounts; plugin.automodes)
+    if (missingModes.length)
     {
-        const modes = account in channelaccounts;
-        if (!modes || !modes.length) continue;
-
-        auto occupiedChannel = channelName in plugin.state.channels;
-
-        if (!occupiedChannel) continue;
-
-        if (!occupiedChannel.ops.canFind(plugin.state.client.nickname))
-        {
-            string infotint, logtint;
-
-            version(Colours)
-            {
-                import kameloso.common : settings;
-
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    infotint = (cast(KamelosoLogger)logger).infotint;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
-            logger.log("Could not apply this automode because we are not an operator in the channel:");
-            logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
-                infotint, occupiedChannel.name, logtint, *modes, nickname);
-            continue;
-        }
-
-        mode(plugin.state, occupiedChannel.name, "+".repeat(modes.length).join ~ *modes, nickname);
-        plugin.appliedAutomodes[channelName][nickname] = true;
+        mode(plugin.state, channel.name, "+" ~ missingModes, nickname);
     }
 }
 
@@ -220,16 +234,16 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    mode(state, "#channel", "++ov", "mydude");
+    mode(state, "#channel", "+ov", "mydude");
     immutable event = receiveOnly!IRCEvent;
 
     assert((event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(event.type));
     assert((event.channel == "#channel"), event.channel);
-    assert((event.aux == "++ov"), event.aux);
+    assert((event.aux == "+ov"), event.aux);
     assert((event.content == "mydude"), event.content);
 
     immutable line = "MODE %s %s %s".format(event.channel, event.aux, event.content);
-    assert((line == "MODE #channel ++ov mydude"), line);
+    assert((line == "MODE #channel +ov mydude"), line);
 }
 
 
@@ -444,71 +458,12 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 {
     if (event.sender.account.length)
     {
-        plugin.applyAutomodes(event.sender.nickname, event.sender.account);
+        plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
     }
     else
     {
         import kameloso.messaging : whois;
         whois(plugin.state, event.sender.nickname, plugin.automodeSettings.opForcesWhois);
-    }
-}
-
-
-// onUserPart
-/++
- +  Removes a record of an applied automode for an account-channel pair.
- +/
-@(IRCEvent.Type.PART)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onUserPart(AutomodePlugin plugin, const IRCEvent event)
-{
-    if (auto channelApplications = event.channel in plugin.appliedAutomodes)
-    {
-        (*channelApplications).remove(event.sender.nickname);
-    }
-}
-
-
-// onUserQuit
-/++
- +  Removes a record of an applied automode for an account, in any and all channels.
- +/
-@(IRCEvent.Type.QUIT)
-void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
-{
-    foreach (ref channelApplications; plugin.appliedAutomodes)
-    {
-        channelApplications.remove(event.sender.nickname);
-    }
-}
-
-
-// onSelfpart
-/++
- +  Removes all recorded mode applications for a channel when leaving it.
- +/
-@(IRCEvent.Type.SELFPART)
-void onSelfpart(AutomodePlugin plugin, const IRCEvent event)
-{
-    plugin.appliedAutomodes.remove(event.channel);
-}
-
-
-// onNick
-/++
- +  Updates the list of applied automodes to reflect a change in someone's nickname.
- +/
-@(IRCEvent.Type.NICK)
-void onNick(AutomodePlugin plugin, const IRCEvent event)
-{
-    foreach (ref channelApplications; plugin.appliedAutomodes)
-    {
-        if (event.sender.nickname in channelApplications)
-        {
-            channelApplications[event.target.nickname] = true;
-            channelApplications.remove(event.sender.nickname);
-        }
     }
 }
 
@@ -570,9 +525,6 @@ private:
 
     /// Associative array of automodes.
     string[string][string] automodes;
-
-    /// Records of applied automodes so we don't repeat ourselves.
-    bool[string][string] appliedAutomodes;
 
     /// The file to read and save automode definitions from/to.
     @Resource string automodeFile = "automodes.json";
