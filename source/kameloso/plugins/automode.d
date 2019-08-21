@@ -265,7 +265,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     import std.algorithm.searching : count;
     import std.uni : toLower;
 
-    if (event.content.count(" ") != 2)
+    if (event.content.count(' ') != 2)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: addmode [channel] [mode] [account/nickname]");
@@ -382,7 +382,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.uni : toLower;
 
-    if (event.content.count(" ") != 1)
+    if (event.content.count(' ') != 1)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: clearmode [channel] [account]");
