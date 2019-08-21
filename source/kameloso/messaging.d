@@ -305,7 +305,7 @@ unittest
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string modes, const string content = string.init,
+    const string channel, const const(char)[] modes, const string content = string.init,
     const bool quiet = settings.hideOutgoing)
 in (channel.length, "Tried to set a mode but no channel was given")
 do
@@ -316,7 +316,7 @@ do
     event.type = IRCEvent.Type.MODE;
     if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
-    event.aux = modes;
+    event.aux = modes.idup;
     event.content = content;
 
     state.mainThread.send(event);
