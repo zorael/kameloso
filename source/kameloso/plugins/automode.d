@@ -269,6 +269,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: addmode [channel] [mode] [account/nickname]");
+            //                       1      2
         return;
     }
 
@@ -386,6 +387,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: clearmode [channel] [account]");
+            //                         1
         return;
     }
 
@@ -445,7 +447,7 @@ void onCommandPrintModes(AutomodePlugin plugin)
 /++
  +  Triggers a WHOIS of the user invoking it with bot commands.
  +
- +  The `kameloso.plugins.common.PrivilegeLevel.anyone` annotation is is to
+ +  The `kameloso.plugins.common.PrivilegeLevel.anyone` annotation is to
  +  force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)

@@ -1267,6 +1267,7 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: [add|del|list] [nickname]");
+            //                    1
         return;
     }
 
