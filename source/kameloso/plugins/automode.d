@@ -312,8 +312,8 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     {
         import std.format : format;
 
-        immutable verb = (channelName in plugin.automodes) &&
-            (id in plugin.automodes[channelName]) ? "updated" : "added";
+        const accountmodes = channelName in plugin.automodes;
+        immutable verb = accountmodes && (id in *accountmodes) ? "updated" : "added";
 
         plugin.automodes[channelName][id] = mode;
 
