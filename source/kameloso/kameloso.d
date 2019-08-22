@@ -1303,8 +1303,10 @@ Next tryConnect(ref IRCBot bot)
             immutable pattern = (attempt.ip.addressFamily == AddressFamily.INET6) ?
                 "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
                 "Connecting to %s%s%s:%1$s%4$s%3$s ...";
-            logger.logf(pattern, infotint, attempt.ip.toHostNameString,
-                logtint, attempt.ip.toPortString);
+            immutable resolvedHost = attempt.ip.toHostNameString;
+            immutable address = (parser.client.server.address == resolvedHost) ?
+                attempt.ip.toAddrString : resolvedHost;
+            logger.logf(pattern, infotint, address, logtint, attempt.ip.toPortString);
             continue;
 
         case connected:
