@@ -1574,17 +1574,6 @@ int kamelosoMain(string[] args)
     IRCBot bot;
     bot.abort = &abort;
 
-    // Apply some defaults, as stored in `kameloso.constants`.
-    with (bot.parser.client)
-    {
-        import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
-
-        realName = KamelosoDefaultStrings.realName;
-        quitReason = KamelosoDefaultStrings.quitReason;
-        server.address = KamelosoDefaultStrings.serverAddress;
-        server.port = KamelosoDefaultIntegers.port;
-    }
-
     import std.path : buildNormalizedPath;
 
     // Default values
@@ -1637,6 +1626,17 @@ int kamelosoMain(string[] args)
 
     case returnFailure:
         return 1;
+    }
+
+    // Apply some defaults, as stored in `kameloso.constants`.
+    with (bot.parser.client)
+    {
+        import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
+
+        if (!realName.length) realName = KamelosoDefaultStrings.realName;
+        if (!quitReason.length) quitReason = KamelosoDefaultStrings.quitReason;
+        if (!server.address.length) server.address = KamelosoDefaultStrings.serverAddress;
+        if (server.port == 0) server.port = KamelosoDefaultIntegers.port;
     }
 
     string pre, post, infotint, logtint, warningtint, errortint;
