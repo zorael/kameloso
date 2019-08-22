@@ -1300,10 +1300,11 @@ Next tryConnect(ref IRCBot bot)
         case preconnect:
             import std.socket : AddressFamily;
 
-            immutable pattern = (attempt.ip.addressFamily == AddressFamily.INET6) ?
+            immutable resolvedHost = attempt.ip.toHostNameString;
+            immutable pattern = !resolvedHost.length &&
+                (attempt.ip.addressFamily == AddressFamily.INET6) ?
                 "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
                 "Connecting to %s%s%s:%1$s%4$s%3$s ...";
-            immutable resolvedHost = attempt.ip.toHostNameString;
             immutable address = (!resolvedHost.length ||
                 (parser.client.server.address == resolvedHost)) ?
                 attempt.ip.toAddrString : resolvedHost;
