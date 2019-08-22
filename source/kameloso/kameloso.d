@@ -1568,6 +1568,17 @@ int kamelosoMain(string[] args)
     IRCBot bot;
     bot.abort = &abort;
 
+    // Apply some defaults, as stored in `kameloso.constants`.
+    with (bot.parser.client)
+    {
+        import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
+
+        realName = KamelosoDefaultStrings.realName;
+        quitReason = KamelosoDefaultStrings.quitReason;
+        server.address = KamelosoDefaultStrings.serverAddress;
+        server.port = KamelosoDefaultIntegers.port;
+    }
+
     import std.path : buildNormalizedPath;
 
     // Default values
