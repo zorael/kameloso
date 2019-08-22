@@ -1304,7 +1304,8 @@ Next tryConnect(ref IRCBot bot)
                 "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
                 "Connecting to %s%s%s:%1$s%4$s%3$s ...";
             immutable resolvedHost = attempt.ip.toHostNameString;
-            immutable address = (parser.client.server.address == resolvedHost) ?
+            immutable address = (!resolvedHost.length ||
+                (parser.client.server.address == resolvedHost)) ?
                 attempt.ip.toAddrString : resolvedHost;
             logger.logf(pattern, infotint, address, logtint, attempt.ip.toPortString);
             continue;
