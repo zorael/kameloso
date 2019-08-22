@@ -52,6 +52,9 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
     string slice = event.content;
     slice.nom(settings.prefix);
 
+    // An empty command is invalid, as is one containing spaces
+    if (!slice.length || slice.contains(' ')) return;
+
     if (const channelOneliners = event.channel in plugin.onelinersByChannel)
     {
         // Insert .toLower here if we want case-insensitive oneliners
