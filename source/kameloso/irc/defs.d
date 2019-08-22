@@ -945,10 +945,10 @@ struct IRCServer
     }
 
     /// Server address (or IP).
-    string address = "irc.freenode.net";
+    string address;
 
     /// The port to connect to, usually 6667-6669.
-    ushort port = 6667;
+    ushort port;
 
     @Unconfigurable
     {

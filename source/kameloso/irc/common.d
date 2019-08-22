@@ -1615,10 +1615,10 @@ struct IRCClient
         string ident; // = "NaN";
 
         /// Client GECOS/"real name".
-        string realName = "kameloso IRC bot";
+        string realName;
 
         /// Default reason given when quitting without specifying one.
-        string quitReason = "beep boop I am a bot";
+        string quitReason;
 
         /// Username to use for services account.
         string account;
