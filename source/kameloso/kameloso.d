@@ -1298,9 +1298,13 @@ Next tryConnect(ref IRCBot bot)
         final switch (attempt.state)
         {
         case preconnect:
-            // Alternative: attempt.ip.toHostNameString
-            logger.logf("Connecting to %s%s%s:%1$s%4$s%3$s ...",
-                infotint, attempt.ip.toAddrString, logtint, attempt.ip.toPortString);
+            import std.socket : AddressFamily;
+
+            immutable pattern = (attempt.ip.addressFamily == AddressFamily.INET6) ?
+                "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
+                "Connecting to %s%s%s:%1$s%4$s%3$s ...";
+            logger.logf(pattern, infotint, attempt.ip.toHostNameString,
+                logtint, attempt.ip.toPortString);
             continue;
 
         case connected:
