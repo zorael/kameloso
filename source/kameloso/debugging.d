@@ -63,7 +63,7 @@ unittest
         nickname = "NICKNAME";
         user = "UUUUUSER";
         server.address = "something.freenode.net";
-        server.port = 0;
+        server.port = 6667;
         server.daemon = IRCServer.Daemon.unreal;
         server.aModes = "eIbq";
     }
@@ -78,7 +78,7 @@ with (parser.client)
     nickname = "NICKNAME";
     user = "UUUUUSER";
     server.address = "something.freenode.net";
-    server.port = 0;
+    server.port = 6667;
     server.daemon = IRCServer.Daemon.unreal;
     server.aModes = "eIbq";
 }`, '\n' ~ sink.data);
@@ -221,7 +221,7 @@ unittest
         nickname = "NICKNAME";
         user = "UUUUUSER";
         server.address = "something.freenode.net";
-        server.port = 0;
+        server.port = 6667;
         server.daemon = IRCServer.Daemon.unreal;
         server.aModes = "eIbq";
     }
@@ -232,7 +232,7 @@ unittest
 `nickname = "NICKNAME";
 user = "UUUUUSER";
 server.address = "something.freenode.net";
-server.port = 0;
+server.port = 6667;
 server.daemon = IRCServer.Daemon.unreal;
 server.aModes = "eIbq";
 `, '\n' ~ sink.data);
@@ -245,7 +245,7 @@ assert(sink.data ==
 `assert((nickname == "NICKNAME"), nickname);
 assert((user == "UUUUUSER"), user);
 assert((server.address == "something.freenode.net"), server.address);
-assert((server.port == 0), server.port.to!string);
+assert((server.port == 6667), server.port.to!string);
 assert((server.daemon == IRCServer.Daemon.unreal), Enum!(IRCServer.Daemon).toString(server.daemon));
 assert((server.aModes == "eIbq"), server.aModes);
 `, '\n' ~ sink.data);

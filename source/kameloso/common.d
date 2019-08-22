@@ -1351,9 +1351,8 @@ unittest
     assert(!client.nickname.length, client.nickname);
     assert(!client.user.length, client.user);
     assert(!client.ident.length, client.ident);
-    assert(client.realName.length);
+    assert(!client.realName.length, client.realName);
 
-    client.realName = string.init;
     completeClient(client);
 
     assert(client.nickname.length);
