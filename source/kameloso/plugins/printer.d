@@ -1569,7 +1569,7 @@ if (isOutputRange!(Sink, char[]))
 
         import kameloso.string : beginsWith;
 
-        if (rawTypestring.beginsWith("ERR_"))
+        if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR))
         {
             sink.colourWith(bright ? Bright.error : Dark.error);
         }
