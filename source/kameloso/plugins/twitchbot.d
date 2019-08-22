@@ -1668,7 +1668,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 
     foreach (user; only(&event.sender, &event.target))
     {
-        if (user.nickname == event.channel)
+        if (event.channel.length && (user.nickname == event.channel[1..$]))
         {
             user.class_ = IRCUser.Class.admin;
         }
