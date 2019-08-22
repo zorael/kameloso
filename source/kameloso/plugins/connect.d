@@ -486,8 +486,8 @@ void onNickInUse(ConnectService service)
         }
         else
         {
-            import kameloso.constants : altNickSign;
-            service.state.client.nickname ~= altNickSign;
+            import kameloso.constants : KamelosoDefaultStrings;
+            service.state.client.nickname ~= KamelosoDefaultStrings.altNickSign;
             service.renamedDuringRegistration = true;
         }
 
