@@ -203,7 +203,7 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
 
     foreach (const mode; (*modes).representation)
     {
-        if (auto usersWithThisMode = cast(char)mode in channel.mods)
+        if (const usersWithThisMode = cast(char)mode in channel.mods)
         {
             if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(account))
             {

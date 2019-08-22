@@ -205,7 +205,7 @@ struct JSONStorage
         {
             sink.formattedWrite("    \"%s\":\n", key);
 
-            if (auto entry = key in storage)
+            if (const entry = key in storage)
             {
                 sink.put(entry.toPrettyString.indent);
             }

@@ -508,7 +508,7 @@ room-id                            "39298218"
                     charityAA[charityKey] = slice;
                 }
 
-                if (auto charityName = "msg-param-charity-name" in charityAA)
+                if (const charityName = "msg-param-charity-name" in charityAA)
                 {
                     import kameloso.string : escapeControlCharacters, strippedRight;
 
@@ -518,7 +518,7 @@ room-id                            "39298218"
                         .escapeControlCharacters!(Yes.remove);
                 }
 
-                if (auto charityLink = "msg-param-charity-learn-more" in charityAA)
+                if (const charityLink = "msg-param-charity-learn-more" in charityAA)
                 {
                     if (event.aux.length) event.aux ~= " (" ~ *charityLink ~ ')';
                     else
@@ -527,7 +527,7 @@ room-id                            "39298218"
                     }
                 }
 
-                if (auto charityHashtag = "msg-param-charity-hashtag" in charityAA)
+                if (const charityHashtag = "msg-param-charity-hashtag" in charityAA)
                 {
                     if (event.aux.length) event.aux ~= ' ' ~ *charityHashtag;
                     else
@@ -537,12 +537,12 @@ room-id                            "39298218"
                 }
 
                 // Doesn't start with msg-param-charity but it will be set later down
-                /*if (auto charityTotal = "msg-param-total" in charityAA)
+                /*if (const charityTotal = "msg-param-total" in charityAA)
                 {
                     event.count = (*charityTotal).to!int;
                 }*/
 
-                if (auto charityRemaining = "msg-param-charity-hours-remaining" in charityAA)
+                if (const charityRemaining = "msg-param-charity-hours-remaining" in charityAA)
                 {
                     event.altcount = (*charityRemaining).to!int;
                 }

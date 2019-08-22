@@ -85,7 +85,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 {
                     if (p.name != specifiedPlugin) continue;
 
-                    if (auto description = specifiedCommand in p.commands)
+                    if (const description = specifiedCommand in p.commands)
                     {
                         enum pattern = "[%s] %s: %s";
 

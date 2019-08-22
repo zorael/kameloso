@@ -3272,7 +3272,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             import std.string : representation;
             foreach (immutable modesign; modesigns.representation)
             {
-                if (auto modechar = modesign in plugin.state.client.server.prefixchars)
+                if (const modechar = modesign in plugin.state.client.server.prefixchars)
                 {
                     import kameloso.irc.common : setMode;
                     import std.conv : to;
