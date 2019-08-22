@@ -11,17 +11,49 @@ enum KamelosoInfo
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
 
-/// When a nickname is taken, append this to get a new name.
-enum altNickSign = '^';
+/++
+ +  Kameloso defaults, strings version.
+ +/
+enum KamelosoDefaultStrings
+{
+    /// Default server address.
+    serverAddress = "irc.freenode.net",
+    /// The default GEOC/"real name" string.
+    realName = "kameloso IRC bot",
+    /// The default quit reason, when the bot exits normally (not through Ctrl+C).
+    quitReason = "beep boop I am a bot",
+    /// When a nickname is taken, append this to get a new name.
+    altNickSign = "^",
+}
 
-/// How many times to attempt to connect to an IP before moving on to the next one.
-enum connectionRetries = 4;
+/++
+ +  Kameloso defaults, integers version.
+ +/
+enum KamelosoDefaultIntegers
+{
+    /// Default server port.
+    port = 6667,
+}
 
-/// By what to multiply the connect timeout after failing an attempt.
-enum connectionDelayIncrementMultiplier = 1.5;
+/++
+ +  Connection defaults, integers version.
+ +/
+enum ConnectionDefaultIntegers
+{
+    /// How many times to attempt to connect to an IP before moving on to the next one.
+    retries = 4,
+    /// The maximum amount of time to wait between connection attempts.
+    delayCap = 10*60,  // seconds
+}
 
-/// The maximum amount of time to wait between connection attempts.
-enum connectionDelayCap = 10*60;  // seconds
+/++
+ +  Connection defaults, floating point version.
+ +/
+enum ConnectionDefaultFloats : double
+{
+    /// By what to multiply the connect timeout after failing an attempt.
+    delayIncrementMultiplier = 1.5,
+}
 
 /// Buffer sizes in bytes.
 enum BufferSize
