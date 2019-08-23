@@ -639,6 +639,7 @@ Next mainLoop(ref IRCBot bot)
 
             case timeout:
                 logger.error("Connection lost.");
+                bot.conn.connected = false;
                 return Next.returnFailure;
 
             case error:
@@ -653,6 +654,7 @@ Next mainLoop(ref IRCBot bot)
                         logtint, attempt.lastSocketError_, errortint);
                 }
 
+                bot.conn.connected = false;
                 return Next.returnFailure;
             }
 
@@ -1827,6 +1829,7 @@ int kamelosoMain(string[] args)
         // May as well check once here, in case something in initPlugins aborted or so.
         if (*bot.abort) break outerloop;
 
+        bot.conn.connected = false;
         bot.conn.reset();
 
         immutable actionAfterResolve = tryResolve(bot);
@@ -1941,7 +1944,6 @@ int kamelosoMain(string[] args)
         // Start the main loop
         next = bot.mainLoop();
         firstConnect = false;
-        bot.conn.connected = false;
     }
     while (!*bot.abort && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
