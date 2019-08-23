@@ -1948,7 +1948,25 @@ int kamelosoMain(string[] args)
     while (!*bot.abort && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
 
-    if (!*bot.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
+    if (*bot.abort && bot.conn.connected)
+    {
+        if (!settings.hideOutgoing)
+        {
+            version(Colours)
+            {
+                import kameloso.irc.colours : mapEffects;
+                logger.trace("--> QUIT :", bot.parser.client.quitReason.mapEffects);
+            }
+            else
+            {
+                import kameloso.irc.colours : stripEffects;
+                logger.trace("--> QUIT :", bot.parser.client.quitReason.stripEffects);
+            }
+        }
+
+        bot.conn.sendline("QUIT :" ~ bot.parser.client.quitReason);
+    }
+    else if (!*bot.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
