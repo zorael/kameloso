@@ -1300,6 +1300,7 @@ Next tryConnect(ref IRCBot bot)
         final switch (attempt.state)
         {
         case preconnect:
+            import kameloso.string : sharedDomains;
             import std.socket : AddressFamily;
 
             immutable resolvedHost = attempt.ip.toHostNameString;
@@ -1307,9 +1308,12 @@ Next tryConnect(ref IRCBot bot)
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
                 "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
                 "Connecting to %s%s%s:%1$s%4$s%3$s ...";
+
             immutable address = (!resolvedHost.length ||
-                (parser.client.server.address == resolvedHost)) ?
+                (parser.client.server.address == resolvedHost) ||
+                (sharedDomains(parser.client.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
+
             logger.logf(pattern, infotint, address, logtint, attempt.ip.toPortString);
             continue;
 
