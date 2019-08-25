@@ -37,76 +37,6 @@ __gshared bool abort;
 
 private:
 
-version (Windows)
-{
-    // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
-    // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
-
-    import core.sys.windows.wincon : SetConsoleCP, SetConsoleOutputCP;
-    //import core.sys.windows.windef : UINT;
-
-    /// Original codepage at program start.
-    __gshared uint originalCP;
-
-    /// Original output codepage at program start.
-    __gshared uint originalOutputCP;
-
-    /// Original console mode at program start.
-    __gshared uint originalConsoleMode;
-
-    /++
-     +  Sets the console codepage to display UTF-8 characters (åäö, 高所恐怖症, ...)
-     +  and the console mode to display terminal colours.
-     +/
-    void setConsoleModeAndCodepage()
-    {
-        import core.stdc.stdlib : atexit;
-        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-        import core.sys.windows.wincon : ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP, SetConsoleMode;
-        import core.sys.windows.winnls : CP_UTF8;
-
-        originalCP = GetConsoleCP();
-        originalOutputCP = GetConsoleOutputCP();
-
-        SetConsoleCP(CP_UTF8);
-        SetConsoleOutputCP(CP_UTF8);
-
-        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
-
-        immutable getConRetval = GetConsoleMode(stdoutHandle, &originalConsoleMode);
-        assert((getConRetval != 0), "Failed to get console mode");
-
-        immutable setConRetval = SetConsoleMode(stdoutHandle,
-            originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        assert((setConRetval != 0), "Failed to set console mode");
-
-        // atexit handlers are also called when exiting via exit() etc.;
-        // that's the reason this isn't a RAII struct.
-        atexit(&resetConsoleModeAndCodepage);
-    }
-
-    /++
-     +  Resets the console codepage and console mode to the values they had at
-     +  program start.
-     +/
-    extern(C)
-    void resetConsoleModeAndCodepage()
-    {
-        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-        import core.sys.windows.wincon : SetConsoleMode;
-
-        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
-
-        SetConsoleCP(originalCP);
-        SetConsoleOutputCP(originalOutputCP);
-        SetConsoleMode(stdoutHandle, originalConsoleMode);
-    }
-}
-
-
 /+
     Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
 
@@ -1652,6 +1582,8 @@ int initBot(string[] args)
 
     version(Windows)
     {
+        import kameloso.terminal : setConsoleModeAndCodepage;
+
         // Set up the console to display text and colours properly.
         setConsoleModeAndCodepage();
     }
