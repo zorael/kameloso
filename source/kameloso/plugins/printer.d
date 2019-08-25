@@ -1609,7 +1609,7 @@ if (isOutputRange!(Sink, char[]))
 
         if (aux.length)
         {
-            .put!(Yes.colours)(sink, Bright.aux, Dark.aux, " (", aux, ')');
+            .put!(Yes.colours)(sink, bright ? Bright.aux : Dark.aux, " (", aux, ')');
         }
 
         if (count != 0)
