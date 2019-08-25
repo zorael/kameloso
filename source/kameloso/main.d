@@ -20,7 +20,7 @@ else
 /++
  +  Entry point of the program.
  +
- +  Technically it just passes on execution to `kameloso.kameloso.kamelosoMain`.
+ +  Technically it just passes on execution to `kameloso.kameloso.initBot`.
  +
  +  Params:
  +      args = Command-line arguments passed to the program.
@@ -30,7 +30,7 @@ else
  +/
 int main(string[] args)
 {
-    import kameloso.kameloso : kamelosoMain;
+    import kameloso.kameloso : initBot;
 
-    return kamelosoMain(args);
+    return initBot(args);
 }

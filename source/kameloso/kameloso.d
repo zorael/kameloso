@@ -1572,7 +1572,7 @@ void complainAboutMissingConfiguration(const string[] args)
 public:
 
 
-// main
+// initBot
 /++
  +  Entry point of the program.
  +
@@ -1582,7 +1582,7 @@ public:
  +  Returns:
  +      `0` on success, `1` on failure.
  +/
-int kamelosoMain(string[] args)
+int initBot(string[] args)
 {
     version(Posix)
     {
