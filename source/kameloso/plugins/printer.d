@@ -1309,7 +1309,7 @@ if (isOutputRange!(Sink, char[]))
         if (plugin.printerSettings.randomNickColours)
         {
             import kameloso.terminal : colourByHash;
-            return nickname.colourByHash;
+            return colourByHash(nickname, bright);
         }
         else
         {
@@ -2327,7 +2327,7 @@ if (isOutputRange!(Sink, char[]))
         immutable end = highlights[i].end;
 
         sink.put(dline[pos..start]);
-        sink.colourWith(colourful ? colourByHash(id) : pre);
+        sink.colourWith(colourful ? colourByHash(id, settings.brightTerminal) : pre);
         sink.put(dline[start..end]);
         sink.colourWith(post);
 
