@@ -1590,6 +1590,12 @@ int initBot(string[] args)
         setThreadName("kameloso");
     }
 
+    import kameloso.constants : KamelosoInfo;
+    import kameloso.terminal : setTitle;
+
+    enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
+    setTitle(terminalTitle);
+
     // Initialise the main IRCBot. Set its abort pointer to the global abort.
     IRCBot bot;
     bot.abort = &abort;
