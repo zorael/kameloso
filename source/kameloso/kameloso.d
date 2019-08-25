@@ -43,7 +43,7 @@ shared static this()
 
     Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
  +/
-static if (__VERSION__ <= 2086L)
+static if (__VERSION__ <= 2088L)
 {
     debug
     {
