@@ -11,7 +11,6 @@
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
 * works on **Twitch**, including basic [streamer assistant plugin](source/kameloso/plugins/twitchbot.d) (not compiled in by default)
-* IRC colour coding and text effects display properly in your terminal ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
 
@@ -21,7 +20,6 @@ All of the above are plugins and can be runtime disabled or compiled out. It is 
 
 * the **dmd** and **ldc** compilers may segfault in some cases if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
-* Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
@@ -171,8 +169,6 @@ Later invocations of `--writeconfig` will only regenerate the file. It will neve
 
 If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-If you are on Windows and you're seeing `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a permanent fix.
-
 ### Other files
 
 More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **OSX** and **Windows** they will be put in subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
@@ -271,14 +267,6 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 ## Windows
 
 Plugins that access the web, including the webtitles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
-
-Terminal colours may also not work in a `cmd` console, requiring a registry edit to make them display properly. The following works for at least Windows 10:
-
-* In `regedit` under `HKEY_CURRENT_USER\Console`, create a `DWORD` named `VirtualTerminalLevel` and give it a value of `1`.
-* In Powershell: `Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1`
-* In a `cmd` console: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
-
-Otherwise use the `--monochrome` setting to disable colours, or compile a non-coloured configuration.
 
 When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command.
 
