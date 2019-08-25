@@ -944,7 +944,7 @@ unittest
  +      A `TerminalForeground` based on the passed string.
  +/
 version(Colours)
-TerminalForeground colourByHash(const string word, const Flag!"bright" bright = No.bright) pure @nogc nothrow
+TerminalForeground colourByHash(const string word, const bool bright) pure @nogc nothrow
 in (word.length, "Tried to colour by hash but no word was given")
 do
 {
