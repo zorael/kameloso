@@ -23,15 +23,84 @@ version(ProfileGC)
     ];
 }
 
-version(Windows)
-shared static this()
-{
-    import core.sys.windows.windows : SetConsoleCP, SetConsoleOutputCP, CP_UTF8;
 
-    // If we don't set the right codepage, the normal Windows cmd terminal won't
-    // display international characters like åäö.
-    SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
+// abort
+/++
+ +  Abort flag.
+ +
+ +  This is set when the program is interrupted (such as via Ctrl+C). Other
+ +  parts of the program will be monitoring it, to take the cue and abort when
+ +  it is set.
+ +/
+__gshared bool abort;
+
+
+private:
+
+version (Windows)
+{
+    // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
+    // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
+
+    import core.sys.windows.wincon : SetConsoleCP, SetConsoleOutputCP;
+    //import core.sys.windows.windef : UINT;
+
+    /// Original codepage at program start.
+    __gshared uint originalCP;
+
+    /// Original output codepage at program start.
+    __gshared uint originalOutputCP;
+
+    /// Original console mode at program start.
+    __gshared uint originalConsoleMode;
+
+    /++
+     +  Sets the console codepage to display UTF-8 characters (åäö, 高所恐怖症, ...)
+     +  and the console mode to display terminal colours.
+     +/
+    void setConsoleModeAndCodepage()
+    {
+        import core.stdc.stdlib : atexit;
+        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
+        import core.sys.windows.wincon : ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP, SetConsoleMode;
+        import core.sys.windows.winnls : CP_UTF8;
+
+        originalCP = GetConsoleCP();
+        originalOutputCP = GetConsoleOutputCP();
+
+        SetConsoleCP(CP_UTF8);
+        SetConsoleOutputCP(CP_UTF8);
+
+        immutable stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
+
+        bool success = GetConsoleMode(stdoutHandle, &originalConsoleMode);
+        assert(success, "Failed to get console mode");
+
+        success = SetConsoleMode(stdoutHandle,
+            originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        assert(success, "Failed to set console mode");
+
+        // atexit handlers are also called when exiting via exit() etc.;
+        // that's the reason this isn't a RAII struct.
+        atexit(&resetConsoleModeAndCodepage);
+    }
+
+    /++
+     +  Resets the console codepage and console mode to the values they had at
+     +  program start.
+     +/
+    extern(C)
+    void resetConsoleModeAndCodepage()
+    {
+        immutable stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
+
+        SetConsoleCP(originalCP);
+        SetConsoleOutputCP(originalOutputCP);
+        SetConsoleMode(stdoutHandle, originalMode);
+    }
 }
 
 
@@ -59,18 +128,6 @@ static if (__VERSION__ <= 2088L)
         pragma(msg, "See bug #18026 at https://issues.dlang.org/show_bug.cgi?id=18026");
     }
 }
-
-
-private:
-
-/++
- +  Abort flag.
- +
- +  This is set when the program is interrupted (such as via Ctrl+C). Other
- +  parts of the program will be monitoring it, to take the cue and abort when
- +  it is set.
- +/
-__gshared bool abort;
 
 
 // signalHandler
@@ -1588,6 +1645,12 @@ int initBot(string[] args)
     {
         import kameloso.thread : setThreadName;
         setThreadName("kameloso");
+    }
+
+    version(Windows)
+    {
+        // Set up the console to display text and colours properly.
+        setConsoleModeAndCodepage();
     }
 
     // Initialise the main IRCBot. Set its abort pointer to the global abort.
