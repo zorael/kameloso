@@ -988,19 +988,19 @@ unittest
     alias FG = TerminalForeground;
 
     {
-        immutable hash = "kameloso".colourByHash;
+        immutable hash = colourByHash("kameloso", false);
         assert((hash == FG.lightgreen), Enum!FG.toString(hash));
     }
     {
-        immutable hash = "kameloso^".colourByHash;
+        immutable hash = colourByHash("kameloso^", false);
         assert((hash == FG.lightcyan), Enum!FG.toString(hash));
     }
     {
-        immutable hash = "zorael".colourByHash;
+        immutable hash = colourByHash("zorael", false);
         assert((hash == FG.cyan), Enum!FG.toString(hash));
     }
     {
-        immutable hash = "NO".colourByHash;
+        immutable hash = colourByHash("NO", false);
         assert((hash == FG.lightred), Enum!FG.toString(hash));
     }
 }
