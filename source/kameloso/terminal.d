@@ -62,12 +62,13 @@ version (Windows)
         auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
 
-        immutable getConRetval = GetConsoleMode(stdoutHandle, &originalConsoleMode);
-        assert((getConRetval != 0), "Failed to get console mode");
+        immutable getModeRetval = GetConsoleMode(stdoutHandle, &originalConsoleMode);
 
-        immutable setConRetval = SetConsoleMode(stdoutHandle,
-            originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        assert((setConRetval != 0), "Failed to set console mode");
+        if (getModeRetval != 0)
+        {
+            // The console is a real terminal, not a pager (or Cygwin mintty)
+            SetConsoleMode(stdoutHandle, originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        }
 
         // atexit handlers are also called when exiting via exit() etc.;
         // that's the reason this isn't a RAII struct.
