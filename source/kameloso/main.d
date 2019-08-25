@@ -11,6 +11,15 @@ void main()
 {
     import kameloso.common : logger;
 
+    version(Windows)
+    {
+        import kameloso.terminal : setConsoleModeAndCodepage;
+
+        // Set up the console to display text and colours properly.
+        // It will only affect the below "All tests passed" line however...
+        setConsoleModeAndCodepage();
+    }
+
     // Compiled with -b unittest, so run the tests and exit.
     // Logger is initialised in a module constructor, don't re-init here.
     logger.info("All tests passed successfully!");
