@@ -266,7 +266,7 @@ void messageFiber(ref IRCBot bot)
                 {
                     if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        prelude = "PRIVMSG #%s :.w %s ".format(bot.parser.client.nickname, target.nickname);
+                        prelude = "PRIVMSG #%s :/w %s ".format(bot.parser.client.nickname, target.nickname);
                     }
                 }
 
