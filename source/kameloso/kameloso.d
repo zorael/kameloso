@@ -72,15 +72,15 @@ version (Windows)
         SetConsoleCP(CP_UTF8);
         SetConsoleOutputCP(CP_UTF8);
 
-        immutable stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
 
-        bool success = GetConsoleMode(stdoutHandle, &originalConsoleMode);
-        assert(success, "Failed to get console mode");
+        immutable getConRetval = GetConsoleMode(stdoutHandle, &originalConsoleMode);
+        assert((getConRetval != 0), "Failed to get console mode");
 
-        success = SetConsoleMode(stdoutHandle,
+        immutable setConRetval = SetConsoleMode(stdoutHandle,
             originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        assert(success, "Failed to set console mode");
+        assert((setConRetval != 0), "Failed to set console mode");
 
         // atexit handlers are also called when exiting via exit() etc.;
         // that's the reason this isn't a RAII struct.
@@ -94,12 +94,15 @@ version (Windows)
     extern(C)
     void resetConsoleModeAndCodepage()
     {
-        immutable stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
+        import core.sys.windows.wincon : SetConsoleMode;
+
+        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
 
         SetConsoleCP(originalCP);
         SetConsoleOutputCP(originalOutputCP);
-        SetConsoleMode(stdoutHandle, originalMode);
+        SetConsoleMode(stdoutHandle, originalConsoleMode);
     }
 }
 
