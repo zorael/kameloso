@@ -412,6 +412,9 @@ void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
     enum tooDarkThreshold = 100;
     enum tooDarkIncrement = 40;
 
+    enum tooBlue = 130;
+    enum tooBlueOtherColourThreshold = 45;
+
     enum highlight = 40;
 
     enum darkenThreshold = 240;
@@ -440,6 +443,13 @@ void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
     r += ((r > g) & (r > b)) * highlight;
     g += ((g > b) & (g > r)) * highlight;
     b += ((b > g) & (b > r)) * highlight;
+
+    // Whitewash blue slightly
+    if ((b > tooBlue) && (r < tooBlueOtherColourThreshold) && (g < tooBlueOtherColourThreshold))
+    {
+        r += tooBlueOtherColourThreshold;
+        g += tooBlueOtherColourThreshold;
+    }
 
     // Make bright colours more biased toward one colour
     r -= ((r > darkenThreshold) & ((r < b) | (r < g))) * darken;
