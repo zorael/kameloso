@@ -30,7 +30,7 @@ version (Windows)
     // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
     // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
 
-    import core.sys.windows.wincon : SetConsoleCP, SetConsoleOutputCP;
+    import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
 
     /// Original codepage at program start.
     __gshared uint originalCP;
@@ -50,7 +50,7 @@ version (Windows)
         import core.stdc.stdlib : atexit;
         import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
         import core.sys.windows.wincon : ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP, SetConsoleMode;
+            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP;
         import core.sys.windows.winnls : CP_UTF8;
 
         originalCP = GetConsoleCP();
@@ -83,7 +83,6 @@ version (Windows)
     private void resetConsoleModeAndCodepage() @system
     {
         import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-        import core.sys.windows.wincon : SetConsoleMode;
 
         auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
