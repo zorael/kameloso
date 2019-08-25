@@ -25,6 +25,41 @@ enum TerminalToken
     reset = 15,
 }
 
+
+// setTitle
+/++
+ +  Sets the terminal title to a given string. Supposedly.
+ +
+ +  Example:
+ +  ---
+ +  setTitle("kameloso IRC bot");
+ +  ---
+ +
+ +  Params:
+ +      title = String to set the title to.
+ +/
+void setTitle(const string title) @system
+{
+    version(Posix)
+    {
+        import std.stdio : stdout, write;
+
+        write("\033]0;" ~ title ~ "\007");
+        stdout.flush();
+    }
+    else version(Windows)
+    {
+        import core.sys.windows.wincon : SetConsoleTitleA;
+        import std.string : toStringz;
+
+        SetConsoleTitleA(title.toStringz);
+    }
+    else
+    {
+        // Unexpected platform, do nothing
+    }
+}
+
 version(Colours):
 
 /++
