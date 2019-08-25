@@ -241,9 +241,9 @@ $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --writeconfig
 ```
 
-Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!regular`, `!enable`, `!disable`, `!phrase`, `!timer`
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!regular`, `!enable`, `!disable`, `!phrase`, `!timer`
 
-Note: a dot "`.`" prefix will not work on Twitch, as it conflicts with Twitch's own commands.
+Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
 Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
 
