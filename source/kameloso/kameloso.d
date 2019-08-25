@@ -23,17 +23,19 @@ version(ProfileGC)
     ];
 }
 
-version(Windows)
-shared static this()
-{
-    import core.sys.windows.windows : SetConsoleCP, SetConsoleOutputCP, CP_UTF8;
 
-    // If we don't set the right codepage, the normal Windows cmd terminal won't
-    // display international characters like åäö.
-    SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
-}
+// abort
+/++
+ +  Abort flag.
+ +
+ +  This is set when the program is interrupted (such as via Ctrl+C). Other
+ +  parts of the program will be monitoring it, to take the cue and abort when
+ +  it is set.
+ +/
+__gshared bool abort;
 
+
+private:
 
 /+
     Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
@@ -59,18 +61,6 @@ static if (__VERSION__ <= 2088L)
         pragma(msg, "See bug #18026 at https://issues.dlang.org/show_bug.cgi?id=18026");
     }
 }
-
-
-private:
-
-/++
- +  Abort flag.
- +
- +  This is set when the program is interrupted (such as via Ctrl+C). Other
- +  parts of the program will be monitoring it, to take the cue and abort when
- +  it is set.
- +/
-__gshared bool abort;
 
 
 // signalHandler
@@ -1588,6 +1578,14 @@ int initBot(string[] args)
     {
         import kameloso.thread : setThreadName;
         setThreadName("kameloso");
+    }
+
+    version(Windows)
+    {
+        import kameloso.terminal : setConsoleModeAndCodepage;
+
+        // Set up the console to display text and colours properly.
+        setConsoleModeAndCodepage();
     }
 
     import kameloso.constants : KamelosoInfo;
