@@ -275,9 +275,21 @@ void messageFiber(ref IRCBot bot)
                 break;
 
             case EMOTE:
-                alias I = IRCControlCharacter;
                 immutable emoteTarget = target.nickname.length ? target.nickname : channel;
-                line = "PRIVMSG %s :%sACTION %s%2s".format(emoteTarget, cast(int)I.ctcp, content);
+
+                version(TwitchSupport)
+                {
+                    if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    {
+                        line = "PRIVMSG %s :/me %s".format(emoteTarget, content);
+                    }
+                }
+
+                if (!line.length)
+                {
+                    line = "PRIVMSG %s :%cACTION %s%2c".format(emoteTarget,
+                        cast(char)IRCControlCharacter.ctcp, content);
+                }
                 break;
 
             case MODE:
