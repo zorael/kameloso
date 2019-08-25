@@ -306,12 +306,12 @@ void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureBlackReplacement = 120;
 
-    enum tooDarkThreshold = 120;
-    enum tooDarkIncrement = 80;
+    enum tooDarkThreshold = 100;
+    enum tooDarkIncrement = 40;
 
-    enum highlight = 20;
+    enum highlight = 40;
 
-    enum darkenThreshold = 220;
+    enum darkenThreshold = 240;
     enum darken = 20;
 
     // Sanity check
