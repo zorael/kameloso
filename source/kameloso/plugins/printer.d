@@ -1778,7 +1778,8 @@ unittest
  +          "broadcaster"   : 'B',
  +          "twitchcon2017" : '7',
  +          "twitchcon2018" : '8',
- +          "bits-leader"   : 'L',
+ +          "twitchconEU2019" : '9',
+ +          "twitchconNA2019" : '9',
  +          "staff"         : '*',
  +          "admin"         : '+',
  +      ];
@@ -1867,6 +1868,11 @@ if (isOutputRange!(Sink, char[]))
 
         case "twitchcon2018":
             badgechar = '8';
+            break;
+
+        case "twitchconEU2019":
+        case "twitchconNA2019":
+            badgechar = '9';
             break;
 
         case "staff":
