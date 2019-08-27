@@ -18,9 +18,6 @@ All of the above are plugins and can be runtime disabled or compiled out. It is 
 
 ## Current limitations:
 
-* the **dmd** and **ldc** compilers may segfault in some cases if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
-* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
-
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
 Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written.
@@ -237,9 +234,9 @@ $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --writeconfig
 ```
 
-Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!regular`, `!enable`, `!disable`, `!phrase`, `!timer`
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!regular`, `!enable`, `!disable`, `!phrase`, `!timer`
 
-Note: a dot "`.`" prefix will not work on Twitch, as it conflicts with Twitch's own commands.
+Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
 Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
 
@@ -256,7 +253,7 @@ The IRC event parsing is largely decoupled from the bot parts of the program, ne
 * [`traits.d`](source/kameloso/traits.d)
 * [`uda.d`](source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Examples of parsing results can be found in the test files in [`tests/`](source/tests/). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required.
+Feel free to copy these and drop them into your own project. Examples of parsing results can be found in the test files in [`/tests`](/tests). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required.
 
 ## Further help
 
@@ -276,7 +273,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 
 # Roadmap
 
-* pipedream zero: **no compiler segfaults**
+* pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 * pipedream: DCC
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
