@@ -39,10 +39,9 @@ unittest
     immutable e18 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -");
     with (e18)
     {
-        assert((sender.address == "tmi.twitch.tv"), sender.address);
         assert((type == IRCEvent.Type.TWITCH_HOSTSTART), Enum!(IRCEvent.Type).toString(type));
+        assert((sender.nickname == "h1z1"), sender.nickname);
         assert((channel == "#lirik"), channel);
-        assert((content == "h1z1"), content);
         assert(!count, count.to!string);
         assert(!num, num.to!string);
     }
@@ -50,8 +49,8 @@ unittest
     immutable e19 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :- 178");
     with (e19)
     {
-        assert((sender.address == "tmi.twitch.tv"), sender.address);
         assert((type == IRCEvent.Type.TWITCH_HOSTEND), Enum!(IRCEvent.Type).toString(type));
+        assert((sender.address == "tmi.twitch.tv"), sender.address);
         assert((channel == "#lirik"), channel);
         assert((count == 178), count.to!string);
         assert(!num, num.to!string);
@@ -60,10 +59,9 @@ unittest
     immutable e20 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :chu8 270");
     with (e20)
     {
-        assert((sender.address == "tmi.twitch.tv"), sender.address);
         assert((type == IRCEvent.Type.TWITCH_HOSTSTART), Enum!(IRCEvent.Type).toString(type));
+        assert((sender.nickname == "chu8"), sender.nickname);
         assert((channel == "#lirik"), channel);
-        assert((content == "chu8"), content);
         assert((count == 270), count.to!string);
         assert(!num, num.to!string);
     }
@@ -137,10 +135,8 @@ unittest
         with (event)
         {
             assert((type == TWITCH_HOSTSTART), Enum!(IRCEvent.Type).toString(type));
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((sender.nickname == "zombie_barricades"), sender.nickname);
             assert((channel == "#andymilonakis"), channel);
-            assert((content == "zombie_barricades"), content);
         }
     }
     {
