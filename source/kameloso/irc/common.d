@@ -1623,6 +1623,20 @@ struct IRCClient
         /// Username to use for services account.
         string account;
 
+        version(TwitchSupport)
+        {
+            /++
+                The Twitch colour to assign to our nickname.
+
+                "Normal users can choose between Blue, Coral, DodgerBlue,
+                SpringGreen, YellowGreen, Green, OrangeRed, Red, GoldenRod,
+                HotPink, CadetBlue, SeaGreen, Chocolate, BlueViolet, and Firebrick.
+                Twitch Turbo users can use any Hex value (i.e: #000000)."
+            +/
+            @CannotContainComments
+            string colour;
+        }
+
         @Hidden
         {
             /// Password for services account.
