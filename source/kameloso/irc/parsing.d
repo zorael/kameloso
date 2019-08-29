@@ -32,8 +32,9 @@
  +  {
  +      assert(type == IRCEvent.Type.MODE);
  +      assert(sender.nickname == "zorael");
- +      assert(sender.ident == "NaN");
+ +      assert(sender.ident == "~NaN");
  +      assert(sender.address == "address.tld");
+ +      assert(target.nickname == "nickname");
  +      assert(channel == "#channel");
  +      assert(aux = "+v");
  +  }
@@ -44,13 +45,25 @@
  +
  +  with (event2)
  +  {
- +      assert(type == IRCEvent.TYpe.ERR_BANONCHAN);
+ +      assert(type == IRCEvent.Type.ERR_BANONCHAN);
  +      assert(sender.address == "cherryh.freenode.net");
  +      assert(channel == "#d");
  +      assert(target.nickname == "oldnick");
  +      assert(content == "Cannot change nickname while banned on channel");
  +      assert(aux == "newnick");
  +      assert(num == 435);
+ +  }
+ +
+ +  string furtherFromServer = ":kameloso^!~ident@81-233-105-99-no80.tbcn.telia.com NICK :kameloso_";
+ +  IRCEvent event3 = parser.toIRCEvent(furtherFromServer);
+ +
+ +  with (event3)
+ +  {
+ +      assert(type == IRCEvent.Type.NICK);
+ +      assert(sender.nickname == "kameloso^");
+ +      assert(sender.ident == "~ident");
+ +      assert(sender.address == "81-233-105-99-no80.tbcn.telia.com");
+ +      assert(target.nickname = "kameloso_");
  +  }
  +  ---
  +
