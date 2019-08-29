@@ -93,6 +93,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             pattern.format(p.name.ircBold, specifiedCommand.ircBold, description.string_) :
                             pattern.format(p.name, specifiedCommand, description.string_);
 
+                        query(plugin.state, sender.nickname, message);
+
                         if (description.syntax.length)
                         {
                             import kameloso.string : beginsWith;
@@ -110,7 +112,6 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                                 "Usage".ircBold ~ ": " ~ prefixedSyntax :
                                 "Usage: " ~ prefixedSyntax;
 
-                            query(plugin.state, sender.nickname, message);
                             query(plugin.state, sender.nickname, syntax);
                         }
                     }
