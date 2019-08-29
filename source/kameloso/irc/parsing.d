@@ -1077,9 +1077,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             // :tmi.twitch.tv HOSTTARGET #hosting_channel <channel> [<number-of-viewers>]
             // :tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -
             event.channel = slice.nom(" :");
-            event.sender.nickname = slice.nom(' ');
-            event.sender.address = string.init;
-            event.sender.class_ = IRCUser.Class.unset;
+            event.target.nickname = slice.nom(' ');  // target channel
             event.count = (slice == "-") ? 0 : slice.to!int;
             break;
 
