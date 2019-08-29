@@ -256,6 +256,12 @@ void messageFiber(ref IRCBot bot)
                 {
                     if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
                     {
+                        if (target.nickname == bot.parser.client.nickname)
+                        {
+                            // "You cannot whisper to yourself." (whisper_invalid_self)
+                            return;
+                        }
+
                         prelude = "PRIVMSG #%s :/w %s ".format(bot.parser.client.nickname, target.nickname);
                     }
                 }
