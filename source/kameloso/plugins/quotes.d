@@ -112,7 +112,6 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
  +  if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
@@ -228,7 +227,6 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
  +  written to disk.
  +/
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
