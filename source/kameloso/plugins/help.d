@@ -190,13 +190,13 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             }
 
             enum pattern = "Use %s [%s] [%s] for information about a command.";
+            enum colouredLine = pattern.format("help".ircBold, "plugin".ircBold, "command".ircBold);
 
-            immutable message = settings.colouredOutgoing ?
-                pattern.format("help".ircBold, "plugin".ircBold, "command".ircBold) :
+            immutable message = settings.colouredOutgoing ? colouredLine :
                 "Use help [plugin] [command] for information about a command.";
 
             query(plugin.state, sender.nickname, message);
-            query(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");
+            //query(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 
