@@ -63,7 +63,6 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
     {
         import kameloso.string : contains, nom;
         import core.thread : Fiber;
-        import std.algorithm.searching : endsWith;
         import std.algorithm.sorting : sort;
         import std.format : format;
         import std.typecons : No, Yes;
@@ -139,7 +138,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             {
                 foreach (p; plugins)
                 {
-                    if ((p.name != content) || !p.commands.length || p.name.endsWith("Service"))  continue;
+                    if (p.name != content) continue;
+                    else if (!p.commands.length) return;  // match and no commands
 
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
@@ -177,7 +177,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
             foreach (p; plugins)
             {
-                if (!p.commands.length || p.name.endsWith("Service")) continue;
+                if (!p.commands.length) continue;  // command-less plugin/service
 
                 enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
