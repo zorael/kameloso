@@ -40,7 +40,9 @@ unittest
     with (e18)
     {
         assert((type == IRCEvent.Type.TWITCH_HOSTSTART), Enum!(IRCEvent.Type).toString(type));
-        assert((sender.nickname == "h1z1"), sender.nickname);
+        assert((sender.address == "tmi.twitch.tv"), sender.address);
+        assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+        assert((target.nickname == "h1z1"), sender.nickname);
         assert((channel == "#lirik"), channel);
         assert(!count, count.to!string);
         assert(!num, num.to!string);
@@ -51,6 +53,7 @@ unittest
     {
         assert((type == IRCEvent.Type.TWITCH_HOSTEND), Enum!(IRCEvent.Type).toString(type));
         assert((sender.address == "tmi.twitch.tv"), sender.address);
+        assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
         assert((channel == "#lirik"), channel);
         assert((count == 178), count.to!string);
         assert(!num, num.to!string);
@@ -60,7 +63,9 @@ unittest
     with (e20)
     {
         assert((type == IRCEvent.Type.TWITCH_HOSTSTART), Enum!(IRCEvent.Type).toString(type));
-        assert((sender.nickname == "chu8"), sender.nickname);
+        assert((sender.address == "tmi.twitch.tv"), sender.address);
+        assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+        assert((target.nickname == "chu8"), sender.nickname);
         assert((channel == "#lirik"), channel);
         assert((count == 270), count.to!string);
         assert(!num, num.to!string);
@@ -135,7 +140,9 @@ unittest
         with (event)
         {
             assert((type == TWITCH_HOSTSTART), Enum!(IRCEvent.Type).toString(type));
-            assert((sender.nickname == "zombie_barricades"), sender.nickname);
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((target.nickname == "zombie_barricades"), sender.nickname);
             assert((channel == "#andymilonakis"), channel);
         }
     }
