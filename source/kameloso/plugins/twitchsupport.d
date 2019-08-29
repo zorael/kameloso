@@ -1318,7 +1318,7 @@ room-id             "31457014"
  +  use that ourselves.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
-void onEndOfMotd()
+void onEndOfMotd(TwitchSupportService service)
 {
     import kameloso.common : logger, settings;
 
@@ -1342,6 +1342,15 @@ void onEndOfMotd()
         logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
             "on Twitch servers, as it is reserved for Twitch's own commands.",
             logtint, settings.prefix, warningtint);
+    }
+
+    if (service.state.client.colour.length)
+    {
+        import kameloso.messaging : raw;
+        import std.format : format;
+
+        raw(service.state, "PRIVMSG #%s :/color %s"
+            .format(service.state.client.nickname, service.state.client.colour));
     }
 }
 
