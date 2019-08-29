@@ -107,6 +107,8 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 /++
  +  Fetches and repeats a random quote of a supplied nickname.
  +
+ +  On Twitch, picks a quote from the stored quotes of the current channel owner.
+ +
  +  The quote is read from in-memory JSON storage, and it is sent to the
  +  channel the triggering event occurred in, alternatively in a private message
  +  if the request was sent in one such.
@@ -127,7 +129,17 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     // stripModesign to allow for quotes from @nickname and +dudebro
     immutable signed = event.content.stripped;
-    immutable specified = plugin.state.client.server.stripModesign(signed);
+    string specified;
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            specified = event.channel[1..$];
+        }
+    }
+
+    if (!specified.length) specified = plugin.state.client.server.stripModesign(signed);
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
