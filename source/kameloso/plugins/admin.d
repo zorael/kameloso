@@ -23,7 +23,7 @@ private:
 import kameloso.common : logger, settings;
 import kameloso.plugins.common;
 import kameloso.irc.common : IRCClient;
-import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourByHash;
+import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.irc.defs;
 import kameloso.messaging;
 

@@ -7,7 +7,7 @@
  +  `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
  +  background colour number.
  +/
-module kameloso.irc.colours;
+module kameloso.irccolours;
 
 import kameloso.irc.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;

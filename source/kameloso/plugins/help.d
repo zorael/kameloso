@@ -55,7 +55,7 @@ struct HelpSettings
 @Description("Shows a list of all available commands.", "$command [plugin] [command]")
 void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.colours : ircBold;
+    import kameloso.irccolours : ircBold;
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 

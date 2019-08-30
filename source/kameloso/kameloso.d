@@ -118,12 +118,12 @@ void messageFiber(ref IRCBot bot)
             {
                 version(Colours)
                 {
-                    import kameloso.irc.colours : mapEffects;
+                    import kameloso.irccolours : mapEffects;
                     logger.trace("--> ", line.mapEffects);
                 }
                 else
                 {
-                    import kameloso.irc.colours : stripEffects;
+                    import kameloso.irccolours : stripEffects;
                     logger.trace("--> ", line.stripEffects);
                 }
             }
@@ -1980,12 +1980,12 @@ int initBot(string[] args)
         {
             version(Colours)
             {
-                import kameloso.irc.colours : mapEffects;
+                import kameloso.irccolours : mapEffects;
                 logger.trace("--> QUIT :", bot.parser.client.quitReason.mapEffects);
             }
             else
             {
-                import kameloso.irc.colours : stripEffects;
+                import kameloso.irccolours : stripEffects;
                 logger.trace("--> QUIT :", bot.parser.client.quitReason.stripEffects);
             }
         }

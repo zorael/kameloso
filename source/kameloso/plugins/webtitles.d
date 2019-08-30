@@ -19,7 +19,7 @@ import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
 import kameloso.plugins.common;
 import kameloso.irc.defs;
-import kameloso.irc.colours : ircBold;
+import kameloso.irccolours : ircBold;
 
 import requests : Request;
 
@@ -481,7 +481,7 @@ void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
 
         if (colouredOutput)
         {
-            import kameloso.irc.colours : ircColourByHash;
+            import kameloso.irccolours : ircColourByHash;
             line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold, results.youtubeTitle,
                 colouredOutput ? results.youtubeAuthor.ircColourByHash : results.youtubeAuthor.ircBold);
         }

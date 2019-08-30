@@ -15,7 +15,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common;
-import kameloso.irc.colours : ircBold, ircColourByHash;
+import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;

@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common : logger, settings;
-import kameloso.irc.colours : ircBold, ircColourByHash;
+import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.json : JSONStorage;
 import kameloso.messaging;
 

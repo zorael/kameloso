@@ -405,12 +405,12 @@ struct IRCBot
                 {
                     version(Colours)
                     {
-                        import kameloso.irc.colours : mapEffects;
+                        import kameloso.irccolours : mapEffects;
                         logger.trace("--> ", buffer.front.line.mapEffects);
                     }
                     else
                     {
-                        import kameloso.irc.colours : stripEffects;
+                        import kameloso.irccolours : stripEffects;
                         logger.trace("--> ", buffer.front.line.stripEffects);
                     }
                 }

@@ -20,7 +20,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common;
-import kameloso.irc.colours;
+import kameloso.irccolours;
 
 version(Colours) import kameloso.terminal : TerminalForeground;
 

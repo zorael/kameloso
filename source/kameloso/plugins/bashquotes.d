@@ -71,7 +71,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +/
 void worker(shared IRCPluginState sState, const IRCEvent event, const bool colouredOutgoing)
 {
-    import kameloso.irc.colours : ircBold;
+    import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import core.memory : GC;

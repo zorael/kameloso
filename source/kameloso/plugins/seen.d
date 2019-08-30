@@ -41,8 +41,8 @@ import kameloso.plugins.common;
 // Likewise `kameloso.irc.defs`, for the definitions of an IRC event.
 import kameloso.irc.defs;
 
-// `kameloso.irc.colours` for some IRC colouring and formatting.
-import kameloso.irc.colours : ircBold, ircColourByHash;
+// `kameloso.irccolours` for some IRC colouring and formatting.
+import kameloso.irccolours : ircBold, ircColourByHash;
 
 // `kameloso.common` for some globals.
 import kameloso.common : logger, settings;
