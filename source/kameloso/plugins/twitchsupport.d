@@ -1321,10 +1321,11 @@ room-id             "31457014"
 void onEndOfMotd(TwitchSupportService service)
 {
     import kameloso.common : logger, settings;
+    import kameloso.string : beginsWith;
 
     settings.colouredOutgoing = false;
 
-    if (settings.prefix == ".")
+    if (settings.prefix.beginsWith(".") || settings.prefix.beginsWith("/"))
     {
         string logtint, warningtint;
 
@@ -1340,7 +1341,7 @@ void onEndOfMotd(TwitchSupportService service)
         }
 
         logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
-            "on Twitch servers, as it is reserved for Twitch's own commands.",
+            `on Twitch servers, as "." and "/" are reserved for Twitch's own commands.`,
             logtint, settings.prefix, warningtint);
     }
 
