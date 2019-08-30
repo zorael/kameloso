@@ -139,7 +139,15 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 foreach (p; plugins)
                 {
                     if (p.name != content) continue;
-                    else if (!p.commands.length) return;  // match and no commands
+                    else if (!p.commands.length)
+                    {
+                        immutable message = settings.colouredOutgoing ?
+                            "No commands available for plugin " ~ content.ircBold :
+                            "No commands available for plugin " ~ content;
+
+                        query(plugin.state, sender.nickname, message);
+                        return;
+                    }
 
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
