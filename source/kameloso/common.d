@@ -1546,13 +1546,18 @@ if (isAssociativeArray!T)
     {
         static if (!is(typeof(pred) == typeof(null)))
         {
-            static if (__traits(compiles, pred(value)))
+            import std.functional : binaryFun, unaryFun;
+
+            alias unaryPred = unaryFun!pred;
+            alias binaryPred = binaryFun!pred;
+
+            static if (__traits(compiles, unaryPred(value)))
             {
-                if (pred(value)) garbage ~= key;
+                if (unaryPred(value)) garbage ~= key;
             }
-            else static if (__traits(compiles, pred(key, value)))
+            else static if (__traits(compiles, binaryPred(key, value)))
             {
-                if (pred(key, value)) garbage ~= key;
+                if (unaryPred(key, value)) garbage ~= key;
             }
             else
             {
