@@ -1590,7 +1590,7 @@ unittest
         [
             "abc" : "def",
             "ghi" : "jkl",
-            "mno" : string.init,
+            "mno" : "123",
             "pqr" : string.init,
         ];
 
@@ -1599,6 +1599,9 @@ unittest
 
         pruneAA!((a,b) => a == "pqr")(aa);
         assert("pqr" !in aa);
+
+        pruneAA!`a == "123"`(aa);
+        assert("mno" !in aa);
     }
     {
         struct Record
