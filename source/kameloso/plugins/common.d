@@ -3161,6 +3161,15 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        version(TwitchSupport)
+        {
+            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                // Twitch modes are unpredictable. Ignore and reply on badges instead.
+                return;
+            }
+        }
+
         if (auto channel = event.channel in plugin.state.channels)
         {
             import kameloso.irc.common : setMode;
