@@ -107,9 +107,9 @@ test_script:
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
  - dub test           --arch=%Darch% --compiler=%DC% || true
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% -c vanilla
-#- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c polyglot || true
+#- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c dev || true
 #- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c polyglot
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
  - mv kameloso.exe kameloso-twitch.exe

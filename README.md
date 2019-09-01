@@ -117,7 +117,7 @@ There are several configurations in which the bot may be built.
 * `twitch`, everything so far, plus the Twitch streamer bot
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours` and `web`
 * `windows`, default on Windows, also equals `colours` and `web`
-* `polyglot`, development build equalling everything available, including things like more error messages
+* `dev`, development build equalling everything available, including things like more error messages
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 

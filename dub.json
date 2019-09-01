@@ -57,7 +57,7 @@
             "dependencies": { "requests": "~>1.0.9" }
         },
         {
-            "name": "polyglot",
+            "name": "dev",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchSupport", "WithTwitchBotPlugin",
                 "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces", "ExplainReplay",
                 "ProfileGC" ],
