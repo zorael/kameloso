@@ -14,7 +14,7 @@
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
 
-All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d) (6 effective).
+All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
 
 ## Current limitations
 
@@ -279,6 +279,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
 * more pairs of eyes
+* separation of library and application (next)
 
 # Built with
 
