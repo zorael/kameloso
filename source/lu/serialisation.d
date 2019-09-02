@@ -1,7 +1,7 @@
 /++
  +  Various functions related to serialising structs into .ini file-like files.
  +/
-module kameloso.config;
+module lu.utils.serialisation;
 
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;

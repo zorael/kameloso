@@ -32,7 +32,7 @@ private:
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 {
-    import kameloso.config : readConfigInto;
+    import lu.utils.serialisation : readConfigInto;
     import lu.core.meld : MeldingStrategy, meldInto;
 
     IRCClient tempClient;

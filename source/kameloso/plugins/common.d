@@ -1823,7 +1823,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
-        import kameloso.config : readConfigInto;
+        import lu.utils.serialisation : readConfigInto;
         import lu.core.meld : MeldingStrategy, meldInto;
         import std.traits : hasUDA;
 
@@ -1952,7 +1952,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public void serialiseConfigInto(ref Appender!string sink) const
     {
-        import kameloso.config : serialise;
+        import lu.utils.serialisation : serialise;
         import std.traits : hasUDA;
 
         foreach (immutable i, symbol; this.tupleof)

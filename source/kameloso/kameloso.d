@@ -1202,7 +1202,7 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
-    import kameloso.config : ConfigurationFileReadFailureException,
+    import lu.utils.serialisation : ConfigurationFileReadFailureException,
         ConfigurationFileParsingException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;

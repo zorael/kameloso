@@ -687,7 +687,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +/
 void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 {
-    import kameloso.config : justifiedConfigurationText, serialise;
+    import lu.utils.serialisation : justifiedConfigurationText, serialise;
     import lu.core.string : beginsWith, encode64;
     import std.array : Appender;
 
