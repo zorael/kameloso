@@ -1,0 +1,98 @@
+name "kameloso"
+description "IRC bot"
+authors "JR"
+copyright "Copyright © 2019, JR"
+license "MIT"
+targetType "executable"
+mainSourceFile "source/kameloso/main.d"
+dflags "-dip25" "-dip1008"
+libs "phobos2" platform="posix-dmd"
+
+x:ddoxFilterArgs "--unittest-examples" "--ex" "arsd."
+x:ddoxTool "scod"
+
+sourcePaths "source"
+importPaths "source"
+
+versions "AsAnApplication" \
+    "WithAdminPlugin" \
+    "WithAutomodePlugin" \
+    "WithBashQuotesPlugin" \
+    "WithChanQueriesService" \
+    "WithChatbotPlugin" \
+    "WithConnectService" \
+    "WithCTCPService" \
+    "WithHelpPlugin" \
+    "WithNotesPlugin" \
+    "WithOnelinersPlugin" \
+    "WithPersistenceService" \
+    "WithPipelinePlugin" \
+    "WithPrinterPlugin" \
+    "WithQuotesPlugin" \
+    "WithSedReplacePlugin" \
+    "WithSeenPlugin" \
+    "WithWebtitlesPlugin"
+
+configuration "posix" {
+	platforms "posix"
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web"
+}
+configuration "windows" {
+	platforms "windows"
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web"
+}
+configuration "twitch" {
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
+}
+configuration "dev" {
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
+        "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
+}
+configuration "vanilla" {
+	targetType "executable"
+	versions "WithPlugins"
+}
+configuration "colours" {
+	targetType "executable"
+	versions "WithPlugins" "Colours"
+}
+configuration "web" {
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	versions "WithPlugins" "Web"
+}
+configuration "full" {
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
+}
+configuration "pluginless" {
+	targetType "executable"
+	versions "Colours"
+}
+configuration "pluginless-vanilla" {
+	targetType "executable"
+}
+configuration "unittest" {
+	dependency "requests" version="~>1.0.9"
+	targetType "executable"
+	sourcePaths "tests"
+	importPaths "tests"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
+        "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
+}
+
+subPackage {
+    name "lu"
+    targetType "library"
+    sourcePaths "source/lu"
+    importPaths "source/lu"
+}
