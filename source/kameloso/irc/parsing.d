@@ -73,7 +73,7 @@ module kameloso.irc.parsing;
 
 import kameloso.irc.defs;
 import kameloso.irc.common : IRCClient, IRCParseException;
-import kameloso.string : contains, nom;
+import lu.core.string : contains, nom;
 
 package:
 
@@ -121,7 +121,7 @@ version(AsAnApplication)
  +/
 IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
-    import kameloso.string : strippedRight;
+    import lu.core.string : strippedRight;
     import std.datetime.systime : Clock;
     import std.uni : toLower;
 
@@ -298,7 +298,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         break;
 
     default:
-        import kameloso.string : beginsWith;
+        import lu.core.string : beginsWith;
 
         if (event.raw.beginsWith("NOTICE"))
         {
@@ -595,7 +595,7 @@ unittest
  +/
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : beginsWith;
+    import lu.core.string : beginsWith;
     import std.conv : to;
     import std.typecons : Flag, No, Yes;
 
@@ -638,7 +638,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         if (slice.contains(' '))
         {
-            import kameloso.string : unquoted;
+            import lu.core.string : unquoted;
 
             event.channel = slice.nom(" :");
             event.content = slice;
@@ -665,7 +665,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case QUIT:
-        import kameloso.string : unquoted;
+        import lu.core.string : unquoted;
 
         // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
         event.type = (event.sender.nickname == client.nickname) ? SELFQUIT : QUIT;
@@ -760,7 +760,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             event.aux = hg[1..$];
         }
 
-        import kameloso.string : strippedLeft;
+        import lu.core.string : strippedLeft;
         slice.nom(' ');  // hopcount
         event.content = slice.strippedLeft;
         break;
@@ -883,7 +883,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_WHOISUSER: // 311
-        import kameloso.string : strippedLeft;
+        import lu.core.string : strippedLeft;
 
         // :orwell.freenode.net 311 kameloso^ kameloso ~NaN ns3363704.ip-94-23-253.eu * : kameloso
         slice.nom(' ');  // bot nickname
@@ -1226,7 +1226,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_WHOWASUSER: // 314
-        import kameloso.string : stripped;
+        import lu.core.string : stripped;
 
         // :irc.uworld.se 314 kameloso^^ kameloso ~NaN C2802314.E23AD7D8.E9841504.IP * : kameloso!
         slice.nom(' '); // bot nickname
@@ -1291,7 +1291,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +/
 void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : beginsWithOneOf;
+    import lu.core.string : beginsWithOneOf;
 
     if (slice.contains(" :"))
     {
@@ -1621,7 +1621,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
  +/
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : beginsWith, beginsWithOneOf;
+    import lu.core.string : beginsWith, beginsWithOneOf;
     import std.typecons : Flag, No, Yes;
 
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
@@ -1834,7 +1834,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         foreach (immutable type; EnumMembers!(IRCEvent.Type))
         {
             import lu.core.conv : Enum;
-            import kameloso.string : beginsWith;
+            import lu.core.string : beginsWith;
 
             //enum typestring = type.to!string;
             enum typestring = Enum!(IRCEvent.Type).toString(type);
@@ -1892,7 +1892,7 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     }
     else
     {
-        import kameloso.string : beginsWith;
+        import lu.core.string : beginsWith;
         import std.string : representation;
 
         // :kameloso^ MODE kameloso^ :+i

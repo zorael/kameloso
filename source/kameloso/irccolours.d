@@ -390,7 +390,7 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
     const uint bgBase = TerminalBackground.default_)
 {
     import kameloso.terminal : TF = TerminalFormat;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     alias I = IRCControlCharacter;
 

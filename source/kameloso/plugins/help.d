@@ -61,7 +61,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
         import core.thread : Fiber;
         import std.algorithm.sorting : sort;
         import std.format : format;
@@ -96,7 +96,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                         if (description.syntax.length)
                         {
-                            import kameloso.string : beginsWith;
+                            import lu.core.string : beginsWith;
                             import std.array : replace;
 
                             immutable udaSyntax = description.syntax

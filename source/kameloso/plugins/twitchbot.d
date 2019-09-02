@@ -90,7 +90,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
-        import kameloso.string : contains;
+        import lu.core.string : contains;
         import std.algorithm.searching : canFind;
 
         if (const channelRegulars = event.channel in plugin.regularsByChannel)
@@ -147,7 +147,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onUserState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     // We're implicitly moderator if we match the channel name, so exempt that case
 
@@ -367,7 +367,7 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
     "$command [target channel if query] [ban|unban|list|clear]")
 void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -400,7 +400,7 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.format : format;
 
     string slice = event.content;  // mutable
@@ -433,7 +433,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
         if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.iteration : splitter;
             import std.conv : ConvException, to;
 
@@ -477,7 +477,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
     case "list":
         if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -578,7 +578,7 @@ void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
     "$command [target channel if query] [add|del|list|clear]")
 void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -611,7 +611,7 @@ void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.format : format;
 
     string slice = event.content;  // mutable
@@ -679,7 +679,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
         if (auto timerDefs = targetChannel in plugin.timerDefsByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.iteration : splitter;
             import std.conv : ConvException, to;
 
@@ -726,7 +726,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "list":
         if (const timers = targetChannel in plugin.timerDefsByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -970,7 +970,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 in ((event.channel in plugin.activeChannels), "Tried to start a vote in what is probably a non-home channel")
 do
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
     import std.conv : ConvException, to;
@@ -1020,7 +1020,7 @@ do
 
     foreach (immutable rawChoice; slice.splitter(" "))
     {
-        import kameloso.string : strippedRight;
+        import lu.core.string : strippedRight;
 
         // Strip any trailing commas
         immutable choice = rawChoice.strippedRight(',');
@@ -1068,7 +1068,7 @@ do
 
                 foreach (const result; sorted)
                 {
-                    import kameloso.string : plurality;
+                    import lu.core.string : plurality;
 
                     immutable noun = result.value.plurality("vote", "votes");
                     immutable double voteRatio = cast(double)result.value / total;
@@ -1225,7 +1225,7 @@ void onCommandRegularChan(TwitchBotPlugin plugin, const IRCEvent event)
     "$command [add|del|list] [nickname]")
 void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -1258,7 +1258,7 @@ void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.uni : toLower;
@@ -1788,7 +1788,7 @@ private:
 
         if (event.type == IRCEvent.Type.CHAN)
         {
-            import kameloso.string : beginsWith;
+            import lu.core.string : beginsWith;
 
             if (event.content.beginsWith(settings.prefix) &&
                 (event.content.length > settings.prefix.length))

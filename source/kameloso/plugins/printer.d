@@ -1567,7 +1567,7 @@ if (isOutputRange!(Sink, char[]))
         .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp,
             '[', timestamp, ']');
 
-        import kameloso.string : beginsWith;
+        import lu.core.string : beginsWith;
 
         if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
             (event.type == IRCEvent.Type.TWITCH_ERROR))
@@ -1690,7 +1690,7 @@ if (isOutputRange!(Sink, char[]))
  +/
 string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
 {
-    import kameloso.string : beginsWith;
+    import lu.core.string : beginsWith;
 
     if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
     {
@@ -1813,7 +1813,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable badgeAndNum; badgestring.splitter(","))
     {
-        import kameloso.string : nom;
+        import lu.core.string : nom;
 
         string slice = badgeAndNum;
         immutable badge = slice.nom('/');
@@ -1884,7 +1884,7 @@ if (isOutputRange!(Sink, char[]))
             break;
 
         default:
-            import kameloso.string : beginsWith;
+            import lu.core.string : beginsWith;
             import std.algorithm.searching : endsWith;
 
             if (badge.beginsWith("bits-"))
@@ -2196,7 +2196,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     import kameloso.terminal : colourWith;
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
     import std.array : Appender;
 
     alias DefaultBright = DefaultColours.EventPrintingBright;
@@ -2299,7 +2299,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (emote; emotes.splitter("/"))
     {
-        import kameloso.string : nom;
+        import lu.core.string : nom;
 
         immutable emoteID = emote.nom(':');
 

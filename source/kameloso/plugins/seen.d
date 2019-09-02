@@ -432,7 +432,7 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
     foreach (const signed; event.content.splitter(" "))
     {
         import kameloso.irc.common : stripModesign;
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
 
         string nickname = signed;
 
@@ -519,7 +519,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : timeSince;
     import kameloso.irc.common : isValidNickname;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;
@@ -753,7 +753,7 @@ long[string] loadSeen(const string filename)
 
     scope(exit)
     {
-        import kameloso.string : plurality;
+        import lu.core.string : plurality;
         logger.logf("Currently %s%d%s %s seen.",
             infotint, aa.length, logtint, aa.length.plurality("user", "users"));
     }
@@ -907,7 +907,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
     if (!plugin.isEnabled) return;
     if (header != "seen") return;
 
-    import kameloso.string : strippedRight;
+    import lu.core.string : strippedRight;
     import kameloso.thread : BusMessage;
 
     auto message = cast(BusMessage!string)content;

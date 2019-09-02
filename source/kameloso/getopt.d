@@ -79,7 +79,7 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
  +/
 void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
 {
-    import kameloso.string : beginsWith, contains;
+    import lu.core.string : beginsWith, contains;
     import std.algorithm.iteration : filter;
 
     static assert((!Rest.length || (Rest.length % 2 == 0)),
@@ -91,7 +91,7 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
 
         if (arg.contains('='))
         {
-            import kameloso.string : nom;
+            import lu.core.string : nom;
 
             immutable realWord = slice.nom('=');
             if (realWord != option) continue;
@@ -475,7 +475,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         }
 
         // 6a. Strip whitespace
-        import kameloso.string : stripped;
+        import lu.core.string : stripped;
         import std.algorithm.iteration : map;
         import std.array : array;
 

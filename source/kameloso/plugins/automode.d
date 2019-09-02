@@ -261,7 +261,7 @@ unittest
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     import kameloso.irc.common : isValidChannel, isValidNickname;
-    import kameloso.string : beginsWith, nom;
+    import lu.core.string : beginsWith, nom;
     import std.algorithm.searching : count;
     import std.uni : toLower;
 
@@ -378,7 +378,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     "$command [channel] [account]")
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.uni : toLower;

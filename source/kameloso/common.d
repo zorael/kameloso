@@ -688,7 +688,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
 void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 {
     import kameloso.config : justifiedConfigurationText, serialise;
-    import kameloso.string : beginsWith, encode64;
+    import lu.core.string : beginsWith, encode64;
     import std.array : Appender;
 
     Appender!string sink;
@@ -903,7 +903,7 @@ if (isOutputRange!(Sink, char[]))
 in ((duration >= 0.seconds), "Cannot call timeSince on a negative duration")
 do
 {
-    import kameloso.string : plurality;
+    import lu.core.string : plurality;
     import std.format : formattedWrite;
 
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
@@ -1273,7 +1273,7 @@ unittest
 
     version(XDG)
     {
-        import kameloso.string : beginsWith;
+        import lu.core.string : beginsWith;
         import std.process : environment;
 
         environment["XDG_DATA_HOME"] = "/tmp";

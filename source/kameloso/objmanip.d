@@ -46,7 +46,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 in (memberToSet.length, "Tried to set member by name but no member string was given")
 do
 {
-    import kameloso.string : stripSuffix, stripped, unquoted;
+    import lu.core.string : stripSuffix, stripped, unquoted;
     import std.conv : ConvException, to;
     import std.format : format;
 
@@ -104,7 +104,7 @@ do
                             .replace(escapedPlaceholder, separator.token);
                     }
 
-                    import kameloso.string : contains;
+                    import lu.core.string : contains;
                     while (values.contains(doubleEphemeral))
                     {
                         values = values.replace(doubleEphemeral, ephemeralSeparator);

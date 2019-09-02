@@ -10,7 +10,7 @@ module kameloso.messaging;
 import kameloso.irc.defs;
 import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
-import kameloso.string : beginsWithOneOf;
+import lu.core.string : beginsWithOneOf;
 
 import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;

@@ -190,7 +190,7 @@ struct JSONStorage
     in (givenOrder.length, "Tried to serialise a JSON storage in order given without a given order")
     do
     {
-        import kameloso.string : indent;
+        import lu.core.string : indent;
         import std.format : formattedWrite;
 
         if (storage.isNull)
@@ -250,7 +250,7 @@ struct JSONStorage
         }
         else
         {
-            import kameloso.string : indent;
+            import lu.core.string : indent;
             import std.array : array;
             import std.format : formattedWrite;
             import std.range : retro;

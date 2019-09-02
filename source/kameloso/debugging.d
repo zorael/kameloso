@@ -152,7 +152,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
                 }
                 else static if (is(T == enum))
                 {
-                    import kameloso.string : nom;
+                    import lu.core.string : nom;
                     import std.algorithm.searching : count;
                     import std.traits : fullyQualifiedName;
 
@@ -194,7 +194,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
                     }
                 }
 
-                import kameloso.string : tabs;
+                import lu.core.string : tabs;
                 import std.format : formattedWrite;
                 sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
             }
@@ -325,7 +325,7 @@ assert((c == '#'), c.to!string);
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.string : tabs;
+    import lu.core.string : tabs;
     import std.format : format, formattedWrite;
 
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
@@ -350,7 +350,7 @@ if (isOutputRange!(Sink, char[]))
 unittest
 {
     import kameloso.irc.parsing : IRCParser;
-    import kameloso.string : tabs;
+    import lu.core.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
 
@@ -406,7 +406,7 @@ void generateAsserts(ref IRCBot bot) @system
     import kameloso.common : logger;
     import kameloso.irc.defs : IRCServer;
     import kameloso.printing : printObjects;
-    import kameloso.string : contains, nom, stripped;
+    import lu.core.string : contains, nom, stripped;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
@@ -499,7 +499,7 @@ void generateAsserts(ref IRCBot bot) @system
         while ((input = readln()) !is null)
         {
             import kameloso.irc.common : IRCParseException;
-            import kameloso.string : beginsWithOneOf;
+            import lu.core.string : beginsWithOneOf;
 
             if (*abort) return;
 

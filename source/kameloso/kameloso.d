@@ -221,7 +221,7 @@ void messageFiber(ref IRCBot bot)
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(IRCEvent event) scope
         {
-            import kameloso.string : splitOnWord;
+            import lu.core.string : splitOnWord;
             import std.format : format;
 
             enum maxIRCLineLength = 512;
@@ -1308,7 +1308,7 @@ Next tryConnect(ref IRCBot bot)
         final switch (attempt.state)
         {
         case preconnect:
-            import kameloso.string : sharedDomains;
+            import lu.core.string : sharedDomains;
             import std.socket : AddressFamily;
 
             immutable resolvedHost = attempt.ip.toHostNameString;
@@ -1438,7 +1438,7 @@ Next tryResolve(ref IRCBot bot)
             continue;
 
         case success:
-            import kameloso.string : plurality;
+            import lu.core.string : plurality;
             logger.infof("%s%s resolved into %s%s%2$s %5$s.",
                 parser.client.server.address, logtint, infotint, conn.ips.length,
                 conn.ips.length.plurality("IP", "IPs"));
@@ -1696,7 +1696,7 @@ int initBot(string[] args)
     writeln();
 
     import kameloso.printing : printObjects;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     // Print the current settings to show what's going on.
     printObjects(bot.parser.client, bot.parser.client.server);

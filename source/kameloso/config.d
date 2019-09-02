@@ -147,7 +147,7 @@ if ((Things.length > 1) && isOutputRange!(Sink, char[]))
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.string : stripSuffix;
+    import lu.core.string : stripSuffix;
     import std.format : format, formattedWrite;
     import std.traits : Unqual;
 
@@ -381,7 +381,7 @@ pipyon 3
  +/
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
-    import kameloso.string : stripSuffix, stripped;
+    import lu.core.string : stripSuffix, stripped;
     import std.format : format;
 
     string section;
@@ -473,7 +473,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                 }
                                 else
                                 {
-                                    import kameloso.string : contains, nom;
+                                    import lu.core.string : contains, nom;
 
                                     // Slice away any comments
                                     value = value.contains('#') ? value.nom('#') : value;
@@ -634,7 +634,7 @@ naN     !"¤%&/`;
  +/
 auto justifiedConfigurationText(const string origLines)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     import std.algorithm.comparison : max;
     import std.algorithm.iteration : splitter;
     import std.array : Appender;

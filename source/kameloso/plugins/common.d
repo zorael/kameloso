@@ -414,7 +414,7 @@ struct IRCPluginState
 bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
 {
     import kameloso.common : logger, settings;
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.conv : ConvException;
 
     string logtint, warningtint;
@@ -1162,7 +1162,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
 
@@ -1326,7 +1326,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             continue;  // next BotCommand UDA
                         }
 
-                        import kameloso.string : strippedLeft;
+                        import lu.core.string : strippedLeft;
                         import std.algorithm.comparison : equal;
                         import std.typecons : No, Yes;
                         import std.uni : asLowerCase, toLower;
@@ -2034,7 +2034,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctName =
         {
-            import kameloso.string : contains, nom;
+            import lu.core.string : contains, nom;
 
             string moduleName = module_;  // mutable
 
@@ -2826,7 +2826,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         import kameloso.irc.common : IRCControlCharacter, stripModesign;
         import kameloso.irccolours : stripColours;
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
         import std.algorithm.iteration : splitter;
 
         auto names = event.content.splitter(" ");
@@ -3243,7 +3243,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.string : contains;
+        import lu.core.string : contains;
         import std.algorithm.iteration : splitter;
 
         if (!event.content.length) return;
@@ -3260,7 +3260,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (userstring.contains('!') && userstring.contains('@'))
             {
-                import kameloso.string : nom;
+                import lu.core.string : nom;
                 // SpotChat-like, names are in full nick!ident@address form
                 nickname = slice.nom('!');
             }
@@ -3529,7 +3529,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
-    import kameloso.string : beginsWith, nom, stripSeparatedPrefix;
+    import lu.core.string : beginsWith, nom, stripSeparatedPrefix;
     import std.typecons : No, Yes;
 
     with (mutEvent)

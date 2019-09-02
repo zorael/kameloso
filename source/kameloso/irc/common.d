@@ -12,7 +12,7 @@ import kameloso.irc.parsing;
 
 public:
 
-import kameloso.string : contains, nom;
+import lu.core.string : contains, nom;
 
 @safe:
 
@@ -223,7 +223,7 @@ auto typenumsOf(const IRCServer.Daemon daemon) pure nothrow @nogc
  +/
 bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 {
-    import kameloso.string : sharedDomains;
+    import lu.core.string : sharedDomains;
     import std.uni : toLower;
 
     with (event)
@@ -460,7 +460,7 @@ unittest
  +/
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 {
-    import kameloso.string : sharedDomains;
+    import lu.core.string : sharedDomains;
     import std.uni : toLower;
 
     with (event)
@@ -614,7 +614,7 @@ bool isValidChannel(const string channel, const IRCServer server) pure @nogc
 in (channel.length, "Tried to determine whether a channel was valid but no channel was given")
 do
 {
-    import kameloso.string : beginsWithOneOf;
+    import lu.core.string : beginsWithOneOf;
     import std.string : representation;
 
     /++
@@ -1064,7 +1064,7 @@ unittest
 void setMode(ref IRCChannel channel, const string signedModestring,
     const string data, IRCServer server) pure
 {
-    import kameloso.string : beginsWith;
+    import lu.core.string : beginsWith;
     import std.array : array;
     import std.algorithm.iteration : splitter;
     import std.range : StoppingPolicy, retro, zip;

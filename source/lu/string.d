@@ -7,7 +7,7 @@
  +  supplied substring; and `contains`, which uses an educated approach to
  +  finding substrings in a string.
  +/
-module kameloso.string;
+module lu.core.string;
 
 import std.range.primitives : ElementEncodingType, ElementType, isOutputRange;
 import std.traits : isIntegral, isMutable, isSomeString;

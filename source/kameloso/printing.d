@@ -152,7 +152,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable n, thing; things)
     {
-        import kameloso.string : stripSuffix;
+        import lu.core.string : stripSuffix;
         import std.format : formattedWrite;
         import std.traits : Unqual;
 
@@ -336,7 +336,7 @@ if (isOutputRange!(Sink, char[]))
 ///
 @system unittest
 {
-    import kameloso.string : contains;
+    import lu.core.string : contains;
     import std.array : Appender;
 
     struct Struct
