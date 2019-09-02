@@ -76,7 +76,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -126,7 +126,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -186,7 +186,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -257,7 +257,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -325,7 +325,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -376,7 +376,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -427,7 +427,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -478,7 +478,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -531,7 +531,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -582,7 +582,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -624,7 +624,7 @@ void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : MessageMismatch;
     import std.typecons : Tuple;
@@ -678,7 +678,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -729,7 +729,7 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state,
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -774,7 +774,7 @@ void immediate(IRCPluginState state, const string line)
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import kameloso.thread : ThreadMessage;
     import std.meta : AliasSeq;
 

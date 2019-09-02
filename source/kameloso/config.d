@@ -234,7 +234,7 @@ if (isOutputRange!(Sink, char[]))
             }
             else static if (is(T == enum))
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 immutable value = Enum!T.toString(member);
             }
             else

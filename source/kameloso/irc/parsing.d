@@ -321,7 +321,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.conv : to;
 
     IRCParser parser;
@@ -406,7 +406,7 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pur
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.conv : to;
 
     IRCParser parser;
@@ -513,7 +513,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         try
         {
-            import kameloso.conv : Enum;
+            import lu.core.conv : Enum;
             event.type = Enum!(IRCEvent.Type).fromString(typestring);
         }
         catch (ConvException e)
@@ -526,7 +526,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.conv : to;
 
     IRCParser parser;
@@ -1600,7 +1600,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 
         with (parser.client.server)
         {
-            import kameloso.conv : Enum;
+            import lu.core.conv : Enum;
             logger.warningf("daemon:%s (%s), network:%s",
                 Enum!(IRCServer.Daemon).toString(daemon), daemonstring, network);
         }
@@ -1833,7 +1833,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
         foreach (immutable type; EnumMembers!(IRCEvent.Type))
         {
-            import kameloso.conv : Enum;
+            import lu.core.conv : Enum;
             import kameloso.string : beginsWith;
 
             //enum typestring = type.to!string;
@@ -2009,7 +2009,7 @@ unittest
  +/
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.algorithm.iteration : splitter;
     import std.conv : ConvException, to;
 

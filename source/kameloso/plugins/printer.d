@@ -881,7 +881,7 @@ void onISUPPORT(PrinterPlugin plugin)
             }
         }
 
-        import kameloso.conv : Enum;
+        import lu.core.conv : Enum;
         logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
             infotint, networkName, logtint,
             infotint, Enum!(IRCServer.Daemon).toString(daemon),
@@ -980,7 +980,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -1278,7 +1278,7 @@ if (isOutputRange!(Sink, char[]))
 {
     import kameloso.terminal : FG = TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
@@ -1335,7 +1335,7 @@ if (isOutputRange!(Sink, char[]))
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
                 import kameloso.terminal : truecolour;
-                import kameloso.conv : numFromHex;
+                import lu.core.conv : numFromHex;
 
                 int r, g, b;
                 user.colour.numFromHex(r, g, b);

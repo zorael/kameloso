@@ -983,7 +983,7 @@ do
 version(Colours)
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     alias FG = TerminalForeground;
 

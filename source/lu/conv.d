@@ -2,7 +2,7 @@
  +  This module contains functions that in one way or another converts its
  +  arguments into something else.
  +/
-module kameloso.conv;
+module lu.core.conv;
 
 import std.typecons : Flag, No, Yes;
 

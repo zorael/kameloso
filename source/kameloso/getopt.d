@@ -98,7 +98,7 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
 
             static if (is(T == enum))
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 *ptr = Enum!T.fromString(slice);
             }
             else
@@ -155,7 +155,7 @@ unittest
         "--banana", &s.banana,
     );
 
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     assert(s.monochrome);
     assert((s.server == "irc.freenode.net"), s.server);

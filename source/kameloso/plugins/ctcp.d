@@ -188,7 +188,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
         break;
 
     default:
-        import kameloso.conv : Enum;
+        import lu.core.conv : Enum;
         assert(0, "Missing CTCP_ case entry for " ~ Enum!(IRCEvent.Type).toString(event.type));
     }
 
@@ -264,7 +264,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
             {
                 foreach (immutable type; getUDAs!(fun, IRCEvent.Type))
                 {
-                    import kameloso.conv : Enum;
+                    import lu.core.conv : Enum;
                     enum typestring = Enum!(IRCEvent.Type).toString(type);
 
                     static if (typestring.beginsWith("CTCP_"))

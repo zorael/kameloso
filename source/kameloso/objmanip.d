@@ -182,7 +182,7 @@ do
                     {
                         static if (is(T == enum))
                         {
-                            import kameloso.conv : Enum;
+                            import lu.core.conv : Enum;
 
                             immutable asString = valueToSet
                                 .stripped
@@ -314,7 +314,7 @@ unittest
     assert(success);
     assert((c.def == 42), c.def.to!string);
 
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     enum E { abc, def, ghi }
 

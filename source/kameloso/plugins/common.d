@@ -985,7 +985,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.datetime.systime : Clock;
 
     IRCEvent event;
@@ -1191,13 +1191,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
             }
 
             enum name = ()
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 import std.format : format;
 
                 string pluginName = module_;  // mutable
@@ -1438,7 +1438,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
-                    import kameloso.conv : Enum;
+                    import lu.core.conv : Enum;
                     import std.format : format;
 
                     enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
@@ -1450,7 +1450,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     with (IRCEvent.Type)
                     {
-                        import kameloso.conv : Enum;
+                        import lu.core.conv : Enum;
 
                         alias U = eventTypeUDA;
 
@@ -2574,7 +2574,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 void explainReplay()
                 {
                     import kameloso.common : logger, settings;
-                    import kameloso.conv : Enum;
+                    import lu.core.conv : Enum;
 
                     string infotint, logtint;
 
@@ -3909,7 +3909,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         with (IRCEvent.Type)
         with (whoisEvent)
         {
-            import kameloso.conv : Enum;
+            import lu.core.conv : Enum;
             assert(((type == RPL_WHOISACCOUNT) ||
                 (type == RPL_WHOISREGNICK) ||
                 (type == RPL_ENDOFWHOIS) ||

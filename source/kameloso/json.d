@@ -111,7 +111,7 @@ struct JSONStorage
     in (filename.length, "Tried to save a JSON storage to an empty filename")
     do
     {
-        import kameloso.conv : Enum;
+        import lu.core.conv : Enum;
         import std.array : Appender;
         import std.json : JSONType;
         import std.stdio : File, writeln;

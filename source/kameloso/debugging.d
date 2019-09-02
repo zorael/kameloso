@@ -432,7 +432,7 @@ void generateAsserts(ref IRCBot bot) @system
 
         try
         {
-            import kameloso.conv : Enum;
+            import lu.core.conv : Enum;
             import kameloso.irc.common : typenumsOf;
 
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;

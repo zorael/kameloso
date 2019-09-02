@@ -225,7 +225,7 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
 
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.concurrency;
     import std.format : format;
 

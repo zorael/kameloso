@@ -362,7 +362,7 @@ unittest
         class_ = User.Class.blacklist;
     }
 
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     User twoCopy = two;
 
