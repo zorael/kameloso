@@ -2369,7 +2369,7 @@ struct IRCParser
 
 unittest
 {
-    import kameloso.meld : MeldingStrategy, meldInto;
+    import lu.core.meld : MeldingStrategy, meldInto;
 
     IRCParser parser;
 

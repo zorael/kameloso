@@ -472,7 +472,7 @@ struct IRCBot
 
             if (theseInvalidEntries.length)
             {
-                import kameloso.meld : meldInto;
+                import lu.core.meld : meldInto;
                 theseInvalidEntries.meldInto(allInvalidEntries);
             }
 

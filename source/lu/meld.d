@@ -3,7 +3,7 @@
  +  structs and combines them, creating a resulting struct with values from both
  +  parent structs. Array and associative array variants exist too.
  +/
-module kameloso.meld;
+module lu.core.meld;
 
 import std.traits : isArray, isAssociativeArray;
 

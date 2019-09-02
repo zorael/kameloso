@@ -1824,7 +1824,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
         import kameloso.config : readConfigInto;
-        import kameloso.meld : MeldingStrategy, meldInto;
+        import lu.core.meld : MeldingStrategy, meldInto;
         import std.traits : hasUDA;
 
         string[][string] invalidEntries;
@@ -3627,7 +3627,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 
     if (auto user = newUser.nickname in plugin.state.users)
     {
-        import kameloso.meld : meldInto;
+        import lu.core.meld : meldInto;
         newUser.meldInto(*user);
     }
     else

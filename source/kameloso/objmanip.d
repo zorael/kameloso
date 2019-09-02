@@ -4,7 +4,7 @@
  +/
 module kameloso.objmanip;
 
-public import kameloso.meld;
+public import lu.core.meld;
 
 @safe:
 

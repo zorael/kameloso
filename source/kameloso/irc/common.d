@@ -60,7 +60,7 @@ version(AsAnApplication)
  +/
 auto typenumsOf(const IRCServer.Daemon daemon) pure nothrow @nogc
 {
-    import kameloso.meld : MeldingStrategy, meldInto;
+    import lu.core.meld : MeldingStrategy, meldInto;
     import std.typecons : Flag, No, Yes;
 
     /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
