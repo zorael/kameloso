@@ -3,8 +3,22 @@
  +/
 module lu.net;
 
-import kameloso.constants;
+/// Buffer sizes in bytes.
+enum BufferSize
+{
+    socketOptionReceive = 2048,
+    socketOptionSend = 1024,
+    socketReceive = 2048,
+}
 
+/// Various timeouts in seconds.
+enum Timeout
+{
+    send = 5,
+    receive = 1,
+    keepalive = 300,
+    connectionLost = 600,
+}
 
 // Connection
 /++
