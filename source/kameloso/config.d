@@ -166,7 +166,7 @@ if (isOutputRange!(Sink, char[]))
     foreach (immutable i, member; thing.tupleof)
     {
         import kameloso.uda : Separator, Unconfigurable;
-        import kameloso.traits : isConfigurableVariable;
+        import lu.core.traits : isConfigurableVariable;
         import std.traits : hasUDA, isType;
 
         alias T = Unqual!(typeof(member));

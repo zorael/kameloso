@@ -57,7 +57,7 @@ do
     {
     static foreach (immutable i; 0..thing.tupleof.length)
     {{
-        import kameloso.traits : isConfigurableVariable;
+        import lu.core.traits : isConfigurableVariable;
         import std.traits : Unqual, isType;
 
         alias T = Unqual!(typeof(thing.tupleof[i]));

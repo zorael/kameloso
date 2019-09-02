@@ -1,7 +1,7 @@
 /++
  +  Various compile-time traits used throughout the program.
  +/
-module kameloso.traits;
+module lu.core.traits;
 
 import kameloso.uda;
 

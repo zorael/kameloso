@@ -1470,7 +1470,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                 }
 
-                import kameloso.traits : TakesParams, stringofParams;
+                import lu.core.traits : TakesParams, stringofParams;
                 import std.meta : AliasSeq, staticMap;
                 import std.traits : Parameters, Unqual, arity, staticMap;
 
@@ -1722,7 +1722,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public this(IRCPluginState state) @system
     {
         import kameloso.common : settings;
-        import kameloso.traits : isConfigurableVariable;
+        import lu.core.traits : isConfigurableVariable;
         import std.traits : hasUDA;
 
         this.privateState = state;
@@ -1746,7 +1746,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         static if (__traits(compiles, .initialise))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1772,7 +1772,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .postprocess))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1797,7 +1797,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1975,7 +1975,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
             import std.datetime.systime : SysTime;
 
             if (!isEnabled) return;
@@ -2006,7 +2006,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -2178,7 +2178,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             static if (TakesParams!(.periodically, typeof(this)))
             {
@@ -2204,7 +2204,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -2231,7 +2231,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .onBusMessage))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             static if (TakesParams!(.onBusMessage, typeof(this), string, Sendable))
             {
