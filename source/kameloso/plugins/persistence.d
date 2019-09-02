@@ -254,7 +254,7 @@ void periodically(PersistenceService service)
 void reloadClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.common : logger;
-    import kameloso.json : JSONStorage;
+    import lu.utils.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -334,7 +334,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
  +/
 void initResources(PersistenceService service)
 {
-    import kameloso.json : JSONStorage;
+    import lu.utils.json : JSONStorage;
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;

@@ -177,7 +177,7 @@ void onCommandCommands(OnelinersPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(OnelinersPlugin plugin)
 {
-    import kameloso.json : JSONStorage, populateFromJSON;
+    import lu.utils.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
     with (plugin)
@@ -225,7 +225,7 @@ void saveResourceToDisk(const string[string][string] aa, const string filename)
  +/
 void initResources(OnelinersPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.utils.json : JSONStorage;
     import std.json : JSONException;
     import std.path : baseName;
 

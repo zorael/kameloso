@@ -861,7 +861,7 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.utils.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;

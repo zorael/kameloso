@@ -1,7 +1,7 @@
 /++
  +  Simple JSON wrappers to make keeping JSON storages easier.
  +/
-module kameloso.json;
+module lu.utils.json;
 
 import std.range.primitives : isOutputRange;
 

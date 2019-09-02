@@ -547,7 +547,7 @@ void onEndOfMotd(NotesPlugin plugin)
  +/
 void initResources(NotesPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.utils.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -581,7 +581,7 @@ public:
 final class NotesPlugin : IRCPlugin
 {
 private:
-    import kameloso.json : JSONStorage;
+    import lu.utils.json : JSONStorage;
 
     /// All Notes plugin settings gathered.
     @Settings NotesSettings notesSettings;
