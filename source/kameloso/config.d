@@ -128,7 +128,7 @@ if ((Things.length > 1) && isOutputRange!(Sink, char[]))
 /++
  +  Serialises the fields of an object into an .ini file-like format.
  +
- +  It only serialises fields not annotated with `kameloso.uda.Unconfigurable`,
+ +  It only serialises fields not annotated with `lu.core.uda.Unconfigurable`,
  +  and it doesn't recurse into other structs or classes.
  +
  +  Example:
@@ -165,7 +165,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i, member; thing.tupleof)
     {
-        import kameloso.uda : Separator, Unconfigurable;
+        import lu.core.uda : Separator, Unconfigurable;
         import lu.core.traits : isConfigurableVariable;
         import std.traits : hasUDA, isType;
 
@@ -270,7 +270,7 @@ if (isOutputRange!(Sink, char[]))
             }
             else
             {
-                import kameloso.uda : Quoted;
+                import lu.core.uda : Quoted;
 
                 static if (isSomeString!T && hasUDA!(Thing.tupleof[i], Quoted))
                 {
@@ -287,7 +287,7 @@ if (isOutputRange!(Sink, char[]))
 
 unittest
 {
-    import kameloso.uda : Quoted;
+    import lu.core.uda : Quoted;
     import std.array : Appender;
 
     struct FooSettings
@@ -453,7 +453,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                 static if (!is(T == enum))
                 {
-                    import kameloso.uda : CannotContainComments, Unconfigurable;
+                    import lu.core.uda : CannotContainComments, Unconfigurable;
 
                     switch (entry)
                     {
@@ -502,7 +502,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
 unittest
 {
-    import kameloso.uda : Separator;
+    import lu.core.uda : Separator;
     import std.algorithm.iteration : splitter;
     import std.conv : text;
 
@@ -720,7 +720,7 @@ unittest
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
-    import kameloso.uda : Separator;
+    import lu.core.uda : Separator;
 
     struct Foo
     {

@@ -1603,7 +1603,7 @@ struct IRCClient
 {
     version(RichClient)
     {
-        import kameloso.uda : CannotContainComments, Hidden, Separator, Unconfigurable;
+        import lu.core.uda : CannotContainComments, Hidden, Separator, Unconfigurable;
 
         /// Client nickname.
         string nickname; // = "kameloso";

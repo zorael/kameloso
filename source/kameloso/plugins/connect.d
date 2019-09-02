@@ -32,7 +32,7 @@ import std.typecons : Flag, No, Yes;
  +/
 struct ConnectSettings
 {
-    import kameloso.uda : CannotContainComments, Separator;
+    import lu.core.uda : CannotContainComments, Separator;
 
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;

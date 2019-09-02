@@ -3,7 +3,7 @@
  +/
 module lu.core.traits;
 
-import kameloso.uda;
+import lu.core.uda;
 
 import std.traits : Unqual, isArray, isAssociativeArray, isFunction, isType;
 import std.typecons : Flag, No, Yes;

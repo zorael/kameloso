@@ -37,7 +37,7 @@ import std.typecons : Flag, No, Yes;
  +/
 struct AdminSettings
 {
-    import kameloso.uda : Unconfigurable;
+    import lu.core.uda : Unconfigurable;
 
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;

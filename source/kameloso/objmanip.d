@@ -77,7 +77,7 @@ do
                 }
                 else static if (!isSomeString!T && isArray!T)
                 {
-                    import kameloso.uda : Separator;
+                    import lu.core.uda : Separator;
                     import std.array : replace;
                     import std.traits : getUDAs, hasUDA;
 
@@ -225,7 +225,7 @@ do
 ///
 unittest
 {
-    import kameloso.uda : Separator;
+    import lu.core.uda : Separator;
     import std.conv : to;
 
     struct Foo

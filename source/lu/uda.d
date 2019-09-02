@@ -1,7 +1,7 @@
 /++
  +  User-defined attributes (UDAs) used in the non-plugin parts of the program.
  +/
-module kameloso.uda;
+module lu.core.uda;
 
 /// UDA conveying that a field is not to be saved in configuration files.
 struct Unconfigurable;

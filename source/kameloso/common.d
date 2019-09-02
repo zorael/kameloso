@@ -5,7 +5,7 @@
 module kameloso.common;
 
 import kameloso.irc.common : IRCClient;
-import kameloso.uda;
+import lu.core.uda;
 
 import core.time : Duration, seconds;
 

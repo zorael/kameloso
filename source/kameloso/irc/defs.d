@@ -6,11 +6,11 @@
  +  applicable to be used as a header. Some methods are included though, like
  +  some `toString`s and `opEqual`s.
  +
- +  The only kameloso dependency should be `kameloso.uda`.
+ +  The only kameloso dependency should be `lu.core.uda`.
  +/
 module kameloso.irc.defs;
 
-import kameloso.uda;
+import lu.core.uda;
 
 import std.range.primitives : isOutputRange;
 
