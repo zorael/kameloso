@@ -465,7 +465,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                             enum memberstring = __traits(identifier, Things[i].tupleof[n]);
 
                             case memberstring:
-                                import kameloso.objmanip : setMemberByName;
+                                import lu.objmanip : setMemberByName;
 
                                 static if (hasUDA!(Things[i].tupleof[n], CannotContainComments))
                                 {

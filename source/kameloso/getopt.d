@@ -484,7 +484,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         client.homes = client.homes.map!((ch) => ch.stripped).array;
 
         // 7. Clear entries that are dashes
-        import kameloso.objmanip : zeroMembers;
+        import lu.objmanip : zeroMembers;
         zeroMembers!"-"(client);
 
         // 8. Make channels lowercase

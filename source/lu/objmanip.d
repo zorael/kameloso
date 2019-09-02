@@ -2,9 +2,9 @@
  +  This module contains functions that in some way or another manipulates
  +  struct and class instances.
  +/
-module kameloso.objmanip;
+module lu.objmanip;
 
-public import lu.core.meld;
+import lu.core.meld;
 
 @safe:
 

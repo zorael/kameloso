@@ -453,7 +453,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
         if (pluginstring == "core")
         {
             import kameloso.common : initLogger, settings;
-            import kameloso.objmanip : setMemberByName;
+            import lu.objmanip : setMemberByName;
 
             try
             {
@@ -1889,7 +1889,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public bool setSettingByName(const string setting, const string value)
     {
-        import kameloso.objmanip : setMemberByName;
+        import lu.objmanip : setMemberByName;
         import std.traits : hasUDA;
 
         bool success;
