@@ -1,7 +1,7 @@
 /++
  +  Simple JSON wrappers to make keeping JSON storages easier.
  +/
-module lu.utils.json;
+module lu.json;
 
 import std.range.primitives : isOutputRange;
 
@@ -70,7 +70,7 @@ struct JSONStorage
     in (filename.length, "Tried to load an empty filename into a JSON storage")
     do
     {
-        import kameloso.common : FileTypeMismatchException;
+        import lu.common : FileTypeMismatchException;
         import std.file : exists, getAttributes, isFile, readText;
         import std.path : baseName;
         import std.json : JSONException;

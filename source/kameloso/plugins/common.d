@@ -353,7 +353,7 @@ unittest
  +/
 struct IRCPluginState
 {
-    import kameloso.common : Labeled;
+    import lu.common : Labeled;
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
@@ -1823,7 +1823,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
-        import lu.utils.serialisation : readConfigInto;
+        import lu.serialisation : readConfigInto;
         import lu.core.meld : MeldingStrategy, meldInto;
         import std.traits : hasUDA;
 
@@ -1952,7 +1952,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public void serialiseConfigInto(ref Appender!string sink) const
     {
-        import lu.utils.serialisation : serialise;
+        import lu.serialisation : serialise;
         import std.traits : hasUDA;
 
         foreach (immutable i, symbol; this.tupleof)
@@ -3728,7 +3728,7 @@ void rehashUsers(IRCPlugin plugin)
  +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 {
-    import kameloso.common : labeled;
+    import lu.common : labeled;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currTime.toUnixTime + secs;

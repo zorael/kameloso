@@ -19,7 +19,7 @@ import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : ircBold, ircColourByHash;
-import lu.utils.json : JSONStorage;
+import lu.json : JSONStorage;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
@@ -390,7 +390,7 @@ void onEndOfMotd(QuotesPlugin plugin)
  +/
 void initResources(QuotesPlugin plugin)
 {
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;

@@ -50,7 +50,7 @@ struct AutomodeSettings
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONValue;
 
     // Create a JSONStorage only to save it
@@ -67,7 +67,7 @@ void saveAutomodes(AutomodePlugin plugin)
  +/
 void initResources(AutomodePlugin plugin)
 {
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -478,7 +478,7 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(AutomodePlugin plugin)
 {
-    import lu.utils.json : JSONStorage, populateFromJSON;
+    import lu.json : JSONStorage, populateFromJSON;
 
     with (plugin)
     {
@@ -538,7 +538,7 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
  +/
 void pruneChannels(ref string[string][string] automodes)
 {
-    import kameloso.common : pruneAA;
+    import lu.common : pruneAA;
     pruneAA(automodes);
 }
 

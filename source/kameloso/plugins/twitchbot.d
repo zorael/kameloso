@@ -1376,7 +1376,7 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    import lu.utils.json : JSONStorage, populateFromJSON;
+    import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
     with (plugin)
@@ -1431,7 +1431,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
     import std.path : baseName;
 
@@ -1601,7 +1601,7 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
 }
 
 
-import lu.utils.json : JSONStorage;
+import lu.json : JSONStorage;
 
 // timerDefsToJSON
 /++

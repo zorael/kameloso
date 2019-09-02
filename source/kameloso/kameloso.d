@@ -8,6 +8,7 @@ import kameloso.irc;
 import kameloso.irc.defs;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
+import lu.common : Next;
 
 version(ProfileGC)
 {
@@ -1202,8 +1203,9 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
-    import lu.utils.serialisation : ConfigurationFileReadFailureException,
+    import lu.serialisation : ConfigurationFileReadFailureException,
         ConfigurationFileParsingException;
+    import lu.common : FileTypeMismatchException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 

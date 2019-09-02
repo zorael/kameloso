@@ -48,7 +48,7 @@ struct NotesSettings
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : timeSince;
+    import lu.common : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
@@ -547,7 +547,7 @@ void onEndOfMotd(NotesPlugin plugin)
  +/
 void initResources(NotesPlugin plugin)
 {
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -581,7 +581,7 @@ public:
 final class NotesPlugin : IRCPlugin
 {
 private:
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
 
     /// All Notes plugin settings gathered.
     @Settings NotesSettings notesSettings;

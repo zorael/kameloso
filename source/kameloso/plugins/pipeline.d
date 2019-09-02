@@ -22,6 +22,7 @@ import kameloso.thread : ThreadMessage;
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.messaging;
+import lu.common;
 
 import std.concurrency;
 import std.stdio : File;

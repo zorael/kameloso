@@ -1,7 +1,7 @@
 /++
  +  Various functions related to serialising structs into .ini file-like files.
  +/
-module lu.utils.serialisation;
+module lu.serialisation;
 
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -32,7 +32,7 @@ import std.typecons : Flag, No, Yes;
  +/
 string configurationText(const string configFile)
 {
-    import kameloso.common : FileTypeMismatchException;
+    import lu.common : FileTypeMismatchException;
     import std.file : exists, getAttributes, isFile, readText;
     import std.string : chomp;
 
@@ -674,7 +674,7 @@ auto justifiedConfigurationText(const string origLines)
         }
     }
 
-    import kameloso.common : getMultipleOf;
+    import lu.common : getMultipleOf;
     import std.algorithm.iteration : joiner;
 
     Appender!string justified;

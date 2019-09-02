@@ -847,7 +847,7 @@ enum AlterationResult
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account)
 {
-    import lu.utils.json : JSONStorage;
+    import lu.json : JSONStorage;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.json : JSONValue;

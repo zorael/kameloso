@@ -148,6 +148,7 @@ struct CoreSettings
 struct IRCBot
 {
     import kameloso.common : OutgoingLine;
+    import lu.common : Buffer;
     import lu.net : Connection;
     import kameloso.constants : BufferSize;
     import kameloso.irc.parsing : IRCParser;
@@ -608,7 +609,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +/
 void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 {
-    import lu.utils.serialisation : justifiedConfigurationText, serialise;
+    import lu.serialisation : justifiedConfigurationText, serialise;
     import lu.core.string : beginsWith, encode64;
     import std.array : Appender;
 
