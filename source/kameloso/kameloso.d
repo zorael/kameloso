@@ -519,9 +519,9 @@ void exhaustMessages()
 /++
  +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
  +  over the over `std.socket.Socket`, reading lines and yielding
- +  `kameloso.connection.ListenAttempt`s as it goes.
+ +  `lu.net.ListenAttempt`s as it goes.
  +
- +  Full lines are stored in `kameloso.connection.ListenAttempt`s which are
+ +  Full lines are stored in `lu.net.ListenAttempt`s which are
  +  yielded in the `std.concurrency.Generator` to be caught here, consequently
  +  parsed into `kameloso.irc.defs.IRCEvent`s, and then dispatched to all plugins.
  +
@@ -537,7 +537,7 @@ void exhaustMessages()
  +/
 Next mainLoop(ref IRCBot bot)
 {
-    import kameloso.connection : ListenAttempt, listenFiber;
+    import lu.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
 
     /// Enum denoting what we should do next loop.
@@ -1260,8 +1260,8 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 // tryConnect
 /++
  +  Tries to connect to the IPs in `kameloso.common.IRCBot.conn.ips` by
- +  leveraging `kameloso.connection.connectFiber`, reacting on the
- +  `kameloso.connection.ConnectAttempt`s it yields to provide feedback to the user.
+ +  leveraging `lu.net.connectFiber`, reacting on the
+ +  `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -1273,7 +1273,7 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
  +/
 Next tryConnect(ref IRCBot bot)
 {
-    import kameloso.connection : ConnectionAttempt, connectFiber;
+    import lu.net : ConnectionAttempt, connectFiber;
     import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
@@ -1383,8 +1383,8 @@ Next tryConnect(ref IRCBot bot)
 // tryResolve
 /++
  +  Tries to resolve the address in `bot.parser.client.server` to IPs, by
- +  leveraging `kameloso.connection.resolveFiber`, reacting on the
- +  `kameloso.connection.ResolveAttempt`s it yields to provide feedback to the user.
+ +  leveraging `lu.net.resolveFiber`, reacting on the
+ +  `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.bot`.
@@ -1395,7 +1395,7 @@ Next tryConnect(ref IRCBot bot)
  +/
 Next tryResolve(ref IRCBot bot)
 {
-    import kameloso.connection : ResolveAttempt, resolveFiber;
+    import lu.net : ResolveAttempt, resolveFiber;
     import kameloso.constants : Timeout;
     import std.concurrency : Generator;
 

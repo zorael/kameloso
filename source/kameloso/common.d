@@ -227,7 +227,7 @@ unittest
 struct IRCBot
 {
     import kameloso.common : OutgoingLine;
-    import kameloso.connection : Connection;
+    import lu.net : Connection;
     import kameloso.constants : BufferSize;
     import kameloso.irc.parsing : IRCParser;
     import kameloso.plugins.common : IRCPlugin;

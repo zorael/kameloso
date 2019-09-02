@@ -1,7 +1,7 @@
 /++
  +  Functions related to connecting to an IRC server, and reading from it.
  +/
-module kameloso.connection;
+module lu.net;
 
 import kameloso.constants;
 
