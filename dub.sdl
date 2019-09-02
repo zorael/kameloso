@@ -13,6 +13,7 @@ x:ddoxTool "scod"
 
 sourcePaths "source"
 importPaths "source"
+dependency "lu" version="*"
 
 versions "AsAnApplication" \
     "WithAdminPlugin" \
@@ -88,11 +89,4 @@ configuration "unittest" {
 	importPaths "tests"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
-}
-
-subPackage {
-    name "lu"
-    targetType "library"
-    sourcePaths "source/lu"
-    importPaths "source/lu"
 }
