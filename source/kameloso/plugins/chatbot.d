@@ -14,7 +14,7 @@ version(WithChatbotPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.common : settings;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;

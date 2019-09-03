@@ -1,5 +1,5 @@
 /++
- +  The Twitch Support service post-processes `kameloso.irc.defs.IRCEvent`s after
+ +  The Twitch Support service post-processes `lurk.defs.IRCEvent`s after
  +  they are parsed but before they are sent to the plugins for handling, and
  +  deals with Twitch-specifics. Those include extracting the colour someone's
  +  name should be printed in, their alias/"display name" (generally their
@@ -21,7 +21,7 @@ version(TwitchSupport):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 
 version(Colours)
 {
@@ -31,8 +31,8 @@ version(Colours)
 
 // postprocess
 /++
- +  Handle Twitch specifics, modifying the `kameloso.irc.defs.IRCEvent` to add
- +  things like `kameloso.irc.defs.IRCEvent.colour` and differentiate between
+ +  Handle Twitch specifics, modifying the `lurk.defs.IRCEvent` to add
+ +  things like `lurk.defs.IRCEvent.colour` and differentiate between
  +  temporary and permanent bans.
  +/
 void postprocess(TwitchSupportService service, ref IRCEvent event)
@@ -75,11 +75,11 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
  +
  +  Params:
  +      service = Current `TwitchSupportService`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` whose tags should be parsed.
+ +      event = Reference to the `lurk.defs.IRCEvent` whose tags should be parsed.
  +/
 void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 {
-    import kameloso.irc.common : decodeIRCv3String;
+    import lurk.common : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
@@ -1380,7 +1380,7 @@ private:
      +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +      event = Parsed `lurk.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.onEventImpl`
      +          after verifying we're on a Twitch server.
      +/

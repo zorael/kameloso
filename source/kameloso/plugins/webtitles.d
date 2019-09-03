@@ -18,7 +18,7 @@ private:
 import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.irccolours : ircBold;
 
 import requests : Request;
@@ -90,7 +90,7 @@ struct TitleLookupRequest
     /// The context state of the requesting plugin instance.
     IRCPluginState state;
 
-    /// The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
+    /// The `lurk.defs.IRCEvent` that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.

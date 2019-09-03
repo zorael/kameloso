@@ -28,7 +28,7 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;

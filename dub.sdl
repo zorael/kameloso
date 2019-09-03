@@ -14,6 +14,7 @@ x:ddoxTool "scod"
 sourcePaths "source"
 importPaths "source"
 dependency "lu" version="*"
+dependency "lurk" version="*"
 
 versions "AsAnApplication" \
     "WithAdminPlugin" \

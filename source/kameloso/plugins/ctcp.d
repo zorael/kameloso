@@ -16,7 +16,7 @@ version(WithCTCPService):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.messaging;
 
 
@@ -198,7 +198,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
     }
     else
     {
-        import kameloso.irc.common : IRCControlCharacter;
+        import lurk.common : IRCControlCharacter;
 
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
@@ -213,7 +213,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 unittest
 {
     // Ensure onCTCPs implement cases for all its annotated
-    // `kameloso.irc.defs.IRCEvent.Type`s.
+    // `lurk.defs.IRCEvent.Type`s.
     import std.traits : getUDAs;
 
     auto service = new CTCPService(IRCPluginState.init);
@@ -231,14 +231,14 @@ unittest
 /++
  +  Sends a list of which `CTCP` events we understand.
  +
- +  This builds a string of the names of all `kameloso.irc.defs.IRCEvent.Type`s
+ +  This builds a string of the names of all `lurk.defs.IRCEvent.Type`s
  +  that begin with `CTCP_`, at compile-time. As such, as long as we name any
  +  new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 {
-    import kameloso.irc.common : IRCControlCharacter;
+    import lurk.common : IRCControlCharacter;
     import std.format : format;
 
     /*  This metadata query returns a list of the CTCP messages that this
@@ -312,7 +312,7 @@ private:
      +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +      event = Parsed `lurk.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
      +          after verifying we're not on a Twitch server.
      +/

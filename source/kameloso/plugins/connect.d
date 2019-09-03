@@ -1,7 +1,7 @@
 /++
  +  The Connect service handles logging onto IRC servers after having connected,
  +  as well as managing authentication to services. It also manages responding
- +  to `kameloso.irc.defs.IRCEvent.Type.PING` requests.
+ +  to `lurk.defs.IRCEvent.Type.PING` requests.
  +
  +  It has no commands; everything in it is reactionary, with no special
  +  awareness mixed in.
@@ -17,7 +17,7 @@ version(WithConnectService):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
@@ -102,7 +102,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `kameloso.irc.common.IRCClient` of
+ +  Records a channel in the `channels` array in the `lurk.common.IRCClient` of
  +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
@@ -126,7 +126,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the arrays in
- +  `kameloso.irc.common.IRCClient` of the current `ConnectService`'s
+ +  `lurk.common.IRCClient` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Params:
@@ -179,10 +179,10 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
- +  Responds to `kameloso.irc.defs.IRCEvent.Type.ERR_NEEDPONG` events by sending
- +  the text supplied as content in the `kameloso.irc.defs.IRCEvent` to the server.
+ +  Responds to `lurk.defs.IRCEvent.Type.ERR_NEEDPONG` events by sending
+ +  the text supplied as content in the `lurk.defs.IRCEvent` to the server.
  +
- +  "Also known as `kameloso.irc.defs.IRCEvent.Type.ERR_NEEDPONG` (Unreal/Ultimate)
+ +  "Also known as `lurk.defs.IRCEvent.Type.ERR_NEEDPONG` (Unreal/Ultimate)
  +  for use during registration, however it's not used in Unreal (and might not
  +  be used in Ultimate either)."
  +
@@ -199,12 +199,12 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 
 // onPing
 /++
- +  Pongs the server upon `kameloso.irc.defs.IRCEvent.Type.PING`.
+ +  Pongs the server upon `lurk.defs.IRCEvent.Type.PING`.
  +
  +  We make sure to ping with the sender as target, and not the necessarily
- +  the server as saved in the `kameloso.irc.defs.IRCServer` struct. For
- +  example, `kameloso.irc.defs.IRCEvent.Type.ERR_BADPING` (or is it
- +  `kameloso.irc.defs.IRCEvent.Type.ERR_NEEDPONG`?) generally wants you to
+ +  the server as saved in the `lurk.defs.IRCServer` struct. For
+ +  example, `lurk.defs.IRCEvent.Type.ERR_BADPING` (or is it
+ +  `lurk.defs.IRCEvent.Type.ERR_NEEDPONG`?) generally wants you to
  +  ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
@@ -357,7 +357,7 @@ void tryAuth(ConnectService service)
  +  authenticate with services if applicable.
  +
  +  Some servers don't have a `MOTD`, so act on
- +  `kameloso.irc.defs.IRCEvent.Type.ERR_NOMOTD` as well.
+ +  `lurk.defs.IRCEvent.Type.ERR_NOMOTD` as well.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -436,8 +436,8 @@ void onAuthEnd(ConnectService service)
  +  Flags authentication as finished and join channels.
  +
  +  Some networks/daemons (like RusNet) send the "authentication complete"
- +  message as a `kameloso.irc.defs.IRCEvent.Type.NOTICE` from `NickServ`, not a
- +  `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
+ +  message as a `lurk.defs.IRCEvent.Type.NOTICE` from `NickServ`, not a
+ +  `lurk.defs.IRCEvent.Type.PRIVMSG`.
  +
  +  Whitelist more nicknames as we discover them. Also English only for now but
  +  can be easily extended.
@@ -530,7 +530,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
- +  Quits the program if we supplied a bad `kameloso.irc.IRCClient.pass`.
+ +  Quits the program if we supplied a bad `lurk.IRCClient.pass`.
  +
  +  There's no point in reconnecting.
  +/
@@ -707,15 +707,15 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.irc.common.IRCClient.account` and `kameloso.irc.common.IRCClient.password`,
+ +  `lurk.common.IRCClient.account` and `lurk.common.IRCClient.password`,
  +  then sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(account \0 account \0 password)`
  +
- +  ...where `kameloso.irc.common.IRCClient.account` is the services account name and
- +  `kameloso.irc.common.IRCClient.password` is the account password.
+ +  ...where `lurk.common.IRCClient.account` is the services account name and
+ +  `lurk.common.IRCClient.password` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
@@ -758,7 +758,7 @@ void onSASLAuthenticate(ConnectService service)
 // onSASLSuccess
 /++
  +  On SASL authentication success, calls a `CAP END` to finish the
- +  `kameloso.irc.defs.IRCEvent.Type.CAP` negotiations.
+ +  `lurk.defs.IRCEvent.Type.CAP` negotiations.
  +
  +  Flags the client as having finished registering and authing, allowing the
  +  main loop to pick it up and propagate it to all other plugins.
@@ -791,7 +791,7 @@ void onSASLSuccess(ConnectService service)
 // onSASLFailure
 /++
  +  On SASL authentication failure, calls a `CAP END` to finish the
- +  `kameloso.irc.defs.IRCEvent.Type.CAP` negotiations and finish registration.
+ +  `lurk.defs.IRCEvent.Type.CAP` negotiations and finish registration.
  +
  +  Flags the client as having finished registering, allowing the main loop to
  +  pick it up and propagate it to all other plugins.
@@ -834,7 +834,7 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
 
 // onWelcome
 /++
- +  Marks registration as completed upon `kameloso.irc.defs.IRCEvent.Type.RPL_WELCOME`
+ +  Marks registration as completed upon `lurk.defs.IRCEvent.Type.RPL_WELCOME`
  +  (numeric `001`).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
@@ -869,8 +869,8 @@ void onWelcome(ConnectService service, const IRCEvent event)
  +  Requests an UTF-8 codepage after we've figured out that the server supports changing such.
  +
  +  Currently only RusNet is known to support codepages. If more show up,
- +  consider creating an `kameloso.irc.defs.IRCServer``.hasCodepages` bool and set
- +  it if `CODEPAGES` is included in `kameloso.irc.defs.IRCEvent.Type.RPL_MYINFO`.
+ +  consider creating an `lurk.defs.IRCServer``.hasCodepages` bool and set
+ +  it if `CODEPAGES` is included in `lurk.defs.IRCEvent.Type.RPL_MYINFO`.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(ConnectService service)
@@ -989,7 +989,7 @@ void negotiateNick(ConnectService service)
  +
  +  This initialisation event fires immediately after a successful connect, and
  +  so instead of waiting for something from the server to trigger our
- +  registration procedure (notably `kameloso.irc.defs.IRCEvent.Type.NOTICE`s
+ +  registration procedure (notably `lurk.defs.IRCEvent.Type.NOTICE`s
  +  about our `IDENT` and hostname), we preemptively register.
  +
  +  It seems to work.
@@ -1057,7 +1057,7 @@ private:
     /// At what step we're currently at with regards to nick negotiation.
     Progress nickNegotiation;
 
-    /// Whether or not the server has sent at least one `kameloso.irc.defs.IRCEvent.Type.PING`.
+    /// Whether or not the server has sent at least one `lurk.defs.IRCEvent.Type.PING`.
     bool serverPinged;
 
     /// Whether or not the bot has renamed itself during registration.

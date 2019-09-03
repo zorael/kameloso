@@ -13,7 +13,7 @@ version(WithNotesPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.common;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
@@ -154,7 +154,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : stripModesign;
+    import lurk.common : stripModesign;
     import std.algorithm.iteration : splitter;
 
     if (event.channel !in plugin.notes) return;

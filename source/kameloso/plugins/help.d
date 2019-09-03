@@ -12,7 +12,7 @@ version(WithHelpPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.messaging;
 import kameloso.common : logger, settings;
 
@@ -45,7 +45,7 @@ struct HelpSettings
  +  as an argument.
  +
  +  Once we have the list we format it nicely and send it back to the requester,
- +  which we remember since we saved the original `kameloso.irc.defs.IRCEvent`.
+ +  which we remember since we saved the original `lurk.defs.IRCEvent`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)

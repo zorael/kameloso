@@ -22,9 +22,9 @@ private:
 
 import kameloso.common : logger, settings;
 import kameloso.plugins.common;
-import kameloso.irc.common : IRCClient;
+import lurk.common : IRCClient;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.messaging;
 
 import std.concurrency : send;
@@ -151,7 +151,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Prints the details of one or more specific, supplied users to the local terminal.
  +
- +  It basically prints the matching `kameloso.irc.defs.IRCUser`.
+ +  It basically prints the matching `lurk.defs.IRCUser`.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -261,7 +261,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandQuit
 /++
- +  Sends a `kameloso.irc.defs.IRCEvent.Type.QUIT` event to the server.
+ +  Sends a `lurk.defs.IRCEvent.Type.QUIT` event to the server.
  +
  +  If any extra text is following the "`quit`" prefix, it uses that as the quit
  +  reason, otherwise it falls back to the default as specified in the configuration file.
@@ -290,7 +290,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddHome
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `lurk.common.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
@@ -304,7 +304,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : isValidChannel;
+    import lurk.common : isValidChannel;
     import lu.core.string : stripped;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
@@ -418,7 +418,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `lurk.common.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -462,7 +462,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `lurk.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
@@ -494,13 +494,13 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +      plugin = The current `AdminPlugin`.
  +      specified = The nickname or account to white-/blacklist.
  +      list = Which of "whitelist" or "blacklist" to add to.
- +      event = Optional instigating `kameloso.irc.defs.IRCEvent`.
+ +      event = Optional instigating `lurk.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
     const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
-    import kameloso.irc.common : isValidNickname;
+    import lurk.common : isValidNickname;
     import lu.core.string : contains, stripped;
 
     /// Report result, either to the local terminal or to the IRC channel/sender
@@ -651,7 +651,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
  +      plugin = The current `AdminPlugin`.
  +      account = The account to delist as whitelisted/blacklisted.
  +      list = Which of "whitelist" or "blacklist" to remove from.
- +      event = Optional instigating `kameloso.irc.defs.IRCEvent`.
+ +      event = Optional instigating `lurk.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const IRCEvent event = IRCEvent.init)
@@ -744,7 +744,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `lurk.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
@@ -1417,7 +1417,7 @@ private:
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
 
-    /// Snapshot of the previous `kameloso.irc.common.IRCClient`.
+    /// Snapshot of the previous `lurk.common.IRCClient`.
     debug IRCClient previousClient;
 
     /// File with user definitions. Must be the same as in persistence.d.

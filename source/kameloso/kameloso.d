@@ -4,8 +4,7 @@
 module kameloso.kameloso;
 
 import kameloso.common;
-import kameloso.irc;
-import kameloso.irc.defs;
+import lurk;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import lu.common : Next;
@@ -524,7 +523,7 @@ void exhaustMessages()
  +
  +  Full lines are stored in `lu.net.ListenAttempt`s which are
  +  yielded in the `std.concurrency.Generator` to be caught here, consequently
- +  parsed into `kameloso.irc.defs.IRCEvent`s, and then dispatched to all plugins.
+ +  parsed into `lurk.defs.IRCEvent`s, and then dispatched to all plugins.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -935,9 +934,9 @@ import kameloso.plugins.common : IRCPlugin;
  +
  +  Params:
  +      plugin = The `kameloso.plugins.common.IRCPlugin` whose
- +          `kameloso.irc.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
+ +          `lurk.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
  +          iterate and process.
- +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      event = The triggering `lurk.defs.IRCEvent`.
  +/
 void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
@@ -1936,7 +1935,7 @@ int initBot(string[] args)
             break outerloop;
         }
 
-        import kameloso.irc.parsing : IRCParser;
+        import lurk.parsing : IRCParser;
 
         bot.parser = IRCParser(backupClient);
 

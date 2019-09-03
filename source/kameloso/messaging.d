@@ -1,13 +1,13 @@
 /++
  +  Functions used to send messages to the server.
  +
- +  It does this by crafting `kameloso.irc.defs.IRCEvent`s from the passed
+ +  It does this by crafting `lurk.defs.IRCEvent`s from the passed
  +  arguments, then sends it to the concurrency message-reading parts of the
  +  main loop, which formats them into strings and sends them to the server.
  +/
 module kameloso.messaging;
 
-import kameloso.irc.defs;
+import lurk.defs;
 import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
 import lu.core.string : beginsWithOneOf;
@@ -149,7 +149,7 @@ unittest
  +  the arguments passed to it.
  +
  +  This reflects how channel messages and private messages are both the
- +  underlying same type; `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
+ +  underlying same type; `lurk.defs.IRCEvent.Type.PRIVMSG`.
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
