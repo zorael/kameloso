@@ -52,12 +52,14 @@ configuration "twitch" {
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
 	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
 }
 configuration "dev" {
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
 	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
 }
 configuration "vanilla" {
 	targetType "executable"
@@ -76,6 +78,7 @@ configuration "full" {
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
 	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
 }
 configuration "pluginless" {
 	targetType "executable"
@@ -89,4 +92,5 @@ configuration "unittest" {
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
 	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
 }
