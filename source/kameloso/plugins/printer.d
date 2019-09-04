@@ -1,8 +1,8 @@
 /++
- +  The Printer plugin takes incoming `lurk.defs.IRCEvent`s, formats them
+ +  The Printer plugin takes incoming `dialect.defs.IRCEvent`s, formats them
  +  into being easily readable and prints them to the screen, optionally with colours.
  +
- +  It has no commands; all `lurk.defs.IRCEvent`s will be parsed and
+ +  It has no commands; all `dialect.defs.IRCEvent`s will be parsed and
  +  printed, excluding certain types that were deemed too spammy. Print them as
  +  well by disabling `PrinterSettings.filterMost`.
  +
@@ -18,7 +18,7 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.common;
-import lurk.defs;
+import dialect.defs;
 import kameloso.common;
 import kameloso.irccolours;
 
@@ -843,7 +843,7 @@ void commitLog(ref LogLineBuffer buffer)
 // onISUPPORT
 /++
  +  Prints information about the current server as we gain details of it from an
- +  `lurk.defs.IRCEvent.Type.RPL_ISUPPORT` event.
+ +  `dialect.defs.IRCEvent.Type.RPL_ISUPPORT` event.
  +
  +  Set a flag so we only print this information once; (ISUPPORTS can/do stretch
  +  across several events.)
@@ -963,15 +963,15 @@ unittest
 
 // formatMessageMonochrome
 /++
- +  Formats an `lurk.defs.IRCEvent` into an output range sink, in monochrome.
+ +  Formats an `dialect.defs.IRCEvent` into an output range sink, in monochrome.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `lurk.defs.IRCEvent` into.
- +      event = The `lurk.defs.IRCEvent` that is to be formatted.
+ +      sink = Output range to format the `dialect.defs.IRCEvent` into.
+ +      event = The `dialect.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
  +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -1100,7 +1100,7 @@ if (isOutputRange!(Sink, char[]))
                 case CHAN:
                 case EMOTE:
                 case TWITCH_SUBGIFT:
-                    import lurk.common : containsNickname;
+                    import dialect.common : containsNickname;
                     if (content.containsNickname(plugin.state.client.nickname))
                     {
                         // Nick was mentioned (certain)
@@ -1258,15 +1258,15 @@ unittest
 
 // formatMessageColoured
 /++
- +  Formats an `lurk.defs.IRCEvent` into an output range sink, coloured.
+ +  Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `lurk.defs.IRCEvent` into.
- +      event = The `lurk.defs.IRCEvent` that is to be formatted.
+ +      sink = Output range to format the `dialect.defs.IRCEvent` into.
+ +      event = The `dialect.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
  +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -1514,7 +1514,7 @@ if (isOutputRange!(Sink, char[]))
                 case TWITCH_SUBGIFT:
                 //case SELFCHAN:
                     import kameloso.terminal : invert;
-                    import lurk.common : containsNickname;
+                    import dialect.common : containsNickname;
 
                     /// Nick was mentioned (certain)
                     bool match;
@@ -1665,7 +1665,7 @@ if (isOutputRange!(Sink, char[]))
 // withoutTypePrefix
 /++
  +  Slices away any type prefixes from the string of a
- +  `lurk.defs.IRCEvent.Type`.
+ +  `dialect.defs.IRCEvent.Type`.
  +
  +  Only for shared use in `formatMessageMonochrome` and
  +  `formatMessageColoured`.
@@ -1683,7 +1683,7 @@ if (isOutputRange!(Sink, char[]))
  +  ---
  +
  +  Params:
- +      typestring = The string form of a `lurk.defs.IRCEvent.Type`.
+ +      typestring = The string form of a `dialect.defs.IRCEvent.Type`.
  +
  +  Returns:
  +      A slice of the passed `typestring`, excluding any prefixes if present.
@@ -2181,12 +2181,12 @@ unittest
 // highlightEmotes
 /++
  +  Tints emote strings and highlights Twitch emotes in a ref
- +  `lurk.defs.IRCEvent`'s `content` member.
+ +  `dialect.defs.IRCEvent`'s `content` member.
  +
  +  Wraps `highlightEmotesImpl`.
  +
  +  Params:
- +      event = `lurk.defs.IRCEvent` whose content text to highlight.
+ +      event = `dialect.defs.IRCEvent` whose content text to highlight.
  +      colourful = Whether or not emotes should be highlit in colours.
  +/
 version(Colours)
@@ -2538,7 +2538,7 @@ public:
 
 // PrinterPlugin
 /++
- +  The Printer plugin takes all `lurk.defs.IRCEvent`s and prints them to
+ +  The Printer plugin takes all `dialect.defs.IRCEvent`s and prints them to
  +  the local terminal, formatted and optionally in colour.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split

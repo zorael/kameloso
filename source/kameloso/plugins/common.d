@@ -7,8 +7,8 @@
  +/
 module kameloso.plugins.common;
 
-import lurk.common : IRCClient;
-import lurk.defs;
+import dialect.common : IRCClient;
+import dialect.defs;
 
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
@@ -153,7 +153,7 @@ interface IRCPlugin
  +/
 abstract class TriggerRequest
 {
-    /// Stored `lurk.defs.IRCEvent` to replay.
+    /// Stored `dialect.defs.IRCEvent` to replay.
     IRCEvent event;
 
     /// `PrivilegeLevel` of the function to replay.
@@ -180,7 +180,7 @@ abstract class TriggerRequest
  +
  +  It functions like a Command pattern object in that it stores a payload and
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
- +  returns we trigger the object and the original `lurk.defs.IRCEvent`
+ +  returns we trigger the object and the original `dialect.defs.IRCEvent`
  +  is replayed.
  +
  +  Params:
@@ -195,7 +195,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
 
     static if (!is(Payload == typeof(null)))
     {
-        /// Command payload aside from the `lurk.defs.IRCEvent`.
+        /// Command payload aside from the `dialect.defs.IRCEvent`.
         Payload payload;
 
         /++
@@ -204,7 +204,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
          +  Params:
          +      payload = Payload of templated type `Payload` to attach to this
          +          `TriggerRequestImpl`.
-         +      event = `lurk.defs.IRCEvent` to attach to this
+         +      event = `dialect.defs.IRCEvent` to attach to this
          +          `TriggerRequestImpl`.
          +      privilegeLevel = The privilege level required to trigger the
          +          passed function.
@@ -244,7 +244,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
 
     /++
      +  Call the passed function/delegate pointer, optionally with the stored
-     +  `lurk.defs.IRCEvent` and/or `Payload`.
+     +  `dialect.defs.IRCEvent` and/or `Payload`.
      +/
     override void trigger() @system
     {
@@ -358,7 +358,7 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `lurk.common.IRCClient`, containing information pertaining
+     +  The current `dialect.common.IRCClient`, containing information pertaining
      +  to the bot in the context of the current (alive) connection.
      +/
     IRCClient client;
@@ -373,7 +373,7 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued `WHOIS` requests and pertaining `lurk.defs.IRCEvent`s to
+     +  Queued `WHOIS` requests and pertaining `dialect.defs.IRCEvent`s to
      +  replay.
      +
      +  The main loop iterates this after processing all on-event functions so
@@ -384,7 +384,7 @@ struct IRCPluginState
 
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
-     +  `lurk.defs.IRCEvent.Type`.
+     +  `dialect.defs.IRCEvent.Type`.
      +/
     Fiber[][IRCEvent.Type] awaitingFibers;
 
@@ -628,7 +628,7 @@ enum FilterResult
 
 /++
  +  To what extent the annotated function demands its triggering
- +  `lurk.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
+ +  `dialect.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
  +/
 enum PrefixPolicy
 {
@@ -636,7 +636,7 @@ enum PrefixPolicy
     prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
     /++
      +  Message should begin with the bot's name, except in
-     +  `lurk.defs.IRCEvent.Type.QUERY` events.
+     +  `dialect.defs.IRCEvent.Type.QUERY` events.
      +/
     nickname,
 }
@@ -663,7 +663,7 @@ enum PrivilegeLevel
     anyone = 1, /// Anyone may trigger this event.
     registered = 2,  /// Anyone registered with services may trigger this event.
     /++
-     +  Only those of the `lurk.common.IRCClient.Class.whitelist`
+     +  Only those of the `dialect.common.IRCClient.Class.whitelist`
      +  class may trigger this event.
      +/
     whitelist = 3,
@@ -678,7 +678,7 @@ enum PrivilegeLevel
  +
  +  Params:
  +      payload = Payload to attach to the `TriggerRequest`.
- +      event = `lurk.defs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
@@ -699,7 +699,7 @@ TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
  +  *without* a payload attached.
  +
  +  Params:
- +      event = `lurk.defs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
@@ -856,7 +856,7 @@ struct Settings;
 
 // Description
 /++
- +  Describes an `lurk.defs.IRCEvent`-annotated handler function.
+ +  Describes an `dialect.defs.IRCEvent`-annotated handler function.
  +
  +  This is used to describe functions triggered by `BotCommand`s, in the help
  +  listing routine in `kameloso.plugins.chatbot`.
@@ -909,7 +909,7 @@ struct Enabler;
  +  and deny use.
  +
  +  Params:
- +      event = `lurk.defs.IRCEvent` to filter.
+ +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +
  +  Returns:
@@ -1102,7 +1102,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  that or any custom-defined `allow` in `typeof(this)`.
      +
      +  Params:
-     +      event = `lurk.defs.IRCEvent` to allow, or not.
+     +      event = `dialect.defs.IRCEvent` to allow, or not.
      +      privilegeLevel = `PrivilegeLevel` of the handler in question.
      +
      +  Returns:
@@ -1129,14 +1129,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEvent
     /++
-     +  Pass on the supplied `lurk.defs.IRCEvent` to `onEventImpl`.
+     +  Pass on the supplied `dialect.defs.IRCEvent` to `onEventImpl`.
      +
      +  This is made a separate function to allow plugins to override it and
      +  insert their own code, while still leveraging `onEventImpl` for the
      +  actual dirty work.
      +
      +  Params:
-     +      event = Parse `lurk.defs.IRCEvent` to pass onto `onEventImpl`.
+     +      event = Parse `dialect.defs.IRCEvent` to pass onto `onEventImpl`.
      +
      +  See_Also:
      +      onEventImpl
@@ -1149,14 +1149,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEventImpl
     /++
-     +  Pass on the supplied `lurk.defs.IRCEvent` to functions annotated
-     +  with the right `lurk.defs.IRCEvent.Type`s.
+     +  Pass on the supplied `dialect.defs.IRCEvent` to functions annotated
+     +  with the right `dialect.defs.IRCEvent.Type`s.
      +
      +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
      +  `PrefixPolicy` where such is appropriate.
      +
      +  Params:
-     +      event = Parsed `lurk.defs.IRCEvent` to dispatch to event handlers.
+     +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
     private void onEventImpl(const IRCEvent event) @system
     {
@@ -1214,7 +1214,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
-                    // UDA is `lurk.defs.IRCEvent.Type.ANY`, let pass
+                    // UDA is `dialect.defs.IRCEvent.Type.ANY`, let pass
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
@@ -1268,7 +1268,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     if (!event.channel.length)
                     {
-                        // it is a non-channel event, like a `lurk.defs.IRCEvent.Type.QUERY`
+                        // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
                     }
                     else if (!privateState.client.homes.canFind(event.channel))
                     {
@@ -1765,7 +1765,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // postprocess
     /++
-     +  Lets a plugin modify an `lurk.defs.IRCEvent` while it's begin
+     +  Lets a plugin modify an `dialect.defs.IRCEvent` while it's begin
      +  constructed, before it's finalised and passed on to be handled.
      +/
     public void postprocess(ref IRCEvent event) @system
@@ -1913,7 +1913,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Prints the plugin's `Settings`-annotated structs.
      +
      +  It both prints module-level structs as well as structs in the
-     +  `lurk.defs.IRCPlugin` (subtype) itself.
+     +  `dialect.defs.IRCPlugin` (subtype) itself.
      +/
     public void printSettings() const
     {
@@ -2333,7 +2333,7 @@ public:
      +  the arguments passed to it.
      +
      +  This reflects how channel messages and private messages are both the
-     +  underlying same type; `lurk.defs.IRCEvent.Type.PRIVMSG`.
+     +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -2504,7 +2504,7 @@ public:
  +  Most of the time a plugin doesn't require a full `UserAwareness`; only
  +  those that need looking up users outside of the current event do. The
  +  persistency service allows for plugins to just read the information from
- +  the `lurk.defs.IRCUser` embedded in the event directly, and that's
+ +  the `dialect.defs.IRCUser` embedded in the event directly, and that's
  +  often enough.
  +
  +  General rule: if a plugin doesn't access `state.users`, it's probably
@@ -2526,10 +2526,10 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Replays any queued requests awaiting the result of a WHOIS. Before that,
      +  records the user's services account by saving it to the user's
-     +  `lurk.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `dialect.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
-     +  `lurk.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
+     +  `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
      +  cover the case where a user without an account triggering `PrivilegeLevel.anyone`-
      +  or `PrivilegeLevel.ignored`-level commands.
      +
@@ -2717,7 +2717,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessQuitMixin
     /++
-     +  Removes a user's `lurk.defs.IRCUser` entry from a plugin's user
+     +  Removes a user's `dialect.defs.IRCUser` entry from a plugin's user
      +  list upon them disconnecting.
      +/
     @(Awareness.cleanup)
@@ -2752,12 +2752,12 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessCatchTargetMixin
     /++
      +  Catches a user's information and saves it in the plugin's
-     +  `IRCPluginState.users` array of `lurk.defs.IRCUser`s.
+     +  `IRCPluginState.users` array of `dialect.defs.IRCUser`s.
      +
-     +  `lurk.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
-     +  the `lurk.defs.IRCUser.lastWhois` field that we want to store.
+     +  `dialect.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
+     +  the `dialect.defs.IRCUser.lastWhois` field that we want to store.
      +
-     +  `lurk.defs.IRCEvent.Type.CHGHOST` occurs when a user changes host
+     +  `dialect.defs.IRCEvent.Type.CHGHOST` occurs when a user changes host
      +  on some servers that allow for custom host addresses.
      +/
     @(Awareness.early)
@@ -2824,7 +2824,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import lurk.common : IRCControlCharacter, stripModesign;
+        import dialect.common : IRCControlCharacter, stripModesign;
         import kameloso.irccolours : stripColours;
         import lu.core.string : contains, nom;
         import std.algorithm.iteration : splitter;
@@ -2888,9 +2888,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessPingMixin
     /++
      +  Rehash the internal `IRCPluginState.users` associative array of
-     +  `lurk.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
+     +  `dialect.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
      +
-     +  We ride the periodicity of `lurk.defs.IRCEvent.Type.PING` to get
+     +  We ride the periodicity of `dialect.defs.IRCEvent.Type.PING` to get
      +  a natural cadence without having to resort to timed `core.thread.Fiber`s.
      +
      +  The number of hours is so far hardcoded but can be made configurable if
@@ -2960,7 +2960,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfjoinMixin
     /++
-     +  Create a new `lurk.defs.IRCChannel` in the the `IRCPlugin`'s
+     +  Create a new `dialect.defs.IRCChannel` in the the `IRCPlugin`'s
      +  `IRCPluginState.channels` associative array when the bot joins a channel.
      +/
     @(Awareness.setup)
@@ -2976,7 +2976,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfpartMixin
     /++
-     +  Removes an `lurk.defs.IRCChannel` from the internal list when the
+     +  Removes an `dialect.defs.IRCChannel` from the internal list when the
      +  bot leaves it.
      +
      +  Remove users from the `plugin.state.users` array if, by leaving, it left
@@ -3069,7 +3069,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  `IRCPluginState.users` associative array point to the new nickname.
      +
      +  Does *not* add a new entry if one doesn't exits, to counter the fact
-     +  that `lurk.defs.IRCEvent.Type.NICK` events don't belong to a channel,
+     +  that `dialect.defs.IRCEvent.Type.NICK` events don't belong to a channel,
      +  and as such can't be regulated with `ChannelPolicy` annotations. This way
      +  the user will only be moved if it was already added elsewhere. Else we'll leak users.
      +
@@ -3114,7 +3114,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessTopicMixin
     /++
-     +  Update the entry for an `lurk.defs.IRCChannel` if someone changes
+     +  Update the entry for an `dialect.defs.IRCChannel` if someone changes
      +  the topic of it.
      +/
     @(Awareness.early)
@@ -3153,7 +3153,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Sets a mode for a channel.
      +
      +  Most modes replace others of the same type, notable exceptions being
-     +  bans and mode exemptions. We let `lurk.common.setMode` take care of that.
+     +  bans and mode exemptions. We let `dialect.common.setMode` take care of that.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -3172,7 +3172,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
         if (auto channel = event.channel in plugin.state.channels)
         {
-            import lurk.common : setMode;
+            import dialect.common : setMode;
             (*channel).setMode(event.aux, event.content, plugin.state.client.server);
         }
     }
@@ -3207,7 +3207,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             {
                 if (const modechar = modesign in plugin.state.client.server.prefixchars)
                 {
-                    import lurk.common : setMode;
+                    import dialect.common : setMode;
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
@@ -3270,7 +3270,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 nickname = userstring;
             }
 
-            import lurk.common : stripModesign;
+            import dialect.common : stripModesign;
 
             string modesigns;
             nickname = plugin.state.client.server.stripModesign(nickname, modesigns);
@@ -3283,7 +3283,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             {
                 if (const modechar = modesign in plugin.state.client.server.prefixchars)
                 {
-                    import lurk.common : setMode;
+                    import dialect.common : setMode;
                     import std.conv : to;
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.client.server);
@@ -3324,7 +3324,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import lurk.common : setMode;
+        import dialect.common : setMode;
         import std.conv : to;
 
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
@@ -3363,7 +3363,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import lurk.common : setMode;
+        import dialect.common : setMode;
 
         if (auto channel = event.channel in plugin.state.channels)
         {
@@ -3384,7 +3384,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +
  +  There is a chance of a user leak, if parting users are not broadcast. As
  +  such we mark when the user was last seen in the
- +  `lurk.defs.IRCUser.lastWhois` member, which opens up the possibility
+ +  `dialect.defs.IRCUser.lastWhois` member, which opens up the possibility
  +  of pruning the plugin's `IRCPluginState.users` array of old entries.
  +
  +  Twitch awareness needs channel awareness, or it is meaningless.
@@ -3515,9 +3515,9 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `lurk.common.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      client = `dialect.common.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
- +      mutEvent = Reference to the mutable `lurk.defs.IRCEvent` we're considering.
+ +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +
  +  Returns:
  +      `true` if the message is in a context where the event matches the
@@ -3592,14 +3592,14 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
 
 // catchUser
 /++
- +  Catch an `lurk.defs.IRCUser`, saving it to the `IRCPlugin`'s
+ +  Catch an `dialect.defs.IRCUser`, saving it to the `IRCPlugin`'s
  +  `IRCPluginState.users` array.
  +
  +  If a user already exists, meld the new information into the old one.
  +
  +  Params:
  +      plugin = Current `IRCPlugin`.
- +      newUser = The `lurk.defs.IRCUser` to catch.
+ +      newUser = The `dialect.defs.IRCUser` to catch.
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
@@ -3647,8 +3647,8 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +  Params:
  +      plugin = Current `IRCPlugin`.
  +      payload = Payload to attach to the `TriggerRequest`, generally an
- +          `lurk.defs.IRCEvent` to replay once the `WHOIS` results return.
- +      event = `lurk.defs.IRCEvent` that instigated this `WHOIS` call.
+ +          `dialect.defs.IRCEvent` to replay once the `WHOIS` results return.
+ +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
  +/
@@ -3695,7 +3695,7 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 // rehashUsers
 /++
  +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
- +  associative array and the ones in each `lurk.defs.IRCChannel.users` associative arrays.
+ +  associative array and the ones in each `dialect.defs.IRCChannel.users` associative arrays.
  +
  +  This optimises lookup and should be done every so often,
  +
@@ -3757,8 +3757,8 @@ void delayFiber(IRCPlugin plugin, const long secs)
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `lurk.defs.IRCEvent` matches the passed
- +  `lurk.defs.IRCEvent.Type` type.
+ +  triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3766,8 +3766,8 @@ void delayFiber(IRCPlugin plugin, const long secs)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
- +          `lurk.defs.IRCEvent` of type `type` comes along.
- +      type = The kind of `lurk.defs.IRCEvent` that should trigger the
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `dialect.defs.IRCEvent` that should trigger the
  +          passed awaiting fiber.
  +/
 void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
@@ -3779,8 +3779,8 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `lurk.defs.IRCEvent` matches the passed
- +  `lurk.defs.IRCEvent.Type` type.
+ +  triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3789,7 +3789,7 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      type = The kind of `lurk.defs.IRCEvent` that should trigger this
+ +      type = The kind of `dialect.defs.IRCEvent` that should trigger this
  +          implicit awaiting fiber (in the current context).
  +/
 void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
@@ -3801,8 +3801,8 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `lurk.defs.IRCEvent` matches all of the passed
- +  `lurk.defs.IRCEvent.Type` types.
+ +  triggering `dialect.defs.IRCEvent` matches all of the passed
+ +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3810,10 +3810,10 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
- +          `lurk.defs.IRCEvent` of type `type` comes along.
- +      types = The kinds of `lurk.defs.IRCEvent` that should trigger
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          the passed awaiting fiber, in an array with elements of type
- +          `lurk.defs.IRCEvent.Type`.
+ +          `dialect.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
@@ -3827,8 +3827,8 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `lurk.defs.IRCEvent` matches all of the passed
- +  `lurk.defs.IRCEvent.Type` types.
+ +  triggering `dialect.defs.IRCEvent` matches all of the passed
+ +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3837,9 +3837,9 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      types = The kinds of `lurk.defs.IRCEvent` that should trigger
+ +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          this implicit awaiting fiber (in the current context), in an array
- +          with elements of type `lurk.defs.IRCEvent.Type`.
+ +          with elements of type `dialect.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
@@ -3856,8 +3856,8 @@ import std.traits : isSomeFunction;
 /++
  +  Functionality for catching WHOIS results and calling passed function aliases
  +  with the resulting account information that was divined from it, in the form
- +  of the actual `lurk.defs.IRCEvent`, the target
- +  `lurk.defs.IRCUser` within it, the user's `account` field, or merely
+ +  of the actual `dialect.defs.IRCEvent`, the target
+ +  `dialect.defs.IRCUser` within it, the user's `account` field, or merely
  +  alone as an arity-0 function.
  +
  +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -3896,7 +3896,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /// Reusable mixin that catches WHOIS results.
     void whoisFiberDelegate()
     {
-        import lurk.defs : IRCEvent, IRCUser;
+        import dialect.defs : IRCEvent, IRCUser;
         import kameloso.thread : CarryingFiber;
         import core.thread : Fiber;
 
@@ -3921,7 +3921,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND) return;
 
-        import lurk.common : toLowerCase;
+        import dialect.common : toLowerCase;
 
         immutable m = plugin.state.client.server.caseMapping;
 
@@ -3998,7 +3998,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
 
     /++
-     +  Constructs a `kameloso.thread.CarryingFiber!(lurk.defs.IRCEvent)`
+     +  Constructs a `kameloso.thread.CarryingFiber!(dialect.defs.IRCEvent)`
      +  and enqueues it into the `awaitingFibers` associative array, then issues
      +  a `WHOIS` call.
      +
@@ -4069,7 +4069,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
  +  If not version `TwitchSupport` then it always returns the nickname.
  +
  +  Params:
- +      user = `lurk.defs.IRCUser` to examine.
+ +      user = `dialect.defs.IRCUser` to examine.
  +
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.

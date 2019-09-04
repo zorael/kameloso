@@ -3,7 +3,7 @@ module kameloso.plugins.hello;
 version(none):  // Remove to enable
 
 import kameloso.plugins.common;
-import lurk.defs;
+import dialect.defs;
 import kameloso.messaging;
 
 @(IRCEvent.Type.CHAN)     // This function should trigger on channel messages

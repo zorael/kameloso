@@ -21,7 +21,7 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.common;
-import lurk.defs;
+import dialect.defs;
 import kameloso.messaging;
 import kameloso.common : logger, settings;
 
@@ -336,7 +336,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandPhraseChan
 /++
  +  Bans, unbans, lists or clears banned phrases for the current channel.
- +  `lurk.defs.IRCEvent.Type.CHAN` wrapper.
+ +  `dialect.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
@@ -356,7 +356,7 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandPhraseQuery
 /++
  +  Bans, unbans, lists or clears banned phrases for the specified target channel.
- +  `lurk.defs.IRCEvent.Type.QUERY` wrapper.
+ +  `dialect.defs.IRCEvent.Type.QUERY` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
@@ -395,7 +395,7 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `lurk.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +      targetChannel = The channel we're handling phrase bans for.
  +/
 void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
@@ -547,7 +547,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 // onCommandTimerChan
 /++
  +  Adds, deletes, lists or clears timers for the specified target channel.
- +  `lurk.defs.IRCEvent.Type.CHAN` wrapper.
+ +  `dialect.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
  +/
@@ -567,7 +567,7 @@ void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandTimerQuery
 /++
  +  Adds, deletes, lists or clears timers for the specified target channel.
- +  `lurk.defs.IRCEvent.Type.QUERY` wrapper.
+ +  `dialect.defs.IRCEvent.Type.QUERY` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
  +/
@@ -606,7 +606,7 @@ void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `lurk.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +      targetChannels = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
@@ -1253,7 +1253,7 @@ void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `lurk.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +      targetChannel = The channel we're adding/listing/removing regulars to/from.
  +/
 void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
@@ -1647,7 +1647,7 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // postprocess
 /++
- +  Postprocesses `lurk.defs.IRCEvent`s, changing the user classes to
+ +  Postprocesses `dialect.defs.IRCEvent`s, changing the user classes to
  +  reflect whether or not a user is a regular.
  +
  +  The Persistence service doesn't have access to `TwitchBotPlugin.regularsByChannel`
@@ -1766,14 +1766,14 @@ private:
 
     /++
      +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does nothing on non-Twitch servers. Also filters `lurk.defs.IRCEvent.Type.CHAN`
+     +  plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
      +  events to only trigger on active channels (that have its `Channel.enabled`
      +  set to true).
      +
      +  The function to call is `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `lurk.defs.IRCEvent` to pass onto
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/

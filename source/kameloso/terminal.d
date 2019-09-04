@@ -694,7 +694,7 @@ version(Colours)
 string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
     (const string line, const string toInvert)
 {
-    import lurk.common : isValidNicknameCharacter;
+    import dialect.common : isValidNicknameCharacter;
     import std.array : Appender;
     import std.format : format;
     import std.string : indexOf;

@@ -16,7 +16,7 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.common;
-import lurk.defs;
+import dialect.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import lu.json : JSONStorage;
@@ -122,7 +122,7 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
     "$command [nickname]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    import lurk.common : isValidNickname, stripModesign;
+    import dialect.common : isValidNickname, stripModesign;
     import lu.core.string : stripped;
     import std.format : format;
     import std.json : JSONException;
@@ -246,7 +246,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 @Description("Creates a new quote.", "$command [nickname] [quote text]")
 void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    import lurk.common : isValidNickname, stripModesign;
+    import dialect.common : isValidNickname, stripModesign;
     import lu.core.string : nom;
     import std.json : JSONException;
     import std.format : format;

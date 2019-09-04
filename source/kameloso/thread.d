@@ -47,7 +47,7 @@ version(Posix)
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server `lurk.defs.IRCEvent.Type.PONG` event.
+    /// Concurrency message type asking for a to-server `dialect.defs.IRCEvent.Type.PONG` event.
     struct Pong {}
 
     /// Concurrency message type asking to verbosely send a line to the server.
@@ -71,7 +71,7 @@ struct ThreadMessage
     /++
      +  Concurrency message asking for a reference to the arrays of
      +  `kameloso.plugins.common.IRCPlugin`s in the current
-     +  `lurk.common.IRCClient`'s plugin array.
+     +  `dialect.common.IRCClient`'s plugin array.
      +/
     struct PeekPlugins {}
 

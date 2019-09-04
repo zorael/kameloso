@@ -14,7 +14,7 @@ version(WithAutomodePlugin):
 private:
 
 import kameloso.plugins.common;
-import lurk.defs;
+import dialect.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
@@ -94,7 +94,7 @@ void initResources(AutomodePlugin plugin)
  +  Potentially applies an automode, depending on the definitions and the user
  +  triggering the function.
  +
- +  Different `lurk.defs.IRCEvent.Type`s have to be handled differently,
+ +  Different `dialect.defs.IRCEvent.Type`s have to be handled differently,
  +  as the triggering user may be either the sender or the target.
  +/
 @(IRCEvent.Type.ACCOUNT)
@@ -260,7 +260,7 @@ unittest
     "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import lurk.common : isValidChannel, isValidNickname;
+    import dialect.common : isValidChannel, isValidNickname;
     import lu.core.string : beginsWith, nom;
     import std.algorithm.searching : count;
     import std.uni : toLower;
@@ -499,7 +499,7 @@ void onEndOfMotd(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 void onMode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import lurk.common : containsNickname;
+    import dialect.common : containsNickname;
     import std.algorithm.searching : canFind;
 
     if (!event.content.containsNickname(plugin.state.client.nickname)) return;
@@ -577,7 +577,7 @@ private:
      +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `lurk.defs.IRCEvent` to pass onto
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
      +          after verifying we're not on a Twitch server.
      +/

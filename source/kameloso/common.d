@@ -4,7 +4,7 @@
  +/
 module kameloso.common;
 
-import lurk.common : IRCClient;
+import dialect.common : IRCClient;
 import lu.core.uda;
 
 import core.time : Duration, seconds;
@@ -151,7 +151,7 @@ struct IRCBot
     import lu.common : Buffer;
     import lu.net : Connection;
     import kameloso.constants : BufferSize;
-    import lurk.parsing : IRCParser;
+    import dialect.parsing : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;
@@ -190,7 +190,7 @@ struct IRCBot
 
     /++
      +  A runtime array of all plugins. We iterate these when we have finished
-     +  parsing an `lurk.defs.IRCEvent`, and call the relevant event
+     +  parsing an `dialect.defs.IRCEvent`, and call the relevant event
      +  handlers of each.
      +/
     IRCPlugin[] plugins;
@@ -277,7 +277,7 @@ struct IRCBot
 
             version(TwitchSupport)
             {
-                import lurk.defs : IRCServer;
+                import dialect.defs : IRCServer;
 
                 double k = throttle.k;
                 double burst = throttle.burst;
@@ -522,7 +522,7 @@ struct IRCBot
      +  update all plugins to have an updated copy of it.
      +
      +  Params:
-     +      client = `lurk.common.IRCClient` to propagate to all plugins.
+     +      client = `dialect.common.IRCClient` to propagate to all plugins.
      +/
     void propagateClient(IRCClient client) pure nothrow @nogc
     {
@@ -885,7 +885,7 @@ unittest
  +  the same value (if they're empty).
  +
  +  Params:
- +      client = Reference to the `lurk.common.IRCClient` to complete.
+ +      client = Reference to the `dialect.common.IRCClient` to complete.
  +/
 void completeClient(ref IRCClient client)
 out (; (client.nickname.length), "Empty client nickname")

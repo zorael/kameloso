@@ -5,8 +5,8 @@
 module kameloso.debugging;
 
 import kameloso.common : IRCBot;
-import lurk.common : IRCClient;
-import lurk.defs;
+import dialect.common : IRCClient;
+import dialect.defs;
 
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -18,7 +18,7 @@ debug:
 // formatClientAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `lurk.common.IRCClient`, including instantiating a fresh one.
+ +  `dialect.common.IRCClient`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
@@ -30,7 +30,7 @@ debug:
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      client = `lurk.common.IRCClient` to simulate the assignment of.
+ +      client = `dialect.common.IRCClient` to simulate the assignment of.
  +/
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 if (isOutputRange!(Sink, char[]))
@@ -209,7 +209,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
 ///
 unittest
 {
-    import lurk.parsing : IRCParser;
+    import dialect.parsing : IRCParser;
     import std.array : Appender;
 
     Appender!string sink;
@@ -309,7 +309,7 @@ assert((c == '#'), c.to!string);
 // formatEventAssertBlock
 /++
  +  Constructs assert statement blocks for each changed field of an
- +  `lurk.defs.IRCEvent`.
+ +  `dialect.defs.IRCEvent`.
  +
  +  Example:
  +  ---
@@ -320,7 +320,7 @@ assert((c == '#'), c.to!string);
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      event = `lurk.defs.IRCEvent` to construct assert statements for.
+ +      event = `dialect.defs.IRCEvent` to construct assert statements for.
  +/
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 if (isOutputRange!(Sink, char[]))
@@ -349,7 +349,7 @@ if (isOutputRange!(Sink, char[]))
 
 unittest
 {
-    import lurk.parsing : IRCParser;
+    import dialect.parsing : IRCParser;
     import lu.core.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
@@ -390,7 +390,7 @@ unittest
 // generateAsserts
 /++
  +  Reads raw server strings from `stdin`, parses them into
- +  `lurk.defs.IRCEvent`s and constructs assert blocks of their contents.
+ +  `dialect.defs.IRCEvent`s and constructs assert blocks of their contents.
  +
  +  Example:
  +  ---
@@ -404,7 +404,7 @@ unittest
 void generateAsserts(ref IRCBot bot) @system
 {
     import kameloso.common : logger;
-    import lurk.defs : IRCServer;
+    import dialect.defs : IRCServer;
     import kameloso.printing : printObjects;
     import lu.core.string : contains, nom, stripped;
     import std.conv : ConvException;
@@ -416,7 +416,7 @@ void generateAsserts(ref IRCBot bot) @system
     with (IRCServer)
     with (bot)
     {
-        import lurk.parsing : IRCParser;  // Must be here or shadows IRCBot : IRCParser
+        import dialect.parsing : IRCParser;  // Must be here or shadows IRCBot : IRCParser
 
         parser = IRCParser.init;
 
@@ -433,7 +433,7 @@ void generateAsserts(ref IRCBot bot) @system
         try
         {
             import lu.core.conv : Enum;
-            import lurk.common : typenumsOf;
+            import dialect.common : typenumsOf;
 
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
             parser.typenums = typenumsOf(daemon);
@@ -498,7 +498,7 @@ void generateAsserts(ref IRCBot bot) @system
 
         while ((input = readln()) !is null)
         {
-            import lurk.common : IRCParseException;
+            import dialect.common : IRCParseException;
             import lu.core.string : beginsWithOneOf;
 
             if (*abort) return;

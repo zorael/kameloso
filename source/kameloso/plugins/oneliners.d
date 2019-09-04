@@ -13,7 +13,7 @@ version(WithOnelinersPlugin):
 private:
 
 import kameloso.plugins.common;
-import lurk.defs;
+import dialect.defs;
 import kameloso.messaging;
 import kameloso.common : logger, settings;
 
@@ -25,7 +25,7 @@ struct OnelinersSettings
     @Enabler bool enabled = true;
 
     /++
-     +  Toggle whether or not a class of `lurk.defs.IRCUser.Class.whitelist`
+     +  Toggle whether or not a class of `dialect.defs.IRCUser.Class.whitelist`
      +  is enough to be allowed to modify oneliners.
      +/
     bool whitelistMayModify = true;
