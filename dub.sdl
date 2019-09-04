@@ -38,26 +38,26 @@ versions "AsAnApplication" \
 
 configuration "posix" {
 	platforms "posix"
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
+	dependency "requests" version="~>1.0.9"
 	versions "WithPlugins" "Colours" "Web"
 }
 configuration "windows" {
 	platforms "windows"
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web"
+	dependency "requests" version="~>1.0.9"
 }
 configuration "twitch" {
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
+	dependency "requests" version="~>1.0.9"
 }
 configuration "dev" {
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
+	dependency "requests" version="~>1.0.9"
 }
 configuration "vanilla" {
 	targetType "executable"
@@ -68,14 +68,14 @@ configuration "colours" {
 	versions "WithPlugins" "Colours"
 }
 configuration "web" {
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
 	versions "WithPlugins" "Web"
+	dependency "requests" version="~>1.0.9"
 }
 configuration "full" {
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
+	dependency "requests" version="~>1.0.9"
 }
 configuration "pluginless" {
 	targetType "executable"
@@ -85,10 +85,8 @@ configuration "pluginless-vanilla" {
 	targetType "executable"
 }
 configuration "unittest" {
-	dependency "requests" version="~>1.0.9"
 	targetType "executable"
-	sourcePaths "tests"
-	importPaths "tests"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
+	dependency "requests" version="~>1.0.9"
 }
