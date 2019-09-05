@@ -135,13 +135,13 @@ if (isOutputRange!(Sink, char[]))
 
     static if (printAll)
     {
-        import lu.core.traits : longestUnconfigurableMemberName, longestUnconfigurableMemberTypeName;
+        import kameloso.traits : longestUnconfigurableMemberName, longestUnconfigurableMemberTypeName;
         enum typewidth = max(minimumTypeWidth, (longestUnconfigurableMemberTypeName!Things.length + 1));
         enum initialWidth = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
     }
     else
     {
-        import lu.core.traits : longestMemberName, longestMemberTypeName;
+        import kameloso.traits : longestMemberName, longestMemberTypeName;
         enum typewidth = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
         enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
     }
