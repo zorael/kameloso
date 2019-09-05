@@ -28,7 +28,7 @@ version = PrefixedCommandsFallBackToNickname;
 private
 static if (__VERSION__ == 2079L)
 {
-    import std.traits : getSymbolsByUDA;
+    import lu.core.traits : getSymbolsByUDA;
 
     struct UDA_2079 {}
     struct Foo_2079
@@ -1056,7 +1056,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public bool isEnabled() const @property pure nothrow @nogc
     {
-        import std.traits : Unqual, getSymbolsByUDA, hasUDA;
+        import lu.core.traits : getSymbolsByUDA;
+        import std.traits : Unqual, hasUDA;
 
         bool retval = true;
 
@@ -1163,8 +1164,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import lu.core.string : contains, nom;
+        import lu.core.traits : getSymbolsByUDA;
         import std.meta : Filter, templateNot, templateOr;
-        import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
+        import std.traits : isSomeFunction, getUDAs, hasUDA;
 
         if (!isEnabled) return;
 
@@ -2066,8 +2068,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctCommands =
         {
+            import lu.core.traits : getSymbolsByUDA;
             import std.meta : Filter;
-            import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
+            import std.traits : getUDAs, hasUDA, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
 

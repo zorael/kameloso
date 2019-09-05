@@ -254,7 +254,8 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
     enum string allCTCPTypes = ()
     {
         import lu.core.string : beginsWith, strippedRight;
-        import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
+        import lu.core.traits : getSymbolsByUDA;
+        import std.traits : getUDAs, isSomeFunction;
 
         string allTypes;
 
