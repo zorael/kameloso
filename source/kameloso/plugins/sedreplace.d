@@ -28,8 +28,8 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 

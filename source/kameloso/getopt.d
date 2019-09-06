@@ -4,8 +4,8 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, IRCBot;
-import dialect.defs : IRCClient;
 import lu.common : Next;
+import dialect.defs : IRCClient;
 import std.typecons : No, Yes;
 
 @safe:
@@ -33,8 +33,8 @@ private:
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 {
-    import lu.serialisation : readConfigInto;
     import lu.core.meld : MeldingStrategy, meldInto;
+    import lu.serialisation : readConfigInto;
 
     IRCClient tempClient;
     CoreSettings tempSettings;

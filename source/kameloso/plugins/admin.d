@@ -20,8 +20,8 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.common : logger, settings;
 import kameloso.plugins.common;
+import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -303,8 +303,8 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import dialect.common : isValidChannel;
     import lu.core.string : stripped;
+    import dialect.common : isValidChannel;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
 
@@ -499,8 +499,8 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
     const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
-    import dialect.common : isValidNickname;
     import lu.core.string : contains, stripped;
+    import dialect.common : isValidNickname;
 
     /// Report result, either to the local terminal or to the IRC channel/sender
     void report(const AlterationResult result, const string id)
@@ -846,8 +846,8 @@ enum AlterationResult
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account)
 {
-    import lu.json : JSONStorage;
     import kameloso.thread : ThreadMessage;
+    import lu.json : JSONStorage;
     import std.concurrency : send;
     import std.json : JSONValue;
 
@@ -1203,8 +1203,8 @@ debug
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
 void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : contains, nom;
     import kameloso.thread : ThreadMessage, busMessage;
+    import lu.core.string : contains, nom;
     import std.stdio : stdout, writeln;
 
     if (!event.content.length) return;
@@ -1257,8 +1257,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     // Don't return if disabled, as it blocks us from re-enabling with verb set
 
     import kameloso.printing : printObject;
-    import lu.core.string : contains, nom, strippedRight;
     import kameloso.thread : BusMessage;
+    import lu.core.string : contains, nom, strippedRight;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);

@@ -7,10 +7,10 @@
  +/
 module kameloso.messaging;
 
-import dialect.defs;
 import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
 import lu.core.string : beginsWithOneOf;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;
@@ -624,8 +624,8 @@ void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
 ///
 unittest
 {
-    import lu.core.conv : Enum;
     import kameloso.thread : ThreadMessage;
+    import lu.core.conv : Enum;
     import std.concurrency : MessageMismatch;
     import std.typecons : Tuple;
 
@@ -774,8 +774,8 @@ void immediate(IRCPluginState state, const string line)
 ///
 unittest
 {
-    import lu.core.conv : Enum;
     import kameloso.thread : ThreadMessage;
+    import lu.core.conv : Enum;
     import std.meta : AliasSeq;
 
     IRCPluginState state;

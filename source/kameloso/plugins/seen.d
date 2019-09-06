@@ -431,8 +431,8 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 
     foreach (const signed; event.content.splitter(" "))
     {
-        import dialect.common : stripModesign;
         import lu.core.string : contains, nom;
+        import dialect.common : stripModesign;
 
         string nickname = signed;
 
@@ -517,9 +517,9 @@ void onEndOfList(SeenPlugin plugin)
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
-    import dialect.common : isValidNickname;
     import lu.core.string : contains;
     import lu.common : timeSince;
+    import dialect.common : isValidNickname;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;
@@ -907,8 +907,8 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
     if (!plugin.isEnabled) return;
     if (header != "seen") return;
 
-    import lu.core.string : strippedRight;
     import kameloso.thread : BusMessage;
+    import lu.core.string : strippedRight;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);

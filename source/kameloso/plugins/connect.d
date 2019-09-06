@@ -17,10 +17,10 @@ version(WithConnectService):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.format : format;
 import std.typecons : Flag, No, Yes;

@@ -1824,8 +1824,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
-        import lu.serialisation : readConfigInto;
         import lu.core.meld : MeldingStrategy, meldInto;
+        import lu.serialisation : readConfigInto;
         import std.traits : hasUDA;
 
         string[][string] invalidEntries;
@@ -2826,9 +2826,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import dialect.common : IRCControlCharacter, stripModesign;
         import kameloso.irccolours : stripColours;
         import lu.core.string : contains, nom;
+        import dialect.common : IRCControlCharacter, stripModesign;
         import std.algorithm.iteration : splitter;
 
         auto names = event.content.splitter(" ");
@@ -3287,6 +3287,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 {
                     import dialect.common : setMode;
                     import std.conv : to;
+
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.client.server);
                 }
@@ -3898,8 +3899,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /// Reusable mixin that catches WHOIS results.
     void whoisFiberDelegate()
     {
-        import dialect.defs : IRCEvent, IRCUser;
         import kameloso.thread : CarryingFiber;
+        import dialect.defs : IRCEvent, IRCUser;
         import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);

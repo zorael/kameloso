@@ -18,9 +18,9 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.common;
 import kameloso.irccolours;
+import dialect.defs;
 
 version(Colours) import kameloso.terminal : TerminalForeground;
 
@@ -2193,9 +2193,9 @@ version(Colours)
 version(TwitchSupport)
 void highlightEmotes(ref IRCEvent event, const bool colourful)
 {
-    import kameloso.terminal : colourWith;
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
+    import kameloso.terminal : colourWith;
     import lu.core.string : contains;
     import std.array : Appender;
 

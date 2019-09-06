@@ -15,11 +15,11 @@ version(WithWebtitlesPlugin):
 
 private:
 
+import kameloso.plugins.common;
+import kameloso.irccolours : ircBold;
 import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
-import kameloso.plugins.common;
 import dialect.defs;
-import kameloso.irccolours : ircBold;
 
 import requests : Request;
 

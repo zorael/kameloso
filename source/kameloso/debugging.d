@@ -348,8 +348,8 @@ if (isOutputRange!(Sink, char[]))
 
 unittest
 {
-    import dialect.parsing : IRCParser;
     import lu.core.string : tabs;
+    import dialect.parsing : IRCParser;
     import std.array : Appender;
     import std.format : formattedWrite;
 
@@ -403,9 +403,9 @@ unittest
 void generateAsserts(ref IRCBot bot) @system
 {
     import kameloso.common : logger;
-    import dialect.defs : IRCServer;
     import kameloso.printing : printObjects;
     import lu.core.string : contains, nom, stripped;
+    import dialect.defs : IRCServer;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
@@ -497,8 +497,8 @@ void generateAsserts(ref IRCBot bot) @system
 
         while ((input = readln()) !is null)
         {
-            import dialect.common : IRCParseException;
             import lu.core.string : beginsWithOneOf;
+            import dialect.common : IRCParseException;
 
             if (*abort) return;
 

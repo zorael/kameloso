@@ -14,10 +14,10 @@ version(WithBashQuotesPlugin):
 
 private:
 
-import kameloso.common : settings;
 import kameloso.plugins.common;
-import dialect.defs;
+import kameloso.common : settings;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 

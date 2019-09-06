@@ -16,11 +16,11 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : ircBold, ircColourByHash;
-import lu.json : JSONStorage;
 import kameloso.messaging;
+import lu.json : JSONStorage;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -248,8 +248,8 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign;
     import lu.core.string : nom;
-    import std.json : JSONException;
     import std.format : format;
+    import std.json : JSONException;
     import std.typecons : No, Yes;
 
     string slice = event.content;  // need mutable

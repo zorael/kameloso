@@ -13,9 +13,9 @@ version(WithOnelinersPlugin):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
-import kameloso.messaging;
 import kameloso.common : logger, settings;
+import kameloso.messaging;
+import dialect.defs;
 
 
 /// All Oneliner plugin runime settings.

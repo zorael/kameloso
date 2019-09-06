@@ -4,8 +4,8 @@
  +/
 module kameloso.common;
 
-import dialect.defs : IRCClient;
 import lu.core.uda;
+import dialect.defs : IRCClient;
 
 import core.time : Duration, seconds;
 

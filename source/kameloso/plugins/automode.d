@@ -14,10 +14,10 @@ version(WithAutomodePlugin):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : No, Yes;
 
@@ -260,8 +260,8 @@ unittest
     "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import dialect.common : isValidChannel, isValidNickname;
     import lu.core.string : beginsWith, nom;
+    import dialect.common : isValidChannel, isValidNickname;
     import std.algorithm.searching : count;
     import std.uni : toLower;
 

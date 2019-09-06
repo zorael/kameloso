@@ -4,10 +4,10 @@
 module kameloso.kameloso;
 
 import kameloso.common;
-import dialect;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import lu.common : Next;
+import dialect;
 
 version(ProfileGC)
 {
@@ -1202,9 +1202,9 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
+    import lu.common : FileTypeMismatchException;
     import lu.serialisation : ConfigurationFileReadFailureException,
         ConfigurationFileParsingException;
-    import lu.common : FileTypeMismatchException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
@@ -1274,9 +1274,9 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
  +/
 Next tryConnect(ref IRCBot bot)
 {
-    import lu.net : ConnectionAttempt, connectFiber;
     import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
     import kameloso.thread : interruptibleSleep;
+    import lu.net : ConnectionAttempt, connectFiber;
     import std.concurrency : Generator;
 
     alias State = ConnectionAttempt.State;
@@ -1396,8 +1396,8 @@ Next tryConnect(ref IRCBot bot)
  +/
 Next tryResolve(ref IRCBot bot)
 {
-    import lu.net : ResolveAttempt, resolveFiber;
     import kameloso.constants : Timeout;
+    import lu.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
 
     string infotint, logtint, warningtint, errortint;

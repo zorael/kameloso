@@ -439,8 +439,9 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
  +/
 string stripEffects(const string line)
 {
-    import dialect.common : I = IRCControlCharacter;
     import std.array : replace;
+
+    alias I = IRCControlCharacter;
 
     enum boldCode = "" ~ I.bold;
     enum italicsCode = "" ~ I.italics;

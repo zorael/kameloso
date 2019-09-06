@@ -17,12 +17,12 @@ version(WithPipelinePlugin):
 
 private:
 
+import kameloso.plugins.common;
 import kameloso.common;
 import kameloso.thread : ThreadMessage;
-import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.messaging;
 import lu.common;
+import dialect.defs;
 
 import std.concurrency;
 import std.stdio : File;
@@ -135,8 +135,8 @@ void pipereader(shared IRCPluginState newState, const string filename)
 
             if (line[0] == ':')
             {
-                import lu.core.string : contains, nom;
                 import kameloso.thread : ThreadMessage, busMessage;
+                import lu.core.string : contains, nom;
 
                 if (line.contains(' '))
                 {

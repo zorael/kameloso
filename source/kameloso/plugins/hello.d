@@ -3,8 +3,8 @@ module kameloso.plugins.hello;
 version(none):  // Remove to enable
 
 import kameloso.plugins.common;
-import dialect.defs;
 import kameloso.messaging;
+import dialect.defs;
 
 @(IRCEvent.Type.CHAN)     // This function should trigger on channel messages
 @(PrivilegeLevel.ignore)  // ...sent by anyone, ignoring whether they're whitelisted or not etc
