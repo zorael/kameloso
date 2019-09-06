@@ -7,7 +7,6 @@
  +/
 module kameloso.plugins.common;
 
-import dialect.common : IRCClient;
 import dialect.defs;
 
 import core.thread : Fiber;
@@ -358,7 +357,7 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `dialect.common.IRCClient`, containing information pertaining
+     +  The current `dialect.defs.IRCClient`, containing information pertaining
      +  to the bot in the context of the current (alive) connection.
      +/
     IRCClient client;
@@ -663,7 +662,7 @@ enum PrivilegeLevel
     anyone = 1, /// Anyone may trigger this event.
     registered = 2,  /// Anyone registered with services may trigger this event.
     /++
-     +  Only those of the `dialect.common.IRCClient.Class.whitelist`
+     +  Only those of the `dialect.defs.IRCClient.Class.whitelist`
      +  class may trigger this event.
      +/
     whitelist = 3,
@@ -2529,7 +2528,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Replays any queued requests awaiting the result of a WHOIS. Before that,
      +  records the user's services account by saving it to the user's
-     +  `dialect.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `dialect.defs.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
      +  `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
@@ -3518,7 +3517,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `dialect.common.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +

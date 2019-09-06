@@ -22,10 +22,9 @@ private:
 
 import kameloso.common : logger, settings;
 import kameloso.plugins.common;
-import dialect.common : IRCClient;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
-import dialect.defs;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
@@ -290,7 +289,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddHome
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `dialect.common.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
@@ -418,7 +417,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `dialect.common.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -462,7 +461,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `dialect.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
@@ -744,7 +743,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `dialect.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
@@ -1417,7 +1416,7 @@ private:
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
 
-    /// Snapshot of the previous `dialect.common.IRCClient`.
+    /// Snapshot of the previous `dialect.defs.IRCClient`.
     debug IRCClient previousClient;
 
     /// File with user definitions. Must be the same as in persistence.d.

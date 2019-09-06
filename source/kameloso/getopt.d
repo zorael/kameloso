@@ -4,7 +4,7 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, IRCBot;
-import dialect.common : IRCClient;
+import dialect.defs : IRCClient;
 import lu.common : Next;
 import std.typecons : No, Yes;
 
@@ -15,7 +15,7 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read `kameloso.common.CoreSettings` and `dialect.common.IRCClient` from file
+ +  Read `kameloso.common.CoreSettings` and `dialect.defs.IRCClient` from file
  +  into temporaries, then meld them into the real ones, into which the
  +  command-line arguments will have been applied.
  +
@@ -28,7 +28,7 @@ private:
  +  ---
  +
  +  Params:
- +      client = Reference `dialect.common.IRCClient` to apply changes to.
+ +      client = Reference `dialect.defs.IRCClient` to apply changes to.
  +      settings = Reference `kameloso.common.CoreSettings` to apply changes to.
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
@@ -244,7 +244,7 @@ void printHelp(GetoptResult results) @system
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      client = Reference to the current `dialect.common.IRCClient`.
+ +      client = Reference to the current `dialect.defs.IRCClient`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +

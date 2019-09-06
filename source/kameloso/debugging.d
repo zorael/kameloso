@@ -5,7 +5,6 @@
 module kameloso.debugging;
 
 import kameloso.common : IRCBot;
-import dialect.common : IRCClient;
 import dialect.defs;
 
 import std.range.primitives : isOutputRange;
@@ -18,7 +17,7 @@ debug:
 // formatClientAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `dialect.common.IRCClient`, including instantiating a fresh one.
+ +  `dialect.defs.IRCClient`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
@@ -30,7 +29,7 @@ debug:
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      client = `dialect.common.IRCClient` to simulate the assignment of.
+ +      client = `dialect.defs.IRCClient` to simulate the assignment of.
  +/
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 if (isOutputRange!(Sink, char[]))

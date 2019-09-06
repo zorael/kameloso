@@ -4,7 +4,7 @@
  +/
 module kameloso.common;
 
-import dialect.common : IRCClient;
+import dialect.defs : IRCClient;
 import lu.core.uda;
 
 import core.time : Duration, seconds;
@@ -522,7 +522,7 @@ struct IRCBot
      +  update all plugins to have an updated copy of it.
      +
      +  Params:
-     +      client = `dialect.common.IRCClient` to propagate to all plugins.
+     +      client = `dialect.defs.IRCClient` to propagate to all plugins.
      +/
     void propagateClient(IRCClient client) pure nothrow @nogc
     {
@@ -885,7 +885,7 @@ unittest
  +  the same value (if they're empty).
  +
  +  Params:
- +      client = Reference to the `dialect.common.IRCClient` to complete.
+ +      client = Reference to the `dialect.defs.IRCClient` to complete.
  +/
 void completeClient(ref IRCClient client)
 out (; (client.nickname.length), "Empty client nickname")

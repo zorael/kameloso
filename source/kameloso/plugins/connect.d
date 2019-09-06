@@ -102,7 +102,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `dialect.common.IRCClient` of
+ +  Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
  +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
@@ -126,7 +126,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the arrays in
- +  `dialect.common.IRCClient` of the current `ConnectService`'s
+ +  `dialect.defs.IRCClient` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Params:
@@ -707,15 +707,15 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `dialect.common.IRCClient.account` and `dialect.common.IRCClient.password`,
+ +  `dialect.defs.IRCClient.account` and `dialect.defs.IRCClient.password`,
  +  then sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(account \0 account \0 password)`
  +
- +  ...where `dialect.common.IRCClient.account` is the services account name and
- +  `dialect.common.IRCClient.password` is the account password.
+ +  ...where `dialect.defs.IRCClient.account` is the services account name and
+ +  `dialect.defs.IRCClient.password` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
