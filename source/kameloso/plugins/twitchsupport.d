@@ -667,6 +667,28 @@ user-type
                 event.type = Type.TWITCH_EXTENDSUB;
                 break;
 
+            case "highlighted-message":
+/+
+badge-info                         ""
+badges                             "bits-leader/1"
+color                              ""
+display-name                       "racken771"
+emotes                             ""
+flags                              ""
+id                                 "dcba6d0e-931b-483a-9be8-74547ec12f31"
+mod                                "0"
+msg-id                             "highlighted-message"
+room-id                            "176370525"
+subscriber                         "0"
+tmi-sent-ts                        "1567811080611"
+turbo                              "0"
+user-id                            "243530867"
+user-type                          ""
++/
+                // These are PRIVMSGs
+                event.aux = value;
+                break;
+
             /*case "bad_ban_admin":
             case "bad_ban_anon":
             case "bad_ban_broadcaster":
