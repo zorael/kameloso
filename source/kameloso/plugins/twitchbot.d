@@ -21,7 +21,7 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import dialect.defs;
 import kameloso.messaging;
 import kameloso.common : logger, settings;
 
@@ -90,7 +90,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
-        import kameloso.string : contains;
+        import lu.core.string : contains;
         import std.algorithm.searching : canFind;
 
         if (const channelRegulars = event.channel in plugin.regularsByChannel)
@@ -147,7 +147,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onUserState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     // We're implicitly moderator if we match the channel name, so exempt that case
 
@@ -336,7 +336,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandPhraseChan
 /++
  +  Bans, unbans, lists or clears banned phrases for the current channel.
- +  `kameloso.irc.defs.IRCEvent.Type.CHAN` wrapper.
+ +  `dialect.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
@@ -356,7 +356,7 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandPhraseQuery
 /++
  +  Bans, unbans, lists or clears banned phrases for the specified target channel.
- +  `kameloso.irc.defs.IRCEvent.Type.QUERY` wrapper.
+ +  `dialect.defs.IRCEvent.Type.QUERY` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
@@ -367,7 +367,7 @@ void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
     "$command [target channel if query] [ban|unban|list|clear]")
 void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -395,12 +395,12 @@ void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +      targetChannel = The channel we're handling phrase bans for.
  +/
 void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.format : format;
 
     string slice = event.content;  // mutable
@@ -433,7 +433,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 
         if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.iteration : splitter;
             import std.conv : ConvException, to;
 
@@ -477,7 +477,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
     case "list":
         if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -547,7 +547,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 // onCommandTimerChan
 /++
  +  Adds, deletes, lists or clears timers for the specified target channel.
- +  `kameloso.irc.defs.IRCEvent.Type.CHAN` wrapper.
+ +  `dialect.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
  +/
@@ -567,7 +567,7 @@ void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandTimerQuery
 /++
  +  Adds, deletes, lists or clears timers for the specified target channel.
- +  `kameloso.irc.defs.IRCEvent.Type.QUERY` wrapper.
+ +  `dialect.defs.IRCEvent.Type.QUERY` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
  +/
@@ -578,7 +578,7 @@ void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
     "$command [target channel if query] [add|del|list|clear]")
 void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -606,12 +606,12 @@ void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +      targetChannels = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.format : format;
 
     string slice = event.content;  // mutable
@@ -679,7 +679,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
 
         if (auto timerDefs = targetChannel in plugin.timerDefsByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.iteration : splitter;
             import std.conv : ConvException, to;
 
@@ -726,7 +726,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
     case "list":
         if (const timers = targetChannel in plugin.timerDefsByChannel)
         {
-            import kameloso.string : stripped;
+            import lu.core.string : stripped;
             import std.algorithm.comparison : min;
 
             enum toDisplay = 10;
@@ -970,7 +970,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 in ((event.channel in plugin.activeChannels), "Tried to start a vote in what is probably a non-home channel")
 do
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
     import std.conv : ConvException, to;
@@ -1020,7 +1020,7 @@ do
 
     foreach (immutable rawChoice; slice.splitter(" "))
     {
-        import kameloso.string : strippedRight;
+        import lu.core.string : strippedRight;
 
         // Strip any trailing commas
         immutable choice = rawChoice.strippedRight(',');
@@ -1068,7 +1068,7 @@ do
 
                 foreach (const result; sorted)
                 {
-                    import kameloso.string : plurality;
+                    import lu.core.string : plurality;
 
                     immutable noun = result.value.plurality("vote", "votes");
                     immutable double voteRatio = cast(double)result.value / total;
@@ -1225,7 +1225,7 @@ void onCommandRegularChan(TwitchBotPlugin plugin, const IRCEvent event)
     "$command [add|del|list] [nickname]")
 void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -1253,12 +1253,12 @@ void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +      targetChannel = The channel we're adding/listing/removing regulars to/from.
  +/
 void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.uni : toLower;
@@ -1376,7 +1376,7 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    import kameloso.json : JSONStorage, populateFromJSON;
+    import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
     with (plugin)
@@ -1431,7 +1431,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
     import std.path : baseName;
 
@@ -1601,7 +1601,7 @@ void populateTimers(TwitchBotPlugin plugin, const string filename)
 }
 
 
-import kameloso.json : JSONStorage;
+import lu.json : JSONStorage;
 
 // timerDefsToJSON
 /++
@@ -1647,7 +1647,7 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // postprocess
 /++
- +  Postprocesses `kameloso.irc.defs.IRCEvent`s, changing the user classes to
+ +  Postprocesses `dialect.defs.IRCEvent`s, changing the user classes to
  +  reflect whether or not a user is a regular.
  +
  +  The Persistence service doesn't have access to `TwitchBotPlugin.regularsByChannel`
@@ -1766,14 +1766,14 @@ private:
 
     /++
      +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does nothing on non-Twitch servers. Also filters `kameloso.irc.defs.IRCEvent.Type.CHAN`
+     +  plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
      +  events to only trigger on active channels (that have its `Channel.enabled`
      +  set to true).
      +
      +  The function to call is `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/
@@ -1788,7 +1788,7 @@ private:
 
         if (event.type == IRCEvent.Type.CHAN)
         {
-            import kameloso.string : beginsWith;
+            import lu.core.string : beginsWith;
 
             if (event.content.beginsWith(settings.prefix) &&
                 (event.content.length > settings.prefix.length))

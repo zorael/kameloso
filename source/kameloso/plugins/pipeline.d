@@ -3,7 +3,7 @@
  +  which you can pipe text and have it be sent verbatim to the server.
  +
  +  It has no commands; indeed, it doesn't listen to
- +  `kameloso.irc.defs.IRCEvent`s at all, only to what is sent to it via the
+ +  `dialect.defs.IRCEvent`s at all, only to what is sent to it via the
  +  named FIFO pipe.
  +
  +  This requires version `Posix`, which is true for UNIX-like systems (like
@@ -17,11 +17,12 @@ version(WithPipelinePlugin):
 
 private:
 
+import kameloso.plugins.common;
 import kameloso.common;
 import kameloso.thread : ThreadMessage;
-import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.messaging;
+import lu.common;
+import dialect.defs;
 
 import std.concurrency;
 import std.stdio : File;
@@ -127,15 +128,15 @@ void pipereader(shared IRCPluginState newState, const string filename)
         foreach (immutable line; fifo.byLineCopy)
         {
             import kameloso.messaging : raw, quit;
-            import kameloso.string : beginsWith;
+            import lu.core.string : beginsWith;
             import std.uni : toLower;
 
             if (!line.length) break;
 
             if (line[0] == ':')
             {
-                import kameloso.string : contains, nom;
                 import kameloso.thread : ThreadMessage, busMessage;
+                import lu.core.string : contains, nom;
 
                 if (line.contains(' '))
                 {

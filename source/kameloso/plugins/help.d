@@ -12,9 +12,9 @@ version(WithHelpPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
-import kameloso.messaging;
 import kameloso.common : logger, settings;
+import kameloso.messaging;
+import dialect.defs;
 
 
 // HelpSettings
@@ -45,7 +45,7 @@ struct HelpSettings
  +  as an argument.
  +
  +  Once we have the list we format it nicely and send it back to the requester,
- +  which we remember since we saved the original `kameloso.irc.defs.IRCEvent`.
+ +  which we remember since we saved the original `dialect.defs.IRCEvent`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -61,7 +61,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
         import core.thread : Fiber;
         import std.algorithm.sorting : sort;
         import std.format : format;
@@ -96,7 +96,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                         if (description.syntax.length)
                         {
-                            import kameloso.string : beginsWith;
+                            import lu.core.string : beginsWith;
                             import std.array : replace;
 
                             immutable udaSyntax = description.syntax

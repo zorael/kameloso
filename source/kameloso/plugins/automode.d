@@ -14,10 +14,10 @@ version(WithAutomodePlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : No, Yes;
 
@@ -50,7 +50,7 @@ struct AutomodeSettings
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONValue;
 
     // Create a JSONStorage only to save it
@@ -67,7 +67,7 @@ void saveAutomodes(AutomodePlugin plugin)
  +/
 void initResources(AutomodePlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -94,7 +94,7 @@ void initResources(AutomodePlugin plugin)
  +  Potentially applies an automode, depending on the definitions and the user
  +  triggering the function.
  +
- +  Different `kameloso.irc.defs.IRCEvent.Type`s have to be handled differently,
+ +  Different `dialect.defs.IRCEvent.Type`s have to be handled differently,
  +  as the triggering user may be either the sender or the target.
  +/
 @(IRCEvent.Type.ACCOUNT)
@@ -225,7 +225,7 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
 
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.concurrency;
     import std.format : format;
 
@@ -260,8 +260,8 @@ unittest
     "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : isValidChannel, isValidNickname;
-    import kameloso.string : beginsWith, nom;
+    import lu.core.string : beginsWith, nom;
+    import dialect.common : isValidChannel, isValidNickname;
     import std.algorithm.searching : count;
     import std.uni : toLower;
 
@@ -378,7 +378,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     "$command [channel] [account]")
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
+    import lu.core.string : nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.uni : toLower;
@@ -478,7 +478,7 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(AutomodePlugin plugin)
 {
-    import kameloso.json : JSONStorage, populateFromJSON;
+    import lu.json : JSONStorage, populateFromJSON;
 
     with (plugin)
     {
@@ -499,7 +499,7 @@ void onEndOfMotd(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 void onMode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : containsNickname;
+    import dialect.common : containsNickname;
     import std.algorithm.searching : canFind;
 
     if (!event.content.containsNickname(plugin.state.client.nickname)) return;
@@ -538,7 +538,7 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
  +/
 void pruneChannels(ref string[string][string] automodes)
 {
-    import kameloso.common : pruneAA;
+    import lu.common : pruneAA;
     pruneAA(automodes);
 }
 
@@ -577,7 +577,7 @@ private:
      +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
      +          after verifying we're not on a Twitch server.
      +/

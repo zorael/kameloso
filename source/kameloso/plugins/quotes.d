@@ -16,11 +16,11 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : ircBold, ircColourByHash;
-import kameloso.json : JSONStorage;
 import kameloso.messaging;
+import lu.json : JSONStorage;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -122,8 +122,8 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
     "$command [nickname]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : isValidNickname, stripModesign;
-    import kameloso.string : stripped;
+    import dialect.common : isValidNickname, stripModesign;
+    import lu.core.string : stripped;
     import std.format : format;
     import std.json : JSONException;
 
@@ -246,10 +246,10 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 @Description("Creates a new quote.", "$command [nickname] [quote text]")
 void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : isValidNickname, stripModesign;
-    import kameloso.string : nom;
-    import std.json : JSONException;
+    import dialect.common : isValidNickname, stripModesign;
+    import lu.core.string : nom;
     import std.format : format;
+    import std.json : JSONException;
     import std.typecons : No, Yes;
 
     string slice = event.content;  // need mutable
@@ -390,7 +390,7 @@ void onEndOfMotd(QuotesPlugin plugin)
  +/
 void initResources(QuotesPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;

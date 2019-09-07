@@ -5,8 +5,7 @@
 module kameloso.debugging;
 
 import kameloso.common : IRCBot;
-import kameloso.irc.common : IRCClient;
-import kameloso.irc.defs;
+import dialect.defs;
 
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -18,7 +17,7 @@ debug:
 // formatClientAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `kameloso.irc.common.IRCClient`, including instantiating a fresh one.
+ +  `dialect.defs.IRCClient`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
@@ -30,7 +29,7 @@ debug:
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      client = `kameloso.irc.common.IRCClient` to simulate the assignment of.
+ +      client = `dialect.defs.IRCClient` to simulate the assignment of.
  +/
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 if (isOutputRange!(Sink, char[]))
@@ -152,7 +151,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
                 }
                 else static if (is(T == enum))
                 {
-                    import kameloso.string : nom;
+                    import lu.core.string : nom;
                     import std.algorithm.searching : count;
                     import std.traits : fullyQualifiedName;
 
@@ -194,7 +193,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
                     }
                 }
 
-                import kameloso.string : tabs;
+                import lu.core.string : tabs;
                 import std.format : formattedWrite;
                 sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
             }
@@ -209,7 +208,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
 ///
 unittest
 {
-    import kameloso.irc.parsing : IRCParser;
+    import dialect.parsing : IRCParser;
     import std.array : Appender;
 
     Appender!string sink;
@@ -309,7 +308,7 @@ assert((c == '#'), c.to!string);
 // formatEventAssertBlock
 /++
  +  Constructs assert statement blocks for each changed field of an
- +  `kameloso.irc.defs.IRCEvent`.
+ +  `dialect.defs.IRCEvent`.
  +
  +  Example:
  +  ---
@@ -320,12 +319,12 @@ assert((c == '#'), c.to!string);
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      event = `kameloso.irc.defs.IRCEvent` to construct assert statements for.
+ +      event = `dialect.defs.IRCEvent` to construct assert statements for.
  +/
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.string : tabs;
+    import lu.core.string : tabs;
     import std.format : format, formattedWrite;
 
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
@@ -349,8 +348,8 @@ if (isOutputRange!(Sink, char[]))
 
 unittest
 {
-    import kameloso.irc.parsing : IRCParser;
-    import kameloso.string : tabs;
+    import lu.core.string : tabs;
+    import dialect.parsing : IRCParser;
     import std.array : Appender;
     import std.format : formattedWrite;
 
@@ -390,7 +389,7 @@ unittest
 // generateAsserts
 /++
  +  Reads raw server strings from `stdin`, parses them into
- +  `kameloso.irc.defs.IRCEvent`s and constructs assert blocks of their contents.
+ +  `dialect.defs.IRCEvent`s and constructs assert blocks of their contents.
  +
  +  Example:
  +  ---
@@ -404,9 +403,9 @@ unittest
 void generateAsserts(ref IRCBot bot) @system
 {
     import kameloso.common : logger;
-    import kameloso.irc.defs : IRCServer;
     import kameloso.printing : printObjects;
-    import kameloso.string : contains, nom, stripped;
+    import lu.core.string : contains, nom, stripped;
+    import dialect.defs : IRCServer;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
@@ -416,7 +415,7 @@ void generateAsserts(ref IRCBot bot) @system
     with (IRCServer)
     with (bot)
     {
-        import kameloso.irc.parsing : IRCParser;  // Must be here or shadows IRCBot : IRCParser
+        import dialect.parsing : IRCParser;  // Must be here or shadows IRCBot : IRCParser
 
         parser = IRCParser.init;
 
@@ -432,8 +431,8 @@ void generateAsserts(ref IRCBot bot) @system
 
         try
         {
-            import kameloso.conv : Enum;
-            import kameloso.irc.common : typenumsOf;
+            import lu.core.conv : Enum;
+            import dialect.common : typenumsOf;
 
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
             parser.typenums = typenumsOf(daemon);
@@ -498,8 +497,8 @@ void generateAsserts(ref IRCBot bot) @system
 
         while ((input = readln()) !is null)
         {
-            import kameloso.irc.common : IRCParseException;
-            import kameloso.string : beginsWithOneOf;
+            import lu.core.string : beginsWithOneOf;
+            import dialect.common : IRCParseException;
 
             if (*abort) return;
 

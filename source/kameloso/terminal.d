@@ -694,7 +694,7 @@ version(Colours)
 string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
     (const string line, const string toInvert)
 {
-    import kameloso.irc.common : isValidNicknameCharacter;
+    import dialect.common : isValidNicknameCharacter;
     import std.array : Appender;
     import std.format : format;
     import std.string : indexOf;
@@ -983,7 +983,7 @@ do
 version(Colours)
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     alias FG = TerminalForeground;
 

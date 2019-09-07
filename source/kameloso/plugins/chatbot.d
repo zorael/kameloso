@@ -14,10 +14,10 @@ version(WithChatbotPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.common : settings;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 

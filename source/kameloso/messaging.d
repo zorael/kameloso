@@ -1,16 +1,16 @@
 /++
  +  Functions used to send messages to the server.
  +
- +  It does this by crafting `kameloso.irc.defs.IRCEvent`s from the passed
+ +  It does this by crafting `dialect.defs.IRCEvent`s from the passed
  +  arguments, then sends it to the concurrency message-reading parts of the
  +  main loop, which formats them into strings and sends them to the server.
  +/
 module kameloso.messaging;
 
-import kameloso.irc.defs;
 import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
-import kameloso.string : beginsWithOneOf;
+import lu.core.string : beginsWithOneOf;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;
@@ -76,7 +76,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -126,7 +126,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -149,7 +149,7 @@ unittest
  +  the arguments passed to it.
  +
  +  This reflects how channel messages and private messages are both the
- +  underlying same type; `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
+ +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
@@ -186,7 +186,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -257,7 +257,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -325,7 +325,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -376,7 +376,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -427,7 +427,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -478,7 +478,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -531,7 +531,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -582,7 +582,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -624,8 +624,8 @@ void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
 ///
 unittest
 {
-    import kameloso.conv : Enum;
     import kameloso.thread : ThreadMessage;
+    import lu.core.conv : Enum;
     import std.concurrency : MessageMismatch;
     import std.typecons : Tuple;
 
@@ -678,7 +678,7 @@ do
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -729,7 +729,7 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state,
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -774,8 +774,8 @@ void immediate(IRCPluginState state, const string line)
 ///
 unittest
 {
-    import kameloso.conv : Enum;
     import kameloso.thread : ThreadMessage;
+    import lu.core.conv : Enum;
     import std.meta : AliasSeq;
 
     IRCPluginState state;

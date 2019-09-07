@@ -1,0 +1,103 @@
+name "kameloso"
+description "IRC bot"
+authors "JR"
+copyright "Copyright © 2019, JR"
+license "MIT"
+targetType "executable"
+mainSourceFile "source/kameloso/main.d"
+dflags "-dip25" "-dip1008"
+libs "phobos2" platform="posix-dmd"
+
+x:ddoxFilterArgs "--unittest-examples" "--ex" "arsd."
+x:ddoxTool "scod"
+
+sourcePaths "source"
+importPaths "source"
+
+dependency "lu" version="~>0.0.2"
+dependency "dialect" version="==0.0.3"
+
+versions "AsAnApplication" \
+    "WithAdminPlugin" \
+    "WithAutomodePlugin" \
+    "WithBashQuotesPlugin" \
+    "WithChanQueriesService" \
+    "WithChatbotPlugin" \
+    "WithConnectService" \
+    "WithCTCPService" \
+    "WithHelpPlugin" \
+    "WithNotesPlugin" \
+    "WithOnelinersPlugin" \
+    "WithPersistenceService" \
+    "WithPipelinePlugin" \
+    "WithPrinterPlugin" \
+    "WithQuotesPlugin" \
+    "WithSedReplacePlugin" \
+    "WithSeenPlugin" \
+    "WithWebtitlesPlugin"
+
+configuration "posix" {
+	platforms "posix"
+	targetType "executable"
+	dependency "requests" version="~>1.0.9"
+	versions "WithPlugins" "Colours" "Web"
+	subConfiguration "dialect" "rich"
+}
+configuration "windows" {
+	platforms "windows"
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web"
+	dependency "requests" version="~>1.0.9"
+	subConfiguration "dialect" "rich"
+}
+configuration "twitch" {
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
+	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
+}
+configuration "dev" {
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
+        "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
+	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
+}
+configuration "vanilla" {
+	targetType "executable"
+	versions "WithPlugins"
+	subConfiguration "dialect" "rich"
+}
+configuration "colours" {
+	targetType "executable"
+	versions "WithPlugins" "Colours"
+	subConfiguration "dialect" "rich"
+}
+configuration "web" {
+	targetType "executable"
+	versions "WithPlugins" "Web"
+	dependency "requests" version="~>1.0.9"
+	subConfiguration "dialect" "rich"
+}
+configuration "full" {
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
+	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
+}
+configuration "pluginless" {
+	targetType "executable"
+	versions "Colours"
+	subConfiguration "dialect" "rich"
+}
+configuration "pluginless-vanilla" {
+	targetType "executable"
+	subConfiguration "dialect" "rich"
+}
+configuration "unittest" {
+	targetType "executable"
+	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
+        "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
+	dependency "requests" version="~>1.0.9"
+    subConfiguration "dialect" "twitch"
+}

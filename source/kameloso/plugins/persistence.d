@@ -1,14 +1,14 @@
 /++
  +  The Persistence service keeps track of all seen users, gathering as much
  +  information about them as possible, then injects them into
- +  `kameloso.irc.defs.IRCEvent`s when such information is not present.
+ +  `dialect.defs.IRCEvent`s when such information is not present.
  +
  +  This means that even if a service only refers to a user by nickname, things
  +  like his ident and address will be available to plugins as well, assuming
  +  the Persistence service had seen that previously.
  +
  +  It has no commands. It only does post-processing and doesn't handle
- +  `kameloso.irc.defs.IRCEvent`s in the normal sense at all.
+ +  `dialect.defs.IRCEvent`s in the normal sense at all.
  +
  +  It is mandatory for plugins to pick up user classes.
  +/
@@ -20,14 +20,14 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import dialect.defs;
 
 
 // postprocess
 /++
- +  Hijacks a reference to a `kameloso.irc.defs.IRCEvent` after parsing and
- +  fleshes out the `kameloso.irc.defs.IRCEvent.sender` and/or
- +  `kameloso.irc.defs.IRCEvent.target` fields, so that things like account names
+ +  Hijacks a reference to a `dialect.defs.IRCEvent` after parsing and
+ +  fleshes out the `dialect.defs.IRCEvent.sender` and/or
+ +  `dialect.defs.IRCEvent.target` fields, so that things like account names
  +  that are only sent sometimes carry over.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
@@ -62,7 +62,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                 if (stored)
                 {
-                    import kameloso.meld : MeldingStrategy, meldInto;
+                    import lu.core.meld : MeldingStrategy, meldInto;
 
                     // Twitch bot postprocess is run before this postprocess is.
                     // If it changes the user class, have it persist past our
@@ -131,7 +131,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 break;
             }
 
-            import kameloso.meld : MeldingStrategy, meldInto;
+            import lu.core.meld : MeldingStrategy, meldInto;
 
             // Meld into the stored user, and store the union in the event
             (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
@@ -161,7 +161,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
 // onQuit
 /++
- +  Removes a user's `kameloso.irc.defs.IRCUser` entry from the `users`
+ +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
  +  associative array of the current `PersistenceService`'s
  +  `kameloso.plugins.common.IRCPluginState` upon them disconnecting.
  +/
@@ -176,7 +176,7 @@ void onQuit(PersistenceService service, const IRCEvent event)
 /++
  +  Updates the entry of someone in the `users` associative array of the current
  +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` when they
- +  change nickname, to point to the new `kameloso.irc.defs.IRCUser`.
+ +  change nickname, to point to the new `dialect.defs.IRCUser`.
  +
  +  Removes the old entry.
  +/
@@ -254,7 +254,7 @@ void periodically(PersistenceService service)
 void reloadClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.common : logger;
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -334,7 +334,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
  +/
 void initResources(PersistenceService service)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
@@ -421,13 +421,13 @@ public:
 
 // PersistenceService
 /++
- +  The Persistence service melds new `kameloso.irc.defs.IRCUser`s (from
- +  post-processing new `kameloso.irc.defs.IRCEvent`s) with old records of themselves.
+ +  The Persistence service melds new `dialect.defs.IRCUser`s (from
+ +  post-processing new `dialect.defs.IRCEvent`s) with old records of themselves.
  +
  +  Sometimes the only bit of information about a sender (or target) embedded in
- +  an `kameloso.irc.defs.IRCEvent` may be his/her nickname, even though the
+ +  an `dialect.defs.IRCEvent` may be his/her nickname, even though the
  +  event before detailed everything, even including their account name. With
- +  this service we aim to complete such `kameloso.irc.defs.IRCUser` entries as
+ +  this service we aim to complete such `dialect.defs.IRCUser` entries as
  +  the union of everything we know from previous events.
  +
  +  It only needs part of `kameloso.plugins.common.UserAwareness` for minimal

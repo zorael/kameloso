@@ -28,8 +28,8 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -320,7 +320,7 @@ unittest
 @(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : beginsWith, stripped;
+    import lu.core.string : beginsWith, stripped;
     import std.datetime.systime : Clock;
 
     immutable stripped_ = event.content.stripped;

@@ -20,12 +20,11 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.common : logger, settings;
 import kameloso.plugins.common;
-import kameloso.irc.common : IRCClient;
+import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
-import kameloso.irc.defs;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
@@ -37,7 +36,7 @@ import std.typecons : Flag, No, Yes;
  +/
 struct AdminSettings
 {
-    import kameloso.uda : Unconfigurable;
+    import lu.core.uda : Unconfigurable;
 
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -110,7 +109,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
-        import kameloso.string : contains;
+        import lu.core.string : contains;
 
         if (event.raw.contains(1))
         {
@@ -151,7 +150,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Prints the details of one or more specific, supplied users to the local terminal.
  +
- +  It basically prints the matching `kameloso.irc.defs.IRCUser`.
+ +  It basically prints the matching `dialect.defs.IRCUser`.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -261,7 +260,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandQuit
 /++
- +  Sends a `kameloso.irc.defs.IRCEvent.Type.QUIT` event to the server.
+ +  Sends a `dialect.defs.IRCEvent.Type.QUIT` event to the server.
  +
  +  If any extra text is following the "`quit`" prefix, it uses that as the quit
  +  reason, otherwise it falls back to the default as specified in the configuration file.
@@ -290,7 +289,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddHome
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
@@ -304,8 +303,8 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : isValidChannel;
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
+    import dialect.common : isValidChannel;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
 
@@ -418,7 +417,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -430,7 +429,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @Description("Removes a channel from the list of homes and leaves it.", "$command [channel]")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
 
@@ -462,7 +461,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
@@ -479,7 +478,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     "$command [account to whitelist]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     plugin.lookupEnlist(event.content.stripped, "whitelist", event);
 }
 
@@ -494,14 +493,14 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +      plugin = The current `AdminPlugin`.
  +      specified = The nickname or account to white-/blacklist.
  +      list = Which of "whitelist" or "blacklist" to add to.
- +      event = Optional instigating `kameloso.irc.defs.IRCEvent`.
+ +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
     const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
-    import kameloso.irc.common : isValidNickname;
-    import kameloso.string : contains, stripped;
+    import lu.core.string : contains, stripped;
+    import dialect.common : isValidNickname;
 
     /// Report result, either to the local terminal or to the IRC channel/sender
     void report(const AlterationResult result, const string id)
@@ -651,7 +650,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
  +      plugin = The current `AdminPlugin`.
  +      account = The account to delist as whitelisted/blacklisted.
  +      list = Which of "whitelist" or "blacklist" to remove from.
- +      event = Optional instigating `kameloso.irc.defs.IRCEvent`.
+ +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const IRCEvent event = IRCEvent.init)
@@ -744,7 +743,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
@@ -760,7 +759,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
     "$command [account to remove from whitelist]")
 void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     plugin.delist(event.content.stripped, "whitelist", event);
 }
 
@@ -784,7 +783,7 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
     "$command [account to blacklist]")
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     plugin.lookupEnlist(event.content.stripped, "blacklist", event);
 }
 
@@ -806,7 +805,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     "$command [account to remove from whitelist]")
 void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     plugin.delist(event.content.stripped, "blacklist", event);
 }
 
@@ -847,8 +846,8 @@ enum AlterationResult
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account)
 {
-    import kameloso.json : JSONStorage;
     import kameloso.thread : ThreadMessage;
+    import lu.json : JSONStorage;
     import std.concurrency : send;
     import std.json : JSONValue;
 
@@ -1204,8 +1203,8 @@ debug
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
 void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains, nom;
     import kameloso.thread : ThreadMessage, busMessage;
+    import lu.core.string : contains, nom;
     import std.stdio : stdout, writeln;
 
     if (!event.content.length) return;
@@ -1258,8 +1257,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     // Don't return if disabled, as it blocks us from re-enabling with verb set
 
     import kameloso.printing : printObject;
-    import kameloso.string : contains, nom, strippedRight;
     import kameloso.thread : BusMessage;
+    import lu.core.string : contains, nom, strippedRight;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
@@ -1417,7 +1416,7 @@ private:
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
 
-    /// Snapshot of the previous `kameloso.irc.common.IRCClient`.
+    /// Snapshot of the previous `dialect.defs.IRCClient`.
     debug IRCClient previousClient;
 
     /// File with user definitions. Must be the same as in persistence.d.

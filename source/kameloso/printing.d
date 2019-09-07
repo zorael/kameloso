@@ -37,7 +37,7 @@ public:
  +
  +  Params:
  +      printAll = Whether or not to also display members marked as
- +          `kameloso.uda.Unconfigurable`, usually transitive information that
+ +          `lu.core.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
@@ -101,7 +101,7 @@ alias printObject = printObjects;
  +
  +  Params:
  +      printAll = Whether or not to also display members marked as
- +          `kameloso.uda.Unconfigurable`, usually transitive information that
+ +          `lu.core.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
@@ -152,7 +152,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable n, thing; things)
     {
-        import kameloso.string : stripSuffix;
+        import lu.core.string : stripSuffix;
         import std.format : formattedWrite;
         import std.traits : Unqual;
 
@@ -170,8 +170,8 @@ if (isOutputRange!(Sink, char[]))
 
         foreach (immutable i, member; thing.tupleof)
         {
-            import kameloso.traits : isConfigurableVariable;
-            import kameloso.uda : Hidden, Unconfigurable;
+            import lu.core.traits : isConfigurableVariable;
+            import lu.core.uda : Hidden, Unconfigurable;
             import std.traits : hasUDA, isAssociativeArray, isType;
 
             enum shouldNormallyBePrinted = !isType!member &&
@@ -183,7 +183,7 @@ if (isOutputRange!(Sink, char[]))
 
             static if (shouldNormallyBePrinted || shouldMaybeBePrinted)
             {
-                import kameloso.traits : isTrulyString;
+                import lu.core.traits : isTrulyString;
                 import std.traits : isArray;
 
                 alias T = Unqual!(typeof(member));
@@ -241,7 +241,7 @@ if (isOutputRange!(Sink, char[]))
                         immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
                         immutable typeCode = bright ? F.lightcyan : F.cyan;
 
-                        import kameloso.traits : UnqualArray;
+                        import lu.core.traits : UnqualArray;
 
                         sink.formattedWrite(arrayPattern,
                             typeCode.colour, typewidth, UnqualArray!T.stringof,
@@ -260,7 +260,7 @@ if (isOutputRange!(Sink, char[]))
                             enum arrayPattern = "%*s %-*s%s(%d)\n";
                         }
 
-                        import kameloso.traits : UnqualArray;
+                        import lu.core.traits : UnqualArray;
 
                         sink.formattedWrite(arrayPattern,
                             typewidth, UnqualArray!T.stringof,
@@ -336,7 +336,7 @@ if (isOutputRange!(Sink, char[]))
 ///
 @system unittest
 {
-    import kameloso.string : contains;
+    import lu.core.string : contains;
     import std.array : Appender;
 
     struct Struct
@@ -506,7 +506,7 @@ if (isOutputRange!(Sink, char[]))
  +
  +  Params:
  +      printAll = Whether or not to also display members marked as
- +          `kameloso.uda.Unconfigurable`, usually transitive information that
+ +          `lu.core.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.

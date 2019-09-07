@@ -1,8 +1,8 @@
 /++
- +  The Printer plugin takes incoming `kameloso.irc.defs.IRCEvent`s, formats them
+ +  The Printer plugin takes incoming `dialect.defs.IRCEvent`s, formats them
  +  into being easily readable and prints them to the screen, optionally with colours.
  +
- +  It has no commands; all `kameloso.irc.defs.IRCEvent`s will be parsed and
+ +  It has no commands; all `dialect.defs.IRCEvent`s will be parsed and
  +  printed, excluding certain types that were deemed too spammy. Print them as
  +  well by disabling `PrinterSettings.filterMost`.
  +
@@ -18,9 +18,9 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.common;
 import kameloso.irccolours;
+import dialect.defs;
 
 version(Colours) import kameloso.terminal : TerminalForeground;
 
@@ -843,7 +843,7 @@ void commitLog(ref LogLineBuffer buffer)
 // onISUPPORT
 /++
  +  Prints information about the current server as we gain details of it from an
- +  `kameloso.irc.defs.IRCEvent.Type.RPL_ISUPPORT` event.
+ +  `dialect.defs.IRCEvent.Type.RPL_ISUPPORT` event.
  +
  +  Set a flag so we only print this information once; (ISUPPORTS can/do stretch
  +  across several events.)
@@ -881,7 +881,7 @@ void onISUPPORT(PrinterPlugin plugin)
             }
         }
 
-        import kameloso.conv : Enum;
+        import lu.core.conv : Enum;
         logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
             infotint, networkName, logtint,
             infotint, Enum!(IRCServer.Daemon).toString(daemon),
@@ -963,15 +963,15 @@ unittest
 
 // formatMessageMonochrome
 /++
- +  Formats an `kameloso.irc.defs.IRCEvent` into an output range sink, in monochrome.
+ +  Formats an `dialect.defs.IRCEvent` into an output range sink, in monochrome.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `kameloso.irc.defs.IRCEvent` into.
- +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
+ +      sink = Output range to format the `dialect.defs.IRCEvent` into.
+ +      event = The `dialect.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
  +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -980,7 +980,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -1100,7 +1100,7 @@ if (isOutputRange!(Sink, char[]))
                 case CHAN:
                 case EMOTE:
                 case TWITCH_SUBGIFT:
-                    import kameloso.irc.common : containsNickname;
+                    import dialect.common : containsNickname;
                     if (content.containsNickname(plugin.state.client.nickname))
                     {
                         // Nick was mentioned (certain)
@@ -1258,15 +1258,15 @@ unittest
 
 // formatMessageColoured
 /++
- +  Formats an `kameloso.irc.defs.IRCEvent` into an output range sink, coloured.
+ +  Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `kameloso.irc.defs.IRCEvent` into.
- +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
+ +      sink = Output range to format the `dialect.defs.IRCEvent` into.
+ +      event = The `dialect.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
  +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -1278,7 +1278,7 @@ if (isOutputRange!(Sink, char[]))
 {
     import kameloso.terminal : FG = TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
@@ -1335,7 +1335,7 @@ if (isOutputRange!(Sink, char[]))
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
                 import kameloso.terminal : truecolour;
-                import kameloso.conv : numFromHex;
+                import lu.core.conv : numFromHex;
 
                 int r, g, b;
                 user.colour.numFromHex(r, g, b);
@@ -1514,7 +1514,7 @@ if (isOutputRange!(Sink, char[]))
                 case TWITCH_SUBGIFT:
                 //case SELFCHAN:
                     import kameloso.terminal : invert;
-                    import kameloso.irc.common : containsNickname;
+                    import dialect.common : containsNickname;
 
                     /// Nick was mentioned (certain)
                     bool match;
@@ -1567,7 +1567,7 @@ if (isOutputRange!(Sink, char[]))
         .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp,
             '[', timestamp, ']');
 
-        import kameloso.string : beginsWith;
+        import lu.core.string : beginsWith;
 
         if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
             (event.type == IRCEvent.Type.TWITCH_ERROR))
@@ -1665,7 +1665,7 @@ if (isOutputRange!(Sink, char[]))
 // withoutTypePrefix
 /++
  +  Slices away any type prefixes from the string of a
- +  `kameloso.irc.defs.IRCEvent.Type`.
+ +  `dialect.defs.IRCEvent.Type`.
  +
  +  Only for shared use in `formatMessageMonochrome` and
  +  `formatMessageColoured`.
@@ -1683,14 +1683,14 @@ if (isOutputRange!(Sink, char[]))
  +  ---
  +
  +  Params:
- +      typestring = The string form of a `kameloso.irc.defs.IRCEvent.Type`.
+ +      typestring = The string form of a `dialect.defs.IRCEvent.Type`.
  +
  +  Returns:
  +      A slice of the passed `typestring`, excluding any prefixes if present.
  +/
 string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
 {
-    import kameloso.string : beginsWith;
+    import lu.core.string : beginsWith;
 
     if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
     {
@@ -1813,7 +1813,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable badgeAndNum; badgestring.splitter(","))
     {
-        import kameloso.string : nom;
+        import lu.core.string : nom;
 
         string slice = badgeAndNum;
         immutable badge = slice.nom('/');
@@ -1884,7 +1884,7 @@ if (isOutputRange!(Sink, char[]))
             break;
 
         default:
-            import kameloso.string : beginsWith;
+            import lu.core.string : beginsWith;
             import std.algorithm.searching : endsWith;
 
             if (badge.beginsWith("bits-"))
@@ -2181,22 +2181,22 @@ unittest
 // highlightEmotes
 /++
  +  Tints emote strings and highlights Twitch emotes in a ref
- +  `kameloso.irc.defs.IRCEvent`'s `content` member.
+ +  `dialect.defs.IRCEvent`'s `content` member.
  +
  +  Wraps `highlightEmotesImpl`.
  +
  +  Params:
- +      event = `kameloso.irc.defs.IRCEvent` whose content text to highlight.
+ +      event = `dialect.defs.IRCEvent` whose content text to highlight.
  +      colourful = Whether or not emotes should be highlit in colours.
  +/
 version(Colours)
 version(TwitchSupport)
 void highlightEmotes(ref IRCEvent event, const bool colourful)
 {
-    import kameloso.terminal : colourWith;
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
-    import kameloso.string : contains;
+    import kameloso.terminal : colourWith;
+    import lu.core.string : contains;
     import std.array : Appender;
 
     alias DefaultBright = DefaultColours.EventPrintingBright;
@@ -2299,7 +2299,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (emote; emotes.splitter("/"))
     {
-        import kameloso.string : nom;
+        import lu.core.string : nom;
 
         immutable emoteID = emote.nom(':');
 
@@ -2538,7 +2538,7 @@ public:
 
 // PrinterPlugin
 /++
- +  The Printer plugin takes all `kameloso.irc.defs.IRCEvent`s and prints them to
+ +  The Printer plugin takes all `dialect.defs.IRCEvent`s and prints them to
  +  the local terminal, formatted and optionally in colour.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split

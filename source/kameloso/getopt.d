@@ -3,8 +3,9 @@
  +/
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, IRCBot, Next;
-import kameloso.irc.common : IRCClient;
+import kameloso.common : CoreSettings, IRCBot;
+import lu.common : Next;
+import dialect.defs : IRCClient;
 import std.typecons : No, Yes;
 
 @safe:
@@ -14,7 +15,7 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read `kameloso.common.CoreSettings` and `kameloso.irc.common.IRCClient` from file
+ +  Read `kameloso.common.CoreSettings` and `dialect.defs.IRCClient` from file
  +  into temporaries, then meld them into the real ones, into which the
  +  command-line arguments will have been applied.
  +
@@ -27,13 +28,13 @@ private:
  +  ---
  +
  +  Params:
- +      client = Reference `kameloso.irc.common.IRCClient` to apply changes to.
+ +      client = Reference `dialect.defs.IRCClient` to apply changes to.
  +      settings = Reference `kameloso.common.CoreSettings` to apply changes to.
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 {
-    import kameloso.config : readConfigInto;
-    import kameloso.meld : MeldingStrategy, meldInto;
+    import lu.core.meld : MeldingStrategy, meldInto;
+    import lu.serialisation : readConfigInto;
 
     IRCClient tempClient;
     CoreSettings tempSettings;
@@ -79,7 +80,7 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
  +/
 void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
 {
-    import kameloso.string : beginsWith, contains;
+    import lu.core.string : beginsWith, contains;
     import std.algorithm.iteration : filter;
 
     static assert((!Rest.length || (Rest.length % 2 == 0)),
@@ -91,14 +92,14 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
 
         if (arg.contains('='))
         {
-            import kameloso.string : nom;
+            import lu.core.string : nom;
 
             immutable realWord = slice.nom('=');
             if (realWord != option) continue;
 
             static if (is(T == enum))
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 *ptr = Enum!T.fromString(slice);
             }
             else
@@ -155,7 +156,7 @@ unittest
         "--banana", &s.banana,
     );
 
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
 
     assert(s.monochrome);
     assert((s.server == "irc.freenode.net"), s.server);
@@ -243,7 +244,7 @@ void printHelp(GetoptResult results) @system
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      client = Reference to the current `kameloso.irc.common.IRCClient`.
+ +      client = Reference to the current `dialect.defs.IRCClient`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +
@@ -475,7 +476,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         }
 
         // 6a. Strip whitespace
-        import kameloso.string : stripped;
+        import lu.core.string : stripped;
         import std.algorithm.iteration : map;
         import std.array : array;
 
@@ -483,7 +484,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         client.homes = client.homes.map!((ch) => ch.stripped).array;
 
         // 7. Clear entries that are dashes
-        import kameloso.objmanip : zeroMembers;
+        import lu.objmanip : zeroMembers;
         zeroMembers!"-"(client);
 
         // 8. Make channels lowercase

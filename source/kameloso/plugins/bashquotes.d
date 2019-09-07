@@ -14,10 +14,10 @@ version(WithBashQuotesPlugin):
 
 private:
 
-import kameloso.common : settings;
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import kameloso.common : settings;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -65,7 +65,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +      sState = A `shared` `kameloso.plugins.common.IRCPluginState` containing
  +          necessary information to pass messages to send messages to the main
  +          thread, to send text to the server or display text on the screen.
- +      event = The `kameloso.irc.defs.IRCEvent` in flight.
+ +      event = The `dialect.defs.IRCEvent` in flight.
  +      colouredOutgoing = Whether or not to tint messages going to the server
  +          with mIRC colouring.
  +/

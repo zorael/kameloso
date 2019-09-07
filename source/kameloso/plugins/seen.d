@@ -38,8 +38,8 @@ version(WithSeenPlugin):
 // We need crucial things from `kameloso.plugins.common`.
 import kameloso.plugins.common;
 
-// Likewise `kameloso.irc.defs`, for the definitions of an IRC event.
-import kameloso.irc.defs;
+// Likewise `dialect.defs`, for the definitions of an IRC event.
+import dialect.defs;
 
 // `kameloso.irccolours` for some IRC colouring and formatting.
 import kameloso.irccolours : ircBold, ircColourByHash;
@@ -104,7 +104,7 @@ public:
  +
  +  * `kameloso.plugins.common.IRCPluginState.users` is an associative array
  +     keyed with users' nicknames. The value to that key is an
- +     `kameloso.irc.defs.IRCUser` representing that user in terms of nickname,
+ +     `dialect.defs.IRCUser` representing that user in terms of nickname,
  +     address, ident, and services account name. This is a way to keep track of
  +     users by more than merely their name. It is however not saved at the end
  +     of the program; it is merely state and transient.
@@ -118,7 +118,7 @@ public:
  +     associative array into which we place `kameloso.plugins.common.TriggerRequest`s.
  +     The main loop will pick up on these and call `WHOIS` on the nickname in the key-
  +     A `kameloso.plugins.common.TriggerRequest` is otherwise just an
- +     `kameloso.irc.defs.IRCEvent` to be played back when the `WHOIS` results
+ +     `dialect.defs.IRCEvent` to be played back when the `WHOIS` results
  +     return, as well as a function pointer to call with that event. This is
  +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
  +     queue management handled behind the scenes.
@@ -191,7 +191,7 @@ private:  // Module-level private.
      +  other than call the module's functions.
      +
      +  As an exception, it mixes in the bits needed to automatically call
-     +  functions based on their `kameloso.irc.defs.IRCEvent.Type` annotations.
+     +  functions based on their `dialect.defs.IRCEvent.Type` annotations.
      +  It is mandatory, if you want things to work.
      +
      +  Seen from any other module, this module is a big block of private things
@@ -258,13 +258,13 @@ struct SeenSettings
  +  Whenever a user does something, record this user as having been seen at the
  +  current time.
  +
- +  This function will be called whenever an `kameloso.irc.defs.IRCEvent` is
- +  being processed of the `kameloso.irc.defs.IRCEvent.Type`s that we annotate
+ +  This function will be called whenever an `dialect.defs.IRCEvent` is
+ +  being processed of the `dialect.defs.IRCEvent.Type`s that we annotate
  +  the function with.
  +
  +  The `kameloso.plugins.common.Chainable` annotations mean that the plugin
  +  will also process other functions in this module with the same
- +  `kameloso.irc.defs.IRCEvent.Type` annotations, even if this one matched. The
+ +  `dialect.defs.IRCEvent.Type` annotations, even if this one matched. The
  +  default is otherwise that it will end early after one match, but this
  +  doesn't ring well with catch-all functions like these. It's sensible to save
  +  `kameloso.plugins.common.Chainable` only for the modules and functions that
@@ -273,10 +273,10 @@ struct SeenSettings
  +  The `kameloso.plugins.common.ChannelPolicy` annotation dictates whether or not this
  +  function should be called based on the *channel* the event took place in, if
  +  applicable. The two policies are `kameloso.plugins.common.ChannelPolicy.home`,
- +  in which only events in channels in the `kameloso.irc.common.IRCClient.homes`
+ +  in which only events in channels in the `dialect.defs.IRCClient.homes`
  +  array will be allowed to trigger this; or `kameloso.plugins.common.ChannelPolicy.any`,
  +  in which case anywhere goes. For events that don't correspond to a channel (such as
- +  `kameloso.irc.defs.IRCEvent.Type.QUERY`) the setting is ignored.
+ +  `dialect.defs.IRCEvent.Type.QUERY`) the setting is ignored.
  +
  +  The `kameloso.plugins.common.PrivilegeLevel` annotation dictates who is
  +  authorised to trigger the function. It has five policies;
@@ -324,9 +324,9 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
     /+
         Updates the user's timestamp to the current time.
 
-        This will, as such, be automatically called on `kameloso.irc.defs.IRCEvent.Type.EMOTE`,
-        `kameloso.irc.defs.IRCEvent.Type.QUERY`, `kameloso.irc.defs.IRCEvent.Type.CHAN`,
-        `kameloso.irc.defs.IRCEvent.Type.JOIN`, and `kameloso.irc.defs.IRCEvent.Type.PART`
+        This will, as such, be automatically called on `dialect.defs.IRCEvent.Type.EMOTE`,
+        `dialect.defs.IRCEvent.Type.QUERY`, `dialect.defs.IRCEvent.Type.CHAN`,
+        `dialect.defs.IRCEvent.Type.JOIN`, and `dialect.defs.IRCEvent.Type.PART`
         events. Furthermore, it will only trigger if it took place in a home channel.
      +/
     plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
@@ -338,11 +338,11 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
  +  When someone quits, update their entry with the current timestamp iff they
  +  already have an entry.
  +
- +  `kameloso.irc.defs.IRCEvent.Type.QUIT` events don't carry a channel.
+ +  `dialect.defs.IRCEvent.Type.QUIT` events don't carry a channel.
  +  Users bleed into the seen users database by quitting unless we somehow limit
  +  it to only accept quits from those in home channels. Users in home channels
  +  should always have an entry, provided that
- +  `kameloso.irc.defs.IRCEvent.Type.RPL_NAMREPLY` lists were given when
+ +  `dialect.defs.IRCEvent.Type.RPL_NAMREPLY` lists were given when
  +  joining one, which seems to (largely?) be the case.
  +
  +  Do nothing if an entry was not found.
@@ -365,13 +365,13 @@ void onQuit(SeenPlugin plugin, const IRCEvent event)
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +
- +  Like `kameloso.irc.defs.IRCEvent.Type.QUIT`,
- +  kameloso.irc.defs.IRCEvent.Type.NICK` events don't carry a channel, so we
+ +  Like `dialect.defs.IRCEvent.Type.QUIT`,
+ +  dialect.defs.IRCEvent.Type.NICK` events don't carry a channel, so we
  +  can't annotate it `kameloso.plugins.common.ChannelPolicy.home`; all we know
  +  is that the user is in one or more channels we're currently in. We can't
  +  tell whether it's in a home or not. As such, only update if the user has
  +  already been observed at least once, which should always be the case (provided
- +  `kameloso.irc.defs.IRCEvent.Type.RPL_NAMREPLY` lists on join).
+ +  `dialect.defs.IRCEvent.Type.RPL_NAMREPLY` lists on join).
  +/
 @(Chainable)
 @(IRCEvent.Type.NICK)
@@ -431,8 +431,8 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 
     foreach (const signed; event.content.splitter(" "))
     {
-        import kameloso.irc.common : stripModesign;
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
+        import dialect.common : stripModesign;
 
         string nickname = signed;
 
@@ -465,9 +465,9 @@ void onEndOfList(SeenPlugin plugin)
 
 // onCommandSeen
 /++
- +  Whenever someone says "seen" in a `kameloso.irc.defs.IRCEvent.Type.CHAN` or
- +  a `kameloso.irc.defs.IRCEvent.Type.QUERY`, and if
- +  `kameloso.irc.defs.IRCEvent.Type.CHAN` then only if in a *home*, processes this function.
+ +  Whenever someone says "seen" in a `dialect.defs.IRCEvent.Type.CHAN` or
+ +  a `dialect.defs.IRCEvent.Type.QUERY`, and if
+ +  `dialect.defs.IRCEvent.Type.CHAN` then only if in a *home*, processes this function.
  +
  +  The `kameloso.plugins.common.BotCommand` annotation defines a piece of text
  +  that the incoming message must start with for this function to be called.
@@ -478,7 +478,7 @@ void onEndOfList(SeenPlugin plugin)
  +  * `direct`, where the raw command is expected without any bot prefix at all.
  +  * `prefixed`, where the message has to start with the command prefix (usually `!`)
  +  * `nickname`, where the message has to start with bot's nickname, except
- +     if it's in a `kameloso.irc.defs.IRCEvent.Type.QUERY` message.<br>
+ +     if it's in a `dialect.defs.IRCEvent.Type.QUERY` message.<br>
  +
  +  The plugin system will have made certain we only get messages starting with
  +  "`seen`", since we annotated this function with such a
@@ -486,13 +486,13 @@ void onEndOfList(SeenPlugin plugin)
  +  so we're left only with the "arguments" to "`seen`". `event.aux` contains
  +  the triggering word, if it's needed.
  +
- +  If this is a `kameloso.irc.defs.IRCEvent.Type.CHAN` event, the original lines
+ +  If this is a `dialect.defs.IRCEvent.Type.CHAN` event, the original lines
  +  could (for example) have been "`kameloso: seen Joe`", or merely "`!seen Joe`"
- +  (assuming a "`!`" prefix). If it was a private `kameloso.irc.defs.IRCEvent.Type.QUERY`
+ +  (assuming a "`!`" prefix). If it was a private `dialect.defs.IRCEvent.Type.QUERY`
  +  message, the `kameloso:` prefix may have been omitted. In either case, we're
  +  left with only the parts we're interested in, and the rest sliced off.
  +
- +  As a result, the `kameloso.irc.defs.IRCEvent` `event` would look something
+ +  As a result, the `dialect.defs.IRCEvent` `event` would look something
  +  like this:
  +
  +  ---
@@ -517,9 +517,9 @@ void onEndOfList(SeenPlugin plugin)
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : timeSince;
-    import kameloso.irc.common : isValidNickname;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
+    import lu.common : timeSince;
+    import dialect.common : isValidNickname;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;
@@ -678,7 +678,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +/
 void updateUser(SeenPlugin plugin, const string signed, const long time)
 {
-    import kameloso.irc.common : stripModesign;
+    import dialect.common : stripModesign;
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
     immutable nickname = plugin.state.client.server.stripModesign(signed);
@@ -753,7 +753,7 @@ long[string] loadSeen(const string filename)
 
     scope(exit)
     {
-        import kameloso.string : plurality;
+        import lu.core.string : plurality;
         logger.logf("Currently %s%d%s %s seen.",
             infotint, aa.length, logtint, aa.length.plurality("user", "users"));
     }
@@ -861,7 +861,7 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -907,8 +907,8 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
     if (!plugin.isEnabled) return;
     if (header != "seen") return;
 
-    import kameloso.string : strippedRight;
     import kameloso.thread : BusMessage;
+    import lu.core.string : strippedRight;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);

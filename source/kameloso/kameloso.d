@@ -4,10 +4,10 @@
 module kameloso.kameloso;
 
 import kameloso.common;
-import kameloso.irc;
-import kameloso.irc.defs;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
+import lu.common : Next;
+import dialect;
 
 version(ProfileGC)
 {
@@ -221,7 +221,7 @@ void messageFiber(ref IRCBot bot)
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(IRCEvent event) scope
         {
-            import kameloso.string : splitOnWord;
+            import lu.core.string : splitOnWord;
             import std.format : format;
 
             enum maxIRCLineLength = 512;
@@ -363,7 +363,7 @@ void messageFiber(ref IRCBot bot)
                 break;
 
             default:
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
 
                 // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
                 logger.warning("No outgoing event case for type ",
@@ -519,11 +519,11 @@ void exhaustMessages()
 /++
  +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
  +  over the over `std.socket.Socket`, reading lines and yielding
- +  `kameloso.connection.ListenAttempt`s as it goes.
+ +  `lu.net.ListenAttempt`s as it goes.
  +
- +  Full lines are stored in `kameloso.connection.ListenAttempt`s which are
+ +  Full lines are stored in `lu.net.ListenAttempt`s which are
  +  yielded in the `std.concurrency.Generator` to be caught here, consequently
- +  parsed into `kameloso.irc.defs.IRCEvent`s, and then dispatched to all plugins.
+ +  parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -537,7 +537,7 @@ void exhaustMessages()
  +/
 Next mainLoop(ref IRCBot bot)
 {
-    import kameloso.connection : ListenAttempt, listenFiber;
+    import lu.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
 
     /// Enum denoting what we should do next loop.
@@ -926,9 +926,9 @@ import kameloso.plugins.common : IRCPlugin;
  +
  +  Params:
  +      plugin = The `kameloso.plugins.common.IRCPlugin` whose
- +          `kameloso.irc.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
+ +          `dialect.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
  +          iterate and process.
- +      event = The triggering `kameloso.irc.defs.IRCEvent`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
  +/
 void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
@@ -1194,7 +1194,8 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
-    import kameloso.config : ConfigurationFileReadFailureException,
+    import lu.common : FileTypeMismatchException;
+    import lu.serialisation : ConfigurationFileReadFailureException,
         ConfigurationFileParsingException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
@@ -1252,8 +1253,8 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 // tryConnect
 /++
  +  Tries to connect to the IPs in `kameloso.common.IRCBot.conn.ips` by
- +  leveraging `kameloso.connection.connectFiber`, reacting on the
- +  `kameloso.connection.ConnectAttempt`s it yields to provide feedback to the user.
+ +  leveraging `lu.net.connectFiber`, reacting on the
+ +  `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -1265,9 +1266,9 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
  +/
 Next tryConnect(ref IRCBot bot)
 {
-    import kameloso.connection : ConnectionAttempt, connectFiber;
     import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
     import kameloso.thread : interruptibleSleep;
+    import lu.net : ConnectionAttempt, connectFiber;
     import std.concurrency : Generator;
 
     alias State = ConnectionAttempt.State;
@@ -1300,7 +1301,7 @@ Next tryConnect(ref IRCBot bot)
         final switch (attempt.state)
         {
         case preconnect:
-            import kameloso.string : sharedDomains;
+            import lu.core.string : sharedDomains;
             import std.socket : AddressFamily;
 
             immutable resolvedHost = attempt.ip.toHostNameString;
@@ -1375,8 +1376,8 @@ Next tryConnect(ref IRCBot bot)
 // tryResolve
 /++
  +  Tries to resolve the address in `bot.parser.client.server` to IPs, by
- +  leveraging `kameloso.connection.resolveFiber`, reacting on the
- +  `kameloso.connection.ResolveAttempt`s it yields to provide feedback to the user.
+ +  leveraging `lu.net.resolveFiber`, reacting on the
+ +  `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.bot`.
@@ -1387,8 +1388,8 @@ Next tryConnect(ref IRCBot bot)
  +/
 Next tryResolve(ref IRCBot bot)
 {
-    import kameloso.connection : ResolveAttempt, resolveFiber;
     import kameloso.constants : Timeout;
+    import lu.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
 
     string infotint, logtint, warningtint, errortint;
@@ -1430,7 +1431,7 @@ Next tryResolve(ref IRCBot bot)
             continue;
 
         case success:
-            import kameloso.string : plurality;
+            import lu.core.string : plurality;
             logger.infof("%s%s resolved into %s%s%2$s %5$s.",
                 parser.client.server.address, logtint, infotint, conn.ips.length,
                 conn.ips.length.plurality("IP", "IPs"));
@@ -1688,7 +1689,7 @@ int initBot(string[] args)
     writeln();
 
     import kameloso.printing : printObjects;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     // Print the current settings to show what's going on.
     printObjects(bot.parser.client, bot.parser.client.server);
@@ -1926,7 +1927,7 @@ int initBot(string[] args)
             break outerloop;
         }
 
-        import kameloso.irc.parsing : IRCParser;
+        import dialect.parsing : IRCParser;
 
         bot.parser = IRCParser(backupClient);
 

@@ -7,8 +7,7 @@
  +/
 module kameloso.plugins.common;
 
-import kameloso.irc.common : IRCClient;
-import kameloso.irc.defs;
+import dialect.defs;
 
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
@@ -28,7 +27,7 @@ version = PrefixedCommandsFallBackToNickname;
 private
 static if (__VERSION__ == 2079L)
 {
-    import std.traits : getSymbolsByUDA;
+    import lu.core.traits : getSymbolsByUDA;
 
     struct UDA_2079 {}
     struct Foo_2079
@@ -153,7 +152,7 @@ interface IRCPlugin
  +/
 abstract class TriggerRequest
 {
-    /// Stored `kameloso.irc.defs.IRCEvent` to replay.
+    /// Stored `dialect.defs.IRCEvent` to replay.
     IRCEvent event;
 
     /// `PrivilegeLevel` of the function to replay.
@@ -180,7 +179,7 @@ abstract class TriggerRequest
  +
  +  It functions like a Command pattern object in that it stores a payload and
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
- +  returns we trigger the object and the original `kameloso.irc.defs.IRCEvent`
+ +  returns we trigger the object and the original `dialect.defs.IRCEvent`
  +  is replayed.
  +
  +  Params:
@@ -195,7 +194,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
 
     static if (!is(Payload == typeof(null)))
     {
-        /// Command payload aside from the `kameloso.irc.defs.IRCEvent`.
+        /// Command payload aside from the `dialect.defs.IRCEvent`.
         Payload payload;
 
         /++
@@ -204,7 +203,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
          +  Params:
          +      payload = Payload of templated type `Payload` to attach to this
          +          `TriggerRequestImpl`.
-         +      event = `kameloso.irc.defs.IRCEvent` to attach to this
+         +      event = `dialect.defs.IRCEvent` to attach to this
          +          `TriggerRequestImpl`.
          +      privilegeLevel = The privilege level required to trigger the
          +          passed function.
@@ -244,7 +243,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
 
     /++
      +  Call the passed function/delegate pointer, optionally with the stored
-     +  `kameloso.irc.defs.IRCEvent` and/or `Payload`.
+     +  `dialect.defs.IRCEvent` and/or `Payload`.
      +/
     override void trigger() @system
     {
@@ -353,12 +352,12 @@ unittest
  +/
 struct IRCPluginState
 {
-    import kameloso.common : Labeled;
+    import lu.common : Labeled;
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
     /++
-     +  The current `kameloso.irc.common.IRCClient`, containing information pertaining
+     +  The current `dialect.defs.IRCClient`, containing information pertaining
      +  to the bot in the context of the current (alive) connection.
      +/
     IRCClient client;
@@ -373,7 +372,7 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued `WHOIS` requests and pertaining `kameloso.irc.defs.IRCEvent`s to
+     +  Queued `WHOIS` requests and pertaining `dialect.defs.IRCEvent`s to
      +  replay.
      +
      +  The main loop iterates this after processing all on-event functions so
@@ -384,7 +383,7 @@ struct IRCPluginState
 
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
-     +  `kameloso.irc.defs.IRCEvent.Type`.
+     +  `dialect.defs.IRCEvent.Type`.
      +/
     Fiber[][IRCEvent.Type] awaitingFibers;
 
@@ -414,7 +413,7 @@ struct IRCPluginState
 bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
 {
     import kameloso.common : logger, settings;
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.conv : ConvException;
 
     string logtint, warningtint;
@@ -453,7 +452,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
         if (pluginstring == "core")
         {
             import kameloso.common : initLogger, settings;
-            import kameloso.objmanip : setMemberByName;
+            import lu.objmanip : setMemberByName;
 
             try
             {
@@ -628,7 +627,7 @@ enum FilterResult
 
 /++
  +  To what extent the annotated function demands its triggering
- +  `kameloso.irc.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
+ +  `dialect.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
  +/
 enum PrefixPolicy
 {
@@ -636,7 +635,7 @@ enum PrefixPolicy
     prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
     /++
      +  Message should begin with the bot's name, except in
-     +  `kameloso.irc.defs.IRCEvent.Type.QUERY` events.
+     +  `dialect.defs.IRCEvent.Type.QUERY` events.
      +/
     nickname,
 }
@@ -663,7 +662,7 @@ enum PrivilegeLevel
     anyone = 1, /// Anyone may trigger this event.
     registered = 2,  /// Anyone registered with services may trigger this event.
     /++
-     +  Only those of the `kameloso.irc.common.IRCClient.Class.whitelist`
+     +  Only those of the `dialect.defs.IRCClient.Class.whitelist`
      +  class may trigger this event.
      +/
     whitelist = 3,
@@ -678,7 +677,7 @@ enum PrivilegeLevel
  +
  +  Params:
  +      payload = Payload to attach to the `TriggerRequest`.
- +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
@@ -699,7 +698,7 @@ TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
  +  *without* a payload attached.
  +
  +  Params:
- +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
@@ -856,7 +855,7 @@ struct Settings;
 
 // Description
 /++
- +  Describes an `kameloso.irc.defs.IRCEvent`-annotated handler function.
+ +  Describes an `dialect.defs.IRCEvent`-annotated handler function.
  +
  +  This is used to describe functions triggered by `BotCommand`s, in the help
  +  listing routine in `kameloso.plugins.chatbot`.
@@ -909,7 +908,7 @@ struct Enabler;
  +  and deny use.
  +
  +  Params:
- +      event = `kameloso.irc.defs.IRCEvent` to filter.
+ +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +
  +  Returns:
@@ -985,7 +984,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 ///
 unittest
 {
-    import kameloso.conv : Enum;
+    import lu.core.conv : Enum;
     import std.datetime.systime : Clock;
 
     IRCEvent event;
@@ -1056,7 +1055,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public bool isEnabled() const @property pure nothrow @nogc
     {
-        import std.traits : Unqual, getSymbolsByUDA, hasUDA;
+        import lu.core.traits : getSymbolsByUDA;
+        import std.traits : Unqual, hasUDA;
 
         bool retval = true;
 
@@ -1102,7 +1102,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  that or any custom-defined `allow` in `typeof(this)`.
      +
      +  Params:
-     +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
+     +      event = `dialect.defs.IRCEvent` to allow, or not.
      +      privilegeLevel = `PrivilegeLevel` of the handler in question.
      +
      +  Returns:
@@ -1129,14 +1129,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEvent
     /++
-     +  Pass on the supplied `kameloso.irc.defs.IRCEvent` to `onEventImpl`.
+     +  Pass on the supplied `dialect.defs.IRCEvent` to `onEventImpl`.
      +
      +  This is made a separate function to allow plugins to override it and
      +  insert their own code, while still leveraging `onEventImpl` for the
      +  actual dirty work.
      +
      +  Params:
-     +      event = Parse `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`.
+     +      event = Parse `dialect.defs.IRCEvent` to pass onto `onEventImpl`.
      +
      +  See_Also:
      +      onEventImpl
@@ -1149,22 +1149,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEventImpl
     /++
-     +  Pass on the supplied `kameloso.irc.defs.IRCEvent` to functions annotated
-     +  with the right `kameloso.irc.defs.IRCEvent.Type`s.
+     +  Pass on the supplied `dialect.defs.IRCEvent` to functions annotated
+     +  with the right `dialect.defs.IRCEvent.Type`s.
      +
      +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
      +  `PrefixPolicy` where such is appropriate.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event handlers.
+     +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
     private void onEventImpl(const IRCEvent event) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
+        import lu.core.traits : getSymbolsByUDA;
         import std.meta : Filter, templateNot, templateOr;
-        import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
+        import std.traits : isSomeFunction, getUDAs, hasUDA;
 
         if (!isEnabled) return;
 
@@ -1191,13 +1192,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
             }
 
             enum name = ()
             {
-                import kameloso.conv : Enum;
+                import lu.core.conv : Enum;
                 import std.format : format;
 
                 string pluginName = module_;  // mutable
@@ -1214,7 +1215,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
-                    // UDA is `kameloso.irc.defs.IRCEvent.Type.ANY`, let pass
+                    // UDA is `dialect.defs.IRCEvent.Type.ANY`, let pass
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
@@ -1268,7 +1269,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     if (!event.channel.length)
                     {
-                        // it is a non-channel event, like a `kameloso.irc.defs.IRCEvent.Type.QUERY`
+                        // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
                     }
                     else if (!privateState.client.homes.canFind(event.channel))
                     {
@@ -1326,7 +1327,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             continue;  // next BotCommand UDA
                         }
 
-                        import kameloso.string : strippedLeft;
+                        import lu.core.string : strippedLeft;
                         import std.algorithm.comparison : equal;
                         import std.typecons : No, Yes;
                         import std.uni : asLowerCase, toLower;
@@ -1438,7 +1439,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
-                    import kameloso.conv : Enum;
+                    import lu.core.conv : Enum;
                     import std.format : format;
 
                     enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
@@ -1450,7 +1451,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     with (IRCEvent.Type)
                     {
-                        import kameloso.conv : Enum;
+                        import lu.core.conv : Enum;
 
                         alias U = eventTypeUDA;
 
@@ -1470,7 +1471,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                 }
 
-                import kameloso.traits : TakesParams, stringofParams;
+                import lu.core.traits : TakesParams, stringofParams;
                 import std.meta : AliasSeq, staticMap;
                 import std.traits : Parameters, Unqual, arity, staticMap;
 
@@ -1722,7 +1723,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public this(IRCPluginState state) @system
     {
         import kameloso.common : settings;
-        import kameloso.traits : isConfigurableVariable;
+        import lu.core.traits : isConfigurableVariable;
         import std.traits : hasUDA;
 
         this.privateState = state;
@@ -1746,7 +1747,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         static if (__traits(compiles, .initialise))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1765,14 +1766,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // postprocess
     /++
-     +  Lets a plugin modify an `kameloso.irc.defs.IRCEvent` while it's begin
+     +  Lets a plugin modify an `dialect.defs.IRCEvent` while it's begin
      +  constructed, before it's finalised and passed on to be handled.
      +/
     public void postprocess(ref IRCEvent event) @system
     {
         static if (__traits(compiles, .postprocess))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1797,7 +1798,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1823,8 +1824,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
-        import kameloso.config : readConfigInto;
-        import kameloso.meld : MeldingStrategy, meldInto;
+        import lu.core.meld : MeldingStrategy, meldInto;
+        import lu.serialisation : readConfigInto;
         import std.traits : hasUDA;
 
         string[][string] invalidEntries;
@@ -1889,7 +1890,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public bool setSettingByName(const string setting, const string value)
     {
-        import kameloso.objmanip : setMemberByName;
+        import lu.objmanip : setMemberByName;
         import std.traits : hasUDA;
 
         bool success;
@@ -1913,7 +1914,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Prints the plugin's `Settings`-annotated structs.
      +
      +  It both prints module-level structs as well as structs in the
-     +  `kameloso.irc.defs.IRCPlugin` (subtype) itself.
+     +  `dialect.defs.IRCPlugin` (subtype) itself.
      +/
     public void printSettings() const
     {
@@ -1952,7 +1953,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public void serialiseConfigInto(ref Appender!string sink) const
     {
-        import kameloso.config : serialise;
+        import lu.serialisation : serialise;
         import std.traits : hasUDA;
 
         foreach (immutable i, symbol; this.tupleof)
@@ -1975,7 +1976,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
             import std.datetime.systime : SysTime;
 
             if (!isEnabled) return;
@@ -2006,7 +2007,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -2034,7 +2035,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctName =
         {
-            import kameloso.string : contains, nom;
+            import lu.core.string : contains, nom;
 
             string moduleName = module_;  // mutable
 
@@ -2066,8 +2067,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctCommands =
         {
+            import lu.core.traits : getSymbolsByUDA;
             import std.meta : Filter;
-            import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
+            import std.traits : getUDAs, hasUDA, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -2178,7 +2180,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             static if (TakesParams!(.periodically, typeof(this)))
             {
@@ -2204,7 +2206,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -2231,7 +2233,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .onBusMessage))
         {
-            import kameloso.traits : TakesParams;
+            import lu.core.traits : TakesParams;
 
             static if (TakesParams!(.onBusMessage, typeof(this), string, Sendable))
             {
@@ -2333,7 +2335,7 @@ public:
      +  the arguments passed to it.
      +
      +  This reflects how channel messages and private messages are both the
-     +  underlying same type; `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
+     +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -2504,7 +2506,7 @@ public:
  +  Most of the time a plugin doesn't require a full `UserAwareness`; only
  +  those that need looking up users outside of the current event do. The
  +  persistency service allows for plugins to just read the information from
- +  the `kameloso.irc.defs.IRCUser` embedded in the event directly, and that's
+ +  the `dialect.defs.IRCUser` embedded in the event directly, and that's
  +  often enough.
  +
  +  General rule: if a plugin doesn't access `state.users`, it's probably
@@ -2526,10 +2528,10 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Replays any queued requests awaiting the result of a WHOIS. Before that,
      +  records the user's services account by saving it to the user's
-     +  `kameloso.irc.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `dialect.defs.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
-     +  `kameloso.irc.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
+     +  `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
      +  cover the case where a user without an account triggering `PrivilegeLevel.anyone`-
      +  or `PrivilegeLevel.ignored`-level commands.
      +
@@ -2574,7 +2576,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 void explainReplay()
                 {
                     import kameloso.common : logger, settings;
-                    import kameloso.conv : Enum;
+                    import lu.core.conv : Enum;
 
                     string infotint, logtint;
 
@@ -2717,7 +2719,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessQuitMixin
     /++
-     +  Removes a user's `kameloso.irc.defs.IRCUser` entry from a plugin's user
+     +  Removes a user's `dialect.defs.IRCUser` entry from a plugin's user
      +  list upon them disconnecting.
      +/
     @(Awareness.cleanup)
@@ -2752,12 +2754,12 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessCatchTargetMixin
     /++
      +  Catches a user's information and saves it in the plugin's
-     +  `IRCPluginState.users` array of `kameloso.irc.defs.IRCUser`s.
+     +  `IRCPluginState.users` array of `dialect.defs.IRCUser`s.
      +
-     +  `kameloso.irc.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
-     +  the `kameloso.irc.defs.IRCUser.lastWhois` field that we want to store.
+     +  `dialect.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
+     +  the `dialect.defs.IRCUser.lastWhois` field that we want to store.
      +
-     +  `kameloso.irc.defs.IRCEvent.Type.CHGHOST` occurs when a user changes host
+     +  `dialect.defs.IRCEvent.Type.CHGHOST` occurs when a user changes host
      +  on some servers that allow for custom host addresses.
      +/
     @(Awareness.early)
@@ -2824,9 +2826,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc.common : IRCControlCharacter, stripModesign;
         import kameloso.irccolours : stripColours;
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
+        import dialect.common : IRCControlCharacter, stripModesign;
         import std.algorithm.iteration : splitter;
 
         auto names = event.content.splitter(" ");
@@ -2888,9 +2890,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessPingMixin
     /++
      +  Rehash the internal `IRCPluginState.users` associative array of
-     +  `kameloso.irc.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
+     +  `dialect.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
      +
-     +  We ride the periodicity of `kameloso.irc.defs.IRCEvent.Type.PING` to get
+     +  We ride the periodicity of `dialect.defs.IRCEvent.Type.PING` to get
      +  a natural cadence without having to resort to timed `core.thread.Fiber`s.
      +
      +  The number of hours is so far hardcoded but can be made configurable if
@@ -2960,7 +2962,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfjoinMixin
     /++
-     +  Create a new `kameloso.irc.defs.IRCChannel` in the the `IRCPlugin`'s
+     +  Create a new `dialect.defs.IRCChannel` in the the `IRCPlugin`'s
      +  `IRCPluginState.channels` associative array when the bot joins a channel.
      +/
     @(Awareness.setup)
@@ -2976,7 +2978,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfpartMixin
     /++
-     +  Removes an `kameloso.irc.defs.IRCChannel` from the internal list when the
+     +  Removes an `dialect.defs.IRCChannel` from the internal list when the
      +  bot leaves it.
      +
      +  Remove users from the `plugin.state.users` array if, by leaving, it left
@@ -3069,7 +3071,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  `IRCPluginState.users` associative array point to the new nickname.
      +
      +  Does *not* add a new entry if one doesn't exits, to counter the fact
-     +  that `kameloso.irc.defs.IRCEvent.Type.NICK` events don't belong to a channel,
+     +  that `dialect.defs.IRCEvent.Type.NICK` events don't belong to a channel,
      +  and as such can't be regulated with `ChannelPolicy` annotations. This way
      +  the user will only be moved if it was already added elsewhere. Else we'll leak users.
      +
@@ -3114,7 +3116,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessTopicMixin
     /++
-     +  Update the entry for an `kameloso.irc.defs.IRCChannel` if someone changes
+     +  Update the entry for an `dialect.defs.IRCChannel` if someone changes
      +  the topic of it.
      +/
     @(Awareness.early)
@@ -3153,7 +3155,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Sets a mode for a channel.
      +
      +  Most modes replace others of the same type, notable exceptions being
-     +  bans and mode exemptions. We let `kameloso.irc.common.setMode` take care of that.
+     +  bans and mode exemptions. We let `dialect.common.setMode` take care of that.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -3172,7 +3174,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
         if (auto channel = event.channel in plugin.state.channels)
         {
-            import kameloso.irc.common : setMode;
+            import dialect.common : setMode;
             (*channel).setMode(event.aux, event.content, plugin.state.client.server);
         }
     }
@@ -3207,7 +3209,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             {
                 if (const modechar = modesign in plugin.state.client.server.prefixchars)
                 {
-                    import kameloso.irc.common : setMode;
+                    import dialect.common : setMode;
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
@@ -3243,7 +3245,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.string : contains;
+        import lu.core.string : contains;
         import std.algorithm.iteration : splitter;
 
         if (!event.content.length) return;
@@ -3260,7 +3262,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (userstring.contains('!') && userstring.contains('@'))
             {
-                import kameloso.string : nom;
+                import lu.core.string : nom;
                 // SpotChat-like, names are in full nick!ident@address form
                 nickname = slice.nom('!');
             }
@@ -3270,7 +3272,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 nickname = userstring;
             }
 
-            import kameloso.irc.common : stripModesign;
+            import dialect.common : stripModesign;
 
             string modesigns;
             nickname = plugin.state.client.server.stripModesign(nickname, modesigns);
@@ -3283,8 +3285,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             {
                 if (const modechar = modesign in plugin.state.client.server.prefixchars)
                 {
-                    import kameloso.irc.common : setMode;
+                    import dialect.common : setMode;
                     import std.conv : to;
+
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.client.server);
                 }
@@ -3324,7 +3327,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc.common : setMode;
+        import dialect.common : setMode;
         import std.conv : to;
 
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
@@ -3363,7 +3366,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc.common : setMode;
+        import dialect.common : setMode;
 
         if (auto channel = event.channel in plugin.state.channels)
         {
@@ -3384,7 +3387,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +
  +  There is a chance of a user leak, if parting users are not broadcast. As
  +  such we mark when the user was last seen in the
- +  `kameloso.irc.defs.IRCUser.lastWhois` member, which opens up the possibility
+ +  `dialect.defs.IRCUser.lastWhois` member, which opens up the possibility
  +  of pruning the plugin's `IRCPluginState.users` array of old entries.
  +
  +  Twitch awareness needs channel awareness, or it is meaningless.
@@ -3515,9 +3518,9 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `kameloso.irc.common.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
- +      mutEvent = Reference to the mutable `kameloso.irc.defs.IRCEvent` we're considering.
+ +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +
  +  Returns:
  +      `true` if the message is in a context where the event matches the
@@ -3529,7 +3532,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
-    import kameloso.string : beginsWith, nom, stripSeparatedPrefix;
+    import lu.core.string : beginsWith, nom, stripSeparatedPrefix;
     import std.typecons : No, Yes;
 
     with (mutEvent)
@@ -3592,14 +3595,14 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
 
 // catchUser
 /++
- +  Catch an `kameloso.irc.defs.IRCUser`, saving it to the `IRCPlugin`'s
+ +  Catch an `dialect.defs.IRCUser`, saving it to the `IRCPlugin`'s
  +  `IRCPluginState.users` array.
  +
  +  If a user already exists, meld the new information into the old one.
  +
  +  Params:
  +      plugin = Current `IRCPlugin`.
- +      newUser = The `kameloso.irc.defs.IRCUser` to catch.
+ +      newUser = The `dialect.defs.IRCUser` to catch.
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
@@ -3627,7 +3630,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 
     if (auto user = newUser.nickname in plugin.state.users)
     {
-        import kameloso.meld : meldInto;
+        import lu.core.meld : meldInto;
         newUser.meldInto(*user);
     }
     else
@@ -3647,8 +3650,8 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +  Params:
  +      plugin = Current `IRCPlugin`.
  +      payload = Payload to attach to the `TriggerRequest`, generally an
- +          `kameloso.irc.defs.IRCEvent` to replay once the `WHOIS` results return.
- +      event = `kameloso.irc.defs.IRCEvent` that instigated this `WHOIS` call.
+ +          `dialect.defs.IRCEvent` to replay once the `WHOIS` results return.
+ +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
  +/
@@ -3695,7 +3698,7 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 // rehashUsers
 /++
  +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
- +  associative array and the ones in each `kameloso.irc.defs.IRCChannel.users` associative arrays.
+ +  associative array and the ones in each `dialect.defs.IRCChannel.users` associative arrays.
  +
  +  This optimises lookup and should be done every so often,
  +
@@ -3728,7 +3731,7 @@ void rehashUsers(IRCPlugin plugin)
  +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 {
-    import kameloso.common : labeled;
+    import lu.common : labeled;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currTime.toUnixTime + secs;
@@ -3757,8 +3760,8 @@ void delayFiber(IRCPlugin plugin, const long secs)
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.irc.defs.IRCEvent` matches the passed
- +  `kameloso.irc.defs.IRCEvent.Type` type.
+ +  triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3766,8 +3769,8 @@ void delayFiber(IRCPlugin plugin, const long secs)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
- +          `kameloso.irc.defs.IRCEvent` of type `type` comes along.
- +      type = The kind of `kameloso.irc.defs.IRCEvent` that should trigger the
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `dialect.defs.IRCEvent` that should trigger the
  +          passed awaiting fiber.
  +/
 void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
@@ -3779,8 +3782,8 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.irc.defs.IRCEvent` matches the passed
- +  `kameloso.irc.defs.IRCEvent.Type` type.
+ +  triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3789,7 +3792,7 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      type = The kind of `kameloso.irc.defs.IRCEvent` that should trigger this
+ +      type = The kind of `dialect.defs.IRCEvent` that should trigger this
  +          implicit awaiting fiber (in the current context).
  +/
 void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
@@ -3801,8 +3804,8 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.irc.defs.IRCEvent` matches all of the passed
- +  `kameloso.irc.defs.IRCEvent.Type` types.
+ +  triggering `dialect.defs.IRCEvent` matches all of the passed
+ +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3810,10 +3813,10 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
- +          `kameloso.irc.defs.IRCEvent` of type `type` comes along.
- +      types = The kinds of `kameloso.irc.defs.IRCEvent` that should trigger
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          the passed awaiting fiber, in an array with elements of type
- +          `kameloso.irc.defs.IRCEvent.Type`.
+ +          `dialect.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
@@ -3827,8 +3830,8 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.irc.defs.IRCEvent` matches all of the passed
- +  `kameloso.irc.defs.IRCEvent.Type` types.
+ +  triggering `dialect.defs.IRCEvent` matches all of the passed
+ +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3837,9 +3840,9 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      types = The kinds of `kameloso.irc.defs.IRCEvent` that should trigger
+ +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          this implicit awaiting fiber (in the current context), in an array
- +          with elements of type `kameloso.irc.defs.IRCEvent.Type`.
+ +          with elements of type `dialect.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
@@ -3856,8 +3859,8 @@ import std.traits : isSomeFunction;
 /++
  +  Functionality for catching WHOIS results and calling passed function aliases
  +  with the resulting account information that was divined from it, in the form
- +  of the actual `kameloso.irc.defs.IRCEvent`, the target
- +  `kameloso.irc.defs.IRCUser` within it, the user's `account` field, or merely
+ +  of the actual `dialect.defs.IRCEvent`, the target
+ +  `dialect.defs.IRCUser` within it, the user's `account` field, or merely
  +  alone as an arity-0 function.
  +
  +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -3896,8 +3899,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /// Reusable mixin that catches WHOIS results.
     void whoisFiberDelegate()
     {
-        import kameloso.irc.defs : IRCEvent, IRCUser;
         import kameloso.thread : CarryingFiber;
+        import dialect.defs : IRCEvent, IRCUser;
         import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
@@ -3909,7 +3912,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         with (IRCEvent.Type)
         with (whoisEvent)
         {
-            import kameloso.conv : Enum;
+            import lu.core.conv : Enum;
             assert(((type == RPL_WHOISACCOUNT) ||
                 (type == RPL_WHOISREGNICK) ||
                 (type == RPL_ENDOFWHOIS) ||
@@ -3921,7 +3924,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND) return;
 
-        import kameloso.irc.common : toLowerCase;
+        import dialect.common : toLowerCase;
 
         immutable m = plugin.state.client.server.caseMapping;
 
@@ -3998,7 +4001,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
 
     /++
-     +  Constructs a `kameloso.thread.CarryingFiber!(kameloso.irc.defs.IRCEvent)`
+     +  Constructs a `kameloso.thread.CarryingFiber!(dialect.defs.IRCEvent)`
      +  and enqueues it into the `awaitingFibers` associative array, then issues
      +  a `WHOIS` call.
      +
@@ -4069,7 +4072,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
  +  If not version `TwitchSupport` then it always returns the nickname.
  +
  +  Params:
- +      user = `kameloso.irc.defs.IRCUser` to examine.
+ +      user = `dialect.defs.IRCUser` to examine.
  +
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.

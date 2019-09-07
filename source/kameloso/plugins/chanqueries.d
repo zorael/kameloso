@@ -17,7 +17,7 @@ version(WithChanQueriesService):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import dialect.defs;
 
 import std.typecons : No, Yes;
 
@@ -43,7 +43,7 @@ enum ChannelState : ubyte
 /++
  +  Queries channels for information about them and their users.
  +
- +  Checks an internal list of channels once every `kameloso.irc.defs.IRCEvent.Type.PING`,
+ +  Checks an internal list of channels once every `dialect.defs.IRCEvent.Type.PING`,
  +  and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
@@ -252,7 +252,7 @@ private:
      +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.onEventImpl`
      +          after verifying we're not on a Twitch server.
      +/

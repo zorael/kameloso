@@ -9,7 +9,7 @@
  +/
 module kameloso.irccolours;
 
-import kameloso.irc.common : IRCControlCharacter;
+import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
 
 version(Colours)
@@ -390,7 +390,7 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
     const uint bgBase = TerminalBackground.default_)
 {
     import kameloso.terminal : TF = TerminalFormat;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     alias I = IRCControlCharacter;
 
@@ -429,7 +429,7 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
 // stripEffects
 /++
  +  Removes all form of mIRC formatting (colours, bold, italics, underlined)
- +  from an `kameloso.irc.defs.IRCEvent`.
+ +  from an `dialect.defs.IRCEvent`.
  +
  +  Params:
  +      line = String to strip effects from.
@@ -439,8 +439,9 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
  +/
 string stripEffects(const string line)
 {
-    import kameloso.irc.common : I = IRCControlCharacter;
     import std.array : replace;
+
+    alias I = IRCControlCharacter;
 
     enum boldCode = "" ~ I.bold;
     enum italicsCode = "" ~ I.italics;

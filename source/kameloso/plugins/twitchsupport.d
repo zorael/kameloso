@@ -1,5 +1,5 @@
 /++
- +  The Twitch Support service post-processes `kameloso.irc.defs.IRCEvent`s after
+ +  The Twitch Support service post-processes `dialect.defs.IRCEvent`s after
  +  they are parsed but before they are sent to the plugins for handling, and
  +  deals with Twitch-specifics. Those include extracting the colour someone's
  +  name should be printed in, their alias/"display name" (generally their
@@ -21,7 +21,7 @@ version(TwitchSupport):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
+import dialect.defs;
 
 version(Colours)
 {
@@ -31,8 +31,8 @@ version(Colours)
 
 // postprocess
 /++
- +  Handle Twitch specifics, modifying the `kameloso.irc.defs.IRCEvent` to add
- +  things like `kameloso.irc.defs.IRCEvent.colour` and differentiate between
+ +  Handle Twitch specifics, modifying the `dialect.defs.IRCEvent` to add
+ +  things like `dialect.defs.IRCEvent.colour` and differentiate between
  +  temporary and permanent bans.
  +/
 void postprocess(TwitchSupportService service, ref IRCEvent event)
@@ -75,11 +75,11 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
  +
  +  Params:
  +      service = Current `TwitchSupportService`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` whose tags should be parsed.
+ +      event = Reference to the `dialect.defs.IRCEvent` whose tags should be parsed.
  +/
 void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 {
-    import kameloso.irc.common : decodeIRCv3String;
+    import dialect.common : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
@@ -105,7 +105,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
     with (IRCEvent)
     foreach (tag; tagRange)
     {
-        import kameloso.string : contains, nom;
+        import lu.core.string : contains, nom;
 
         immutable key = tag.nom("=");
         immutable value = tag;
@@ -490,7 +490,7 @@ room-id                            "39298218"
                 //msg-param-total = 135770
                 // Charity has too many fields to fit an IRCEvent as they are currently
                 // Cram as much into aux as possible
-                import kameloso.string : beginsWith;
+                import lu.core.string : beginsWith;
                 import std.algorithm.iteration : filter;
                 import std.conv : to;
                 import std.typecons : Flag, No, Yes;
@@ -510,7 +510,7 @@ room-id                            "39298218"
 
                 if (const charityName = "msg-param-charity-name" in charityAA)
                 {
-                    import kameloso.string : escapeControlCharacters, strippedRight;
+                    import lu.core.string : escapeControlCharacters, strippedRight;
 
                     event.aux = (*charityName)
                         .decodeIRCv3String
@@ -665,6 +665,28 @@ user-id                            "237654991"
 user-type
 +/
                 event.type = Type.TWITCH_EXTENDSUB;
+                break;
+
+            case "highlighted-message":
+/+
+badge-info                         ""
+badges                             "bits-leader/1"
+color                              ""
+display-name                       "racken771"
+emotes                             ""
+flags                              ""
+id                                 "dcba6d0e-931b-483a-9be8-74547ec12f31"
+mod                                "0"
+msg-id                             "highlighted-message"
+room-id                            "176370525"
+subscriber                         "0"
+tmi-sent-ts                        "1567811080611"
+turbo                              "0"
+user-id                            "243530867"
+user-type                          ""
++/
+                // These are PRIVMSGs
+                event.aux = value;
                 break;
 
             /*case "bad_ban_admin":
@@ -825,7 +847,7 @@ user-type
                 break;
 
             default:
-                import kameloso.string : beginsWith;
+                import lu.core.string : beginsWith;
 
                 version(TwitchWarnings)
                 {
@@ -870,7 +892,7 @@ user-type
          case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            import kameloso.string : strippedRight;
+            import lu.core.string : strippedRight;
 
             if (!value.length) break;
 
@@ -917,7 +939,7 @@ user-type
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // The moderator’s reason for the timeout or ban.
             // system-msg: The message printed in chat along with this notice.
-            import kameloso.string : escapeControlCharacters, strippedRight;
+            import lu.core.string : escapeControlCharacters, strippedRight;
             import std.typecons : No, Yes;
 
             if (!value.length) break;
@@ -1321,7 +1343,7 @@ room-id             "31457014"
 void onEndOfMotd(TwitchSupportService service)
 {
     import kameloso.common : logger, settings;
-    import kameloso.string : beginsWith;
+    import lu.core.string : beginsWith;
 
     settings.colouredOutgoing = false;
 
@@ -1380,7 +1402,7 @@ private:
      +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
      +          `kameloso.plugins.common.onEventImpl`
      +          after verifying we're on a Twitch server.
      +/

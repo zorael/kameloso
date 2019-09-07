@@ -13,10 +13,10 @@ version(WithNotesPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
 import kameloso.common;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
+import dialect.defs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -48,7 +48,7 @@ struct NotesSettings
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : timeSince;
+    import lu.common : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
@@ -154,7 +154,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc.common : stripModesign;
+    import dialect.common : stripModesign;
     import std.algorithm.iteration : splitter;
 
     if (event.channel !in plugin.notes) return;
@@ -195,7 +195,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.algorithm.comparison : equal;
     import std.json : JSONException;
     import std.typecons : No, Yes;
@@ -300,7 +300,7 @@ debug
     "$command [nickname to fake a join for]")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.typecons : No, Yes;
 
     logger.info("Faking an event.");
@@ -338,7 +338,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +/
 auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
 {
-    import kameloso.string : decode64;
+    import lu.core.string : decode64;
     import std.datetime.systime : SysTime;
     import std.format : format;
     import std.json : JSONType;
@@ -490,7 +490,7 @@ void pruneNotes(NotesPlugin plugin)
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string channel, const string line)
 {
-    import kameloso.string : encode64;
+    import lu.core.string : encode64;
     import std.datetime.systime : Clock;
     import std.json : JSONValue;
 
@@ -547,7 +547,7 @@ void onEndOfMotd(NotesPlugin plugin)
  +/
 void initResources(NotesPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
@@ -581,7 +581,7 @@ public:
 final class NotesPlugin : IRCPlugin
 {
 private:
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
 
     /// All Notes plugin settings gathered.
     @Settings NotesSettings notesSettings;

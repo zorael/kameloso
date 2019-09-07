@@ -15,11 +15,11 @@ version(WithWebtitlesPlugin):
 
 private:
 
+import kameloso.plugins.common;
+import kameloso.irccolours : ircBold;
 import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
-import kameloso.plugins.common;
-import kameloso.irc.defs;
-import kameloso.irccolours : ircBold;
+import dialect.defs;
 
 import requests : Request;
 
@@ -90,7 +90,7 @@ struct TitleLookupRequest
     /// The context state of the requesting plugin instance.
     IRCPluginState state;
 
-    /// The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
+    /// The `dialect.defs.IRCEvent` that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.
@@ -117,7 +117,7 @@ struct TitleLookupRequest
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : logger, settings;
-    import kameloso.string : beginsWith, contains, nom;
+    import lu.core.string : beginsWith, contains, nom;
 
     if (event.content.beginsWith(settings.prefix)) return;
 
@@ -214,7 +214,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
     try
     {
-        import kameloso.string : beginsWith, contains, nom;
+        import lu.core.string : beginsWith, contains, nom;
         import std.datetime.systime : Clock;
         import std.typecons : No, Yes;
 
@@ -415,10 +415,10 @@ TitleLookupResults lookupTitle(const string url)
     results.title = decodeTitle(doc.title);
     results.domain = res.finalURI.original_host;  // thanks to ikod
 
-    import kameloso.string : beginsWith;
+    import lu.core.string : beginsWith;
     if (results.domain.beginsWith("www."))
     {
-        import kameloso.string : nom;
+        import lu.core.string : nom;
         results.domain.nom('.');
     }
 
@@ -542,7 +542,7 @@ void reportReddit(TitleLookupRequest request)
  +/
 string[] findURLs(const string line) @safe pure
 {
-    import kameloso.string : contains, nom, strippedRight;
+    import lu.core.string : contains, nom, strippedRight;
     import std.string : indexOf;
     import std.typecons : Flag, No, Yes;
 
@@ -662,7 +662,7 @@ unittest
  +/
 string rewriteDirectImgurURL(const string url) @safe pure
 {
-    import kameloso.string : beginsWith, nom;
+    import lu.core.string : beginsWith, nom;
     import std.typecons : No, Yes;
 
     if (url.beginsWith("https://i.imgur.com/"))
@@ -748,7 +748,7 @@ JSONValue getYouTubeInfo(const string url)
  +/
 string decodeTitle(const string title)
 {
-    import kameloso.string : stripped;
+    import lu.core.string : stripped;
     import arsd.dom : htmlEntitiesDecode;
     import std.array : replace;
 
@@ -801,7 +801,7 @@ unittest
 string lookupReddit(const string url, const bool modified = false)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.string : contains;
+    import lu.core.string : contains;
 
     // Don't look up Reddit URLs. Naïve match, may have false negatives.
     // Also skip YouTube links.
@@ -817,7 +817,7 @@ string lookupReddit(const string url, const bool modified = false)
 
     with (res.finalURI)
     {
-        import kameloso.string : beginsWith;
+        import lu.core.string : beginsWith;
 
         if (uri.beginsWith("https://www.reddit.com/login") ||
             uri.beginsWith("https://www.reddit.com/submit") ||
@@ -855,7 +855,7 @@ string lookupReddit(const string url, const bool modified = false)
  +/
 void prune(shared TitleLookupResults[string] cache)
 {
-    import kameloso.common : pruneAA;
+    import lu.common : pruneAA;
     import std.datetime.systime : Clock;
 
     if (!cache.length) return;

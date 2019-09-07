@@ -13,9 +13,9 @@ version(WithOnelinersPlugin):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc.defs;
-import kameloso.messaging;
 import kameloso.common : logger, settings;
+import kameloso.messaging;
+import dialect.defs;
 
 
 /// All Oneliner plugin runime settings.
@@ -25,7 +25,7 @@ struct OnelinersSettings
     @Enabler bool enabled = true;
 
     /++
-     +  Toggle whether or not a class of `kameloso.irc.defs.IRCUser.Class.whitelist`
+     +  Toggle whether or not a class of `dialect.defs.IRCUser.Class.whitelist`
      +  is enough to be allowed to modify oneliners.
      +/
     bool whitelistMayModify = true;
@@ -45,7 +45,7 @@ struct OnelinersSettings
 @(ChannelPolicy.home)
 void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : beginsWith, contains, nom;
+    import lu.core.string : beginsWith, contains, nom;
 
     if (!event.content.beginsWith(settings.prefix)) return;
 
@@ -79,7 +79,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @Description("Adds or removes a oneliner command.", "$command [add|del] [text]")
 void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains, nom;
+    import lu.core.string : contains, nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.typecons : No, Yes;
@@ -177,7 +177,7 @@ void onCommandCommands(OnelinersPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(OnelinersPlugin plugin)
 {
-    import kameloso.json : JSONStorage, populateFromJSON;
+    import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
     with (plugin)
@@ -225,7 +225,7 @@ void saveResourceToDisk(const string[string][string] aa, const string filename)
  +/
 void initResources(OnelinersPlugin plugin)
 {
-    import kameloso.json : JSONStorage;
+    import lu.json : JSONStorage;
     import std.json : JSONException;
     import std.path : baseName;
 
