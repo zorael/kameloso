@@ -39,8 +39,9 @@ versions "AsAnApplication" \
 configuration "posix" {
 	platforms "posix"
 	targetType "executable"
-	dependency "requests" version="~>1.0.9"
 	versions "WithPlugins" "Colours" "Web"
+	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
 	subConfiguration "dialect" "rich"
 }
 configuration "windows" {
@@ -48,12 +49,14 @@ configuration "windows" {
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web"
 	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
 	subConfiguration "dialect" "rich"
 }
 configuration "twitch" {
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
 	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
 configuration "dev" {
@@ -61,6 +64,7 @@ configuration "dev" {
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
 	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
 configuration "vanilla" {
@@ -77,12 +81,14 @@ configuration "web" {
 	targetType "executable"
 	versions "WithPlugins" "Web"
 	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
 	subConfiguration "dialect" "rich"
 }
 configuration "full" {
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
 	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
 configuration "pluginless" {
@@ -99,5 +105,6 @@ configuration "unittest" {
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
 	dependency "requests" version="~>1.0.9"
+	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
