@@ -41,12 +41,14 @@ configuration "posix" {
 	targetType "executable"
 	dependency "requests" version="~>1.0.9"
 	versions "WithPlugins" "Colours" "Web"
+	subConfiguration "dialect" "rich"
 }
 configuration "windows" {
 	platforms "windows"
 	targetType "executable"
 	versions "WithPlugins" "Colours" "Web"
 	dependency "requests" version="~>1.0.9"
+	subConfiguration "dialect" "rich"
 }
 configuration "twitch" {
 	targetType "executable"
@@ -64,15 +66,18 @@ configuration "dev" {
 configuration "vanilla" {
 	targetType "executable"
 	versions "WithPlugins"
+	subConfiguration "dialect" "rich"
 }
 configuration "colours" {
 	targetType "executable"
 	versions "WithPlugins" "Colours"
+	subConfiguration "dialect" "rich"
 }
 configuration "web" {
 	targetType "executable"
 	versions "WithPlugins" "Web"
 	dependency "requests" version="~>1.0.9"
+	subConfiguration "dialect" "rich"
 }
 configuration "full" {
 	targetType "executable"
@@ -83,9 +88,11 @@ configuration "full" {
 configuration "pluginless" {
 	targetType "executable"
 	versions "Colours"
+	subConfiguration "dialect" "rich"
 }
 configuration "pluginless-vanilla" {
 	targetType "executable"
+	subConfiguration "dialect" "rich"
 }
 configuration "unittest" {
 	targetType "executable"
