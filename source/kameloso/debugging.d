@@ -10,8 +10,9 @@ import dialect.defs;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
+version(AssertsGeneration):
+
 @safe:
-debug:
 
 
 // formatClientAssignment

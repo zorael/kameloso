@@ -353,13 +353,13 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
     string[] inputChannels;
     string[] inputHomes;
 
-    debug
+    version(AssertsGeneration)
     {
-        enum genDescription = "[DEBUG] Parse an IRC event string and generate an assert block";
+        enum genDescription = "Parse an IRC event string and generate an assert block";
     }
     else
     {
-        enum genDescription = "(Unavailable in non-debug builds)";
+        enum genDescription = "(Unavailable in non-dev builds)";
     }
 
     immutable argsBackup = args.idup;
@@ -537,7 +537,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
 
         if (shouldGenerateAsserts)
         {
-            debug
+            version(AssertsGeneration)
             {
                 // --gen|--generate was passed, enter assert generation
                 import kameloso.debugging : generateAsserts;
@@ -547,7 +547,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             else
             {
                 import std.getopt : GetOptException;
-                throw new GetOptException("--asserts is disabled in non-debug mode");
+                throw new GetOptException("--asserts is disabled in non-dev builds");
             }
         }
 

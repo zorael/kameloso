@@ -106,42 +106,45 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         if (settings.flush) stdout.flush();
     }
 
-    if (plugin.adminSettings.printAsserts)
+    version(AssertsGeneration)
     {
-        import kameloso.debugging : formatEventAssertBlock;
-        import lu.core.string : contains;
-
-        if (event.raw.contains(1))
+        if (plugin.adminSettings.printAsserts)
         {
-            logger.warning("event.raw contains CTCP 1 which might not get printed");
+            import kameloso.debugging : formatEventAssertBlock;
+            import lu.core.string : contains;
+
+            if (event.raw.contains(1))
+            {
+                logger.warning("event.raw contains CTCP 1 which might not get printed");
+            }
+
+            formatEventAssertBlock(stdout.lockingTextWriter, event);
+            writeln();
+
+            if (plugin.state.client != plugin.previousClient)
+            {
+                import kameloso.debugging : formatDelta;
+
+                /+writeln("/*");
+                /*writeln("with (parser.client)");
+                writeln("{");*/
+                stdout.lockingTextWriter.formatDelta!(No.asserts)
+                    (plugin.previousClient, plugin.state.client, 0);
+                /*writeln("}");*/
+                writeln("*/");
+                writeln();+/
+
+                writeln("with (parser.client)");
+                writeln("{");
+                stdout.lockingTextWriter.formatDelta!(Yes.asserts)
+                    (plugin.previousClient, plugin.state.client, 1);
+                writeln("}\n");
+
+                plugin.previousClient = plugin.state.client;
+            }
+
+            if (settings.flush) stdout.flush();
         }
-
-        formatEventAssertBlock(stdout.lockingTextWriter, event);
-        writeln();
-
-        if (plugin.state.client != plugin.previousClient)
-        {
-            import kameloso.debugging : formatDelta;
-
-            /+writeln("/*");
-            /*writeln("with (parser.client)");
-            writeln("{");*/
-            stdout.lockingTextWriter.formatDelta!(No.asserts)
-                (plugin.previousClient, plugin.state.client, 0);
-            /*writeln("}");*/
-            writeln("*/");
-            writeln();+/
-
-            writeln("with (parser.client)");
-            writeln("{");
-            stdout.lockingTextWriter.formatDelta!(Yes.asserts)
-                (plugin.previousClient, plugin.state.client, 1);
-            writeln("}\n");
-
-            plugin.previousClient = plugin.state.client;
-        }
-
-        if (settings.flush) stdout.flush();
     }
 }
 
@@ -1002,6 +1005,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
  +  This is used to creating unittest blocks in the source code.
  +/
 debug
+version(AssertsGeneration)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
@@ -1299,18 +1303,22 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             return;
 
-        case "printasserts":
-            plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
+        debug
+        version(AssertsGeneration)
+        {
+            case "printasserts":
+                plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
 
-            if (plugin.adminSettings.printAsserts)
-            {
-                import kameloso.debugging : formatClientAssignment;
-                import std.stdio : stdout;
+                if (plugin.adminSettings.printAsserts)
+                {
+                    import kameloso.debugging : formatClientAssignment;
+                    import std.stdio : stdout;
 
-                // Print the bot assignment but only if we're toggling it on
-                formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
-            }
-            return;
+                    // Print the bot assignment but only if we're toggling it on
+                    formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+                }
+                return;
+        }
     }
 
     case "resetterm":
@@ -1365,6 +1373,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
  +  `printAsserts` is debug-only, so gate this behind debug too.
  +/
 debug
+version(AssertsGeneration)
 void start(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.printAsserts) return;
@@ -1416,8 +1425,12 @@ private:
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
 
-    /// Snapshot of the previous `dialect.defs.IRCClient`.
-    debug IRCClient previousClient;
+    debug
+    version(AssertsGeneration)
+    {
+        /// Snapshot of the previous `dialect.defs.IRCClient`.
+        IRCClient previousClient;
+    }
 
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";
