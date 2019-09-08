@@ -1253,7 +1253,6 @@ import kameloso.thread : Sendable;
  +      header = String header describing the passed content payload.
  +      content = Message content.
  +/
-version(Posix)  // No need to compile this in on pipeline-less builds
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
     if (header != "admin") return;
