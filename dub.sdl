@@ -16,8 +16,9 @@ importPaths "source"
 
 dependency "lu" version="~>0.0.2"
 dependency "dialect" version="==0.0.3"
+subConfiguration "dialect" "rich"
 
-versions "AsAnApplication" \
+versions \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
     "WithBashQuotesPlugin" \
@@ -38,70 +39,64 @@ versions "AsAnApplication" \
 
 configuration "posix" {
 	platforms "posix"
-	targetType "executable"
 	versions "WithPlugins" "Colours" "Web"
 	dependency "requests" version="~>1.0.9"
 	dependency "arsd-official:dom" version="~>4.0.2"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "windows" {
 	platforms "windows"
-	targetType "executable"
 	versions "WithPlugins" "Colours" "Web"
 	dependency "requests" version="~>1.0.9"
 	dependency "arsd-official:dom" version="~>4.0.2"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "twitch" {
-	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
 	dependency "requests" version="~>1.0.9"
 	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
+
 configuration "dev" {
-	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
 	dependency "requests" version="~>1.0.9"
 	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
+
 configuration "vanilla" {
-	targetType "executable"
 	versions "WithPlugins"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "colours" {
-	targetType "executable"
 	versions "WithPlugins" "Colours"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "web" {
-	targetType "executable"
 	versions "WithPlugins" "Web"
 	dependency "requests" version="~>1.0.9"
 	dependency "arsd-official:dom" version="~>4.0.2"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "full" {
-	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
 	dependency "requests" version="~>1.0.9"
 	dependency "arsd-official:dom" version="~>4.0.2"
     subConfiguration "dialect" "twitch"
 }
+
 configuration "pluginless" {
-	targetType "executable"
 	versions "Colours"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "pluginless-vanilla" {
+	// Mustn't be empty
 	targetType "executable"
-	subConfiguration "dialect" "rich"
 }
+
 configuration "unittest" {
-	targetType "executable"
 	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" "ProfileGC"
 	dependency "requests" version="~>1.0.9"
