@@ -101,7 +101,7 @@ struct CoreSettings
     }
     else
     {
-        bool monochrome = true;  /// Mainly version Windows.
+        bool monochrome = true;  /// Non-colours version defaults to true.
     }
 
     /// Default reason given when quitting without specifying one.
