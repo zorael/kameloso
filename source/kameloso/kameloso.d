@@ -154,7 +154,7 @@ void messageFiber(ref IRCBot bot)
         {
             // This will automatically close the connection.
             // Set quit to yes to propagate the decision up the stack.
-            immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
+            immutable reason = givenReason.length ? givenReason : settings.quitReason;
             bot.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
             next = Next.returnSuccess;
         }
@@ -1657,7 +1657,7 @@ int initBot(string[] args)
         import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
 
         if (!realName.length) realName = KamelosoDefaultStrings.realName;
-        if (!quitReason.length) quitReason = KamelosoDefaultStrings.quitReason;
+        if (!settings.quitReason.length) settings.quitReason = KamelosoDefaultStrings.quitReason;
         if (!server.address.length) server.address = KamelosoDefaultStrings.serverAddress;
         if (server.port == 0) server.port = KamelosoDefaultIntegers.port;
     }
@@ -1974,16 +1974,16 @@ int initBot(string[] args)
             version(Colours)
             {
                 import kameloso.irccolours : mapEffects;
-                logger.trace("--> QUIT :", bot.parser.client.quitReason.mapEffects);
+                logger.trace("--> QUIT :", settings.quitReason.mapEffects);
             }
             else
             {
                 import kameloso.irccolours : stripEffects;
-                logger.trace("--> QUIT :", bot.parser.client.quitReason.stripEffects);
+                logger.trace("--> QUIT :", settings.quitReason.stripEffects);
             }
         }
 
-        bot.conn.sendline("QUIT :" ~ bot.parser.client.quitReason);
+        bot.conn.sendline("QUIT :" ~ settings.quitReason);
     }
     else if (!*bot.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
     {

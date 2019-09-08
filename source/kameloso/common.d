@@ -104,6 +104,9 @@ struct CoreSettings
         bool monochrome = true;  /// Mainly version Windows.
     }
 
+    /// Default reason given when quitting without specifying one.
+    string quitReason;
+
     /// Flag denoting whether or not the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
