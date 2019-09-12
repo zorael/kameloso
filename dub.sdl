@@ -64,7 +64,7 @@ configuration "dev" {
         "ProfileGC" "AssertsGeneration"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
-    subConfiguration "dialect" "twitch"
+    subConfiguration "dialect" "dev"
 }
 
 configuration "vanilla" {
@@ -103,5 +103,5 @@ configuration "unittest" {
         "ProfileGC" "AssertsGeneration"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
-    subConfiguration "dialect" "twitch"
+    subConfiguration "dialect" "dev"
 }
