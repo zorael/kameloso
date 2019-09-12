@@ -359,6 +359,7 @@ void tryAuth(ConnectService service)
  +  Some servers don't have a `MOTD`, so act on
  +  `dialect.defs.IRCEvent.Type.ERR_NOMOTD` as well.
  +/
+@Chainable
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
@@ -402,6 +403,57 @@ void onEndOfMotd(ConnectService service)
         }
 
         service.sentAfterConnect = true;
+    }
+}
+
+
+// onEndOfMotdTwitch
+/++
+ +  Upon having connected, registered and logged onto the Twitch servers,
+ +  disable outgoing colours and warn about having a `.` or `/` prefix.
+ +
+ +  Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
+ +  Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
+ +  so we can't use that ourselves.
+ +/
+version(TwitchSupport)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotdTwitch(ConnectService service)
+{
+    import kameloso.common : logger, settings;
+    import lu.string : beginsWith;
+
+    if (service.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+
+    settings.colouredOutgoing = false;
+
+    if (settings.prefix.beginsWith(".") || settings.prefix.beginsWith("/"))
+    {
+        string logtint, warningtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                warningtint = (cast(KamelosoLogger)logger).warningtint;
+            }
+        }
+
+        logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
+            `on Twitch servers, as "." and "/" are reserved for Twitch's own commands.`,
+            logtint, settings.prefix, warningtint);
+    }
+
+    if (service.state.client.colour.length)
+    {
+        import kameloso.messaging : raw;
+        import std.format : format;
+
+        raw(service.state, "PRIVMSG #%s :/color %s"
+            .format(service.state.client.nickname, service.state.client.colour));
     }
 }
 
