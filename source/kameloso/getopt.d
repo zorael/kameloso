@@ -33,7 +33,7 @@ private:
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 {
-    import lu.core.meld : MeldingStrategy, meldInto;
+    import lu.meld : MeldingStrategy, meldInto;
     import lu.serialisation : readConfigInto;
 
     IRCClient tempClient;
@@ -80,7 +80,7 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
  +/
 void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
 {
-    import lu.core.string : beginsWith, contains;
+    import lu.string : beginsWith, contains;
     import std.algorithm.iteration : filter;
 
     static assert((!Rest.length || (Rest.length % 2 == 0)),
@@ -92,14 +92,14 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
 
         if (arg.contains('='))
         {
-            import lu.core.string : nom;
+            import lu.string : nom;
 
             immutable realWord = slice.nom('=');
             if (realWord != option) continue;
 
             static if (is(T == enum))
             {
-                import lu.core.conv : Enum;
+                import lu.conv : Enum;
                 *ptr = Enum!T.fromString(slice);
             }
             else
@@ -156,7 +156,7 @@ unittest
         "--banana", &s.banana,
     );
 
-    import lu.core.conv : Enum;
+    import lu.conv : Enum;
 
     assert(s.monochrome);
     assert((s.server == "irc.freenode.net"), s.server);
@@ -476,7 +476,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         }
 
         // 6a. Strip whitespace
-        import lu.core.string : stripped;
+        import lu.string : stripped;
         import std.algorithm.iteration : map;
         import std.array : array;
 

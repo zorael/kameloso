@@ -45,7 +45,7 @@ struct OnelinersSettings
 @(ChannelPolicy.home)
 void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, contains, nom;
 
     if (!event.content.beginsWith(settings.prefix)) return;
 
@@ -79,7 +79,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @Description("Adds or removes a oneliner command.", "$command [add|del] [text]")
 void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : contains, nom;
+    import lu.string : contains, nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.typecons : No, Yes;

@@ -32,7 +32,7 @@ import std.typecons : Flag, No, Yes;
  +/
 struct ConnectSettings
 {
-    import lu.core.uda : CannotContainComments, Separator;
+    import lu.uda : CannotContainComments, Separator;
 
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
@@ -156,7 +156,7 @@ void joinChannels(ConnectService service)
         }
 
         import kameloso.messaging : joinChannel = join;
-        import lu.core.string : plurality;
+        import lu.string : plurality;
         import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
         import std.array : join;
@@ -236,7 +236,7 @@ void tryAuth(ConnectService service)
 
     with (service.state)
     {
-        import lu.core.string : beginsWith, decode64;
+        import lu.string : beginsWith, decode64;
         immutable password = client.password.beginsWith("base64:") ?
             decode64(client.password[7..$]) : client.password;
 
@@ -388,7 +388,7 @@ void onEndOfMotd(ConnectService service)
         {
             foreach (immutable line; service.connectSettings.sendAfterConnect)
             {
-                import lu.core.string : stripped;
+                import lu.string : stripped;
                 import std.array : replace;
 
                 immutable processed = line
@@ -450,7 +450,7 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
         if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
-    import lu.core.string : beginsWith;
+    import lu.string : beginsWith;
 
     if ((event.sender.nickname == "NickServ") &&
         event.content.beginsWith("Password accepted for nick"))
@@ -722,7 +722,7 @@ void onSASLAuthenticate(ConnectService service)
 {
     with (service.state.client)
     {
-        import lu.core.string : beginsWith, decode64, encode64;
+        import lu.string : beginsWith, decode64, encode64;
 
         service.authentication = Progress.started;
 

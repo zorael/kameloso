@@ -128,7 +128,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
         foreach (immutable line; fifo.byLineCopy)
         {
             import kameloso.messaging : raw, quit;
-            import lu.core.string : beginsWith;
+            import lu.string : beginsWith;
             import std.uni : toLower;
 
             if (!line.length) break;
@@ -136,7 +136,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
             if (line[0] == ':')
             {
                 import kameloso.thread : ThreadMessage, busMessage;
-                import lu.core.string : contains, nom;
+                import lu.string : contains, nom;
 
                 if (line.contains(' '))
                 {

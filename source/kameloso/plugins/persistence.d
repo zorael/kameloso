@@ -62,7 +62,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                 if (stored)
                 {
-                    import lu.core.meld : MeldingStrategy, meldInto;
+                    import lu.meld : MeldingStrategy, meldInto;
 
                     // Twitch bot postprocess is run before this postprocess is.
                     // If it changes the user class, have it persist past our
@@ -131,7 +131,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 break;
             }
 
-            import lu.core.meld : MeldingStrategy, meldInto;
+            import lu.meld : MeldingStrategy, meldInto;
 
             // Meld into the stored user, and store the union in the event
             (*user).meldInto!(MeldingStrategy.aggressive)(*stored);

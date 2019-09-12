@@ -14,7 +14,7 @@ x:ddoxTool "scod"
 sourcePaths "source"
 importPaths "source"
 
-dependency "lu" version="~>0.0.2"
+dependency "lu" version="~>0.1.0"
 dependency "dialect" version="==0.0.3"
 subConfiguration "dialect" "rich"
 

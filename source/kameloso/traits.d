@@ -1,10 +1,10 @@
 /++
- +  Various traits that are too kameloso-specific to be in `lu.core`.
+ +  Various traits that are too kameloso-specific to be in `lu`.
  +/
 module kameloso.traits;
 
-import lu.core.traits : isConfigurableVariable;
-import lu.core.uda : Hidden, Unconfigurable;
+import lu.traits : isConfigurableVariable;
+import lu.uda : Hidden, Unconfigurable;
 import std.traits : isArray, isAssociativeArray, isType;
 import std.typecons : Flag, No, Yes;
 
@@ -164,11 +164,11 @@ if (Things.length > 0)
                 {
                     alias T = typeof(__traits(getMember, Thing, name));
 
-                    import lu.core.traits : isTrulyString;
+                    import lu.traits : isTrulyString;
 
                     static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
                     {
-                        import lu.core.traits : UnqualArray;
+                        import lu.traits : UnqualArray;
                         enum typestring = UnqualArray!T.stringof;
                     }
                     else

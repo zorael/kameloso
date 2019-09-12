@@ -123,7 +123,7 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign;
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     import std.format : format;
     import std.json : JSONException;
 
@@ -247,7 +247,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign;
-    import lu.core.string : nom;
+    import lu.string : nom;
     import std.format : format;
     import std.json : JSONException;
     import std.typecons : No, Yes;

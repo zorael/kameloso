@@ -27,7 +27,7 @@ version = PrefixedCommandsFallBackToNickname;
 private
 static if (__VERSION__ == 2079L)
 {
-    import lu.core.traits : getSymbolsByUDA;
+    import lu.traits : getSymbolsByUDA;
 
     struct UDA_2079 {}
     struct Foo_2079
@@ -413,7 +413,7 @@ struct IRCPluginState
 bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
 {
     import kameloso.common : logger, settings;
-    import lu.core.string : contains, nom;
+    import lu.string : contains, nom;
     import std.conv : ConvException;
 
     string logtint, warningtint;
@@ -984,7 +984,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 ///
 unittest
 {
-    import lu.core.conv : Enum;
+    import lu.conv : Enum;
     import std.datetime.systime : Clock;
 
     IRCEvent event;
@@ -1055,7 +1055,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public bool isEnabled() const @property pure nothrow @nogc
     {
-        import lu.core.traits : getSymbolsByUDA;
+        import lu.traits : getSymbolsByUDA;
         import std.traits : Unqual, hasUDA;
 
         bool retval = true;
@@ -1162,8 +1162,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import lu.core.string : contains, nom;
-        import lu.core.traits : getSymbolsByUDA;
+        import lu.string : contains, nom;
+        import lu.traits : getSymbolsByUDA;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : isSomeFunction, getUDAs, hasUDA;
 
@@ -1192,13 +1192,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
-                import lu.core.conv : Enum;
+                import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
             }
 
             enum name = ()
             {
-                import lu.core.conv : Enum;
+                import lu.conv : Enum;
                 import std.format : format;
 
                 string pluginName = module_;  // mutable
@@ -1327,7 +1327,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             continue;  // next BotCommand UDA
                         }
 
-                        import lu.core.string : strippedLeft;
+                        import lu.string : strippedLeft;
                         import std.algorithm.comparison : equal;
                         import std.typecons : No, Yes;
                         import std.uni : asLowerCase, toLower;
@@ -1439,7 +1439,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
-                    import lu.core.conv : Enum;
+                    import lu.conv : Enum;
                     import std.format : format;
 
                     enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
@@ -1451,7 +1451,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     with (IRCEvent.Type)
                     {
-                        import lu.core.conv : Enum;
+                        import lu.conv : Enum;
 
                         alias U = eventTypeUDA;
 
@@ -1471,7 +1471,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                 }
 
-                import lu.core.traits : TakesParams, stringofParams;
+                import lu.traits : TakesParams, stringofParams;
                 import std.meta : AliasSeq, staticMap;
                 import std.traits : Parameters, Unqual, arity, staticMap;
 
@@ -1723,7 +1723,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public this(IRCPluginState state) @system
     {
         import kameloso.common : settings;
-        import lu.core.traits : isConfigurableVariable;
+        import lu.traits : isConfigurableVariable;
         import std.traits : hasUDA;
 
         this.privateState = state;
@@ -1747,7 +1747,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         static if (__traits(compiles, .initialise))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1773,7 +1773,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .postprocess))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1798,7 +1798,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -1824,7 +1824,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
-        import lu.core.meld : MeldingStrategy, meldInto;
+        import lu.meld : MeldingStrategy, meldInto;
         import lu.serialisation : readConfigInto;
         import std.traits : hasUDA;
 
@@ -1976,7 +1976,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
             import std.datetime.systime : SysTime;
 
             if (!isEnabled) return;
@@ -2007,7 +2007,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -2035,7 +2035,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctName =
         {
-            import lu.core.string : contains, nom;
+            import lu.string : contains, nom;
 
             string moduleName = module_;  // mutable
 
@@ -2067,7 +2067,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctCommands =
         {
-            import lu.core.traits : getSymbolsByUDA;
+            import lu.traits : getSymbolsByUDA;
             import std.meta : Filter;
             import std.traits : getUDAs, hasUDA, isSomeFunction;
 
@@ -2180,7 +2180,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             static if (TakesParams!(.periodically, typeof(this)))
             {
@@ -2206,7 +2206,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             if (!isEnabled) return;
 
@@ -2233,7 +2233,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .onBusMessage))
         {
-            import lu.core.traits : TakesParams;
+            import lu.traits : TakesParams;
 
             static if (TakesParams!(.onBusMessage, typeof(this), string, Sendable))
             {
@@ -2576,7 +2576,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 void explainReplay()
                 {
                     import kameloso.common : logger, settings;
-                    import lu.core.conv : Enum;
+                    import lu.conv : Enum;
 
                     string infotint, logtint;
 
@@ -2827,7 +2827,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irccolours : stripColours;
-        import lu.core.string : contains, nom;
+        import lu.string : contains, nom;
         import dialect.common : IRCControlCharacter, stripModesign;
         import std.algorithm.iteration : splitter;
 
@@ -3245,7 +3245,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import lu.core.string : contains;
+        import lu.string : contains;
         import std.algorithm.iteration : splitter;
 
         if (!event.content.length) return;
@@ -3262,7 +3262,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (userstring.contains('!') && userstring.contains('@'))
             {
-                import lu.core.string : nom;
+                import lu.string : nom;
                 // SpotChat-like, names are in full nick!ident@address form
                 nickname = slice.nom('!');
             }
@@ -3532,7 +3532,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
-    import lu.core.string : beginsWith, nom, stripSeparatedPrefix;
+    import lu.string : beginsWith, nom, stripSeparatedPrefix;
     import std.typecons : No, Yes;
 
     with (mutEvent)
@@ -3630,7 +3630,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 
     if (auto user = newUser.nickname in plugin.state.users)
     {
-        import lu.core.meld : meldInto;
+        import lu.meld : meldInto;
         newUser.meldInto(*user);
     }
     else
@@ -3912,7 +3912,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         with (IRCEvent.Type)
         with (whoisEvent)
         {
-            import lu.core.conv : Enum;
+            import lu.conv : Enum;
             assert(((type == RPL_WHOISACCOUNT) ||
                 (type == RPL_WHOISREGNICK) ||
                 (type == RPL_ENDOFWHOIS) ||

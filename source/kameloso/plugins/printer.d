@@ -881,7 +881,7 @@ void onISUPPORT(PrinterPlugin plugin)
             }
         }
 
-        import lu.core.conv : Enum;
+        import lu.conv : Enum;
         logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
             infotint, networkName, logtint,
             infotint, Enum!(IRCServer.Daemon).toString(daemon),
@@ -980,7 +980,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
-    import lu.core.conv : Enum;
+    import lu.conv : Enum;
     import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -1278,7 +1278,7 @@ if (isOutputRange!(Sink, char[]))
 {
     import kameloso.terminal : FG = TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
-    import lu.core.conv : Enum;
+    import lu.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
@@ -1335,7 +1335,7 @@ if (isOutputRange!(Sink, char[]))
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
                 import kameloso.terminal : truecolour;
-                import lu.core.conv : numFromHex;
+                import lu.conv : numFromHex;
 
                 int r, g, b;
                 user.colour.numFromHex(r, g, b);
@@ -1567,7 +1567,7 @@ if (isOutputRange!(Sink, char[]))
         .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp,
             '[', timestamp, ']');
 
-        import lu.core.string : beginsWith;
+        import lu.string : beginsWith;
 
         if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
             (event.type == IRCEvent.Type.TWITCH_ERROR))
@@ -1690,7 +1690,7 @@ if (isOutputRange!(Sink, char[]))
  +/
 string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
 {
-    import lu.core.string : beginsWith;
+    import lu.string : beginsWith;
 
     if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
     {
@@ -1813,7 +1813,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable badgeAndNum; badgestring.splitter(","))
     {
-        import lu.core.string : nom;
+        import lu.string : nom;
 
         string slice = badgeAndNum;
         immutable badge = slice.nom('/');
@@ -1884,7 +1884,7 @@ if (isOutputRange!(Sink, char[]))
             break;
 
         default:
-            import lu.core.string : beginsWith;
+            import lu.string : beginsWith;
             import std.algorithm.searching : endsWith;
 
             if (badge.beginsWith("bits-"))
@@ -2196,7 +2196,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
     import kameloso.terminal : colourWith;
-    import lu.core.string : contains;
+    import lu.string : contains;
     import std.array : Appender;
 
     alias DefaultBright = DefaultColours.EventPrintingBright;
@@ -2299,7 +2299,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (emote; emotes.splitter("/"))
     {
-        import lu.core.string : nom;
+        import lu.string : nom;
 
         immutable emoteID = emote.nom(':');
 

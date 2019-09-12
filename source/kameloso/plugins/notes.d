@@ -195,7 +195,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : contains, nom;
+    import lu.string : contains, nom;
     import std.algorithm.comparison : equal;
     import std.json : JSONException;
     import std.typecons : No, Yes;
@@ -300,7 +300,7 @@ debug
     "$command [nickname to fake a join for]")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : contains, nom;
+    import lu.string : contains, nom;
     import std.typecons : No, Yes;
 
     logger.info("Faking an event.");
@@ -338,7 +338,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +/
 auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
 {
-    import lu.core.string : decode64;
+    import lu.string : decode64;
     import std.datetime.systime : SysTime;
     import std.format : format;
     import std.json : JSONType;
@@ -490,7 +490,7 @@ void pruneNotes(NotesPlugin plugin)
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string channel, const string line)
 {
-    import lu.core.string : encode64;
+    import lu.string : encode64;
     import std.datetime.systime : Clock;
     import std.json : JSONValue;
 

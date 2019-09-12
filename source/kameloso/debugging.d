@@ -152,7 +152,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
                 }
                 else static if (is(T == enum))
                 {
-                    import lu.core.string : nom;
+                    import lu.string : nom;
                     import std.algorithm.searching : count;
                     import std.traits : fullyQualifiedName;
 
@@ -194,7 +194,7 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
                     }
                 }
 
-                import lu.core.string : tabs;
+                import lu.string : tabs;
                 import std.format : formattedWrite;
                 sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
             }
@@ -325,7 +325,7 @@ assert((c == '#'), c.to!string);
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 if (isOutputRange!(Sink, char[]))
 {
-    import lu.core.string : tabs;
+    import lu.string : tabs;
     import std.format : format, formattedWrite;
 
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
@@ -349,7 +349,7 @@ if (isOutputRange!(Sink, char[]))
 
 unittest
 {
-    import lu.core.string : tabs;
+    import lu.string : tabs;
     import dialect.parsing : IRCParser;
     import std.array : Appender;
     import std.format : formattedWrite;
@@ -405,7 +405,7 @@ void generateAsserts(ref IRCBot bot) @system
 {
     import kameloso.common : logger;
     import kameloso.printing : printObjects;
-    import lu.core.string : contains, nom, stripped;
+    import lu.string : contains, nom, stripped;
     import dialect.defs : IRCServer;
     import std.conv : ConvException;
     import std.range : chunks, only;
@@ -432,7 +432,7 @@ void generateAsserts(ref IRCBot bot) @system
 
         try
         {
-            import lu.core.conv : Enum;
+            import lu.conv : Enum;
             import dialect.common : typenumsOf;
 
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
@@ -498,7 +498,7 @@ void generateAsserts(ref IRCBot bot) @system
 
         while ((input = readln()) !is null)
         {
-            import lu.core.string : beginsWithOneOf;
+            import lu.string : beginsWithOneOf;
             import dialect.common : IRCParseException;
 
             if (*abort) return;

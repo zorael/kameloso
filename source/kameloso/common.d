@@ -4,7 +4,7 @@
  +/
 module kameloso.common;
 
-import lu.core.uda;
+import lu.uda;
 import dialect.defs : IRCClient;
 
 import core.time : Duration, seconds;
@@ -397,7 +397,7 @@ struct IRCBot
 
             if (theseInvalidEntries.length)
             {
-                import lu.core.meld : meldInto;
+                import lu.meld : meldInto;
                 theseInvalidEntries.meldInto(allInvalidEntries);
             }
 
@@ -613,7 +613,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
 void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 {
     import lu.serialisation : justifiedConfigurationText, serialise;
-    import lu.core.string : beginsWith, encode64;
+    import lu.string : beginsWith, encode64;
     import std.array : Appender;
 
     Appender!string sink;
@@ -855,7 +855,7 @@ unittest
 
     version(XDG)
     {
-        import lu.core.string : beginsWith;
+        import lu.string : beginsWith;
         import std.process : environment;
 
         environment["XDG_DATA_HOME"] = "/tmp";

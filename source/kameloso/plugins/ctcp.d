@@ -188,7 +188,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
         break;
 
     default:
-        import lu.core.conv : Enum;
+        import lu.conv : Enum;
         assert(0, "Missing CTCP_ case entry for " ~ Enum!(IRCEvent.Type).toString(event.type));
     }
 
@@ -253,8 +253,8 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 
     enum string allCTCPTypes = ()
     {
-        import lu.core.string : beginsWith, strippedRight;
-        import lu.core.traits : getSymbolsByUDA;
+        import lu.string : beginsWith, strippedRight;
+        import lu.traits : getSymbolsByUDA;
         import std.traits : getUDAs, isSomeFunction;
 
         string allTypes;
@@ -265,7 +265,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
             {
                 foreach (immutable type; getUDAs!(fun, IRCEvent.Type))
                 {
-                    import lu.core.conv : Enum;
+                    import lu.conv : Enum;
                     enum typestring = Enum!(IRCEvent.Type).toString(type);
 
                     static if (typestring.beginsWith("CTCP_"))

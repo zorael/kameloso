@@ -320,7 +320,7 @@ unittest
 @(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : beginsWith, stripped;
+    import lu.string : beginsWith, stripped;
     import std.datetime.systime : Clock;
 
     immutable stripped_ = event.content.stripped;

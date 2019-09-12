@@ -117,7 +117,7 @@ struct TitleLookupRequest
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : logger, settings;
-    import lu.core.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, contains, nom;
 
     if (event.content.beginsWith(settings.prefix)) return;
 
@@ -214,7 +214,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
     try
     {
-        import lu.core.string : beginsWith, contains, nom;
+        import lu.string : beginsWith, contains, nom;
         import std.datetime.systime : Clock;
         import std.typecons : No, Yes;
 
@@ -415,10 +415,10 @@ TitleLookupResults lookupTitle(const string url)
     results.title = decodeTitle(doc.title);
     results.domain = res.finalURI.original_host;  // thanks to ikod
 
-    import lu.core.string : beginsWith;
+    import lu.string : beginsWith;
     if (results.domain.beginsWith("www."))
     {
-        import lu.core.string : nom;
+        import lu.string : nom;
         results.domain.nom('.');
     }
 
@@ -542,7 +542,7 @@ void reportReddit(TitleLookupRequest request)
  +/
 string[] findURLs(const string line) @safe pure
 {
-    import lu.core.string : contains, nom, strippedRight;
+    import lu.string : contains, nom, strippedRight;
     import std.string : indexOf;
     import std.typecons : Flag, No, Yes;
 
@@ -662,7 +662,7 @@ unittest
  +/
 string rewriteDirectImgurURL(const string url) @safe pure
 {
-    import lu.core.string : beginsWith, nom;
+    import lu.string : beginsWith, nom;
     import std.typecons : No, Yes;
 
     if (url.beginsWith("https://i.imgur.com/"))
@@ -748,7 +748,7 @@ JSONValue getYouTubeInfo(const string url)
  +/
 string decodeTitle(const string title)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     import arsd.dom : htmlEntitiesDecode;
     import std.array : replace;
 
@@ -801,7 +801,7 @@ unittest
 string lookupReddit(const string url, const bool modified = false)
 {
     import kameloso.constants : BufferSize;
-    import lu.core.string : contains;
+    import lu.string : contains;
 
     // Don't look up Reddit URLs. Naïve match, may have false negatives.
     // Also skip YouTube links.
@@ -817,7 +817,7 @@ string lookupReddit(const string url, const bool modified = false)
 
     with (res.finalURI)
     {
-        import lu.core.string : beginsWith;
+        import lu.string : beginsWith;
 
         if (uri.beginsWith("https://www.reddit.com/login") ||
             uri.beginsWith("https://www.reddit.com/submit") ||

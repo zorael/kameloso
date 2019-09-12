@@ -983,7 +983,7 @@ do
 version(Colours)
 unittest
 {
-    import lu.core.conv : Enum;
+    import lu.conv : Enum;
 
     alias FG = TerminalForeground;
 

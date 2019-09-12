@@ -105,7 +105,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
     with (IRCEvent)
     foreach (tag; tagRange)
     {
-        import lu.core.string : contains, nom;
+        import lu.string : contains, nom;
 
         immutable key = tag.nom("=");
         immutable value = tag;
@@ -490,7 +490,7 @@ room-id                            "39298218"
                 //msg-param-total = 135770
                 // Charity has too many fields to fit an IRCEvent as they are currently
                 // Cram as much into aux as possible
-                import lu.core.string : beginsWith;
+                import lu.string : beginsWith;
                 import std.algorithm.iteration : filter;
                 import std.conv : to;
                 import std.typecons : Flag, No, Yes;
@@ -510,7 +510,7 @@ room-id                            "39298218"
 
                 if (const charityName = "msg-param-charity-name" in charityAA)
                 {
-                    import lu.core.string : escapeControlCharacters, strippedRight;
+                    import lu.string : escapeControlCharacters, strippedRight;
 
                     event.aux = (*charityName)
                         .decodeIRCv3String
@@ -847,7 +847,7 @@ user-type                          ""
                 break;
 
             default:
-                import lu.core.string : beginsWith;
+                import lu.string : beginsWith;
 
                 version(TwitchWarnings)
                 {
@@ -892,7 +892,7 @@ user-type                          ""
          case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            import lu.core.string : strippedRight;
+            import lu.string : strippedRight;
 
             if (!value.length) break;
 
@@ -939,7 +939,7 @@ user-type                          ""
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // The moderator’s reason for the timeout or ban.
             // system-msg: The message printed in chat along with this notice.
-            import lu.core.string : escapeControlCharacters, strippedRight;
+            import lu.string : escapeControlCharacters, strippedRight;
             import std.typecons : No, Yes;
 
             if (!value.length) break;
@@ -1343,7 +1343,7 @@ room-id             "31457014"
 void onEndOfMotd(TwitchSupportService service)
 {
     import kameloso.common : logger, settings;
-    import lu.core.string : beginsWith;
+    import lu.string : beginsWith;
 
     settings.colouredOutgoing = false;
 

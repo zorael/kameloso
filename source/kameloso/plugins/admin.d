@@ -36,7 +36,7 @@ import std.typecons : Flag, No, Yes;
  +/
 struct AdminSettings
 {
-    import lu.core.uda : Unconfigurable;
+    import lu.uda : Unconfigurable;
 
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -111,7 +111,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         if (plugin.adminSettings.printAsserts)
         {
             import kameloso.debugging : formatEventAssertBlock;
-            import lu.core.string : contains;
+            import lu.string : contains;
 
             if (event.raw.contains(1))
             {
@@ -306,7 +306,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     import dialect.common : isValidChannel;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
@@ -432,7 +432,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @Description("Removes a channel from the list of homes and leaves it.", "$command [channel]")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
 
@@ -481,7 +481,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     "$command [account to whitelist]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     plugin.lookupEnlist(event.content.stripped, "whitelist", event);
 }
 
@@ -502,7 +502,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
     const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
-    import lu.core.string : contains, stripped;
+    import lu.string : contains, stripped;
     import dialect.common : isValidNickname;
 
     /// Report result, either to the local terminal or to the IRC channel/sender
@@ -762,7 +762,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
     "$command [account to remove from whitelist]")
 void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     plugin.delist(event.content.stripped, "whitelist", event);
 }
 
@@ -786,7 +786,7 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
     "$command [account to blacklist]")
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     plugin.lookupEnlist(event.content.stripped, "blacklist", event);
 }
 
@@ -808,7 +808,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     "$command [account to remove from whitelist]")
 void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : stripped;
+    import lu.string : stripped;
     plugin.delist(event.content.stripped, "blacklist", event);
 }
 
@@ -1208,7 +1208,7 @@ debug
 void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, busMessage;
-    import lu.core.string : contains, nom;
+    import lu.string : contains, nom;
     import std.stdio : stdout, writeln;
 
     if (!event.content.length) return;
@@ -1261,7 +1261,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
     import kameloso.printing : printObject;
     import kameloso.thread : BusMessage;
-    import lu.core.string : contains, nom, strippedRight;
+    import lu.string : contains, nom, strippedRight;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);

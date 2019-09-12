@@ -225,7 +225,7 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
 
 unittest
 {
-    import lu.core.conv : Enum;
+    import lu.conv : Enum;
     import std.concurrency;
     import std.format : format;
 
@@ -260,7 +260,7 @@ unittest
     "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : beginsWith, nom;
+    import lu.string : beginsWith, nom;
     import dialect.common : isValidChannel, isValidNickname;
     import std.algorithm.searching : count;
     import std.uni : toLower;
@@ -378,7 +378,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     "$command [channel] [account]")
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import lu.core.string : nom;
+    import lu.string : nom;
     import std.algorithm.searching : count;
     import std.format : format;
     import std.uni : toLower;

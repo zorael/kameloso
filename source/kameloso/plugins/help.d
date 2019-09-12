@@ -61,7 +61,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import lu.core.string : contains, nom;
+        import lu.string : contains, nom;
         import core.thread : Fiber;
         import std.algorithm.sorting : sort;
         import std.format : format;
@@ -96,7 +96,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                         if (description.syntax.length)
                         {
-                            import lu.core.string : beginsWith;
+                            import lu.string : beginsWith;
                             import std.array : replace;
 
                             immutable udaSyntax = description.syntax
