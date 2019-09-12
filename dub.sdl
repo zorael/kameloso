@@ -38,70 +38,70 @@ versions \
     "WithWebtitlesPlugin"
 
 configuration "posix" {
-	platforms "posix"
-	versions "WithPlugins" "Colours" "Web"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
+    platforms "posix"
+    versions "WithPlugins" "Colours" "Web"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
 }
 
 configuration "windows" {
-	platforms "windows"
-	versions "WithPlugins" "Colours" "Web"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
+    platforms "windows"
+    versions "WithPlugins" "Colours" "Web"
+    dependency "requests" version="~>1.0.9"
+dependency "arsd-official:dom" version="~>4.0.3"
 }
 
 configuration "twitch" {
-	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
-    subConfiguration "dialect" "twitch"
+    versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
+subConfiguration "dialect" "twitch"
 }
 
 configuration "dev" {
-	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
+    versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
-		"ProfileGC" "AssertsGeneration"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
+        "ProfileGC" "AssertsGeneration"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
     subConfiguration "dialect" "twitch"
 }
 
 configuration "vanilla" {
-	versions "WithPlugins"
+    versions "WithPlugins"
 }
 
 configuration "colours" {
-	versions "WithPlugins" "Colours"
+    versions "WithPlugins" "Colours"
 }
 
 configuration "web" {
-	versions "WithPlugins" "Web"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
+    versions "WithPlugins" "Web"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
 }
 
 configuration "full" {
-	versions "WithPlugins" "Colours" "Web" "TwitchSupport"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
+    versions "WithPlugins" "Colours" "Web" "TwitchSupport"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
     subConfiguration "dialect" "twitch"
 }
 
 configuration "pluginless" {
-	versions "Colours"
+    versions "Colours"
 }
 
 configuration "pluginless-vanilla" {
-	// Mustn't be empty
-	targetType "executable"
+    // Mustn't be empty
+    targetType "executable"
 }
 
 configuration "unittest" {
-	versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
+    versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
-		"ProfileGC" "AssertsGeneration"
-	dependency "requests" version="~>1.0.9"
-	dependency "arsd-official:dom" version="~>4.0.3"
+        "ProfileGC" "AssertsGeneration"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
     subConfiguration "dialect" "twitch"
 }
