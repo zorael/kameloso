@@ -8,7 +8,6 @@ mainSourceFile "source/kameloso/main.d"
 dflags "-dip25" "-dip1008"
 libs "phobos2" platform="posix-dmd"
 
-x:ddoxFilterArgs "--unittest-examples" "--ex" "arsd."
 x:ddoxTool "scod"
 
 sourcePaths "source"
