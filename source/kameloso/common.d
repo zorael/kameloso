@@ -104,9 +104,6 @@ struct CoreSettings
         bool monochrome = true;  /// Non-colours version defaults to true.
     }
 
-    /// Default reason given when quitting without specifying one.
-    string quitReason;
-
     /// Flag denoting whether or not the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
@@ -153,20 +150,6 @@ struct IRCBot
     /// Username to use as services account login name.
     string account;
 
-    version(TwitchSupport)
-    {
-        /++
-            The Twitch colour to assign to our nickname.
-
-            "Normal users can choose between Blue, Coral, DodgerBlue,
-            SpringGreen, YellowGreen, Green, OrangeRed, Red, GoldenRod,
-            HotPink, CadetBlue, SeaGreen, Chocolate, BlueViolet, and Firebrick.
-            Twitch Turbo users can use any Hex value (i.e: #000000)."
-        +/
-        @CannotContainComments
-        string colour;
-    }
-
     @Hidden
     @CannotContainComments
     {
@@ -191,6 +174,24 @@ struct IRCBot
         @CannotContainComments
         string[] channels;
     }
+
+    version(TwitchSupport)
+    {
+        /++
+            The Twitch colour to assign to our nickname.
+
+            "Normal users can choose between Blue, Coral, DodgerBlue,
+            SpringGreen, YellowGreen, Green, OrangeRed, Red, GoldenRod,
+            HotPink, CadetBlue, SeaGreen, Chocolate, BlueViolet, and Firebrick.
+            Twitch Turbo users can use any Hex value (i.e: #000000)."
+        +/
+        @CannotContainComments
+        string colour;
+    }
+
+    /// Default reason given when quitting without specifying one.
+    @CannotContainComments
+    string quitReason;
 }
 
 
