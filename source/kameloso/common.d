@@ -199,7 +199,7 @@ struct IRCBot
  +  State needed for the kameloso bot, aggregated in a struct for easier passing
  +  by reference.
  +/
-struct IRCBot
+struct Kameloso
 {
     import kameloso.common : OutgoingLine;
     import lu.common : Buffer;
@@ -653,15 +653,15 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +
  +  Example:
  +  ---
- +  IRCBot bot;
- +  bot.writeConfigurationFile(bot.settings.configFile);
+ +  Kameloso instance;
+ +  instance.writeConfigurationFile(instance.settings.configFile);
  +  ---
  +
  +  Params:
- +      bot = Reference to the current `IRCBot`, with all its settings.
+ +      instance = Reference to the current `Kameloso`, with all its settings.
  +      filename = String filename of the file to write to.
  +/
-void writeConfigurationFile(ref IRCBot bot, const string filename) @system
+void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
     import lu.serialisation : justifiedConfigurationText, serialise;
     import lu.string : beginsWith, encode64;
@@ -670,7 +670,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename) @system
     Appender!string sink;
     sink.reserve(4096);  // ~2234
 
-    with (bot.parser)
+    with (instance.parser)
     {
         if (client.password.length && !client.password.beginsWith("base64:"))
         {
@@ -679,7 +679,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename) @system
 
         sink.serialise(client, client.server, settings);
 
-        foreach (plugin; bot.plugins)
+        foreach (plugin; instance.plugins)
         {
             plugin.serialiseConfigInto(sink);
         }

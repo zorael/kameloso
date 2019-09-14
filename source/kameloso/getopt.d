@@ -3,7 +3,7 @@
  +/
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, IRCBot;
+import kameloso.common : CoreSettings, Kameloso;
 import lu.common : Next;
 import dialect.defs : IRCClient;
 import std.typecons : No, Yes;
@@ -243,7 +243,7 @@ void printHelp(GetoptResult results) @system
  +  The filename is read from `kameloso.common.settings`.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      client = Reference to the current `dialect.defs.IRCClient`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
@@ -251,7 +251,7 @@ void printHelp(GetoptResult results) @system
  +  Returns:
  +      `kameloso.common.Next.returnSuccess` so the caller knows to return and exit.
  +/
-Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettings) @system
+Next writeConfig(ref Kameloso instance, ref IRCClient client, ref string[] customSettings) @system
 {
     import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
     import kameloso.printing : printObjects;
@@ -281,9 +281,9 @@ Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettin
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
-    bot.initPlugins(customSettings);
+    instance.initPlugins(customSettings);
 
-    bot.writeConfigurationFile(settings.configFile);
+    instance.writeConfigurationFile(settings.configFile);
 
     // Reload saved file
     meldSettingsFromFile(client, settings);
@@ -314,15 +314,15 @@ public:
  +
  +  Example:
  +  ---
- +  IRCBot bot;
- +  Next next = bot.handleGetopt(args);
+ +  Kameloso instance;
+ +  Next next = instance.handleGetopt(args);
  +
  +  if (next == Next.returnSuccess) return 0;
  +  // ...
  +  ---
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      args = The `string[]` args the program was called with.
  +      customSettings = Reference array of custom settings to apply on top of
  +          the settings read from the configuration file.
@@ -335,7 +335,7 @@ public:
  +  Throws:
  +      `std.getopt.GetOptException` if `--asserts`/`--gen` is passed in non-debug builds.
  +/
-Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @system
+Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSettings) @system
 {
     import kameloso.common : completeClient, printVersionInfo, settings;
     import std.format : format;
@@ -366,7 +366,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
 
     arraySep = ",";
 
-    with (bot.parser)
+    with (instance.parser)
     {
         auto results = args.getopt(
             config.caseSensitive,
@@ -499,7 +499,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
-            return writeConfig(bot, client, customSettings);
+            return writeConfig(instance, client, customSettings);
         }
 
         if (shouldShowSettings)
@@ -528,9 +528,9 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
 
             printObjects!(No.printAll)(client, client.server, settings);
 
-            bot.initPlugins(customSettings);
+            instance.initPlugins(customSettings);
 
-            foreach (plugin; bot.plugins) plugin.printSettings();
+            foreach (plugin; instance.plugins) plugin.printSettings();
 
             return Next.returnSuccess;
         }
@@ -541,7 +541,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             {
                 // --gen|--generate was passed, enter assert generation
                 import kameloso.debugging : generateAsserts;
-                bot.generateAsserts();
+                instance.generateAsserts();
                 return Next.returnSuccess;
             }
             else
@@ -552,7 +552,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         }
 
         // 10. `client` finished; inherit into `client`
-        bot.parser.client = client;
+        instance.parser.client = client;
 
         return Next.continue_;
     }

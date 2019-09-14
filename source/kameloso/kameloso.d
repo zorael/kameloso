@@ -95,9 +95,9 @@ void signalHandler(int sig) nothrow @nogc @system
  +  means the bot should exit or not.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +/
-void messageFiber(ref IRCBot bot)
+void messageFiber(ref Kameloso instance)
 {
     import std.concurrency : yield;
 
@@ -128,25 +128,25 @@ void messageFiber(ref IRCBot bot)
                 }
             }
 
-            bot.conn.sendline(line);
+            instance.conn.sendline(line);
         }
 
         /// Echo a line to the terminal and send it to the server.
         void sendline(ThreadMessage.Sendline, string line) scope
         {
-            bot.outbuffer.put(OutgoingLine(line, settings.hideOutgoing));
+            instance.outbuffer.put(OutgoingLine(line, settings.hideOutgoing));
         }
 
         /// Send a line to the server without echoing it.
         void quietline(ThreadMessage.Quietline, string line) scope
         {
-            bot.outbuffer.put(OutgoingLine(line, true));
+            instance.outbuffer.put(OutgoingLine(line, true));
         }
 
         /// Respond to `PING` with `PONG` to the supplied text as target.
         void pong(ThreadMessage.Pong, string target) scope
         {
-            bot.outbuffer.put(OutgoingLine("PONG :" ~ target, true));
+            instance.outbuffer.put(OutgoingLine("PONG :" ~ target, true));
         }
 
         /// Quit the server with the supplied reason, or the default.
@@ -155,21 +155,21 @@ void messageFiber(ref IRCBot bot)
             // This will automatically close the connection.
             // Set quit to yes to propagate the decision up the stack.
             immutable reason = givenReason.length ? givenReason : settings.quitReason;
-            bot.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
+            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
             next = Next.returnSuccess;
         }
 
         /// Disconnects from and reconnects to the server.
         void reconnect(ThreadMessage.Reconnect) scope
         {
-            bot.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", false));
+            instance.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", false));
             next = Next.retry;
         }
 
         /// Saves current configuration to disk.
         void save(ThreadMessage.Save) scope
         {
-            bot.writeConfigurationFile(settings.configFile);
+            instance.writeConfigurationFile(settings.configFile);
         }
 
         import kameloso.thread : CarryingFiber;
@@ -185,14 +185,14 @@ void messageFiber(ref IRCBot bot)
         {
             auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
             assert(fiber, "Peeking Fiber was null!");
-            fiber.payload = bot.plugins;  // Make it visible from within the Fiber
+            fiber.payload = instance.plugins;  // Make it visible from within the Fiber
             fiber.call();
         }
 
         /// Reloads all plugins.
         void reloadPlugins(ThreadMessage.Reload) scope
         {
-            foreach (plugin; bot.plugins)
+            foreach (plugin; instance.plugins)
             {
                 plugin.reload();
             }
@@ -202,7 +202,7 @@ void messageFiber(ref IRCBot bot)
         import kameloso.thread : Sendable;
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
-            foreach (plugin; bot.plugins)
+            foreach (plugin; instance.plugins)
             {
                 plugin.onBusMessage(header, content);
             }
@@ -211,7 +211,7 @@ void messageFiber(ref IRCBot bot)
         /// Passes an empty header-only bus message to each plugin.
         void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header) scope
         {
-            foreach (plugin; bot.plugins)
+            foreach (plugin; instance.plugins)
             {
                 shared Sendable content;
                 plugin.onBusMessage(header, content);
@@ -237,13 +237,13 @@ void messageFiber(ref IRCBot bot)
 
             with (IRCEvent.Type)
             with (event)
-            with (bot)
+            with (instance)
             switch (event.type)
             {
             case CHAN:
                 version(TwitchSupport)
                 {
-                    fast = (bot.parser.client.server.daemon == IRCServer.Daemon.twitch) &&
+                    fast = (instance.parser.client.server.daemon == IRCServer.Daemon.twitch) &&
                         (event.aux.length > 0);
                 }
 
@@ -254,15 +254,15 @@ void messageFiber(ref IRCBot bot)
             case QUERY:
                 version(TwitchSupport)
                 {
-                    if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    if (instance.parser.client.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        if (target.nickname == bot.parser.client.nickname)
+                        if (target.nickname == instance.parser.client.nickname)
                         {
                             // "You cannot whisper to yourself." (whisper_invalid_self)
                             return;
                         }
 
-                        prelude = "PRIVMSG #%s :/w %s ".format(bot.parser.client.nickname, target.nickname);
+                        prelude = "PRIVMSG #%s :/w %s ".format(instance.parser.client.nickname, target.nickname);
                     }
                 }
 
@@ -275,7 +275,7 @@ void messageFiber(ref IRCBot bot)
 
                 version(TwitchSupport)
                 {
-                    if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    if (instance.parser.client.server.daemon == IRCServer.Daemon.twitch)
                     {
                         line = "PRIVMSG %s :/me %s".format(emoteTarget, content);
                     }
@@ -343,17 +343,17 @@ void messageFiber(ref IRCBot bot)
                 {
                     // Force
                     line = "WHOIS " ~ target.nickname;
-                    bot.previousWhoisTimestamps[target.nickname] = now;
+                    instance.previousWhoisTimestamps[target.nickname] = now;
                 }
                 else
                 {
                     // Copy/paste from whoisForTriggerRequestQueue
-                    immutable then = bot.previousWhoisTimestamps.get(target.nickname, 0);
+                    immutable then = instance.previousWhoisTimestamps.get(target.nickname, 0);
 
                     if ((now - then) > Timeout.whoisRetry)
                     {
                         line = "WHOIS " ~ target.nickname;
-                        bot.previousWhoisTimestamps[target.nickname] = now;
+                        instance.previousWhoisTimestamps[target.nickname] = now;
                     }
                 }
                 break;
@@ -376,12 +376,12 @@ void messageFiber(ref IRCBot bot)
             {
                 version(TwitchSupport)
                 {
-                    if ((bot.parser.client.server.daemon == IRCServer.Daemon.twitch) && fast)
+                    if ((instance.parser.client.server.daemon == IRCServer.Daemon.twitch) && fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
                         immutable quiet = settings.hideOutgoing ||
                             (event.target.class_ == IRCUser.Class.special);
-                        bot.fastbuffer.put(OutgoingLine(finalLine, quiet));
+                        instance.fastbuffer.put(OutgoingLine(finalLine, quiet));
                         return;
                     }
                 }
@@ -526,7 +526,7 @@ void exhaustMessages()
  +  parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +
  +  Returns:
  +      `kameloso.common.Next.returnFailure` if circumstances mean the bot
@@ -535,7 +535,7 @@ void exhaustMessages()
  +      `kameloso.common.Next.retry` if the bot should reconnect to the server.
  +      `kameloso.common.Next.continue_` is never returned.
  +/
-Next mainLoop(ref IRCBot bot)
+Next mainLoop(ref Kameloso instance)
 {
     import lu.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
@@ -547,10 +547,10 @@ Next mainLoop(ref IRCBot bot)
 
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
-        listenFiber(bot.conn, *bot.abort));
+        listenFiber(instance.conn, *instance.abort));
 
     auto messenger = new Generator!Next(() =>
-        messageFiber(bot));
+        messageFiber(instance));
 
     string logtint, errortint, warningtint;
 
@@ -572,7 +572,7 @@ Next mainLoop(ref IRCBot bot)
     {
         import core.thread : Fiber;
 
-        if (*bot.abort) return Next.returnFailure;
+        if (*instance.abort) return Next.returnFailure;
 
         if (listener.state == Fiber.State.TERM)
         {
@@ -583,12 +583,12 @@ Next mainLoop(ref IRCBot bot)
         import std.datetime.systime : Clock;
         immutable nowInUnix = Clock.currTime.toUnixTime;
 
-        foreach (ref plugin; bot.plugins)
+        foreach (ref plugin; instance.plugins)
         {
             plugin.periodically(nowInUnix);
         }
 
-        foreach (plugin; bot.plugins)
+        foreach (plugin; instance.plugins)
         {
             if (!plugin.state.timedFibers.length) continue;
 
@@ -603,7 +603,7 @@ Next mainLoop(ref IRCBot bot)
         // That should be enough to stop it from being a memory leak.
         if ((nowInUnix % 86_400) == 0)
         {
-            bot.previousWhoisTimestamps = typeof(bot.previousWhoisTimestamps).init;
+            instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
         }
 
         // Call the generator, query it for event lines
@@ -612,7 +612,7 @@ Next mainLoop(ref IRCBot bot)
         listenerloop:
         foreach (const attempt; listener)
         {
-            if (*bot.abort) return Next.returnFailure;
+            if (*instance.abort) return Next.returnFailure;
 
             // Handle the attempt; switch on its state
             with (State)
@@ -643,7 +643,7 @@ Next mainLoop(ref IRCBot bot)
 
             case timeout:
                 logger.error("Connection lost.");
-                bot.conn.connected = false;
+                instance.conn.connected = false;
                 return Next.returnFailure;
 
             case error:
@@ -658,7 +658,7 @@ Next mainLoop(ref IRCBot bot)
                         logtint, attempt.lastSocketError_, errortint);
                 }
 
-                bot.conn.connected = false;
+                instance.conn.connected = false;
                 return Next.returnFailure;
             }
 
@@ -681,15 +681,15 @@ Next mainLoop(ref IRCBot bot)
 
                 try
                 {
-                    event = bot.parser.toIRCEvent(attempt.line);
+                    event = instance.parser.toIRCEvent(attempt.line);
                 }
                 catch (UTFException e)
                 {
-                    event = bot.parser.toIRCEvent(sanitize(attempt.line));
+                    event = instance.parser.toIRCEvent(sanitize(attempt.line));
                 }
                 catch (UnicodeException e)
                 {
-                    event = bot.parser.toIRCEvent(sanitize(attempt.line));
+                    event = instance.parser.toIRCEvent(sanitize(attempt.line));
                 }
                 catch (Exception e)
                 {
@@ -699,14 +699,14 @@ Next mainLoop(ref IRCBot bot)
                     throw e;
                 }
 
-                if (bot.parser.client.updated)
+                if (instance.parser.client.updated)
                 {
                     // Parsing changed the client; propagate
-                    bot.parser.client.updated = false;
-                    bot.propagateClient(bot.parser.client);
+                    instance.parser.client.updated = false;
+                    instance.propagateClient(instance.parser.client);
                 }
 
-                foreach (plugin; bot.plugins)
+                foreach (plugin; instance.plugins)
                 {
                     try
                     {
@@ -723,14 +723,14 @@ Next mainLoop(ref IRCBot bot)
                     if (plugin.state.client.updated)
                     {
                         // Postprocessing changed the client; propagate
-                        bot.parser.client = plugin.state.client;
-                        bot.parser.client.updated = false;
-                        bot.propagateClient(bot.parser.client);
+                        instance.parser.client = plugin.state.client;
+                        instance.parser.client.updated = false;
+                        instance.propagateClient(instance.parser.client);
                     }
                 }
 
                 // Let each plugin process the event
-                foreach (plugin; bot.plugins)
+                foreach (plugin; instance.plugins)
                 {
                     try
                     {
@@ -740,7 +740,7 @@ Next mainLoop(ref IRCBot bot)
                         plugin.handleAwaitingFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
-                        bot.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue);
+                        instance.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue);
 
                         if (plugin.state.client.updated)
                         {
@@ -750,9 +750,9 @@ Next mainLoop(ref IRCBot bot)
                                 processing; it keeps its update internally
                                 between both passes.
                             */
-                            bot.parser.client = plugin.state.client;
-                            bot.parser.client.updated = false;
-                            bot.propagateClient(bot.parser.client);
+                            instance.parser.client = plugin.state.client;
+                            instance.parser.client.updated = false;
+                            instance.propagateClient(instance.parser.client);
                         }
                     }
                     catch (UTFException e)
@@ -786,18 +786,18 @@ Next mainLoop(ref IRCBot bot)
 
                     version(TwitchSupport)
                     {
-                        if (event.channel.length && (event.channel[1..$] == bot.parser.client.nickname))
+                        if (event.channel.length && (event.channel[1..$] == instance.parser.client.nickname))
                         {
-                            bot.throttleline(bot.fastbuffer, Yes.onlyIncrement, Yes.sendFaster);
+                            instance.throttleline(instance.fastbuffer, Yes.onlyIncrement, Yes.sendFaster);
                         }
                         else
                         {
-                            bot.throttleline(bot.outbuffer, Yes.onlyIncrement);
+                            instance.throttleline(instance.outbuffer, Yes.onlyIncrement);
                         }
                     }
                     else
                     {
-                        bot.throttleline(bot.outbuffer, Yes.onlyIncrement);
+                        instance.throttleline(instance.outbuffer, Yes.onlyIncrement);
                     }
                     break;
 
@@ -854,11 +854,11 @@ Next mainLoop(ref IRCBot bot)
             next = Next.returnFailure;
         }
 
-        bool bufferHasMessages = (!bot.outbuffer.empty || !bot.priorityBuffer.empty);
+        bool bufferHasMessages = (!instance.outbuffer.empty || !instance.priorityBuffer.empty);
 
         version(TwitchSupport)
         {
-            bufferHasMessages |= !bot.fastbuffer.empty;
+            bufferHasMessages |= !instance.fastbuffer.empty;
         }
 
         if (bufferHasMessages)
@@ -874,30 +874,30 @@ Next mainLoop(ref IRCBot bot)
 
             version(TwitchSupport)
             {
-                if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
-                else if (!bot.fastbuffer.empty) untilNext =
-                    bot.throttleline(bot.fastbuffer, No.onlyIncrement, Yes.sendFaster);
+                if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
+                else if (!instance.fastbuffer.empty) untilNext =
+                    instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
                 else
                 {
-                    untilNext = bot.throttleline(bot.outbuffer);
+                    untilNext = instance.throttleline(instance.outbuffer);
                 }
             }
             else
             {
-                if (!bot.priorityBuffer.empty) untilNext = bot.throttleline(bot.priorityBuffer);
+                if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
                 else
                 {
-                    untilNext = bot.throttleline(bot.outbuffer);
+                    untilNext = instance.throttleline(instance.outbuffer);
                 }
             }
 
-            with (bot.conn.socket)
+            with (instance.conn.socket)
             with (SocketOption)
             with (SocketOptionLevel)
             {
                 if (untilNext > 0)
                 {
-                    if ((untilNext < bot.throttle.burst) &&
+                    if ((untilNext < instance.throttle.burst) &&
                         (untilNext < Timeout.receive))
                     {
                         setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
@@ -1115,10 +1115,10 @@ import kameloso.plugins.common : TriggerRequest;
  +  Takes a queue of `TriggerRequest` objects and emits `WHOIS` requests for each one.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      reqs = Reference to an associative array of `TriggerRequest`s.
  +/
-void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] reqs)
+void whoisForTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][string] reqs)
 {
     // Walk through requests and call `WHOIS` on those that haven't been
     // `WHOIS`ed in the last `Timeout.whois` seconds
@@ -1131,12 +1131,12 @@ void whoisForTriggerRequestQueue(ref IRCBot bot, const TriggerRequest[][string] 
         import std.datetime.systime : Clock;
 
         immutable now = Clock.currTime.toUnixTime;
-        immutable then = bot.previousWhoisTimestamps.get(nickname, 0);
+        immutable then = instance.previousWhoisTimestamps.get(nickname, 0);
 
         if ((now - then) > Timeout.whoisRetry)
         {
-            bot.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, settings.hideOutgoing));
-            bot.previousWhoisTimestamps[nickname] = now;
+            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, settings.hideOutgoing));
+            instance.previousWhoisTimestamps[nickname] = now;
         }
     }
 }
@@ -1184,7 +1184,7 @@ void resetSignals() nothrow @nogc
  +  Attempt handling `getopt`, wrapped in try-catch blocks.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      args = The arguments passed to the program.
  +      customSettings = Reference to the dynamic array of custom settings as
  +          defined with `--set plugin.setting=value` on the command line.
@@ -1192,7 +1192,7 @@ void resetSignals() nothrow @nogc
  +  Returns:
  +      `kameloso.common.Next`.* depending on what action the calling site should take.
  +/
-Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
+Next tryGetopt(ref Kameloso instance, string[] args, ref string[] customSettings)
 {
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : ConfigurationFileReadFailureException,
@@ -1217,7 +1217,7 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
     {
         import kameloso.getopt : handleGetopt;
         // Act on arguments getopt, pass return value to main
-        return bot.handleGetopt(args, customSettings);
+        return instance.handleGetopt(args, customSettings);
     }
     catch (GetOptException e)
     {
@@ -1252,19 +1252,19 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 
 // tryConnect
 /++
- +  Tries to connect to the IPs in `kameloso.common.IRCBot.conn.ips` by
+ +  Tries to connect to the IPs in `kameloso.common.Kameloso.conn.ips` by
  +  leveraging `lu.net.connectFiber`, reacting on the
  +  `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +
  +  Returns:
  +      `kameloso.common.Next.continue_` if connection succeeded,
  +      `kameloso.common.Next.returnFailure` if connection failed and the
  +      program should exit.
  +/
-Next tryConnect(ref IRCBot bot)
+Next tryConnect(ref Kameloso instance)
 {
     import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
     import kameloso.thread : interruptibleSleep;
@@ -1273,8 +1273,8 @@ Next tryConnect(ref IRCBot bot)
 
     alias State = ConnectionAttempt.State;
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(bot.conn,  settings.endlesslyConnect,
-            ConnectionDefaultIntegers.retries, *bot.abort));
+        connectFiber(instance.conn,  settings.endlesslyConnect,
+            ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.retry;
 
     string infotint, logtint;
@@ -1292,7 +1292,7 @@ Next tryConnect(ref IRCBot bot)
 
     connector.call();
 
-    with (bot)
+    with (instance)
     foreach (const attempt; connector)
     {
         import core.time : seconds;
@@ -1375,18 +1375,18 @@ Next tryConnect(ref IRCBot bot)
 
 // tryResolve
 /++
- +  Tries to resolve the address in `bot.parser.client.server` to IPs, by
+ +  Tries to resolve the address in `instance.parser.client.server` to IPs, by
  +  leveraging `lu.net.resolveFiber`, reacting on the
  +  `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.bot`.
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
  +
  +  Returns:
  +      `kameloso.common.Next.continue_` if resolution succeeded,
  +      `kameloso.common.Next.returnFailure` if it failed and the program should exit.
  +/
-Next tryResolve(ref IRCBot bot)
+Next tryResolve(ref Kameloso instance)
 {
     import kameloso.constants : Timeout;
     import lu.net : ResolveAttempt, resolveFiber;
@@ -1412,15 +1412,15 @@ Next tryResolve(ref IRCBot bot)
 
     alias State = ResolveAttempt.State;
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(bot.conn, bot.parser.client.server.address,
-        bot.parser.client.server.port, settings.ipv6, resolveAttempts, *bot.abort));
+        resolveFiber(instance.conn, instance.parser.client.server.address,
+        instance.parser.client.server.port, settings.ipv6, resolveAttempts, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
 
     resolver.call();
 
-    with (bot)
+    with (instance)
     foreach (const attempt; resolver)
     {
         with (State)
@@ -1593,9 +1593,9 @@ int initBot(string[] args)
     enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
     setTitle(terminalTitle);
 
-    // Initialise the main IRCBot. Set its abort pointer to the global abort.
-    IRCBot bot;
-    bot.abort = &abort;
+    // Initialise the main Kameloso. Set its abort pointer to the global abort.
+    Kameloso instance;
+    instance.abort = &abort;
 
     import std.path : buildNormalizedPath;
 
@@ -1629,11 +1629,11 @@ int initBot(string[] args)
         import kameloso.terminal : TerminalToken;
 
         logger.error("We just crashed!", cast(char)TerminalToken.bell);
-        *bot.abort = true;
+        *instance.abort = true;
         resetSignals();
     }
 
-    immutable actionAfterGetopt = bot.tryGetopt(args, customSettings);
+    immutable actionAfterGetopt = instance.tryGetopt(args, customSettings);
 
     with (Next)
     final switch (actionAfterGetopt)
@@ -1652,7 +1652,7 @@ int initBot(string[] args)
     }
 
     // Apply some defaults, as stored in `kameloso.constants`.
-    with (bot.parser.client)
+    with (instance.parser.client)
     {
         import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
 
@@ -1692,9 +1692,9 @@ int initBot(string[] args)
     import lu.string : contains;
 
     // Print the current settings to show what's going on.
-    printObjects(bot.parser.client, bot.parser.client.server);
+    printObjects(instance.parser.client, instance.parser.client.server);
 
-    if (!bot.parser.client.homes.length && !bot.parser.client.admins.length)
+    if (!instance.parser.client.homes.length && !instance.parser.client.admins.length)
     {
         complainAboutMissingConfiguration(args);
     }
@@ -1704,7 +1704,7 @@ int initBot(string[] args)
         IRCServer conservativeServer;
         conservativeServer.maxNickLength = 25;  // Twitch max, should be enough
 
-        if (!bot.parser.client.nickname.isValidNickname(conservativeServer))
+        if (!instance.parser.client.nickname.isValidNickname(conservativeServer))
         {
             // No need to print the nickname, visible from printObjects preivously
             logger.error("Invalid nickname!");
@@ -1723,7 +1723,7 @@ int initBot(string[] args)
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
-        immutable addressIsResolvable = bot.parser.client.server.address.contains('.');
+        immutable addressIsResolvable = instance.parser.client.server.address.contains('.');
     }
     else
     {
@@ -1734,7 +1734,7 @@ int initBot(string[] args)
     if (!settings.force && !addressIsResolvable)
     {
         logger.errorf("Invalid address! [%s%s%s]", logtint,
-            bot.parser.client.server.address, errortint);
+            instance.parser.client.server.address, errortint);
         return 1;
     }
 
@@ -1743,7 +1743,7 @@ int initBot(string[] args)
 
     // Resolve and create the resource directory
     settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
-        "server", bot.parser.client.server.address);
+        "server", instance.parser.client.server.address);
     settings.configDirectory = settings.configFile.dirName;
 
     if (!settings.resourceDirectory.exists)
@@ -1759,7 +1759,7 @@ int initBot(string[] args)
 
     try
     {
-        const invalidEntries = bot.initPlugins(customSettings);
+        const invalidEntries = instance.initPlugins(customSettings);
         complainAboutInvalidConfigurationEntries(invalidEntries);
     }
     catch (ConvException e)
@@ -1777,13 +1777,13 @@ int initBot(string[] args)
 
     // Save the original nickname *once*, outside the connection loop.
     // It will change later and knowing this is useful when authenticating
-    bot.parser.client.origNickname = bot.parser.client.nickname;
+    instance.parser.client.origNickname = instance.parser.client.nickname;
 
     /// Return value so that the exit scopeguard knows what to return.
     int retval;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
-    IRCClient backupClient = bot.parser.client;
+    IRCClient backupClient = instance.parser.client;
 
     /// Enum denoting what we should do next loop.
     Next next;
@@ -1800,7 +1800,7 @@ int initBot(string[] args)
     outerloop:
     do
     {
-        // *bot.abort is guaranteed to be false here.
+        // *instance.abort is guaranteed to be false here.
 
         silentExit = true;
 
@@ -1811,48 +1811,48 @@ int initBot(string[] args)
             import core.time : seconds;
 
             // Carry some values but otherwise restore the pristine client backup
-            backupClient.nickname = bot.parser.client.nickname;
-            backupClient.homes = bot.parser.client.homes;
-            backupClient.channels = bot.parser.client.channels;
-            //bot.parser.client = backupClient;  // Initialised below
+            backupClient.nickname = instance.parser.client.nickname;
+            backupClient.homes = instance.parser.client.homes;
+            backupClient.channels = instance.parser.client.channels;
+            //instance.parser.client = backupClient;  // Initialised below
 
             // Exhaust leftover queued messages
             exhaustMessages();
 
             // Clear outgoing messages
-            bot.outbuffer.clear();
-            bot.priorityBuffer.clear();
+            instance.outbuffer.clear();
+            instance.priorityBuffer.clear();
 
             version(TwitchSupport)
             {
-                bot.fastbuffer.clear();
+                instance.fastbuffer.clear();
             }
 
             logger.log("Please wait a few seconds ...");
-            interruptibleSleep(Timeout.retry.seconds, *bot.abort);
-            if (*bot.abort) break outerloop;
+            interruptibleSleep(Timeout.retry.seconds, *instance.abort);
+            if (*instance.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt
-            bot.initPlugins(customSettings);
+            instance.initPlugins(customSettings);
 
             // Reset throttling, in case there were queued messages.
-            bot.throttle = typeof(bot.throttle).init;
+            instance.throttle = typeof(instance.throttle).init;
         }
 
         scope(exit)
         {
             // Always teardown when exiting this loop (for whatever reason)
-            bot.teardownPlugins();
+            instance.teardownPlugins();
         }
 
         // May as well check once here, in case something in initPlugins aborted or so.
-        if (*bot.abort) break outerloop;
+        if (*instance.abort) break outerloop;
 
-        bot.conn.connected = false;
-        bot.conn.reset();
+        instance.conn.connected = false;
+        instance.conn.reset();
 
-        immutable actionAfterResolve = tryResolve(bot);
-        if (*bot.abort) break outerloop;  // tryResolve interruptibleSleep can abort
+        immutable actionAfterResolve = tryResolve(instance);
+        if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterResolve)
@@ -1874,8 +1874,8 @@ int initBot(string[] args)
             break outerloop;
         }
 
-        immutable actionAfterConnect = tryConnect(bot);
-        if (*bot.abort) break outerloop;  // tryConnect interruptibleSleep can abort
+        immutable actionAfterConnect = tryConnect(instance);
+        if (*instance.abort) break outerloop;  // tryConnect interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterConnect)
@@ -1902,8 +1902,8 @@ int initBot(string[] args)
         // valid server to create a directory for.
         try
         {
-            bot.initPluginResources();
-            if (*bot.abort) break outerloop;
+            instance.initPluginResources();
+            if (*instance.abort) break outerloop;
         }
         catch (IRCPluginInitialisationException e)
         {
@@ -1929,12 +1929,12 @@ int initBot(string[] args)
 
         import dialect.parsing : IRCParser;
 
-        bot.parser = IRCParser(backupClient);
+        instance.parser = IRCParser(backupClient);
 
         try
         {
-            bot.startPlugins();
-            if (*bot.abort) break outerloop;
+            instance.startPlugins();
+            if (*instance.abort) break outerloop;
         }
         catch (IRCPluginInitialisationException e)
         {
@@ -1961,13 +1961,13 @@ int initBot(string[] args)
         silentExit = false;
 
         // Start the main loop
-        next = bot.mainLoop();
+        next = instance.mainLoop();
         firstConnect = false;
     }
-    while (!*bot.abort && ((next == Next.continue_) || (next == Next.retry) ||
+    while (!*instance.abort && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
 
-    if (*bot.abort && bot.conn.connected)
+    if (*instance.abort && instance.conn.connected)
     {
         if (!settings.hideOutgoing)
         {
@@ -1983,9 +1983,9 @@ int initBot(string[] args)
             }
         }
 
-        bot.conn.sendline("QUIT :" ~ settings.quitReason);
+        instance.conn.sendline("QUIT :" ~ settings.quitReason);
     }
-    else if (!*bot.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
+    else if (!*instance.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
@@ -1994,10 +1994,10 @@ int initBot(string[] args)
     // Save if we're exiting and configuration says we should.
     if (settings.saveOnExit)
     {
-        bot.writeConfigurationFile(settings.configFile);
+        instance.writeConfigurationFile(settings.configFile);
     }
 
-    if (*bot.abort)
+    if (*instance.abort)
     {
         // Ctrl+C
         logger.error("Aborting...");
