@@ -145,6 +145,57 @@ struct CoreSettings
 
 // IRCBot
 /++
+ +  Aggregate of information relevant for an IRC *bot* that goes beyond what is
+ +  needed for a mere IRC *client*.
+ +/
+struct IRCBot
+{
+    /// Username to use as services account login name.
+    string account;
+
+    version(TwitchSupport)
+    {
+        /++
+            The Twitch colour to assign to our nickname.
+
+            "Normal users can choose between Blue, Coral, DodgerBlue,
+            SpringGreen, YellowGreen, Green, OrangeRed, Red, GoldenRod,
+            HotPink, CadetBlue, SeaGreen, Chocolate, BlueViolet, and Firebrick.
+            Twitch Turbo users can use any Hex value (i.e: #000000)."
+        +/
+        @CannotContainComments
+        string colour;
+    }
+
+    @Hidden
+    @CannotContainComments
+    {
+        /// Password for services account.
+        string password;
+
+        /// Login `PASS`, different from `SASL` and services.
+        string pass;
+    }
+
+    @Separator(",")
+    @Separator(" ")
+    {
+        /// The nickname services accounts of *administrators*, in a bot-like context.
+        string[] admins;
+
+        /// List of homes, in a bot-like context.
+        @CannotContainComments
+        string[] homes;
+
+        /// Currently inhabited non-home channels.
+        @CannotContainComments
+        string[] channels;
+    }
+}
+
+
+// Kameloso
+/++
  +  State needed for the kameloso bot, aggregated in a struct for easier passing
  +  by reference.
  +/
