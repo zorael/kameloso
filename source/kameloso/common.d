@@ -256,6 +256,9 @@ struct Kameloso
     /// Parser instance.
     IRCParser parser;
 
+    /// IRC bot values.
+    IRCBot bot;
+
     /// Values and state needed to throttle sending messages.
     Throttle throttle;
 
