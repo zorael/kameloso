@@ -499,11 +499,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
         import std.array : array;
         import std.uni : toLower;
 
-        parser.client.homes = parser.client.homes
+        bot.homes = bot.homes
             .map!(channelName => channelName.toLower)
             .array;
 
-        parser.client.channels = parser.client.channels
+        bot.channels = bot.channels
             .map!(channelName => channelName.toLower)
             .array;
 

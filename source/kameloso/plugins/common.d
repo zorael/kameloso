@@ -1278,7 +1278,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
                     }
-                    else if (!privateState.client.homes.canFind(event.channel))
+                    else if (!privateState.bot.homes.canFind(event.channel))
                     {
                         static if (verbose)
                         {

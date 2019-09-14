@@ -681,14 +681,14 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
     Appender!string sink;
     sink.reserve(4096);  // ~2234
 
-    with (instance.parser)
+    with (instance)
     {
-        if (client.password.length && !client.password.beginsWith("base64:"))
+        if (bot.password.length && !bot.password.beginsWith("base64:"))
         {
-            client.password = "base64:" ~ encode64(client.password);
+            bot.password = "base64:" ~ encode64(bot.password);
         }
 
-        sink.serialise(client, client.server, settings);
+        sink.serialise(parser.client, bot, parser.client.server, settings);
 
         foreach (plugin; instance.plugins)
         {

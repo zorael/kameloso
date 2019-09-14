@@ -75,16 +75,16 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        immutable index = client.channels.countUntil(event.channel);
+        immutable index = bot.channels.countUntil(event.channel);
 
         if (index != -1)
         {
-            client.channels = client.channels.remove!(SwapStrategy.unstable)(index);
+            bot.channels = bot.channels.remove!(SwapStrategy.unstable)(index);
             client.updated = true;
         }
         else
         {
-            immutable homeIndex = client.homes.countUntil(event.channel);
+            immutable homeIndex = bot.homes.countUntil(event.channel);
 
             if (homeIndex != -1)
             {
@@ -113,10 +113,10 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        if (!client.homes.canFind(event.channel) && !client.channels.canFind(event.channel))
+        if (!bot.homes.canFind(event.channel) && !bot.channels.canFind(event.channel))
         {
             // Track new channel in the channels array
-            client.channels ~= event.channel;
+            bot.channels ~= event.channel;
             client.updated = true;
         }
     }
@@ -136,7 +136,7 @@ void joinChannels(ConnectService service)
 {
     with (service.state)
     {
-        if (!client.homes.length && !client.channels.length)
+        if (!bot.homes.length && !bot.channels.length)
         {
             logger.warning("No channels, no purpose ...");
             return;
@@ -162,8 +162,8 @@ void joinChannels(ConnectService service)
         import std.array : join;
         import std.range : walkLength;
 
-        auto homelist = client.homes.sort().uniq;
-        auto chanlist = client.channels.sort().uniq;
+        auto homelist = bot.homes.sort().uniq;
+        auto chanlist = bot.channels.sort().uniq;
         immutable numChans = homelist.walkLength() + chanlist.walkLength();
 
         logger.logf("Joining %s%d%s %s ...", infotint, numChans, logtint,
@@ -171,8 +171,8 @@ void joinChannels(ConnectService service)
 
         // Join in two steps so homes don't get shoved away by the channels
         // FIXME: line should split if it reaches 512 characters
-        if (client.homes.length) joinChannel(service.state, homelist.join(","), string.init, true);
-        if (client.channels.length) joinChannel(service.state, chanlist.join(","), string.init, true);
+        if (bot.homes.length) joinChannel(service.state, homelist.join(","), string.init, true);
+        if (bot.channels.length) joinChannel(service.state, chanlist.join(","), string.init, true);
     }
 }
 
@@ -237,8 +237,8 @@ void tryAuth(ConnectService service)
     with (service.state)
     {
         import lu.string : beginsWith, decode64;
-        immutable password = client.password.beginsWith("base64:") ?
-            decode64(client.password[7..$]) : client.password;
+        immutable password = bot.password.beginsWith("base64:") ?
+            decode64(bot.password[7..$]) : bot.password;
 
         // Specialcase networks
         switch (client.server.network)
@@ -308,9 +308,9 @@ void tryAuth(ConnectService service)
         case u2:
             // Accepts auth login
             // GameSurge is AuthServ
-            string account = client.account;
+            string account = bot.account;
 
-            if (!client.account.length)
+            if (!bot.account.length)
             {
                 logger.logf("No account specified! Trying %s%s%s ...", infotint, client.origNickname, logtint);
                 account = client.origNickname;
@@ -338,7 +338,7 @@ void tryAuth(ConnectService service)
             logger.warning("Unsure of what AUTH approach to use.");
             logger.info("Please report information about what approach succeeded!");
 
-            if (client.account.length)
+            if (bot.account.length)
             {
                 goto case ircdseven;
             }
@@ -364,7 +364,7 @@ void tryAuth(ConnectService service)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
 {
-    if (service.state.client.password.length &&
+    if (service.state.bot.password.length &&
         (service.authentication == Progress.notStarted) &&
         (service.state.client.server.daemon != IRCServer.Daemon.twitch))
     {
@@ -372,7 +372,7 @@ void onEndOfMotd(ConnectService service)
     }
 
     if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
-        !service.state.client.password.length ||
+        !service.state.bot.password.length ||
         (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
     {
         // tryAuth finished early with an unsuccessful login, else
@@ -447,13 +447,13 @@ void onEndOfMotdTwitch(ConnectService service)
             logtint, settings.prefix, warningtint);
     }
 
-    if (service.state.client.colour.length)
+    if (service.state.bot.colour.length)
     {
         import kameloso.messaging : raw;
         import std.format : format;
 
         raw(service.state, "PRIVMSG #%s :/color %s"
-            .format(service.state.client.nickname, service.state.client.colour));
+            .format(service.state.client.nickname, service.state.bot.colour));
     }
 }
 
@@ -582,7 +582,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
- +  Quits the program if we supplied a bad `dialect.IRCClient.pass`.
+ +  Quits the program if we supplied a bad `dialect.IRCbot.pass`.
  +
  +  There's no point in reconnecting.
  +/
@@ -671,7 +671,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!service.connectSettings.sasl || !service.state.client.password.length) continue;
+                if (!service.connectSettings.sasl || !service.state.bot.password.length) continue;
                 raw(service.state, "CAP REQ :sasl", true);
                 tryingSASL = true;
                 break;
@@ -759,20 +759,21 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `dialect.defs.IRCClient.account` and `dialect.defs.IRCClient.password`,
+ +  `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
  +  then sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(account \0 account \0 password)`
  +
- +  ...where `dialect.defs.IRCClient.account` is the services account name and
- +  `dialect.defs.IRCClient.password` is the account password.
+ +  ...where `dialect.defs.IRCbot.account` is the services account name and
+ +  `dialect.defs.IRCbot.password` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
 {
     with (service.state.client)
+    with (service.state.bot)
     {
         import lu.string : beginsWith, decode64, encode64;
 
@@ -968,7 +969,7 @@ void register(ConnectService service)
     {
         version(TwitchSupport)
         {
-            if (!client.pass.length && client.server.address.endsWith(".twitch.tv"))
+            if (!bot.pass.length && client.server.address.endsWith(".twitch.tv"))
             {
                 // client.server.daemon is always Daemon.unset at this point
                 logger.error("You *need* a pass to join this server.");
@@ -980,9 +981,9 @@ void register(ConnectService service)
         service.registration = Progress.started;
         raw(service.state, "CAP LS 302", true);
 
-        if (client.pass.length)
+        if (bot.pass.length)
         {
-            raw(service.state, "PASS " ~ client.pass, true);
+            raw(service.state, "PASS " ~ bot.pass, true);
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
 

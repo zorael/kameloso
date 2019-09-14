@@ -319,7 +319,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         return;
     }
 
-    if (plugin.state.client.homes.canFind(channelToAdd))
+    if (plugin.state.bot.homes.canFind(channelToAdd))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "We are already in that home channel.");
         return;
@@ -327,8 +327,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     // We need to add it to the homes array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
-    plugin.state.client.homes ~= channelToAdd;
-    plugin.state.client.updated = true;
+    plugin.state.bot.homes ~= channelToAdd;
+    plugin.state.bot.updated = true;
     join(plugin.state, channelToAdd);
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
@@ -365,7 +365,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         case ERR_LINKCHANNEL:
             // We were redirected. Still assume we wanted to add this one?
             logger.log("Redirected!");
-            plugin.state.client.homes ~= followupEvent.content.toLower;
+            plugin.state.bot.homes ~= followupEvent.content.toLower;
             // Drop down and undo original addition
             break;
 
@@ -378,12 +378,12 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        immutable homeIndex = plugin.state.client.homes.countUntil(followupEvent.channel);
+        immutable homeIndex = plugin.state.bot.homes.countUntil(followupEvent.channel);
         if (homeIndex != -1)
         {
-            plugin.state.client.homes = plugin.state.client.homes
+            plugin.state.bot.homes = plugin.state.bot.homes
                 .remove!(SwapStrategy.unstable)(homeIndex);
-            plugin.state.client.updated = true;
+            plugin.state.bot.updated = true;
         }
         else
         {
@@ -437,7 +437,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     import std.algorithm.mutation : SwapStrategy, remove;
 
     immutable channel = event.content.stripped;
-    immutable homeIndex = plugin.state.client.homes.countUntil(channel);
+    immutable homeIndex = plugin.state.bot.homes.countUntil(channel);
 
     if (homeIndex == -1)
     {
@@ -453,9 +453,9 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
         return;
     }
 
-    plugin.state.client.homes = plugin.state.client.homes
+    plugin.state.bot.homes = plugin.state.bot.homes
         .remove!(SwapStrategy.unstable)(homeIndex);
-    plugin.state.client.updated = true;
+    plugin.state.bot.updated = true;
     part(plugin.state, channel);
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home removed.");
 }
