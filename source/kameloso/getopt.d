@@ -3,7 +3,7 @@
  +/
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, Kameloso;
+import kameloso.common : CoreSettings, IRCBot, Kameloso;
 import lu.common : Next;
 import dialect.defs : IRCClient;
 import std.typecons : No, Yes;
@@ -22,21 +22,24 @@ private:
  +  Example:
  +  ---
  +  IRCClient client;
+ +  IRCBot bot;
  +  CoreSettings settings;
  +
- +  meldSettingsFromFile(client, settings);
+ +  meldSettingsFromFile(client, bot, settings);
  +  ---
  +
  +  Params:
  +      client = Reference `dialect.defs.IRCClient` to apply changes to.
+ +      bot = Reference `kameloso.common.IRCBot` to apply changes to.
  +      settings = Reference `kameloso.common.CoreSettings` to apply changes to.
  +/
-void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
+void meldSettingsFromFile(ref IRCClient client, ref IRCBot bot, ref CoreSettings settings)
 {
     import lu.meld : MeldingStrategy, meldInto;
     import lu.serialisation : readConfigInto;
 
     IRCClient tempClient;
+    IRCBot tempBot;
     CoreSettings tempSettings;
 
     // These arguments are by reference.
@@ -44,12 +47,14 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
     // 2. Read settings into temporary client
     // 3. Meld arguments *into* temporary client, overwriting
     // 4. Inherit temporary client into client
-    settings.configFile.readConfigInto(tempClient, tempClient.server, tempSettings);
+    settings.configFile.readConfigInto(tempClient, tempBot, tempClient.server, tempSettings);
 
     client.meldInto!(MeldingStrategy.aggressive)(tempClient);
+    bot.meldInto!(MeldingStrategy.aggressive)(tempBot);
     settings.meldInto!(MeldingStrategy.aggressive)(tempSettings);
 
     client = tempClient;
+    bot = tempBot;
     settings = tempSettings;
 }
 
@@ -251,7 +256,8 @@ void printHelp(GetoptResult results) @system
  +  Returns:
  +      `kameloso.common.Next.returnSuccess` so the caller knows to return and exit.
  +/
-Next writeConfig(ref Kameloso instance, ref IRCClient client, ref string[] customSettings) @system
+Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCBot bot,
+    ref string[] customSettings) @system
 {
     import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
     import kameloso.printing : printObjects;
@@ -286,13 +292,13 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref string[] custo
     instance.writeConfigurationFile(settings.configFile);
 
     // Reload saved file
-    meldSettingsFromFile(client, settings);
+    meldSettingsFromFile(client, bot, settings);
 
-    printObjects(client, client.server, settings);
+    printObjects(client, instance.bot, client.server, settings);
 
     logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
 
-    if (!client.admins.length && !client.homes.length)
+    if (!instance.bot.admins.length && !instance.bot.homes.length)
     {
         import kameloso.common : complainAboutIncompleteConfiguration;
         logger.log("Edit it and make sure it contains at least one of the following:");
@@ -366,27 +372,27 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
 
     arraySep = ",";
 
-    with (instance.parser)
+    with (instance)
     {
         auto results = args.getopt(
             config.caseSensitive,
             config.bundling,
             "n|nickname",   "Nickname",
-                            &client.nickname,
-            "s|server",     "Server address [%s]".format(client.server.address),
-                            &client.server.address,
-            "P|port",       "Server port [%d]".format(client.server.port),
-                            &client.server.port,
+                            &parser.client.nickname,
+            "s|server",     "Server address [%s]".format(parser.client.server.address),
+                            &parser.client.server.address,
+            "P|port",       "Server port [%d]".format(parser.client.server.port),
+                            &parser.client.server.port,
             "6|ipv6",       "Use IPv6 when available [%s]".format(settings.ipv6),
                             &settings.ipv6,
             "A|account",    "Services account name",
-                            &client.account,
+                            &bot.account,
             "p|password",   "Services account password",
-                            &client.password,
+                            &bot.password,
             "pass",         "Registration pass",
-                            &client.pass,
+                            &bot.pass,
             "admins",       "Administrators' services accounts, comma-separated",
-                            &client.admins,
+                            &bot.admins,
             "H|homes",      "Home channels to operate in, comma-separated " ~
                             "(escape or enquote any octothorpe #s)",
                             &inputHomes,
@@ -448,8 +454,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             4. Reinitialise the logger with new settings
          +/
 
-        meldSettingsFromFile(client, settings);
-        completeClient(client);
+        meldSettingsFromFile(parser.client, instance.bot, settings);
+        completeClient(parser.client);
         adjustGetopt(argsBackup,
             "--bright", &settings.brightTerminal,
             "--brightTerminal", &settings.brightTerminal,
@@ -466,13 +472,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
         // 6. Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
-            if (inputHomes.length) client.homes ~= inputHomes;
-            if (inputChannels.length) client.channels ~= inputChannels;
+            if (inputHomes.length) bot.homes ~= inputHomes;
+            if (inputChannels.length) bot.channels ~= inputChannels;
         }
         else
         {
-            if (inputHomes.length) client.homes = inputHomes;
-            if (inputChannels.length) client.channels = inputChannels;
+            if (inputHomes.length) bot.homes = inputHomes;
+            if (inputChannels.length) bot.channels = inputChannels;
         }
 
         // 6a. Strip whitespace
@@ -480,26 +486,32 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
         import std.algorithm.iteration : map;
         import std.array : array;
 
-        client.channels = client.channels.map!((ch) => ch.stripped).array;
-        client.homes = client.homes.map!((ch) => ch.stripped).array;
+        bot.channels = bot.channels.map!((ch) => ch.stripped).array;
+        bot.homes = bot.homes.map!((ch) => ch.stripped).array;
 
         // 7. Clear entries that are dashes
         import lu.objmanip : zeroMembers;
-        zeroMembers!"-"(client);
+        zeroMembers!"-"(parser.client);
+        zeroMembers!"-"(bot);
 
         // 8. Make channels lowercase
         import std.algorithm.iteration : map;
         import std.array : array;
         import std.uni : toLower;
 
-        client.homes = client.homes.map!(channelName => channelName.toLower).array;
-        client.channels = client.channels.map!(channelName => channelName.toLower).array;
+        parser.client.homes = parser.client.homes
+            .map!(channelName => channelName.toLower)
+            .array;
+
+        parser.client.channels = parser.client.channels
+            .map!(channelName => channelName.toLower)
+            .array;
 
         // 9. Handle showstopper arguments (that display something and then exits)
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
-            return writeConfig(instance, client, customSettings);
+            return writeConfig(instance, parser.client, bot, customSettings);
         }
 
         if (shouldShowSettings)
@@ -526,7 +538,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             printVersionInfo(pre, post);
             writeln();
 
-            printObjects!(No.printAll)(client, client.server, settings);
+            printObjects!(No.printAll)(parser.client, bot, parser.client.server, settings);
 
             instance.initPlugins(customSettings);
 
@@ -550,9 +562,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
                 throw new GetOptException("--asserts is disabled in non-dev builds");
             }
         }
-
-        // 10. `client` finished; inherit into `client`
-        instance.parser.client = client;
 
         return Next.continue_;
     }
