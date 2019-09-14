@@ -922,17 +922,43 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the stop of a broadcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
+    if (plugin.activeChannels[event.channel].broadcastStart == 0L)
+    {
+        chan(plugin.state, event.channel, "Broadcast was never registered as started...");
+        return;
+    }
+
+    plugin.reportStopTime(event);
+}
+
+
+// onAutomaticStop
+/++
+ +  Automatically signals a stream stop when a host starts.
+ +
+ +  This is generally done as the last thing after a stream session, so it makes
+ +  sense to automate `onCommandStop`.
+ +/
+@(ChannelPolicy.home)
+@(IRCEvent.Type.TWITCH_HOSTSTART)
+void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    if (plugin.activeChannels[event.channel].broadcastStart == 0L) return;
+    plugin.reportStopTime(event);
+}
+
+
+// reportStopTime
+/++
+ +  Reports how long the recently ongoing, now ended broadcast lasted.
+ +/
+void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
+{
     import core.time : msecs;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
     auto channel = event.channel in plugin.activeChannels;
-
-    if (channel.broadcastStart == 0L)
-    {
-        chan(plugin.state, event.channel, "Broadcast was never registered as started...");
-        return;
-    }
 
     auto now = Clock.currTime;
     now.fracSecs = 0.msecs;
