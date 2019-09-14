@@ -154,7 +154,7 @@ void messageFiber(ref Kameloso instance)
         {
             // This will automatically close the connection.
             // Set quit to yes to propagate the decision up the stack.
-            immutable reason = givenReason.length ? givenReason : settings.quitReason;
+            immutable reason = givenReason.length ? givenReason : instance.bot.quitReason;
             instance.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
             next = Next.returnSuccess;
         }
@@ -1652,14 +1652,14 @@ int initBot(string[] args)
     }
 
     // Apply some defaults, as stored in `kameloso.constants`.
-    with (instance.parser.client)
+    with (instance)
     {
         import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
 
-        if (!realName.length) realName = KamelosoDefaultStrings.realName;
-        if (!settings.quitReason.length) settings.quitReason = KamelosoDefaultStrings.quitReason;
-        if (!server.address.length) server.address = KamelosoDefaultStrings.serverAddress;
-        if (server.port == 0) server.port = KamelosoDefaultIntegers.port;
+        if (!parser.client.realName.length) parser.client.realName = KamelosoDefaultStrings.realName;
+        if (!bot.quitReason.length) bot.quitReason = KamelosoDefaultStrings.quitReason;
+        if (!parser.client.server.address.length) parser.client.server.address = KamelosoDefaultStrings.serverAddress;
+        if (parser.client.server.port == 0) parser.client.server.port = KamelosoDefaultIntegers.port;
     }
 
     string pre, post, infotint, logtint, warningtint, errortint;
@@ -1692,9 +1692,9 @@ int initBot(string[] args)
     import lu.string : contains;
 
     // Print the current settings to show what's going on.
-    printObjects(instance.parser.client, instance.parser.client.server);
+    printObjects(instance.parser.client, instance.bot, instance.parser.client.server);
 
-    if (!instance.parser.client.homes.length && !instance.parser.client.admins.length)
+    if (!instance.bot.homes.length && !instance.bot.admins.length)
     {
         complainAboutMissingConfiguration(args);
     }
@@ -1812,8 +1812,6 @@ int initBot(string[] args)
 
             // Carry some values but otherwise restore the pristine client backup
             backupClient.nickname = instance.parser.client.nickname;
-            backupClient.homes = instance.parser.client.homes;
-            backupClient.channels = instance.parser.client.channels;
             //instance.parser.client = backupClient;  // Initialised below
 
             // Exhaust leftover queued messages
@@ -1974,16 +1972,16 @@ int initBot(string[] args)
             version(Colours)
             {
                 import kameloso.irccolours : mapEffects;
-                logger.trace("--> QUIT :", settings.quitReason.mapEffects);
+                logger.trace("--> QUIT :", instance.bot.quitReason.mapEffects);
             }
             else
             {
                 import kameloso.irccolours : stripEffects;
-                logger.trace("--> QUIT :", settings.quitReason.stripEffects);
+                logger.trace("--> QUIT :", instance.bot.quitReason.stripEffects);
             }
         }
 
-        instance.conn.sendline("QUIT :" ~ settings.quitReason);
+        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason);
     }
     else if (!*instance.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
     {
