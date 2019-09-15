@@ -974,9 +974,10 @@ unittest
 /++
  +  Completes a client's member fields with values needed to connect.
  +
- +  Nickname, user, ident and GECOS/"real name" is required. If there is no
- +  nickname, generate a random one, then just update the other members to have
- +  the same value (if they're empty).
+ +  Nickname, user, IDENT, GECOS/"real name", server address and server port are
+ +  required. If there is no nickname, generate a random one, then just update
+ +  the other members to have the same value (if they're empty) OR with values
+ +  stored in `kameloso.constants.KamelosoDefaultStrings`.
  +
  +  Params:
  +      client = Reference to the `dialect.defs.IRCClient` to complete.
@@ -988,6 +989,8 @@ out (; (client.ident.length), "Empty client ident")
 out (; (client.realName.length), "Empty client GECOS/real name")
 do
 {
+    import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
+
     // If no client.nickname set, generate a random guest name.
     if (!client.nickname.length)
     {
@@ -1009,29 +1012,48 @@ do
         client.ident = client.nickname;
     }
 
-    // If no client.realName set, ditto.
+    // If no client.realName set, inherit from `kameloso.constants.KamelosoDefaultStrings`.
     if (!client.realName.length)
     {
-        client.realName = client.nickname;
+        client.realName = KamelosoDefaultStrings.realName;
+    }
+
+    // As above.
+    if (!client.server.address.length)
+    {
+        client.server.address = KamelosoDefaultStrings.serverAddress;
+    }
+
+    // Ditto but `kameloso.constants.KamelosoDefaultIntegers`.
+    if (client.server.port == 0)
+    {
+        client.server.port = KamelosoDefaultIntegers.port;
     }
 }
 
 ///
 unittest
 {
+    import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
+    import std.conv : text;
+
     IRCClient client;
 
     assert(!client.nickname.length, client.nickname);
     assert(!client.user.length, client.user);
     assert(!client.ident.length, client.ident);
     assert(!client.realName.length, client.realName);
+    assert(!client.server.address, client.server.address);
+    assert((client.server.port == 0), client.server.port.text);
 
     completeClient(client);
 
     assert(client.nickname.length);
     assert((client.user == client.nickname), client.user);
     assert((client.ident == client.ident), client.ident);
-    assert((client.realName == client.realName), client.realName);
+    assert((client.realName == KamelosoDefaultStrings.realName), client.realName);
+    assert((client.server.address == KamelosoDefaultStrings.serverAddress), client.server.address);
+    assert((client.server.port == KamelosoDefaultIntegers.port), client.server.port.text);
 
     client.user = string.init;
     completeClient(client);
