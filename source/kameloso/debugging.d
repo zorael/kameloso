@@ -439,7 +439,7 @@ void generateAsserts(ref Kameloso instance) @system
             parser.typenums = typenumsOf(daemon);
             parser.client.server.daemon = daemon;
             parser.client.server.daemonstring = version_;
-            parser.client.updated = true;
+            parser.clientUpdated = true;
         }
         catch (ConvException e)
         {
@@ -471,7 +471,7 @@ void generateAsserts(ref Kameloso instance) @system
         printObjects!(Yes.printAll)(parser.client, parser.client.server);
         writeln();
 
-        parser.client.updated = false;
+        parser.clientUpdated = false;
         stdout.lockingTextWriter.formatClientAssignment(parser.client);
         writeln();
         writeln("parser.typenums = typenumsOf(parser.client.server.daemon);");
@@ -537,9 +537,9 @@ void generateAsserts(ref Kameloso instance) @system
                 stdout.lockingTextWriter.formatEventAssertBlock(event);
                 writeln();
 
-                if (parser.client.updated)
+                if (parser.clientUpdated)
                 {
-                    parser.client.updated = false;
+                    parser.clientUpdated = false;
                     foreach (plugin; plugins) plugin.state.client = parser.client;
 
                     /+writeln("/*");

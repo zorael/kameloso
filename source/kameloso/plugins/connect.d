@@ -80,7 +80,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
         if (index != -1)
         {
             bot.channels = bot.channels.remove!(SwapStrategy.unstable)(index);
-            client.updated = true;
+            botUpdated = true;
         }
         else
         {
@@ -117,7 +117,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
         {
             // Track new channel in the channels array
             bot.channels ~= event.channel;
-            client.updated = true;
+            botUpdated = true;
         }
     }
 }
@@ -543,7 +543,7 @@ void onNickInUse(ConnectService service)
             service.renamedDuringRegistration = true;
         }
 
-        service.state.client.updated = true;
+        service.state.clientUpdated = true;
         raw(service.state, "NICK " ~ service.state.client.nickname);
     }
 }
@@ -899,7 +899,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
     if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
     {
         service.state.client.nickname = event.target.nickname;
-        service.state.client.updated = true;
+        service.state.clientUpdated = true;
     }
 
     version(TwitchSupport) {}

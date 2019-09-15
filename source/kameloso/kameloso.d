@@ -699,10 +699,10 @@ Next mainLoop(ref Kameloso instance)
                     throw e;
                 }
 
-                if (instance.parser.client.updated)
+                if (instance.parser.clientUpdated)
                 {
                     // Parsing changed the client; propagate
-                    instance.parser.client.updated = false;
+                    instance.parser.clientUpdated = false;
                     instance.propagateClient(instance.parser.client);
                 }
 
@@ -720,12 +720,18 @@ Next mainLoop(ref Kameloso instance)
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
-                    if (plugin.state.client.updated)
+                    if (plugin.state.botUpdated)
+                    {
+                        // Postprocessing changed the bot; propagate
+                        plugin.state.botUpdated = false;
+                        instance.propagateBot(plugin.state.bot);
+                    }
+
+                    if (plugin.state.clientUpdated)
                     {
                         // Postprocessing changed the client; propagate
-                        instance.parser.client = plugin.state.client;
-                        instance.parser.client.updated = false;
-                        instance.propagateClient(instance.parser.client);
+                        plugin.state.clientUpdated = false;
+                        instance.propagateClient(plugin.state.client);
                     }
                 }
 
@@ -742,17 +748,25 @@ Next mainLoop(ref Kameloso instance)
                         // Fetch any queued `WHOIS` requests and handle
                         instance.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue);
 
-                        if (plugin.state.client.updated)
+                        if (plugin.state.botUpdated)
                         {
                             /*  Plugin `onEvent` or `WHOIS` reaction updated the
-                                client. There's no need to check for both
+                                bot. There's no need to check for both
                                 separately since this is just a single plugin
                                 processing; it keeps its update internally
                                 between both passes.
                             */
-                            instance.parser.client = plugin.state.client;
-                            instance.parser.client.updated = false;
-                            instance.propagateClient(instance.parser.client);
+                            plugin.state.botUpdated = false;
+                            instance.propagateBot(plugin.state.bot);
+                        }
+
+                        if (plugin.state.clientUpdated)
+                        {
+                            /*  Plugin `onEvent` or `WHOIS` reaction updated the
+                                client. As above.
+                            */
+                            plugin.state.clientUpdated = false;
+                            instance.propagateClient(plugin.state.client);
                         }
                     }
                     catch (UTFException e)

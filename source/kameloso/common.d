@@ -513,9 +513,15 @@ struct Kameloso
             {
                 plugin.teardown();
 
-                if (plugin.state.client.updated)
+                if (plugin.state.botUpdated)
                 {
-                    parser.client = plugin.state.client;
+                    plugin.state.botUpdated = false;
+                    propagateBot(plugin.state.bot);
+                }
+
+                if (plugin.state.clientUpdated)
+                {
+                    plugin.state.clientUpdated = false;
                     propagateClient(parser.client);
                 }
             }
@@ -561,12 +567,18 @@ struct Kameloso
         {
             plugin.start();
 
-            if (plugin.state.client.updated)
+            if (plugin.state.botUpdated)
+            {
+                // start changed the bot; propagate
+                plugin.state.botUpdated = false;
+                propagateBot(plugin.state.bot);
+            }
+
+            if (plugin.state.clientUpdated)
             {
                 // start changed the client; propagate
-                parser.client = plugin.state.client;
-                parser.client.updated = false; // all plugins' state.client will be overwritten with this
-                propagateClient(parser.client);
+                plugin.state.clientUpdated = false;
+                propagateClient(plugin.state.client);
             }
         }
     }
@@ -574,16 +586,18 @@ struct Kameloso
 
     // propagateClient
     /++
-     +  Takes a client and passes it out to all plugins.
+     +  Takes a `dialect.defs.IRCClient` and passes it out to all plugins.
      +
      +  This is called when a change to the client has occurred and we want to
-     +  update all plugins to have an updated copy of it.
+     +  update all plugins to have a current copy of it.
      +
      +  Params:
      +      client = `dialect.defs.IRCClient` to propagate to all plugins.
      +/
     void propagateClient(IRCClient client) pure nothrow @nogc
     {
+        parser.client = client;
+
         foreach (plugin; plugins)
         {
             plugin.state.client = client;

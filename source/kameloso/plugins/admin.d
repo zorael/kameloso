@@ -328,7 +328,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     // We need to add it to the homes array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
     plugin.state.bot.homes ~= channelToAdd;
-    plugin.state.bot.updated = true;
+    plugin.state.botUpdated = true;
     join(plugin.state, channelToAdd);
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
@@ -358,8 +358,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         {
         case SELFJOIN:
             // Success!
-            /*client.homes ~= followupChannel;
-            client.updated = true;*/
+            /*plugin.state.bot.homes ~= followupChannel;
+            plugin.state.botUpdated = true;*/
             return;
 
         case ERR_LINKCHANNEL:
@@ -383,7 +383,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         {
             plugin.state.bot.homes = plugin.state.bot.homes
                 .remove!(SwapStrategy.unstable)(homeIndex);
-            plugin.state.bot.updated = true;
+            plugin.state.botUpdated = true;
         }
         else
         {
@@ -455,7 +455,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
     plugin.state.bot.homes = plugin.state.bot.homes
         .remove!(SwapStrategy.unstable)(homeIndex);
-    plugin.state.bot.updated = true;
+    plugin.state.botUpdated = true;
     part(plugin.state, channel);
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home removed.");
 }
