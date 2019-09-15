@@ -250,6 +250,7 @@ void printHelp(GetoptResult results) @system
  +  Params:
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      client = Reference to the current `dialect.defs.IRCClient`.
+ +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +
