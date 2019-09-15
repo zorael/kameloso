@@ -260,7 +260,8 @@ void printHelp(GetoptResult results) @system
 Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCBot bot,
     ref string[] customSettings) @system
 {
-    import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
+    import kameloso.common : logger, completeClient, printVersionInfo,
+        settings, writeConfigurationFile;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -289,6 +290,12 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCBot bot,
 
     // If we don't initialise the plugins there'll be no plugins array
     instance.initPlugins(customSettings);
+
+    // Fill out some empty fields
+    completeClient(client);
+
+    import kameloso.constants : KamelosoDefaultStrings;
+    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;
 
     instance.writeConfigurationFile(settings.configFile);
 
