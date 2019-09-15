@@ -160,21 +160,6 @@ struct IRCBot
         string pass;
     }
 
-    @Separator(",")
-    @Separator(" ")
-    {
-        /// The nickname services accounts of *administrators*, in a bot-like context.
-        string[] admins;
-
-        /// List of homes, in a bot-like context.
-        @CannotContainComments
-        string[] homes;
-
-        /// Currently inhabited non-home channels.
-        @CannotContainComments
-        string[] channels;
-    }
-
     version(TwitchSupport)
     {
         /++
@@ -192,6 +177,21 @@ struct IRCBot
     /// Default reason given when quitting without specifying one.
     @CannotContainComments
     string quitReason;
+
+    @Separator(",")
+    @Separator(" ")
+    {
+        /// The nickname services accounts of *administrators*, in a bot-like context.
+        string[] admins;
+
+        /// List of homes, in a bot-like context.
+        @CannotContainComments
+        string[] homes;
+
+        /// Currently inhabited non-home channels.
+        @CannotContainComments
+        string[] channels;
+    }
 }
 
 
