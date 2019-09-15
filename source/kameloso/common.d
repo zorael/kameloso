@@ -433,6 +433,7 @@ struct Kameloso
 
         IRCPluginState state;
         state.client = parser.client;
+        state.bot = this.bot;
         state.mainThread = thisTid;
         immutable now = Clock.currTime.toUnixTime;
 
