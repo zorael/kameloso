@@ -399,6 +399,12 @@ struct IRCPluginState
 
     /// The next (Unix time) timestamp at which to call `periodically`.
     long nextPeriodical;
+
+    /// Whether or not `bot` was altered. Must be reset manually.
+    bool botUpdated;
+
+    /// Whether or not `client` was altered. Must be reset manually.
+    bool clientUpdated;
 }
 
 
