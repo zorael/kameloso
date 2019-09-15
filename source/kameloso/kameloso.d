@@ -1607,9 +1607,9 @@ void preInstanceSetup()
 
 // setupSettings
 /++
- +  Sets up `settings`, expanding paths and more.
+ +  Sets up `kameloso.common.settings`, expanding paths and more.
  +
- +  This is called early during execution.
+ +  This is called during early execution.
  +/
 void setupSettings()
 {
@@ -1756,7 +1756,7 @@ void resolveResourceDirectory(ref Kameloso instance)
  +
  +  Params:
  +      instance = Reference to the current `Kameloso`.
- +      attempt = Voldemort aggregate of state values used when connecting.
+ +      attempt = Voldemort aggregate of state variables used when connecting.
  +/
 void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 {
@@ -1951,6 +1951,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
 }
 
+
 public:
 
 
@@ -1966,6 +1967,7 @@ public:
  +/
 int initBot(string[] args)
 {
+    /// Voldemort aggregate of state variables.
     struct Attempt
     {
         /// Enum denoting what we should do next loop.
@@ -1990,6 +1992,7 @@ int initBot(string[] args)
         int retval;
     }
 
+    // Set up the terminal environment.
     preInstanceSetup();
 
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
@@ -1997,11 +2000,8 @@ int initBot(string[] args)
     instance.abort = &abort;
     Attempt attempt;
 
+    // Set up `kameloso.common.settings`, expanding paths.
     setupSettings();
-
-    // Prepare an array for `handleGetopt` to fill by ref with custom settings
-    // set on the command-line using `--set plugin.setting=value`
-    //string[] customSettings;
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
@@ -2077,6 +2077,7 @@ int initBot(string[] args)
         complainAboutMissingConfiguration(args);
     }
 
+    // Verify that settings are as they should be (nickname exists and not too long, etc)
     immutable actionAfterVerification = instance.verifySettings();
 
     with (Next)
@@ -2095,6 +2096,7 @@ int initBot(string[] args)
         return 1;
     }
 
+    // Resolve resource directory paths.
     instance.resolveResourceDirectory();
 
     // Initialise plugins outside the loop once, for the error messages
