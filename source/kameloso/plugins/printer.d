@@ -1034,6 +1034,8 @@ if (isOutputRange!(Sink, char[]))
                         case SELFJOIN:
                         case PART:
                         case SELFPART:
+                        case QUERY:
+                        //case SELFQUERY:  // Doesn't seem to happen
                             break;
 
                         default:
