@@ -192,13 +192,6 @@ struct IRCBot
     /// Default reason given when quitting without specifying one.
     @CannotContainComments
     string quitReason;
-
-    @Hidden
-    @Unconfigurable
-    {
-        /// Whether or not the bot was altered and need propagating.
-        bool updated;
-    }
 }
 
 
