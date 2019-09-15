@@ -1665,16 +1665,9 @@ int initBot(string[] args)
         return 1;
     }
 
-    // Apply some defaults, as stored in `kameloso.constants`.
-    with (instance)
-    {
-        import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
-
-        if (!parser.client.realName.length) parser.client.realName = KamelosoDefaultStrings.realName;
-        if (!bot.quitReason.length) bot.quitReason = KamelosoDefaultStrings.quitReason;
-        if (!parser.client.server.address.length) parser.client.server.address = KamelosoDefaultStrings.serverAddress;
-        if (parser.client.server.port == 0) parser.client.server.port = KamelosoDefaultIntegers.port;
-    }
+    // Apply some defaults to empty members, as stored in `kameloso.constants`.
+    import kameloso.common : completeClient;
+    completeClient(instance.parser.client);
 
     string pre, post, infotint, logtint, warningtint, errortint;
 
