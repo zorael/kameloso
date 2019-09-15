@@ -589,6 +589,27 @@ struct Kameloso
             plugin.state.client = client;
         }
     }
+
+
+    // propagateBot
+    /++
+     +  Takes a `kameloso.common.IRCBot` and passes it out to all plugins.
+     +
+     +  This is called when a change to the bot has occurred and we want to
+     +  update all plugins to have a current copy of it.
+     +
+     +  Params:
+     +      bot = `kameloso.common.IRCBot` to propagate to all plugins.
+     +/
+    void propagateBot(IRCBot bot) pure nothrow @nogc
+    {
+        this.bot = bot;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.bot = bot;
+        }
+    }
 }
 
 
