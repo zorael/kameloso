@@ -415,7 +415,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : canFind;
 
     if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && !plugin.state.client.homes.canFind(event.channel))
+        event.channel.length && !plugin.state.bot.homes.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;
@@ -616,7 +616,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         // channels this user is in (that the bot is also in)
         foreach (immutable channelName, const foreachChannel; state.channels)
         {
-            if (!printerSettings.logAllChannels && !state.client.homes.canFind(channelName))
+            if (!printerSettings.logAllChannels && !state.bot.homes.canFind(channelName))
             {
                 // Not logging all channels and this is not a home.
                 continue;
@@ -1034,6 +1034,8 @@ if (isOutputRange!(Sink, char[]))
                         case SELFJOIN:
                         case PART:
                         case SELFPART:
+                        case QUERY:
+                        //case SELFQUERY:  // Doesn't seem to happen
                             break;
 
                         default:

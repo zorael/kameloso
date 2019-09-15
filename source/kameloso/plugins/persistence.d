@@ -43,7 +43,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         {
             import std.algorithm.searching : canFind;
 
-            if (service.state.client.admins.canFind(userToClassify.account))
+            if (service.state.bot.admins.canFind(userToClassify.account))
             {
                 // Admins are (currently) stored in an array IRCClient.admins
                 userToClassify.class_ = IRCUser.Class.admin;

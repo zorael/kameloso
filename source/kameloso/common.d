@@ -104,9 +104,6 @@ struct CoreSettings
         bool monochrome = true;  /// Non-colours version defaults to true.
     }
 
-    /// Default reason given when quitting without specifying one.
-    string quitReason;
-
     /// Flag denoting whether or not the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
@@ -145,10 +142,65 @@ struct CoreSettings
 
 // IRCBot
 /++
+ +  Aggregate of information relevant for an IRC *bot* that goes beyond what is
+ +  needed for a mere IRC *client*.
+ +/
+struct IRCBot
+{
+    /// Username to use as services account login name.
+    string account;
+
+    @Hidden
+    @CannotContainComments
+    {
+        /// Password for services account.
+        string password;
+
+        /// Login `PASS`, different from `SASL` and services.
+        string pass;
+    }
+
+    @Separator(",")
+    @Separator(" ")
+    {
+        /// The nickname services accounts of *administrators*, in a bot-like context.
+        string[] admins;
+
+        /// List of homes, in a bot-like context.
+        @CannotContainComments
+        string[] homes;
+
+        /// Currently inhabited non-home channels.
+        @CannotContainComments
+        string[] channels;
+    }
+
+    version(TwitchSupport)
+    {
+        /++
+            The Twitch colour to assign to our nickname.
+
+            "Normal users can choose between Blue, Coral, DodgerBlue,
+            SpringGreen, YellowGreen, Green, OrangeRed, Red, GoldenRod,
+            HotPink, CadetBlue, SeaGreen, Chocolate, BlueViolet, and Firebrick.
+            Twitch Turbo users can use any Hex value (i.e: #000000)."
+        +/
+        @CannotContainComments
+        string colour;
+    }
+
+    /// Default reason given when quitting without specifying one.
+    @CannotContainComments
+    string quitReason;
+}
+
+
+// Kameloso
+/++
  +  State needed for the kameloso bot, aggregated in a struct for easier passing
  +  by reference.
  +/
-struct IRCBot
+struct Kameloso
 {
     import kameloso.common : OutgoingLine;
     import lu.common : Buffer;
@@ -203,6 +255,9 @@ struct IRCBot
 
     /// Parser instance.
     IRCParser parser;
+
+    /// IRC bot values.
+    IRCBot bot;
 
     /// Values and state needed to throttle sending messages.
     Throttle throttle;
@@ -378,6 +433,7 @@ struct IRCBot
 
         IRCPluginState state;
         state.client = parser.client;
+        state.bot = this.bot;
         state.mainThread = thisTid;
         immutable now = Clock.currTime.toUnixTime;
 
@@ -458,9 +514,15 @@ struct IRCBot
             {
                 plugin.teardown();
 
-                if (plugin.state.client.updated)
+                if (plugin.state.botUpdated)
                 {
-                    parser.client = plugin.state.client;
+                    plugin.state.botUpdated = false;
+                    propagateBot(plugin.state.bot);
+                }
+
+                if (plugin.state.clientUpdated)
+                {
+                    plugin.state.clientUpdated = false;
                     propagateClient(parser.client);
                 }
             }
@@ -506,12 +568,18 @@ struct IRCBot
         {
             plugin.start();
 
-            if (plugin.state.client.updated)
+            if (plugin.state.botUpdated)
+            {
+                // start changed the bot; propagate
+                plugin.state.botUpdated = false;
+                propagateBot(plugin.state.bot);
+            }
+
+            if (plugin.state.clientUpdated)
             {
                 // start changed the client; propagate
-                parser.client = plugin.state.client;
-                parser.client.updated = false; // all plugins' state.client will be overwritten with this
-                propagateClient(parser.client);
+                plugin.state.clientUpdated = false;
+                propagateClient(plugin.state.client);
             }
         }
     }
@@ -519,19 +587,42 @@ struct IRCBot
 
     // propagateClient
     /++
-     +  Takes a client and passes it out to all plugins.
+     +  Takes a `dialect.defs.IRCClient` and passes it out to all plugins.
      +
      +  This is called when a change to the client has occurred and we want to
-     +  update all plugins to have an updated copy of it.
+     +  update all plugins to have a current copy of it.
      +
      +  Params:
      +      client = `dialect.defs.IRCClient` to propagate to all plugins.
      +/
     void propagateClient(IRCClient client) pure nothrow @nogc
     {
+        parser.client = client;
+
         foreach (plugin; plugins)
         {
             plugin.state.client = client;
+        }
+    }
+
+
+    // propagateBot
+    /++
+     +  Takes a `kameloso.common.IRCBot` and passes it out to all plugins.
+     +
+     +  This is called when a change to the bot has occurred and we want to
+     +  update all plugins to have a current copy of it.
+     +
+     +  Params:
+     +      bot = `kameloso.common.IRCBot` to propagate to all plugins.
+     +/
+    void propagateBot(IRCBot bot) pure nothrow @nogc
+    {
+        this.bot = bot;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.bot = bot;
         }
     }
 }
@@ -602,15 +693,15 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +
  +  Example:
  +  ---
- +  IRCBot bot;
- +  bot.writeConfigurationFile(bot.settings.configFile);
+ +  Kameloso instance;
+ +  instance.writeConfigurationFile(instance.settings.configFile);
  +  ---
  +
  +  Params:
- +      bot = Reference to the current `IRCBot`, with all its settings.
+ +      instance = Reference to the current `Kameloso`, with all its settings.
  +      filename = String filename of the file to write to.
  +/
-void writeConfigurationFile(ref IRCBot bot, const string filename) @system
+void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
     import lu.serialisation : justifiedConfigurationText, serialise;
     import lu.string : beginsWith, encode64;
@@ -619,16 +710,16 @@ void writeConfigurationFile(ref IRCBot bot, const string filename) @system
     Appender!string sink;
     sink.reserve(4096);  // ~2234
 
-    with (bot.parser)
+    with (instance)
     {
-        if (client.password.length && !client.password.beginsWith("base64:"))
+        if (bot.password.length && !bot.password.beginsWith("base64:"))
         {
-            client.password = "base64:" ~ encode64(client.password);
+            bot.password = "base64:" ~ encode64(bot.password);
         }
 
-        sink.serialise(client, client.server, settings);
+        sink.serialise(parser.client, bot, parser.client.server, settings);
 
-        foreach (plugin; bot.plugins)
+        foreach (plugin; instance.plugins)
         {
             plugin.serialiseConfigInto(sink);
         }

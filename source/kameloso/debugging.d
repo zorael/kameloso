@@ -4,7 +4,7 @@
  +/
 module kameloso.debugging;
 
-import kameloso.common : IRCBot;
+import kameloso.common : Kameloso;
 import dialect.defs;
 
 import std.range.primitives : isOutputRange;
@@ -394,14 +394,14 @@ unittest
  +
  +  Example:
  +  ---
- +  IRCBot bot;
- +  bot.generateAsserts();
+ +  Kameloso instance;
+ +  instance.generateAsserts();
  +  ---
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`, with all its settings.
+ +      instance = Reference to the current `kameloso.common.Kameloso`, with all its settings.
  +/
-void generateAsserts(ref IRCBot bot) @system
+void generateAsserts(ref Kameloso instance) @system
 {
     import kameloso.common : logger;
     import kameloso.printing : printObjects;
@@ -414,9 +414,9 @@ void generateAsserts(ref IRCBot bot) @system
     import std.typecons : No, Yes;
 
     with (IRCServer)
-    with (bot)
+    with (instance)
     {
-        import dialect.parsing : IRCParser;  // Must be here or shadows IRCBot : IRCParser
+        import dialect.parsing : IRCParser;  // Must be here or shadows Kameloso : IRCParser
 
         parser = IRCParser.init;
 
@@ -439,7 +439,7 @@ void generateAsserts(ref IRCBot bot) @system
             parser.typenums = typenumsOf(daemon);
             parser.client.server.daemon = daemon;
             parser.client.server.daemonstring = version_;
-            parser.client.updated = true;
+            parser.clientUpdated = true;
         }
         catch (ConvException e)
         {
@@ -471,7 +471,7 @@ void generateAsserts(ref IRCBot bot) @system
         printObjects!(Yes.printAll)(parser.client, parser.client.server);
         writeln();
 
-        parser.client.updated = false;
+        parser.clientUpdated = false;
         stdout.lockingTextWriter.formatClientAssignment(parser.client);
         writeln();
         writeln("parser.typenums = typenumsOf(parser.client.server.daemon);");
@@ -537,9 +537,9 @@ void generateAsserts(ref IRCBot bot) @system
                 stdout.lockingTextWriter.formatEventAssertBlock(event);
                 writeln();
 
-                if (parser.client.updated)
+                if (parser.clientUpdated)
                 {
-                    parser.client.updated = false;
+                    parser.clientUpdated = false;
                     foreach (plugin; plugins) plugin.state.client = parser.client;
 
                     /+writeln("/*");

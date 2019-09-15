@@ -352,15 +352,22 @@ unittest
  +/
 struct IRCPluginState
 {
+    import kameloso.common : IRCBot;
     import lu.common : Labeled;
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
     /++
      +  The current `dialect.defs.IRCClient`, containing information pertaining
-     +  to the bot in the context of the current (alive) connection.
+     +  to the bot in the context of a client connected to an IRC server.
      +/
     IRCClient client;
+
+    /++
+     +  The current `kameloso.common.IRCBot`, containing information pertaining
+     +  to the bot in the context of an IRC bot.
+     +/
+    IRCBot bot;
 
     /// Thread ID to the main thread.
     Tid mainThread;
@@ -392,6 +399,12 @@ struct IRCPluginState
 
     /// The next (Unix time) timestamp at which to call `periodically`.
     long nextPeriodical;
+
+    /// Whether or not `bot` was altered. Must be reset manually.
+    bool botUpdated;
+
+    /// Whether or not `client` was altered. Must be reset manually.
+    bool clientUpdated;
 }
 
 
@@ -1271,7 +1284,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
                     }
-                    else if (!privateState.client.homes.canFind(event.channel))
+                    else if (!privateState.bot.homes.canFind(event.channel))
                     {
                         static if (verbose)
                         {

@@ -99,7 +99,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         }
 
         if ((event.sender.nickname == plugin.state.client.nickname) ||
-            plugin.state.client.admins.canFind(event.sender.nickname) ||
+            plugin.state.bot.admins.canFind(event.sender.nickname) ||
             event.sender.badges.contains("mode"/*rator*/))
         {
             return;
@@ -1708,7 +1708,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
             {
                 if ((*channelRegulars).canFind(user.nickname))
                 {
-                    user.class_ = plugin.state.client.admins.canFind(user.nickname) ?
+                    user.class_ = plugin.state.bot.admins.canFind(user.nickname) ?
                         IRCUser.Class.admin : IRCUser.Class.whitelist;
                 }
             }
