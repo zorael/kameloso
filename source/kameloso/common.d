@@ -987,6 +987,8 @@ out (; (client.nickname.length), "Empty client nickname")
 out (; (client.user.length), "Empty client usern ame")
 out (; (client.ident.length), "Empty client ident")
 out (; (client.realName.length), "Empty client GECOS/real name")
+out (; (client.server.address.length), "Empty server address")
+out (; (client.server.port != 0), "Server port of 0")
 do
 {
     import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
