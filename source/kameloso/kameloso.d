@@ -1572,20 +1572,16 @@ void complainAboutMissingConfiguration(const string[] args)
 }
 
 
-public:
-
-
-// initBot
+// preInstanceSetup
 /++
- +  Entry point of the program.
+ +  Sets up the program (terminal) environment.
  +
- +  Params:
- +      args = Command-line arguments passed to the program.
+ +  Depending on your platform it may set any of thread name, terminal title and
+ +  console codepages.
  +
- +  Returns:
- +      `0` on success, `1` on failure.
+ +  This is called very early during execution.
  +/
-int initBot(string[] args)
+void preInstanceSetup()
 {
     version(Posix)
     {
@@ -1606,11 +1602,17 @@ int initBot(string[] args)
 
     enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
     setTitle(terminalTitle);
+}
 
-    // Initialise the main Kameloso. Set its abort pointer to the global abort.
-    Kameloso instance;
-    instance.abort = &abort;
 
+// setupSettings
+/++
+ +  Sets up `settings`, expanding paths and more.
+ +
+ +  This is called early during execution.
+ +/
+void setupSettings()
+{
     import std.path : buildNormalizedPath;
 
     // Default values
@@ -1626,86 +1628,24 @@ int initBot(string[] args)
         // Whitelist more as we find them.
         settings.flush = true;
     }
+}
 
-    // Prepare an array for `handleGetopt` to fill by ref with custom settings
-    // set on the command-line using `--set plugin.setting=value`
-    string[] customSettings;
 
-    // Initialise the logger immediately so it's always available.
-    // handleGetopt re-inits later when we know the settings for monochrome
-    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
-
-    // Set up signal handling so that we can gracefully catch Ctrl+C.
-    setupSignals();
-
-    scope(failure)
-    {
-        import kameloso.terminal : TerminalToken;
-
-        logger.error("We just crashed!", cast(char)TerminalToken.bell);
-        *instance.abort = true;
-        resetSignals();
-    }
-
-    immutable actionAfterGetopt = instance.tryGetopt(args, customSettings);
-
-    with (Next)
-    final switch (actionAfterGetopt)
-    {
-    case continue_:
-        break;
-
-    case retry:  // should never happen
-        assert(0, "tryGetopt returned Next.retry");
-
-    case returnSuccess:
-        return 0;
-
-    case returnFailure:
-        return 1;
-    }
-
-    // Apply some defaults to empty members, as stored in `kameloso.constants`.
-    import kameloso.common : completeClient;
-    completeClient(instance.parser.client);
-
-    string pre, post, infotint, logtint, warningtint, errortint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.terminal : TerminalForeground, colour;
-            import kameloso.logger : KamelosoLogger;
-
-            enum headertintColourBright = TerminalForeground.black.colour;
-            enum headertintColourDark = TerminalForeground.white.colour;
-            enum defaulttintColour = TerminalForeground.default_.colour;
-            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
-            post = defaulttintColour;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
-        }
-    }
-
-    import std.stdio : writeln;
-    printVersionInfo(pre, post);
-    writeln();
-
-    import kameloso.printing : printObjects;
-    import lu.string : contains;
-
-    // Print the current settings to show what's going on.
-    printObjects(instance.parser.client, instance.bot, instance.parser.client.server);
-
-    if (!instance.bot.homes.length && !instance.bot.admins.length)
-    {
-        complainAboutMissingConfiguration(args);
-    }
-
+// verifySettings
+/++
+ +  Verifies some settings and returns whether the program should continue
+ +  executing (or whether there were errors such that we should exit).
+ +
+ +  This is called after command-line arguments have been parsed.
+ +
+ +  Params:
+ +      instance = Reference to the current `Kameloso`.
+ +
+ +  Returns:
+ +      `Next.returnFailure` if the program should exit, `Next.continue_` otherwise.
+ +/
+Next verifySettings(ref Kameloso instance)
+{
     if (!settings.force)
     {
         IRCServer conservativeServer;
@@ -1715,18 +1655,20 @@ int initBot(string[] args)
         {
             // No need to print the nickname, visible from printObjects preivously
             logger.error("Invalid nickname!");
-            return 1;
+            return Next.returnFailure;
         }
 
         if (!settings.prefix.length)
         {
             logger.error("No prefix configured!");
-            return 1;
+            return Next.returnFailure;
         }
     }
 
     version(Posix)
     {
+        import lu.string : contains;
+
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
@@ -1740,13 +1682,42 @@ int initBot(string[] args)
 
     if (!settings.force && !addressIsResolvable)
     {
+        string logtint, errortint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.terminal : TerminalForeground, colour;
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                errortint = (cast(KamelosoLogger)logger).errortint;
+            }
+        }
+
         logger.errorf("Invalid address! [%s%s%s]", logtint,
             instance.parser.client.server.address, errortint);
-        return 1;
+        return Next.returnFailure;
     }
 
+    return Next.continue_;
+}
+
+
+// resolveResourceDirectory
+/++
+ +  Resolves resource directories verbosely.
+ +
+ +  This is called after settings have been verified, before plugins are initialised.
+ +
+ +  Params:
+ +      instance = Reference to the current `Kameloso`.
+ +/
+void resolveResourceDirectory(ref Kameloso instance)
+{
     import std.file : exists;
-    import std.path : dirName;
+    import std.path : buildNormalizedPath, dirName;
 
     // Resolve and create the resource directory
     settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
@@ -1756,54 +1727,61 @@ int initBot(string[] args)
     if (!settings.resourceDirectory.exists)
     {
         import std.file : mkdirRecurse;
+
+        string infotint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.terminal : TerminalForeground, colour;
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+            }
+        }
+
         mkdirRecurse(settings.resourceDirectory);
         logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
     }
+}
 
-    // Initialise plugins outside the loop once, for the error messages
-    import kameloso.plugins.common : IRCPluginSettingsException;
-    import std.conv : ConvException;
 
-    try
+// startBot
+/++
+ +  Main connection logic.
+ +
+ +  This function *starts* the bot, after it has been sufficiently initialised.
+ +  It resolves and connects to servers, then hands off execution to `mainLoop`.
+ +
+ +  Params:
+ +      instance = Reference to the current `Kameloso`.
+ +      attempt = Voldemort aggregate of state values used when connecting.
+ +/
+void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
+{
+    string logtint, warningtint;
+
+    version(Colours)
     {
-        const invalidEntries = instance.initPlugins(customSettings);
-        complainAboutInvalidConfigurationEntries(invalidEntries);
-    }
-    catch (ConvException e)
-    {
-        // Configuration file/--set argument syntax error
-        logger.error(e.msg);
-        if (!settings.force) return 1;
-    }
-    catch (IRCPluginSettingsException e)
-    {
-        // --set plugin/setting name error
-        logger.error(e.msg);
-        if (!settings.force) return 1;
+        if (!settings.monochrome)
+        {
+            import kameloso.terminal : TerminalForeground, colour;
+            import kameloso.logger : KamelosoLogger;
+
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
+        }
     }
 
     // Save the original nickname *once*, outside the connection loop.
     // It will change later and knowing this is useful when authenticating
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
-    /// Return value so that the exit scopeguard knows what to return.
-    int retval;
-
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
-    /// Enum denoting what we should do next loop.
-    Next next;
-
-    /++
-     +  Bool whether this is the first connection attempt or if we have
-     +  connected at least once already.
-     +/
-    bool firstConnect = true;
-
-    /// Whether or not "Exiting..." should be printed at program exit.
-    bool silentExit;
-
+    with (attempt)
     outerloop:
     do
     {
@@ -1971,9 +1949,189 @@ int initBot(string[] args)
     }
     while (!*instance.abort && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
+}
+
+public:
+
+
+// initBot
+/++
+ +  Entry point of the program.
+ +
+ +  Params:
+ +      args = Command-line arguments passed to the program.
+ +
+ +  Returns:
+ +      `0` on success, `1` on failure.
+ +/
+int initBot(string[] args)
+{
+    struct Attempt
+    {
+        /// Enum denoting what we should do next loop.
+        Next next;
+
+        /++
+         +  An array for `handleGetopt` to fill by ref with custom settings
+         +  set on the command-line using `--set plugin.setting=value`.
+         +/
+        string[] customSettings;
+
+        /++
+         +  Bool whether this is the first connection attempt or if we have
+         +  connected at least once already.
+         +/
+        bool firstConnect = true;
+
+        /// Whether or not "Exiting..." should be printed at program exit.
+        bool silentExit;
+
+        /// Shell return value to exit with.
+        int retval;
+    }
+
+    preInstanceSetup();
+
+    // Initialise the main Kameloso. Set its abort pointer to the global abort.
+    Kameloso instance;
+    instance.abort = &abort;
+    Attempt attempt;
+
+    setupSettings();
+
+    // Prepare an array for `handleGetopt` to fill by ref with custom settings
+    // set on the command-line using `--set plugin.setting=value`
+    //string[] customSettings;
+
+    // Initialise the logger immediately so it's always available.
+    // handleGetopt re-inits later when we know the settings for monochrome
+    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+
+    // Set up signal handling so that we can gracefully catch Ctrl+C.
+    setupSignals();
+
+    scope(failure)
+    {
+        import kameloso.terminal : TerminalToken;
+
+        logger.error("We just crashed!", cast(char)TerminalToken.bell);
+        *instance.abort = true;
+        resetSignals();
+    }
+
+    immutable actionAfterGetopt = instance.tryGetopt(args, attempt.customSettings);
+
+    with (Next)
+    final switch (actionAfterGetopt)
+    {
+    case continue_:
+        break;
+
+    case retry:  // should never happen
+        assert(0, "tryGetopt returned Next.retry");
+
+    case returnSuccess:
+        return 0;
+
+    case returnFailure:
+        return 1;
+    }
+
+    // Apply some defaults to empty members, as stored in `kameloso.constants`.
+    import kameloso.common : completeClient;
+    completeClient(instance.parser.client);
+
+    string pre, post, infotint, logtint, warningtint, errortint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.terminal : TerminalForeground, colour;
+            import kameloso.logger : KamelosoLogger;
+
+            enum headertintColourBright = TerminalForeground.black.colour;
+            enum headertintColourDark = TerminalForeground.white.colour;
+            enum defaulttintColour = TerminalForeground.default_.colour;
+            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
+            post = defaulttintColour;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
+            errortint = (cast(KamelosoLogger)logger).errortint;
+        }
+    }
+
+    import std.stdio : writeln;
+    printVersionInfo(pre, post);
+    writeln();
+
+    import kameloso.printing : printObjects;
+
+    // Print the current settings to show what's going on.
+    printObjects(instance.parser.client, instance.bot, instance.parser.client.server);
+
+    if (!instance.bot.homes.length && !instance.bot.admins.length)
+    {
+        complainAboutMissingConfiguration(args);
+    }
+
+    immutable actionAfterVerification = instance.verifySettings();
+
+    with (Next)
+    final switch (actionAfterVerification)
+    {
+    case continue_:
+        break;
+
+    case retry:  // should never happen
+        assert(0, "verifySettings returned Next.retry");
+
+    case returnSuccess:
+        return 0;
+
+    case returnFailure:
+        return 1;
+    }
+
+    instance.resolveResourceDirectory();
+
+    // Initialise plugins outside the loop once, for the error messages
+    import kameloso.plugins.common : IRCPluginSettingsException;
+    import std.conv : ConvException;
+
+    try
+    {
+        const invalidEntries = instance.initPlugins(attempt.customSettings);
+        complainAboutInvalidConfigurationEntries(invalidEntries);
+    }
+    catch (ConvException e)
+    {
+        // Configuration file/--set argument syntax error
+        logger.error(e.msg);
+        if (!settings.force) return 1;
+    }
+    catch (IRCPluginSettingsException e)
+    {
+        // --set plugin/setting name error
+        logger.error(e.msg);
+        if (!settings.force) return 1;
+    }
+
+    // Save the original nickname *once*, outside the connection loop.
+    // It will change later and knowing this is useful when authenticating
+    instance.parser.client.origNickname = instance.parser.client.nickname;
+
+    // Go!
+    instance.startBot(attempt);
+
+    // If we're here, we should exit. The only question is in what way.
 
     if (*instance.abort && instance.conn.connected)
     {
+        // Connected and aborting
+
         if (!settings.hideOutgoing)
         {
             version(Colours)
@@ -1990,7 +2148,8 @@ int initBot(string[] args)
 
         instance.conn.sendline("QUIT :" ~ instance.bot.quitReason);
     }
-    else if (!*instance.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
+    else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
+        !settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
@@ -2008,10 +2167,10 @@ int initBot(string[] args)
         logger.error("Aborting...");
         return 1;
     }
-    else if (!silentExit)
+    else if (!attempt.silentExit)
     {
         logger.info("Exiting...");
     }
 
-    return retval;
+    return attempt.retval;
 }
