@@ -112,7 +112,7 @@ void setTitle(const string title) @system
     {
         import std.stdio : stdout, write;
 
-        write("\033]0;" ~ title ~ "\007");
+        write("\033]0;", title, "\007");
         stdout.flush();
     }
     else version(Windows)
