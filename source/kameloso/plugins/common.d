@@ -938,7 +938,9 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 
     immutable user = event.sender;
     immutable now = Clock.currTime.toUnixTime;
-    immutable timediff = (now - user.lastWhois);
+    //immutable timediff = (now - user.updated);
+    static if (__traits(hasMember, user, "updated")) immutable timediff = (now - user.updated);
+    else immutable timediff = (now - user.lastWhois);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
     if (user.account.length)
@@ -1021,13 +1023,23 @@ unittest
     assert((res3 == FilterResult.fail), Enum!FilterResult.toString(res3));
 
     event.sender.class_ = IRCUser.Class.anyone;
-    event.sender.lastWhois = Clock.currTime.toUnixTime;
+    //event.sender.updated = Clock.currTime.toUnixTime;
+    static if (__traits(hasMember, event.sender, "updated"))
+    {
+        event.sender.updated = Clock.currTime.toUnixTime;
+    }
+    else event.sender.lastWhois = Clock.currTime.toUnixTime;
 
     immutable res4 = filterUser(event, level);
     assert((res4 == FilterResult.fail), Enum!FilterResult.toString(res4));
 
     event.sender.class_ = IRCUser.Class.blacklist;
-    event.sender.lastWhois = long.init;
+    //event.sender.updated = long.init;
+    static if (__traits(hasMember, event.sender, "updated"))
+    {
+        event.sender.updated = 0L;
+    }
+    else event.sender.lastWhois = 0L;
 
     immutable res5 = filterUser(event, level);
     assert((res5 == FilterResult.fail), Enum!FilterResult.toString(res5));
@@ -2770,7 +2782,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  `IRCPluginState.users` array of `dialect.defs.IRCUser`s.
      +
      +  `dialect.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
-     +  the `dialect.defs.IRCUser.lastWhois` field that we want to store.
+     +  the `dialect.defs.IRCUser.updated` field that we want to store.
      +
      +  `dialect.defs.IRCEvent.Type.CHGHOST` occurs when a user changes host
      +  on some servers that allow for custom host addresses.
@@ -3400,7 +3412,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +
  +  There is a chance of a user leak, if parting users are not broadcast. As
  +  such we mark when the user was last seen in the
- +  `dialect.defs.IRCUser.lastWhois` member, which opens up the possibility
+ +  `dialect.defs.IRCUser.updated` member, which opens up the possibility
  +  of pruning the plugin's `IRCPluginState.users` array of old entries.
  +
  +  Twitch awareness needs channel awareness, or it is meaningless.
@@ -3634,7 +3646,12 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
             {
                 import std.datetime.systime : Clock;
 
-                newUser.lastWhois = Clock.currTime.toUnixTime;
+                //newUser.updated = Clock.currTime.toUnixTime;
+                static if (__traits(hasMember, newUser, "updated"))
+                {
+                    newUser.updated = Clock.currTime.toUnixTime;
+                }
+                else newUser.lastWhois = Clock.currTime.toUnixTime;
                 plugin.state.users[newUser.nickname] = newUser;
             }
             return;

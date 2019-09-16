@@ -116,7 +116,8 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
         alias T = Unqual!(typeof(member));
         enum memberstring = __traits(identifier, before.tupleof[i]);
 
-        static if ((memberstring == "raw") || (memberstring == "time") || (memberstring == "lastWhois"))
+        static if ((memberstring == "raw") || (memberstring == "time") ||
+            (memberstring == "lastWhois") || (memberstring == "updated"))
         {
             continue;
         }
