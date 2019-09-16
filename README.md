@@ -102,9 +102,9 @@ $ dub build
 
 This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols.
 
-> You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+> The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
 ### Build configurations
 
@@ -279,14 +279,15 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
 * more pairs of eyes
-* separation of library and application (next)
 
 # Built with
 
 * [**D**](https://dlang.org)
 * [`dub`](https://code.dlang.org)
-* [`dlang-requests`](https://code.dlang.org/packages/requests)
-* [`arsd`](https://github.com/adamdruppe/arsd)
+* [`dialect`](https://github.com/zorael/dialect) ([dub](http://dialect.dub.pm))
+* [`lu`](https://github.com/zorael/lu) ([dub](http://lu.dub.pm))
+* [`dlang-requests`](https://github.com/ikod/dlang-requests) ([dub](http://requests.dub.pm))
+* [`arsd`](https://github.com/adamdruppe/arsd) ([dub](http://arsd-official.dub.pm))
 
 # License
 
