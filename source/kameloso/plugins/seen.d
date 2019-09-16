@@ -431,8 +431,8 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 
     foreach (const signed; event.content.splitter(" "))
     {
-        import lu.string : contains, nom;
         import dialect.common : stripModesign;
+        import lu.string : contains, nom;
 
         string nickname = signed;
 
@@ -517,9 +517,9 @@ void onEndOfList(SeenPlugin plugin)
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
-    import lu.string : contains;
-    import lu.common : timeSince;
     import dialect.common : isValidNickname;
+    import lu.common : timeSince;
+    import lu.string : contains;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;

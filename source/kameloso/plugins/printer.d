@@ -1278,8 +1278,8 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention, const bool bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.terminal : FG = TerminalForeground, colourWith;
     import kameloso.constants : DefaultColours;
+    import kameloso.terminal : FG = TerminalForeground, colourWith;
     import lu.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;

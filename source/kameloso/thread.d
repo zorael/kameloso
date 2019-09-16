@@ -28,8 +28,8 @@ version(Posix)
      +/
     void setThreadName(const string name)
     {
-        import std.string : toStringz;
         import core.thread : Thread;
+        import std.string : toStringz;
 
         pthread_setname_np(Thread.getThis().id, name.toStringz);
     }

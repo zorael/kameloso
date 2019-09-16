@@ -4,8 +4,8 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, IRCBot, Kameloso;
-import lu.common : Next;
 import dialect.defs : IRCClient;
+import lu.common : Next;
 import std.typecons : No, Yes;
 
 @safe:
@@ -120,8 +120,8 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
         }
         else
         {
-            import std.getopt : GetOptException;
             import std.format : format;
+            import std.getopt : GetOptException;
             throw new GetOptException("No %s value passed to %s".format(T.stringof, option));
         }
     }

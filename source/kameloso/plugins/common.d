@@ -2840,8 +2840,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irccolours : stripColours;
-        import lu.string : contains, nom;
         import dialect.common : IRCControlCharacter, stripModesign;
+        import lu.string : contains, nom;
         import std.algorithm.iteration : splitter;
 
         auto names = event.content.splitter(" ");

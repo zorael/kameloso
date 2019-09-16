@@ -21,9 +21,9 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.common;
-import dialect.defs;
-import kameloso.messaging;
 import kameloso.common : logger, settings;
+import kameloso.messaging;
+import dialect.defs;
 
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;

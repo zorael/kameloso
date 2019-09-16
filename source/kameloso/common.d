@@ -4,8 +4,8 @@
  +/
 module kameloso.common;
 
-import lu.uda;
 import dialect.defs : IRCClient;
+import lu.uda;
 
 import core.time : Duration, seconds;
 
@@ -203,11 +203,11 @@ struct IRCBot
 struct Kameloso
 {
     import kameloso.common : OutgoingLine;
+    import kameloso.constants : BufferSize;
+    import kameloso.plugins.common : IRCPlugin;
+    import dialect.parsing : IRCParser;
     import lu.common : Buffer;
     import lu.net : Connection;
-    import kameloso.constants : BufferSize;
-    import dialect.parsing : IRCParser;
-    import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;
 

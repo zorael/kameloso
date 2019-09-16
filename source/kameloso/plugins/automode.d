@@ -260,8 +260,8 @@ unittest
     "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import lu.string : beginsWith, nom;
     import dialect.common : isValidChannel, isValidNickname;
+    import lu.string : beginsWith, nom;
     import std.algorithm.searching : count;
     import std.uni : toLower;
 

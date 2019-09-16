@@ -19,8 +19,8 @@ import kameloso.plugins.common;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
-import lu.json : JSONStorage;
 import dialect.defs;
+import lu.json : JSONStorage;
 
 import std.typecons : Flag, No, Yes;
 

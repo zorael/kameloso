@@ -19,9 +19,8 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.common;
-import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
-import lu.common;
+import kameloso.thread : ThreadMessage;
 import dialect.defs;
 
 import std.concurrency;
@@ -88,8 +87,8 @@ void pipereader(shared IRCPluginState newState, const string filename)
     {
         if (!settings.monochrome)
         {
-            import kameloso.terminal : colour;
             import kameloso.constants : DefaultColours;
+            import kameloso.terminal : colour;
             import std.experimental.logger : LogLevel;
 
             // We don't have a logger instance so we have to access the
@@ -240,6 +239,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
  +/
 void createFIFO(const string filename)
 {
+    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
     import std.file : exists;
 
     if (!filename.exists)
@@ -337,6 +337,8 @@ void onMotd(PipelinePlugin plugin)
             import std.path : buildNormalizedPath;
             fifoFilename = buildNormalizedPath(tempdir, fifoFilename);
         }
+
+        import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
 
         try
         {

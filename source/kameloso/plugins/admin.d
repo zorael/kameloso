@@ -306,8 +306,8 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.string : stripped;
     import dialect.common : isValidChannel;
+    import lu.string : stripped;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
 
@@ -502,8 +502,8 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
     const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
-    import lu.string : contains, stripped;
     import dialect.common : isValidNickname;
+    import lu.string : contains, stripped;
 
     /// Report result, either to the local terminal or to the IRC channel/sender
     void report(const AlterationResult result, const string id)

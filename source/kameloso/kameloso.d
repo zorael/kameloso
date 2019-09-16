@@ -6,8 +6,8 @@ module kameloso.kameloso;
 import kameloso.common;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
-import lu.common : Next;
 import dialect;
+import lu.common : Next;
 
 version(ProfileGC)
 {
@@ -172,8 +172,8 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(settings.configFile);
         }
 
-        import kameloso.thread : CarryingFiber;
         import kameloso.plugins.common : IRCPlugin;
+        import kameloso.thread : CarryingFiber;
 
         /++
         +  Attaches a reference to the main array of
@@ -1688,7 +1688,6 @@ Next verifySettings(ref Kameloso instance)
         {
             if (!settings.monochrome)
             {
-                import kameloso.terminal : TerminalForeground, colour;
                 import kameloso.logger : KamelosoLogger;
 
                 logtint = (cast(KamelosoLogger)logger).logtint;
@@ -1734,9 +1733,7 @@ void resolveResourceDirectory(ref Kameloso instance)
         {
             if (!settings.monochrome)
             {
-                import kameloso.terminal : TerminalForeground, colour;
                 import kameloso.logger : KamelosoLogger;
-
                 infotint = (cast(KamelosoLogger)logger).infotint;
             }
         }
@@ -1766,7 +1763,6 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
     {
         if (!settings.monochrome)
         {
-            import kameloso.terminal : TerminalForeground, colour;
             import kameloso.logger : KamelosoLogger;
 
             logtint = (cast(KamelosoLogger)logger).logtint;
@@ -2047,8 +2043,8 @@ int initBot(string[] args)
     {
         if (!settings.monochrome)
         {
-            import kameloso.terminal : TerminalForeground, colour;
             import kameloso.logger : KamelosoLogger;
+            import kameloso.terminal : TerminalForeground, colour;
 
             enum headertintColourBright = TerminalForeground.black.colour;
             enum headertintColourDark = TerminalForeground.white.colour;

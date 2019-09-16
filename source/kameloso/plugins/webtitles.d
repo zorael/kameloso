@@ -17,8 +17,8 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.irccolours : ircBold;
-import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
+import kameloso.thread : ThreadMessage;
 import dialect.defs;
 
 import requests : Request;

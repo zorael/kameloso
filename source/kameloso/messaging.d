@@ -9,11 +9,11 @@ module kameloso.messaging;
 
 import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
-import lu.string : beginsWithOneOf;
 import dialect.defs;
+import lu.string : beginsWithOneOf;
 
-import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;
+import std.typecons : Flag, No, Yes;
 
 version(unittest)
 {

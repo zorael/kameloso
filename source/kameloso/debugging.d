@@ -349,8 +349,8 @@ if (isOutputRange!(Sink, char[]))
 
 unittest
 {
-    import lu.string : tabs;
     import dialect.parsing : IRCParser;
+    import lu.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
 
@@ -405,8 +405,8 @@ void generateAsserts(ref Kameloso instance) @system
 {
     import kameloso.common : logger;
     import kameloso.printing : printObjects;
-    import lu.string : contains, nom, stripped;
     import dialect.defs : IRCServer;
+    import lu.string : contains, nom, stripped;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
@@ -432,8 +432,8 @@ void generateAsserts(ref Kameloso instance) @system
 
         try
         {
-            import lu.conv : Enum;
             import dialect.common : typenumsOf;
+            import lu.conv : Enum;
 
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
             parser.typenums = typenumsOf(daemon);
@@ -498,8 +498,8 @@ void generateAsserts(ref Kameloso instance) @system
 
         while ((input = readln()) !is null)
         {
-            import lu.string : beginsWithOneOf;
             import dialect.common : IRCParseException;
+            import lu.string : beginsWithOneOf;
 
             if (*abort) return;
 
