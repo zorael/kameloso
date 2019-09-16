@@ -11,13 +11,19 @@
  +  It has no bot commands, as everything is done by scanning messages for signs
  +  of `s/this/that/` patterns.
  +
- +  It supports a delimiter of `/`, `#` and `|`. You can also end it with a
- +  `g` to set the global flag, to have more than one match substituted.
+ +  It supports a delimiter of `/`, `|`, `#`, `@`, ` `, `_` and `;`, but more
+ +  can be trivially added.
+ +
+ +  You can also end it with a `g` to set the global flag, to have more than one
+ +  match substituted.
  +
  +  ---
  +  $ echo "foo bar baz" | sed "s/bar/qux/g"
- +  $ echo "foo bar baz" | sed "s#bar#qux#g"
  +  $ echo "foo bar baz" | sed "s|bar|qux|g"
+ +  $ echo "foo bar baz" | sed "s#bar#qux#g"
+ +  $ echo "foo bar baz" | sed "s@bar@qux@"
+ +  $ echo "foo bar baz" | sed "s bar qux "
+ +  $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
  +  ---
  +/
 module kameloso.plugins.sedreplace;
@@ -106,6 +112,18 @@ string sedReplace(const string line, const string expr, const bool relaxSyntax) 
     case '#':
         return line.sedReplaceImpl!'#'(expr, relaxSyntax);
 
+    case '@':
+        return line.sedReplaceImpl!'@'(expr, relaxSyntax);
+
+    case ' ':
+        return line.sedReplaceImpl!' '(expr, relaxSyntax);
+
+    case '_':
+        return line.sedReplaceImpl!'_'(expr, relaxSyntax);
+
+    case ';':
+        return line.sedReplaceImpl!';'(expr, relaxSyntax);
+
     default:
         return line;
     }
@@ -143,6 +161,41 @@ unittest
         enum before = "HARBL";
         immutable after = before.sedReplace("s/A/_/", false);
         assert((after == "H_RBL"), after);
+    }
+    {
+        enum before = "there are four lights";
+        immutable after = before.sedReplace("s@ @_@g", false);
+        assert((after == "there_are_four_lights"), after);
+    }
+    {
+        enum before = "kameloso";
+        immutable after = before.sedReplace("s los bot ", false);
+        assert((after == "kameboto"), after);
+    }
+    {
+        enum before = "abc 123 def 456";
+        immutable after = before.sedReplace("s/123/789", true);
+        assert((after == "abc 789 def 456"), after);
+    }
+    {
+        enum before = "高所恐怖症";
+        immutable after = before.sedReplace("s/高所/閉所", true);
+        assert((after == "閉所恐怖症"), after);
+    }
+    {
+        enum before = "asdf/fdsa";
+        immutable after = before.sedReplace("s/\\//-", true);
+        assert((after == "asdf-fdsa"), after);
+    }
+    {
+        enum before = "HARBL";
+        immutable after = before.sedReplace("s/A/_/", true);
+        assert((after == "H_RBL"), after);
+    }
+    {
+        enum before = "kameloso";
+        immutable after = before.sedReplace("s los bot", true);
+        assert((after == "kameboto"), after);
     }
 }
 
@@ -333,7 +386,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         plugin.prevlines[sender] = line;
     }
 
-    if (stripped_.beginsWith("s") && (stripped_.length >= 5))
+    if (stripped_.beginsWith('s') && (stripped_.length >= 5))
     {
         immutable delimeter = stripped_[1];
 
@@ -342,6 +395,10 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case '/':
         case '|':
         case '#':
+        case '@':
+        case ' ':
+        case '_':
+        case ';':
             if (const line = event.sender.nickname in plugin.prevlines)
             {
                 if ((Clock.currTime.toUnixTime - line.timestamp) > replaceTimeoutSeconds)
