@@ -737,7 +737,9 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         break;
 
     case "ACK":
-        switch (event.content)
+        import lu.string : strippedRight;
+
+        switch (event.content.strippedRight)
         {
         case "sasl":
             raw(service.state, "AUTHENTICATE PLAIN", true);
