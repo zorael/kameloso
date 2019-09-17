@@ -1028,7 +1028,28 @@ void negotiateNick(ConnectService service)
     if (!service.state.client.server.address.endsWith(".twitch.tv"))
     {
         // Twitch doesn't require USER, only PASS and NICK
-        raw(service.state, "USER %s * 8 : %s".format(service.state.client.ident,
+        /+
+            Command: USER
+            Parameters: <user> <mode> <unused> <realname>
+
+            The <mode> parameter should be a numeric, and can be used to
+            automatically set user modes when registering with the server.  This
+            parameter is a bitmask, with only 2 bits having any signification: if
+            the bit 2 is set, the user mode 'w' will be set and if the bit 3 is
+            set, the user mode 'i' will be set.
+
+            https://tools.ietf.org/html/rfc2812#section-3.1.3
+
+            The available modes are as follows:
+                a - user is flagged as away;
+                i - marks a users as invisible;
+                w - user receives wallops;
+                r - restricted user connection;
+                o - operator flag;
+                O - local operator flag;
+                s - marks a user for receipt of server notices.
+         +/
+        raw(service.state, "USER %s 8 * :%s".format(service.state.client.user,
             service.state.client.realName));
     }
 
