@@ -1051,16 +1051,16 @@ unittest
     completeClient(client);
 
     assert(client.nickname.length);
-    assert((client.user == client.nickname), client.user);
-    assert((client.ident == client.ident), client.ident);
+    assert((client.user == KamelosoDefaultStrings.user), client.user);
+    assert((client.ident == KamelosoDefaultStrings.ident), client.ident);
     assert((client.realName == KamelosoDefaultStrings.realName), client.realName);
     assert((client.server.address == KamelosoDefaultStrings.serverAddress), client.server.address);
     assert((client.server.port == KamelosoDefaultIntegers.port), client.server.port.text);
 
-    client.user = string.init;
+    client.nickname = string.init;
     completeClient(client);
 
-    assert((client.user == client.nickname), client.user);
+    assert(client.nickname.length, client.nickname);
 }
 
 
