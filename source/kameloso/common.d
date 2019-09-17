@@ -984,7 +984,7 @@ unittest
  +/
 void completeClient(ref IRCClient client)
 out (; (client.nickname.length), "Empty client nickname")
-out (; (client.user.length), "Empty client usern ame")
+out (; (client.user.length), "Empty client username")
 out (; (client.ident.length), "Empty client ident")
 out (; (client.realName.length), "Empty client GECOS/real name")
 out (; (client.server.address.length), "Empty server address")
@@ -1002,13 +1002,13 @@ do
         client.nickname = "guest%03d".format(uniform(0, 1000));
     }
 
-    // If no client.user set, inherit client.nickname into it.
+    // If no client.user set, inherit from `kameloso.constants.KamelosoDefaultStrings`.
     if (!client.user.length)
     {
-        client.user = client.nickname;
+        client.user = KamelosoDefaultStrings.user;
     }
 
-    // If no client.ident set, ditto.
+    // If no client.ident set, inherit from nickname.
     if (!client.ident.length)
     {
         client.ident = client.nickname;
