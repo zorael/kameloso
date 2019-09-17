@@ -18,6 +18,8 @@ enum KamelosoDefaultStrings
 {
     /// Default user to use when logging onto a server (the USER command).
     user = "kameloso",
+    /// Default IDENT identifier.
+    ident = "NaN",
     /// Default server address.
     serverAddress = "irc.freenode.net",
     /// The default GEOC/"real name" string.
