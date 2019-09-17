@@ -1008,19 +1008,19 @@ do
         client.user = KamelosoDefaultStrings.user;
     }
 
-    // If no client.ident set, inherit from nickname.
+    // If no client.ident set, inherit.
     if (!client.ident.length)
     {
-        client.ident = client.nickname;
+        client.ident = KamelosoDefaultStrings.ident;
     }
 
-    // If no client.realName set, inherit from `kameloso.constants.KamelosoDefaultStrings`.
+    // If no client.realName set, inherit.
     if (!client.realName.length)
     {
         client.realName = KamelosoDefaultStrings.realName;
     }
 
-    // As above.
+    // If no client.server.address set, inherit.
     if (!client.server.address.length)
     {
         client.server.address = KamelosoDefaultStrings.serverAddress;
