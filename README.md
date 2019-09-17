@@ -67,7 +67,6 @@ $ ./kameloso --channels "#d,#freenode"
     * [Online help and commands](#online-help-and-commands)
   * [Twitch](#twitch)
     * [Streamer assistant bot](#streamer-assistant-bot)
-  * [Use as a library](#use-as-a-library)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
@@ -239,21 +238,6 @@ Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, 
 Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
 Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
-
-## Use as a library
-
-The IRC event parsing is largely decoupled from the bot parts of the program, needing only some common non-bot-oriented helper modules.
-
-* [`irc/defs.d`](source/kameloso/irc/defs.d)
-* [`irc/parsing.d`](source/kameloso/irc/parsing.d)
-* [`irc/common.d`](source/kameloso/irc/common.d)
-* [`string.d`](source/kameloso/string.d)
-* [`conv.d`](source/kameloso/conv.d)
-* [`meld.d`](source/kameloso/meld.d)
-* [`traits.d`](source/kameloso/traits.d)
-* [`uda.d`](source/kameloso/uda.d)
-
-Feel free to copy these and drop them into your own project. Examples of parsing results can be found in the test files in [`/tests`](/tests). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required.
 
 ## Further help
 
