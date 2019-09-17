@@ -295,11 +295,16 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
 
     default:
+        import lu.string : strippedRight;
         import std.array : replace;
         import std.stdio : stdout;
 
         // Strip bells so we don't get phantom noise
-        mutEvent.content = mutEvent.content.replace(cast(ubyte)7, string.init);
+        // Strip right to get rid of trailing whitespace
+        // Do it in this order in case bells hide whitespace.
+        mutEvent.content = mutEvent.content
+            .replace(cast(ubyte)7, string.init)
+            .strippedRight;
 
         bool printed;
 
