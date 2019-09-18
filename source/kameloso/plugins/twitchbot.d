@@ -1829,6 +1829,12 @@ private:
         /// UNIX timestamp of when broadcasting started.
         long broadcastStart;
 
+        /// Link ban actions keyed by offending nickname.
+        Ban[string] linkBans;
+
+        /// Users permitted to post links (for a brief time).
+        string[long] linkPermits;
+
         /++
          +  A counter of how many messages we have seen in the channel.
          +
