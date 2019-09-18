@@ -1813,6 +1813,13 @@ private:
     /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
+        /// Aggregate of a ban action.
+        struct Ban
+        {
+            long timestamp;  /// When this ban was triggered.
+            uint offense;  /// How many consecutive bans have been fired.
+        }
+
         /// Toggle of whether or not the bot should operate in this channel.
         bool enabled = true;
 
