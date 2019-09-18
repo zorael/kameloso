@@ -203,40 +203,50 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         immutable now = Clock.currTime.toUnixTime;
 
         auto channel = event.channel in plugin.activeChannels;
+        auto ban = event.sender.nickname in channel.linkBans;
 
         immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
 
-        if (auto ban = event.sender.nickname in channel.linkBans)
+        if (ban)
         {
             immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
 
             if (banEndTime > now)
             {
-                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d %s"
-                    .format(event.sender.nickname, durations[ban.offense], messages[ban.offense]));
-
                 ban.timestamp = now;
                 if (ban.offense < 2) ++ban.offense;
-                return;
             }
-            // else drop down and create a new ban
+            else
+            {
+                // Force a new ban
+                ban = null;
+            }
         }
 
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d %s"
-            .format(event.sender.nickname, durations[0], messages[0]));
+        if (!ban)
+        {
+            TwitchBotPlugin.Channel.Ban newBan;
+            newBan.timestamp = now;
+            channel.linkBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in channel.linkBans;
+        }
 
-        TwitchBotPlugin.Channel.Ban newBan;
-        newBan.timestamp = now;
-        newBan.offense = 1;
-        channel.linkBans[event.sender.nickname] = newBan;
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+            .format(event.sender.nickname, durations[ban.offense]));
+        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
+            .format(event.sender.nickname, messages[ban.offense]));
         return;
     }
 
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
-    import std.typecons : tuple;
+    import std.typecons : Tuple, tuple;
 
-    auto eventAndURLs = tuple(event, urls);
+    alias EventAndURLs = Tuple!(IRCEvent, string[]);
+
+    EventAndURLs eventAndURLs;
+    eventAndURLs[0] = event;
+    eventAndURLs[1] = urls;
 
     plugin.state.mainThread.send(ThreadMessage.BusMessage(),
         "webtitles", busMessage(eventAndURLs));
