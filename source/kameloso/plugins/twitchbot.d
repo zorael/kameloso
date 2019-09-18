@@ -181,7 +181,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!allowed)
     {
-        if (auto regulars = event.channel in plugin.regularsByChannel)
+        if (const regulars = event.channel in plugin.regularsByChannel)
         {
             allowed = (*regulars).canFind(event.sender.nickname);
         }
@@ -189,7 +189,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!allowed)
     {
-        if (auto permitTimestamp = event.sender.nickname in
+        if (const permitTimestamp = event.sender.nickname in
             plugin.activeChannels[event.channel].linkPermits)
         {
             allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
