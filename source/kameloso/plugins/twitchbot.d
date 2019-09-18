@@ -134,6 +134,80 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onLink
+/++
+ +  Parses a message to see if the message contains one or more URLs.
+ +
+ +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+ +  try to send them onto the Webtitles plugin for lookups and reporting.
+ +
+ +  Whitelisted, regulars, admins and special users are so far exempted.
+ +/
+version(WithWebtitlesPlugin)
+@(Terminating)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onLink(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : findURLs, settings;
+    import lu.string : beginsWith;
+    import std.algorithm.searching : canFind;
+
+    if (event.content.beginsWith(settings.prefix)) return;
+
+    string[] urls = findURLs(event.content);  // mutable so nom works
+    if (!urls.length) return;
+
+    bool allowed;
+
+    with (IRCUser.Class)
+    final switch (event.sender.class_)
+    {
+    case unset:
+    case blacklist:
+    case anyone:
+        // Don't set
+        break;
+
+    case whitelist:
+    case admin:
+    case special:
+        allowed = true;
+        break;
+    }
+
+    if (!allowed)
+    {
+        if (auto regulars = event.channel in plugin.regularsByChannel)
+        {
+            allowed = (*regulars).canFind(event.sender.nickname);
+        }
+    }
+
+    if (!allowed)
+    {
+        import std.format : format;
+
+        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+        //chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d Stop posting links"
+            .format(event.sender.nickname, plugin.twitchBotSettings.linkTimeout));
+        return;
+    }
+
+    import kameloso.thread : ThreadMessage, busMessage;
+    import std.concurrency : send;
+    import std.typecons : tuple;
+
+    auto eventAndURLs = tuple(event, urls);
+
+    plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+        "webtitles", busMessage(eventAndURLs));
+}
+
+
 // onUserState
 /++
  +  On `IRCEvent.Type.USERSTATE` events, manually catch if we seem to be a moderator,
