@@ -158,11 +158,10 @@ struct IRCBot
 
         /// Login `PASS`, different from `SASL` and services.
         string pass;
-    }
 
-    /// Default reason given when quitting without specifying one.
-    @CannotContainComments
-    string quitReason;
+        /// Default reason given when quitting without specifying one.
+        string quitReason;
+    }
 
     @Separator(",")
     @Separator(" ")
