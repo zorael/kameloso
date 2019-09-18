@@ -52,6 +52,9 @@ struct TwitchBotSettings
 
     /// How long a user should be timed out if they send a banned phrase.
     int bannedPhraseTimeout = 60;
+
+    /// How long a user should be timed out if they post a link.
+    int linkTimeout = 5;
 }
 
 
