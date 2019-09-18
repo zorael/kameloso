@@ -106,8 +106,7 @@ struct TitleLookupRequest
  +  Parses a message to see if the message contains one or more URLs.
  +
  +  It uses a simple state machine in `findURLs` to exhaustively try to look up
- +  every URL returned by it. It accesses the cache of already looked up
- +  addresses to lessen the amount of work.
+ +  every URL returned by it.
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -116,13 +115,29 @@ struct TitleLookupRequest
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : logger, settings;
-    import lu.string : beginsWith, contains, nom;
+    import kameloso.common : settings;
+    import lu.string : beginsWith;
 
     if (event.content.beginsWith(settings.prefix)) return;
 
-    auto urls = findURLs(event.content);  // mutable
+    string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
+
+    return plugin.lookupURLs(event, urls);
+}
+
+
+// lookupURLs
+/++
+ +  Looks up the URLs in the passed `string[]` `urls` by spawning a worker
+ +  thread to do all the work.
+ +
+ +  It accesses the cache of already looked up addresses to speed things up.
+ +/
+void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
+{
+    import kameloso.common : logger, settings;
+    import lu.string : beginsWith, contains, nom;
 
     string infotint;
 
