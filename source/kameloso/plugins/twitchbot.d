@@ -154,6 +154,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.common : findURLs, settings;
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
+    import std.datetime.systime : Clock;
 
     if (event.content.beginsWith(settings.prefix)) return;
 
@@ -188,8 +189,16 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!allowed)
     {
+        if (auto permitTimestamp = event.sender.nickname in
+            plugin.activeChannels[event.channel].linkPermits)
+        {
+            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+        }
+    }
+
+    if (!allowed)
+    {
         import std.format : format;
-        import std.datetime.systime : Clock;
 
         static immutable int[3] durations = [ 5, 60, 3600 ];
         static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
