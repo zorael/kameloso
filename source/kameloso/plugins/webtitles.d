@@ -953,4 +953,24 @@ private:
     shared TitleLookupResults[string] cache;
 
     mixin IRCPluginImpl;
+
+    // onEvent
+    /++
+     +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
+     +  plugin does not trigger on `dialect.defs.IRCEvent`s on Twitch servers.
+     +
+     +  The function to call if the event *should* be processed is
+     +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
+     +
+     +  Params:
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
+     +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
+     +          after verifying we should process the event.
+     +/
+    version(TwitchSupport)
+    public void onEvent(const IRCEvent event)
+    {
+        if (state.client.server.daemon == IRCServer.Daemon.twitch) return;
+        return onEventImpl(event);
+    }
 }
