@@ -446,15 +446,6 @@ void onEndOfMotdTwitch(ConnectService service)
             `on Twitch servers, as "." and "/" are reserved for Twitch's own commands.`,
             logtint, settings.prefix, warningtint);
     }
-
-    if (service.state.bot.colour.length)
-    {
-        import kameloso.messaging : raw;
-        import std.format : format;
-
-        raw(service.state, "PRIVMSG #%s :/color %s"
-            .format(service.state.client.nickname, service.state.bot.colour));
-    }
 }
 
 
