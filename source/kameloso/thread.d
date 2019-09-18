@@ -121,7 +121,7 @@ final class BusMessage(T) : Sendable
      +  Constructor that adds a passed payload to the internal stored `payload`,
      +  creating a *shared* `BusMessage`.
      +/
-    this(T payload) shared @safe
+    auto this(T payload) shared
     {
         this.payload = cast(shared)payload;
     }
