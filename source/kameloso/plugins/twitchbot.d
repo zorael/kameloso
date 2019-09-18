@@ -1953,6 +1953,9 @@ private:
     /// Filename of file with timer definitions.
     @Resource string timersFile = "twitchtimers.json";
 
+    /// When to next clear expired permits and bans.
+    long nextCleanup;
+
     /++
      +  How often to check whether timers should fire, in seconds. A smaller
      +  number means better precision.
