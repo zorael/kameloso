@@ -1668,9 +1668,11 @@ void initResources(TwitchBotPlugin plugin)
  +/
 void periodically(TwitchBotPlugin plugin)
 {
-    import std.datetime.systime : Clock;
+    import std.datetime : DateTime;
+    import std.datetime.systime : Clock, SysTime;
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable currTime = Clock.currTime;
+    immutable now = currTime.toUnixTime;
 
     if ((plugin.state.client.server.daemon != IRCServer.Daemon.unset) &&
         (plugin.state.client.server.daemon != IRCServer.Daemon.twitch))
@@ -1680,10 +1682,18 @@ void periodically(TwitchBotPlugin plugin)
         return;
     }
 
+    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
+
+    if (now < plugin.nextCleanup) return;
+
+    const next = SysTime(DateTime(currTime.year, currTime.month,
+        currTime.day, 0, 0, 0), currTime.timezone)
+        .roll!"days"(1);
+
+    plugin.nextCleanup = next.toUnixTime;
+
     foreach (immutable channelName, channel; plugin.activeChannels)
     {
-        if (!channel.timers.length) continue;
-
         foreach (timer; channel.timers)
         {
             if (!timer || (timer.state != Fiber.State.HOLD))
@@ -1694,9 +1704,47 @@ void periodically(TwitchBotPlugin plugin)
 
             timer.call();
         }
-    }
 
-    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
+        if (channel.linkBans.length)
+        {
+            string[] garbage;
+
+            foreach (immutable nickname, const linkBan; channel.linkBans)
+            {
+                immutable maxBanEndTime = linkBan.timestamp + 7200;
+
+                if (now > maxBanEndTime)
+                {
+                    garbage ~= nickname;
+                }
+            }
+
+            foreach_reverse (immutable nickname; garbage)
+            {
+                channel.linkBans.remove(nickname);
+            }
+        }
+
+        if (channel.linkPermits.length)
+        {
+            string[] garbage;
+
+            foreach (immutable nickname, const timestamp; channel.linkPermits)
+            {
+                immutable maxPermitEndTime = timestamp + 60;
+
+                if (now > maxPermitEndTime)
+                {
+                    garbage ~= nickname;
+                }
+            }
+
+            foreach_reverse (immutable nickname; garbage)
+            {
+                channel.linkPermits.remove(nickname);
+            }
+        }
+    }
 }
 
 
