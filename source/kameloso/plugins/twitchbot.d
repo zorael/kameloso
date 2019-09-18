@@ -144,7 +144,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
  +  Whitelisted, regulars, admins and special users are so far exempted.
  +/
 version(WithWebtitlesPlugin)
-@(Terminating)
+@(Chainable)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
