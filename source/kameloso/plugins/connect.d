@@ -44,7 +44,7 @@ struct ConnectSettings
     bool exitOnSASLFailure = false;
 
     /// Lines to send after successfully connecting and registering.
-    @Separator(";")
+    @Separator(";;")
     @CannotContainComments
     string[] sendAfterConnect;
 }
