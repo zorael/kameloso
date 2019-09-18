@@ -147,7 +147,7 @@ final class BusMessage(T) : Sendable
  +  Returns:
  +      A `shared` `BusMessage!T` where `T` is the unqualified type of the payload.
  +/
-shared(Sendable) busMessage(T)(T payload) @safe
+shared(Sendable) busMessage(T)(T payload)
 {
     import std.traits : Unqual;
     return new shared BusMessage!(Unqual!T)(payload);
