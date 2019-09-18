@@ -1915,7 +1915,7 @@ private:
         Ban[string] linkBans;
 
         /// Users permitted to post links (for a brief time).
-        string[long] linkPermits;
+        long[string] linkPermits;
 
         /++
          +  A counter of how many messages we have seen in the channel.
