@@ -123,9 +123,9 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
                 import std.format : format;
 
                 // Will using immediate here trigger spam detection?
-                immediate(plugin.state, "PRIVMSG %s :.delete %s".format(event.channel, event.id));
+                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
                 //chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
-                chan!(Yes.priority)(plugin.state, event.channel, ".timeout %s %d Banned phrase"
+                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d Banned phrase"
                     .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
                 break;
             }
