@@ -253,6 +253,34 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandPermit
+/++
+ +  Permits a user to post links for a hardcoded 60 seconds.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "permit")
+@Description("Permits a specified user to post links for a brief period of time.",
+    "$command [target user]")
+void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import lu.string : stripped;
+    import std.datetime.systime : Clock;
+    import std.format : format;
+
+    immutable nickname = event.content.stripped;
+    immutable now = Clock.currTime.toUnixTime;
+
+    plugin.activeChannels[event.channel].linkPermits[nickname] = now;
+
+    chan(plugin.state, event.channel,
+        "@%s, you are now allowed to post links for 60 seconds."
+        .format(nickname));
+}
+
+
 // onUserState
 /++
  +  On `IRCEvent.Type.USERSTATE` events, manually catch if we seem to be a moderator,
