@@ -189,11 +189,46 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     if (!allowed)
     {
         import std.format : format;
+        import std.datetime.systime : Clock;
+
+        static immutable int[3] durations = [ 5, 60, 3600 ];
+        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+        static immutable string[3] messages =
+        [
+            "Stop posting links",
+            "Really, no links",
+            "Go cool off",
+        ];
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        auto channel = event.channel in plugin.activeChannels;
 
         immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-        //chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d Stop posting links"
-            .format(event.sender.nickname, plugin.twitchBotSettings.linkTimeout));
+
+        if (auto ban = event.sender.nickname in channel.linkBans)
+        {
+            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+            if (banEndTime > now)
+            {
+                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d %s"
+                    .format(event.sender.nickname, durations[ban.offense], messages[ban.offense]));
+
+                ban.timestamp = now;
+                if (ban.offense < 2) ++ban.offense;
+                return;
+            }
+            // else drop down and create a new ban
+        }
+
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d %s"
+            .format(event.sender.nickname, durations[0], messages[0]));
+
+        TwitchBotPlugin.Channel.Ban newBan;
+        newBan.timestamp = now;
+        newBan.offense = 1;
+        channel.linkBans[event.sender.nickname] = newBan;
         return;
     }
 
