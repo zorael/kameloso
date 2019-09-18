@@ -385,21 +385,20 @@ void onEndOfMotd(ConnectService service)
 
     if (!service.sentAfterConnect)
     {
-        if (service.connectSettings.sendAfterConnect.length)
+        foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
         {
-            foreach (immutable line; service.connectSettings.sendAfterConnect)
-            {
-                import lu.string : stripped;
-                import std.array : replace;
+            import lu.string : strippedLeft;
+            import std.array : replace;
 
-                immutable processed = line
-                    .stripped
-                    .replace("$nickname", service.state.client.nickname)
-                    .replace("$origserver", service.state.client.server.address)
-                    .replace("$server", service.state.client.server.resolvedAddress);
+            immutable line = unstripped.strippedLeft;
+            if (!line.length) continue;
 
-                raw(service.state, processed);
-            }
+            immutable processed = line
+                .replace("$nickname", service.state.client.nickname)
+                .replace("$origserver", service.state.client.server.address)
+                .replace("$server", service.state.client.server.resolvedAddress);
+
+            raw(service.state, processed);
         }
 
         service.sentAfterConnect = true;
