@@ -1384,7 +1384,6 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 void onLink(TwitchBotPlugin plugin, const IRCEvent event)
