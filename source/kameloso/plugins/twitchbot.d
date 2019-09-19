@@ -1980,6 +1980,9 @@ private:
         /// UNIX timestamp of when broadcasting started.
         long broadcastStart;
 
+        /// Phrase ban actions keyed by offending nickname.
+        Ban[string] phraseBans;
+
         /// Link ban actions keyed by offending nickname.
         Ban[string] linkBans;
 
