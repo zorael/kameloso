@@ -35,20 +35,20 @@ struct TwitchBotSettings
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
+    /// Whether or not regulars are impliictly whitelisted.
+    bool regularsAreWhitelisted = true;
+
     /// Whether or not to bell on every message.
     bool bellOnMessage = false;
 
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = true;
 
-    /// Whether or not to filter URLs in user messages.
-    bool filterURLs = false;
-
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
-    /// Whether or not regulars are impliictly whitelisted.
-    bool regularsAreWhitelisted = true;
+    /// Whether or not to filter URLs in user messages.
+    bool filterURLs = false;
 
     /// Whether or not to match ban phrases case-sensitively.
     bool bannedPhrasesObeyCase = true;
