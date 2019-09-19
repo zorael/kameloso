@@ -41,6 +41,9 @@ struct TwitchBotSettings
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = true;
 
+    /// Whether or not to filter URLs in user messages.
+    bool filterURLs = false;
+
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
@@ -52,9 +55,6 @@ struct TwitchBotSettings
 
     /// How long a user should be timed out if they send a banned phrase.
     int bannedPhraseTimeout = 60;
-
-    /// How long a user should be timed out if they post a link.
-    int linkTimeout = 5;
 }
 
 
