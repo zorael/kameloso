@@ -121,7 +121,7 @@ final class BusMessage(T) : Sendable
      +  Constructor that adds a passed payload to the internal stored `payload`,
      +  creating a *shared* `BusMessage`.
      +/
-    this(T payload) shared @safe
+    auto this(T payload) shared
     {
         this.payload = cast(shared)payload;
     }
@@ -147,7 +147,7 @@ final class BusMessage(T) : Sendable
  +  Returns:
  +      A `shared` `BusMessage!T` where `T` is the unqualified type of the payload.
  +/
-shared(Sendable) busMessage(T)(T payload) @safe
+shared(Sendable) busMessage(T)(T payload)
 {
     import std.traits : Unqual;
     return new shared BusMessage!(Unqual!T)(payload);

@@ -105,9 +105,8 @@ struct TitleLookupRequest
 /++
  +  Parses a message to see if the message contains one or more URLs.
  +
- +  It uses a simple state machine in `findURLs` to exhaustively try to look up
- +  every URL returned by it. It accesses the cache of already looked up
- +  addresses to lessen the amount of work.
+ +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+ +  try to look up every URL returned by it.
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -116,13 +115,29 @@ struct TitleLookupRequest
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : logger, settings;
-    import lu.string : beginsWith, contains, nom;
+    import kameloso.common : findURLs, settings;
+    import lu.string : beginsWith;
 
     if (event.content.beginsWith(settings.prefix)) return;
 
-    auto urls = findURLs(event.content);  // mutable
+    string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
+
+    return plugin.lookupURLs(event, urls);
+}
+
+
+// lookupURLs
+/++
+ +  Looks up the URLs in the passed `string[]` `urls` by spawning a worker
+ +  thread to do all the work.
+ +
+ +  It accesses the cache of already looked up addresses to speed things up.
+ +/
+void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
+{
+    import kameloso.common : logger, settings;
+    import lu.string : beginsWith, contains, nom;
 
     string infotint;
 
@@ -515,138 +530,6 @@ void reportReddit(TitleLookupRequest request)
 }
 
 
-// findURLs
-/++
- +  Finds URLs in a string, returning an array of them.
- +
- +  Replacement for regex matching using much less memory when compiling
- +  (around ~300mb).
- +
- +  To consider: does this need a `dstring`?
- +
- +  Example:
- +  ---
- +  // Replaces the following:
- +  // enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
- +  // static urlRegex = ctRegex!stephenhay;
- +
- +  string[] urls = findURL("blah https://google.com http://facebook.com httpx://wefpokwe");
- +  assert(urls.length == 2);
- +  ---
- +
- +  Params:
- +      line = String line to examine and find URLs in.
- +
- +  Returns:
- +      A `string[]` array of found URLs. These include fragment identifiers.
- +/
-string[] findURLs(const string line) @safe pure
-{
-    import lu.string : contains, nom, strippedRight;
-    import std.string : indexOf;
-    import std.typecons : Flag, No, Yes;
-
-    enum wordBoundaryTokens = ".,!?:";
-
-    string[] hits;
-    string slice = line;  // mutable
-
-    ptrdiff_t httpPos = slice.indexOf("http");
-
-    while (httpPos != -1)
-    {
-        if ((httpPos > 0) && (slice[httpPos-1] != ' '))
-        {
-            // Run-on http address (character before the 'h')
-            slice = slice[httpPos+4..$];
-            httpPos = slice.indexOf("http");
-            continue;
-        }
-
-        slice = slice[httpPos..$];
-
-        if (slice.length < 11)
-        {
-            // Too short, minimum is "http://a.se".length
-            break;
-        }
-        else if ((slice[4] != ':') && (slice[4] != 's'))
-        {
-            // Not http or https, something else
-            // But could still be another link after this
-            slice = slice[5..$];
-            httpPos = slice.indexOf("http");
-            continue;
-        }
-        else if (!slice[8..$].contains('.'))
-        {
-            break;
-        }
-        else if (!slice.contains(' ') &&
-            (slice[10..$].contains("http://") ||
-            slice[10..$].contains("https://")))
-        {
-            // There is a second URL in the middle of this one
-            break;
-        }
-
-        // nom until the next space if there is one, otherwise just inherit slice
-        // Also strip away common punctuation
-        hits ~= slice.nom!(Yes.inherit)(' ').strippedRight(wordBoundaryTokens);
-        httpPos = slice.indexOf("http");
-    }
-
-    return hits;
-}
-
-///
-unittest
-{
-    import std.conv : text;
-
-    {
-        const urls = findURLs("http://google.com");
-        assert((urls.length == 1), urls.text);
-        assert((urls[0] == "http://google.com"), urls[0]);
-    }
-    {
-        const urls = findURLs("blah https://a.com http://b.com shttps://c https://d.asdf.asdf.asdf        ");
-        assert((urls.length == 3), urls.text);
-        assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.text);
-    }
-    {
-        const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http");
-        assert(!urls.length, urls.text);
-    }
-    {
-        const urls = findURLs("http://a.sehttp://a.shttp://a.http://http:");
-        assert(!urls.length, urls.text);
-    }
-    {
-        const urls = findURLs("blahblah https://motorbörsen.se blhblah");
-        assert(urls.length, urls.text);
-    }
-    {
-        // Let dlang-requests attempt complex URLs, don't validate more than necessary
-        const urls = findURLs("blahblah https://高所恐怖症。co.jp blhblah");
-        assert(urls.length, urls.text);
-    }
-    {
-        const urls = findURLs("nyaa is now at https://nyaa.si, https://nyaa.si? " ~
-            "https://nyaa.si. https://nyaa.si! and you should use it https://nyaa.si:");
-
-        foreach (immutable url; urls)
-        {
-            assert((url == "https://nyaa.si"), url);
-        }
-    }
-    {
-        const urls = findURLs("https://google.se httpx://google.se https://google.se");
-        assert((urls == [ "https://google.se", "https://google.se" ]), urls.text);
-    }
-}
-
-
 // rewriteDirectImgurURL
 /++
  +  Takes a direct imgur link (one that points to an image) and rewrites it to
@@ -883,6 +766,40 @@ void start(WebtitlesPlugin plugin)
 }
 
 
+import kameloso.thread : Sendable;
+
+// onBusMessage
+/++
+ +  Catches bus messages with the "`webtitles`" header requesting URLs to be
+ +  looked up and the titles of which reported.
+ +
+ +  Only relevant on Twitch servers, so gate it behind version TwitchSupport.
+ +  No point in checking `plugin.state.client.server.daemon == IRCServer.Daemon.twitch`
+ +  as these messages will never be sent on other servers.
+ +
+ +  Params:
+ +      plugin = The current `WebtitlesPlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
+ +/
+version(TwitchSupport)
+void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
+{
+    if (header != "webtitles") return;
+
+    import kameloso.thread : BusMessage;
+    import std.typecons : Tuple;
+
+    alias EventAndURLs = Tuple!(IRCEvent, string[]);
+
+    auto message = cast(BusMessage!EventAndURLs)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    auto eventAndURLs = cast(EventAndURLs)message.payload;
+    plugin.lookupURLs(eventAndURLs[0], eventAndURLs[1]);
+}
+
+
 mixin MinimalAuthentication;
 
 public:
@@ -904,4 +821,24 @@ private:
     shared TitleLookupResults[string] cache;
 
     mixin IRCPluginImpl;
+
+    // onEvent
+    /++
+     +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
+     +  plugin does not trigger on `dialect.defs.IRCEvent`s on Twitch servers.
+     +
+     +  The function to call if the event *should* be processed is
+     +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
+     +
+     +  Params:
+     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
+     +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
+     +          after verifying we should process the event.
+     +/
+    version(TwitchSupport)
+    public void onEvent(const IRCEvent event)
+    {
+        if (state.client.server.daemon == IRCServer.Daemon.twitch) return;
+        return onEventImpl(event);
+    }
 }

@@ -41,6 +41,9 @@ struct TwitchBotSettings
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = true;
 
+    /// Whether or not to filter URLs in user messages.
+    bool filterURLs = false;
+
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
@@ -120,14 +123,191 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
                 import std.format : format;
 
                 // Will using immediate here trigger spam detection?
-                immediate(plugin.state, "PRIVMSG %s :.delete %s".format(event.channel, event.id));
+                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
                 //chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
-                chan!(Yes.priority)(plugin.state, event.channel, ".timeout %s %d Banned phrase"
+                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d Banned phrase"
                     .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
                 break;
             }
         }
     }
+}
+
+
+// onLink
+/++
+ +  Parses a message to see if the message contains one or more URLs.
+ +
+ +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+ +  try to send them onto the Webtitles plugin for lookups and reporting.
+ +
+ +  Whitelisted, regulars, admins and special users are so far exempted.
+ +/
+version(WithWebtitlesPlugin)
+@(Chainable)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onLink(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : findURLs, settings;
+    import lu.string : beginsWith;
+    import std.algorithm.searching : canFind;
+    import std.datetime.systime : Clock;
+
+    if (!plugin.twitchBotSettings.filterURLs) return;
+
+    if (event.content.beginsWith(settings.prefix)) return;
+
+    string[] urls = findURLs(event.content);  // mutable so nom works
+    if (!urls.length) return;
+
+    bool allowed;
+
+    with (IRCUser.Class)
+    final switch (event.sender.class_)
+    {
+    case unset:
+    case blacklist:
+    case anyone:
+        // Don't set
+        break;
+
+    case whitelist:
+    case admin:
+    case special:
+        allowed = true;
+        break;
+    }
+
+    if (!allowed)
+    {
+        if (const regulars = event.channel in plugin.regularsByChannel)
+        {
+            allowed = (*regulars).canFind(event.sender.nickname);
+        }
+    }
+
+    if (!allowed)
+    {
+        if (const permitTimestamp = event.sender.nickname in
+            plugin.activeChannels[event.channel].linkPermits)
+        {
+            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+        }
+    }
+
+    if (!allowed)
+    {
+        import std.format : format;
+
+        static immutable int[3] durations = [ 5, 60, 3600 ];
+        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+        static immutable string[3] messages =
+        [
+            "Stop posting links",
+            "Really, no links",
+            "Go cool off",
+        ];
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        auto channel = event.channel in plugin.activeChannels;
+        auto ban = event.sender.nickname in channel.linkBans;
+
+        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+        if (ban)
+        {
+            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+            if (banEndTime > now)
+            {
+                ban.timestamp = now;
+                if (ban.offense < 2) ++ban.offense;
+            }
+            else
+            {
+                // Force a new ban
+                ban = null;
+            }
+        }
+
+        if (!ban)
+        {
+            TwitchBotPlugin.Channel.Ban newBan;
+            newBan.timestamp = now;
+            channel.linkBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in channel.linkBans;
+        }
+
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+            .format(event.sender.nickname, durations[ban.offense]));
+        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
+            .format(event.sender.nickname, messages[ban.offense]));
+        return;
+    }
+
+    import kameloso.thread : ThreadMessage, busMessage;
+    import std.concurrency : send;
+    import std.typecons : Tuple, tuple;
+
+    alias EventAndURLs = Tuple!(IRCEvent, string[]);
+
+    EventAndURLs eventAndURLs;
+    eventAndURLs[0] = event;
+    eventAndURLs[1] = urls;
+
+    plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+        "webtitles", busMessage(eventAndURLs));
+}
+
+
+// onCommandPermit
+/++
+ +  Permits a user to post links for a hardcoded 60 seconds.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "permit")
+@Description("Permits a specified user to post links for a brief period of time.",
+    "$command [target user]")
+void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import lu.string : stripped;
+    import std.datetime.systime : Clock;
+    import std.format : format;
+    import std.uni : toLower;
+
+    if (!plugin.twitchBotSettings.filterURLs)
+    {
+        chan(plugin.state, event.channel, "Links are not being filtered.");
+        return;
+    }
+
+    string nickname = event.content.stripped.toLower;
+    if (!nickname.length) return;
+
+    if (nickname[0] == '@') nickname = nickname[1..$];
+
+    immutable now = Clock.currTime.toUnixTime;
+    auto channel = event.channel in plugin.activeChannels;
+
+    channel.linkPermits[nickname] = now;
+    channel.linkBans.remove(nickname);
+    string target = nickname;
+
+    if (auto user = nickname in plugin.state.users)
+    {
+        target = user.alias_;
+    }
+
+    chan(plugin.state, event.channel,
+        "@%s, you are now allowed to post links for 60 seconds."
+        .format(target));
 }
 
 
@@ -1509,9 +1689,11 @@ void initResources(TwitchBotPlugin plugin)
  +/
 void periodically(TwitchBotPlugin plugin)
 {
-    import std.datetime.systime : Clock;
+    import std.datetime : DateTime;
+    import std.datetime.systime : Clock, SysTime;
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable currTime = Clock.currTime;
+    immutable now = currTime.toUnixTime;
 
     if ((plugin.state.client.server.daemon != IRCServer.Daemon.unset) &&
         (plugin.state.client.server.daemon != IRCServer.Daemon.twitch))
@@ -1521,10 +1703,18 @@ void periodically(TwitchBotPlugin plugin)
         return;
     }
 
+    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
+
+    if (now < plugin.nextCleanup) return;
+
+    const next = SysTime(DateTime(currTime.year, currTime.month,
+        currTime.day, 0, 0, 0), currTime.timezone)
+        .roll!"days"(1);
+
+    plugin.nextCleanup = next.toUnixTime;
+
     foreach (immutable channelName, channel; plugin.activeChannels)
     {
-        if (!channel.timers.length) continue;
-
         foreach (timer; channel.timers)
         {
             if (!timer || (timer.state != Fiber.State.HOLD))
@@ -1535,9 +1725,47 @@ void periodically(TwitchBotPlugin plugin)
 
             timer.call();
         }
-    }
 
-    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
+        if (channel.linkBans.length)
+        {
+            string[] garbage;
+
+            foreach (immutable nickname, const linkBan; channel.linkBans)
+            {
+                immutable maxBanEndTime = linkBan.timestamp + 7200;
+
+                if (now > maxBanEndTime)
+                {
+                    garbage ~= nickname;
+                }
+            }
+
+            foreach_reverse (immutable nickname; garbage)
+            {
+                channel.linkBans.remove(nickname);
+            }
+        }
+
+        if (channel.linkPermits.length)
+        {
+            string[] garbage;
+
+            foreach (immutable nickname, const timestamp; channel.linkPermits)
+            {
+                immutable maxPermitEndTime = timestamp + 60;
+
+                if (now > maxPermitEndTime)
+                {
+                    garbage ~= nickname;
+                }
+            }
+
+            foreach_reverse (immutable nickname; garbage)
+            {
+                channel.linkPermits.remove(nickname);
+            }
+        }
+    }
 }
 
 
@@ -1736,6 +1964,13 @@ private:
     /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
+        /// Aggregate of a ban action.
+        struct Ban
+        {
+            long timestamp;  /// When this ban was triggered.
+            uint offense;  /// How many consecutive bans have been fired.
+        }
+
         /// Toggle of whether or not the bot should operate in this channel.
         bool enabled = true;
 
@@ -1744,6 +1979,12 @@ private:
 
         /// UNIX timestamp of when broadcasting started.
         long broadcastStart;
+
+        /// Link ban actions keyed by offending nickname.
+        Ban[string] linkBans;
+
+        /// Users permitted to post links (for a brief time).
+        long[string] linkPermits;
 
         /++
          +  A counter of how many messages we have seen in the channel.
@@ -1780,6 +2021,9 @@ private:
 
     /// Filename of file with timer definitions.
     @Resource string timersFile = "twitchtimers.json";
+
+    /// When to next clear expired permits and bans.
+    long nextCleanup;
 
     /++
      +  How often to check whether timers should fire, in seconds. A smaller
