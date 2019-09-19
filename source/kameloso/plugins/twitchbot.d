@@ -50,9 +50,6 @@ struct TwitchBotSettings
     /// Whether or not to filter URLs in user messages.
     bool filterURLs = false;
 
-    /// Whether or not to match ban phrases case-sensitively.
-    bool bannedPhrasesObeyCase = true;
-
     /// Whether or not to employ phrase bans.
     bool phraseBans = true;
 
