@@ -282,6 +282,8 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.uni : toLower;
 
+    if (!plugin.twitchBotSettings.filterURLs) return;
+
     string nickname = event.content.stripped.toLower;
     if (!nickname.length) return;
 
