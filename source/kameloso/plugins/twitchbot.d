@@ -1733,16 +1733,7 @@ void periodically(TwitchBotPlugin plugin)
         return;
     }
 
-    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
-
-    if (now < plugin.nextCleanup) return;
-
-    const next = SysTime(DateTime(currTime.year, currTime.month,
-        currTime.day, 0, 0, 0), currTime.timezone)
-        .roll!"days"(1);
-
-    plugin.nextCleanup = next.toUnixTime;
-
+    // Walk through channels, trigger fibers
     foreach (immutable channelName, channel; plugin.activeChannels)
     {
         foreach (timer; channel.timers)
@@ -1755,47 +1746,55 @@ void periodically(TwitchBotPlugin plugin)
 
             timer.call();
         }
-
-        if (channel.linkBans.length)
-        {
-            string[] garbage;
-
-            foreach (immutable nickname, const linkBan; channel.linkBans)
-            {
-                immutable maxBanEndTime = linkBan.timestamp + 7200;
-
-                if (now > maxBanEndTime)
-                {
-                    garbage ~= nickname;
-                }
-            }
-
-            foreach_reverse (immutable nickname; garbage)
-            {
-                channel.linkBans.remove(nickname);
-            }
-        }
-
-        if (channel.linkPermits.length)
-        {
-            string[] garbage;
-
-            foreach (immutable nickname, const timestamp; channel.linkPermits)
-            {
-                immutable maxPermitEndTime = timestamp + 60;
-
-                if (now > maxPermitEndTime)
-                {
-                    garbage ~= nickname;
-                }
-            }
-
-            foreach_reverse (immutable nickname; garbage)
-            {
-                channel.linkPermits.remove(nickname);
-            }
-        }
     }
+
+    // Schedule next
+    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
+
+    // Early abort if we shouldn't clean up
+    if (now < plugin.nextPrune) return;
+
+    // Walk through channels, prune stale bans and permits
+    foreach (immutable channelName, channel; plugin.activeChannels)
+    {
+        static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
+        {
+            string[] garbage;
+
+            foreach (immutable key, const entry; aa)
+            {
+                static if (is(typeof(entry) : long))
+                {
+                    immutable maxEndTime = entry + gracePeriod;
+                }
+                else
+                {
+                    immutable maxEndTime = entry.timestamp + gracePeriod;
+                }
+
+                if (now > maxEndTime)
+                {
+                    garbage ~= key;
+                }
+            }
+
+            foreach_reverse (immutable key; garbage)
+            {
+                aa.remove(key);
+            }
+        }
+
+        pruneByTimestamp(channel.linkBans, now, 7200);
+        pruneByTimestamp(channel.linkPermits, now, 60);
+        pruneByTimestamp(channel.phraseBans, now, 7200);
+    }
+
+    // Schedule next prune to next midnight
+    const next = SysTime(DateTime(currTime.year, currTime.month,
+        currTime.day, 0, 0, 0), currTime.timezone)
+        .roll!"days"(1);
+
+    plugin.nextPrune = next.toUnixTime;
 }
 
 
