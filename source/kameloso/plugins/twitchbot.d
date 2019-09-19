@@ -278,8 +278,9 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     import lu.string : stripped;
     import std.datetime.systime : Clock;
     import std.format : format;
+    import std.uni : toLower;
 
-    string nickname = event.content.stripped;
+    string nickname = event.content.stripped.toLower;
     if (!nickname.length) return;
 
     if (nickname[0] == '@') nickname = nickname[1..$];
