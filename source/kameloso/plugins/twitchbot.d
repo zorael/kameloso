@@ -2056,7 +2056,7 @@ private:
     @Resource string timersFile = "twitchtimers.json";
 
     /// When to next clear expired permits and bans.
-    long nextCleanup;
+    long nextPrune;
 
     /++
      +  How often to check whether timers should fire, in seconds. A smaller
