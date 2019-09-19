@@ -1381,7 +1381,6 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
@@ -1510,7 +1509,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +  Also bump the message counter for the channel, to be used by timers.
  +/
 @(Terminating)
-@(IRCEvent.Type.SELFCHAN)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
