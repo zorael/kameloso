@@ -55,6 +55,9 @@ struct TwitchBotSettings
 
     /// Whether or not to employ phrase bans.
     bool phraseBans = true;
+
+    /// Whether or not to match ban phrases case-sensitively.
+    bool phraseBansObeyCase = true;
 }
 
 
@@ -117,7 +120,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
             import std.uni : asLowerCase;
 
             // Try not to allocate two whole new strings
-            immutable match = plugin.twitchBotSettings.bannedPhrasesObeyCase ?
+            immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
                 event.content.contains(phrase) :
                 event.content.asLowerCase.canFind(phrase.asLowerCase);
 
