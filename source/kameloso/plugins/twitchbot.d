@@ -1379,7 +1379,6 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
  +
  +  Whitelisted, regulars, admins and special users are so far exempted.
  +/
-version(WithWebtitlesPlugin)
 @(Chainable)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -1484,18 +1483,21 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    import kameloso.thread : ThreadMessage, busMessage;
-    import std.concurrency : send;
-    import std.typecons : Tuple, tuple;
+    version(WithWebtitlesPlugin)
+    {
+        import kameloso.thread : ThreadMessage, busMessage;
+        import std.concurrency : send;
+        import std.typecons : Tuple, tuple;
 
-    alias EventAndURLs = Tuple!(IRCEvent, string[]);
+        alias EventAndURLs = Tuple!(IRCEvent, string[]);
 
-    EventAndURLs eventAndURLs;
-    eventAndURLs[0] = event;
-    eventAndURLs[1] = urls;
+        EventAndURLs eventAndURLs;
+        eventAndURLs[0] = event;
+        eventAndURLs[1] = urls;
 
-    plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-        "webtitles", busMessage(eventAndURLs));
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+            "webtitles", busMessage(eventAndURLs));
+    }
 }
 
 
