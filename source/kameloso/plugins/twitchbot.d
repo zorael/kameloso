@@ -1489,11 +1489,18 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onAnyMessage
 /++
- +  Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+ +  Performs various actions on incoming messages.
  +
- +  This is useful with small audiences, so you don't miss messages.
+ +  * Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+ +  * Detects and deals with banned phrases.
+ +  * Bumps the message counter for the channel, used by timers.
  +
- +  Also bump the message counter for the channel, to be used by timers.
+ +  Belling is useful with small audiences, so you don't miss messages.
+ +
+ +  Note: This is annotated `kameloso.plugins.common.Terminating` and must be
+ +  placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
+ +  This lets us know the banned phrase wasn't part of a command (as it would
+ +  otherwise not reach this point).
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
