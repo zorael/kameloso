@@ -108,9 +108,12 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
             return;
         }
 
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime.toUnixTime;
+
         foreach (immutable phrase; *bannedPhrases)
         {
-            import std.algorithm.searching : canFind;
             import std.uni : asLowerCase;
 
             // Try not to allocate two whole new strings
@@ -122,12 +125,40 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
             {
                 import std.format : format;
 
+                static immutable int[3] durations = [ 5, 60, 3600 ];
+                static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+
+                auto ban = event.sender.nickname in channel.phraseBans;
+
                 immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+                if (ban)
+                {
+                    immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+                    if (banEndTime > now)
+                    {
+                        ban.timestamp = now;
+                        if (ban.offense < 2) ++ban.offense;
+                    }
+                    else
+                    {
+                        // Force a new ban
+                        ban = null;
+                    }
+                }
+
+                if (!ban)
+                {
+                    TwitchBotPlugin.Channel.Ban newBan;
+                    newBan.timestamp = now;
+                    channel.phraseBans[event.sender.nickname] = newBan;
+                    ban = event.sender.nickname in channel.phraseBans;
+                }
+
                 chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-                    .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
-                /*chan!(Yes.priority)(plugin.state, event.channel, "@%s, Banned phrase"
-                    .format(event.sender.nickname));*/
-                break;
+                    .format(event.sender.nickname, durations[ban.offense]));
+                return;
             }
         }
     }
