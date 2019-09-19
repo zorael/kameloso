@@ -1374,10 +1374,13 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
 /++
  +  Parses a message to see if the message contains one or more URLs.
  +
- +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
- +  try to send them onto the Webtitles plugin for lookups and reporting.
+ +  It uses a simple state machine in `kameloso.common.findURLs`. If the Webtitles
+ +  plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
+ +  send them to it for lookups and reporting.
  +
- +  Whitelisted, regulars, admins and special users are so far exempted.
+ +  Whitelisted, regulars, admins and special users are so far allowed to trigger this, as are
+ +  any user who has been given a temporary permit via `onCommandPermit`.
+ +  Those without permission will have the message deleted and be served a timeout.
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
