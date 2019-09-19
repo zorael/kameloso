@@ -282,7 +282,11 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.uni : toLower;
 
-    if (!plugin.twitchBotSettings.filterURLs) return;
+    if (!plugin.twitchBotSettings.filterURLs)
+    {
+        chan(plugin.state, event.channel, "Links are not being filtered.");
+        return;
+    }
 
     string nickname = event.content.stripped.toLower;
     if (!nickname.length) return;
