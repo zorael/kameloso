@@ -1410,7 +1410,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case whitelist:
     case admin:
     case special:
-        //allowed = true;
+        allowed = true;
         break;
     }
 
