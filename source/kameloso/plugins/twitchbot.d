@@ -1516,10 +1516,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import std.stdio;
-
-    writeln("onAnyMessage");
-
     if (plugin.twitchBotSettings.bellOnMessage)
     {
         import kameloso.terminal : TerminalToken;
@@ -1534,7 +1530,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     auto channel = event.channel in plugin.activeChannels;
     ++channel.messageCount;
-    writeln("new count:", channel.messageCount);
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
@@ -1572,7 +1567,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
             if (match)
             {
-                writeln("saw a banned phrase ", phrase);
                 import std.format : format;
 
                 static immutable int[3] durations = [ 5, 60, 3600 ];
@@ -1584,18 +1578,15 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
                 if (ban)
                 {
-                    writeln("existing ban");
                     immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
 
                     if (banEndTime > now)
                     {
-                        writeln("not yet expired");
                         ban.timestamp = now;
                         if (ban.offense < 2) ++ban.offense;
                     }
                     else
                     {
-                        writeln("expired");
                         // Force a new ban
                         ban = null;
                     }
@@ -1603,7 +1594,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
                 if (!ban)
                 {
-                    writeln("new ban");
                     TwitchBotPlugin.Channel.Ban newBan;
                     newBan.timestamp = now;
                     channel.phraseBans[event.sender.nickname] = newBan;
