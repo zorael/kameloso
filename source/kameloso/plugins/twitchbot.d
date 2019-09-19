@@ -1778,7 +1778,7 @@ void periodically(TwitchBotPlugin plugin)
                 }
             }
 
-            foreach_reverse (immutable key; garbage)
+            foreach (immutable key; garbage)
             {
                 aa.remove(key);
             }
