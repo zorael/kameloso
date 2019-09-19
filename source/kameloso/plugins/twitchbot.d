@@ -1525,7 +1525,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         stdout.flush();
     }
 
-    // Don't trigger on whispers
+    // Don't do any more than bell on whispers
     if (event.type == IRCEvent.Type.QUERY) return;
 
     auto channel = event.channel in plugin.activeChannels;
@@ -1533,31 +1533,28 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
-        writeln("has banned phrases");
-        import lu.string : contains;
-        import std.algorithm.searching : canFind;
-
-        if (const channelRegulars = event.channel in plugin.regularsByChannel)
+        with (IRCUser.Class)
+        final switch (event.sender.class_)
         {
-            // It's a regular; allow
-            if ((*channelRegulars).canFind(event.sender.nickname)) { writeln("is a regular"); return; }
-        }
+        case unset:
+        case blacklist:
+        case anyone:
+            // Drop down
+            break;
 
-        if ((event.sender.nickname == plugin.state.client.nickname) ||
-            plugin.state.bot.admins.canFind(event.sender.nickname) ||
-            event.sender.badges.contains("mode"/*rator*/))
-        {
-            // It's us, another admin or a moderator; allow
-            writeln("it's us, another admin or a moderator");
-            //return;
+        case whitelist:
+        case admin:
+        case special:
+            return;
         }
 
         import std.datetime.systime : Clock;
-
         immutable now = Clock.currTime.toUnixTime;
 
         foreach (immutable phrase; *bannedPhrases)
         {
+            import lu.string : contains;
+            import std.algorithm.searching : canFind;
             import std.uni : asLowerCase;
 
             // Try not to allocate two whole new strings
