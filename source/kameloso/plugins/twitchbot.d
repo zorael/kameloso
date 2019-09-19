@@ -1404,7 +1404,11 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case unset:
     case blacklist:
     case anyone:
-        // Don't set
+        if (const permitTimestamp = event.sender.nickname in
+            plugin.activeChannels[event.channel].linkPermits)
+        {
+            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+        }
         break;
 
     case whitelist:
@@ -1412,23 +1416,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case special:
         allowed = true;
         break;
-    }
-
-    if (!allowed)
-    {
-        if (const regulars = event.channel in plugin.regularsByChannel)
-        {
-            allowed = (*regulars).canFind(event.sender.nickname);
-        }
-    }
-
-    if (!allowed)
-    {
-        if (const permitTimestamp = event.sender.nickname in
-            plugin.activeChannels[event.channel].linkPermits)
-        {
-            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
-        }
     }
 
     if (!allowed)
