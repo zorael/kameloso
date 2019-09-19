@@ -61,113 +61,6 @@ struct TwitchBotSettings
 }
 
 
-// onAnyMessage
-/++
- +  Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
- +
- +  This is useful with small audiences, so you don't miss messages.
- +
- +  Also bump the message counter for the channel, to be used by timers.
- +/
-@(Chainable)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    if (plugin.twitchBotSettings.bellOnMessage)
-    {
-        import kameloso.terminal : TerminalToken;
-        import std.stdio : stdout, write;
-
-        write(cast(char)TerminalToken.bell);
-        stdout.flush();
-    }
-
-    // Don't trigger on whispers
-    if (event.type == IRCEvent.Type.QUERY) return;
-
-    auto channel = event.channel in plugin.activeChannels;
-    ++channel.messageCount;
-
-    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
-    {
-        import lu.string : contains;
-        import std.algorithm.searching : canFind;
-
-        if (const channelRegulars = event.channel in plugin.regularsByChannel)
-        {
-            // It's a regular; allow
-            if ((*channelRegulars).canFind(event.sender.nickname)) return;
-        }
-
-        if ((event.sender.nickname == plugin.state.client.nickname) ||
-            plugin.state.bot.admins.canFind(event.sender.nickname) ||
-            event.sender.badges.contains("mode"/*rator*/))
-        {
-            // It's us, another admin or a moderator; allow
-            return;
-        }
-
-        import std.datetime.systime : Clock;
-
-        immutable now = Clock.currTime.toUnixTime;
-
-        foreach (immutable phrase; *bannedPhrases)
-        {
-            import std.uni : asLowerCase;
-
-            // Try not to allocate two whole new strings
-            immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
-                event.content.contains(phrase) :
-                event.content.asLowerCase.canFind(phrase.asLowerCase);
-
-            if (match)
-            {
-                import std.format : format;
-
-                static immutable int[3] durations = [ 5, 60, 3600 ];
-                static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-
-                auto ban = event.sender.nickname in channel.phraseBans;
-
-                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-                if (ban)
-                {
-                    immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-                    if (banEndTime > now)
-                    {
-                        ban.timestamp = now;
-                        if (ban.offense < 2) ++ban.offense;
-                    }
-                    else
-                    {
-                        // Force a new ban
-                        ban = null;
-                    }
-                }
-
-                if (!ban)
-                {
-                    TwitchBotPlugin.Channel.Ban newBan;
-                    newBan.timestamp = now;
-                    channel.phraseBans[event.sender.nickname] = newBan;
-                    ban = event.sender.nickname in channel.phraseBans;
-                }
-
-                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-                    .format(event.sender.nickname, durations[ban.offense]));
-                return;
-            }
-        }
-    }
-}
-
-
 // onLink
 /++
  +  Parses a message to see if the message contains one or more URLs.
@@ -1603,6 +1496,126 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Available actions: add, del, list");
         break;
+    }
+}
+
+
+// onAnyMessage
+/++
+ +  Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+ +
+ +  This is useful with small audiences, so you don't miss messages.
+ +
+ +  Also bump the message counter for the channel, to be used by timers.
+ +/
+@(Terminating)
+@(IRCEvent.Type.SELFCHAN)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.EMOTE)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import std.stdio;
+
+    writeln("onAnyMessage");
+
+    if (plugin.twitchBotSettings.bellOnMessage)
+    {
+        import kameloso.terminal : TerminalToken;
+        import std.stdio : stdout, write;
+
+        write(cast(char)TerminalToken.bell);
+        stdout.flush();
+    }
+
+    // Don't trigger on whispers
+    if (event.type == IRCEvent.Type.QUERY) return;
+
+    auto channel = event.channel in plugin.activeChannels;
+    ++channel.messageCount;
+    writeln("new count:", channel.messageCount);
+
+    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
+    {
+        writeln("has banned phrases");
+        import lu.string : contains;
+        import std.algorithm.searching : canFind;
+
+        if (const channelRegulars = event.channel in plugin.regularsByChannel)
+        {
+            // It's a regular; allow
+            if ((*channelRegulars).canFind(event.sender.nickname)) { writeln("is a regular"); return; }
+        }
+
+        if ((event.sender.nickname == plugin.state.client.nickname) ||
+            plugin.state.bot.admins.canFind(event.sender.nickname) ||
+            event.sender.badges.contains("mode"/*rator*/))
+        {
+            // It's us, another admin or a moderator; allow
+            writeln("it's us, another admin or a moderator");
+            //return;
+        }
+
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        foreach (immutable phrase; *bannedPhrases)
+        {
+            import std.uni : asLowerCase;
+
+            // Try not to allocate two whole new strings
+            immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
+                event.content.contains(phrase) :
+                event.content.asLowerCase.canFind(phrase.asLowerCase);
+
+            if (match)
+            {
+                writeln("saw a banned phrase ", phrase);
+                import std.format : format;
+
+                static immutable int[3] durations = [ 5, 60, 3600 ];
+                static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+
+                auto ban = event.sender.nickname in channel.phraseBans;
+
+                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+                if (ban)
+                {
+                    writeln("existing ban");
+                    immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+                    if (banEndTime > now)
+                    {
+                        writeln("not yet expired");
+                        ban.timestamp = now;
+                        if (ban.offense < 2) ++ban.offense;
+                    }
+                    else
+                    {
+                        writeln("expired");
+                        // Force a new ban
+                        ban = null;
+                    }
+                }
+
+                if (!ban)
+                {
+                    writeln("new ban");
+                    TwitchBotPlugin.Channel.Ban newBan;
+                    newBan.timestamp = now;
+                    channel.phraseBans[event.sender.nickname] = newBan;
+                    ban = event.sender.nickname in channel.phraseBans;
+                }
+
+                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+                    .format(event.sender.nickname, durations[ban.offense]));
+                return;
+            }
+        }
     }
 }
 
