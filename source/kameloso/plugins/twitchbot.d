@@ -53,8 +53,8 @@ struct TwitchBotSettings
     /// Whether or not to match ban phrases case-sensitively.
     bool bannedPhrasesObeyCase = true;
 
-    /// How long a user should be timed out if they send a banned phrase.
-    int bannedPhraseTimeout = 60;
+    /// Whether or not to employ phrase bans.
+    bool phraseBans = true;
 }
 
 
