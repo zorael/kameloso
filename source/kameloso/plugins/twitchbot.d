@@ -61,136 +61,6 @@ struct TwitchBotSettings
 }
 
 
-// onLink
-/++
- +  Parses a message to see if the message contains one or more URLs.
- +
- +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
- +  try to send them onto the Webtitles plugin for lookups and reporting.
- +
- +  Whitelisted, regulars, admins and special users are so far exempted.
- +/
-version(WithWebtitlesPlugin)
-@(Chainable)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onLink(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import kameloso.common : findURLs, settings;
-    import lu.string : beginsWith;
-    import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock;
-
-    if (!plugin.twitchBotSettings.filterURLs) return;
-
-    if (event.content.beginsWith(settings.prefix)) return;
-
-    string[] urls = findURLs(event.content);  // mutable so nom works
-    if (!urls.length) return;
-
-    bool allowed;
-
-    with (IRCUser.Class)
-    final switch (event.sender.class_)
-    {
-    case unset:
-    case blacklist:
-    case anyone:
-        // Don't set
-        break;
-
-    case whitelist:
-    case admin:
-    case special:
-        allowed = true;
-        break;
-    }
-
-    if (!allowed)
-    {
-        if (const regulars = event.channel in plugin.regularsByChannel)
-        {
-            allowed = (*regulars).canFind(event.sender.nickname);
-        }
-    }
-
-    if (!allowed)
-    {
-        if (const permitTimestamp = event.sender.nickname in
-            plugin.activeChannels[event.channel].linkPermits)
-        {
-            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
-        }
-    }
-
-    if (!allowed)
-    {
-        import std.format : format;
-
-        static immutable int[3] durations = [ 5, 60, 3600 ];
-        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-        static immutable string[3] messages =
-        [
-            "Stop posting links",
-            "Really, no links",
-            "Go cool off",
-        ];
-
-        immutable now = Clock.currTime.toUnixTime;
-
-        auto channel = event.channel in plugin.activeChannels;
-        auto ban = event.sender.nickname in channel.linkBans;
-
-        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-        if (ban)
-        {
-            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-            if (banEndTime > now)
-            {
-                ban.timestamp = now;
-                if (ban.offense < 2) ++ban.offense;
-            }
-            else
-            {
-                // Force a new ban
-                ban = null;
-            }
-        }
-
-        if (!ban)
-        {
-            TwitchBotPlugin.Channel.Ban newBan;
-            newBan.timestamp = now;
-            channel.linkBans[event.sender.nickname] = newBan;
-            ban = event.sender.nickname in channel.linkBans;
-        }
-
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-            .format(event.sender.nickname, durations[ban.offense]));
-        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
-            .format(event.sender.nickname, messages[ban.offense]));
-        return;
-    }
-
-    import kameloso.thread : ThreadMessage, busMessage;
-    import std.concurrency : send;
-    import std.typecons : Tuple, tuple;
-
-    alias EventAndURLs = Tuple!(IRCEvent, string[]);
-
-    EventAndURLs eventAndURLs;
-    eventAndURLs[0] = event;
-    eventAndURLs[1] = urls;
-
-    plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-        "webtitles", busMessage(eventAndURLs));
-}
-
-
 // onCommandPermit
 /++
  +  Permits a user to post links for a hardcoded 60 seconds.
@@ -1497,6 +1367,134 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
             "Available actions: add, del, list");
         break;
     }
+}
+
+
+// onLink
+/++
+ +  Parses a message to see if the message contains one or more URLs.
+ +
+ +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+ +  try to send them onto the Webtitles plugin for lookups and reporting.
+ +
+ +  Whitelisted, regulars, admins and special users are so far exempted.
+ +/
+version(WithWebtitlesPlugin)
+@(Chainable)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onLink(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : findURLs, settings;
+    import lu.string : beginsWith;
+    import std.algorithm.searching : canFind;
+    import std.datetime.systime : Clock;
+
+    if (!plugin.twitchBotSettings.filterURLs) return;
+
+    string[] urls = findURLs(event.content);  // mutable so nom works
+    if (!urls.length) return;
+
+    bool allowed;
+
+    with (IRCUser.Class)
+    final switch (event.sender.class_)
+    {
+    case unset:
+    case blacklist:
+    case anyone:
+        // Don't set
+        break;
+
+    case whitelist:
+    case admin:
+    case special:
+        //allowed = true;
+        break;
+    }
+
+    if (!allowed)
+    {
+        if (const regulars = event.channel in plugin.regularsByChannel)
+        {
+            allowed = (*regulars).canFind(event.sender.nickname);
+        }
+    }
+
+    if (!allowed)
+    {
+        if (const permitTimestamp = event.sender.nickname in
+            plugin.activeChannels[event.channel].linkPermits)
+        {
+            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+        }
+    }
+
+    if (!allowed)
+    {
+        import std.format : format;
+
+        static immutable int[3] durations = [ 5, 60, 3600 ];
+        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+        static immutable string[3] messages =
+        [
+            "Stop posting links",
+            "Really, no links",
+            "Go cool off",
+        ];
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        auto channel = event.channel in plugin.activeChannels;
+        auto ban = event.sender.nickname in channel.linkBans;
+
+        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+        if (ban)
+        {
+            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+            if (banEndTime > now)
+            {
+                ban.timestamp = now;
+                if (ban.offense < 2) ++ban.offense;
+            }
+            else
+            {
+                // Force a new ban
+                ban = null;
+            }
+        }
+
+        if (!ban)
+        {
+            TwitchBotPlugin.Channel.Ban newBan;
+            newBan.timestamp = now;
+            channel.linkBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in channel.linkBans;
+        }
+
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+            .format(event.sender.nickname, durations[ban.offense]));
+        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
+            .format(event.sender.nickname, messages[ban.offense]));
+        return;
+    }
+
+    import kameloso.thread : ThreadMessage, busMessage;
+    import std.concurrency : send;
+    import std.typecons : Tuple, tuple;
+
+    alias EventAndURLs = Tuple!(IRCEvent, string[]);
+
+    EventAndURLs eventAndURLs;
+    eventAndURLs[0] = event;
+    eventAndURLs[1] = urls;
+
+    plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+        "webtitles", busMessage(eventAndURLs));
 }
 
 
