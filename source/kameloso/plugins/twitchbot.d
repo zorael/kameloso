@@ -35,232 +35,29 @@ struct TwitchBotSettings
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
+    /// Whether or not regulars are impliictly whitelisted.
+    bool regularsAreWhitelisted = true;
+
     /// Whether or not to bell on every message.
     bool bellOnMessage = false;
 
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = true;
 
-    /// Whether or not to filter URLs in user messages.
-    bool filterURLs = false;
-
     /// Whether or not to do reminders at the end of vote durations.
     bool voteReminders = true;
 
-    /// Whether or not regulars are impliictly whitelisted.
-    bool regularsAreWhitelisted = true;
+    /// Whether or not to filter URLs in user messages.
+    bool filterURLs = false;
 
     /// Whether or not to match ban phrases case-sensitively.
     bool bannedPhrasesObeyCase = true;
 
-    /// How long a user should be timed out if they send a banned phrase.
-    int bannedPhraseTimeout = 60;
-}
+    /// Whether or not to employ phrase bans.
+    bool phraseBans = true;
 
-
-// onAnyMessage
-/++
- +  Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
- +
- +  This is useful with small audiences, so you don't miss messages.
- +
- +  Also bump the message counter for the channel, to be used by timers.
- +/
-@(Chainable)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    if (plugin.twitchBotSettings.bellOnMessage)
-    {
-        import kameloso.terminal : TerminalToken;
-        import std.stdio : stdout, write;
-
-        write(cast(char)TerminalToken.bell);
-        stdout.flush();
-    }
-
-    // Don't trigger on whispers
-    if (event.type == IRCEvent.Type.QUERY) return;
-
-    if (auto channel = event.channel in plugin.activeChannels)
-    {
-        ++channel.messageCount;
-    }
-
-    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
-    {
-        import lu.string : contains;
-        import std.algorithm.searching : canFind;
-
-        if (const channelRegulars = event.channel in plugin.regularsByChannel)
-        {
-            if ((*channelRegulars).canFind(event.sender.nickname)) return;
-        }
-
-        if ((event.sender.nickname == plugin.state.client.nickname) ||
-            plugin.state.bot.admins.canFind(event.sender.nickname) ||
-            event.sender.badges.contains("mode"/*rator*/))
-        {
-            return;
-        }
-
-        foreach (immutable phrase; *bannedPhrases)
-        {
-            import std.algorithm.comparison : equal;
-            import std.uni : asLowerCase;
-
-            // Try not to allocate two whole new strings
-            immutable match = plugin.twitchBotSettings.bannedPhrasesObeyCase ?
-                event.content.contains(phrase) :
-                event.content.asLowerCase.equal(phrase.asLowerCase);
-
-            if (match)
-            {
-                import std.format : format;
-
-                // Will using immediate here trigger spam detection?
-                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-                //chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
-                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d Banned phrase"
-                    .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
-                break;
-            }
-        }
-    }
-}
-
-
-// onLink
-/++
- +  Parses a message to see if the message contains one or more URLs.
- +
- +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
- +  try to send them onto the Webtitles plugin for lookups and reporting.
- +
- +  Whitelisted, regulars, admins and special users are so far exempted.
- +/
-version(WithWebtitlesPlugin)
-@(Chainable)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onLink(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import kameloso.common : findURLs, settings;
-    import lu.string : beginsWith;
-    import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock;
-
-    if (!plugin.twitchBotSettings.filterURLs) return;
-
-    if (event.content.beginsWith(settings.prefix)) return;
-
-    string[] urls = findURLs(event.content);  // mutable so nom works
-    if (!urls.length) return;
-
-    bool allowed;
-
-    with (IRCUser.Class)
-    final switch (event.sender.class_)
-    {
-    case unset:
-    case blacklist:
-    case anyone:
-        // Don't set
-        break;
-
-    case whitelist:
-    case admin:
-    case special:
-        allowed = true;
-        break;
-    }
-
-    if (!allowed)
-    {
-        if (const regulars = event.channel in plugin.regularsByChannel)
-        {
-            allowed = (*regulars).canFind(event.sender.nickname);
-        }
-    }
-
-    if (!allowed)
-    {
-        if (const permitTimestamp = event.sender.nickname in
-            plugin.activeChannels[event.channel].linkPermits)
-        {
-            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
-        }
-    }
-
-    if (!allowed)
-    {
-        import std.format : format;
-
-        static immutable int[3] durations = [ 5, 60, 3600 ];
-        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-        static immutable string[3] messages =
-        [
-            "Stop posting links",
-            "Really, no links",
-            "Go cool off",
-        ];
-
-        immutable now = Clock.currTime.toUnixTime;
-
-        auto channel = event.channel in plugin.activeChannels;
-        auto ban = event.sender.nickname in channel.linkBans;
-
-        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-        if (ban)
-        {
-            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-            if (banEndTime > now)
-            {
-                ban.timestamp = now;
-                if (ban.offense < 2) ++ban.offense;
-            }
-            else
-            {
-                // Force a new ban
-                ban = null;
-            }
-        }
-
-        if (!ban)
-        {
-            TwitchBotPlugin.Channel.Ban newBan;
-            newBan.timestamp = now;
-            channel.linkBans[event.sender.nickname] = newBan;
-            ban = event.sender.nickname in channel.linkBans;
-        }
-
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-            .format(event.sender.nickname, durations[ban.offense]));
-        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
-            .format(event.sender.nickname, messages[ban.offense]));
-        return;
-    }
-
-    import kameloso.thread : ThreadMessage, busMessage;
-    import std.concurrency : send;
-    import std.typecons : Tuple, tuple;
-
-    alias EventAndURLs = Tuple!(IRCEvent, string[]);
-
-    EventAndURLs eventAndURLs;
-    eventAndURLs[0] = event;
-    eventAndURLs[1] = urls;
-
-    plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-        "webtitles", busMessage(eventAndURLs));
+    /// Whether or not to match ban phrases case-sensitively.
+    bool phraseBansObeyCase = true;
 }
 
 
@@ -1573,6 +1370,238 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
 }
 
 
+// onLink
+/++
+ +  Parses a message to see if the message contains one or more URLs.
+ +
+ +  It uses a simple state machine in `kameloso.common.findURLs`. If the Webtitles
+ +  plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
+ +  send them to it for lookups and reporting.
+ +
+ +  Whitelisted, regulars, admins and special users are so far allowed to trigger this, as are
+ +  any user who has been given a temporary permit via `onCommandPermit`.
+ +  Those without permission will have the message deleted and be served a timeout.
+ +/
+@(Chainable)
+@(IRCEvent.Type.CHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onLink(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : findURLs, settings;
+    import lu.string : beginsWith;
+    import std.algorithm.searching : canFind;
+    import std.datetime.systime : Clock;
+
+    if (!plugin.twitchBotSettings.filterURLs) return;
+
+    string[] urls = findURLs(event.content);  // mutable so nom works
+    if (!urls.length) return;
+
+    bool allowed;
+
+    with (IRCUser.Class)
+    final switch (event.sender.class_)
+    {
+    case unset:
+    case blacklist:
+    case anyone:
+        if (const permitTimestamp = event.sender.nickname in
+            plugin.activeChannels[event.channel].linkPermits)
+        {
+            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+        }
+        break;
+
+    case whitelist:
+    case admin:
+    case special:
+        allowed = true;
+        break;
+    }
+
+    if (!allowed)
+    {
+        import std.format : format;
+
+        static immutable int[3] durations = [ 5, 60, 3600 ];
+        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+        static immutable string[3] messages =
+        [
+            "Stop posting links",
+            "Really, no links",
+            "Go cool off",
+        ];
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        auto channel = event.channel in plugin.activeChannels;
+        auto ban = event.sender.nickname in channel.linkBans;
+
+        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+        if (ban)
+        {
+            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+            if (banEndTime > now)
+            {
+                ban.timestamp = now;
+                if (ban.offense < 2) ++ban.offense;
+            }
+            else
+            {
+                // Force a new ban
+                ban = null;
+            }
+        }
+
+        if (!ban)
+        {
+            TwitchBotPlugin.Channel.Ban newBan;
+            newBan.timestamp = now;
+            channel.linkBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in channel.linkBans;
+        }
+
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+            .format(event.sender.nickname, durations[ban.offense]));
+        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
+            .format(event.sender.nickname, messages[ban.offense]));
+        return;
+    }
+
+    version(WithWebtitlesPlugin)
+    {
+        import kameloso.thread : ThreadMessage, busMessage;
+        import std.concurrency : send;
+        import std.typecons : Tuple, tuple;
+
+        alias EventAndURLs = Tuple!(IRCEvent, string[]);
+
+        EventAndURLs eventAndURLs;
+        eventAndURLs[0] = event;
+        eventAndURLs[1] = urls;
+
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+            "webtitles", busMessage(eventAndURLs));
+    }
+}
+
+
+// onAnyMessage
+/++
+ +  Performs various actions on incoming messages.
+ +
+ +  * Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+ +  * Detects and deals with banned phrases.
+ +  * Bumps the message counter for the channel, used by timers.
+ +
+ +  Belling is useful with small audiences, so you don't miss messages.
+ +
+ +  Note: This is annotated `kameloso.plugins.common.Terminating` and must be
+ +  placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
+ +  This lets us know the banned phrase wasn't part of a command (as it would
+ +  otherwise not reach this point).
+ +/
+@(Terminating)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.EMOTE)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    if (plugin.twitchBotSettings.bellOnMessage)
+    {
+        import kameloso.terminal : TerminalToken;
+        import std.stdio : stdout, write;
+
+        write(cast(char)TerminalToken.bell);
+        stdout.flush();
+    }
+
+    // Don't do any more than bell on whispers
+    if (event.type == IRCEvent.Type.QUERY) return;
+
+    auto channel = event.channel in plugin.activeChannels;
+    ++channel.messageCount;
+
+    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
+    {
+        with (IRCUser.Class)
+        final switch (event.sender.class_)
+        {
+        case unset:
+        case blacklist:
+        case anyone:
+            // Drop down
+            break;
+
+        case whitelist:
+        case admin:
+        case special:
+            return;
+        }
+
+        import std.datetime.systime : Clock;
+        immutable now = Clock.currTime.toUnixTime;
+
+        foreach (immutable phrase; *bannedPhrases)
+        {
+            import lu.string : contains;
+            import std.algorithm.searching : canFind;
+            import std.uni : asLowerCase;
+
+            // Try not to allocate two whole new strings
+            immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
+                event.content.contains(phrase) :
+                event.content.asLowerCase.canFind(phrase.asLowerCase);
+
+            if (match)
+            {
+                import std.format : format;
+
+                static immutable int[3] durations = [ 5, 60, 3600 ];
+                static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+
+                auto ban = event.sender.nickname in channel.phraseBans;
+
+                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+                if (ban)
+                {
+                    immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+                    if (banEndTime > now)
+                    {
+                        ban.timestamp = now;
+                        if (ban.offense < 2) ++ban.offense;
+                    }
+                    else
+                    {
+                        // Force a new ban
+                        ban = null;
+                    }
+                }
+
+                if (!ban)
+                {
+                    TwitchBotPlugin.Channel.Ban newBan;
+                    newBan.timestamp = now;
+                    channel.phraseBans[event.sender.nickname] = newBan;
+                    ban = event.sender.nickname in channel.phraseBans;
+                }
+
+                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+                    .format(event.sender.nickname, durations[ban.offense]));
+                return;
+            }
+        }
+    }
+}
+
+
 // onEndOfMotd
 /++
  +  Populate the regulars and phrases array after we have successfully
@@ -1979,6 +2008,9 @@ private:
 
         /// UNIX timestamp of when broadcasting started.
         long broadcastStart;
+
+        /// Phrase ban actions keyed by offending nickname.
+        Ban[string] phraseBans;
 
         /// Link ban actions keyed by offending nickname.
         Ban[string] linkBans;
