@@ -1527,23 +1527,24 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     auto channel = event.channel in plugin.activeChannels;
     ++channel.messageCount;
 
+    with (IRCUser.Class)
+    final switch (event.sender.class_)
+    {
+    case unset:
+    case blacklist:
+    case anyone:
+        // Drop down, continue to phrase bans
+        break;
+
+    case whitelist:
+    case admin:
+    case special:
+        // Nothing more to do
+        return;
+    }
+
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
-        with (IRCUser.Class)
-        final switch (event.sender.class_)
-        {
-        case unset:
-        case blacklist:
-        case anyone:
-            // Drop down
-            break;
-
-        case whitelist:
-        case admin:
-        case special:
-            return;
-        }
-
         import std.datetime.systime : Clock;
         immutable now = Clock.currTime.toUnixTime;
 
