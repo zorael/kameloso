@@ -279,7 +279,11 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock;
     import std.format : format;
 
-    immutable nickname = event.content.stripped;
+    string nickname = event.content.stripped;
+    if (!nickname.length) return;
+
+    if (nickname[0] == '@') nickname = nickname[1..$];
+
     immutable now = Clock.currTime.toUnixTime;
 
     plugin.activeChannels[event.channel].linkPermits[nickname] = now;
