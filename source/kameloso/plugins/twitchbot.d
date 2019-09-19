@@ -156,6 +156,8 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock;
 
+    if (!plugin.twitchBotSettings.filterURLs) return;
+
     if (event.content.beginsWith(settings.prefix)) return;
 
     string[] urls = findURLs(event.content);  // mutable so nom works
