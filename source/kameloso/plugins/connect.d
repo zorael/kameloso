@@ -371,18 +371,6 @@ void onEndOfMotd(ConnectService service)
         service.tryAuth();
     }
 
-    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
-        !service.state.bot.password.length ||
-        (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
-    {
-        // tryAuth finished early with an unsuccessful login, else
-        // `service.authentication` would be set much later.
-        // Twitch servers can't auth so join immediately
-        // but don't do anything if we already joined channels.
-        service.joinChannels();
-        service.joinedChannels = true;
-    }
-
     if (!service.sentAfterConnect)
     {
         foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
@@ -402,6 +390,18 @@ void onEndOfMotd(ConnectService service)
         }
 
         service.sentAfterConnect = true;
+    }
+
+    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
+        !service.state.bot.password.length ||
+        (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
+    {
+        // tryAuth finished early with an unsuccessful login, else
+        // `service.authentication` would be set much later.
+        // Twitch servers can't auth so join immediately
+        // but don't do anything if we already joined channels.
+        service.joinChannels();
+        service.joinedChannels = true;
     }
 }
 
