@@ -290,10 +290,16 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 
     channel.linkPermits[nickname] = now;
     channel.linkBans.remove(nickname);
+    string target = nickname;
+
+    if (auto user = nickname in plugin.state.users)
+    {
+        target = user.alias_;
+    }
 
     chan(plugin.state, event.channel,
         "@%s, you are now allowed to post links for 60 seconds."
-        .format(nickname));
+        .format(target));
 }
 
 
