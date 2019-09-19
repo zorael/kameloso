@@ -44,9 +44,6 @@ struct TwitchBotSettings
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = true;
 
-    /// Whether or not to do reminders at the end of vote durations.
-    bool voteReminders = true;
-
     /// Whether or not to filter URLs in user messages.
     bool filterURLs = false;
 
@@ -1130,24 +1127,21 @@ do
             .format(thisFiber.payload, voteChoices.byKey));
     }
 
-    if (plugin.twitchBotSettings.voteReminders)
+    // Warn once at 30 seconds remaining if the vote was for at least 60 seconds
+    // Warn once at 10 seconds if the vote was for at least 20 seconds
+
+    if (dur >= 60)
     {
-        // Warn once at 30 seconds remaining if the vote was for at least 60 seconds
-        // Warn once at 10 seconds if the vote was for at least 20 seconds
+        auto reminder30 = new CarryingFiber!int(&dgReminder);
+        reminder30.payload = 30;
+        plugin.delayFiber(reminder30, dur-30);
+    }
 
-        if (dur >= 60)
-        {
-            auto reminder30 = new CarryingFiber!int(&dgReminder);
-            reminder30.payload = 30;
-            plugin.delayFiber(reminder30, dur-30);
-        }
-
-        if (dur >= 20)
-        {
-            auto reminder10 = new CarryingFiber!int(&dgReminder);
-            reminder10.payload = 10;
-            plugin.delayFiber(reminder10, dur-10);
-        }
+    if (dur >= 20)
+    {
+        auto reminder10 = new CarryingFiber!int(&dgReminder);
+        reminder10.payload = 10;
+        plugin.delayFiber(reminder10, dur-10);
     }
 
     chan(plugin.state, event.channel,
