@@ -86,10 +86,8 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     // Don't trigger on whispers
     if (event.type == IRCEvent.Type.QUERY) return;
 
-    if (auto channel = event.channel in plugin.activeChannels)
-    {
-        ++channel.messageCount;
-    }
+    auto channel = event.channel in plugin.activeChannels;
+    ++channel.messageCount;
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
@@ -98,6 +96,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
         if (const channelRegulars = event.channel in plugin.regularsByChannel)
         {
+            // It's a regular; allow
             if ((*channelRegulars).canFind(event.sender.nickname)) return;
         }
 
@@ -105,28 +104,29 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
             plugin.state.bot.admins.canFind(event.sender.nickname) ||
             event.sender.badges.contains("mode"/*rator*/))
         {
+            // It's us, another admin or a moderator; allow
             return;
         }
 
         foreach (immutable phrase; *bannedPhrases)
         {
-            import std.algorithm.comparison : equal;
+            import std.algorithm.searching : canFind;
             import std.uni : asLowerCase;
 
             // Try not to allocate two whole new strings
             immutable match = plugin.twitchBotSettings.bannedPhrasesObeyCase ?
                 event.content.contains(phrase) :
-                event.content.asLowerCase.equal(phrase.asLowerCase);
+                event.content.asLowerCase.canFind(phrase.asLowerCase);
 
             if (match)
             {
                 import std.format : format;
 
-                // Will using immediate here trigger spam detection?
                 immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-                //chan!(Yes.priority)(plugin.state, event.channel, ".delete " ~ event.id);
-                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d Banned phrase"
+                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
                     .format(event.sender.nickname, plugin.twitchBotSettings.bannedPhraseTimeout));
+                /*chan!(Yes.priority)(plugin.state, event.channel, "@%s, Banned phrase"
+                    .format(event.sender.nickname));*/
                 break;
             }
         }
