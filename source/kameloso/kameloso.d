@@ -950,7 +950,7 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
     if (!plugin.state.awaitingFibers[event.type].length) return;
 
-    size_t[] toRemove;
+    Fiber[] expiredFibers;
 
     foreach (immutable i, fiber; plugin.state.awaitingFibers[event.type])
     {
@@ -982,7 +982,7 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
             if (fiber.state == Fiber.State.TERM)
             {
-                toRemove ~= i;
+                expiredFibers ~= fiber;
             }
         }
         catch (IRCParseException e)
@@ -1002,7 +1002,7 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                 plugin.name, i, logtint, e.msg);
             printObject(e.event);
             version(PrintStacktraces) logger.trace(e.info);
-            toRemove ~= i;
+            expiredFibers ~= fiber;
         }
         catch (Exception e)
         {
@@ -1021,16 +1021,27 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                 plugin.name, i, logtint, e.msg);
             printObject(event);
             version(PrintStacktraces) logger.trace(e.toString);
-            toRemove ~= i;
+            expiredFibers ~= fiber;
         }
     }
 
     // Clean up processed Fibers
-    foreach_reverse (immutable i; toRemove)
+    foreach (expiredFiber; expiredFibers)
     {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        plugin.state.awaitingFibers[event.type] =
-            plugin.state.awaitingFibers[event.type].remove!(SwapStrategy.unstable)(i);
+        foreach (ref fibersByType; plugin.state.awaitingFibers)
+        {
+            foreach_reverse (immutable i, /*ref*/ fiber; fibersByType)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+
+                if (fiber == expiredFiber)
+                {
+                    fibersByType = fibersByType.remove!(SwapStrategy.unstable)(i);
+                }
+            }
+        }
+
+        destroy(expiredFiber);  // Overkill?
     }
 }
 

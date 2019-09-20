@@ -148,11 +148,13 @@ void onPing(ChanQueriesService service)
             // Overwrite state with `ChannelState.queried`;
             // `topicKnown` etc are no longer relevant.
             service.channelStates[channelName] = ChannelState.queried;
-
-            // The main loop will clean up the `awaitingFibers` array.
         }
 
         service.querying = false;  // "Unlock"
+
+        // This Fiber will end with a timed triggering.
+        // Force an awiting fiber clean-up next ping.
+        service.awaitEvent(IRCEvent.Type.PING);
     }
 
     Fiber fiber = new Fiber(&dg);
