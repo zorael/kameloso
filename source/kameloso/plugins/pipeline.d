@@ -348,7 +348,7 @@ void onMotd(PipelinePlugin plugin)
         }
         catch (ReturnValueException e)
         {
-            logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %$2s%$5d%4$s)",
+            logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
                 e.msg, logtint, e.command, warningtint, e.retval);
         }
         catch (FileExistsException e)
