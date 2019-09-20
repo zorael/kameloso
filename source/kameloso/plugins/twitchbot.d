@@ -1127,8 +1127,16 @@ do
             .format(thisFiber.payload, voteChoices.byKey));
     }
 
-    // Warn once at 30 seconds remaining if the vote was for at least 60 seconds
+    // Warn once at 60 seconds if the vote was for at least 240 second
+    // Warn once at 30 seconds if the vote was for at least 60 seconds
     // Warn once at 10 seconds if the vote was for at least 20 seconds
+
+    if (dur >= 240)
+    {
+        auto reminder60 = new CarryingFiber!int(&dgReminder);
+        reminder60.payload = 60;
+        plugin.delayFiber(reminder60, dur-60);
+    }
 
     if (dur >= 60)
     {
