@@ -354,6 +354,7 @@ if (isOutputRange!(Sink, char[]))
         .replace('"', `\"`);
 
     sink.put("{\n");
+    if (escaped != raw) sink.formattedWrite("%s// %s\n", 1.tabs, raw);
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, escaped);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
