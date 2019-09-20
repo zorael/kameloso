@@ -485,18 +485,6 @@ void generateAsserts(ref Kameloso instance) @system
         string input;
         IRCClient old = parser.client;
 
-        import kameloso.plugins;
-
-        IRCPlugin[] plugins;
-        IRCPluginState state;
-        state.client = parser.client;
-
-        // Instantiate all plugins so that we can invoke postprocess
-        foreach (Plugin; EnabledPlugins)
-        {
-            plugins ~= new Plugin(state);
-        }
-
         while ((input = readln()) !is null)
         {
             import dialect.common : IRCParseException;
@@ -531,7 +519,6 @@ void generateAsserts(ref Kameloso instance) @system
             try
             {
                 IRCEvent event = parser.toIRCEvent(raw);
-                foreach (plugin; plugins) plugin.postprocess(event);
 
                 writeln();
 
@@ -541,15 +528,6 @@ void generateAsserts(ref Kameloso instance) @system
                 if (parser.clientUpdated)
                 {
                     parser.clientUpdated = false;
-                    foreach (plugin; plugins) plugin.state.client = parser.client;
-
-                    /+writeln("/*");
-                    /*writeln("with (parser.client)");
-                    writeln("{");*/
-                    stdout.lockingTextWriter.formatDelta!(No.asserts)(old, parser.client, 0);
-                    /*writeln("}");*/
-                    writeln("*/");
-                    writeln();+/
 
                     writeln("with (parser.client)");
                     writeln("{");
