@@ -87,10 +87,12 @@ public:
  +      Tid mainThread;
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;
- +      WHOISRequest[string] triggerRequestQueue;
- +      Fiber[][IRCEvent.Type] awaitingFibers;
+ +      TriggerRequest[][string] triggerRequestQueue;
+ +      Fiber[][EnumMembers!(IRCEvent.Type).length] awaitingFibers;
  +      Labeled!(Fiber, long)[] timedFibers;
  +      long nextPeriodical;
+ +
+ +      // More internals
  +  }
  +  ---
  +
