@@ -197,7 +197,21 @@ if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
 
                 import lu.string : tabs;
                 import std.format : formattedWrite;
-                sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
+
+                static if (isSomeString!T)
+                {
+                    import std.array : replace;
+
+                    immutable escaped = member
+                        .replace('\\', `\\`)
+                        .replace('"', `\"`);
+
+                    sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, escaped);
+                }
+                else
+                {
+                    sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
+                }
             }
         }
         else
@@ -327,6 +341,7 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 if (isOutputRange!(Sink, char[]))
 {
     import lu.string : tabs;
+    import std.array : replace;
     import std.format : format, formattedWrite;
 
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
@@ -334,8 +349,12 @@ if (isOutputRange!(Sink, char[]))
     immutable raw = event.tags.length ?
         "@%s %s".format(event.tags, event.raw) : event.raw;
 
+    immutable escaped = raw
+        .replace('\\', `\\`)
+        .replace('"', `\"`);
+
     sink.put("{\n");
-    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, raw);
+    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, escaped);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
     sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
