@@ -388,11 +388,13 @@ struct IRCPluginState
      +/
     TriggerRequest[][string] triggerRequestQueue;
 
+    import std.traits : EnumMembers;
+
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
      +  `dialect.defs.IRCEvent.Type`.
      +/
-    Fiber[][IRCEvent.Type] awaitingFibers;
+    Fiber[][EnumMembers!(IRCEvent.Type).length] awaitingFibers;
 
     /// The list of timed `core.thread.Fiber`s, labeled by UNIX time.
     Labeled!(Fiber, long)[] timedFibers;
