@@ -419,7 +419,7 @@ void generateAsserts(ref Kameloso instance) @system
     {
         import dialect.parsing : IRCParser;  // Must be here or shadows Kameloso : IRCParser
 
-        parser = IRCParser.init;
+        parser.initPostprocessors();  // Normally done in IRCParser(IRCClient) constructor
 
         logger.info("Available daemons:");
         writefln("%(%(%-14s%)\n%)", EnumMembers!(IRCServer.Daemon).only.chunks(3));
