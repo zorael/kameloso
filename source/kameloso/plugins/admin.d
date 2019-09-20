@@ -85,11 +85,11 @@ debug
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.stdio : stdout, writefln, writeln;
+    import std.stdio : stdout, write, writefln, writeln;
 
     if (plugin.adminSettings.printRaw)
     {
-        if (event.tags.length) writeln(event.tags, '$');
+        if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
         if (settings.flush) stdout.flush();
     }
