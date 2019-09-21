@@ -1,6 +1,97 @@
 /++
  +  Various debugging functions, used to generate assertion statements for use
- +  in the source code `unittest` blocks.
+ +  in the source code `unittest` blocks in upstream `dialect`.
+ +
+ +  Raw IRC strings can be gotten from toggling the `printRaw` feature of the Admin
+ +  plugin, alternatively via its `printAsserts`. Its generated asserts are not
+ +  necessarily possible to copy/paste into `dialect` however, because of how we make
+ +  information about users persistent across events with the Persistence service.
+ +
+ +  For this, the `--asserts` flag is used.
+ +
+ +  Example:
+ +
+ +  `$ kameloso --asserts`
+ +  ---
+ + [...]
+ +
+// Paste raw event strings and hit Enter to generate an assert block. Ctrl+C twice to exit.
+
+@badge-info=subscriber/15;badges=subscriber/12;color=;display-name=tayk47_mom;emotes=;flags=;id=d6729804-2bf3-495d-80ce-a2fe8ed00a26;login=tayk47_mom;mod=0;msg-id=submysterygift;msg-pa
+ram-mass-gift-count=1;msg-param-origin-id=49\s9d\s3e\s68\sca\s26\se9\s2a\s6e\s44\sd4\s60\s9b\s3d\saa\sb9\s4c\sad\s43\s5c;msg-param-sender-count=4;msg-param-sub-plan=1000;room-id=710929
+38;subscriber=1;system-msg=tayk47_mom\sis\sgifting\s1\sTier\s1\sSubs\sto\sxQcOW's\scommunity!\sThey've\sgifted\sa\stotal\sof\s4\sin\sthe\schannel!;tmi-sent-ts=1569013433362;user-id=224
+578549;user-type= :tmi.twitch.tv USERNOTICE #xqcow
+
+{
+    immutable event = parser.toIRCEvent("@badge-info=subscriber/15;badges=subscriber/12;color=;display-name=tayk47_mom;emotes=;flags=;id=d6729804-2bf3-495d-80ce-a2fe8ed00a26;login=tayk
+47_mom;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\\s9d\\s3e\\s68\\sca\\s26\\se9\\s2a\\s6e\\s44\\sd4\\s60\\s9b\\s3d\\saa\\sb9\\s4c\\sad\\s43\\s5c;msg
+-param-sender-count=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sxQcOW's\\scommunity!\\sThey've\\sgifted\\s
+a\\stotal\\sof\\s4\\sin\\sthe\\schannel!;tmi-sent-ts=1569013433362;user-id=224578549;user-type= :tmi.twitch.tv USERNOTICE #xqcow");
+    with (event)
+    {
+        assert((type == IRCEvent.Type.TWITCH_BULKGIFT), Enum!(IRCEvent.Type).toString(type));
+        assert((sender.nickname == "tayk47_mom"), sender.nickname);
+        assert((sender.alias_ == "tayk47_mom"), sender.alias_);
+        assert((sender.account == "tayk47_mom"), sender.account);
+        assert((sender.badges == "subscriber/12"), sender.badges);
+        assert((channel == "#xqcow"), channel);
+        assert((content == "tayk47_mom is gifting 1 Tier 1 Subs to xQcOW's community! They've gifted a total of 4 in the channel!"), content);
+        assert((aux == "1000"), aux);
+        assert((tags == "badge-info=subscriber/15;badges=subscriber/12;color=;display-name=tayk47_mom;emotes=;flags=;id=d6729804-2bf3-495d-80ce-a2fe8ed00a26;login=tayk47_mom;mod=0;msg-
+id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\\s9d\\s3e\\s68\\sca\\s26\\se9\\s2a\\s6e\\s44\\sd4\\s60\\s9b\\s3d\\saa\\sb9\\s4c\\sad\\s43\\s5c;msg-param-sender-cou
+nt=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sxQcOW's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s
+4\\sin\\sthe\\schannel!;tmi-sent-ts=1569013433362;user-id=224578549;user-type="), tags);
+        assert((count == 1), count.to!string);
+        assert((altcount == 4), altcount.to!string);
+        assert((id == "d6729804-2bf3-495d-80ce-a2fe8ed00a26"), id);
+    }
+}
+ +  ---
+ +
+ +  Generated with the `--asserts` flag, these can be directly copy/pasted into
+ +  `dialect`. They only carry state from the events pasted before it, but the
+ +  changes made are also made copy/pastable.
+ +
+ +  Example:
+ +
+ +  `$ kameloso --asserts`
+ +  ---
+ + [...]
+ +
+// Paste raw event strings and hit Enter to generate an assert block. Ctrl+C twice to exit.
+
+@badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type= :tmi.twitch.tv GLOBALUSERSTATE
+
+{
+        immutable event = parser.toIRCEvent("@badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type= :tmi.twitch.tv GLOBALUSERSTATE");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.GLOBALUSERSTATE), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((target.nickname == "zorael"), target.nickname);
+            assert((target.alias_ == "Zorael"), target.alias_);
+            assert((target.class_ == IRCUser.Class.admin), Enum!(IRCUser.Class).toString(target.class_));
+            assert((target.badges == "*"), target.badges);
+            assert((target.colour == "5F9EA0"), target.colour);
+            assert((tags == "badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type="), tags);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((alias_ == "Zorael"), alias_);
+    }
+}
+ +  ---
+ +
+ +  The `with (parser.client)` segment, inlined with the rest of the test, will
+ +  update the parser's `dialect.defs.IRCClient` with information gleamed from
+ +  this one, giving it new context to events pasted afterwards.
+ +
+ +  This makes it easy to generate tests that precisely reflect what kind of
+ +  `dialect.defs.IRCEvent`s given strings are parsed into, enabling us to
+ +  detect any unwanted side-effects to changes we make.
  +/
 module kameloso.debugging;
 
