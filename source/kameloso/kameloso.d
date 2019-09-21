@@ -347,7 +347,7 @@ void messageFiber(ref Kameloso instance)
                 }
                 else
                 {
-                    // Copy/paste from whoisForTriggerRequestQueue
+                    // Copy/paste from processTriggerRequestQueue
                     immutable then = instance.previousWhoisTimestamps.get(target.nickname, 0);
 
                     if ((now - then) > Timeout.whoisRetry)
@@ -720,7 +720,7 @@ Next mainLoop(ref Kameloso instance)
                         plugin.handleAwaitingFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
-                        instance.whoisForTriggerRequestQueue(plugin.state.triggerRequestQueue);
+                        instance.processTriggerRequestQueue(plugin.state.triggerRequestQueue);
 
                         if (plugin.state.botUpdated)
                         {
@@ -1199,7 +1199,7 @@ do
 
 import kameloso.plugins.common : TriggerRequest;
 
-// whoisForTriggerRequestQueue
+// processTriggerRequestQueue
 /++
  +  Takes a queue of `TriggerRequest` objects and emits `WHOIS` requests for each one.
  +
@@ -1207,7 +1207,7 @@ import kameloso.plugins.common : TriggerRequest;
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      reqs = Reference to an associative array of `TriggerRequest`s.
  +/
-void whoisForTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][string] reqs)
+void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][string] reqs)
 {
     // Walk through requests and call `WHOIS` on those that haven't been
     // `WHOIS`ed in the last `Timeout.whois` seconds
