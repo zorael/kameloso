@@ -2708,7 +2708,21 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         if (event.aux == "WHOIS")
         {
             // We're on a server that doesn't support WHOIS
-            // --> clear WHOIS queue and pretend like nothing happened
+            // Trigger queued requests of a PrivilegeLevel.anyone nature, since
+            // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
+            // Then clear everything
+
+            foreach (requests; plugin.state.triggerRequestQueue)
+            {
+                foreach (request; requests)
+                {
+                    if (request.privilegeLevel == PrivilegeLevel.anyone)
+                    {
+                        request.trigger();
+                    }
+                }
+            }
+
             plugin.state.triggerRequestQueue.clear();
         }
     }
