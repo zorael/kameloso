@@ -668,7 +668,16 @@ Next mainLoop(ref Kameloso instance)
             {
                 // Something asserted
                 logger.error("scopeguard tripped.");
-                printObject(event);
+
+                if (event == IRCEvent.init)
+                {
+                    logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
+                }
+                else
+                {
+                    // Offending line included in event, in raw
+                    printObject(event);
+                }
             }
 
             import core.exception : UnicodeException;
