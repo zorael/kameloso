@@ -877,57 +877,72 @@ Next mainLoop(ref Kameloso instance)
 
         if (bufferHasMessages)
         {
-            // There are messages to send.
-
-            import kameloso.constants : Timeout;
-            import core.time : msecs, seconds;
-            import std.socket : SocketOption, SocketOptionLevel;
-            import std.typecons : Flag, No, Yes;
-
-            double untilNext;
-
-            version(TwitchSupport)
-            {
-                if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
-                else if (!instance.fastbuffer.empty) untilNext =
-                    instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
-                else
-                {
-                    untilNext = instance.throttleline(instance.outbuffer);
-                }
-            }
-            else
-            {
-                if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
-                else
-                {
-                    untilNext = instance.throttleline(instance.outbuffer);
-                }
-            }
-
-            with (instance.conn.socket)
-            with (SocketOption)
-            with (SocketOptionLevel)
-            {
-                if (untilNext > 0)
-                {
-                    if ((untilNext < instance.throttle.burst) &&
-                        (untilNext < Timeout.receive))
-                    {
-                        setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
-                        readWasShortened = true;
-                    }
-                }
-                else if (readWasShortened)
-                {
-                    setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
-                    readWasShortened = false;
-                }
-            }
+            sendMessages(instance, readWasShortened);
         }
     }
 
     return next;
+}
+
+
+// sendMessages
+/++
+ +  Sends strings to the server from the message buffers.
+ +
+ +  Broken out of `mainLoop` to make it more legible.
+ +
+ +  Params:
+ +      instance = Reference to the current `Kameloso`.
+ +      readWasShortened = Flag bool of whether or not the read timeout was
+ +          lowered to allow us to send a message earlier.
+ +/
+void sendMessages(ref Kameloso instance, ref bool readWasShortened)
+{
+    import kameloso.constants : Timeout;
+    import core.time : msecs, seconds;
+    import std.socket : SocketOption, SocketOptionLevel;
+    import std.typecons : Flag, No, Yes;
+
+    double untilNext;
+
+    version(TwitchSupport)
+    {
+        if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
+        else if (!instance.fastbuffer.empty) untilNext =
+            instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
+        else
+        {
+            untilNext = instance.throttleline(instance.outbuffer);
+        }
+    }
+    else
+    {
+        if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
+        else
+        {
+            untilNext = instance.throttleline(instance.outbuffer);
+        }
+    }
+
+    with (instance.conn.socket)
+    with (SocketOption)
+    with (SocketOptionLevel)
+    {
+        if (untilNext > 0)
+        {
+            if ((untilNext < instance.throttle.burst) &&
+                (untilNext < Timeout.receive))
+            {
+                setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
+                readWasShortened = true;
+            }
+        }
+        else if (readWasShortened)
+        {
+            setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
+            readWasShortened = false;
+        }
+    }
 }
 
 
