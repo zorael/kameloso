@@ -614,51 +614,23 @@ Next mainLoop(ref Kameloso instance)
         {
             if (*instance.abort) return Next.returnFailure;
 
-            // Handle the attempt; switch on its state
-            with (State)
-            final switch (attempt.state)
+            immutable actionAfterListen = listenAttemptToNext(instance, attempt);
+
+            with (Next)
+            final switch (actionAfterListen)
             {
-            case prelisten:  // Should never happen
-                assert(0, "listener attempt yielded state prelisten");
-
-            case isEmpty:
-                // Empty line yielded means nothing received; break foreach and try again
-                break listenerloop;
-
-            case hasString:
-                // hasString means we should drop down and continue processing
+            case continue_:
+                // Drop down and continue
                 break;
 
-            case warning:
-                // Benign socket error; break foreach and try again
-                import core.thread : Thread;
-                import core.time : seconds;
-
-                logger.warningf("Connection error! (%s%s%s)", logtint,
-                    attempt.lastSocketError_, warningtint);
-
-                // Sleep briefly so it won't flood the screen on chains of errors
-                Thread.sleep(1.seconds);
+            case retry:
+                // Break and try again
                 break listenerloop;
 
-            case timeout:
-                logger.error("Connection lost.");
-                instance.conn.connected = false;
-                return Next.returnFailure;
+            case returnSuccess:
+                assert(0, "listenAttemptToNext returned Next.returnSuccess");
 
-            case error:
-                if (attempt.bytesReceived == 0)
-                {
-                    logger.errorf("Connection error: empty server response! (%s%s%s)",
-                        logtint, attempt.lastSocketError_, errortint);
-                }
-                else
-                {
-                    logger.errorf("Connection error: invalid server response! (%s%s%s)",
-                        logtint, attempt.lastSocketError_, errortint);
-                }
-
-                instance.conn.connected = false;
+            case returnFailure:
                 return Next.returnFailure;
             }
 
@@ -944,6 +916,87 @@ void sendMessages(ref Kameloso instance, ref bool readWasShortened)
             setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
             readWasShortened = false;
         }
+    }
+}
+
+
+import lu.net : ListenAttempt;
+
+// listenAttemptToNext
+/++
+ +  Translates the `lu.net.ListenAttempt.state` received from a
+ +  `std.concurrency.Generator` into a `kameloso.common.Next`, while also providing
+ +  warnings and error messages.
+ +
+ +  Params:
+ +      instance = Reference to the current `Kameloso`.
+ +      attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
+ +
+ +  Returns:
+ +      A `kameloso.common.Next` describing what action `mainLoop` should take next.
+ +/
+Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
+{
+    string logtint, errortint, warningtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            errortint = (cast(KamelosoLogger)logger).errortint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
+        }
+    }
+
+    // Handle the attempt; switch on its state
+    with (ListenAttempt.State)
+    final switch (attempt.state)
+    {
+    case prelisten:  // Should never happen
+        assert(0, "listener attempt yielded state prelisten");
+
+    case isEmpty:
+        // Empty line yielded means nothing received; break foreach and try again
+        return Next.retry;
+
+    case hasString:
+        // hasString means we should drop down and continue processing
+        return Next.continue_;
+
+    case warning:
+        // Benign socket error; break foreach and try again
+        import core.thread : Thread;
+        import core.time : seconds;
+
+        logger.warningf("Connection error! (%s%s%s)", logtint,
+            attempt.lastSocketError_, warningtint);
+
+        // Sleep briefly so it won't flood the screen on chains of errors
+        Thread.sleep(1.seconds);
+        return Next.retry;
+
+    case timeout:
+        logger.error("Connection lost.");
+        instance.conn.connected = false;
+        return Next.returnFailure;
+
+    case error:
+        if (attempt.bytesReceived == 0)
+        {
+            logger.errorf("Connection error: empty server response! (%s%s%s)",
+                logtint, attempt.lastSocketError_, errortint);
+        }
+        else
+        {
+            logger.errorf("Connection error: invalid server response! (%s%s%s)",
+                logtint, attempt.lastSocketError_, errortint);
+        }
+
+        instance.conn.connected = false;
+        return Next.returnFailure;
     }
 }
 
