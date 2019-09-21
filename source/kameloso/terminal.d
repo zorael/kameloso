@@ -3,6 +3,47 @@
  +
  +  Much of this module has to do with terminal text colouring and is therefore
  +  version `Colours`.
+ +
+ +  Example:
+ +  ---
+ +  Appender!string sink;
+ +
+ +  // Output range version
+ +  sink.put("Hello ");
+ +  sink.colourWith(TerminalForeground.red);
+ +  sink.put("world!");
+ +  sink.colourWith(TerminalForeground.default_);
+ +
+ +  with (TerminalForeground)
+ +  {
+ +      // Normal string-returning version
+ +      writeln("Hello ", red.colour, "world!", default_.colour);
+ +  }
+ +
+ +  // Also accepts RGB form
+ +  sink.put(" Also");
+ +  sink.truecolour(128, 128, 255);
+ +  sink.put("magic");
+ +  sink.colourWith(TerminalForeground.default_);
+ +
+ +  with (TerminalForeground)
+ +  {
+ +      writeln("Also ", truecolour(128, 128, 255), "magic", default_.colour);
+ +  }
+ +
+ +  immutable line = "Surrounding text kameloso surrounding text";
+ +  immutable kamelosoInverted = line.invert("kameloso");
+ +  assert(line != kamelosoInverted);
+ +
+ +  immutable tintedNickname = "nickname".colourByHash(false);   // "for bright background" false
+ +  immutable tintedSubstring = "substring".colourByHash(true);  // "for bright background" true
+ +  ---
+ +
+ +  It is used heavily in the Printer plugin, to format sections of its output
+ +  in different colours, but it's generic enough to use anywhere.
+ +
+ +  The output range versions are cumbersome but necessary to minimise the number
+ +  of strings generated.
  +/
 module kameloso.terminal;
 

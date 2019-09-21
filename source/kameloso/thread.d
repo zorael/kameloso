@@ -1,6 +1,30 @@
 /++
  +  Structures and functions related to concurrency message passing, threads and
  +  `core.thread.Fiber`s.
+ +
+ +  Example:
+ +  ---
+ +  import std.concurrency;
+ +
+ +  mainThread.send(ThreadMessage.Sendline(), "Message to send to server");
+ +  mainThread.send(ThreadMessage.Pong(), "irc.freenode.net");
+ +  mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
+ +  mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
+ +
+ +  auto fiber = new CarryingFiber!string(&someDelegate);
+ +  fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
+ +  fiber.call();
+ +  fiber.payload = "You can change it inbetween calls to pass information to it";
+ +  fiber.call();
+ +
+ +  // As such we can make Fibers act like they're taking new arguments each call
+ +  auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate);
+ +  fiber2.payload = newIncomingIRCEvent;
+ +  fiber2.call();
+ +  // [...]
+ +  fiber2.payload = evenNewerIncomingIRCEvent;
+ +  fiber2.call();
+ +  ---
  +/
 module kameloso.thread;
 

@@ -1,5 +1,7 @@
 /++
  +  A collection of constants used throughout the program.
+ +
+ +  This acts as a compile-time configuration file.
  +/
 module kameloso.constants;
 

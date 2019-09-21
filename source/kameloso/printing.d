@@ -2,6 +2,31 @@
  +  Functions related to (formatting and) printing structs and classes to the
  +  local terminal, listing each member variable and their contents in an
  +  easy-to-visually-parse way.
+ +
+ +  Example:
+ +
+ +  `printObjects(client, bot, settings);`
+ +  ---
+-- IRCClient
+   string nickname               "kameloso"(8)
+   string user                   "kameloso"(8)
+   string ident                  "NaN"(3)
+   string realName               "kameloso IRC bot"(16)
+
+-- IRCBot
+   string account                "kameloso"(8)
+ string[] admins                ["zorael"](1)
+ string[] homes                 ["#flerrp"](1)
+ string[] channels              ["#d"](1)
+
+-- IRCServer
+   string address                "irc.freenode.net"(16)
+   ushort port                    6667
+ +  ---
+ +
+ +  Distance between types, member names and member values are deduced automatically
+ +  based on how long they are (in terms of characters). If it doesn't line up,
+ +  its a bug.
  +/
 module kameloso.printing;
 

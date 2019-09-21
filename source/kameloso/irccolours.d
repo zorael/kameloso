@@ -6,6 +6,13 @@
  +  based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
  +  `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
  +  background colour number.
+ +
+ +  Example:
+ +  ---
+ +  immutable nameInColour = "kameloso".ircColour(IRCColour.red);
+ +  immutable nameInHashedColour = "kameloso".ircColouByHash;
+ +  immutable nameInBold = "kameloso".ircBold;
+ +  ---
  +/
 module kameloso.irccolours;
 

@@ -1,5 +1,8 @@
 /++
  +  Various traits that are too kameloso-specific to be in `lu`.
+ +
+ +  They generally deal with lengths of struct/class member names, used to format
+ +  output and align columns for `kameloso.printing.printObject`.
  +/
 module kameloso.traits;
 

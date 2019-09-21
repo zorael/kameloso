@@ -1,6 +1,21 @@
 /++
  +  Contains the custom `KamelosoLogger` class, used to print timestamped and
  +  (optionally) coloured logging messages.
+ +
+ +  This is merely a subclass of `std.experimental.logger.Logger` that formats
+ +  its arguments differently, implying the log level by way of colours.
+ +
+ +  Example:
+ +  ---
+ +  Logger logger = new KamelosoLogger;
+ +
+ +  logger.log("This is LogLevel.log");
+ +  logger.info("LogLevel.info");
+ +  logger.warn(".warn");
+ +  logger.error(".error");
+ +  logger.trace(".trace");
+ +  //logger.fatal("This will crash the program.");
+ +  ---
  +/
 module kameloso.logger;
 

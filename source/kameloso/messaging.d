@@ -1,9 +1,40 @@
 /++
  +  Functions used to send messages to the server.
  +
- +  It does this by crafting `dialect.defs.IRCEvent`s from the passed
- +  arguments, then sends it to the concurrency message-reading parts of the
- +  main loop, which formats them into strings and sends them to the server.
+ +  To send a server message some information is needed; like
+ +  message type, message target, perhaps channel, content and such.
+ +  `dialect.defs.IRCEvent` has all of this, so it lends itself to repurposing
+ +  it to aggregate and carry them, through concurrency messages. These care caught by the
+ +  concurrency message-reading parts of the main loop, which reversely parses
+ +  them into strings and sends them on to the server.
+ +
+ +  Example:
+ +  ---
+ +  //IRCPluginState state;
+ +
+ +  chan(state, "#channel", "Hello world!");
+ +  query(state, "nickname", "foo bar");
+ +  mode(state, "#channel", "nickname", "+o");
+ +  topic(state, "#channel", "I thought what I'd do was, I'd pretend I was one of those deaf-mutes.");
+ +  ---
+ +
+ +  Having to supply the `kameloso.plugins.common.IRCPluginState` on every call
+ +  can be avoided for plugins, by mixing in `kamelso.plugins.common.MessagingProxy`
+ +  and placing the messaging function calls inside a `with (plugin)` block.
+ +
+ +  Example:
+ +  ---
+ +  IRCPluginState state;
+ +  auto plugin = new MyPlugin(state);  // has mixin MessagingProxy;
+ +
+ +  with (plugin)
+ +  {
+ +      chan("#channel", "Foo bar baz");
+ +      query("nickname", "hello");
+ +      mode("#channel", string.init, "+b", "dudebro!*@*");
+ +      mode(string.init, "nickname", "+i");
+ +  }
+ +  ---
  +/
 module kameloso.messaging;
 
