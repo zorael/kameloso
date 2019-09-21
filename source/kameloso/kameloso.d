@@ -57,7 +57,7 @@ static if (__VERSION__ <= 2088L)
     }
     else
     {
-        pragma(msg, "NOTE: Compilation may not succeed outside of debug mode.");
+        pragma(msg, "NOTE: Compilation might not succeed outside of debug mode.");
         pragma(msg, "See bug #18026 at https://issues.dlang.org/show_bug.cgi?id=18026");
     }
 }
