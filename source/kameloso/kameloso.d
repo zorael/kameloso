@@ -691,13 +691,6 @@ Next mainLoop(ref Kameloso instance)
                 {
                     event = instance.parser.toIRCEvent(sanitize(attempt.line));
                 }
-                catch (Exception e)
-                {
-                    // Print, then rethrow down.
-                    logger.errorf("Exception toIRCEvent: %s%s", logtint, e.msg);
-                    version(PrintStacktraces) logger.trace(e.toString);
-                    throw e;
-                }
 
                 if (instance.parser.clientUpdated)
                 {
