@@ -658,6 +658,7 @@ Next mainLoop(ref Kameloso instance)
             try
             {
                 // Sanitise and try again once on UTF/Unicode exceptions
+                import std.datetime.systime : Clock;
                 import std.encoding : sanitize;
 
                 try
@@ -679,6 +680,8 @@ Next mainLoop(ref Kameloso instance)
                     instance.parser.clientUpdated = false;
                     instance.propagateClient(instance.parser.client);
                 }
+
+                event.time = Clock.currTime.toUnixTime;
 
                 foreach (plugin; instance.plugins)
                 {
