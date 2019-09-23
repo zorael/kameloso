@@ -768,16 +768,25 @@ void onSASLAuthenticate(ConnectService service)
     with (service.state.bot)
     {
         import lu.string : beginsWith, decode64, encode64;
+        import std.base64 : Base64Exception;
 
         service.authentication = Progress.started;
 
-        immutable account_ = account.length ? account : origNickname;
-        immutable password_ = password.beginsWith("base64:") ? decode64(password[7..$]) : password;
-        immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
-        immutable encoded = encode64(authToken);
+        try
+        {
+            immutable account_ = account.length ? account : origNickname;
+            immutable password_ = password.beginsWith("base64:") ? decode64(password[7..$]) : password;
+            immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
+            immutable encoded = encode64(authToken);
 
-        raw(service.state, "AUTHENTICATE " ~ encoded, true);
-        if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+            raw(service.state, "AUTHENTICATE " ~ encoded, true);
+            if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+        }
+        catch (Base64Exception e)
+        {
+            logger.error("Could not authenticate: malformed password");
+            return service.onSASLFailure();
+        }
 
         // If we're still authenticating by the next PING, abort and join channels.
 
