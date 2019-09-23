@@ -121,6 +121,10 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     IRCEvent mutEvent = event; // need a mutable copy
 
+    // For many types there's no need to display the target nickname when it's the bot's
+    // Clear event.target.nickname for those types.
+    mutEvent.clearTargetNicknameIfUs(plugin.state.client.nickname);
+
     /++
      +  Update the squelchstamp and return whether or not the current event
      +  should be squelched.
