@@ -2537,6 +2537,59 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
 }
 
 
+// clearTargetNicknameIfUs
+/++
+ +  Clears the target nickname if it matches the passed string.
+ +
+ +  Example:
+ +  ---
+ +  event.clearTargetNicknameIfUs(plugin.state.client.nickname);
+ +  ---
+ +/
+void clearTargetNicknameIfUs(ref IRCEvent event, const string nickname)
+{
+    if (event.target.nickname == nickname)
+    {
+        with (IRCEvent.Type)
+        switch (event.type)
+        {
+        case MODE:
+        case QUERY:
+        case JOIN:
+        case SELFNICK:
+        case RPL_WHOREPLY:
+        case RPL_WHOISUSER:
+        case RPL_WHOISCHANNELS:
+        case RPL_WHOISSERVER:
+        case RPL_WHOISHOST:
+        case RPL_WHOISIDLE:
+        case RPL_LOGGEDIN:
+        case RPL_WHOISACCOUNT:
+        case RPL_WHOISREGNICK:
+        case RPL_ENDOFWHOIS:
+        case RPL_WELCOME:
+        case CLEARCHAT:
+        case CLEARMSG:
+            // Keep bot's nickname as target for these event types.
+            break;
+
+        default:
+            event.target.nickname = string.init;
+            break;
+        }
+    }
+
+    if (event.target.nickname == "*")
+    {
+        // Some events have an asterisk in what we consider the target nickname field. Sometimes.
+        // [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
+        // Clear it if so, since it conveys no information we care about.
+        // It does not appear to be wholly reproducible, suggesting there's more to it.
+        event.target.nickname = string.init;
+    }
+}
+
+
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
 
