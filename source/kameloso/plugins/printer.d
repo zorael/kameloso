@@ -2589,6 +2589,42 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const string nickname)
     }
 }
 
+///
+unittest
+{
+    enum us = "kameloso";
+    enum notUs = "hirrsteff";
+
+    {
+        IRCEvent event;
+        event.type = IRCEvent.Type.CHAN;
+        event.target.nickname = us;
+        event.clearTargetNicknameIfUs(us);
+        assert(!event.target.nickname.length, event.target.nickname);
+    }
+    {
+        IRCEvent event;
+        event.type = IRCEvent.Type.MODE;
+        event.target.nickname = us;
+        event.clearTargetNicknameIfUs(us);
+        assert((event.target.nickname == us), event.target.nickname);
+    }
+    {
+        IRCEvent event;
+        event.type = IRCEvent.Type.CHAN;
+        event.target.nickname = notUs;
+        event.clearTargetNicknameIfUs(us);
+        assert((event.target.nickname == notUs), event.target.nickname);
+    }
+    {
+        IRCEvent event;
+        event.type = IRCEvent.Type.MODE;
+        event.target.nickname = notUs;
+        event.clearTargetNicknameIfUs(us);
+        assert((event.target.nickname == notUs), event.target.nickname);
+    }
+}
+
 
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
