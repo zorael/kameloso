@@ -80,6 +80,7 @@ unittest
         int i;
         @Unconfigurable string veryVeryVeryLongNameThatIsInvalid;
         @Hidden float likewiseWayLongerButInvalid;
+        deprecated bool alsoVeryLongButDeprecated;
     }
 
     struct Bar
@@ -119,6 +120,7 @@ unittest
         int i;
         @Unconfigurable string veryVeryVeryLongNameThatIsValidNow;
         @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
+        deprecated bool alsoVeryLongButDeprecated;
     }
 
     struct Bar
