@@ -199,7 +199,8 @@ if (isOutputRange!(Sink, char[]))
             import lu.uda : Hidden, Unconfigurable;
             import std.traits : hasUDA, isAssociativeArray, isType;
 
-            enum shouldNormallyBePrinted = !isType!member &&
+            enum shouldNormallyBePrinted = !__traits(isDeprecated, thing.tupleof[i]) &&
+                !isType!member &&
                 isConfigurableVariable!member &&
                 !hasUDA!(thing.tupleof[i], Hidden) &&
                 !hasUDA!(thing.tupleof[i], Unconfigurable);
