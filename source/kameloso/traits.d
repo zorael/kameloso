@@ -41,6 +41,7 @@ if (Things.length > 0)
                 static if (!isType!member &&
                     isConfigurableVariable!member &&
                     !hasUDA!(member, Hidden) &&
+                    !__traits(isDeprecated, member) &&
                     (all || !hasUDA!(member, Unconfigurable)))
                 {
                     if (name.length > longest.length)
@@ -163,6 +164,7 @@ if (Things.length > 0)
                 static if (!isType!member &&
                     isConfigurableVariable!member &&
                     !hasUDA!(member, Hidden) &&
+                    !__traits(isDeprecated, member) &&
                     (all || !hasUDA!(member, Unconfigurable)))
                 {
                     alias T = typeof(__traits(getMember, Thing, name));
