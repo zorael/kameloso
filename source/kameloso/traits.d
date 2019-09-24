@@ -6,8 +6,9 @@
  +/
 module kameloso.traits;
 
-import lu.traits : isConfigurableVariable;
+import lu.traits : isConfigurableVariable, isStruct;
 import lu.uda : Hidden, Unconfigurable;
+import std.meta : allSatisfy;
 import std.traits : isArray, isAssociativeArray, isType;
 import std.typecons : Flag, No, Yes;
 
@@ -23,7 +24,7 @@ import std.typecons : Flag, No, Yes;
  +      Things = Types to introspect and count member name lengths of.
  +/
 private template longestMemberNameImpl(Flag!"all" all, Things...)
-if (Things.length > 0)
+if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 {
     enum longestMemberNameImpl = ()
     {
@@ -147,7 +148,7 @@ unittest
  +      Things = Types to introspect and count member type name lengths of.
  +/
 private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
-if (Things.length > 0)
+if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 {
     enum longestMemberTypeNameImpl = ()
     {
