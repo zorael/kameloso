@@ -1015,17 +1015,25 @@ if (isOutputRange!(Sink, char[]))
             }
             else
             {
-                if (sender.alias_.length)
-                {
-                    sink.put(sender.alias_);
-                    if (sender.class_ == IRCUser.Class.special) sink.put('*');
+                bool putAlias;
 
-                    if (!sender.alias_.asLowerCase.equal(sender.nickname))
+                version(TwitchSupport)
+                {
+                    if (sender.alias_.length)
                     {
-                        .put(sink, " <", sender.nickname, '>');
+                        sink.put(sender.alias_);
+                        putAlias = true;
+
+                        if (sender.class_ == IRCUser.Class.special) sink.put('*');
+
+                        if (!sender.alias_.asLowerCase.equal(sender.nickname))
+                        {
+                            .put(sink, " <", sender.nickname, '>');
+                        }
                     }
                 }
-                else if (sender.nickname.length)
+
+                if (!putAlias && sender.nickname.length)
                 {
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(sender.nickname);
@@ -1061,18 +1069,25 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(" (");
 
-            if (target.alias_.length)
+            bool putAlias;
+
+            version(TwitchSupport)
             {
-                .put(sink, target.alias_, ')');
-
-                if (target.class_ == IRCUser.Class.special) sink.put('*');
-
-                if (!target.alias_.asLowerCase.equal(target.nickname))
+                if (target.alias_.length)
                 {
-                    .put(sink, " <", target.nickname, '>');
+                    .put(sink, target.alias_, ')');
+                    putAlias = true;
+
+                    if (target.class_ == IRCUser.Class.special) sink.put('*');
+
+                    if (!target.alias_.asLowerCase.equal(target.nickname))
+                    {
+                        .put(sink, " <", target.nickname, '>');
+                    }
                 }
             }
-            else
+
+            if (!putAlias)
             {
                 .put(sink, target.nickname, ')');
                 if (target.class_ == IRCUser.Class.special) sink.put('*');
@@ -1208,7 +1223,7 @@ unittest
     {
         nickname = "nickname";
         address = "127.0.0.1";
-        alias_ = "Nickname";
+        version(TwitchSupport) alias_ = "Nickname";
         //account = "n1ckn4m3";
         class_ = IRCUser.Class.whitelist;
     }
@@ -1218,7 +1233,8 @@ unittest
 
     plugin.formatMessageMonochrome(sink, event, false, false);
     immutable joinLine = sink.data[11..$];
-    assert((joinLine == "[join] [#channel] Nickname"), joinLine);
+    version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
+    else assert((joinLine == "[join] [#channel] nickname"), joinLine);
     sink = typeof(sink).init;
 
     event.type = IRCEvent.Type.CHAN;
@@ -1226,7 +1242,8 @@ unittest
 
     plugin.formatMessageMonochrome(sink, event, false, false);
     immutable chanLine = sink.data[11..$];
-    assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
+    version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
+    else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
     sink = typeof(sink).init;
 
     version(TwitchSupport)
@@ -1236,7 +1253,8 @@ unittest
 
         plugin.formatMessageMonochrome(sink, event, false, false);
         immutable twitchLine = sink.data[11..$];
-        assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
+        version(TwitchSupport) assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
+        else assert((twitchLine == `[chan] [#channel] nickname [BMS]: "Harbl snarbl"`), twitchLine);
         sink = typeof(sink).init;
         event.sender.badges = string.init;
     }
@@ -1249,7 +1267,8 @@ unittest
 
     plugin.formatMessageMonochrome(sink, event, false, false);
     immutable accountLine = sink.data[11..$];
-    assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
+    version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
+    else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
     sink = typeof(sink).init;
 
     event.errors = "DANGER WILL ROBINSON";
@@ -1261,7 +1280,9 @@ unittest
 
     plugin.formatMessageMonochrome(sink, event, false, false);
     immutable errorLine = sink.data[11..$];
-    assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
+    version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
+        "! DANGER WILL ROBINSON !"), errorLine);
+    else assert((errorLine == `[error] nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
     //sink = typeof(sink).init;
 }
@@ -1381,26 +1402,33 @@ if (isOutputRange!(Sink, char[]))
             }
             else
             {
-                if (sender.alias_.length)
+                bool putAlias;
+
+                version(TwitchSupport)
                 {
-                    sink.put(sender.alias_);
-
-                    if (sender.class_ == IRCUser.Class.special)
+                    if (sender.alias_.length)
                     {
-                        .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                    }
+                        sink.put(sender.alias_);
+                        putAlias = true;
 
-                    import std.algorithm.comparison : equal;
-                    import std.uni : asLowerCase;
+                        if (sender.class_ == IRCUser.Class.special)
+                        {
+                            .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
+                        }
 
-                    if (!sender.alias_.asLowerCase.equal(sender.nickname))
-                    {
-                        .put!(Yes.colours)(sink, FG.default_, " <");
-                        colourUserTruecolour(sink, event.sender);
-                        .put!(Yes.colours)(sink, sender.nickname, FG.default_, '>');
+                        import std.algorithm.comparison : equal;
+                        import std.uni : asLowerCase;
+
+                        if (!sender.alias_.asLowerCase.equal(sender.nickname))
+                        {
+                            .put!(Yes.colours)(sink, FG.default_, " <");
+                            colourUserTruecolour(sink, event.sender);
+                            .put!(Yes.colours)(sink, sender.nickname, FG.default_, '>');
+                        }
                     }
                 }
-                else if (sender.nickname.length)
+
+                if (!putAlias && sender.nickname.length)
                 {
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(sender.nickname);
@@ -1440,27 +1468,34 @@ if (isOutputRange!(Sink, char[]))
             .put!(Yes.colours)(sink, FG.default_, " (");
             colourUserTruecolour(sink, event.target);
 
-            if (target.alias_.length)
+            bool putAlias;
+
+            version(TwitchSupport)
             {
-                .put!(Yes.colours)(sink, target.alias_, FG.default_, ')');
-
-                if (target.class_ == IRCUser.Class.special)
+                if (target.alias_.length)
                 {
-                    .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                }
+                    .put!(Yes.colours)(sink, target.alias_, FG.default_, ')');
 
-                import std.algorithm.comparison : equal;
-                import std.uni : asLowerCase;
+                    putAlias = true;
+                    if (target.class_ == IRCUser.Class.special)
+                    {
+                        .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
+                    }
 
-                if (!target.alias_.asLowerCase.equal(target.nickname))
-                {
-                    //sink.colourWith(FG.default_);
-                    sink.put(" <");
-                    colourUserTruecolour(sink, event.target);
-                    .put!(Yes.colours)(sink, target.nickname, FG.default_, '>');
+                    import std.algorithm.comparison : equal;
+                    import std.uni : asLowerCase;
+
+                    if (!target.alias_.asLowerCase.equal(target.nickname))
+                    {
+                        //sink.colourWith(FG.default_);
+                        sink.put(" <");
+                        colourUserTruecolour(sink, event.target);
+                        .put!(Yes.colours)(sink, target.nickname, FG.default_, '>');
+                    }
                 }
             }
-            else
+
+            if (!putAlias)
             {
                 .put!(Yes.colours)(sink, target.nickname, FG.default_, ')');
 
