@@ -27,23 +27,24 @@ if (Things.length > 0)
 {
     enum longestMemberNameImpl = ()
     {
-        import std.meta : Alias;
         import std.traits : hasUDA;
 
         string longest;
 
         foreach (Thing; Things)
         {
-            foreach (immutable name; __traits(allMembers, Thing))
-            {
-                alias member = Alias!(__traits(getMember, Thing, name));
+            Thing thing;  // need a `this`
 
-                static if (!isType!member &&
-                    isConfigurableVariable!member &&
-                    !hasUDA!(member, Hidden) &&
-                    !__traits(isDeprecated, member) &&
-                    (all || !hasUDA!(member, Unconfigurable)))
+            foreach (immutable i, immutable member; thing.tupleof)
+            {
+                static if (!__traits(isDeprecated, thing.tupleof[i]) &&
+                    !isType!(thing.tupleof[i]) &&
+                    isConfigurableVariable!(thing.tupleof[i]) &&
+                    !hasUDA!(thing.tupleof[i], Hidden) &&
+                    (all || !hasUDA!(thing.tupleof[i], Unconfigurable)))
                 {
+                    enum name = __traits(identifier, thing.tupleof[i]);
+
                     if (name.length > longest.length)
                     {
                         longest = name;
@@ -150,24 +151,23 @@ if (Things.length > 0)
 {
     enum longestMemberTypeNameImpl = ()
     {
-        import std.meta : Alias;
         import std.traits : hasUDA;
 
         string longest;
 
         foreach (Thing; Things)
         {
-            foreach (immutable i, immutable name; __traits(allMembers, Thing))
-            {
-                alias member = Alias!(__traits(getMember, Thing, name));
+            Thing thing;  // need a `this`
 
-                static if (!isType!member &&
-                    isConfigurableVariable!member &&
-                    !hasUDA!(member, Hidden) &&
-                    !__traits(isDeprecated, member) &&
-                    (all || !hasUDA!(member, Unconfigurable)))
+            foreach (immutable i, immutable member; thing.tupleof)
+            {
+                static if (!__traits(isDeprecated, thing.tupleof[i]) &&
+                    !isType!(thing.tupleof[i]) &&
+                    isConfigurableVariable!(thing.tupleof[i]) &&
+                    !hasUDA!(thing.tupleof[i], Hidden) &&
+                    (all || !hasUDA!(thing.tupleof[i], Unconfigurable)))
                 {
-                    alias T = typeof(__traits(getMember, Thing, name));
+                    alias T = typeof(thing.tupleof[i]);
 
                     import lu.traits : isTrulyString;
 
