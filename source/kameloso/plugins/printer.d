@@ -1026,7 +1026,8 @@ if (isOutputRange!(Sink, char[]))
 
                         if (sender.class_ == IRCUser.Class.special) sink.put('*');
 
-                        if (!sender.alias_.asLowerCase.equal(sender.nickname))
+                        if ((sender.alias_ != sender.nickname) &&
+                            !sender.alias_.asLowerCase.equal(sender.nickname))
                         {
                             .put(sink, " <", sender.nickname, '>');
                         }
@@ -1080,7 +1081,8 @@ if (isOutputRange!(Sink, char[]))
 
                     if (target.class_ == IRCUser.Class.special) sink.put('*');
 
-                    if (!target.alias_.asLowerCase.equal(target.nickname))
+                    if ((target.alias_ != target.nickname) &&
+                        !target.alias_.asLowerCase.equal(target.nickname))
                     {
                         .put(sink, " <", target.nickname, '>');
                     }
@@ -1419,7 +1421,8 @@ if (isOutputRange!(Sink, char[]))
                         import std.algorithm.comparison : equal;
                         import std.uni : asLowerCase;
 
-                        if (!sender.alias_.asLowerCase.equal(sender.nickname))
+                        if ((sender.alias_ != sender.nickname) &&
+                            !sender.alias_.asLowerCase.equal(sender.nickname))
                         {
                             .put!(Yes.colours)(sink, FG.default_, " <");
                             colourUserTruecolour(sink, event.sender);
@@ -1485,7 +1488,8 @@ if (isOutputRange!(Sink, char[]))
                     import std.algorithm.comparison : equal;
                     import std.uni : asLowerCase;
 
-                    if (!target.alias_.asLowerCase.equal(target.nickname))
+                    if ((target.alias_ != target.nickname) &&
+                        !target.alias_.asLowerCase.equal(target.nickname))
                     {
                         //sink.colourWith(FG.default_);
                         sink.put(" <");
