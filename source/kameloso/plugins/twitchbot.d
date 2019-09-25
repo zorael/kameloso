@@ -99,9 +99,18 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
         target = user.alias_;
     }
 
-    chan(plugin.state, event.channel,
-        "@%s, you are now allowed to post links for 60 seconds."
-        .format(target));
+    if (plugin.twitchBotSettings.permitOneLinkOnly)
+    {
+        chan(plugin.state, event.channel,
+            "@%s, you are now allowed to post a link for 60 seconds."
+            .format(target));
+    }
+    else
+    {
+        chan(plugin.state, event.channel,
+            "@%s, you are now allowed to post links for 60 seconds."
+            .format(target));
+    }
 }
 
 
@@ -1416,6 +1425,12 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
             plugin.activeChannels[event.channel].linkPermits)
         {
             allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+
+            if (allowed && plugin.twitchBotSettings.permitOneLinkOnly)
+            {
+                // Reset permit since only one link was permitted
+                plugin.activeChannels[event.channel].linkPermits.remove(event.sender.nickname);
+            }
         }
         break;
 
