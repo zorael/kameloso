@@ -52,6 +52,9 @@ struct TwitchBotSettings
 
     /// Whether or not to match ban phrases case-sensitively.
     bool phraseBansObeyCase = true;
+
+    /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
+    bool permitOneLinkOnly = true;
 }
 
 
