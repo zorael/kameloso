@@ -510,6 +510,12 @@ struct Kameloso
                     plugin.state.clientUpdated = false;
                     propagateClient(parser.client);
                 }
+
+                if (plugin.state.serverUpdated)
+                {
+                    plugin.state.serverUpdated = false;
+                    propagateServer(parser.server);
+                }
             }
             catch (ErrnoException e)
             {
@@ -565,6 +571,13 @@ struct Kameloso
                 // start changed the client; propagate
                 plugin.state.clientUpdated = false;
                 propagateClient(plugin.state.client);
+            }
+
+            if (plugin.state.serverUpdated)
+            {
+                // start changed the server; propagate
+                plugin.state.serverUpdated = false;
+                propagateServer(plugin.state.server);
             }
         }
     }

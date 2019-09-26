@@ -681,6 +681,13 @@ Next mainLoop(ref Kameloso instance)
                     instance.propagateClient(instance.parser.client);
                 }
 
+                if (instance.parser.serverUpdated)
+                {
+                    // Parsing changed the server; propagate
+                    instance.parser.serverUpdated = false;
+                    instance.propagateServer(instance.parser.server);
+                }
+
                 event.time = Clock.currTime.toUnixTime;
 
                 foreach (plugin; instance.plugins)
@@ -709,6 +716,13 @@ Next mainLoop(ref Kameloso instance)
                         // Postprocessing changed the client; propagate
                         plugin.state.clientUpdated = false;
                         instance.propagateClient(plugin.state.client);
+                    }
+
+                    if (plugin.state.serverUpdated)
+                    {
+                        // Postprocessing changed the server; propagate
+                        plugin.state.serverUpdated = false;
+                        instance.propagateServer(plugin.state.server);
                     }
                 }
 
@@ -744,6 +758,15 @@ Next mainLoop(ref Kameloso instance)
                             */
                             plugin.state.clientUpdated = false;
                             instance.propagateClient(plugin.state.client);
+                        }
+
+                        if (plugin.state.serverUpdated)
+                        {
+                            /*  Plugin `onEvent` or `WHOIS` reaction updated the
+                                server. As above.
+                            */
+                            plugin.state.serverUpdated = false;
+                            instance.propagateServer(plugin.state.server);
                         }
                     }
                     catch (UTFException e)
