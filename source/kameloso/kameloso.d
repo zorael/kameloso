@@ -652,6 +652,7 @@ Next mainLoop(ref Kameloso instance)
                 }
             }
 
+            import lu.string : NomException;
             import core.exception : UnicodeException;
             import std.utf : UTFException;
 
@@ -824,6 +825,12 @@ Next mainLoop(ref Kameloso instance)
                 logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
                 printObject(e.event);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (NomException e)
+            {
+                logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
+                    logtint, e.haystack, warningtint, e.needle);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
