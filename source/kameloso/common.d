@@ -591,6 +591,27 @@ struct Kameloso
     }
 
 
+    // propagateServer
+    /++
+     +  Takes a `dialect.defs.IRCServer` and passes it out to all plugins.
+     +
+     +  This is called when a change to the server has occurred and we want to
+     +  update all plugins to have a current copy of it.
+     +
+     +  Params:
+     +      server = `dialect.defs.IRCServer` to propagate to all plugins.
+     +/
+    void propagateServer(IRCServer server) pure nothrow @nogc
+    {
+        parser.server = server;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.server = server;
+        }
+    }
+
+
     // propagateBot
     /++
      +  Takes a `kameloso.common.IRCBot` and passes it out to all plugins.
