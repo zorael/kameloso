@@ -564,7 +564,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             // No nickname supplied...
             return;
         }
-        else if (!event.content.isValidNickname(plugin.state.client.server))
+        else if (!event.content.isValidNickname(plugin.state.server))
         {
             // Nickname contained a space
             immutable message = settings.colouredOutgoing ?
@@ -683,7 +683,7 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
     import dialect.common : stripModesign;
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
-    immutable nickname = plugin.state.client.server.stripModesign(signed);
+    immutable nickname = plugin.state.server.stripModesign(signed);
     if (nickname == plugin.state.client.nickname) return;
     plugin.seenUsers[nickname] = time;
 }

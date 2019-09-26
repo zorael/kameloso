@@ -82,7 +82,7 @@ do
 
     version(TwitchSupport)
     {
-        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (state.server.daemon == IRCServer.Daemon.twitch)
         {
             if (channelName[1..$] == state.client.nickname)
             {
@@ -273,7 +273,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = content;
 
-    if (emoteTarget.beginsWithOneOf(state.client.server.chantypes))
+    if (emoteTarget.beginsWithOneOf(state.server.chantypes))
     {
         event.channel = emoteTarget;
     }

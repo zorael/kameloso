@@ -124,7 +124,7 @@ void onPing(ChanQueriesService service)
             raw(service.state, "MODE " ~ channelName, true);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
-            foreach (immutable modechar; service.state.client.server.aModes.representation)
+            foreach (immutable modechar; service.state.server.aModes.representation)
             {
                 import std.format : format;
                 // Cannot await by event type; there are too many types,
@@ -261,7 +261,7 @@ private:
     version(TwitchSupport)
     public void onEvent(const IRCEvent event)
     {
-        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (state.server.daemon == IRCServer.Daemon.twitch)
         {
             // Daemon known to be Twitch
             return;

@@ -4,7 +4,7 @@
  +/
 module kameloso.common;
 
-import dialect.defs : IRCClient;
+import dialect.defs : IRCClient, IRCServer;
 import lu.uda;
 
 import core.time : Duration, seconds;
@@ -325,7 +325,7 @@ struct Kameloso
                 double k = throttle.k;
                 double burst = throttle.burst;
 
-                if (parser.client.server.daemon == IRCServer.Daemon.twitch)
+                if (parser.server.daemon == IRCServer.Daemon.twitch)
                 {
                     if (sendFaster)
                     {
@@ -736,7 +736,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             bot.password = "base64:" ~ encode64(bot.password);
         }
 
-        sink.serialise(parser.client, bot, parser.client.server, settings);
+        sink.serialise(parser.client, bot, parser.server, settings);
 
         foreach (plugin; instance.plugins)
         {
@@ -758,7 +758,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
  +  Example:
  +  ---
  +  Appender!string sink;
- +  sink.serialise(client, client.server, settings);
+ +  sink.serialise(client, server, settings);
  +  immutable configText = sink.data.justifiedConfigurationText;
  +  writeToDisk("kameloso.conf", configText, Yes.addBanner);
  +  ---

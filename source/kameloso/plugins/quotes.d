@@ -133,15 +133,15 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     version(TwitchSupport)
     {
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             specified = event.channel[1..$];
         }
     }
 
-    if (!specified.length) specified = plugin.state.client.server.stripModesign(signed);
+    if (!specified.length) specified = plugin.state.server.stripModesign(signed);
 
-    if (!specified.isValidNickname(plugin.state.client.server))
+    if (!specified.isValidNickname(plugin.state.server))
     {
         enum pattern = `"%s" is not a valid account or nickname.`;
 
@@ -194,7 +194,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         version(TwitchSupport)
         {
-            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 return onSuccess(event.sender);
             }
@@ -254,11 +254,11 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     string slice = event.content;  // need mutable
     immutable signed = slice.nom!(Yes.decode)(' ');
-    immutable specified = plugin.state.client.server.stripModesign(signed);
+    immutable specified = plugin.state.server.stripModesign(signed);
 
     if (!specified.length || !slice.length) return;
 
-    if (!specified.isValidNickname(plugin.state.client.server))
+    if (!specified.isValidNickname(plugin.state.server))
     {
         enum pattern = `"%s" is not a valid account or nickname.`;
 
@@ -315,7 +315,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     version(TwitchSupport)
     {
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             return onSuccess(specified);
         }

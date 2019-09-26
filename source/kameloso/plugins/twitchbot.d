@@ -1746,8 +1746,8 @@ void periodically(TwitchBotPlugin plugin)
     immutable currTime = Clock.currTime;
     immutable now = currTime.toUnixTime;
 
-    if ((plugin.state.client.server.daemon != IRCServer.Daemon.unset) &&
-        (plugin.state.client.server.daemon != IRCServer.Daemon.twitch))
+    if ((plugin.state.server.daemon != IRCServer.Daemon.unset) &&
+        (plugin.state.server.daemon != IRCServer.Daemon.twitch))
     {
         // Known to not be a Twitch server
         plugin.state.nextPeriodical = now + 315_569_260L;
@@ -1966,7 +1966,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     import std.algorithm.searching : canFind;
     import std.range : only;
 
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
     if (!event.sender.nickname.length && !event.target.nickname.length) return;
     if (event.channel.length && (event.channel !in plugin.activeChannels)) return;
 
@@ -2102,8 +2102,8 @@ private:
      +/
     public void onEvent(const IRCEvent event)
     {
-        if ((state.client.server.daemon != IRCServer.Daemon.unset) &&
-            (state.client.server.daemon != IRCServer.Daemon.twitch))
+        if ((state.server.daemon != IRCServer.Daemon.unset) &&
+            (state.server.daemon != IRCServer.Daemon.twitch))
         {
             // Daemon known and not Twitch
             return;

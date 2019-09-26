@@ -149,6 +149,8 @@ unittest
     sink.reserve(128);
 
     IRCClient client;
+    IRCServer server;
+
     with (client)
     {
         nickname = "NICKNAME";
@@ -322,6 +324,8 @@ unittest
     sink.reserve(128);
 
     IRCClient client;
+    IRCServer server;
+
     with (client)
     {
         nickname = "NICKNAME";
@@ -549,8 +553,8 @@ void generateAsserts(ref Kameloso instance) @system
 
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
             parser.typenums = typenumsOf(daemon);
-            parser.client.server.daemon = daemon;
-            parser.client.server.daemonstring = version_;
+            parser.server.daemon = daemon;
+            parser.server.daemonstring = version_;
             parser.clientUpdated = true;
         }
         catch (ConvException e)
@@ -562,10 +566,10 @@ void generateAsserts(ref Kameloso instance) @system
 
         write("Enter network (freenode): ");
         immutable network = readln().stripped;
-        parser.client.server.network = network.length ? network : "freenode";
+        parser.server.network = network.length ? network : "freenode";
 
         // Provide Freenode defaults here, now that they're no longer in IRCServer.init
-        with (parser.client.server)
+        with (parser.server)
         {
             aModes = "eIbq";
             bModes = "k";
@@ -576,17 +580,17 @@ void generateAsserts(ref Kameloso instance) @system
         }
 
         write("Enter server address (irc.freenode.net): ");
-        parser.client.server.address = readln().stripped;
-        if (!parser.client.server.address.length) parser.client.server.address = "irc.freenode.net";
+        parser.server.address = readln().stripped;
+        if (!parser.server.address.length) parser.server.address = "irc.freenode.net";
 
         writeln();
-        printObjects!(Yes.printAll)(parser.client, parser.client.server);
+        printObjects!(Yes.printAll)(parser.client, parser.server);
         writeln();
 
         parser.clientUpdated = false;
         stdout.lockingTextWriter.formatClientAssignment(parser.client);
         writeln();
-        writeln("parser.typenums = typenumsOf(parser.client.server.daemon);");
+        writeln("parser.typenums = typenumsOf(parser.server.daemon);");
 
         writeln();
         writeln("// Paste raw event strings and hit Enter to generate an assert block. " ~

@@ -241,7 +241,7 @@ void tryAuth(ConnectService service)
             decode64(bot.password[7..$]) : bot.password;
 
         // Specialcase networks
-        switch (client.server.network)
+        switch (server.network)
         {
         case "DALnet":
             serviceNick = "NickServ@services.dal.net";
@@ -283,7 +283,7 @@ void tryAuth(ConnectService service)
         service.authentication = Progress.started;
 
         with (IRCServer.Daemon)
-        switch (client.server.daemon)
+        switch (server.daemon)
         {
         case rizon:
         case unreal:
@@ -366,7 +366,7 @@ void onEndOfMotd(ConnectService service)
 {
     if (service.state.bot.password.length &&
         (service.authentication == Progress.notStarted) &&
-        (service.state.client.server.daemon != IRCServer.Daemon.twitch))
+        (service.state.server.daemon != IRCServer.Daemon.twitch))
     {
         service.tryAuth();
     }
@@ -383,8 +383,8 @@ void onEndOfMotd(ConnectService service)
 
             immutable processed = line
                 .replace("$nickname", service.state.client.nickname)
-                .replace("$origserver", service.state.client.server.address)
-                .replace("$server", service.state.client.server.resolvedAddress);
+                .replace("$origserver", service.state.server.address)
+                .replace("$server", service.state.server.resolvedAddress);
 
             raw(service.state, processed);
         }
@@ -394,7 +394,7 @@ void onEndOfMotd(ConnectService service)
 
     if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
-        (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
+        (service.state.server.daemon == IRCServer.Daemon.twitch)))
     {
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
@@ -422,7 +422,7 @@ void onEndOfMotdTwitch(ConnectService service)
     import kameloso.common : logger, settings;
     import lu.string : beginsWith;
 
-    if (service.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+    if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
     settings.colouredOutgoing = false;
 
@@ -489,7 +489,7 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
 {
     version(TwitchSupport)
     {
-        if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+        if (service.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
     import lu.string : beginsWith;
@@ -909,7 +909,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
         // No Twitch support built in
         import std.algorithm.searching : endsWith;
 
-        if (service.state.client.server.address.endsWith(".twitch.tv"))
+        if (service.state.server.address.endsWith(".twitch.tv"))
         {
             logger.warning("This bot was not built with Twitch support enabled. " ~
                 "Expect errors and general uselessness.");
@@ -929,7 +929,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(ConnectService service)
 {
-    if (service.state.client.server.daemon == IRCServer.Daemon.rusnet)
+    if (service.state.server.daemon == IRCServer.Daemon.rusnet)
     {
         raw(service.state, "CODEPAGE UTF-8", true);
     }
@@ -970,9 +970,9 @@ void register(ConnectService service)
     {
         version(TwitchSupport)
         {
-            if (!bot.pass.length && client.server.address.endsWith(".twitch.tv"))
+            if (!bot.pass.length && server.address.endsWith(".twitch.tv"))
             {
-                // client.server.daemon is always Daemon.unset at this point
+                // server.daemon is always Daemon.unset at this point
                 logger.error("You *need* a pass to join this server.");
                 quit(service.state, "Authentication failure (missing pass)");
                 return;
@@ -1026,7 +1026,7 @@ void negotiateNick(ConnectService service)
 
     service.nickNegotiation = Progress.started;
 
-    if (!service.state.client.server.address.endsWith(".twitch.tv"))
+    if (!service.state.server.address.endsWith(".twitch.tv"))
     {
         // Twitch doesn't require USER, only PASS and NICK
         /+

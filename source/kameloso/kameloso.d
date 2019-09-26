@@ -243,7 +243,7 @@ void messageFiber(ref Kameloso instance)
             case CHAN:
                 version(TwitchSupport)
                 {
-                    fast = (instance.parser.client.server.daemon == IRCServer.Daemon.twitch) &&
+                    fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
                         (event.aux.length > 0);
                 }
 
@@ -254,7 +254,7 @@ void messageFiber(ref Kameloso instance)
             case QUERY:
                 version(TwitchSupport)
                 {
-                    if (instance.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
                         if (target.nickname == instance.parser.client.nickname)
                         {
@@ -275,7 +275,7 @@ void messageFiber(ref Kameloso instance)
 
                 version(TwitchSupport)
                 {
-                    if (instance.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                    if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
                         line = "PRIVMSG %s :/me %s".format(emoteTarget, content);
                     }
@@ -376,7 +376,7 @@ void messageFiber(ref Kameloso instance)
             {
                 version(TwitchSupport)
                 {
-                    if ((instance.parser.client.server.daemon == IRCServer.Daemon.twitch) && fast)
+                    if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
                         immutable quiet = settings.hideOutgoing ||
@@ -1426,8 +1426,8 @@ Next tryConnect(ref Kameloso instance)
                 "Connecting to %s%s%s:%1$s%4$s%3$s ...";
 
             immutable address = (!resolvedHost.length ||
-                (parser.client.server.address == resolvedHost) ||
-                (sharedDomains(parser.client.server.address, resolvedHost) < 2)) ?
+                (parser.server.address == resolvedHost) ||
+                (sharedDomains(parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
             logger.logf(pattern, infotint, address, logtint, attempt.ip.toPortString);
@@ -1490,7 +1490,7 @@ Next tryConnect(ref Kameloso instance)
 
 // tryResolve
 /++
- +  Tries to resolve the address in `instance.parser.client.server` to IPs, by
+ +  Tries to resolve the address in `instance.parser.server` to IPs, by
  +  leveraging `lu.net.resolveFiber`, reacting on the
  +  `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
  +
@@ -1527,8 +1527,8 @@ Next tryResolve(ref Kameloso instance)
 
     alias State = ResolveAttempt.State;
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(instance.conn, instance.parser.client.server.address,
-        instance.parser.client.server.port, settings.ipv6, resolveAttempts, *instance.abort));
+        resolveFiber(instance.conn, instance.parser.server.address,
+        instance.parser.server.port, settings.ipv6, resolveAttempts, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -1548,7 +1548,7 @@ Next tryResolve(ref Kameloso instance)
         case success:
             import lu.string : plurality;
             logger.infof("%s%s resolved into %s%s%2$s %5$s.",
-                parser.client.server.address, logtint, infotint, conn.ips.length,
+                parser.server.address, logtint, infotint, conn.ips.length,
                 conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
 
@@ -1773,7 +1773,7 @@ Next verifySettings(ref Kameloso instance)
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
-        immutable addressIsResolvable = instance.parser.client.server.address.contains('.');
+        immutable addressIsResolvable = instance.parser.server.address.contains('.');
     }
     else
     {
@@ -1797,7 +1797,7 @@ Next verifySettings(ref Kameloso instance)
         }
 
         logger.errorf("Invalid address! [%s%s%s]", logtint,
-            instance.parser.client.server.address, errortint);
+            instance.parser.server.address, errortint);
         return Next.returnFailure;
     }
 
@@ -1821,7 +1821,7 @@ void resolveResourceDirectory(ref Kameloso instance)
 
     // Resolve and create the resource directory
     settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
-        "server", instance.parser.client.server.address);
+        "server", instance.parser.server.address);
     settings.configDirectory = settings.configFile.dirName;
 
     if (!settings.resourceDirectory.exists)
@@ -2167,7 +2167,7 @@ int initBot(string[] args)
     import kameloso.printing : printObjects;
 
     // Print the current settings to show what's going on.
-    printObjects(instance.parser.client, instance.bot, instance.parser.client.server);
+    printObjects(instance.parser.client, instance.bot, instance.parser.server);
 
     if (!instance.bot.homes.length && !instance.bot.admins.length)
     {

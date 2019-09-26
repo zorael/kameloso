@@ -285,7 +285,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     immutable mode = line.nom!(Yes.decode)(" ");
     immutable specified = line;
 
-    if (!channelName.isValidChannel(plugin.state.client.server))
+    if (!channelName.isValidChannel(plugin.state.server))
     {
         immutable message = settings.colouredOutgoing ?
             "Invalid channel: " ~ channelName.ircColour(IRCColour.red).ircBold :
@@ -294,7 +294,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
-    else if (!specified.isValidNickname(plugin.state.client.server))
+    else if (!specified.isValidNickname(plugin.state.server))
     {
         immutable message = settings.colouredOutgoing ?
             "Invalid account or nickname: " ~ specified.ircColour(IRCColour.red).ircBold :
@@ -584,7 +584,7 @@ private:
     version(TwitchSupport)
     public void onEvent(const IRCEvent event)
     {
-        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (state.server.daemon == IRCServer.Daemon.twitch)
         {
             // Daemon is known to be Twitch
             return;

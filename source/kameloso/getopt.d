@@ -16,7 +16,7 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, IRCBot, Kameloso;
-import dialect.defs : IRCClient;
+import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.typecons : No, Yes;
 
@@ -406,10 +406,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             config.bundling,
             "n|nickname",   "Nickname",
                             &parser.client.nickname,
-            "s|server",     "Server address [%s]".format(parser.client.server.address),
-                            &parser.client.server.address,
-            "P|port",       "Server port [%d]".format(parser.client.server.port),
-                            &parser.client.server.port,
+            "s|server",     "Server address [%s]".format(parser.server.address),
+                            &parser.server.address,
+            "P|port",       "Server port [%d]".format(parser.server.port),
+                            &parser.server.port,
             "6|ipv6",       "Use IPv6 when available [%s]".format(settings.ipv6),
                             &settings.ipv6,
             "A|account",    "Services account name",
@@ -565,7 +565,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             printVersionInfo(pre, post);
             writeln();
 
-            printObjects!(No.printAll)(parser.client, bot, parser.client.server, settings);
+            printObjects!(No.printAll)(parser.client, bot, parser.server, settings);
 
             instance.initPlugins(customSettings);
 

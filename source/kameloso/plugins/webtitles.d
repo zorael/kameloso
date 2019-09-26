@@ -774,7 +774,7 @@ import kameloso.thread : Sendable;
  +  looked up and the titles of which reported.
  +
  +  Only relevant on Twitch servers, so gate it behind version TwitchSupport.
- +  No point in checking `plugin.state.client.server.daemon == IRCServer.Daemon.twitch`
+ +  No point in checking `plugin.state.server.daemon == IRCServer.Daemon.twitch`
  +  as these messages will never be sent on other servers.
  +
  +  Params:
@@ -838,7 +838,7 @@ private:
     version(TwitchSupport)
     public void onEvent(const IRCEvent event)
     {
-        if (state.client.server.daemon == IRCServer.Daemon.twitch) return;
+        if (state.server.daemon == IRCServer.Daemon.twitch) return;
         return onEventImpl(event);
     }
 }

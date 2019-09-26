@@ -161,7 +161,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
     foreach (immutable signed; event.content.splitter)
     {
-        immutable nickname = plugin.state.client.server.stripModesign(signed);
+        immutable nickname = plugin.state.server.stripModesign(signed);
         if (nickname == plugin.state.client.nickname) continue;
 
         IRCEvent fakeEvent;

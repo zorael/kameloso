@@ -243,7 +243,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case PART:
         version(TwitchSupport)
         {
-            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
                 goto case ROOMSTATE;
@@ -650,7 +650,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         case JOIN:
         case PART:
         case USERSTATE:
-            if (state.client.server.daemon == IRCServer.Daemon.twitch)
+            if (state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // These Twitch events are just noise.
                 return;
@@ -675,7 +675,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         else if (printerSettings.logServer && !sender.nickname.length && sender.address.length)
         {
             // Server
-            writeEventToFile(state.client.server.address, "server.log", No.extendPath);
+            writeEventToFile(state.server.address, "server.log", No.extendPath);
         }
         else
         {
@@ -860,7 +860,7 @@ void commitLog(ref LogLineBuffer buffer)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
-    if (plugin.printedISUPPORT || !plugin.state.client.server.network.length)
+    if (plugin.printedISUPPORT || !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
         return;
@@ -868,7 +868,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    with (plugin.state.client.server)
+    with (plugin.state.server)
     {
         import std.string : capitalize;
         import std.uni : isLower;
@@ -1542,7 +1542,7 @@ if (isOutputRange!(Sink, char[]))
                     sink.put(`: "`);
                 }
 
-                if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch)
+                if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
                 {
                     // Twitch chat has no colours or effects, only emotes
                     content = mapEffects(content, fgBase);
@@ -1550,7 +1550,7 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+                    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                     {
                         highlightEmotes(event, plugin.printerSettings.colourfulEmotes);
                     }
@@ -1579,7 +1579,7 @@ if (isOutputRange!(Sink, char[]))
                     version(TwitchSupport)
                     {
                         // On Twitch, also highlight the display name alias
-                        if ((plugin.state.client.server.daemon == IRCServer.Daemon.twitch) &&
+                        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                             plugin.state.client.alias_.length &&  // Should always be true but check
                             (plugin.state.client.nickname != plugin.state.client.alias_) &&
                             content.containsNickname(plugin.state.client.alias_))

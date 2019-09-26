@@ -313,7 +313,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     immutable channelToAdd = event.content.stripped.toLower;
 
-    if (!channelToAdd.isValidChannel(plugin.state.client.server))
+    if (!channelToAdd.isValidChannel(plugin.state.server))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
         return;
@@ -583,7 +583,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
         immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account);
         return report(result, user.account);
     }
-    else if (!specified.isValidNickname(plugin.state.client.server))
+    else if (!specified.isValidNickname(plugin.state.server))
     {
         if (event.sender.nickname.length)
         {
@@ -629,7 +629,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
 
     version(TwitchSupport)
     {
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             return onSuccess(specified);
         }
@@ -1142,7 +1142,7 @@ void onCommandAuth(AdminPlugin plugin)
 {
     version(TwitchSupport)
     {
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
     import kameloso.thread : ThreadMessage, busMessage;
@@ -1172,7 +1172,7 @@ void onCommandStatus(AdminPlugin plugin)
     import std.stdio : stdout, writeln;
 
     logger.log("Current state:");
-    printObjects!(Yes.printAll)(plugin.state.client, plugin.state.client.server);
+    printObjects!(Yes.printAll)(plugin.state.client, plugin.state.server);
     writeln();
 
     logger.log("Channels:");

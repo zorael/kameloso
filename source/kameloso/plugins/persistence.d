@@ -56,7 +56,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         version(TwitchSupport)
         {
-            if (service.state.client.server.daemon == IRCServer.Daemon.twitch)
+            if (service.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 auto stored = user.nickname in service.state.users;
 

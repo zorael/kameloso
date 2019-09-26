@@ -1148,7 +1148,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         version(TwitchSupport)
         {
-            if (privateState.client.server.daemon == IRCServer.Daemon.twitch)
+            if (privateState.server.daemon == IRCServer.Daemon.twitch)
             {
                 if (privilegeLevel == PrivilegeLevel.anyone)
                 {
@@ -2891,7 +2891,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             if (!slice.contains('!') || !slice.contains('@'))
             {
                 // Freenode-like, only nicknames with possible modesigns
-                immutable nickname = plugin.state.client.server.stripModesign(slice);
+                immutable nickname = plugin.state.server.stripModesign(slice);
                 if (nickname == plugin.state.client.nickname) continue;
                 newUser.nickname = nickname;
             }
@@ -2899,7 +2899,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             {
                 // SpotChat-like, names are in full nick!ident@address form
                 immutable signed = slice.nom('!');
-                immutable nickname = plugin.state.client.server.stripModesign(signed);
+                immutable nickname = plugin.state.server.stripModesign(signed);
                 if (nickname == plugin.state.client.nickname) continue;
 
                 immutable ident = slice.nom('@');
@@ -3215,7 +3215,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         version(TwitchSupport)
         {
-            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Twitch modes are unpredictable. Ignore and reply on badges instead.
                 return;
@@ -3225,7 +3225,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         if (auto channel = event.channel in plugin.state.channels)
         {
             import dialect.common : setMode;
-            (*channel).setMode(event.aux, event.content, plugin.state.client.server);
+            (*channel).setMode(event.aux, event.content, plugin.state.server);
         }
     }
 
@@ -3257,13 +3257,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             // Server-sent string, can assume ASCII (@,%,+...) and go char by char
             foreach (immutable modesign; event.aux.representation)
             {
-                if (const modechar = modesign in plugin.state.client.server.prefixchars)
+                if (const modechar = modesign in plugin.state.server.prefixchars)
                 {
                     import dialect.common : setMode;
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
-                    (*channel).setMode(modestring, event.target.nickname, plugin.state.client.server);
+                    (*channel).setMode(modestring, event.target.nickname, plugin.state.server);
                 }
             }
         }
@@ -3325,7 +3325,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             import dialect.common : stripModesign;
 
             string modesigns;
-            nickname = plugin.state.client.server.stripModesign(nickname, modesigns);
+            nickname = plugin.state.server.stripModesign(nickname, modesigns);
 
             // Register operators, half-ops, voiced etc
             // Can be more than one if multi-prefix capability is enabled
@@ -3333,13 +3333,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             import std.string : representation;
             foreach (immutable modesign; modesigns.representation)
             {
-                if (const modechar = modesign in plugin.state.client.server.prefixchars)
+                if (const modechar = modesign in plugin.state.server.prefixchars)
                 {
                     import dialect.common : setMode;
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
-                    (*channel).setMode(modestring, nickname, plugin.state.client.server);
+                    (*channel).setMode(modestring, nickname, plugin.state.server);
                 }
                 else
                 {
@@ -3394,14 +3394,14 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             immutable ubyte[IRCEvent.Type.RPL_QUIETLIST+1] modecharsByType =
             [
                 RPL_BANLIST : 'b',
-                RPL_EXCEPTLIST : plugin.state.client.server.exceptsChar,
-                RPL_INVITELIST : plugin.state.client.server.invexChar,
+                RPL_EXCEPTLIST : plugin.state.server.exceptsChar,
+                RPL_INVITELIST : plugin.state.server.invexChar,
                 RPL_REOPLIST : 'R',
                 RPL_QUIETLIST : 'q',
             ];
 
             (*channel).setMode((cast(char)modecharsByType[event.type]).to!string,
-                event.content, plugin.state.client.server);
+                event.content, plugin.state.server);
         }
     }
 
@@ -3421,7 +3421,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         if (auto channel = event.channel in plugin.state.channels)
         {
             // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-            (*channel).setMode(event.aux, event.content, plugin.state.client.server);
+            (*channel).setMode(event.aux, event.content, plugin.state.server);
         }
     }
 }
@@ -3491,7 +3491,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const IRCEvent event)
     {
-        if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+        if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
         auto channel = event.channel in plugin.state.channels;
 
@@ -3524,7 +3524,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const IRCEvent event)
     {
-        if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+        if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
         if (!event.target.nickname) return;
 
@@ -3663,7 +3663,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 
     version(TwitchSupport)
     {
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             // There's no need to meld Twitch users, they never change.
 
@@ -3715,7 +3715,7 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
 {
     version(TwitchSupport)
     {
-        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             version(TwitchWarnings)
             {
@@ -3981,7 +3981,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         import dialect.common : toLowerCase;
 
-        immutable m = plugin.state.client.server.caseMapping;
+        immutable m = plugin.state.server.caseMapping;
 
         if (toLowerCase(mixin(carriedVariableName), m) !=
             whoisEvent.target.nickname.toLowerCase(m))
@@ -4072,7 +4072,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         version(TwitchSupport)
         {
-            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 version(TwitchWarnings)
                 {

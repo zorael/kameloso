@@ -303,7 +303,7 @@ void onMotd(PipelinePlugin plugin)
 
         // Save the filename *once* so it persists across nick changes.
         // If !fifoInWorkingDir then in /tmp or $TMPDIR
-        fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
+        fifoFilename = state.client.nickname ~ "@" ~ state.server.address;
 
         if (!pipelineSettings.fifoInWorkingDir)
         {
