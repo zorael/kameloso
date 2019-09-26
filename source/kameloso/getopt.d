@@ -304,7 +304,7 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCBot bot,
     instance.initPlugins(customSettings);
 
     // Fill out some empty fields
-    completeClient(client);
+    applyDefaults(client, server);
 
     import kameloso.constants : KamelosoDefaultStrings;
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;

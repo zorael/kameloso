@@ -2135,8 +2135,8 @@ int initBot(string[] args)
     }
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
-    import kameloso.common : completeClient;
-    completeClient(instance.parser.client);
+    import kameloso.common : applyDefaults;
+    applyDefaults(instance.parser.client, instance.parser.server);
 
     string pre, post, infotint, logtint, warningtint, errortint;
 
