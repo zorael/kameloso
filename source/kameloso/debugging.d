@@ -114,24 +114,27 @@ version(AssertsGeneration):
  +  Example:
  +  ---
  +  IRCClient client;
+ +  IRCServer server;
  +  Appender!string sink;
  +
- +  sink.formatClientAssignment(client);
+ +  sink.formatClientAssignment(client, server);
  +  ---
  +
  +  Params:
  +      sink = Output buffer to write to.
  +      client = `dialect.defs.IRCClient` to simulate the assignment of.
+ +      server = `dialect.defs.IRCServer` to simulate the assignment of.
  +/
-void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
+void formatClientAssignment(Sink)(auto ref Sink sink, const IRCClient client, const IRCServer server)
 if (isOutputRange!(Sink, char[]))
 {
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
 
     sink.put("IRCParser parser;\n\n");
-    sink.put("with (parser.client)\n");
+    sink.put("with (parser)\n");
     sink.put("{\n");
-    sink.formatDelta(IRCClient.init, client, 1);
+    sink.formatDelta(IRCClient.init, client, 1, "client");
+    sink.formatDelta(IRCServer.init, server, 1, "server");
     sink.put('}');
 
     static if (!__traits(hasMember, Sink, "data"))
