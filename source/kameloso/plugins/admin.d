@@ -1030,7 +1030,8 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
     {
         import kameloso.debugging : formatClientAssignment;
         // Print the bot assignment but only if we're toggling it on
-        formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+        formatClientAssignment(stdout.lockingTextWriter,
+            plugin.state.client, plugin.state.server);
     }
 
     if (settings.flush) stdout.flush();
@@ -1314,7 +1315,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
                     import std.stdio : stdout;
 
                     // Print the bot assignment but only if we're toggling it on
-                    formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+                    formatClientAssignment(stdout.lockingTextWriter,
+                        plugin.state.client, plugin.state.server);
                 }
                 return;
         }
@@ -1381,7 +1383,7 @@ void start(AdminPlugin plugin)
     import std.stdio : stdout, writeln;
 
     writeln();
-    formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+    formatClientAssignment(stdout.lockingTextWriter, plugin.state.client, plugin.state.server);
     writeln();
 
     plugin.previousClient = plugin.state.client;

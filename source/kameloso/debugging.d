@@ -591,7 +591,7 @@ void generateAsserts(ref Kameloso instance) @system
         writeln();
 
         parser.clientUpdated = false;
-        stdout.lockingTextWriter.formatClientAssignment(parser.client);
+        stdout.lockingTextWriter.formatClientAssignment(parser.client, parser.server);
         writeln();
         writeln("parser.typenums = typenumsOf(parser.server.daemon);");
 
