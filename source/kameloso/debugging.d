@@ -405,7 +405,7 @@ assert((c == '#'), c.to!string);
 `, '\n' ~ sink.data);
 
     sink = typeof(sink).init;
-    auto parser = IRCParser(client);
+    auto parser = IRCParser(client, server);
 
     auto event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
     event.sender.class_ = IRCUser.Class.special;
@@ -481,7 +481,8 @@ unittest
     sink.reserve(1024);
 
     IRCClient client;
-    auto parser = IRCParser(client);
+    IRCServer server;
+    auto parser = IRCParser(client, server);
 
     immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
 
