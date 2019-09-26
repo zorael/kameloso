@@ -370,7 +370,7 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSettings) @system
 {
-    import kameloso.common : completeClient, printVersionInfo, settings;
+    import kameloso.common : applyDefaults, printVersionInfo, settings;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
@@ -481,8 +481,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             4. Reinitialise the logger with new settings
          +/
 
-        meldSettingsFromFile(parser.client, instance.bot, settings);
-        completeClient(parser.client);
+        meldSettingsFromFile(parser.client, parser.server, instance.bot, settings);
+        applyDefaults(parser.client, parser.server);
         adjustGetopt(argsBackup,
             "--bright", &settings.brightTerminal,
             "--brightTerminal", &settings.brightTerminal,
@@ -538,7 +538,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
-            return writeConfig(instance, parser.client, bot, customSettings);
+            return writeConfig(instance, parser.client, parser.server, bot, customSettings);
         }
 
         if (shouldShowSettings)
