@@ -601,7 +601,8 @@ void generateAsserts(ref Kameloso instance) @system
         writeln();
 
         string input;
-        IRCClient old = parser.client;
+        IRCClient oldClient = parser.client;
+        IRCServer oldServer = parser.server;
 
         while ((input = readln()) !is null)
         {
@@ -643,16 +644,19 @@ void generateAsserts(ref Kameloso instance) @system
                 stdout.lockingTextWriter.formatEventAssertBlock(event);
                 writeln();
 
-                if (parser.clientUpdated)
+                if (parser.clientUpdated || parser.serverUpdated)
                 {
                     parser.clientUpdated = false;
+                    parser.serverUpdated = false;
 
-                    writeln("with (parser.client)");
+                    writeln("with (parser)");
                     writeln("{");
-                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(old, parser.client, 1);
+                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(oldClient, parser.client, 1, "client");
+                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(oldServer, parser.server, 1, "server");
                     writeln("}\n");
 
-                    old = parser.client;
+                    oldClient = parser.client;
+                    oldServer = parser.server;
                 }
             }
             catch (IRCParseException e)
