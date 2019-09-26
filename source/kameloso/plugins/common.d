@@ -413,6 +413,9 @@ struct IRCPluginState
 
     /// Whether or not `client` was altered. Must be reset manually.
     bool clientUpdated;
+
+    /// Whether or not `server` was altered. Must be reset manually.
+    bool serverUpdated;
 }
 
 
