@@ -2009,7 +2009,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 
         import dialect.parsing : IRCParser;
 
-        instance.parser = IRCParser(backupClient);
+        // Reinit with its own server.
+        instance.parser = IRCParser(backupClient, instance.parser.server);
 
         try
         {
