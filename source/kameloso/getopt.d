@@ -34,23 +34,27 @@ private:
  +  Example:
  +  ---
  +  IRCClient client;
+ +  IRCServer server;
  +  IRCBot bot;
  +  CoreSettings settings;
  +
- +  meldSettingsFromFile(client, bot, settings);
+ +  meldSettingsFromFile(client, server, bot, settings);
  +  ---
  +
  +  Params:
  +      client = Reference `dialect.defs.IRCClient` to apply changes to.
+ +      server = Reference `dialect.defs.IRCServer` to apply changes to.
  +      bot = Reference `kameloso.common.IRCBot` to apply changes to.
  +      settings = Reference `kameloso.common.CoreSettings` to apply changes to.
  +/
-void meldSettingsFromFile(ref IRCClient client, ref IRCBot bot, ref CoreSettings settings)
+void meldSettingsFromFile(ref IRCClient client, ref IRCServer server,
+    ref IRCBot bot, ref CoreSettings settings)
 {
     import lu.meld : MeldingStrategy, meldInto;
     import lu.serialisation : readConfigInto;
 
     IRCClient tempClient;
+    IRCServer tempServer;
     IRCBot tempBot;
     CoreSettings tempSettings;
 
@@ -59,13 +63,15 @@ void meldSettingsFromFile(ref IRCClient client, ref IRCBot bot, ref CoreSettings
     // 2. Read settings into temporary client
     // 3. Meld arguments *into* temporary client, overwriting
     // 4. Inherit temporary client into client
-    settings.configFile.readConfigInto(tempClient, tempBot, tempClient.server, tempSettings);
+    settings.configFile.readConfigInto(tempClient, tempBot, tempServer, tempSettings);
 
     client.meldInto!(MeldingStrategy.aggressive)(tempClient);
+    server.meldInto!(MeldingStrategy.aggressive)(tempServer);
     bot.meldInto!(MeldingStrategy.aggressive)(tempBot);
     settings.meldInto!(MeldingStrategy.aggressive)(tempSettings);
 
     client = tempClient;
+    server = tempServer;
     bot = tempBot;
     settings = tempSettings;
 }
