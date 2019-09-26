@@ -364,6 +364,12 @@ struct IRCPluginState
     IRCClient client;
 
     /++
+     +  The current `dialect.defs.IRCServer`, containing information pertaining
+     +  to the bot in the context of an IRC server.
+     +/
+    IRCServer server;
+
+    /++
      +  The current `kameloso.common.IRCBot`, containing information pertaining
      +  to the bot in the context of an IRC bot.
      +/
