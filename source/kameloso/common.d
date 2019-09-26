@@ -1000,6 +1000,7 @@ unittest
  +
  +  Params:
  +      client = Reference to the `dialect.defs.IRCClient` to complete.
+ +      server = Reference to the `dialect.defs.IRCServer` to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server)
 out (; (client.nickname.length), "Empty client nickname")
