@@ -164,15 +164,15 @@ unittest
         server.aModes = "eIbq";
     }
 
-    sink.formatClientAssignment(client);
+    sink.formatClientAssignment(client, server);
 
     assert(sink.data ==
 `IRCParser parser;
 
-with (parser.client)
+with (parser)
 {
-    nickname = "NICKNAME";
-    user = "UUUUUSER";
+    client.nickname = "NICKNAME";
+    client.user = "UUUUUSER";
     server.address = "something.freenode.net";
     server.port = 6667;
     server.daemon = IRCServer.Daemon.unreal;
@@ -339,29 +339,33 @@ unittest
         server.aModes = "eIbq";
     }
 
-    sink.formatDelta(IRCClient.init, client);
+    sink.formatDelta(IRCClient.init, client, 0, "client");
+    sink.formatDelta(IRCServer.init, server, 0, "server");
 
     assert(sink.data ==
-`nickname = "NICKNAME";
-user = "UUUUUSER";
+`client.nickname = "NICKNAME";
+client.user = "UUUUUSER";
 server.address = "something.freenode.net";
 server.port = 6667;
 server.daemon = IRCServer.Daemon.unreal;
 server.aModes = "eIbq";
 `, '\n' ~ sink.data);
 
+
     sink = typeof(sink).init;
 
-    sink.formatDelta!(Yes.asserts)(IRCClient.init, client);
+    sink.formatDelta!(Yes.asserts)(IRCClient.init, client, 0, "client");
+    sink.formatDelta!(Yes.asserts)(IRCServer.init, server, 0, "server");
 
 assert(sink.data ==
-`assert((nickname == "NICKNAME"), nickname);
-assert((user == "UUUUUSER"), user);
+`assert((client.nickname == "NICKNAME"), client.nickname);
+assert((client.user == "UUUUUSER"), client.user);
 assert((server.address == "something.freenode.net"), server.address);
 assert((server.port == 6667), server.port.to!string);
 assert((server.daemon == IRCServer.Daemon.unreal), Enum!(IRCServer.Daemon).toString(server.daemon));
 assert((server.aModes == "eIbq"), server.aModes);
 `, '\n' ~ sink.data);
+
 
     struct Foo
     {
