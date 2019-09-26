@@ -268,6 +268,7 @@ void printHelp(GetoptResult results) @system
  +  Params:
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      client = Reference to the current `dialect.defs.IRCClient`.
+ +      server = Reference to the current `dialect.defs.IRCServer`.
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
@@ -275,10 +276,10 @@ void printHelp(GetoptResult results) @system
  +  Returns:
  +      `kameloso.common.Next.returnSuccess` so the caller knows to return and exit.
  +/
-Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCBot bot,
-    ref string[] customSettings) @system
+Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
+    ref IRCBot bot, ref string[] customSettings) @system
 {
-    import kameloso.common : logger, completeClient, printVersionInfo,
+    import kameloso.common : logger, applyDefaults, printVersionInfo,
         settings, writeConfigurationFile;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
@@ -318,9 +319,9 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCBot bot,
     instance.writeConfigurationFile(settings.configFile);
 
     // Reload saved file
-    meldSettingsFromFile(client, bot, settings);
+    meldSettingsFromFile(client, server, bot, settings);
 
-    printObjects(client, instance.bot, client.server, settings);
+    printObjects(client, instance.bot, server, settings);
 
     logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
 
