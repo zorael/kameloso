@@ -1019,15 +1019,15 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (sender.alias_.length)
+                    if (sender.displayName.length)
                     {
-                        sink.put(sender.alias_);
+                        sink.put(sender.displayName);
                         putAlias = true;
 
                         if (sender.class_ == IRCUser.Class.special) sink.put('*');
 
-                        if ((sender.alias_ != sender.nickname) &&
-                            !sender.alias_.asLowerCase.equal(sender.nickname))
+                        if ((sender.displayName != sender.nickname) &&
+                            !sender.displayName.asLowerCase.equal(sender.nickname))
                         {
                             .put(sink, " <", sender.nickname, '>');
                         }
@@ -1074,15 +1074,15 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if (target.alias_.length)
+                if (target.displayName.length)
                 {
-                    .put(sink, target.alias_, ')');
+                    .put(sink, target.displayName, ')');
                     putAlias = true;
 
                     if (target.class_ == IRCUser.Class.special) sink.put('*');
 
-                    if ((target.alias_ != target.nickname) &&
-                        !target.alias_.asLowerCase.equal(target.nickname))
+                    if ((target.displayName != target.nickname) &&
+                        !target.displayName.asLowerCase.equal(target.nickname))
                     {
                         .put(sink, " <", target.nickname, '>');
                     }
@@ -1225,7 +1225,7 @@ unittest
     {
         nickname = "nickname";
         address = "127.0.0.1";
-        version(TwitchSupport) alias_ = "Nickname";
+        version(TwitchSupport) displayName = "Nickname";
         //account = "n1ckn4m3";
         class_ = IRCUser.Class.whitelist;
     }
@@ -1408,9 +1408,9 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (sender.alias_.length)
+                    if (sender.displayName.length)
                     {
-                        sink.put(sender.alias_);
+                        sink.put(sender.displayName);
                         putAlias = true;
 
                         if (sender.class_ == IRCUser.Class.special)
@@ -1421,8 +1421,8 @@ if (isOutputRange!(Sink, char[]))
                         import std.algorithm.comparison : equal;
                         import std.uni : asLowerCase;
 
-                        if ((sender.alias_ != sender.nickname) &&
-                            !sender.alias_.asLowerCase.equal(sender.nickname))
+                        if ((sender.displayName != sender.nickname) &&
+                            !sender.displayName.asLowerCase.equal(sender.nickname))
                         {
                             .put!(Yes.colours)(sink, FG.default_, " <");
                             colourUserTruecolour(sink, event.sender);
@@ -1475,9 +1475,9 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if (target.alias_.length)
+                if (target.displayName.length)
                 {
-                    .put!(Yes.colours)(sink, target.alias_, FG.default_, ')');
+                    .put!(Yes.colours)(sink, target.displayName, FG.default_, ')');
 
                     putAlias = true;
                     if (target.class_ == IRCUser.Class.special)
@@ -1488,8 +1488,8 @@ if (isOutputRange!(Sink, char[]))
                     import std.algorithm.comparison : equal;
                     import std.uni : asLowerCase;
 
-                    if ((target.alias_ != target.nickname) &&
-                        !target.alias_.asLowerCase.equal(target.nickname))
+                    if ((target.displayName != target.nickname) &&
+                        !target.displayName.asLowerCase.equal(target.nickname))
                     {
                         //sink.colourWith(FG.default_);
                         sink.put(" <");
@@ -1580,11 +1580,11 @@ if (isOutputRange!(Sink, char[]))
                     {
                         // On Twitch, also highlight the display name alias
                         if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                            plugin.state.client.alias_.length &&  // Should always be true but check
-                            (plugin.state.client.nickname != plugin.state.client.alias_) &&
-                            content.containsNickname(plugin.state.client.alias_))
+                            plugin.state.client.displayName.length &&  // Should always be true but check
+                            (plugin.state.client.nickname != plugin.state.client.displayName) &&
+                            content.containsNickname(plugin.state.client.displayName))
                         {
-                            inverted = inverted.invert(plugin.state.client.alias_);
+                            inverted = inverted.invert(plugin.state.client.displayName);
                             match = true;
                         }
                     }

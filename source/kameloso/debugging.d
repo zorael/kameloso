@@ -31,7 +31,7 @@ a\\stotal\\sof\\s4\\sin\\sthe\\schannel!;tmi-sent-ts=1569013433362;user-id=22457
     {
         assert((type == IRCEvent.Type.TWITCH_BULKGIFT), Enum!(IRCEvent.Type).toString(type));
         assert((sender.nickname == "tayk47_mom"), sender.nickname);
-        assert((sender.alias_ == "tayk47_mom"), sender.alias_);
+        assert((sender.displayName == "tayk47_mom"), sender.displayName);
         assert((sender.account == "tayk47_mom"), sender.account);
         assert((sender.badges == "subscriber/12"), sender.badges);
         assert((channel == "#xqcow"), channel);
@@ -70,7 +70,7 @@ nt=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom
             assert((sender.address == "tmi.twitch.tv"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
             assert((target.nickname == "zorael"), target.nickname);
-            assert((target.alias_ == "Zorael"), target.alias_);
+            assert((target.displayName == "Zorael"), target.displayName);
             assert((target.class_ == IRCUser.Class.admin), Enum!(IRCUser.Class).toString(target.class_));
             assert((target.badges == "*"), target.badges);
             assert((target.colour == "5F9EA0"), target.colour);
@@ -80,7 +80,7 @@ nt=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom
 
     with (parser.client)
     {
-        assert((alias_ == "Zorael"), alias_);
+        assert((displayName == "Zorael"), displayName);
     }
 }
  +  ---

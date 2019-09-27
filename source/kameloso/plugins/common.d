@@ -4136,7 +4136,7 @@ string nameOf(const IRCUser user) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
     {
-        return user.alias_.length ? user.alias_ : user.nickname;
+        return user.displayName.length ? user.displayName : user.nickname;
     }
     else
     {

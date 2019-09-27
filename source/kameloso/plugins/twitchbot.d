@@ -96,7 +96,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (auto user = nickname in plugin.state.users)
     {
-        target = user.alias_;
+        target = user.displayName;
     }
 
     if (plugin.twitchBotSettings.permitOneLinkOnly)
@@ -224,7 +224,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     string nickname = channelName[1..$];
     if (const streamer = nickname in plugin.state.users)
     {
-        if (streamer.alias_.length) nickname = streamer.alias_;
+        if (streamer.displayName.length) nickname = streamer.displayName;
     }
 
     void dg()
@@ -830,7 +830,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const streamer = nickname in plugin.state.users)
     {
-        if (streamer.alias_.length) nickname = streamer.alias_;
+        if (streamer.displayName.length) nickname = streamer.displayName;
     }
 
     if (broadcastStart > 0L)
@@ -882,7 +882,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
         if (const streamer = nickname in plugin.state.users)
         {
-            if (streamer.alias_.length) nickname = streamer.alias_;
+            if (streamer.displayName.length) nickname = streamer.displayName;
         }
 
         chan(plugin.state, event.channel, nickname ~ " is already live.");
@@ -956,7 +956,7 @@ void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const streamer = nickname in plugin.state.users)
     {
-        if (streamer.alias_.length) nickname = streamer.alias_;
+        if (streamer.displayName.length) nickname = streamer.displayName;
     }
 
     chan(plugin.state, event.channel, "Broadcast ended. %s streamed for %s."
