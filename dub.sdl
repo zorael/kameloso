@@ -14,7 +14,7 @@ sourcePaths "source"
 importPaths "source"
 
 dependency "lu" version="~>0.1.0"
-dependency "dialect" version="~>0.2.0"
+dependency "dialect" version="~>0.3.0"
 
 versions \
     "WithAdminPlugin" \
