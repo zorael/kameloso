@@ -1887,10 +1887,6 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         }
     }
 
-    // Save the original nickname *once*, outside the connection loop.
-    // It will change later and knowing this is useful when authenticating
-    instance.parser.client.origNickname = instance.parser.client.nickname;
-
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
@@ -2212,6 +2208,11 @@ int initBot(string[] args)
 
     // Resolve resource directory paths.
     instance.resolveResourceDirectory();
+
+    // Save the original nickname *once*, outside the connection loop and before
+    // initialising plugins (who will make a copy of it). Knowing this is useful
+    // when authenticating.
+    instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Initialise plugins outside the loop once, for the error messages
     import kameloso.plugins.common : IRCPluginSettingsException;
