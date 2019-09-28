@@ -831,6 +831,15 @@ Next mainLoop(ref Kameloso instance)
             {
                 logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
                     logtint, e.haystack, warningtint, e.needle);
+
+                if (event != IRCEvent.init)
+                {
+                    printObject(event);
+                }
+                else
+                {
+                    logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
+                }
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
