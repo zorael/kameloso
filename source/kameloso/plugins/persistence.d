@@ -105,9 +105,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 {
                     // User logged out, reset updated so the user can be WHOISed again later
                     // A value of 0L won't be melded...
-                    //user.updated = 1L;
-                    static if (__traits(hasMember, user, "updated")) user.updated = 1L;
-                    else user.lastWhois = 1L;
+                    user.updated = 1L;
                 }
                 else
                 {
@@ -121,9 +119,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 // Record WHOIS if we have new account information
                 import std.datetime.systime : Clock;
 
-                //user.updated = Clock.currTime.toUnixTime;
-                static if (__traits(hasMember, user, "updated")) user.updated = Clock.currTime.toUnixTime;
-                else user.lastWhois = Clock.currTime.toUnixTime;
+                user.updated = Clock.currTime.toUnixTime;
                 applyClassifiersDg(user);
                 break;
 

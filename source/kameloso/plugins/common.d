@@ -949,9 +949,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 
     immutable user = event.sender;
     immutable now = Clock.currTime.toUnixTime;
-    //immutable timediff = (now - user.updated);
-    static if (__traits(hasMember, user, "updated")) immutable timediff = (now - user.updated);
-    else immutable timediff = (now - user.lastWhois);
+    immutable timediff = (now - user.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
     if (user.account.length)
@@ -1034,23 +1032,13 @@ unittest
     assert((res3 == FilterResult.fail), Enum!FilterResult.toString(res3));
 
     event.sender.class_ = IRCUser.Class.anyone;
-    //event.sender.updated = Clock.currTime.toUnixTime;
-    static if (__traits(hasMember, event.sender, "updated"))
-    {
-        event.sender.updated = Clock.currTime.toUnixTime;
-    }
-    else event.sender.lastWhois = Clock.currTime.toUnixTime;
+    event.sender.updated = Clock.currTime.toUnixTime;
 
     immutable res4 = filterUser(event, level);
     assert((res4 == FilterResult.fail), Enum!FilterResult.toString(res4));
 
     event.sender.class_ = IRCUser.Class.blacklist;
-    //event.sender.updated = long.init;
-    static if (__traits(hasMember, event.sender, "updated"))
-    {
-        event.sender.updated = 0L;
-    }
-    else event.sender.lastWhois = 0L;
+    event.sender.updated = 0L;
 
     immutable res5 = filterUser(event, level);
     assert((res5 == FilterResult.fail), Enum!FilterResult.toString(res5));
@@ -3671,12 +3659,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
             {
                 import std.datetime.systime : Clock;
 
-                //newUser.updated = Clock.currTime.toUnixTime;
-                static if (__traits(hasMember, newUser, "updated"))
-                {
-                    newUser.updated = Clock.currTime.toUnixTime;
-                }
-                else newUser.lastWhois = Clock.currTime.toUnixTime;
+                newUser.updated = Clock.currTime.toUnixTime;
                 plugin.state.users[newUser.nickname] = newUser;
             }
             return;
