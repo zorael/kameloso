@@ -273,7 +273,7 @@ unittest
     }
 }
 
-deprecated("Use ircColourByHash instead")
+deprecated("Use `ircColourByHash`")
 alias ircColourNick = ircColourByHash;
 
 
