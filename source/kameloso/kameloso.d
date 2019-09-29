@@ -1402,12 +1402,6 @@ Next tryConnect(ref Kameloso instance)
     import lu.net : ConnectionAttempt, connectFiber;
     import std.concurrency : Generator;
 
-    alias State = ConnectionAttempt.State;
-    auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn,  settings.endlesslyConnect,
-            ConnectionDefaultIntegers.retries, *instance.abort));
-    uint incrementedRetryDelay = Timeout.retry;
-
     string infotint, logtint;
 
     version(Colours)
@@ -1420,6 +1414,11 @@ Next tryConnect(ref Kameloso instance)
             logtint = (cast(KamelosoLogger)logger).logtint;
         }
     }
+
+    auto connector = new Generator!ConnectionAttempt(() =>
+        connectFiber(instance.conn, settings.endlesslyConnect,
+            ConnectionDefaultIntegers.retries, *instance.abort));
+    uint incrementedRetryDelay = Timeout.retry;
 
     connector.call();
 
@@ -1480,7 +1479,7 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case delayThenNextIP:
-            logger.logf("Trying next IP in %s%d%s seconds.",
+            logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
                 infotint, Timeout.retry, logtint);
             interruptibleSleep(Timeout.retry.seconds, *abort);
             if (*abort) return Next.returnFailure;
