@@ -1541,7 +1541,6 @@ Next tryResolve(ref Kameloso instance)
     enum defaultResolveAttempts = 15;
     immutable resolveAttempts = settings.endlesslyConnect ? int.max : defaultResolveAttempts;
 
-    alias State = ResolveAttempt.State;
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
         instance.parser.server.port, settings.ipv6, resolveAttempts, *instance.abort));
@@ -1549,12 +1548,10 @@ Next tryResolve(ref Kameloso instance)
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
 
-    resolver.call();
-
     with (instance)
     foreach (const attempt; resolver)
     {
-        with (State)
+        with (ResolveAttempt.State)
         final switch (attempt.state)
         {
         case preresolve:
@@ -1582,15 +1579,17 @@ Next tryResolve(ref Kameloso instance)
                 interruptibleSleep(incrementedRetryDelay.seconds, *abort);
                 if (*abort) return Next.returnFailure;
 
+                import std.algorithm.comparison : min;
+
                 enum delayCap = 10*60;  // seconds
                 incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
-                incrementedRetryDelay = (incrementedRetryDelay < delayCap) ? incrementedRetryDelay : delayCap;
+                incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
             }
             continue;
 
         case error:
             logger.errorf("Could not resolve server address. (%s%s%s)", logtint, attempt.error, errortint);
-            logger.log("Failed to resolve address to IPs. Verify your server address.");
+            logger.log("Failed to resolve host to IPs. Verify your server address.");
             return Next.returnFailure;
 
         case failure:
