@@ -4104,8 +4104,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
 // nameOf
 /++
- +  Returns either the nickname or the alias of a user, depending on whether the
- +  alias is known or not.
+ +  Returns either the nickname or the display name of a user, depending on whether the
+ +  display name is known or not.
  +
  +  If not version `TwitchSupport` then it always returns the nickname.
  +
@@ -4124,5 +4124,29 @@ string nameOf(const IRCUser user) pure @safe nothrow @nogc
     else
     {
         return user.nickname;
+    }
+}
+
+///
+unittest
+{
+    version(TwitchSupport)
+    {
+        {
+            IRCUser user;
+            user.nickname = "joe";
+            user.displayName = "Joe";
+            assert(nameOf(user) == "Joe");
+        }
+        {
+            IRCUser user;
+            user.nickname = "joe";
+            assert(nameOf(user) == "joe");
+        }
+    }
+    {
+        IRCUser user;
+        user.nickname = "joe";
+        assert(nameOf(user) == "joe");
     }
 }
