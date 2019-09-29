@@ -61,7 +61,15 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
         //import std.uni : toLower;
         if (const response = slice/*.toLower*/ in *channelOneliners)
         {
-            chan(plugin.state, event.channel, *response);
+            import std.array : replace;
+
+            immutable line = (*response)
+                .replace("$nickname", plugin.nameOf(event.sender.nickname))
+                .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
+                .replace("$bot", plugin.state.client.nickname)
+                .replace("$channel", event.channel);
+
+            chan(plugin.state, event.channel, line);
         }
     }
 }
