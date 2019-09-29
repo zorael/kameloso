@@ -221,12 +221,6 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     const string channelName)
 {
-    string nickname = channelName[1..$];
-    if (const streamer = nickname in plugin.state.users)
-    {
-        if (streamer.displayName.length) nickname = streamer.displayName;
-    }
-
     void dg()
     {
         import std.datetime.systime : Clock;
@@ -244,6 +238,8 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
         /// Whether or not stagger has passed, so we don't evaluate it every single time.
         bool staggerDone;
+
+        immutable streamer = plugin.nameOf(channelName[1..$]);
 
         while (true)
         {
@@ -285,9 +281,9 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 import std.random : uniform;
 
                 immutable line = timerDef.line
-                    .replace("$streamer", nickname)
+                    .replace("$streamer", streamer)
                     .replace("$channel", channelName[1..$])
-                    .replace("$nickname", plugin.state.client.nickname)
+                    .replace("$bot", plugin.state.client.nickname)
                     .replace("$random", uniform!"[]"(0, 100).text);
                 chan(plugin.state, channelName, line);
             }
@@ -825,13 +821,7 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
     immutable broadcastStart = plugin.activeChannels[event.channel].broadcastStart;
-
-    string nickname = event.channel[1..$];
-
-    if (const streamer = nickname in plugin.state.users)
-    {
-        if (streamer.displayName.length) nickname = streamer.displayName;
-    }
+    immutable streamer = plugin.nameOf(event.channel[1..$]);
 
     if (broadcastStart > 0L)
     {
@@ -846,11 +836,11 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         immutable delta = now - SysTime.fromUnixTime(broadcastStart);
 
         chan(plugin.state, event.channel, "%s has been live for %s."
-            .format(nickname, delta));
+            .format(streamer, delta));
     }
     else
     {
-        chan(plugin.state, event.channel, nickname ~ " is currently not streaming.");
+        chan(plugin.state, event.channel, streamer ~ " is currently not streaming.");
     }
 }
 
@@ -878,14 +868,8 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channel.broadcastStart != 0L)
     {
-        string nickname = event.channel[1..$];
-
-        if (const streamer = nickname in plugin.state.users)
-        {
-            if (streamer.displayName.length) nickname = streamer.displayName;
-        }
-
-        chan(plugin.state, event.channel, nickname ~ " is already live.");
+        immutable streamer = plugin.nameOf(event.channel[1..$]);
+        chan(plugin.state, event.channel, streamer ~ " is already live.");
         return;
     }
 
@@ -952,15 +936,10 @@ void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
     const delta = now - SysTime.fromUnixTime(channel.broadcastStart);
     channel.broadcastStart = 0L;
 
-    string nickname = event.channel[1..$];
-
-    if (const streamer = nickname in plugin.state.users)
-    {
-        if (streamer.displayName.length) nickname = streamer.displayName;
-    }
+    immutable streamer = plugin.nameOf(event.channel[1..$]);
 
     chan(plugin.state, event.channel, "Broadcast ended. %s streamed for %s."
-        .format(nickname, delta));
+        .format(streamer, delta));
 }
 
 
