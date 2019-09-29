@@ -4150,3 +4150,37 @@ unittest
         assert(nameOf(user) == "joe");
     }
 }
+
+
+// nameOf
+/++
+ +  Returns either the nickname or the display name of a user, depending on whether the
+ +  display name is known or not.
+ +
+ +  Overload that looks up the passed nickname in the passed plugin's
+ +  `users` associative array of `dialect.defs.IRCUser`s.
+ +
+ +  If not version `TwitchSupport` then it always returns the nickname.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`, whatever it is.
+ +      nickname = `dialect.defs.IRCUser` to look up.
+ +
+ +  Returns:
+ +      The nickname of the user if there is no alias known, else the alias.
+ +/
+string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
+{
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            if (const user = nickname in plugin.state.users)
+            {
+                return nameOf(*user);
+            }
+        }
+    }
+
+    return nickname;
+}
