@@ -351,6 +351,41 @@ void tryAuth(ConnectService service)
 }
 
 
+// delayJoinsAfterFailedAuth
+/++
+ +  Creates and enqueues a timed `core.thread.Fiber` that joins channels after
+ +  having failed to authenticate for n seconds.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
+ +/
+void delayJoinsAfterFailedAuth(ConnectService service)
+{
+    import core.thread : Fiber;
+
+    enum authGracePeriod = 15;
+
+    void dg()
+    {
+        if (service.authentication == Progress.started)
+        {
+            logger.log("Auth timed out.");
+            service.authentication = Progress.finished;
+        }
+
+        if (!service.joinedChannels)
+        {
+            service.joinChannels();
+            service.joinedChannels = true;
+        }
+    }
+
+    Fiber fiber = new Fiber(&dg);
+    service.delayFiber(fiber, authGracePeriod);
+    //service.awaitEvent(fiber, IRCEvent.Type.PING);
+}
+
+
 // onEndOfMotd
 /++
  +  Joins channels at the end of the message of the day (`MOTD`), and tries to
