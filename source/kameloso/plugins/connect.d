@@ -348,6 +348,9 @@ void tryAuth(ConnectService service)
             }
         }
     }
+
+    // If we're still authenticating after n seconds, abort and join channels.
+    delayJoinsAfterFailedAuth(service);
 }
 
 
@@ -823,23 +826,8 @@ void onSASLAuthenticate(ConnectService service)
             return service.onSASLFailure();
         }
 
-        // If we're still authenticating by the next PING, abort and join channels.
-
-        void dg()
-        {
-            if (!service.joinedChannels && (service.authentication == Progress.started))
-            {
-                logger.log("Auth timed out.");
-                service.authentication = Progress.finished;
-                service.joinChannels();
-                service.joinedChannels = true;
-            }
-        }
-
-        import core.thread : Fiber;
-
-        Fiber fiber = new Fiber(&dg);
-        service.awaitEvent(fiber, IRCEvent.Type.PING);
+        // If we're still authenticating after n seconds, abort and join channels.
+        delayJoinsAfterFailedAuth(service);
     }
 }
 
