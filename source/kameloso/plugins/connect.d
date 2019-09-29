@@ -1014,7 +1014,7 @@ void register(ConnectService service)
         // Nick negotiation after CAP END
         // If CAP is not supported, go ahead and negotiate nick after n seconds
 
-        enum secsToWaitForCAP = 5;
+        enum secsToWaitForCAP = 1;
 
         void dg()
         {
