@@ -409,6 +409,12 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
+        /// Wrapper around `eventToServer` for shared heap `dialect.defs.IRCEvent`s.
+        void eventPointerToServer(shared(IRCEvent)* event)
+        {
+            return eventToServer(cast()*event);
+        }
+
         /// Proxies the passed message to the `logger`.
         void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
         {
@@ -467,6 +473,7 @@ void messageFiber(ref Kameloso instance)
                 &immediateline,
                 &pong,
                 &eventToServer,
+                &eventPointerToServer,
                 &proxyLoggerMessages,
                 &quitServer,
                 &save,
