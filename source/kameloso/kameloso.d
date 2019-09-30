@@ -485,7 +485,7 @@ void messageFiber(ref Kameloso instance)
                 (Variant v) scope
                 {
                     // Caught an unhandled message
-                    logger.warning("Main thread message fiber received unknown Variant: ", v);
+                    logger.warning("Main thread message fiber received unknown Variant: ", v.type);
                 }
             );
         }
