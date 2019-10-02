@@ -213,37 +213,6 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 }
 
 
-// heapQuery
-/++
- +  Sends a private query message to a user.
- +
- +  Heap version that works around a segfault by allocating a shared
- +  `dialect.defs.IRCEvent` on the heap and passing that, instead of passing by value.
- +
- +  Params:
- +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
- +          which to send messages to the server.
- +      nickname = Nickname of user to which to send the private message.
- +      content = Message body content to send.
- +      quiet = Whether or not to echo what was sent to the local terminal.
- +/
-void heapQuery(IRCPluginState state, const string nickname, const string content,
-    const bool quiet = settings.hideOutgoing)
-in (nickname.length, "Tried to send a private query but no nickname was given")
-do
-{
-    import std.concurrency : send;
-
-    IRCEvent* event = new IRCEvent;
-    event.type = IRCEvent.Type.QUERY;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
-    event.target.nickname = nickname;
-    event.content = content;
-
-    state.mainThread.send(cast(shared)event);
-}
-
-
 mixin MinimalAuthentication;
 
 public:
