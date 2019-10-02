@@ -156,7 +156,7 @@ if (isOutputRange!(Sink, char[]))
     }
 
     enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
-    enum minimumNameWidth = 20;
+    enum minimumNameWidth = 24;  // Current minimum, TwitchBotSettings' "regularsAreWhitelisted"
 
     static if (printAll)
     {
