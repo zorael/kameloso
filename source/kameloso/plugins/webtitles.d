@@ -672,8 +672,6 @@ unittest
  +  Given an URL, looks it up on Reddit to see if it has been posted there.
  +
  +  Params:
- +      state = The current plugin instance's `kameloso.plugins.common.IRCPluginState`,
- +          for use to send text to the local terminal.
  +      url = URL to query Reddit for.
  +      modified = Whether the URL has been modified to add an extra slash at
  +          the end, or remove one if one already existed.
