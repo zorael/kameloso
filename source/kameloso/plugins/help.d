@@ -13,7 +13,7 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.common : logger, settings;
-//import kameloso.messaging;
+import kameloso.messaging;
 import dialect.defs;
 
 
@@ -92,7 +92,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             pattern.format(p.name.ircBold, specifiedCommand.ircBold, description.string_) :
                             pattern.format(p.name, specifiedCommand, description.string_);
 
-                        heapQuery(plugin.state, sender.nickname, message);
+                        query(plugin.state, sender.nickname, message);
 
                         if (description.syntax.length)
                         {
@@ -111,7 +111,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                                 "Usage".ircBold ~ ": " ~ prefixedSyntax :
                                 "Usage: " ~ prefixedSyntax;
 
-                            heapQuery(plugin.state, sender.nickname, syntax);
+                            query(plugin.state, sender.nickname, syntax);
                         }
                     }
                     else
@@ -122,7 +122,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             pattern.format(specifiedCommand.ircBold, specifiedPlugin.ircBold) :
                             pattern.format(specifiedCommand, specifiedPlugin);
 
-                        heapQuery(plugin.state, sender.nickname, message);
+                        query(plugin.state, sender.nickname, message);
                     }
 
                     return;
@@ -132,7 +132,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     "No such plugin: " ~ specifiedPlugin.ircBold :
                     "No such plugin: " ~ specifiedPlugin;
 
-                heapQuery(plugin.state, sender.nickname, message);
+                query(plugin.state, sender.nickname, message);
             }
             else
             {
@@ -145,7 +145,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             "No commands available for plugin " ~ content.ircBold :
                             "No commands available for plugin " ~ content;
 
-                        heapQuery(plugin.state, sender.nickname, message);
+                        query(plugin.state, sender.nickname, message);
                         return;
                     }
 
@@ -156,7 +156,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                         pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
                         pattern.format(width, p.name, p.commands.keys.sort());
 
-                    heapQuery(plugin.state, sender.nickname, message);
+                    query(plugin.state, sender.nickname, message);
                     return;
                 }
 
@@ -164,7 +164,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     "No such plugin: " ~ content.ircBold :
                     "No such plugin: " ~ content;
 
-                heapQuery(plugin.state, sender.nickname, message);
+                query(plugin.state, sender.nickname, message);
             }
         }
         else
@@ -180,8 +180,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 cast(string)KamelosoInfo.built);
 
             immutable banner = settings.colouredOutgoing ? bannerColoured : bannerUncoloured;
-            heapQuery(plugin.state, sender.nickname, banner);
-            heapQuery(plugin.state, sender.nickname, "Available bot commands per plugin:");
+            query(plugin.state, sender.nickname, banner);
+            query(plugin.state, sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -194,7 +194,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
                     pattern.format(width, p.name, p.commands.keys.sort());
 
-                heapQuery(plugin.state, sender.nickname, message);
+                query(plugin.state, sender.nickname, message);
             }
 
             enum pattern = "Use %s [%s] [%s] for information about a command.";
@@ -203,8 +203,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             immutable message = settings.colouredOutgoing ? colouredLine :
                 "Use help [plugin] [command] for information about a command.";
 
-            heapQuery(plugin.state, sender.nickname, message);
-            //heapQuery(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");
+            query(plugin.state, sender.nickname, message);
+            //query(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 
