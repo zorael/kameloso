@@ -4067,7 +4067,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate);
+        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32768);
 
         static if (__traits(compiles, plugin))
         {

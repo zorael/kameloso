@@ -383,7 +383,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber fiber = new Fiber(&dg);
+    Fiber fiber = new Fiber(&dg, 32768);
     service.delayFiber(fiber, authGracePeriod);
     //service.awaitEvent(fiber, IRCEvent.Type.PING);
 }
@@ -1029,7 +1029,7 @@ void register(ConnectService service)
 
         import core.thread : Fiber;
 
-        Fiber fiber = new Fiber(&dg);
+        Fiber fiber = new Fiber(&dg, 32768);
         service.delayFiber(fiber, secsToWaitForCAP);
     }
 }

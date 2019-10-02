@@ -298,7 +298,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         }
     }
 
-    return new Fiber(&dg);
+    return new Fiber(&dg, 32768);
 }
 
 
@@ -1105,7 +1105,7 @@ do
         return dg();
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
 
     plugin.awaitEvent(fiber, IRCEvent.Type.CHAN);
     plugin.delayFiber(fiber, dur);
@@ -1128,21 +1128,21 @@ do
 
     if (dur >= 240)
     {
-        auto reminder60 = new CarryingFiber!int(&dgReminder);
+        auto reminder60 = new CarryingFiber!int(&dgReminder, 32768);
         reminder60.payload = 60;
         plugin.delayFiber(reminder60, dur-60);
     }
 
     if (dur >= 60)
     {
-        auto reminder30 = new CarryingFiber!int(&dgReminder);
+        auto reminder30 = new CarryingFiber!int(&dgReminder, 32768);
         reminder30.payload = 30;
         plugin.delayFiber(reminder30, dur-30);
     }
 
     if (dur >= 20)
     {
-        auto reminder10 = new CarryingFiber!int(&dgReminder);
+        auto reminder10 = new CarryingFiber!int(&dgReminder, 32768);
         reminder10.payload = 10;
         plugin.delayFiber(reminder10, dur-10);
     }

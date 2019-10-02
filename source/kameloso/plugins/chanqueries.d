@@ -157,7 +157,7 @@ void onPing(ChanQueriesService service)
         service.awaitEvent(IRCEvent.Type.PING);
     }
 
-    Fiber fiber = new Fiber(&dg);
+    Fiber fiber = new Fiber(&dg, 32768);
 
     // Enlist the fiber *ONCE*
     with (IRCEvent.Type)

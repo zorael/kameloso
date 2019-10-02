@@ -391,7 +391,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         }
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
 
     with (IRCEvent.Type)
     {
@@ -1123,7 +1123,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32768);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 
@@ -1341,7 +1341,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             // applyCustomSettings displays its own error messages
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32768);
         return plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 
     case "save":
