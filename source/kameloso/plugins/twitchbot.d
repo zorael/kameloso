@@ -91,7 +91,14 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     auto channel = event.channel in plugin.activeChannels;
 
     channel.linkPermits[nickname] = now;
-    channel.linkBans.remove(nickname);
+
+    if (nickname in channel.linkBans)
+    {
+        // Was or is timed out, remove it just in case
+        channel.linkBans.remove(nickname);
+        chan(plugin.state, event.channel, "/timeout " ~ nickname ~ " 0");
+    }
+
     string target = nickname;
 
     if (auto user = nickname in plugin.state.users)
