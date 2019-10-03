@@ -80,7 +80,7 @@ struct TitleLookupResults
 
 // TitleLookupRequest
 /++
- +  A record of an URL lookup request.
+ +  A record of a URL lookup request.
  +
  +  This is used to aggregate information about a lookup request, making it
  +  easier to pass it in between functions. It serves no greater purpose.
@@ -377,7 +377,7 @@ void setRequestHeaders(ref Request req)
 
 // lookupTitle
 /++
- +  Given an URL, tries to look up the web page title of it.
+ +  Given a URL, tries to look up the web page title of it.
  +
  +  Params:
  +      url = URL string to look up.
@@ -669,7 +669,7 @@ unittest
 
 // lookupReddit
 /++
- +  Given an URL, looks it up on Reddit to see if it has been posted there.
+ +  Given a URL, looks it up on Reddit to see if it has been posted there.
  +
  +  Params:
  +      url = URL to query Reddit for.
