@@ -25,6 +25,9 @@ struct HelpSettings
 {
     /// Whether or not the Help plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /// Whether or not replies are always sent in queries.
+    bool repliesInQuery = true;
 }
 
 
