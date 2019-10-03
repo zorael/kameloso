@@ -1202,6 +1202,13 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
             // Drop down for report
         }
 
+        if (nickname in plugin.activeChannels[targetChannel].linkBans)
+        {
+            // Was or is timed out, remove it just in case
+            plugin.activeChannels[targetChannel].linkBans.remove(nickname);
+            chan(plugin.state, targetChannel, "/timeout " ~ nickname ~ " 0");
+        }
+
         saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
         privmsg(plugin.state, event.channel, event.sender.nickname,
             slice ~ " is now a regular.");
