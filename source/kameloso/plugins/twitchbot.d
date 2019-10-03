@@ -316,10 +316,9 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandPhraseChan
+// onCommandPhrase
 /++
  +  Bans, unbans, lists or clears banned phrases for the current channel.
- +  `dialect.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
@@ -330,7 +329,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
     "$command [ban|unban|list|clear]")
-void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handlePhraseCommand(plugin, event, event.channel);
 }
@@ -491,10 +490,9 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 }
 
 
-// onCommandTimerChan
+// onCommandTimer
 /++
  +  Adds, deletes, lists or clears timers for the specified target channel.
- +  `dialect.defs.IRCEvent.Type.CHAN` wrapper.
  +
  +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
  +/
@@ -505,7 +503,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
     "$command [add|del|list|clear]")
-void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handleTimerCommand(plugin, event, event.channel);
 }
@@ -1116,7 +1114,7 @@ do
 }
 
 
-// onCommandRegularChan
+// onCommandRegular
 /++
  +  Adds, lists and removes regulars to/from the current channel.
  +
@@ -1130,7 +1128,7 @@ do
 @BotCommand(PrefixPolicy.prefixed, "regular")
 @Description("Adds or removes a Twitch regulars to/from the current channel. (Channel message wrapper)",
     "$command [add|del|list] [nickname]")
-void onCommandRegularChan(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandRegular(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handleRegularCommand(plugin, event, event.channel);
 }
