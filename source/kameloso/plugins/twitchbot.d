@@ -1325,9 +1325,9 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
         static immutable string[3] messages =
         [
-            "Stop posting links",
-            "Really, no links",
-            "Go cool off",
+            "Stop posting links.",
+            "Really, no links!",
+            "Go cool off.",
         ];
 
         immutable now = Clock.currTime.toUnixTime;
