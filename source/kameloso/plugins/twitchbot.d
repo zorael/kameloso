@@ -329,46 +329,10 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
-    "$command [target channel if query] [ban|unban|list|clear]")
+    "$command [ban|unban|list|clear]")
 void onCommandPhraseChan(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handlePhraseCommand(plugin, event, event.channel);
-}
-
-
-// onCommandPhraseQuery
-/++
- +  Bans, unbans, lists or clears banned phrases for the specified target channel.
- +  `dialect.defs.IRCEvent.Type.QUERY` wrapper.
- +
- +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
- +/
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@BotCommand(PrefixPolicy.prefixed, "phrase")
-@Description("Adds, removes, lists or clears phrases from the list of banned such.",
-    "$command [target channel if query] [ban|unban|list|clear]")
-void onCommandPhraseQuery(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import lu.string : nom;
-    import std.format : format;
-    import std.typecons : Flag, No, Yes;
-    import std.uni : toLower;
-
-    string slice = event.content;  // mutable
-    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
-
-    if (!targetChannel.length || (targetChannel[0] != '#'))
-    {
-        query(plugin.state, event.sender.nickname,
-            "Usage: %s [channel] [ban|unban|list|clear]".format(event.aux));
-        return;
-    }
-
-    IRCEvent modifiedEvent = event;
-    modifiedEvent.content = slice;
-
-    return handlePhraseCommand(plugin, modifiedEvent, targetChannel.toLower);
 }
 
 
@@ -540,46 +504,10 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
-    "$command [target channel if query] [add|del|list|clear]")
+    "$command [add|del|list|clear]")
 void onCommandTimerChan(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handleTimerCommand(plugin, event, event.channel);
-}
-
-
-// onCommandTimerQuery
-/++
- +  Adds, deletes, lists or clears timers for the specified target channel.
- +  `dialect.defs.IRCEvent.Type.QUERY` wrapper.
- +
- +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
- +/
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@BotCommand(PrefixPolicy.prefixed, "timer")
-@Description("Adds, removes, lists or clears timered lines.",
-    "$command [target channel if query] [add|del|list|clear]")
-void onCommandTimerQuery(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import lu.string : nom;
-    import std.format : format;
-    import std.typecons : Flag, No, Yes;
-    import std.uni : toLower;
-
-    string slice = event.content;  // mutable
-    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
-
-    if (!targetChannel.length || (targetChannel[0] != '#'))
-    {
-        query(plugin.state, event.sender.nickname,
-            "Usage: %s [channel] [add|del|list|clear]".format(event.aux));
-        return;
-    }
-
-    IRCEvent modifiedEvent = event;
-    modifiedEvent.content = slice;
-
-    return handleTimerCommand(plugin, modifiedEvent, targetChannel.toLower);
 }
 
 
@@ -1205,42 +1133,6 @@ do
 void onCommandRegularChan(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return handleRegularCommand(plugin, event, event.channel);
-}
-
-
-// onCommandRegularQuery
-/++
- +  Adds, lists and removes regulars to/from the specified channel.
- +
- +  Merely passes the event onto `handleRegularCommand` with the specified channel
- +  as the target channel.
- +/
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@BotCommand(PrefixPolicy.prefixed, "regular")
-@Description("Adds or removes a Twitch regulars to/from the current channel. (Whisper wrapper)",
-    "$command [add|del|list] [nickname]")
-void onCommandRegularQuery(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import lu.string : nom;
-    import std.format : format;
-    import std.typecons : Flag, No, Yes;
-    import std.uni : toLower;
-
-    string slice = event.content;  // mutable
-    immutable targetChannel = slice.nom!(Yes.inherit)(' ');
-
-    if (!targetChannel.length || (targetChannel[0] != '#'))
-    {
-        query(plugin.state, event.sender.nickname,
-            "Usage: %s [channel] [add|del|list] [nickname]".format(event.aux));
-        return;
-    }
-
-    IRCEvent modifiedEvent = event;
-    modifiedEvent.content = slice;
-
-    return handleRegularCommand(plugin, modifiedEvent, targetChannel.toLower);
 }
 
 
