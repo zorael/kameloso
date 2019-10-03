@@ -74,7 +74,10 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
         const plugins = thisFiber.payload;
 
-        with (event)
+        IRCEvent mutEvent = event;  // mutable
+        if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
+
+        with (mutEvent)
         if (content.length)
         {
             if (content.contains!(Yes.decode)(" "))
@@ -95,7 +98,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             pattern.format(p.name.ircBold, specifiedCommand.ircBold, description.string_) :
                             pattern.format(p.name, specifiedCommand, description.string_);
 
-                        query(plugin.state, sender.nickname, message);
+                        privmsg(plugin.state, channel, sender.nickname, message);
 
                         if (description.syntax.length)
                         {
@@ -114,7 +117,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                                 "Usage".ircBold ~ ": " ~ prefixedSyntax :
                                 "Usage: " ~ prefixedSyntax;
 
-                            query(plugin.state, sender.nickname, syntax);
+                            privmsg(plugin.state, channel, sender.nickname, syntax);
                         }
                     }
                     else
@@ -125,7 +128,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             pattern.format(specifiedCommand.ircBold, specifiedPlugin.ircBold) :
                             pattern.format(specifiedCommand, specifiedPlugin);
 
-                        query(plugin.state, sender.nickname, message);
+                        privmsg(plugin.state, channel, sender.nickname, message);
                     }
 
                     return;
@@ -135,7 +138,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     "No such plugin: " ~ specifiedPlugin.ircBold :
                     "No such plugin: " ~ specifiedPlugin;
 
-                query(plugin.state, sender.nickname, message);
+                privmsg(plugin.state, channel, sender.nickname, message);
             }
             else
             {
@@ -148,7 +151,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             "No commands available for plugin " ~ content.ircBold :
                             "No commands available for plugin " ~ content;
 
-                        query(plugin.state, sender.nickname, message);
+                        privmsg(plugin.state, channel, sender.nickname, message);
                         return;
                     }
 
@@ -159,7 +162,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                         pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
                         pattern.format(width, p.name, p.commands.keys.sort());
 
-                    query(plugin.state, sender.nickname, message);
+                    privmsg(plugin.state, channel, sender.nickname, message);
                     return;
                 }
 
@@ -167,7 +170,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     "No such plugin: " ~ content.ircBold :
                     "No such plugin: " ~ content;
 
-                query(plugin.state, sender.nickname, message);
+                privmsg(plugin.state, channel, sender.nickname, message);
             }
         }
         else
@@ -183,8 +186,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 cast(string)KamelosoInfo.built);
 
             immutable banner = settings.colouredOutgoing ? bannerColoured : bannerUncoloured;
-            query(plugin.state, sender.nickname, banner);
-            query(plugin.state, sender.nickname, "Available bot commands per plugin:");
+            privmsg(plugin.state, channel, sender.nickname, banner);
+            privmsg(plugin.state, channel, sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -197,7 +200,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
                     pattern.format(width, p.name, p.commands.keys.sort());
 
-                query(plugin.state, sender.nickname, message);
+                privmsg(plugin.state, channel, sender.nickname, message);
             }
 
             enum pattern = "Use %s [%s] [%s] for information about a command.";
@@ -206,8 +209,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             immutable message = settings.colouredOutgoing ? colouredLine :
                 "Use help [plugin] [command] for information about a command.";
 
-            query(plugin.state, sender.nickname, message);
-            //query(plugin.state, sender.nickname, "Additional unlisted regex commands may be available.");
+            privmsg(plugin.state, channel, sender.nickname, message);
+            //privmsg(plugin.state, channel, sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 
