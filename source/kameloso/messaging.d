@@ -59,8 +59,7 @@ version(unittest)
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channelName = Channel in which to send the message.
@@ -130,8 +129,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      nickname = Nickname of user to which to send the private message.
@@ -184,8 +182,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel in which to send the message, if applicable.
@@ -252,8 +249,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      emoteTarget = Target of the emote, either a nickname to be sent as a
@@ -326,8 +322,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel to change the modes of.
@@ -380,8 +375,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel whose topic to change.
@@ -430,8 +424,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel to which to invite the user.
@@ -481,8 +474,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel to join.
@@ -531,8 +523,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel from which to kick the user.
@@ -586,8 +577,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel to leave.
@@ -636,8 +626,8 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server. Default to `Yes.priority`, since we're quitting.
+ +          received before other messages are, if there are several.
+ +          Default to `Yes.priority`, since we're quitting.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      reason = Optionally, the reason for quitting.
@@ -682,8 +672,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      nickname = String nickname to query for.
@@ -737,8 +726,7 @@ unittest
  +
  +  Params:
  +      priority = Whether or not to send the message as a priority message,
- +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          received before other messages are, if there are several.
  +      state = Reference to the current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      line = Raw IRC string to send to the server.
