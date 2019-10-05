@@ -529,12 +529,56 @@ void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "whitelist")
-@Description("Adds an account to the whitelist of users who may trigger the bot.",
-    "$command [account to whitelist]")
+@Description("Add or remove an account to/from the whitelist of users who may trigger the bot.",
+    "$command [add|del] [account or nickname]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.string : stripped;
-    plugin.lookupEnlist(event.content.stripped, "whitelist", event);
+    return plugin.manageWhitelistBlacklist(event, "whitelist");
+}
+
+
+// manageWhitelistBlacklist
+/++
+ +  Common code for whitelisting and blacklisting nicknames/accounts.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
+ +      list = Which list to add/remove from, "whitelist" or "blacklist".
+ +/
+void manageWhitelistBlacklist(AdminPlugin plugin, const IRCEvent event, const string list)
+in (((list == "whitelist") || (list == "blacklist")), list ~ " is not whitelist nor blacklist")
+do
+{
+    import lu.string : nom;
+    import std.typecons : Flag, No, Yes;
+
+    void sendUsage()
+    {
+        import std.format : format;
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s [add|del]".format(list));
+    }
+
+    if (!event.content.length)
+    {
+        return sendUsage();
+    }
+
+    string slice = event.content;  // mutable
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "add":
+        return plugin.lookupEnlist(slice, list, event);
+
+    case "del":
+        return plugin.delist(slice, list, event);
+
+    default:
+        return sendUsage();
+    }
 }
 
 
@@ -550,12 +594,14 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +      list = Which of "whitelist" or "blacklist" to add to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
-void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
+void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
     const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
     import dialect.common : isValidNickname;
     import lu.string : contains, stripped;
+
+    immutable specified = rawSpecified.stripped;
 
     /// Report result, either to the local terminal or to the IRC channel/sender
     void report(const AlterationResult result, const string id)
@@ -795,30 +841,6 @@ void delist(AdminPlugin plugin, const string account, const string list,
 }
 
 
-// onCommandDewhitelist
-/++
- +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState`.
- +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
- +  opposed to `kameloso.plugins.common.PrivilegeLevel.admin`.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "dewhitelist")
-@Description("Removes an account from the whitelist of users who may trigger the bot.",
-    "$command [account to remove from whitelist]")
-void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
-{
-    import lu.string : stripped;
-    plugin.delist(event.content.stripped, "whitelist", event);
-}
-
-
 // onCommandBlacklist
 /++
  +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
@@ -834,34 +856,11 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "blacklist")
-@Description("Adds an account to the blacklist, exempting them from triggering the bot.",
-    "$command [account to blacklist]")
+@Description("Add or remove an account to/from the blacklist of people who may " ~
+    "explicitly not trigger the bot", "$command [add|del] [account or nickname]")
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.string : stripped;
-    plugin.lookupEnlist(event.content.stripped, "blacklist", event);
-}
-
-
-// onCommandDeblacklist
-/++
- +  Removes a nickname from the list of users who may not trigger the bot whatsoever.
- +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
- +  opposed to `kameloso.plugins.common.PrivilegeLevel.admin`.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "deblacklist")
-@Description("Removes an account from the blacklist, allowing them to trigger the bot again.",
-    "$command [account to remove from whitelist]")
-void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
-{
-    import lu.string : stripped;
-    plugin.delist(event.content.stripped, "blacklist", event);
+    return plugin.manageWhitelistBlacklist(event, "blacklist");
 }
 
 
