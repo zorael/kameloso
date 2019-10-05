@@ -1007,6 +1007,14 @@ if (isOutputRange!(Sink, char[]))
 
     bool shouldBell;
 
+    static if (!__traits(hasMember, Sink, "data"))
+    {
+        scope(exit)
+        {
+            sink.put('\n');
+        }
+    }
+
     with (event)
     {
         void putSender()
@@ -1204,11 +1212,6 @@ if (isOutputRange!(Sink, char[]))
             sink.put(TerminalToken.bell);
         }
     }
-
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        sink.put('\n');
-    }
 }
 
 ///
@@ -1391,6 +1394,14 @@ if (isOutputRange!(Sink, char[]))
         if (!coloured)
         {
             sink.colourWith(colourByHash(user.isServer ? user.address : user.nickname));
+        }
+    }
+
+    static if (!__traits(hasMember, Sink, "data"))
+    {
+        scope(exit)
+        {
+            sink.put('\n');
         }
     }
 
@@ -1705,11 +1716,6 @@ if (isOutputRange!(Sink, char[]))
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
         }
-    }
-
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        sink.put('\n');
     }
 }
 
