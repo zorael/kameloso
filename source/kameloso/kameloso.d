@@ -696,6 +696,30 @@ Next mainLoop(ref Kameloso instance)
                     instance.propagateServer(instance.parser.server);
                 }
 
+                static void checkUpdatesAndPropagate(ref Kameloso instance, IRCPlugin plugin)
+                {
+                    if (plugin.state.botUpdated)
+                    {
+                        // Something changed the bot; propagate
+                        plugin.state.botUpdated = false;
+                        instance.propagateBot(plugin.state.bot);
+                    }
+
+                    if (plugin.state.clientUpdated)
+                    {
+                        // Something changed the client; propagate
+                        plugin.state.clientUpdated = false;
+                        instance.propagateClient(plugin.state.client);
+                    }
+
+                    if (plugin.state.serverUpdated)
+                    {
+                        // Something changed the server; propagate
+                        plugin.state.serverUpdated = false;
+                        instance.propagateServer(plugin.state.server);
+                    }
+                }
+
                 event.time = Clock.currTime.toUnixTime;
 
                 foreach (plugin; instance.plugins)
@@ -712,26 +736,7 @@ Next mainLoop(ref Kameloso instance)
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
-                    if (plugin.state.botUpdated)
-                    {
-                        // Postprocessing changed the bot; propagate
-                        plugin.state.botUpdated = false;
-                        instance.propagateBot(plugin.state.bot);
-                    }
-
-                    if (plugin.state.clientUpdated)
-                    {
-                        // Postprocessing changed the client; propagate
-                        plugin.state.clientUpdated = false;
-                        instance.propagateClient(plugin.state.client);
-                    }
-
-                    if (plugin.state.serverUpdated)
-                    {
-                        // Postprocessing changed the server; propagate
-                        plugin.state.serverUpdated = false;
-                        instance.propagateServer(plugin.state.server);
-                    }
+                    checkUpdatesAndPropagate(instance, plugin);
                 }
 
                 // Let each plugin process the event
@@ -740,42 +745,6 @@ Next mainLoop(ref Kameloso instance)
                     try
                     {
                         plugin.onEvent(event);
-
-                        // Go through Fibers awaiting IRCEvent.Types
-                        plugin.handleAwaitingFibers(event);
-
-                        // Fetch any queued `WHOIS` requests and handle
-                        instance.processTriggerRequestQueue(plugin.state.triggerRequestQueue);
-
-                        if (plugin.state.botUpdated)
-                        {
-                            /*  Plugin `onEvent` or `WHOIS` reaction updated the
-                                bot. There's no need to check for both
-                                separately since this is just a single plugin
-                                processing; it keeps its update internally
-                                between both passes.
-                            */
-                            plugin.state.botUpdated = false;
-                            instance.propagateBot(plugin.state.bot);
-                        }
-
-                        if (plugin.state.clientUpdated)
-                        {
-                            /*  Plugin `onEvent` or `WHOIS` reaction updated the
-                                client. As above.
-                            */
-                            plugin.state.clientUpdated = false;
-                            instance.propagateClient(plugin.state.client);
-                        }
-
-                        if (plugin.state.serverUpdated)
-                        {
-                            /*  Plugin `onEvent` or `WHOIS` reaction updated the
-                                server. As above.
-                            */
-                            plugin.state.serverUpdated = false;
-                            instance.propagateServer(plugin.state.server);
-                        }
                     }
                     catch (UTFException e)
                     {
@@ -790,6 +759,31 @@ Next mainLoop(ref Kameloso instance)
                         printObject(event);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
+
+                    checkUpdatesAndPropagate(instance, plugin);
+
+                    try
+                    {
+                        plugin.handleAwaitingFibers(event);
+                    }
+                    catch (UTFException e)
+                    {
+                        logger.warningf("UTFException %s.handleAwaitingFibers: %s%s",
+                            plugin.name, logtint, e.msg);
+                        version(PrintStacktraces) logger.trace(e.info);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warningf("Exception %s.handleAwaitingFibers: %s%s",
+                            plugin.name, logtint, e.msg);
+                        printObject(event);
+                        version(PrintStacktraces) logger.trace(e.toString);
+                    }
+
+                    checkUpdatesAndPropagate(instance, plugin);
+
+                    // Fetch any queued `WHOIS` requests and handle
+                    instance.processTriggerRequestQueue(plugin.state.triggerRequestQueue);
                 }
 
                 with (IRCEvent.Type)
