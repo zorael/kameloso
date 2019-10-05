@@ -288,38 +288,90 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     }
 }
 
-
-// onCommandAddHome
+// onCommandHome
 /++
- +  Adds a channel to the list of currently active home channels, in the
+ +  Adds or removes channels to/from the list of currently active home channels, in the
  +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
+ +  Merely passes on execution to `addHome` and `delHome`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "addhome")
-@Description("Adds a channel to the list of homes.", "$command [channel]")
-void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
+@BotCommand(PrefixPolicy.nickname, "home")
+@Description("Adds or removes a channel to/from the list of homes.",
+    "$command [add|del|list] [channel]")
+void onCommandHome(AdminPlugin plugin, const IRCEvent event)
+{
+    import lu.string : nom;
+    import std.typecons : Flag, No, Yes;
+
+    void sendUsage()
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: home [add|del|list] [channel]");
+    }
+
+    if (!event.content.length)
+    {
+        return sendUsage();
+    }
+
+    string slice = event.content;  // mutable
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "add":
+        return plugin.addHome(event, slice);
+
+    case "del":
+        return plugin.delHome(event, slice);
+
+    case "list":
+        import std.format : format;
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Current homes: %-(%s, %)".format(plugin.state.bot.homes));
+        return;
+
+    default:
+        return sendUsage();
+    }
+}
+
+
+// addHome
+/++
+ +  Adds a channel to the list of currently active home channels, in the
+ +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState`.
+ +
+ +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      event = The triggering `dialect.defs.IRCEvent`.
+ +      rawChannel = The channel to be added, potentially in unstripped, cased form.
+ +/
+void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 {
     import dialect.common : isValidChannel;
     import lu.string : stripped;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
 
-    immutable channelToAdd = event.content.stripped.toLower;
+    immutable channel = rawChannel.stripped.toLower;
 
-    if (!channelToAdd.isValidChannel(plugin.state.server))
+    if (!channel.isValidChannel(plugin.state.server))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
         return;
     }
 
-    if (plugin.state.bot.homes.canFind(channelToAdd))
+    if (plugin.state.bot.homes.canFind(channel))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "We are already in that home channel.");
         return;
@@ -327,9 +379,9 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     // We need to add it to the homes array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
-    plugin.state.bot.homes ~= channelToAdd;
+    plugin.state.bot.homes ~= channel;
     plugin.state.botUpdated = true;
-    join(plugin.state, channelToAdd);
+    join(plugin.state, channel);
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
     // We have to follow up and see if we actually managed to join the channel
@@ -346,7 +398,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
         const followupEvent = thisFiber.payload;
 
-        if (followupEvent.channel != channelToAdd)
+        if (followupEvent.channel != channel)
         {
             // Different channel; yield fiber, wait for another event
             Fiber.yield();
@@ -417,26 +469,20 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandDelHome
+// delHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
  +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "delhome")
-@Description("Removes a channel from the list of homes and leaves it.", "$command [channel]")
-void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
+void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 {
     import lu.string : stripped;
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
+    import std.uni : toLower;
 
-    immutable channel = event.content.stripped;
+    immutable channel = rawChannel.stripped.toLower;
     immutable homeIndex = plugin.state.bot.homes.countUntil(channel);
 
     if (homeIndex == -1)
@@ -457,7 +503,13 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
         .remove!(SwapStrategy.unstable)(homeIndex);
     plugin.state.botUpdated = true;
     part(plugin.state, channel);
-    privmsg(plugin.state, event.channel, event.sender.nickname, "Home removed.");
+
+    if (channel != event.channel)
+    {
+        // We didn't just leave the channel, so we can report success
+        // Otherwise we get ERR_CANNOTSENDTOCHAN
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Home removed.");
+    }
 }
 
 
