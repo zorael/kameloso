@@ -268,6 +268,8 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_QUIETLIST:
     case RPL_INVITELIST:
     case RPL_EXCEPTLIST:
+    case RPL_REOPLIST:
+    case RPL_ENDOFREOPLIST:
     case SPAMFILTERLIST:
     case RPL_ENDOFBANLIST:
     case RPL_ENDOFQUIETLIST:
