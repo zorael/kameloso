@@ -6,9 +6,9 @@ import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;
 
-@(IRCEvent.Type.CHAN)     // This function should trigger on channel messages
-@(PrivilegeLevel.ignore)  // ...sent by anyone, ignoring whether they're whitelisted or not etc
-@BotCommand(PrefixPolicy.nickname, "hello")  // ...on the command "[bot nickname]: hello"
+@(IRCEvent.Type.CHAN)     // This function should automatically trigger on channel messages
+@(PrivilegeLevel.ignore)  // ...sent by anyone...
+@BotCommand(PrefixPolicy.prefixed, "hello")  // ...on "!hello"
 void onCommandHello(HelloPlugin plugin, const IRCEvent event)
 {
     chan(plugin.state, event.channel, "Hello World!");
