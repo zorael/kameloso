@@ -650,15 +650,24 @@ enum FilterResult
 
 
 /++
- +  To what extent the annotated function demands its triggering
- +  `dialect.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
+ +  In what way the contents of a `dialect.defs.IRCEvent` should start (be "prefixed")
+ +  to be considered as triggering a function.
+ +
+ +  * With `PrefixPolicy.direct`, an event handler will not examine the
+ +    `dialect.defs.IRCEvent.content` member at all and always trigger.
+ +  * With `PrefixPolicy.prefixed`, the event handler will only trigger if the
+ +    `dialect.defs.IRCEvent.content` member starts with the
+ +    `kameloso.common.CoreSettings.prefix` (e.g. "`!`").
+ +  * With  PrefixPolicy.nickname`, it will only trigger if the
+ +    `dialect.defs.IRCEvent.content` member starts with the bot's nickname
+ +    (as in `kameloso: command args`).
  +/
 enum PrefixPolicy
 {
     direct,   /// Message will be treated as-is without looking for prefixes.
     prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
     /++
-     +  Message should begin with the bot's name, except in
+     +  Message should begin with the bot's name, addressing the bot, except in
      +  `dialect.defs.IRCEvent.Type.QUERY` events.
      +/
     nickname,
@@ -679,7 +688,18 @@ enum ChannelPolicy
 }
 
 
-/// What level of privilege is needed to trigger an event.
+/++
+ +  What level of privilege is needed to trigger an event handler.
+ +
+ +  In any event handler context, the triggering user has a *level of privilege*.
+ +  This decides whether or not they are allowed to trigger the function. In
+ +  general privileges are application-wide; meaning, a user with a privilege
+ +  of `PrivilegeLevel.whitelist` with regards to event handlers in plugin A has the
+ +  same privilege level in plugin B, but this does not necessarily need to be
+ +  the case and isn't in the case of the Twitch bot plugin.
+ +
+ +  Put simply this is the "barrier of entry" for event handlers.
+ +/
 enum PrivilegeLevel
 {
     ignore = 0, /// Override privilege checks.
@@ -743,6 +763,18 @@ TriggerRequest triggerRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, 
  +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
  +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
  +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
+ +
+ +  Example:
+ +  ---
+ +  @(IRCEvent.Type.CHAN)
+ +  @(ChannelPolicy.home)
+ +  @BotCommand(PrefixPolicy.prefixed, "foo")
+ +  @BotCommand(PrefixPolicy.prefixed, "bar")
+ +  void onCommandFooOrBar(IRCPlugin plugin, const IRCEvent event)
+ +  {
+ +      // ...
+ +  }
+ +  ---
  +/
 struct BotCommand
 {
@@ -780,6 +812,18 @@ struct BotCommand
  +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
  +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
  +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
+ +
+ +  Example:
+ +  ---
+ +  @(IRCEvent.Type.CHAN)
+ +  @(ChannelPolicy.home)
+ +  @BotRegex(PrefixPolicy.direct, ".+MonkaS.+")
+ +  void onSawMonkaS(IRCPlugin plugin, const IRCEvent event)
+ +  {
+ +      // ...
+ +  }
+ +  ---
+ +
  +/
 struct BotRegex
 {
@@ -863,10 +907,10 @@ struct Verbose;
  +/
 enum Awareness
 {
-    setup,
-    early,
-    late,
-    cleanup,
+    setup,   /// Event handlers setting the stage for following `Awareness.early` ones.
+    early,   /// Event handlers meant to fire earlier than plugin-specific ones.
+    late,    /// Event handlers meant to fire after plugin-specific ones have finished.
+    cleanup, /// Event handlers meant to finish and clean up after all handlers have been called.
 }
 
 
@@ -1049,7 +1093,8 @@ unittest
 /++
  +  Mixin that fully implements an `IRCPlugin`.
  +
- +  Uses compile-time introspection to call top-level functions to extend behaviour;
+ +  Uses compile-time introspection to call top-level functions to extend behaviour.
+ +  Transparently emulates all such as being member methods of the mixing-in class.
  +/
 version(WithPlugins)
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
@@ -1792,6 +1837,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Lets a plugin modify an `dialect.defs.IRCEvent` while it's begin
      +  constructed, before it's finalised and passed on to be handled.
+     +
+     +  Params:
+     +      event = The `dialect.defs.IRCEvent` in flight.
      +/
     public void postprocess(ref IRCEvent event) @system
     {
@@ -1845,6 +1893,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
+     +
+     +  Params:
+     +      configFile = String of the configuration file to read.
+     +
+     +  Returns:
+     +      A `string[][string]` associative array of arrays of invalid entries
+     +      found when reading the passed configuration file.
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
@@ -2054,6 +2109,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
      +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
+     +
+     +  Returns:
+     +      The module name of the mixing-in class.
+     +
+     +  TODO:
+     +      Use `std.traits.moduleName`?
      +/
     public string name() @property const pure
     {
@@ -2199,6 +2260,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Calls `.periodically` on a plugin if the internal private timestamp says
      +  the interval since the last call has passed, letting the plugin do
      +  scheduled tasks.
+     +
+     +  Params:
+     +      now = The current time expressed in UNIX time.
      +/
     public void periodically(const long now) @system
     {
@@ -2252,6 +2316,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // onBusMessage
     /++
      +  Proxies a bus message to the plugin, to let it handle it (or not).
+     +
+     +  Params:
+     +      header = String header for plugins to examine and decide if the
+     +          message was meant for them.
+     +      content = Wildcard content, to be cast to concrete types if the header matches.
      +/
     public void onBusMessage(const string header, shared Sendable content) @system
     {
@@ -2315,6 +2384,10 @@ version(unittest)
  +  `raw("PING :irc.freenode.net")` without having to import
  +  `kameloso.messaging` and include the thread ID of the main thread in every
  +  call of the functions.
+ +
+ +  Params:
+ +      debug_ = Whether or not to include debugging output.
+ +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
 mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
@@ -2535,6 +2608,11 @@ public:
  +
  +  General rule: if a plugin doesn't access `state.users`, it's probably
  +  going to be enough with only `MinimalAuthentication`.
+ +
+ +
+ +  Params:
+ +      debug_ = Whether or not to include debugging output.
+ +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
@@ -2736,6 +2814,11 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
  +
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
+ +
+ +  Params:
+ +      channelPolicy = What `ChannelPolicy` to apply to enwrapped event handlers.
+ +      debug_ = Whether or not to include debugging output.
+ +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
@@ -2980,6 +3063,11 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  Note: It's possible to get the topic, WHO, NAMES, modes, creation time etc of
  +  channels we're not in, so only update the channel entry if there is one
  +  already (and avoid range errors).
+ +
+ +  Params:
+ +      channelPolicy = What `ChannelPolicy` to apply to enwrapped event handlers.
+ +      debug_ = Whether or not to include debugging output.
+ +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
@@ -3429,6 +3517,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +  of pruning the plugin's `IRCPluginState.users` array of old entries.
  +
  +  Twitch awareness needs channel awareness, or it is meaningless.
+ +
+ +  Params:
+ +      channelPolicy = What `ChannelPolicy` to apply to enwrapped event handlers.
+ +      debug_ = Whether or not to include debugging output.
+ +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
 version(TwitchSupport)
