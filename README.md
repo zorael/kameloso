@@ -20,7 +20,7 @@ All of the above are plugins and can be runtime disabled or compiled out. It is 
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue.
+Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue [to the dialect project](https://github.com/zorael/dialect/issues).
 
 Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) servers, so support and coverage is best there.
 
@@ -47,6 +47,9 @@ Minimal test:
 ```bash
 $ dub build
 $ ./kameloso --channels "#d,#freenode"
+
+# alternatively
+$ dub run kameloso -- --channels "#d,#freenode"
 ```
 
 ---
@@ -82,7 +85,7 @@ $ ./kameloso --channels "#d,#freenode"
 
 ## Prerequisites
 
-You need a [**D**](https://dlang.org) compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (September 2017). You will also need more than 4 Gb of free memory to build all features (Linux debug, excluding tests).
+You need a [**D**](https://dlang.org) compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (September 2017). You will also need more than 4 Gb of free memory to build all features (Linux debug, excluding tests). (If you have less, consider using the `--build-mode=singleFile` flag.)
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
@@ -103,7 +106,7 @@ This will compile the bot in the default `debug` mode, which adds some extra cod
 
 You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-> The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+> The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
 ### Build configurations
 
@@ -262,6 +265,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
+* channel-specific whitelists? replace Twitch regulars?
 * more pairs of eyes
 
 # Built with
