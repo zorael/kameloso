@@ -742,8 +742,9 @@ string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
 
     static if (caseInsensitive)
     {
-        import std.uni : toLower;
-        ptrdiff_t startpos = line.toLower.indexOf(toInvert.toLower);
+        import std.algorithm.searching : countUntil;
+        import std.uni : asLowerCase;
+        ptrdiff_t startpos = line.asLowerCase.countUntil(toInvert.asLowerCase);
     }
     else
     {
