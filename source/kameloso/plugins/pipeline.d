@@ -127,8 +127,8 @@ void pipereader(shared IRCPluginState newState, const string filename)
         foreach (immutable line; fifo.byLineCopy)
         {
             import kameloso.messaging : raw, quit;
-            import lu.string : beginsWith;
-            import std.uni : toLower;
+            import std.algorithm.searching : startsWith;
+            import std.uni : asLowerCase;
 
             if (!line.length) break;
 
@@ -152,7 +152,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
                 break;
             }
 
-            if (line.toLower.beginsWith("quit"))
+            if (line.asLowerCase.startsWith("quit"))
             {
                 if ((line.length > 6) && (line[4..6] == " :"))
                 {
