@@ -3835,13 +3835,19 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
+ +      channelName = Optional name of the channel to rehash for. If none given
+ +          it will rehash all channels' associative arrays.
  +/
-void rehashUsers(IRCPlugin plugin)
+void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 {
-    plugin.state.users.rehash();
+    if (!channelName.length)
+    {
+        plugin.state.users.rehash();
+    }
 
     foreach (ref channel; plugin.state.channels)
     {
+        if (channelName.length && (channelName != channel.name)) continue;
         channel.users.rehash();
     }
 }
