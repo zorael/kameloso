@@ -3002,9 +3002,10 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
     @channelPolicy
-    void onUserAwarenessEndOfListMixin(IRCPlugin plugin)
+    void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        rehashUsers(plugin);
+        // Pass a channel name so only that channel is rehashed
+        rehashUsers(plugin, event.channel);
     }
 
 
