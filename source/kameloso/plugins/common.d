@@ -3028,11 +3028,18 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         import std.datetime.systime : Clock;
 
+        enum minutesBeforeInitialRehash = 5;
         enum hoursBetweenRehashes = 12;
 
         immutable now = Clock.currTime.toUnixTime;
 
-        if (now >= _nextPingRehashTimestamp)
+        if (now == 0L)
+        {
+            // First PING encountered
+            // Delay rehashing to let the client join all channels
+            _nextPingRehashTimestamp = now + (minutesBeforeInitialRehash * 60);
+        }
+        else if (now >= _nextPingRehashTimestamp)
         {
             // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
             rehashUsers(plugin);
