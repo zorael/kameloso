@@ -3034,7 +3034,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
         immutable now = Clock.currTime.toUnixTime;
 
-        if (now == 0L)
+        if (_nextPingRehashTimestamp == 0L)
         {
             // First PING encountered
             // Delay rehashing to let the client join all channels
