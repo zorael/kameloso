@@ -40,20 +40,23 @@ configuration "posix" {
     versions "WithPlugins" "Colours" "Web"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "windows" {
     platforms "windows"
     versions "WithPlugins" "Colours" "Web"
     dependency "requests" version="~>1.0.9"
-dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "arsd-official:dom" version="~>4.0.3"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "twitch" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
-subConfiguration "dialect" "twitch"
+    subConfiguration "dialect" "twitch"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "dev" {
@@ -67,16 +70,19 @@ configuration "dev" {
 
 configuration "vanilla" {
     versions "WithPlugins"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "colours" {
     versions "WithPlugins" "Colours"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "web" {
     versions "WithPlugins" "Web"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "full" {
@@ -84,15 +90,18 @@ configuration "full" {
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
     subConfiguration "dialect" "twitch"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "pluginless" {
     versions "Colours"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "pluginless-vanilla" {
     // Mustn't be empty
     targetType "executable"
+    buildRequirements "silenceDeprecations"
 }
 
 configuration "unittest" {
