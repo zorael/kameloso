@@ -99,8 +99,6 @@ configuration "pluginless" {
 }
 
 configuration "pluginless-vanilla" {
-    // Mustn't be empty
-    targetType "executable"
     buildRequirements "silenceDeprecations"
 }
 
