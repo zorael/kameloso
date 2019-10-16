@@ -1549,6 +1549,26 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
 
+    void delayOnNetworkDown(const ResolveAttempt attempt)
+    {
+        if (attempt.retryNum+1 < resolveAttempts)
+        {
+            import kameloso.thread : interruptibleSleep;
+            import core.time : seconds;
+
+            logger.logf("Network down? Retrying in %s%d%s seconds.",
+                infotint, incrementedRetryDelay, logtint);
+            interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+            if (*instance.abort) return;
+
+            import std.algorithm.comparison : min;
+
+            enum delayCap = 10*60;  // seconds
+            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+            incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
+        }
+    }
+
     with (instance)
     foreach (const attempt; resolver)
     {
@@ -1569,29 +1589,29 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
         case exception:
             logger.warningf("Could not resolve server address. (%s%s%s)",
                 logtint, attempt.error, warningtint);
-
-            if (attempt.retryNum+1 < resolveAttempts)
-            {
-                import kameloso.thread : interruptibleSleep;
-                import core.time : seconds;
-
-                logger.logf("Network down? Retrying in %s%d%s seconds.",
-                    infotint, incrementedRetryDelay, logtint);
-                interruptibleSleep(incrementedRetryDelay.seconds, *abort);
-                if (*abort) return Next.returnFailure;
-
-                import std.algorithm.comparison : min;
-
-                enum delayCap = 10*60;  // seconds
-                incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
-                incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
-            }
+            delayOnNetworkDown(attempt);
+            if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
-            logger.errorf("Could not resolve server address. (%s%s%s)", logtint, attempt.error, errortint);
-            logger.log("Failed to resolve host to IPs. Verify your server address.");
-            return Next.returnFailure;
+            logger.errorf("Could not resolve server address. (%s%s%s)",
+                logtint, attempt.error, errortint);
+
+            if (firstConnect)
+            {
+                // First attempt and a failure; something's wrong, abort
+                logger.logf("Failed to resolve host. Verify that you are connected to " ~
+                    "the Internet and that the server address (%s%s%s) is correct.",
+                    infotint, parser.server.address, logtint);
+                return Next.returnFailure;
+            }
+            else
+            {
+                // Not the first attempt yet failure; transient error? retry
+                delayOnNetworkDown(attempt);
+                if (*instance.abort) return Next.returnFailure;
+                continue;
+            }
 
         case failure:
             logger.error("Failed to resolve host.");
