@@ -1141,7 +1141,8 @@ if (isOutputRange!(Sink, char[]))
                 case EMOTE:
                 case TWITCH_SUBGIFT:
                     import dialect.common : containsNickname;
-                    if (content.containsNickname(plugin.state.client.nickname))
+                    if (plugin.state.client.nickname.length &&
+                        content.containsNickname(plugin.state.client.nickname))
                     {
                         // Nick was mentioned (certain)
                         shouldBell = bellOnMention;
