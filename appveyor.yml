@@ -4,11 +4,11 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.088.1
+      DVersion: 2.089.1
       DSubversion:
       arch: x64
     - DC: ldc
-      DVersion: 1.17.0
+      DVersion: 1.19.0
       DSubversion:
       arch: x64
 
