@@ -3,6 +3,55 @@
  +/
 module kameloso.main;
 
+
+/+
+    Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
+
+    It may have been fixed in versions in the future at time of writing, so
+    limit it to 2.086 and earlier. Update this condition as compilers are released.
+
+    Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
+ +/
+static if (__VERSION__ <= 2088L)
+{
+    debug
+    {
+        // Everything is fine in debug mode
+    }
+    else version(D_Ddoc)
+    {
+        // Also fine
+    }
+    else
+    {
+        pragma(msg, "NOTE: Compilation might not succeed outside of debug mode.");
+        pragma(msg, "See bug #18026 at https://issues.dlang.org/show_bug.cgi?id=18026");
+    }
+}
+
+
+/*
+    Warn about bug #20562: [dmd] Memory allocation failed (ERROR: This is a compiler bug)
+
+    It only affects Windows with DMD 2.089.0 or later, on build modes other than
+    `singleFile`. Constrain with an upper major version as the issue is fixed.
+ */
+version(Windows)
+{
+    version(DigitalMars)
+    {
+        static if (__VERSION__ >= 2089L)
+        {
+            pragma(msg, "NOTE: Compilation might not succeed on Windows outside " ~
+                "of single-file build mode.");
+            pragma(msg, "If building fails with an `OutOfMemoryError` compiler " ~
+                "error, rebuild with `dub build --build-mode=singleFile`.");
+            pragma(msg, "See bug #20562 at https://issues.dlang.org/show_bug.cgi?id=20562");
+        }
+    }
+}
+
+
 version(unittest)
 /++
  +  Unit-testing main; does nothing.
