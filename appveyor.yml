@@ -101,41 +101,19 @@ artifacts:
 install:
   - ps: function SetUpDCompiler
         {
+            $version = $env:DVersion;
+            $subversion = $env:DSubversion;
             if($env:DC -eq "dmd"){
-              if($env:arch -eq "x86"){
-                $env:DConf = "m32";
-              }
-              elseif($env:arch -eq "x64"){
-                $env:DConf = "m64";
-              }
-              echo "downloading ...";
-              $env:toolchain = "msvc";
               $releasetype = $env:DReleaseType;
-              $version = $env:DVersion;
-              $subversion = $env:DSubversion;
-              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\dmd.7z";
-              echo "finished.";
-              pushd c:\\;
-              7z x dmd.7z > $null;
-              popd;
+              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\compiler.archive";
             }
             elseif($env:DC -eq "ldc"){
-              echo "downloading ...";
-              if($env:arch -eq "x86"){
-                $env:DConf = "m32";
-              }
-              elseif($env:arch -eq "x64"){
-                $env:DConf = "m64";
-              }
-              $env:toolchain = "msvc";
-              $version = $env:DVersion;
-              $subversion = $env:DSubversion;
-              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-x64.7z" -OutFile "c:\ldc.7z";
-              echo "finished.";
-              pushd c:\\;
-              7z x ldc.7z > $null;
-              popd;
+              $arch = $env:arch;
+              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-$($arch).7z" -OutFile "c:\compiler.archive";
             }
+            pushd c:\\;
+            7z x compiler.archive > $null;
+            popd;
         }
   - ps: SetUpDCompiler
   - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.11.0-windows-x86.zip -OutFile dub.zip
@@ -144,13 +122,16 @@ install:
   - dub --version
 
 before_build:
+  - ps: $env:toolchain = "msvc";
   - ps: if($env:arch -eq "x86"){
             $env:compilersetupargs = "x86";
             $env:Darch = "x86";
+            $env:DConf = "m32";
           }
         elseif($env:arch -eq "x64"){
             $env:compilersetupargs = "amd64";
             $env:Darch = "x86_64";
+            $env:DConf = "m64";
         }
   - ps : if($env:DC -eq "dmd"){
            $env:PATH += ";C:\dmd2\windows\bin;";
@@ -158,7 +139,8 @@ before_build:
          elseif($env:DC -eq "ldc"){
            $version = $env:DVersion;
            $subversion = $env:DSubversion;
-           $env:PATH += ";C:\ldc2-$($version)$($subversion)-windows-x64\bin";
+           $arch = $env:arch;
+           $env:PATH += ";C:\ldc2-$($version)$($subversion)-windows-$($arch)\bin";
            $env:DC = "ldc2";
          }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
