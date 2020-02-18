@@ -7,10 +7,12 @@ environment:
       DVersion: 2.089.1
       DSubversion:
       arch: x64
+      dubArgs: --build-mode=singleFile
     - DC: ldc
       DVersion: 1.19.0
       DSubversion:
       arch: x64
+      dubArgs:
 
 skip_tags: true
 branches:
@@ -105,14 +107,14 @@ test_script:
  - echo %PATH%
  - '%DC% --version'
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
- - dub test           --arch=%Darch% --compiler=%DC% || true
- - dub test  --nodeps --arch=%Darch% --compiler=%DC% -c vanilla
-#- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c dev || true
-#- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c dev
+ - dub test           --arch=%Darch% --compiler=%DC% %dubArgs% || true
+ - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
  - mv kameloso.exe kameloso-twitch.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c vanilla
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c vanilla
  - mv kameloso.exe kameloso-vanilla.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c full
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c full
