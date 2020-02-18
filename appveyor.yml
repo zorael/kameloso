@@ -4,14 +4,81 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x64
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
       DVersion: 2.089.1
       DSubversion:
       arch: x64
       dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.089.1
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.088.1
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.088.1
+      DSubversion:
+      arch: x86
+      dubArgs:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.084.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.084.0
+      DSubversion:
+      arch: x86
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.20.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.20.0
+      DSubversion:
+      arch: x86
+      dubArgs:
     - DC: ldc
       DVersion: 1.19.0
       DSubversion:
       arch: x64
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.19.0
+      DSubversion:
+      arch: x86
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.18.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.18.0
+      DSubversion:
+      arch: x86
       dubArgs:
 
 skip_tags: true
