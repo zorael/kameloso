@@ -66,16 +66,22 @@ static if (__VERSION__ <= 2088L)
 /*
     Warn about bug #20562: [dmd] Memory allocation failed (ERROR: This is a compiler bug)
 
-    It only affects Windows on build modes other than `singleFile`. Defer to dub.sdl
-    for setting the `WindowsBrokenDMD` version for signaling such cases, limiting
-    it to one place.
+    It only affects Windows with DMD 2.089.0 or later, on build modes other than
+    `singleFile`. Constrain with an upper major version as the issue is fixed.
  */
-version(WindowsDMDNeedsSingleFile)
+version(Windows)
 {
-    pragma(msg, "NOTE: Compilation might not succeed on Windows outside of " ~
-        "single-file build mode. If building fails with an `OutOfMemoryError` " ~
-        "compiler error, rebuild with `dub build --build-mode=singleFile`.");
-    pragma(msg, "See bug #20562 at https://issues.dlang.org/show_bug.cgi?id=20562");
+    version(DigitalMars)
+    {
+        static if (__VERSION__ >= 2089L)
+        {
+            pragma(msg, "NOTE: Compilation might not succeed on Windows outside " ~
+                "of single-file build mode.");
+            pragma(msg, "If building fails with an `OutOfMemoryError` compiler " ~
+                "error, rebuild with `dub build --build-mode=singleFile`.");
+            pragma(msg, "See bug #20562 at https://issues.dlang.org/show_bug.cgi?id=20562");
+        }
+    }
 }
 
 
