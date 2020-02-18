@@ -43,6 +43,15 @@ configuration "posix" {
     buildRequirements "silenceDeprecations"
 }
 
+configuration "windows-dmd-needs-singlefile" {
+    platforms "windows"
+    toolchainRequirements dmd="yes" ldc="no" gdc="no" frontend=">=2.088.0"
+    versions "WithPlugins" "Colours" "Web" "WindowsDMDNeedsSingleFile"
+    dependency "requests" version="~>1.0.9"
+    dependency "arsd-official:dom" version="~>4.0.3"
+    buildRequirements "silenceDeprecations"
+}
+
 configuration "windows" {
     platforms "windows"
     versions "WithPlugins" "Colours" "Web"
