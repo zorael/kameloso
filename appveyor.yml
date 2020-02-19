@@ -157,6 +157,7 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - '%DC% --version'
+ - dub --version
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
  - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
