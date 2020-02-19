@@ -116,10 +116,10 @@ install:
             popd;
         }
   - ps: SetUpDCompiler
+  - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
   - dub --version || true
   - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.11.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
-  - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
   - dub --version
 
 before_build:
