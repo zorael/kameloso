@@ -4,13 +4,72 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x64
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
       DVersion: 2.089.1
       DSubversion:
       arch: x64
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.089.1
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.088.1
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.088.1
+      DSubversion:
+      arch: x86
+      dubArgs:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.084.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.084.0
+      DSubversion:
+      arch: x86
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.20.0
+      DSubversion:
+      arch: x64
+      dubArgs:
     - DC: ldc
       DVersion: 1.19.0
       DSubversion:
       arch: x64
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.18.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+    - DC: ldc
+      DVersion: 1.14.0
+      DSubversion:
+      arch: x64
+      dubArgs:
 
 skip_tags: true
 branches:
@@ -32,64 +91,44 @@ artifacts:
 install:
   - ps: function SetUpDCompiler
         {
+            $version = $env:DVersion;
+            $subversion = $env:DSubversion;
             if($env:DC -eq "dmd"){
-              if($env:arch -eq "x86"){
-                $env:DConf = "m32";
-              }
-              elseif($env:arch -eq "x64"){
-                $env:DConf = "m64";
-              }
-              echo "downloading ...";
-              $env:toolchain = "msvc";
               $releasetype = $env:DReleaseType;
-              $version = $env:DVersion;
-              $subversion = $env:DSubversion;
-              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\dmd.7z";
-              echo "finished.";
-              pushd c:\\;
-              7z x dmd.7z > $null;
-              popd;
+              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\compiler.archive";
             }
             elseif($env:DC -eq "ldc"){
-              echo "downloading ...";
-              if($env:arch -eq "x86"){
-                $env:DConf = "m32";
-              }
-              elseif($env:arch -eq "x64"){
-                $env:DConf = "m64";
-              }
-              $env:toolchain = "msvc";
-              $version = $env:DVersion;
-              $subversion = $env:DSubversion;
-              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-x64.7z" -OutFile "c:\ldc.7z";
-              echo "finished.";
-              pushd c:\\;
-              7z x ldc.7z > $null;
-              popd;
+              $arch = $env:arch;
+              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-$($arch).7z" -OutFile "c:\compiler.archive";
             }
+            pushd c:\\;
+            7z x compiler.archive > $null;
+            popd;
         }
   - ps: SetUpDCompiler
-  - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.11.0-windows-x86.zip -OutFile dub.zip
-  - 7z x dub.zip -odub > nul
-  - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
-  - dub --version
 
 before_build:
+  - ps: $env:toolchain = "msvc";
   - ps: if($env:arch -eq "x86"){
             $env:compilersetupargs = "x86";
             $env:Darch = "x86";
+            $env:DConf = "m32";
           }
         elseif($env:arch -eq "x64"){
             $env:compilersetupargs = "amd64";
             $env:Darch = "x86_64";
+            $env:DConf = "m64";
         }
   - ps : if($env:DC -eq "dmd"){
-           $env:PATH += ";C:\dmd2\windows\bin;";
+           $path = $env:PATH;
+           $env:PATH = "C:\dmd2\windows\bin;$($path)";
          }
          elseif($env:DC -eq "ldc"){
            $version = $env:DVersion;
            $subversion = $env:DSubversion;
-           $env:PATH += ";C:\ldc2-$($version)$($subversion)-windows-x64\bin";
+           $arch = $env:arch;
+           $path = $env:PATH;
+           $env:PATH = "C:\ldc2-$($version)$($subversion)-windows-$($arch)\bin;$($path)";
            $env:DC = "ldc2";
          }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
@@ -104,15 +143,16 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - '%DC% --version'
+ - dub --version
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
- - dub test           --arch=%Darch% --compiler=%DC% || true
- - dub test  --nodeps --arch=%Darch% --compiler=%DC% -c vanilla
-#- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c dev || true
-#- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c dev
+ - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
+ - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
  - mv kameloso.exe kameloso-twitch.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c vanilla
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c vanilla
  - mv kameloso.exe kameloso-vanilla.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c full
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c full

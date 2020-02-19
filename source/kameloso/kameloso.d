@@ -11,16 +11,32 @@ import lu.common : Next;
 
 version(ProfileGC)
 {
-    /++
-     +  Set some flags to tune the garbage collector and have it print profiling
-     +  information at program exit, iff version `ProfileGC`.
-     +/
-    extern(C)
-    __gshared string[] rt_options =
-    [
-        "gcopt=profile:1 gc:precise",
-        "scanDataSeg=precise",
-    ];
+    static if (__VERSION__ >= 2085L)
+    {
+        /++
+         +  Set some flags to tune the garbage collector and have it print
+         +  profiling information at program exit, iff version `ProfileGC`.
+         +  Enables the precise garbage collector.
+         +/
+        extern(C)
+        __gshared string[] rt_options =
+        [
+            "gcopt=profile:1 gc:precise",
+            "scanDataSeg=precise",
+        ];
+    }
+    else
+    {
+        /++
+         +  Set some flags to tune the garbage collector and have it print
+         +  profiling information at program exit, iff version `ProfileGC`.
+         +/
+        extern(C)
+        __gshared string[] rt_options =
+        [
+            "gcopt=profile:1",
+        ];
+    }
 }
 
 
@@ -36,31 +52,6 @@ __gshared bool abort;
 
 
 private:
-
-/+
-    Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
-
-    It may have been fixed in versions in the future at time of writing, so
-    limit it to 2.086 and earlier. Update this condition as compilers are released.
-
-    Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
- +/
-static if (__VERSION__ <= 2088L)
-{
-    debug
-    {
-        // Everything is fine in debug mode
-    }
-    else version(D_Ddoc)
-    {
-        // Also fine
-    }
-    else
-    {
-        pragma(msg, "NOTE: Compilation might not succeed outside of debug mode.");
-        pragma(msg, "See bug #18026 at https://issues.dlang.org/show_bug.cgi?id=18026");
-    }
-}
 
 
 // signalHandler
