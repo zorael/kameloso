@@ -65,6 +65,11 @@ environment:
       DSubversion:
       arch: x64
       dubArgs:
+    - DC: ldc
+      DVersion: 1.14.0
+      DSubversion:
+      arch: x64
+      dubArgs:
 
 skip_tags: true
 branches:
