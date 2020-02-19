@@ -11,16 +11,32 @@ import lu.common : Next;
 
 version(ProfileGC)
 {
-    /++
-     +  Set some flags to tune the garbage collector and have it print profiling
-     +  information at program exit, iff version `ProfileGC`.
-     +/
-    extern(C)
-    __gshared string[] rt_options =
-    [
-        "gcopt=profile:1 gc:precise",
-        "scanDataSeg=precise",
-    ];
+    static if (__VERSION__ >= 2085L)
+    {
+        /++
+         +  Set some flags to tune the garbage collector and have it print
+         +  profiling information at program exit, iff version `ProfileGC`.
+         +  Enables the precise garbage collector.
+         +/
+        extern(C)
+        __gshared string[] rt_options =
+        [
+            "gcopt=profile:1 gc:precise",
+            "scanDataSeg=precise",
+        ];
+    }
+    else
+    {
+        /++
+         +  Set some flags to tune the garbage collector and have it print
+         +  profiling information at program exit, iff version `ProfileGC`.
+         +/
+        extern(C)
+        __gshared string[] rt_options =
+        [
+            "gcopt=profile:1",
+        ];
+    }
 }
 
 
