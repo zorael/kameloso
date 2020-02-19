@@ -134,13 +134,15 @@ before_build:
             $env:DConf = "m64";
         }
   - ps : if($env:DC -eq "dmd"){
-           $env:PATH += ";C:\dmd2\windows\bin;";
+           $path = $env:PATH;
+           $env:PATH = "C:\dmd2\windows\bin;$($path)";
          }
          elseif($env:DC -eq "ldc"){
            $version = $env:DVersion;
            $subversion = $env:DSubversion;
            $arch = $env:arch;
-           $env:PATH += ";C:\ldc2-$($version)$($subversion)-windows-$($arch)\bin";
+           $path = $env:PATH;
+           $env:PATH = "C:\ldc2-$($version)$($subversion)-windows-$($arch)\bin;$($path)";
            $env:DC = "ldc2";
          }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
