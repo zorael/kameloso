@@ -45,7 +45,8 @@ version(Windows)
             pragma(msg, "NOTE: Compilation might not succeed on Windows outside " ~
                 "of single-file build mode.");
             pragma(msg, "If building fails with an `OutOfMemoryError` compiler " ~
-                "error, rebuild with `dub build --build-mode=singleFile`.");
+                "error, rebuild with `dub build --build-mode=singleFile` " ~
+                "or with `dub build --compiler=ldc2`.");
             pragma(msg, "See bug #20562 at https://issues.dlang.org/show_bug.cgi?id=20562");
         }
     }
