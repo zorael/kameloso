@@ -366,7 +366,7 @@ public:
  +      proceed or not.
  +
  +  Throws:
- +      `std.getopt.GetOptException` if `--asserts`/`--gen` is passed in non-debug builds.
+ +      `std.getopt.GetOptException` if an unkown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSettings) @system
 {
@@ -380,20 +380,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
     bool shouldWriteConfig;
     bool shouldShowVersion;
     bool shouldShowSettings;
-    bool shouldGenerateAsserts;
     bool shouldAppendChannels;
 
     string[] inputChannels;
     string[] inputHomes;
-
-    version(AssertsGeneration)
-    {
-        enum genDescription = "Parse an IRC event string and generate an assert block";
-    }
-    else
-    {
-        enum genDescription = "(Unavailable in non-dev builds)";
-    }
 
     immutable argsBackup = args.idup;
 
@@ -452,9 +442,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
                             &shouldWriteConfig,
             "save",         &shouldWriteConfig,
             "init",         &shouldWriteConfig,
-            "asserts",      genDescription,
-                            &shouldGenerateAsserts,
-            "gen",          &shouldGenerateAsserts,
             "version",      "Show version information",
                             &shouldShowVersion,
         );
@@ -572,22 +559,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             foreach (plugin; instance.plugins) plugin.printSettings();
 
             return Next.returnSuccess;
-        }
-
-        if (shouldGenerateAsserts)
-        {
-            version(AssertsGeneration)
-            {
-                // --gen|--generate was passed, enter assert generation
-                import kameloso.debugging : generateAsserts;
-                instance.generateAsserts();
-                return Next.returnSuccess;
-            }
-            else
-            {
-                import std.getopt : GetOptException;
-                throw new GetOptException("--asserts is disabled in non-dev builds");
-            }
         }
 
         return Next.continue_;
