@@ -199,21 +199,21 @@ void formatDelta(Flag!"asserts" asserts = No.asserts, Sink, QualThing)
     const uint indents = 0, const string submember = string.init)
 if (isOutputRange!(Sink, char[]) && is(QualThing == struct))
 {
-    import std.traits : Unqual;
-
-    alias Thing = Unqual!QualThing;
-
     immutable prefix = submember.length ? submember ~ '.' : string.init;
 
     foreach (immutable i, ref member; after.tupleof)
     {
-        import std.traits : isSomeFunction, isSomeString, isType;
+        import lu.uda : Hidden;
+        import std.functional : unaryFun;
+        import std.traits : Unqual, hasUDA, isSomeFunction, isSomeString, isType;
 
+        alias Thing = Unqual!QualThing;
         alias T = Unqual!(typeof(member));
         enum memberstring = __traits(identifier, before.tupleof[i]);
 
-        static if ((memberstring == "raw") || (memberstring == "time") || (memberstring == "updated"))
+        static if (hasUDA!(Thing.tupleof[i], Hidden))
         {
+            // Member is annotated as Hidden; skip
             continue;
         }
         else static if (is(T == struct))
