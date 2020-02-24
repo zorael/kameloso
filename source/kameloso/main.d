@@ -42,8 +42,8 @@ version(Windows)
     {
         static if (__VERSION__ >= 2089L)
         {
-            pragma(msg, "NOTE: Compilation might not succeed on Windows outside " ~
-                "of single-file build mode.");
+            pragma(msg, "NOTE: Compilation might not succeed with dmd on Windows " ~
+                "outside of single-file build mode.");
             pragma(msg, "If building fails with an `OutOfMemoryError` compiler " ~
                 "error, rebuild with `dub build --build-mode=singleFile` " ~
                 "or with `dub build --compiler=ldc2`.");
