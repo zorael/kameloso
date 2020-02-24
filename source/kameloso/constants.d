@@ -8,7 +8,7 @@ module kameloso.constants;
 /// Meta-information about the program.
 enum KamelosoInfo
 {
-    version_ = "1.5.0",    /// Version as a string.
+    version_ = "1.6.0",    /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
