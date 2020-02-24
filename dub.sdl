@@ -38,23 +38,23 @@ versions \
 configuration "posix" {
     platforms "posix"
     versions "WithPlugins" "Colours" "Web"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     buildRequirements "silenceDeprecations"
 }
 
 configuration "windows" {
     platforms "windows"
     versions "WithPlugins" "Colours" "Web"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     buildRequirements "silenceDeprecations"
 }
 
 configuration "twitch" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     subConfiguration "dialect" "twitch"
     buildRequirements "silenceDeprecations"
 }
@@ -63,8 +63,8 @@ configuration "dev" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
         "ProfileGC" "AssertGeneration"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     subConfiguration "dialect" "dev"
 }
 
@@ -80,15 +80,15 @@ configuration "colours" {
 
 configuration "web" {
     versions "WithPlugins" "Web"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     buildRequirements "silenceDeprecations"
 }
 
 configuration "full" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     subConfiguration "dialect" "twitch"
     buildRequirements "silenceDeprecations"
 }
@@ -106,7 +106,7 @@ configuration "unittest" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
         "ProfileGC" "AssertGeneration"
-    dependency "requests" version="~>1.0.9"
-    dependency "arsd-official:dom" version="~>4.0.3"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
     subConfiguration "dialect" "dev"
 }
