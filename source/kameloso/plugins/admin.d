@@ -1070,7 +1070,8 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 
     if (plugin.adminSettings.printAsserts)
     {
-        import kameloso.debugging : formatClientAssignment;
+        import lu.deltastrings : formatDeltaInto;
+
         // Print the bot assignment but only if we're toggling it on
         formatClientAssignment(stdout.lockingTextWriter,
             plugin.state.client, plugin.state.server);
