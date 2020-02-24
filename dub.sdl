@@ -62,7 +62,7 @@ configuration "twitch" {
 configuration "dev" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
-        "ProfileGC" "AssertsGeneration"
+        "ProfileGC" "AssertGeneration"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
     subConfiguration "dialect" "dev"
@@ -105,7 +105,7 @@ configuration "pluginless-vanilla" {
 configuration "unittest" {
     versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
         "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
-        "ProfileGC" "AssertsGeneration"
+        "ProfileGC" "AssertGeneration"
     dependency "requests" version="~>1.0.9"
     dependency "arsd-official:dom" version="~>4.0.3"
     subConfiguration "dialect" "dev"
