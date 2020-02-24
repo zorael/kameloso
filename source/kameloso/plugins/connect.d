@@ -1011,25 +1011,60 @@ void register(ConnectService service)
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
 
+        import core.thread : Fiber;
+
+        version(TwitchSupport)
+        {
+            // If we register too early on Twitch servers we won't get a
+            // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
+            // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
+
+            if (server.address.endsWith(".twitch.tv"))
+            {
+                import kameloso.thread : CarryingFiber;
+
+                void dg()
+                {
+                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+                    assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+                    assert((thisFiber.payload.type == IRCEvent.Type.CAP),
+                        "Twitch nick negotiation delegate triggered on unknown type");
+
+                    if ((thisFiber.payload.aux == "ACK") &&
+                        (thisFiber.payload.content == "twitch.tv/tags"))
+                    {
+                        // tag capabilities negotiated, safe to register
+                        service.negotiateNick();
+                    }
+                    else
+                    {
+                        // Wrong kind of CAP event; yield and retry.
+                        Fiber.yield();
+                        return dg();
+                    }
+                }
+
+                Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
+                service.awaitEvent(fiber, IRCEvent.Type.CAP);
+                return;
+            }
+        }
+
         // Nick negotiation after CAP END
         // If CAP is not supported, go ahead and negotiate nick after n seconds
 
-        enum secsToWaitForCAP = 1;
+        enum secsToWaitForCAP = 2;
 
-        void dg()
+        void dgTimered()
         {
             if (service.capabilityNegotiation == Progress.notStarted)
             {
                 //logger.info("Does the server not support capabilities?");
-                // Don't flag CAP as negotiated, let CAP triggers trigger late if they want to
-                //service.capabilityNegotiation = Progress.finished;
                 service.negotiateNick();
             }
         }
 
-        import core.thread : Fiber;
-
-        Fiber fiber = new Fiber(&dg, 32768);
+        Fiber fiber = new Fiber(&dgTimered, 32768);
         service.delayFiber(fiber, secsToWaitForCAP);
     }
 }
