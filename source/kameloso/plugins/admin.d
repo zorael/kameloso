@@ -107,7 +107,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         if (settings.flush) stdout.flush();
     }
 
-    version(AssertGeneration)
+    version(AdminAssertGeneration)
     {
         if (plugin.adminSettings.printAsserts)
         {
@@ -1047,7 +1047,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
  +  This is used to creating unittest blocks in the source code.
  +/
 debug
-version(AssertGeneration)
+version(AdminAssertGeneration)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
@@ -1101,7 +1101,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
  +      server = `dialect.defs.IRCServer` to simulate the assignment of.
  +/
 debug
-version(AssertGeneration)
+version(AdminAssertGeneration)
 void formatClientAssignment(Sink)(auto ref Sink sink, const IRCClient client, const IRCServer server)
 if (isOutputRange!(Sink, char[]))
 {
@@ -1124,7 +1124,7 @@ if (isOutputRange!(Sink, char[]))
 
 ///
 debug
-version(AssertGeneration)
+version(AdminAssertGeneration)
 unittest
 {
     import std.array : Appender;
@@ -1179,7 +1179,7 @@ with (parser)
  +      event = `dialect.defs.IRCEvent` to construct assert statements for.
  +/
 debug
-version(AssertGeneration)
+version(AdminAssertGeneration)
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 if (isOutputRange!(Sink, char[]))
 {
@@ -1214,7 +1214,7 @@ if (isOutputRange!(Sink, char[]))
 
 ///
 debug
-version(AssertGeneration)
+version(AdminAssertGeneration)
 unittest
 {
     import dialect.parsing : IRCParser;
@@ -1523,7 +1523,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return;
 
         debug
-        version(AssertGeneration)
+        version(AdminAssertGeneration)
         {
             case "printasserts":
                 plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
@@ -1592,7 +1592,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
  +  `printAsserts` is debug-only, so gate this behind debug too.
  +/
 debug
-version(AssertGeneration)
+version(AdminAssertGeneration)
 void start(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.printAsserts) return;
@@ -1644,7 +1644,7 @@ private:
     @Settings AdminSettings adminSettings;
 
     debug
-    version(AssertGeneration)
+    version(AdminAssertGeneration)
     {
         /// Snapshot of the previous `dialect.defs.IRCClient`.
         IRCClient previousClient;
