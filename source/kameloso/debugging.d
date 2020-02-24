@@ -97,6 +97,7 @@ module kameloso.debugging;
 
 import kameloso.common : Kameloso;
 import dialect.defs;
+import lu.deltastrings : formatDeltaInto;
 
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -133,8 +134,8 @@ if (isOutputRange!(Sink, char[]))
     sink.put("IRCParser parser;\n\n");
     sink.put("with (parser)\n");
     sink.put("{\n");
-    sink.formatDelta(IRCClient.init, client, 1, "client");
-    sink.formatDelta(IRCServer.init, server, 1, "server");
+    sink.formatDeltaInto(IRCClient.init, client, 1, "client");
+    sink.formatDeltaInto(IRCServer.init, server, 1, "server");
     sink.put('}');
 
     static if (!__traits(hasMember, Sink, "data"))
@@ -459,7 +460,7 @@ if (isOutputRange!(Sink, char[]))
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, escaped);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
-    sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
+    sink.formatDeltaInto!(Yes.asserts)(IRCEvent.init, event, 2);
     sink.formattedWrite("%s}\n", 1.tabs);
     sink.put("}");
 
@@ -490,7 +491,7 @@ unittest
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, event.raw);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
-    sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
+    sink.formatDeltaInto!(Yes.asserts)(IRCEvent.init, event, 2);
     sink.formattedWrite("%s}\n", 1.tabs);
     sink.put("}");
 
@@ -655,8 +656,8 @@ void generateAsserts(ref Kameloso instance) @system
 
                     writeln("with (parser)");
                     writeln("{");
-                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(oldClient, parser.client, 1, "client");
-                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(oldServer, parser.server, 1, "server");
+                    stdout.lockingTextWriter.formatDeltaInto!(Yes.asserts)(oldClient, parser.client, 1, "client");
+                    stdout.lockingTextWriter.formatDeltaInto!(Yes.asserts)(oldServer, parser.server, 1, "server");
                     writeln("}\n");
 
                     oldClient = parser.client;

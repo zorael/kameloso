@@ -123,20 +123,11 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
             if (plugin.state.client != plugin.previousClient)
             {
-                import kameloso.debugging : formatDelta;
-
-                /+writeln("/*");
-                /*writeln("with (parser.client)");
-                writeln("{");*/
-                stdout.lockingTextWriter.formatDelta!(No.asserts)
-                    (plugin.previousClient, plugin.state.client, 0);
-                /*writeln("}");*/
-                writeln("*/");
-                writeln();+/
+                import lu.deltastrings : formatDeltaInto;
 
                 writeln("with (parser.client)");
                 writeln("{");
-                stdout.lockingTextWriter.formatDelta!(Yes.asserts)
+                stdout.lockingTextWriter.formatDeltaInto!(Yes.asserts)
                     (plugin.previousClient, plugin.state.client, 1);
                 writeln("}\n");
 
