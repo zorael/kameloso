@@ -661,6 +661,9 @@ struct Kameloso
 
         /// UNIX time when a connection was lost.
         long stopTime;
+
+        /// How many events fired during a connection.
+        long numEvents;
     }
 
     /// History records of established connections this execution run.
