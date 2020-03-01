@@ -646,6 +646,8 @@ struct Kameloso
         }
     }
 
+
+    // ConnectionHistoryEntry
     /++
      +  A record of a successful connection.
      +/
