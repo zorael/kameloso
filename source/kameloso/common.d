@@ -645,6 +645,21 @@ struct Kameloso
             plugin.state.bot = bot;
         }
     }
+
+    /++
+     +  A record of a successful connection.
+     +/
+    struct ConnectionHistoryEntry
+    {
+        /// UNIX time when a conection was established.
+        long startTime;
+
+        /// UNIX time when a connection was lost.
+        long stopTime;
+    }
+
+    /// History records of established connections this execution run.
+    ConnectionHistoryEntry[] connectionHistory;
 }
 
 
