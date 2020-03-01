@@ -125,6 +125,9 @@ struct CoreSettings
     /// Whether to endlessly connect or whether to give up after a while.
     bool endlesslyConnect = true;
 
+    /// Whether or not to display a connection summary on program exit.
+    bool exitSummary = false;
+
     /// Character(s) that prefix a bot chat command.
     @Quoted string prefix = "!";
 
