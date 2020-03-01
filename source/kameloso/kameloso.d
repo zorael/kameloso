@@ -565,10 +565,17 @@ Next mainLoop(ref Kameloso instance)
         }
     }
 
+    /++
+     +  A snapshot of `settings.exitSummary` to use instead of it, so that
+     +  toggling it mid-execution does nothing. It would not know the connection
+     +  established timestamp and so would give an invalid connection duration.
+     +/
+    immutable exitSummary = settings.exitSummary;
+
     /// The index of the current `ConnectionHistoryIndex` in `instance.connectionHistory`.
     size_t historyEntryIndex;
 
-    if (settings.exitSummary)
+    if (exitSummary)
     {
         historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
         instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
@@ -642,7 +649,7 @@ Next mainLoop(ref Kameloso instance)
                 return Next.returnFailure;
             }
 
-            if (settings.exitSummary)
+            if (exitSummary)
             {
                 // Successful read; record as such
                 instance.connectionHistory[historyEntryIndex].stopTime = nowInUnix;
@@ -729,7 +736,7 @@ Next mainLoop(ref Kameloso instance)
 
                 event.time = Clock.currTime.toUnixTime;
 
-                if (settings.exitSummary)
+                if (exitSummary)
                 {
                     // Successful parse
                     ++instance.connectionHistory[historyEntryIndex].numEvents;
