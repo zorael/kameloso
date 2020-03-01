@@ -537,6 +537,7 @@ Next mainLoop(ref Kameloso instance)
 {
     import lu.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
+    import std.datetime.systime : Clock;
 
     /// Enum denoting what we should do next loop.
     Next next;
@@ -564,6 +565,16 @@ Next mainLoop(ref Kameloso instance)
         }
     }
 
+    /// The index of the current `ConnectionHistoryIndex` in `instance.connectionHistory`.
+    size_t historyEntryIndex;
+
+    if (settings.exitSummary)
+    {
+        historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
+        instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
+        instance.connectionHistory[historyEntryIndex].startTime = Clock.currTime.toUnixTime;
+    }
+
     bool readWasShortened;
 
     while (next == Next.continue_)
@@ -578,7 +589,6 @@ Next mainLoop(ref Kameloso instance)
             return Next.retry;
         }
 
-        import std.datetime.systime : Clock;
         immutable nowInUnix = Clock.currTime.toUnixTime;
 
         foreach (ref plugin; instance.plugins)
@@ -630,6 +640,12 @@ Next mainLoop(ref Kameloso instance)
 
             case returnFailure:
                 return Next.returnFailure;
+            }
+
+            if (settings.exitSummary)
+            {
+                // Successful read; record as such
+                instance.connectionHistory[historyEntryIndex].stopTime = nowInUnix;
             }
 
             IRCEvent event;
@@ -712,6 +728,12 @@ Next mainLoop(ref Kameloso instance)
                 }
 
                 event.time = Clock.currTime.toUnixTime;
+
+                if (settings.exitSummary)
+                {
+                    // Successful parse
+                    ++instance.connectionHistory[historyEntryIndex].numEvents;
+                }
 
                 foreach (plugin; instance.plugins)
                 {
