@@ -2311,6 +2311,35 @@ int initBot(string[] args)
         instance.writeConfigurationFile(settings.configFile);
     }
 
+    // The connection history may be empty if exitSummary was set mid-execution.
+    if (settings.exitSummary && instance.connectionHistory.length)
+    {
+        import std.stdio : writefln;
+        import core.time : Duration;
+
+        Duration totalTime;
+
+        logger.info("Connection summary");
+
+        foreach (immutable i, const entry; instance.connectionHistory)
+        {
+            import std.datetime.systime : SysTime;
+            import core.time : msecs;
+
+            auto start = SysTime.fromUnixTime(entry.startTime);
+            start.fracSecs = 0.msecs;
+            auto stop = SysTime.fromUnixTime(entry.stopTime);
+            stop.fracSecs = 0.msecs;
+            immutable duration = (stop - start);
+            totalTime += duration;
+
+            writefln("%2d: %s, %d events parsed (%s to %s)",
+                i+1, duration, entry.numEvents, start, stop);
+        }
+
+        logger.info("Total time connected: ", logtint, totalTime);
+    }
+
     if (*instance.abort)
     {
         // Ctrl+C
