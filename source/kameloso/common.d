@@ -125,6 +125,9 @@ struct CoreSettings
     /// Whether to endlessly connect or whether to give up after a while.
     bool endlesslyConnect = true;
 
+    /// Whether or not to display a connection summary on program exit.
+    bool exitSummary = false;
+
     /// Character(s) that prefix a bot chat command.
     @Quoted string prefix = "!";
 
@@ -645,6 +648,26 @@ struct Kameloso
             plugin.state.bot = bot;
         }
     }
+
+
+    // ConnectionHistoryEntry
+    /++
+     +  A record of a successful connection.
+     +/
+    struct ConnectionHistoryEntry
+    {
+        /// UNIX time when a conection was established.
+        long startTime;
+
+        /// UNIX time when a connection was lost.
+        long stopTime;
+
+        /// How many events fired during a connection.
+        long numEvents;
+    }
+
+    /// History records of established connections this execution run.
+    ConnectionHistoryEntry[] connectionHistory;
 }
 
 

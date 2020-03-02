@@ -537,6 +537,7 @@ Next mainLoop(ref Kameloso instance)
 {
     import lu.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
+    import std.datetime.systime : Clock;
 
     /// Enum denoting what we should do next loop.
     Next next;
@@ -564,6 +565,23 @@ Next mainLoop(ref Kameloso instance)
         }
     }
 
+    /++
+     +  A snapshot of `settings.exitSummary` to use instead of it, so that
+     +  toggling it mid-execution does nothing. It would not know the connection
+     +  established timestamp and so would give an invalid connection duration.
+     +/
+    immutable exitSummary = settings.exitSummary;
+
+    /// The index of the current `ConnectionHistoryIndex` in `instance.connectionHistory`.
+    size_t historyEntryIndex;
+
+    if (exitSummary)
+    {
+        historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
+        instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
+        instance.connectionHistory[historyEntryIndex].startTime = Clock.currTime.toUnixTime;
+    }
+
     bool readWasShortened;
 
     while (next == Next.continue_)
@@ -578,7 +596,6 @@ Next mainLoop(ref Kameloso instance)
             return Next.retry;
         }
 
-        import std.datetime.systime : Clock;
         immutable nowInUnix = Clock.currTime.toUnixTime;
 
         foreach (ref plugin; instance.plugins)
@@ -630,6 +647,12 @@ Next mainLoop(ref Kameloso instance)
 
             case returnFailure:
                 return Next.returnFailure;
+            }
+
+            if (exitSummary)
+            {
+                // Successful read; record as such
+                instance.connectionHistory[historyEntryIndex].stopTime = nowInUnix;
             }
 
             IRCEvent event;
@@ -712,6 +735,12 @@ Next mainLoop(ref Kameloso instance)
                 }
 
                 event.time = Clock.currTime.toUnixTime;
+
+                if (exitSummary)
+                {
+                    // Successful parse
+                    ++instance.connectionHistory[historyEntryIndex].numEvents;
+                }
 
                 foreach (plugin; instance.plugins)
                 {
@@ -2287,6 +2316,35 @@ int initBot(string[] args)
     if (settings.saveOnExit)
     {
         instance.writeConfigurationFile(settings.configFile);
+    }
+
+    // The connection history may be empty if exitSummary was set mid-execution.
+    if (settings.exitSummary && instance.connectionHistory.length)
+    {
+        import std.stdio : writefln;
+        import core.time : Duration;
+
+        Duration totalTime;
+
+        logger.info("Connection summary");
+
+        foreach (immutable i, const entry; instance.connectionHistory)
+        {
+            import std.datetime.systime : SysTime;
+            import core.time : msecs;
+
+            auto start = SysTime.fromUnixTime(entry.startTime);
+            start.fracSecs = 0.msecs;
+            auto stop = SysTime.fromUnixTime(entry.stopTime);
+            stop.fracSecs = 0.msecs;
+            immutable duration = (stop - start);
+            totalTime += duration;
+
+            writefln("%2d: %s, %d events parsed (%s to %s)",
+                i+1, duration, entry.numEvents, start, stop);
+        }
+
+        logger.info("Total time connected: ", logtint, totalTime);
     }
 
     if (*instance.abort)

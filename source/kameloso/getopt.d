@@ -436,6 +436,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             "r|resourceDir","Specify a different resource directory [%s]"
                             .format(settings.resourceDirectory),
                             &settings.resourceDirectory,
+            "summary",      "Show a connection summary on program exit",
+                            &settings.exitSummary,
             "force",        "Force connect (skips some sanity checks)",
                             &settings.force,
             "w|writeconfig","Write configuration to file",
