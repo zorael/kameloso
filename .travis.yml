@@ -1,6 +1,7 @@
 language: d
 
-dist: bionic
+sudo: required
+dist: trusty
 
 d:
   - dmd
@@ -16,8 +17,6 @@ addons:
       - libevent-dev
 
 script:
-  - ${DC} --version
-  - dub --version
   - dub test  --compiler=${DC} # unittest already includes more than other configs
   - dub test  --compiler=${DC} --nodeps -c vanilla
   - dub build --compiler=${DC} --nodeps -b debug   -c twitch
@@ -34,8 +33,8 @@ before_deploy:
 deploy:
   provider: pages
   local_dir: docs
-  cleanup: false
-  token: $GH_REPO_TOKEN
+  skip_cleanup: true
+  github_token: $GH_REPO_TOKEN
   on:
     branch: master
     condition:
