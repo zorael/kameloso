@@ -900,7 +900,7 @@ Next mainLoop(ref Kameloso instance)
         }
         else
         {
-            logger.errorf("Internal error, thread messenger Fiber ended abruptly.");
+            logger.error("Internal error, thread messenger Fiber ended abruptly.");
             version(PrintStacktraces) printStacktrace();
             next = Next.returnFailure;
         }
