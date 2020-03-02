@@ -502,31 +502,23 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             if (inputChannels.length) bot.channels = inputChannels;
         }
 
-        // 6a. Strip whitespace
+        // 7. Strip channel whitespace and make lowercase
         import lu.string : stripped;
-        import std.algorithm.iteration : map;
-        import std.array : array;
-
-        bot.channels = bot.channels.map!((ch) => ch.stripped).array;
-        bot.homes = bot.homes.map!((ch) => ch.stripped).array;
-
-        // 7. Clear entries that are dashes
-        import lu.objmanip : zeroMembers;
-        zeroMembers!"-"(parser.client);
-        zeroMembers!"-"(bot);
-
-        // 8. Make channels lowercase
         import std.algorithm.iteration : map;
         import std.array : array;
         import std.uni : toLower;
 
+        bot.channels = bot.channels
+            .map!(channelName => channelName.stripped.toLower)
+            .array;
         bot.homes = bot.homes
-            .map!(channelName => channelName.toLower)
+            .map!(channelName => channelName.stripped.toLower)
             .array;
 
-        bot.channels = bot.channels
-            .map!(channelName => channelName.toLower)
-            .array;
+        // 8. Clear entries that are dashes
+        import lu.objmanip : zeroMembers;
+        zeroMembers!"-"(parser.client);
+        zeroMembers!"-"(bot);
 
         // 9. Handle showstopper arguments (that display something and then exits)
         if (shouldWriteConfig)
