@@ -625,6 +625,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ACCOUNT:
     case AWAY:
     case BACK:
+    case CHGHOST:
         // These don't carry a channel; instead have them be logged in all
         // channels this user is in (that the bot is also in)
         foreach (immutable channelName, const foreachChannel; state.channels)
