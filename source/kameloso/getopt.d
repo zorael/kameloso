@@ -464,10 +464,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
         /+
             1. Populate `client` and `settings` with getopt (above)
             2. Meld with settings from file
-            3. Adjust members `monochrome` and `brightTerminal` to counter the
-               fact that melding doesn't work well with bools that don't have
-               an "unset"/null state
-            4. Reinitialise the logger with new settings
+            3. Adjust select getopt variables to counter the
+               fact that melding doesn't work well with bools (that don't have
+               an "unset"/null state)
          +/
 
         meldSettingsFromFile(parser.client, parser.server, instance.bot, settings);
@@ -476,8 +475,14 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             "--bright", &settings.brightTerminal,
             "--brightTerminal", &settings.brightTerminal,
             "--monochrome", &settings.monochrome,
+            "--hideOutgoing", &settings.hideOutgoing,
+            "--hide", &settings.hideOutgoing,
+            "--summary", &settings.exitSummary,
+            "--force", &settings.force,
+            "--ipv6", &settings.ipv6,
         );
 
+        // 4. Reinitialise the logger with new settings
         import kameloso.common : initLogger;
         initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
 
