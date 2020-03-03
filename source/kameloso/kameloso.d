@@ -1368,6 +1368,12 @@ Next tryGetopt(ref Kameloso instance, string[] args, ref string[] customSettings
     try
     {
         import kameloso.getopt : handleGetopt;
+        import lu.serialisation : readConfigInto;
+
+        settings.configFile.readConfigInto(instance.parser.client, instance.bot,
+            instance.parser.server, settings);
+        applyDefaults(instance.parser.client, instance.parser.server);
+
         // Act on arguments getopt, pass return value to main
         return instance.handleGetopt(args, customSettings);
     }
@@ -2187,9 +2193,12 @@ int initBot(string[] args)
         return 1;
     }
 
-    // Apply some defaults to empty members, as stored in `kameloso.constants`.
     import kameloso.common : applyDefaults;
-    applyDefaults(instance.parser.client, instance.parser.server);
+
+    // Apply some defaults to empty members, as stored in `kameloso.constants`.
+    // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
+    // Skip if --force was passed.
+    if (!settings.force) applyDefaults(instance.parser.client, instance.parser.server);
 
     string pre, post, infotint, logtint, warningtint, errortint;
 

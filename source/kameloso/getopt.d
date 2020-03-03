@@ -24,170 +24,6 @@ import std.typecons : No, Yes;
 
 private:
 
-
-// meldSettingsFromFile
-/++
- +  Read `kameloso.common.CoreSettings` and `dialect.defs.IRCClient` from file
- +  into temporaries, then meld them into the real ones, into which the
- +  command-line arguments will have been applied.
- +
- +  Example:
- +  ---
- +  IRCClient client;
- +  IRCServer server;
- +  IRCBot bot;
- +  CoreSettings settings;
- +
- +  meldSettingsFromFile(client, server, bot, settings);
- +  ---
- +
- +  Params:
- +      client = Reference `dialect.defs.IRCClient` to apply changes to.
- +      server = Reference `dialect.defs.IRCServer` to apply changes to.
- +      bot = Reference `kameloso.common.IRCBot` to apply changes to.
- +      settings = Reference `kameloso.common.CoreSettings` to apply changes to.
- +/
-void meldSettingsFromFile(ref IRCClient client, ref IRCServer server,
-    ref IRCBot bot, ref CoreSettings settings)
-{
-    import lu.meld : MeldingStrategy, meldInto;
-    import lu.serialisation : readConfigInto;
-
-    IRCClient tempClient;
-    IRCServer tempServer;
-    IRCBot tempBot;
-    CoreSettings tempSettings;
-
-    // These arguments are by reference.
-    // 1. Read arguments into client
-    // 2. Read settings into temporary client
-    // 3. Meld arguments *into* temporary client, overwriting
-    // 4. Inherit temporary client into client
-    settings.configFile.readConfigInto(tempClient, tempBot, tempServer, tempSettings);
-
-    client.meldInto!(MeldingStrategy.aggressive)(tempClient);
-    server.meldInto!(MeldingStrategy.aggressive)(tempServer);
-    bot.meldInto!(MeldingStrategy.aggressive)(tempBot);
-    settings.meldInto!(MeldingStrategy.aggressive)(tempSettings);
-
-    client = tempClient;
-    server = tempServer;
-    bot = tempBot;
-    settings = tempSettings;
-}
-
-
-// adjustGetopt
-/++
- +  Adjust values set by getopt, by looking for setting strings in the `args`
- +  `string[]` and manually overriding melded values with them.
- +
- +  The way we meld settings is weak against false settings when they are also
- +  the default values of a member. There's no way to tell apart an unset bool
- +  an unset bool from a false one. They will be overwritten by any true value
- +  from the configuration file.
- +
- +  As such, manually parse a backup `args` and look for some passed strings,
- +  then override the variable that was set thus accordingly.
- +
- +  Params:
- +      args = Arguments passed to the program upon invocation.
- +      option = String option in long `--long` or short `-s` form, including
- +          dashes, with an equals sign between option name and value if
- +          applicable (in all cases except bools).
- +      ptr = Pointer to the value to modify.
- +      rest = Remaining `args` and `option` s to call recursively.
- +
- +  Throws: `std.getopt.GetOptException` if no value of type T was passed to
- +      option taking type T.
- +/
-void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
-{
-    import lu.string : beginsWith, contains;
-    import std.algorithm.iteration : filter;
-
-    static assert((!Rest.length || (Rest.length % 2 == 0)),
-        "adjustGetopt must be called with string option, value pointer pairs");
-
-    foreach (immutable arg; args.filter!(word => word.beginsWith(option)))
-    {
-        string slice = arg;  // mutable
-
-        if (arg.contains('='))
-        {
-            import lu.string : nom;
-
-            immutable realWord = slice.nom('=');
-            if (realWord != option) continue;
-
-            static if (is(T == enum))
-            {
-                import lu.conv : Enum;
-                *ptr = Enum!T.fromString(slice);
-            }
-            else
-            {
-                import std.conv : to;
-                *ptr = slice.to!T;
-            }
-        }
-        else static if (is(T == bool))
-        {
-            if (arg != option) continue;
-            *ptr = true;
-        }
-        else
-        {
-            import std.format : format;
-            import std.getopt : GetOptException;
-            throw new GetOptException("No %s value passed to %s".format(T.stringof, option));
-        }
-    }
-
-    static if (rest.length)
-    {
-        return adjustGetopt(args, rest);
-    }
-}
-
-///
-unittest
-{
-    string[] args =
-    [
-        "./kameloso", "--monochrome",
-        "--server=irc.freenode.net",
-        //"--nickname", "kameloso"  // Not supported under the current design
-        "--banana=def",
-    ];
-
-    struct S
-    {
-        enum E { abc, def, ghi, }
-        bool monochrome;
-        string server;
-        string nickname;
-        E banana;
-    }
-
-    S s;
-
-    args.adjustGetopt(
-        //"--nickname", s.nickname,
-        "--server", &s.server,
-        "--monochrome", &s.monochrome,
-        "--banana", &s.banana,
-    );
-
-    import lu.conv : Enum;
-
-    assert(s.monochrome);
-    assert((s.server == "irc.freenode.net"), s.server);
-    assert((s.banana == S.E.def), Enum!(S.E).toString(s.banana));
-    //assert((s.nickname == "kameloso"), s.nickname);
-}
-
-
 import std.getopt : GetoptResult;
 
 // printHelp
@@ -279,8 +115,8 @@ void printHelp(GetoptResult results) @system
 Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, ref string[] customSettings) @system
 {
-    import kameloso.common : logger, applyDefaults, printVersionInfo,
-        settings, writeConfigurationFile;
+    import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
+    import kameloso.constants : KamelosoDefaultStrings;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -310,18 +146,14 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     // If we don't initialise the plugins there'll be no plugins array
     instance.initPlugins(customSettings);
 
-    // Fill out some empty fields
-    applyDefaults(client, server);
-
-    import kameloso.constants : KamelosoDefaultStrings;
+    // Take the opportunity to set a default quit reason. We can't do this in
+    // applyDefaults because it's a perfectly valid use-case not to have a quit
+    // string, and havig it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;
 
-    instance.writeConfigurationFile(settings.configFile);
-
-    // Reload saved file
-    meldSettingsFromFile(client, server, bot, settings);
-
     printObjects(client, instance.bot, server, settings);
+
+    instance.writeConfigurationFile(settings.configFile);
 
     logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
 
@@ -370,7 +202,7 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSettings) @system
 {
-    import kameloso.common : applyDefaults, printVersionInfo, settings;
+    import kameloso.common : printVersionInfo, settings;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
@@ -385,13 +217,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
     string[] inputChannels;
     string[] inputHomes;
 
-    immutable argsBackup = args.idup;
-
     arraySep = ",";
 
     with (instance)
     {
-        auto results = args.getopt(
+        auto results = getopt(args,
             config.caseSensitive,
             config.bundling,
             "n|nickname",   "Nickname",
@@ -461,36 +291,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             return Next.returnSuccess;
         }
 
-        /+
-            1. Populate `client` and `settings` with getopt (above)
-            2. Meld with settings from file
-            3. Adjust select getopt variables to counter the
-               fact that melding doesn't work well with bools (that don't have
-               an "unset"/null state)
-         +/
-
-        meldSettingsFromFile(parser.client, parser.server, instance.bot, settings);
-        applyDefaults(parser.client, parser.server);
-        adjustGetopt(argsBackup,
-            "--bright", &settings.brightTerminal,
-            "--brightTerminal", &settings.brightTerminal,
-            "--monochrome", &settings.monochrome,
-            "--hideOutgoing", &settings.hideOutgoing,
-            "--hide", &settings.hideOutgoing,
-            "--summary", &settings.exitSummary,
-            "--force", &settings.force,
-            "--ipv6", &settings.ipv6,
-        );
-
-        // 4. Reinitialise the logger with new settings
+        // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
         initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
 
-        // 5. Give common.d a copy of `settings`, for `printObject` and for plugins
-        static import kameloso.common;
-        kameloso.common.settings = settings;
-
-        // 6. Manually override or append channels, depending on `shouldAppendChannels`
+        // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
             if (inputHomes.length) bot.homes ~= inputHomes;
@@ -502,7 +307,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             if (inputChannels.length) bot.channels = inputChannels;
         }
 
-        // 7. Strip channel whitespace and make lowercase
+        // Strip channel whitespace and make lowercase
         import lu.string : stripped;
         import std.algorithm.iteration : map;
         import std.array : array;
@@ -515,12 +320,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             .map!(channelName => channelName.stripped.toLower)
             .array;
 
-        // 8. Clear entries that are dashes
+        // Clear entries that are dashes
         import lu.objmanip : zeroMembers;
+
         zeroMembers!"-"(parser.client);
         zeroMembers!"-"(bot);
 
-        // 9. Handle showstopper arguments (that display something and then exits)
+        // Handle showstopper arguments (that display something and then exits)
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
