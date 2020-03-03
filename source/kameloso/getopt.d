@@ -279,8 +279,8 @@ void printHelp(GetoptResult results) @system
 Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, ref string[] customSettings) @system
 {
-    import kameloso.common : logger, applyDefaults, printVersionInfo,
-        settings, writeConfigurationFile;
+    import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
+    import kameloso.constants : KamelosoDefaultStrings;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -310,18 +310,14 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     // If we don't initialise the plugins there'll be no plugins array
     instance.initPlugins(customSettings);
 
-    // Fill out some empty fields
-    applyDefaults(client, server);
-
-    import kameloso.constants : KamelosoDefaultStrings;
+    // Take the opportunity to set a default quit reason. We can't do this in
+    // applyDefaults because it's a perfectly valid use-case not to have a quit
+    // string, and havig it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;
 
-    instance.writeConfigurationFile(settings.configFile);
-
-    // Reload saved file
-    meldSettingsFromFile(client, server, bot, settings);
-
     printObjects(client, instance.bot, server, settings);
+
+    instance.writeConfigurationFile(settings.configFile);
 
     logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
 
