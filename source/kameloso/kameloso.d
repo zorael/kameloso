@@ -1699,9 +1699,9 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +  the calling site.
  +
  +  Params:
- +      args = The command-line arguments passed to the program at start.
+ +      binaryPath = Full path to the current binary.
  +/
-void complainAboutMissingConfiguration(const string[] args)
+void complainAboutMissingConfiguration(const string binaryPath)
 {
     import std.file : exists;
     import std.path : baseName;
@@ -1730,7 +1730,7 @@ void complainAboutMissingConfiguration(const string[] args)
     else
     {
         logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-            infotint, args[0].baseName, logtint);
+            infotint, binaryPath.baseName, logtint);
     }
 }
 
@@ -2233,7 +2233,7 @@ int initBot(string[] args)
 
     if (!instance.bot.homes.length && !instance.bot.admins.length)
     {
-        complainAboutMissingConfiguration(args);
+        complainAboutMissingConfiguration(args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
