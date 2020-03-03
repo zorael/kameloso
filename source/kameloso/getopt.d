@@ -391,7 +391,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
 
     with (instance)
     {
-        auto results = args.getopt(
+        auto results = getopt(args,
             config.caseSensitive,
             config.bundling,
             "n|nickname",   "Nickname",
