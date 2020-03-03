@@ -934,7 +934,7 @@ unittest
     }
     else version(Windows)
     {
-        assert(df.endsWith("\\Local\\kameloso"), df);
+        assert(df.endsWith("\\Roaming\\kameloso"), df);
     }
 }
 
@@ -1008,7 +1008,7 @@ unittest
     else version(Windows)
     {
         immutable df = defaultResourcePrefix;
-        assert(df.endsWith("\\Local\\kameloso"), df);
+        assert(df.endsWith("\\Roaming\\kameloso"), df);
     }
 }
 
