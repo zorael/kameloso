@@ -385,7 +385,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
     string[] inputChannels;
     string[] inputHomes;
 
-    immutable argsBackup = args.idup;
+    const argsBackup = args;  // Don't need an idup, just a copy of the slice
 
     arraySep = ",";
 
