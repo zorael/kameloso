@@ -1338,13 +1338,13 @@ void resetSignals() nothrow @nogc
  +  Params:
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      args = The arguments passed to the program.
- +      customSettings = Reference to the dynamic array of custom settings as
+ +      customSettings = Out reference to the dynamic array of custom settings as
  +          defined with `--set plugin.setting=value` on the command line.
  +
  +  Returns:
  +      `kameloso.common.Next`.* depending on what action the calling site should take.
  +/
-Next tryGetopt(ref Kameloso instance, string[] args, ref string[] customSettings)
+Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : ConfigurationFileReadFailureException,
