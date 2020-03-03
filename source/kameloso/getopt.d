@@ -189,7 +189,7 @@ public:
  +  Params:
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      args = The `string[]` args the program was called with.
- +      customSettings = Reference array of custom settings to apply on top of
+ +      customSettings = Out array of custom settings to apply on top of
  +          the settings read from the configuration file.
  +
  +  Returns:
@@ -200,7 +200,7 @@ public:
  +  Throws:
  +      `std.getopt.GetOptException` if an unkown flag is passed.
  +/
-Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSettings) @system
+Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
     import kameloso.common : printVersionInfo, settings;
     import std.format : format;

@@ -410,7 +410,7 @@ struct Kameloso
      +  Throws:
      +      `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
      +/
-    string[][string] initPlugins(string[] customSettings) @system
+    string[][string] initPlugins(const string[] customSettings) @system
     {
         import kameloso.plugins : EnabledPlugins;
         import kameloso.plugins.common : IRCPluginState, applyCustomSettings;

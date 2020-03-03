@@ -434,7 +434,7 @@ struct IRCPluginState
  +  Returns:
  +      `true` if no setting name mismatches occurred, `false` if it did.
  +/
-bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
+bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
 {
     import kameloso.common : logger, settings;
     import lu.string : contains, nom;
