@@ -874,7 +874,7 @@ else version(FreeBSD)
  +
  +  On OSX it defaults to `$HOME/Library/Application Support/kameloso`.
  +
- +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
+ +  On Windows it defaults to `%APPDATA%\\kameloso`.
  +
  +  Returns:
  +      A string path to the default configuration file.
@@ -898,8 +898,8 @@ auto defaultConfigurationPrefix()
     }
     else version(Windows)
     {
-        // Blindly assume %LOCALAPPDATA% is defined
-        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
+        // Blindly assume %APPDATA% is defined
+        return buildNormalizedPath(environment["APPDATA"], "kameloso");
     }
     else
     {
@@ -947,7 +947,7 @@ unittest
  +  On Posix it defaults to `$XDG_DATA_HOME/kameloso` and falls back to
  +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable present.
  +
- +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
+ +  On Windows it defaults to `%APPDATA%\\kameloso`.
  +
  +  Returns:
  +      A string path to the default resource directory.
@@ -971,8 +971,8 @@ auto defaultResourcePrefix()
     }
     else version(Windows)
     {
-        // Blindly assume %LOCALAPPDATA% is defined
-        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
+        // Blindly assume %APPDATA% is defined
+        return buildNormalizedPath(environment["APPDATA"], "kameloso");
     }
     else
     {
