@@ -461,36 +461,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             return Next.returnSuccess;
         }
 
-        /+
-            1. Populate `client` and `settings` with getopt (above)
-            2. Meld with settings from file
-            3. Adjust select getopt variables to counter the
-               fact that melding doesn't work well with bools (that don't have
-               an "unset"/null state)
-         +/
-
-        meldSettingsFromFile(parser.client, parser.server, instance.bot, settings);
-        applyDefaults(parser.client, parser.server);
-        adjustGetopt(argsBackup,
-            "--bright", &settings.brightTerminal,
-            "--brightTerminal", &settings.brightTerminal,
-            "--monochrome", &settings.monochrome,
-            "--hideOutgoing", &settings.hideOutgoing,
-            "--hide", &settings.hideOutgoing,
-            "--summary", &settings.exitSummary,
-            "--force", &settings.force,
-            "--ipv6", &settings.ipv6,
-        );
-
-        // 4. Reinitialise the logger with new settings
+        // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
         initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
 
-        // 5. Give common.d a copy of `settings`, for `printObject` and for plugins
-        static import kameloso.common;
-        kameloso.common.settings = settings;
-
-        // 6. Manually override or append channels, depending on `shouldAppendChannels`
+        // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
             if (inputHomes.length) bot.homes ~= inputHomes;
@@ -502,7 +477,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             if (inputChannels.length) bot.channels = inputChannels;
         }
 
-        // 7. Strip channel whitespace and make lowercase
+        // Strip channel whitespace and make lowercase
         import lu.string : stripped;
         import std.algorithm.iteration : map;
         import std.array : array;
@@ -515,12 +490,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSetti
             .map!(channelName => channelName.stripped.toLower)
             .array;
 
-        // 8. Clear entries that are dashes
+        // Clear entries that are dashes
         import lu.objmanip : zeroMembers;
+
         zeroMembers!"-"(parser.client);
         zeroMembers!"-"(bot);
 
-        // 9. Handle showstopper arguments (that display something and then exits)
+        // Handle showstopper arguments (that display something and then exits)
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
