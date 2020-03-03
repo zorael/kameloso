@@ -366,7 +366,7 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, ref string[] customSettings) @system
 {
-    import kameloso.common : applyDefaults, printVersionInfo, settings;
+    import kameloso.common : printVersionInfo, settings;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
