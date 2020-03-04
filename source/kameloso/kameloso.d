@@ -1376,9 +1376,14 @@ void setupSignals() nothrow @nogc
  +/
 void resetSignals() nothrow @nogc
 {
-    import core.stdc.signal : signal, SIG_DFL, SIGINT;
+    import core.stdc.signal : signal, SIG_DFL, SIGINT, SIGTERM;
+
+    //enum SIGHUP = 1;
+    enum SIGQUIT = 3;
 
     signal(SIGINT, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+    signal(SIGTERM, SIG_DFL);
 
     version(Posix)
     {
