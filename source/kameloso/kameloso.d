@@ -83,12 +83,36 @@ extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.stdio : printf;
+    import core.stdc.signal : SIGINT, SIGTERM;
 
-    printf("...caught signal %d!\n", sig);
-    abort = true;
+    enum SIGHUP = 1;
+    enum SIGQUIT = 3;
+    enum SIGUSR1 = 10;  // Posix only. Platform-specific, 10 is x86/ARM/"most others"
 
-    // Restore signal handlers to the default
-    resetSignals();
+    switch (sig)
+    {
+    case SIGHUP:
+    case SIGINT:
+    case SIGQUIT:
+    case SIGTERM:
+        printf("...caught signal %d!\n", sig);
+        abort = true;
+
+        // Restore signal handlers to the default
+        resetSignals();
+        break;
+
+    version(Posix)
+    {
+        case SIGUSR1:
+            wantLiveSummary = true;
+            break;
+    }
+
+    default:
+        printf("Caught signal %s but don't know what to do with it\n", sig);
+        goto case SIGINT;
+    }
 }
 
 
@@ -1316,14 +1340,21 @@ void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][st
  +/
 void setupSignals() nothrow @nogc
 {
-    import core.stdc.signal : signal, SIGINT;
+    import core.stdc.signal : SIGINT, SIGTERM, signal;
+
+    enum SIGHUP = 1;
+    enum SIGQUIT = 3;
+    enum SIGUSR1 = 10;  // Posix only. Platform-specific, 10 is x86/ARM/"most others"
 
     signal(SIGINT, &signalHandler);
+    signal(SIGQUIT, &signalHandler);
+    signal(SIGTERM, &signalHandler);
 
     version(Posix)
     {
-        import core.sys.posix.signal : SIGHUP;
+        //import core.sys.posix.signal : SIGHUP;
         signal(SIGHUP, &signalHandler);
+        signal(SIGUSR1, &signalHandler);
     }
 }
 
