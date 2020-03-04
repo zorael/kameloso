@@ -498,6 +498,7 @@ struct Kameloso
         foreach (plugin; plugins)
         {
             import std.exception : ErrnoException;
+            import core.memory : GC;
 
             try
             {
@@ -543,10 +544,13 @@ struct Kameloso
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.toString);
             }
+
+            destroy(plugin);
+            GC.free(&plugin);
         }
 
         // Zero out old plugins array
-        plugins.length = 0;
+        plugins = typeof(plugins).init;
     }
 
 
