@@ -441,6 +441,15 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
+        /++
+         +  Sets the `instance.wantsLiveSummary` flag to true, causing the main
+         +  loop to print a connection summary to the terminal on the next iteration.
+         +/
+        void flagWantLiveSummary(ThreadMessage.WantLiveSummary) scope
+        {
+            instance.wantLiveSummary = true;
+        }
+
         import core.time : seconds;
         import std.datetime.systime : Clock;
 
@@ -473,6 +482,7 @@ void messageFiber(ref Kameloso instance)
                 &reconnect,
                 &dispatchBusMessage,
                 &dispatchEmptyBusMessage,
+                &flagWantLiveSummary,
                 (Variant v) scope
                 {
                     // Caught an unhandled message
