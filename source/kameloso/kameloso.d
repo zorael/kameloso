@@ -447,6 +447,7 @@ void messageFiber(ref Kameloso instance)
          +/
         void flagWantLiveSummary(ThreadMessage.WantLiveSummary) scope
         {
+            if (!settings.exitSummary) return;
             instance.wantLiveSummary = true;
         }
 
@@ -590,6 +591,11 @@ Next mainLoop(ref Kameloso instance)
         historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
         instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
         instance.connectionHistory[historyEntryIndex].startTime = Clock.currTime.toUnixTime;
+
+        // Set wantLiveSummary to false just in case a change happened in the middle
+        // of the last connection. Otherwise the first thing to happen would be
+        // that a summary gets printed.
+        instance.wantLiveSummary = false;
     }
 
     bool readWasShortened;
