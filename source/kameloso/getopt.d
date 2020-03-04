@@ -106,14 +106,14 @@ void printHelp(GetoptResult results) @system
  +      client = Reference to the current `dialect.defs.IRCClient`.
  +      server = Reference to the current `dialect.defs.IRCServer`.
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      customSettings = Reference string array to all the custom settings set
+ +      customSettings = const string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +
  +  Returns:
  +      `kameloso.common.Next.returnSuccess` so the caller knows to return and exit.
  +/
 Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
-    ref IRCBot bot, ref string[] customSettings) @system
+    ref IRCBot bot, const string[] customSettings) @system
 {
     import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
     import kameloso.constants : KamelosoDefaultStrings;
