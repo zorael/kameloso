@@ -118,6 +118,9 @@ struct ThreadMessage
         warning,
         error,
     }
+
+    /// Concurrency message asking the main thread to print a connection summary.
+    struct WantLiveSummary {}
 }
 
 
