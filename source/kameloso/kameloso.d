@@ -2419,8 +2419,7 @@ void printSummary(const ref Kameloso instance)
 
     Duration totalTime;
 
-    logger.trace("---");
-    logger.info("Connection summary:");
+    logger.info("-- Connection summary --");
 
     string logtint;
 
@@ -2452,5 +2451,4 @@ void printSummary(const ref Kameloso instance)
     }
 
     logger.info("Total time connected: ", logtint, totalTime);
-    logger.trace("---");
 }
