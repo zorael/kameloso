@@ -256,16 +256,11 @@ struct Kameloso
      +/
     __gshared bool* abort;
 
-    version(Posix)
-    {
-        /++
-         +  When this is set, the main loop will print a connection summary upon
-         +  the next iteration. It is set when a `SIGUSR1` signal is received.
-         +
-         +  `SIGUSR1` is not available on Windows so this is version Posix.
-         +/
-        __gshared bool* wantLiveSummary;
-    }
+    /++
+     +  When this is set, the main loop should print a connection summary upon
+     +  the next iteration.
+     +/
+    bool wantLiveSummary;
 
     /++
      +  Buffer of outgoing message strings.

@@ -51,21 +51,6 @@ version(ProfileGC)
 __gshared bool abort;
 
 
-version(Posix)
-{
-    // wantLiveSummary
-    /++
-     +  Summary request flag.
-     +
-     +  This is set when the process is sent a `SIGUSR1` signal (10), and tells the
-     +  main loop to print the connection summary on the start of the next iteration.
-     +
-     +  `SIGUSR1` is not available on Windows so this is version Posix.
-     +/
-    __gshared bool wantLiveSummary;
-}
-
-
 private:
 
 
@@ -605,16 +590,12 @@ Next mainLoop(ref Kameloso instance)
 
         if (*instance.abort) return Next.returnFailure;
 
-        version(Posix)
+        if (exitSummary && instance.wantLiveSummary)
         {
-            if (exitSummary && *instance.wantLiveSummary)
-            {
-                // `SIGUSR1` signal received, live connection summary requested.
-                instance.printSummary();
-                *instance.wantLiveSummary = false;
-            }
+            // Live connection summary requested.
+            instance.printSummary();
+            instance.wantLiveSummary = false;
         }
-
 
         if (listener.state == Fiber.State.TERM)
         {
@@ -2179,7 +2160,6 @@ int initBot(string[] args)
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
     instance.abort = &abort;
-    version(Posix) instance.wantLiveSummary = &wantLiveSummary;
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
