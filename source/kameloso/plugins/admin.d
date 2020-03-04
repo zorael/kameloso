@@ -1412,6 +1412,24 @@ void onCommandStatus(AdminPlugin plugin)
 }
 
 
+// onCommandSummary
+/++
+ +  Causes a connection summary to be printed to the terminal.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "summary")
+@Description("[debug] Causes a connection summary to be printed to the terminal.")
+void onCommandSummary(AdminPlugin plugin)
+{
+    import kameloso.thread : ThreadMessage;
+    plugin.state.mainThread.send(ThreadMessage.WantLiveSummary());
+}
+
+
 // onCommandBus
 /++
  +  Sends an internal bus message to other plugins, much like how such can be
