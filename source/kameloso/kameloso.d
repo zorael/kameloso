@@ -2163,6 +2163,7 @@ int initBot(string[] args)
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
     instance.abort = &abort;
+    version(Posix) instance.wantLiveSummary = &wantLiveSummary;
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
