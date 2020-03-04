@@ -83,41 +83,12 @@ extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.stdio : printf;
-    import core.stdc.signal : SIGINT, SIGTERM;
 
-    version(Posix)
-    {
-        enum SIGHUP = 1;
-        enum SIGQUIT = 3;
-        enum SIGUSR1 = 10;  // Platform-specific, 10 is x86/ARM/"most others"
-    }
+    printf("...caught signal %d!\n", sig);
+    abort = true;
 
-    switch (sig)
-    {
-    case SIGINT:
-    case SIGTERM:
-        printf("...caught signal %d!\n", sig);
-        abort = true;
-
-        // Restore signal handlers to the default
-        resetSignals();
-        break;
-
-    version(Posix)
-    {
-        case SIGHUP:
-        case SIGQUIT:
-            goto case SIGINT;
-
-        case SIGUSR1:
-            wantLiveSummary = true;
-            break;
-    }
-
-    default:
-        printf("...caught signal %s but don't know what to do with it!\n", sig);
-        goto case SIGINT;
-    }
+    // Restore signal handlers to the default
+    resetSignals();
 }
 
 
@@ -1351,51 +1322,42 @@ void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][st
 
 // setupSignals
 /++
- +  Registers some signals to redirect to our own `signalHandler`, so we can
- +  catch Ctrl+C (and other external signals like `SIGTERM`) and gracefully shut down.
- +
- +  Additionally on Posix it registers `SIGHUP`, `SIGQUIT` and `SIGUSR1`. These
- +  are not available on Windows.
+ +  Registers `SIGINT` (and optionally `SIGHUP` on Posix systems) to redirect to
+ +  our own `signalHandler`, so we can catch Ctrl+C and gracefully shut down.
  +/
 void setupSignals() nothrow @nogc
 {
-    import core.stdc.signal : SIGINT, SIGTERM, signal;
+    import core.stdc.signal : signal, SIGINT;
 
     signal(SIGINT, &signalHandler);
-    signal(SIGTERM, &signalHandler);
 
     version(Posix)
     {
-        enum SIGHUP = 1;
-        enum SIGQUIT = 3;
-        enum SIGUSR1 = 10;  // Platform-specific, 10 is x86/ARM/"most others"
-
+        import core.sys.posix.signal : SIGHUP;
         signal(SIGHUP, &signalHandler);
-        signal(SIGQUIT, &signalHandler);
-        signal(SIGUSR1, &signalHandler);
     }
 }
 
 
 // resetSignals
 /++
- +  Resets signal handlers to the system default.
+ +  Resets `SIGINT` (and `SIGHUP` handlers) to the system default.
  +/
 void resetSignals() nothrow @nogc
 {
     import core.stdc.signal : signal, SIG_DFL, SIGINT, SIGTERM;
 
+    //enum SIGHUP = 1;
+    enum SIGQUIT = 3;
+
     signal(SIGINT, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
 
     version(Posix)
     {
-        enum SIGHUP = 1;
-        enum SIGQUIT = 3;
-
+        import core.sys.posix.signal : SIGHUP;
         signal(SIGHUP, SIG_DFL);
-        signal(SIGQUIT, SIG_DFL);
-        // Don't reset SIGUSR1
     }
 }
 
