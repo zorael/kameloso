@@ -677,6 +677,7 @@ Next mainLoop(ref Kameloso instance)
             {
                 // Successful read; record as such
                 historyEntry.stopTime = nowInUnix;
+                ++historyEntry.numEvents;
             }
 
             IRCEvent event;
@@ -759,12 +760,6 @@ Next mainLoop(ref Kameloso instance)
                 }
 
                 event.time = Clock.currTime.toUnixTime;
-
-                if (exitSummary)
-                {
-                    // Successful parse
-                    ++historyEntry.numEvents;
-                }
 
                 foreach (plugin; instance.plugins)
                 {
