@@ -666,13 +666,13 @@ struct Kameloso
      +/
     struct ConnectionHistoryEntry
     {
-        /// UNIX time when a conection was established.
+        /// UNIX time when this connection was established.
         long startTime;
 
-        /// UNIX time when a connection was lost.
+        /// UNIX time when this connection was lost.
         long stopTime;
 
-        /// How many events fired during a connection.
+        /// How many events fired during this connection.
         long numEvents;
     }
 
