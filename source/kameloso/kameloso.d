@@ -583,14 +583,15 @@ Next mainLoop(ref Kameloso instance)
      +/
     immutable exitSummary = settings.exitSummary;
 
-    /// The index of the current `ConnectionHistoryIndex` in `instance.connectionHistory`.
-    size_t historyEntryIndex;
+    /// The history entry for the current connection.
+    Kameloso.ConnectionHistoryEntry* historyEntry;
 
     if (exitSummary)
     {
-        historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
+        immutable historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
         instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
-        instance.connectionHistory[historyEntryIndex].startTime = Clock.currTime.toUnixTime;
+        historyEntry = &instance.connectionHistory[historyEntryIndex];
+        historyEntry.startTime = Clock.currTime.toUnixTime;
 
         // Set wantLiveSummary to false just in case a change happened in the middle
         // of the last connection. Otherwise the first thing to happen would be
@@ -675,7 +676,7 @@ Next mainLoop(ref Kameloso instance)
             if (exitSummary)
             {
                 // Successful read; record as such
-                instance.connectionHistory[historyEntryIndex].stopTime = nowInUnix;
+                historyEntry.stopTime = nowInUnix;
             }
 
             IRCEvent event;
@@ -762,7 +763,7 @@ Next mainLoop(ref Kameloso instance)
                 if (exitSummary)
                 {
                     // Successful parse
-                    ++instance.connectionHistory[historyEntryIndex].numEvents;
+                    ++historyEntry.numEvents;
                 }
 
                 foreach (plugin; instance.plugins)
