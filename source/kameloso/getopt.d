@@ -168,6 +168,48 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 }
 
 
+// printSettings
+/++
+ +  Prints the core settings and all plugins' settings to screen.
+ +
+ +  Params:
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
+ +      customSettings = const string array to all the custom settings set
+ +          via `getopt`, to apply to things before saving to disk.
+ +/
+void printSettings(ref Kameloso instance, const string[] customSettings) @system
+{
+    import kameloso.common : printVersionInfo, settings;
+    import kameloso.printing : printObjects;
+    import std.stdio : writeln;
+
+    string pre, post;
+
+    version(Colours)
+    {
+        import kameloso.terminal : TerminalForeground, colour;
+
+        if (!settings.monochrome)
+        {
+            enum headertintColourBright = TerminalForeground.black.colour;
+            enum headertintColourDark = TerminalForeground.white.colour;
+            enum defaulttintColour = TerminalForeground.default_.colour;
+            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
+            post = defaulttintColour;
+        }
+    }
+
+    printVersionInfo(pre, post);
+    writeln();
+
+    printObjects!(No.printAll)(instance.parser.client, instance.bot, instance.parser.server, settings);
+
+    instance.initPlugins(customSettings);
+
+    foreach (plugin; instance.plugins) plugin.printSettings();
+}
+
+
 public:
 
 
@@ -357,33 +399,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            import kameloso.printing : printObjects;
-
-            string pre, post;
-
-            version(Colours)
-            {
-                import kameloso.terminal : TerminalForeground, colour;
-
-                if (!settings.monochrome)
-                {
-                    enum headertintColourBright = TerminalForeground.black.colour;
-                    enum headertintColourDark = TerminalForeground.white.colour;
-                    enum defaulttintColour = TerminalForeground.default_.colour;
-                    pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
-                    post = defaulttintColour;
-                }
-            }
-
-            printVersionInfo(pre, post);
-            writeln();
-
-            printObjects!(No.printAll)(parser.client, bot, parser.server, settings);
-
-            instance.initPlugins(customSettings);
-
-            foreach (plugin; instance.plugins) plugin.printSettings();
-
+            printSettings(instance, customSettings);
             return Next.returnSuccess;
         }
 
