@@ -1303,42 +1303,41 @@ void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][st
 
 // setupSignals
 /++
- +  Registers `SIGINT` (and optionally `SIGHUP` on Posix systems) to redirect to
- +  our own `signalHandler`, so we can catch Ctrl+C and gracefully shut down.
+ +  Registers some process signals to redirect to our own `signalHandler`, so we
+ +  can (for instance) catch Ctrl+C and gracefully shut down.
  +/
 void setupSignals() nothrow @nogc
 {
-    import core.stdc.signal : signal, SIGINT;
+    import core.stdc.signal : signal, SIGINT, SIGTERM;
 
     signal(SIGINT, &signalHandler);
+    signal(SIGTERM, &signalHandler);
 
     version(Posix)
     {
-        import core.sys.posix.signal : SIGHUP;
+        import core.sys.posix.signal : SIGHUP, SIGQUIT;
         signal(SIGHUP, &signalHandler);
+        signal(SIGQUIT, &signalHandler);
     }
 }
 
 
 // resetSignals
 /++
- +  Resets `SIGINT` (and `SIGHUP` handlers) to the system default.
+ +  Resets signal handlers to the system default.
  +/
 void resetSignals() nothrow @nogc
 {
     import core.stdc.signal : signal, SIG_DFL, SIGINT, SIGTERM;
 
-    //enum SIGHUP = 1;
-    enum SIGQUIT = 3;
-
     signal(SIGINT, SIG_DFL);
-    signal(SIGQUIT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
 
     version(Posix)
     {
-        import core.sys.posix.signal : SIGHUP;
+        import core.sys.posix.signal : SIGHUP, SIGQUIT;
         signal(SIGHUP, SIG_DFL);
+        signal(SIGQUIT, SIG_DFL);
     }
 }
 
