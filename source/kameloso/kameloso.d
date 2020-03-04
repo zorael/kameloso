@@ -629,6 +629,17 @@ Next mainLoop(ref Kameloso instance)
 
         if (*instance.abort) return Next.returnFailure;
 
+        version(Posix)
+        {
+            if (exitSummary && *instance.wantLiveSummary)
+            {
+                // `SIGUSR1` signal received, live connection summary requested.
+                instance.printSummary();
+                *instance.wantLiveSummary = false;
+            }
+        }
+
+
         if (listener.state == Fiber.State.TERM)
         {
             // Listening Generator disconnected by itself; reconnect
