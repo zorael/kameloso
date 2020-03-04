@@ -51,6 +51,21 @@ version(ProfileGC)
 __gshared bool abort;
 
 
+version(Posix)
+{
+    // wantLiveSummary
+    /++
+     +  Summary request flag.
+     +
+     +  This is set when the process is sent a `SIGUSR1` signal (10), and tells the
+     +  main loop to print the connection summary on the start of the next iteration.
+     +
+     +  `SIGUSR1` is not available on Windows so this is version Posix.
+     +/
+    __gshared bool wantLiveSummary;
+}
+
+
 private:
 
 
