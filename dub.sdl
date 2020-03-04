@@ -1,7 +1,7 @@
 name "kameloso"
 description "IRC bot"
 authors "JR"
-copyright "Copyright © 2019, JR"
+copyright "Copyright © 2020, JR"
 license "MIT"
 targetType "executable"
 mainSourceFile "source/kameloso/main.d"
@@ -37,6 +37,16 @@ versions \
 
 configuration "posix" {
     platforms "posix"
+    versions "WithPlugins" "Colours" "Web"
+    dependency "requests" version="~>1.0.14"
+    dependency "arsd-official:dom" version="~>5.3.4"
+    buildRequirements "silenceDeprecations"
+}
+
+configuration "windows-lowmem" {
+    platforms "windows"
+    toolchainRequirements dmd="yes" ldc="no" gdc="no" frontend=">=2.089"
+    dflags "-lowmem"
     versions "WithPlugins" "Colours" "Web"
     dependency "requests" version="~>1.0.14"
     dependency "arsd-official:dom" version="~>5.3.4"
