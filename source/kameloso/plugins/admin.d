@@ -1594,6 +1594,9 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     case "deblacklist":
         return plugin.delist(slice, verb[2..$]);
 
+    case "summary":
+        return plugin.onCommandSummary();
+
     default:
         logger.error("Unimplemented piped verb: ", verb);
         break;
