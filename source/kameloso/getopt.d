@@ -202,7 +202,8 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : applyDefaults, printVersionInfo, settings;
+    import lu.serialisation : readConfigInto;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
@@ -221,6 +222,26 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
     with (instance)
     {
+        /+
+            Call getopt on args once and look for any specified configuration files
+            so we know what to read. As such it has to be done before the
+            `readConfigInto`  call. Then call getopt on the rest.
+            Include "c|config" in the normal getopt to have it automatically
+            included in the --help text.
+         +/
+
+        // Can be const
+        const configFileResults = getopt(args,
+            config.caseSensitive,
+            config.bundling,
+            config.passThrough,
+            "c|config", &settings.configFile,
+        );
+
+        settings.configFile.readConfigInto(parser.client, bot, parser.server, settings);
+        applyDefaults(parser.client, parser.server);
+
+        // Cannot be const
         auto results = getopt(args,
             config.caseSensitive,
             config.bundling,
@@ -284,7 +305,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             printVersionInfo();
             return Next.returnSuccess;
         }
-        else if (results.helpWanted)
+        else if (configFileResults.helpWanted)
         {
             // --help|-h was passed; show the help table and quit
             printHelp(results);
