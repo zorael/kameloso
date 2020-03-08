@@ -3322,6 +3322,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         auto channel = event.channel in plugin.state.channels;
         if (!channel) return;
 
+        immutable nickname = event.target.nickname;
+
         // User awareness bits add the IRCUser
         if (event.aux.length)
         {
@@ -3336,20 +3338,28 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
-                    (*channel).setMode(modestring, event.target.nickname, plugin.state.server);
+                    (*channel).setMode(modestring, nickname, plugin.state.server);
+
+                    if (nickname == plugin.state.client.nickname) continue;
+
+                    if ((modesign == '@') &&
+                        (plugin.state.users[nickname].class_ <= IRCUser.Class.operator))
+                    {
+                        // Specialcase operator
+                        plugin.state.users[nickname].class_ = IRCUser.Class.operator;
+                    }
+                }
+                else
+                {
+                    //logger.warning("Invalid modesign in RPL_WHOREPLY: ", modesign);
                 }
             }
         }
 
-        if (event.target.nickname == plugin.state.client.nickname) return;
+        if (nickname == plugin.state.client.nickname) return;
 
-        if (event.target.nickname in channel.users)
-        {
-            // Already registered
-            return;
-        }
-
-        channel.users[event.target.nickname] = true;
+        // In case no mode was applied
+        channel.users[nickname] = true;
     }
 
 
@@ -3413,6 +3423,15 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.server);
+
+                    if (nickname == plugin.state.client.nickname) continue;
+
+                    if ((modesign == '@') &&
+                        (plugin.state.users[nickname].class_ <= IRCUser.Class.operator))
+                    {
+                        // Specialcase operator
+                        plugin.state.users[nickname].class_ = IRCUser.Class.operator;
+                    }
                 }
                 else
                 {
@@ -3422,12 +3441,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (nickname == plugin.state.client.nickname) continue;
 
-            if (nickname in channel.users)
-            {
-                // Already registered
-                continue;
-            }
-
+            // In case no mode was applied
             channel.users[nickname] = true;
         }
     }
