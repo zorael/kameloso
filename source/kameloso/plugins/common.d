@@ -1132,7 +1132,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Judges whether an event may be triggered, based on the event itself and
      +  the annotated `PrivilegeLevel` of the handler in question.
      +
-     +  Pass the passed arguments to `filterUser`, doing nothing otherwise.
+     +  Pass the passed arguments to `filterSender`, doing nothing otherwise.
      +
      +  Sadly we can't keep an `allow` around to override since calling it from
      +  inside the same mixin always seems to resolve the original. So instead,
@@ -1161,7 +1161,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
         }
 
-        return filterUser(event, privilegeLevel);
+        return filterSender(privateState, event, privilegeLevel);
     }
 
 
