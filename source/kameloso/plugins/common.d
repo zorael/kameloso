@@ -2644,6 +2644,16 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     continue;
                 }
 
+                if (request.event.sender.nickname == event.target.nickname)
+                {
+                    request.event.sender = event.target;
+                }
+
+                if (request.event.target.nickname == event.target.nickname)
+                {
+                    request.event.target = event.target;
+                }
+
                 version(ExplainReplay)
                 void explainReplay()
                 {
