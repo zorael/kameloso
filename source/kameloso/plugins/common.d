@@ -1230,6 +1230,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
+                import kameloso.common : settings;
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
             }
