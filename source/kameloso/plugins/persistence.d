@@ -394,7 +394,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
     import lu.conv : Enum;
     import std.range : only;
 
-    foreach (class_; only(IRCUser.Class.whitelist, IRCUser.Class.blacklist))
+    foreach (class_; only(IRCUser.Class.operator, IRCUser.Class.whitelist, IRCUser.Class.blacklist))
     {
         immutable list = Enum!(IRCUser.Class).toString(class_);
         const listFromJSON = list in json;
