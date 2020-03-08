@@ -492,7 +492,7 @@ void initResources(PersistenceService service)
 
     import std.range : only;
 
-    foreach (liststring; only("whitelist", "operator", "blacklist"))
+    foreach (liststring; only("operator", "whitelist", "blacklist"))
     {
         if (liststring !in json)
         {
@@ -508,11 +508,9 @@ void initResources(PersistenceService service)
         }
     }
 
-    // Force whitelist to appear before blacklist in the .json
-    // Note: if we ever want support for admin definitions, we need to do something like:
-    //static immutable order = [ "admin", "whitelist", "blacklist" ];
-    //json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
-    json.save!(JSONStorage.KeyOrderStrategy.reverse)(service.userFile);
+    // Force operator and whitelist to appear before blacklist in the .json
+    static immutable order = [ "operator", "whitelist", "blacklist" ];
+    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
 }
 
 
