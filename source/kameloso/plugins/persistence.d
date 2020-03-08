@@ -508,24 +508,8 @@ void initResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.common : logger, settings;
-
-                string logtint, errortint;
-
-                version(Colours)
-                {
-                    if (!settings.monochrome)
-                    {
-                        import kameloso.logger : KamelosoLogger;
-
-                        logtint = (cast(KamelosoLogger)logger).logtint;
-                        errortint = (cast(KamelosoLogger)logger).errortint;
-                    }
-                }
-
-                logger.errorf("An error occured while reading %s%s%s; it may be malformed: %1$s%4s",
-                    logtint, service.userFile, errortint, e.msg);
-                logger.info("Suggestion: delete it and start afresh.");
+                import std.path : baseName;
+                throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
             }
         }
     }
