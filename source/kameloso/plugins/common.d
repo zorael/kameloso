@@ -710,7 +710,8 @@ enum PrivilegeLevel
      +  class may trigger this event.
      +/
     whitelist = 3,
-    admin = 4, /// Only the administrators may trigger this event.
+    operator = 4,  /// Only operators (or moderators) may trigger this event.
+    admin = 5, /// Only the administrators may trigger this event.
 }
 
 
