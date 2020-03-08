@@ -120,7 +120,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        if (user.nickname == service.state.client.nickname) return;
+        if (user.nickname == service.state.client.nickname) continue;
 
         if (auto stored = user.nickname in service.state.users)
         {
