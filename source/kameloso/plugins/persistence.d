@@ -157,75 +157,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 break;
 
             case RPL_WHOREPLY:
-                if (event.aux.length)
-                {
-                    import std.string : representation;
-
-                    // Register operators, half-ops, voiced etc
-                    // Can be more than one if multi-prefix capability is enabled
-                    // Server-sent string, can assume ASCII (@,%,+...) and go char by char
-                    foreach (immutable modesign; event.aux.representation)
-                    {
-                        if (modesign in service.state.server.prefixchars)
-                        {
-                            if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
-                            {
-                                // Specialcase operators
-                                user.class_ = IRCUser.Class.operator;
-                                service.userClassCurrentChannelCache[user.nickname] = event.channel;
-                            }
-                        }
-                    }
-                }
-                break;
-
-            case RPL_NAMREPLY:
-                import lu.string : contains;
-                import std.algorithm.iteration : splitter;
-                import std.string : representation;
-
-                auto names = event.content.splitter(" ");
-
-                foreach (immutable userstring; names)
-                {
-                    string slice = userstring;
-                    string nickname;
-
-                    if (userstring.contains('!') && userstring.contains('@'))
-                    {
-                        import lu.string : nom;
-                        // SpotChat-like, names are in full nick!ident@address form
-                        nickname = slice.nom('!');
-                    }
-                    else
-                    {
-                        // Freenode-like, only a nickname with possible @%+ prefix
-                        nickname = userstring;
-                    }
-
-                    import dialect.common : stripModesign;
-
-                    string modesigns;
-                    nickname = service.state.server.stripModesign(nickname, modesigns);
-
-                    // Register operators, half-ops, voiced etc
-                    // Can be more than one if multi-prefix capability is enabled
-                    // Server-sent string, can assume ASCII (@,%,+...) and go char by char
-                    foreach (immutable modesign; modesigns.representation)
-                    {
-                        if (modesign in service.state.server.prefixchars)
-                        {
-                            if (nickname == service.state.client.nickname) continue;
-
-                            if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
-                            {
-                                // Specialcase operators
-                                user.class_ = IRCUser.Class.operator;
-                                service.userClassCurrentChannelCache[user.nickname] = event.channel;
-                            }
-                        }
-                    }
-                }
+                // WHO replies are one per user.
+                applyClassifiersDg(user);
                 break;
 
             default:
