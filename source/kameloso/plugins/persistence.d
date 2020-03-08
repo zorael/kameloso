@@ -32,6 +32,7 @@ import dialect.defs;
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
+    import std.algorithm.searching : canFind;
     import std.range : only;
 
     foreach (user; only(&event.sender, &event.target))
@@ -43,13 +44,12 @@ void postprocess(PersistenceService service, ref IRCEvent event)
          +  none available, tries to set one that seems to apply based on what
          +  the user looks like.
          +/
-        void applyClassifiersDg(IRCUser* user, const string channel = event.channel)
+        void applyClassifiersDg(IRCUser* user)
         {
-            import std.algorithm.searching : canFind;
-
             if (user.class_ == IRCUser.Class.admin)
             {
                 // Do nothing, admin is permanent and program-wide
+                return;
             }
             else if (!user.account.length)
             {
@@ -66,12 +66,13 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 // admin discovered
                 user.class_ = IRCUser.Class.admin;
+                return;
             }
-            else if (channel.length && (channel in service.channelUsers) &&
-                (user.account in service.channelUsers[channel]))
+            else if (event.channel.length && (event.channel in service.channelUsers) &&
+                (user.account in service.channelUsers[event.channel]))
             {
                 // Permanent class is defined, so apply it
-                user.class_ = service.channelUsers[channel][user.account];
+                user.class_ = service.channelUsers[event.channel][user.account];
             }
             else
             {
@@ -81,7 +82,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
             // Record this channel as being the one the current class_ applies to.
             // That way we only have to look up a class_ when the channel has changed.
-            service.userClassCurrentChannelCache[user.nickname] = channel;
+            service.userClassCurrentChannelCache[user.nickname] = event.channel;
         }
 
         version(TwitchSupport)
@@ -112,9 +113,25 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 {
                     applyClassifiersDg(stored);
                 }
-                else if (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel)
+                else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
                 {
-                    applyClassifiersDg(stored);
+                    // Not a channel or not a home. Additionally not an admin
+                    stored.class_ = IRCUser.Class.anyone;
+                }
+                else
+                {
+                    const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
+
+                    if (!cachedChannel)
+                    {
+                        // User has no cached channel
+                        applyClassifiersDg(stored);
+                    }
+                    else if (*cachedChannel != event.channel)
+                    {
+                        // User's cached channel is different from this one, class likely differs
+                        applyClassifiersDg(stored);
+                    }
                 }
 
                 *user = *stored;
@@ -130,7 +147,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             switch (event.type)
             {
             case JOIN:
-                if (user.account.length) goto case RPL_WHOISACCOUNT;
+                if (!service.state.bot.homes.canFind(event.channel)) break;
+                else if (user.account.length) goto case RPL_WHOISACCOUNT;
                 break;
 
             case ACCOUNT:
@@ -153,16 +171,19 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 import std.datetime.systime : Clock;
                 user.updated = Clock.currTime.toUnixTime;
                 applyClassifiersDg(user);
-                stored.class_ = user.class_;  // Manually set it so it's guaranteed to persist through a meld
                 break;
 
             case RPL_WHOREPLY:
-                // WHO replies are one per user.
-                applyClassifiersDg(user);
+                // WHO replies are one per user and carries a channel.
+                if (service.state.bot.homes.canFind(event.channel))
+                {
+                    applyClassifiersDg(user);
+                }
                 break;
 
             default:
-                if (user.account.length && (user.account != "*") && !stored.account.length)
+                if (event.channel.length && !service.state.bot.homes.canFind(event.channel)) break;
+                else if (user.account.length && (user.account != "*") && !stored.account.length)
                 {
                     goto case RPL_WHOISACCOUNT;
                 }
@@ -179,15 +200,31 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
             if (user.class_ == IRCUser.Class.admin)
             {
-                // Do nothing, admin is program-wide
+                // Do nothing, admin is permanent and program-wide
             }
             else if (event.type == IRCEvent.Type.QUERY)
             {
                 applyClassifiersDg(stored);
             }
-            else if (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel)
+            else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
             {
-                applyClassifiersDg(stored);
+                // Not a channel or not a home. Additionally not an admin
+                stored.class_ = IRCUser.Class.anyone;
+            }
+            else
+            {
+                const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
+
+                if (!cachedChannel)
+                {
+                    // User has no cached channel
+                    applyClassifiersDg(stored);
+                }
+                else if (*cachedChannel != event.channel)
+                {
+                    // User's cached channel is different from this one, class likely differs
+                    applyClassifiersDg(stored);
+                }
             }
 
             // Inject the modified user into the event
@@ -206,9 +243,25 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 applyClassifiersDg(user);
             }
-            else if (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel)
+            else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
             {
-                applyClassifiersDg(user);
+                // Not a channel or not a home. Additionally not an admin
+                user.class_ = IRCUser.Class.anyone;
+            }
+            else
+            {
+                const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
+
+                if (!cachedChannel)
+                {
+                    // User has no cached channel
+                    applyClassifiersDg(user);
+                }
+                else if (*cachedChannel != event.channel)
+                {
+                    // User's cached channel is different from this one, class likely differs
+                    applyClassifiersDg(user);
+                }
             }
 
             service.state.users[user.nickname] = *user;
