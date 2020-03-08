@@ -150,7 +150,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "user")
 @Description("[debug] Prints out information about one or more specific users " ~
