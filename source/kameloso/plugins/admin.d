@@ -786,6 +786,16 @@ void delist(AdminPlugin plugin, const string account, const string list,
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
+        case noSuchChannel:
+            enum pattern = "Account %s isn't %sed on %s.";
+
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(account.ircColourByHash.ircBold, list, event.channel) :
+                pattern.format(account, list, event.channel);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            break;
+
         case success:
             enum pattern = "de%sed %s.";
 
@@ -822,6 +832,11 @@ void delist(AdminPlugin plugin, const string account, const string list,
 
         case noSuchAccount:
             logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, list);
+            break;
+
+        case noSuchChannel:
+            logger.logf("Account %s%s%s isn't %sed on %1$s%5$s%3$s",
+                infotint, account, logtint, list, event.channel);
             break;
 
         case success:
