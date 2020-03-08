@@ -537,8 +537,9 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +      event = The triggering `dialect.defs.IRCEvent`.
  +      list = Which list to add/remove from, "whitelist" or "blacklist".
  +/
-void manageWhitelistBlacklist(AdminPlugin plugin, const IRCEvent event, const string list)
-in (((list == "whitelist") || (list == "blacklist")), list ~ " is not whitelist nor blacklist")
+void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
+in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+    list ~ " is not whitelist, operator nor blacklist")
 do
 {
     import lu.string : nom;
