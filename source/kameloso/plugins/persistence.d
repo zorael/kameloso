@@ -403,62 +403,59 @@ void reloadClassifiersFromDisk(PersistenceService service)
     json.reset();
     json.load(service.userFile);
 
-    service.userClasses.clear();
+    //service.userClasses.clear();
+    service.channelUsers.clear();
 
-    /*if (const adminFromJSON = "admin" in json)
+    import lu.conv : Enum;
+    import std.range : only;
+
+    foreach (class_; only(IRCUser.Class.whitelist, IRCUser.Class.blacklist))
     {
+        immutable list = Enum!(IRCUser.Class).toString(class_);
+        const listFromJSON = list in json;
+
+        if (!listFromJSON)
+        {
+            json[list] = null;
+            json[list].object = null;
+        }
+
         try
         {
-            foreach (const account; adminFromJSON.array)
+            /*foreach (immutable account, const accountChannelJSON; listFromJSON.object)
             {
-                service.userClasses[account.str] = IRCUser.Class.admin;
+                foreach (immutable channelJSON; accountChannelJSON.array)
+                {
+                    if (account !in service.userClasses)
+                    {
+                        service.userClasses[account] = (IRCUser.Class[string]).init;
+                    }
+
+                    service.userClasses[account][channelJSON.str] = class_;
+                }
+            }*/
+            foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
+            {
+                foreach (immutable accountJSON; channelAccountJSON.array)
+                {
+                    if (channel !in service.channelUsers)
+                    {
+                        service.channelUsers[channel] = (IRCUser.Class[string]).init;
+                    }
+
+                    service.channelUsers[channel][accountJSON.str] = class_;
+                }
             }
         }
         catch (JSONException e)
         {
-            logger.warning("JSON exception caught when populating admins: ", e.msg);
+            logger.warningf("JSON exception caught when populating %s: %s", list, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
         }
         catch (Exception e)
         {
-            logger.warning("Unhandled exception caught when populating admins: ", e.msg);
-        }
-    }*/
-
-    if (const whitelistFromJSON = "whitelist" in json)
-    {
-        try
-        {
-            foreach (const account; whitelistFromJSON.array)
-            {
-                service.userClasses[account.str] = IRCUser.Class.whitelist;
-            }
-        }
-        catch (JSONException e)
-        {
-            logger.warning("JSON exception caught when populating whitelist: ", e.msg);
-        }
-        catch (Exception e)
-        {
-            logger.warning("Unhandled exception caught when populating whitelist: ", e.msg);
-        }
-    }
-
-    if (const blacklistFromJSON = "blacklist" in json)
-    {
-        try
-        {
-            foreach (const account; blacklistFromJSON.array)
-            {
-                service.userClasses[account.str] = IRCUser.Class.blacklist;
-            }
-        }
-        catch (JSONException e)
-        {
-            logger.warning("JSON exception caught when populating blacklist: ", e.msg);
-        }
-        catch (Exception e)
-        {
-            logger.warning("Unhandled exception caught when populating blacklist: ", e.msg);
+            logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
         }
     }
 }
