@@ -106,11 +106,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 else if (event.type == IRCEvent.Type.QUERY)
                 {
-                    stored.class_ = IRCUser.Class.anyone;
-                    service.userClassCurrentChannelCache[user.nickname] = string.init;
+                    applyClassifiersDg(stored);
                 }
-                else if ((stored.class_ == IRCUser.Class.unset) ||
-                    (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel))
+                else if (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel)
                 {
                     applyClassifiersDg(stored);
                 }
@@ -246,11 +244,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             }
             else if (event.type == IRCEvent.Type.QUERY)
             {
-                stored.class_ = IRCUser.Class.anyone;
-                service.userClassCurrentChannelCache[user.nickname] = string.init;
+                applyClassifiersDg(stored);
             }
-            else if ((stored.class_ == IRCUser.Class.unset) ||
-                (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel))
+            else if (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel)
             {
                 applyClassifiersDg(stored);
             }
@@ -269,11 +265,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             }
             else if (event.type == IRCEvent.Type.QUERY)
             {
-                user.class_ = IRCUser.Class.anyone;
-                service.userClassCurrentChannelCache[user.nickname] = string.init;
+                applyClassifiersDg(user);
             }
-            else if ((user.class_ == IRCUser.Class.unset) ||
-                (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel))
+            else if (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel)
             {
                 applyClassifiersDg(user);
             }
