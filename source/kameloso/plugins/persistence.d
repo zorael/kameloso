@@ -64,12 +64,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 //writeln("!! saw admin");
                 user.class_ = IRCUser.Class.admin;
             }
-            else if (channel.length && (channel in service.transientUsers) &&
-                (user.account in service.transientUsers[channel]))
-            {
-                writeln(":: fetched user class from TRANSIENT list");
-                user.class_ = service.transientUsers[channel][user.account];
-            }
             else if (channel.length && (channel in service.channelUsers) &&
                 (user.account in service.channelUsers[channel]))
             {
@@ -176,10 +170,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                         {
                             if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
                             {
-                                import std.stdio;
-                                writeln(user.nickname, " IS OPERATOR @@@@");
                                 user.class_ = IRCUser.Class.operator;
-                                service.transientUsers[event.channel][user.nickname] = IRCUser.Class.operator;
                                 service.userClassCurrentChannelCache[user.nickname] = event.channel;
                             }
                         }
@@ -227,10 +218,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                             if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
                             {
-                                import std.stdio;
-                                writeln(user.nickname, " IS OPERATOR @@@@");
                                 user.class_ = IRCUser.Class.operator;
-                                service.transientUsers[event.channel][user.nickname] = IRCUser.Class.operator;
                                 service.userClassCurrentChannelCache[user.nickname] = event.channel;
                             }
                         }
@@ -566,9 +554,6 @@ private:
 
     /// Associative array of permanent user classifications, per account and channel name.
     IRCUser.Class[string][string] channelUsers;
-
-    /// Associative array of transient user classifications, per account and channel name.
-    IRCUser.Class[string][string] transientUsers;
 
     /// Associative array of which channel the latest class lookup for an account related to.
     string[string] userClassCurrentChannelCache;
