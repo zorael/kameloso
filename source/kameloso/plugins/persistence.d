@@ -36,47 +36,51 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
     foreach (user; only(&event.sender, &event.target))
     {
-        if (!user.nickname.length) continue;
+        if (!user.nickname.length) continue;  // Ignore server events
 
-        /// Apply user class if we have one stored.
+        /++
+         +  Tries to apply any permanent class for a user in a channel, and if
+         +  none available, tries to set one that seems to apply based on what
+         +  the user looks like.
+         +/
         void applyClassifiersDg(IRCUser* user, const string channel = event.channel)
         {
             import std.algorithm.searching : canFind;
-            import std.stdio;
 
             if (user.class_ == IRCUser.Class.admin)
             {
-                // Do nothing
+                // Do nothing, admin is permanent and program-wide
             }
             else if (!user.account.length)
             {
-                //writeln("?? ", user.nickname, " NOT AUTHORIZED (no account)");
+                // No account means it's just a random
                 user.class_ = IRCUser.Class.anyone;
             }
             else if (event.type == IRCEvent.Type.QUERY)
             {
+                // Let everyone except admins be considered a random for now
                 user.class_ = service.state.bot.admins.canFind(user.account) ?
                     IRCUser.Class.admin : IRCUser.Class.anyone;
-                //writeln("no-channel, defaulting to ", user.class_);
             }
             else if (service.state.bot.admins.canFind(user.account))
             {
-                //writeln("!! saw admin");
+                // admin discovered
                 user.class_ = IRCUser.Class.admin;
             }
             else if (channel.length && (channel in service.channelUsers) &&
                 (user.account in service.channelUsers[channel]))
             {
-                writeln(":: fetched user class from PERMANENT list");
+                // Permanent class is defined, so apply it
                 user.class_ = service.channelUsers[channel][user.account];
             }
             else
             {
-                writeln(":( DEFAULTING TO anyone");
+                // All else failed, consider it a random
                 user.class_ = IRCUser.Class.anyone;
             }
 
-            //writefln("... %s(%s):%s@%s", user.nickname, user.account, user.class_, channel);
+            // Record this channel as being the one the current class_ applies to.
+            // That way we only have to look up a class_ when the channel has changed.
             service.userClassCurrentChannelCache[user.nickname] = channel;
         }
 
@@ -166,6 +170,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                         {
                             if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
                             {
+                                // Specialcase operators
                                 user.class_ = IRCUser.Class.operator;
                                 service.userClassCurrentChannelCache[user.nickname] = event.channel;
                             }
@@ -214,6 +219,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                             if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
                             {
+                                // Specialcase operators
                                 user.class_ = IRCUser.Class.operator;
                                 service.userClassCurrentChannelCache[user.nickname] = event.channel;
                             }
