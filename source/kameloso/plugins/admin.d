@@ -941,7 +941,7 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
     import std.concurrency : send;
     import std.json : JSONValue;
 
-    assert(((list == "whitelist") || (list == "blacklist")), list);
+    assert(((list == "whitelist") || (list == "blacklist") || (list == "operator")), list);
 
     JSONStorage json;
     json.reset();
