@@ -158,8 +158,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                     // A value of 0L won't be melded...
                     user.updated = 1L;
                 }
-                else
+                else if (user.nickname in service.userClassCurrentChannelCache)
                 {
+                    // User is already tracked
                     goto case RPL_WHOISACCOUNT;
                 }
                 break;
