@@ -965,10 +965,9 @@ struct Configuration;
 struct Enabler;
 
 
-// filterUser
+// filterSender
 /++
- +  Decides if a nickname is known good (whitelisted/admin), known bad (not
- +  whitelisted/admin), or needs `WHOIS` (to tell if whitelisted/admin).
+ +  Decides if a nickname is known good, known bad, or needs `WHOIS` to tell.
  +
  +  This is used to tell whether or not a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return `FilterResult.whois`.
@@ -984,27 +983,33 @@ struct Enabler;
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a `WHOIS` call.
  +/
-FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
+FilterResult filterSender(IRCPluginState state, const IRCEvent event,
+    const PrivilegeLevel level) @safe
 {
     import kameloso.constants : Timeout;
+    import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
 
-    immutable isBlacklisted = (event.sender.class_ == IRCUser.Class.blacklist);
-    if (isBlacklisted) return FilterResult.fail;
+    immutable class_ = event.sender.class_;
 
-    immutable user = event.sender;
+    if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+
     immutable now = Clock.currTime.toUnixTime;
-    immutable timediff = (now - user.updated);
+    immutable timediff = (now - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
-    if (user.account.length)
+    if (event.sender.account.length)
     {
-        immutable isAdmin = (user.class_ == IRCUser.Class.admin);  // Trust in persistence.d
-        immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
-        immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
-        //immutable isSpecial = (user.class_ == IRCUser.Class.special);
+        immutable isAdmin = state.bot.admins.canFind(event.sender.nickname);
+        immutable isOperator = (class_ == IRCUser.Class.operator);
+        immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
+        immutable isAnyone = (class_ == IRCUser.Class.anyone);
 
-        if (isAdmin && (level <= PrivilegeLevel.admin))
+        if (isAdmin)
+        {
+            return FilterResult.pass;
+        }
+        else if (isOperator && (level <= PrivilegeLevel.operator))
         {
             return FilterResult.pass;
         }
@@ -1012,11 +1017,12 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         {
             return FilterResult.pass;
         }
-        else if (level == PrivilegeLevel.registered)
+        else if (level <= PrivilegeLevel.registered)
         {
+            // event.sender.account is not empty and level <= registered
             return FilterResult.pass;
         }
-        else if (isAnyone && (level == PrivilegeLevel.anyone))
+        else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
@@ -1035,6 +1041,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         final switch (level)
         {
         case admin:
+        case operator:
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
@@ -1048,45 +1055,6 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
             return FilterResult.pass;
         }
     }
-}
-
-///
-unittest
-{
-    import lu.conv : Enum;
-    import std.datetime.systime : Clock;
-
-    IRCEvent event;
-    PrivilegeLevel level = PrivilegeLevel.admin;
-
-    event.type = IRCEvent.Type.CHAN;
-    event.sender.nickname = "zorael";
-
-    immutable res1 = filterUser(event, level);
-    assert((res1 == FilterResult.whois), Enum!FilterResult.toString(res1));
-
-    event.sender.class_ = IRCUser.Class.admin;
-    event.sender.account = "zorael";
-
-    immutable res2 = filterUser(event, level);
-    assert((res2 == FilterResult.pass), Enum!FilterResult.toString(res2));
-
-    event.sender.class_ = IRCUser.Class.whitelist;
-
-    immutable res3 = filterUser(event, level);
-    assert((res3 == FilterResult.fail), Enum!FilterResult.toString(res3));
-
-    event.sender.class_ = IRCUser.Class.anyone;
-    event.sender.updated = Clock.currTime.toUnixTime;
-
-    immutable res4 = filterUser(event, level);
-    assert((res4 == FilterResult.fail), Enum!FilterResult.toString(res4));
-
-    event.sender.class_ = IRCUser.Class.blacklist;
-    event.sender.updated = 0L;
-
-    immutable res5 = filterUser(event, level);
-    assert((res5 == FilterResult.fail), Enum!FilterResult.toString(res5));
 }
 
 
