@@ -976,6 +976,7 @@ struct Enabler;
  +  and deny use.
  +
  +  Params:
+ +      state = The `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +
