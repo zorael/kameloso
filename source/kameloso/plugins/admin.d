@@ -6,7 +6,7 @@
  +
  +  It also offers some less debug-y, more administrative functions, like adding
  +  and removing homes on-the-fly, whitelisting or de-whitelisting account
- +  names, joining or leaving channels, and such.
+ +  names, adding/removing from the operator list, joining or leaving channels, and such.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
@@ -577,7 +577,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      event = The triggering `dialect.defs.IRCEvent`.
- +      list = Which list to add/remove from, "whitelist" or "blacklist".
+ +      list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
 in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
@@ -618,7 +618,7 @@ do
 
 // lookupEnlist
 /++
- +  Adds an account to either the whitelist or the blacklist.
+ +  Adds an account to either the whitelist, operator list or the blacklist.
  +
  +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
  +
@@ -783,14 +783,14 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
 
 // delist
 /++
- +  Removes a nickname from either the whitelist or the blacklist.
+ +  Removes a nickname from either the whitelist, operator list or the blacklist.
  +
  +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
  +
  +  Params:
  +      plugin = The current `AdminPlugin`.
- +      account = The account to delist as whitelisted/blacklisted.
- +      list = Which of "whitelist" or "blacklist" to remove from.
+ +      account = The account to delist as whitelisted/blacklisted or as operator.
+ +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
