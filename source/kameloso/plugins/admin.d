@@ -866,6 +866,7 @@ enum AlterationResult
 {
     alreadyInList,  /// When enlisting, an account already existed.
     noSuchAccount,  /// When delisting, an account could not be found.
+    noSuchChannel,  /// When delisting, a channel count not be found.
     success,        /// Successful enlist/delist.
 }
 
