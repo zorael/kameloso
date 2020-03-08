@@ -2684,7 +2684,16 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 final switch (request.privilegeLevel)
                 {
                 case admin:
-                    if (event.target.class_ == IRCUser.Class.admin)
+                    if (event.target.class_ >= IRCUser.Class.admin)
+                    {
+                        version(ExplainReplay) explainReplay();
+                        request.trigger();
+                        garbageIndexes ~= i;
+                    }
+                    break;
+
+                case operator:
+                    if (event.target.class_ >= IRCUser.Class.operator)
                     {
                         version(ExplainReplay) explainReplay();
                         request.trigger();
@@ -2693,8 +2702,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     break;
 
                 case whitelist:
-                    if ((event.target.class_ == IRCUser.Class.admin) ||
-                        (event.target.class_ == IRCUser.Class.whitelist))
+                    if (event.target.class_ >= IRCUser.Class.whitelist)
                     {
                         version(ExplainReplay) explainReplay();
                         request.trigger();
@@ -2712,12 +2720,13 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     break;
 
                 case anyone:
-                    if (event.target.class_ != IRCUser.Class.blacklist)
+                    if (event.target.class_ >= IRCUser.Class.anyone)
                     {
                         version(ExplainReplay) explainReplay();
                         request.trigger();
                     }
 
+                    // event.target.class_ is either anyone or blacklist here
                     // Always remove queued request even if blacklisted
                     garbageIndexes ~= i;
                     break;
