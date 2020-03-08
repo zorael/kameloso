@@ -39,18 +39,53 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         if (!user.nickname.length) continue;
 
         /// Apply user class if we have one stored.
-        void applyClassifiersDg(IRCUser* userToClassify)
+        void applyClassifiersDg(IRCUser* user, const string channel = event.channel)
         {
             import std.algorithm.searching : canFind;
+            import std.stdio;
 
-            if (service.state.bot.admins.canFind(userToClassify.account))
+            scope(exit)
             {
-                // Admins are (currently) stored in an array IRCClient.admins
-                userToClassify.class_ = IRCUser.Class.admin;
+                service.userClassCurrentChannelCache[user.nickname] = channel;
+                //writefln("... %s(%s):%s@%s", user.nickname, user.account, user.class_, channel);
+            }
+
+            if (user.class_ == IRCUser.Class.admin)
+            {
+                // Do nothing
+            }
+            else if (!user.account.length)
+            {
+                //writeln("?? ", user.nickname, " NOT AUTHORIZED (no account)");
+                user.class_ = IRCUser.Class.anyone;
+            }
+            else if (event.type == IRCEvent.Type.QUERY)
+            {
+                user.class_ = service.state.bot.admins.canFind(user.account) ?
+                    IRCUser.Class.admin : IRCUser.Class.anyone;
+                //writeln("no-channel, defaulting to ", user.class_);
+            }
+            else if (service.state.bot.admins.canFind(user.account))
+            {
+                //writeln("!! saw admin");
+                user.class_ = IRCUser.Class.admin;
+            }
+            else if (channel.length && (channel in service.transientUsers) &&
+                (user.account in service.transientUsers[channel]))
+            {
+                writeln(":: fetched user class from TRANSIENT list");
+                user.class_ = service.transientUsers[channel][user.account];
+            }
+            else if (channel.length && (channel in service.channelUsers) &&
+                (user.account in service.channelUsers[channel]))
+            {
+                writeln(":: fetched user class from PERMANENT list");
+                user.class_ = service.channelUsers[channel][user.account];
             }
             else
             {
-                userToClassify.class_ = service.userClasses.get(userToClassify.account, IRCUser.Class.anyone);
+                writeln(":( DEFAULTING TO anyone");
+                user.class_ = IRCUser.Class.anyone;
             }
         }
 
@@ -63,14 +98,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 if (stored)
                 {
                     import lu.meld : MeldingStrategy, meldInto;
-
-                    // Twitch bot postprocess is run before this postprocess is.
-                    // If it changes the user class, have it persist past our
-                    // own melding here.
-
-                    immutable origClass = user.class_;
                     (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
-                    if (origClass > stored.class_) stored.class_ = origClass;
                 }
                 else
                 {
@@ -78,18 +106,30 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                     stored = user.nickname in service.state.users;
                 }
 
-                if (stored.class_ == IRCUser.Class.unset)
+                // Clear badges if it has the empty placeholder asterisk
+                if (user.badges == "*") stored.badges = string.init;
+
+                if (user.class_ == IRCUser.Class.admin)
+                {
+                    // Do nothing, admin is permanent and program-wide
+                }
+                else if (event.type == IRCEvent.Type.QUERY)
+                {
+                    stored.class_ = IRCUser.Class.anyone;
+                    service.userClassCurrentChannelCache[user.nickname] = string.init;
+                }
+                else if ((stored.class_ == IRCUser.Class.unset) ||
+                    (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel))
                 {
                     applyClassifiersDg(stored);
                 }
-
-                // Clear badges if it has the empty placeholder asterisk
-                if (stored.badges == "*") stored.badges = string.init;
 
                 *user = *stored;
                 continue;
             }
         }
+
+        if (user.nickname == service.state.client.nickname) return;
 
         if (auto stored = user.nickname in service.state.users)
         {
@@ -118,9 +158,87 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             case RPL_WHOISREGNICK:
                 // Record WHOIS if we have new account information
                 import std.datetime.systime : Clock;
-
                 user.updated = Clock.currTime.toUnixTime;
                 applyClassifiersDg(user);
+                stored.class_ = user.class_;  // Manually set it so it's guaranteed to persist through a meld
+                break;
+
+            case RPL_WHOREPLY:
+                if (user.nickname == service.state.client.nickname) break;
+
+                if (event.aux.length)
+                {
+                    import std.string : representation;
+
+                    // Register operators, half-ops, voiced etc
+                    // Can be more than one if multi-prefix capability is enabled
+                    // Server-sent string, can assume ASCII (@,%,+...) and go char by char
+                    foreach (immutable modesign; event.aux.representation)
+                    {
+                        if (modesign in service.state.server.prefixchars)
+                        {
+                            if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
+                            {
+                                import std.stdio;
+                                writeln(user.nickname, " IS OPERATOR @@@@");
+                                user.class_ = IRCUser.Class.operator;
+                                service.transientUsers[event.channel][user.nickname] = IRCUser.Class.operator;
+                                service.userClassCurrentChannelCache[user.nickname] = event.channel;
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case RPL_NAMREPLY:
+                import lu.string : contains;
+                import std.algorithm.iteration : splitter;
+                import std.string : representation;
+
+                auto names = event.content.splitter(" ");
+
+                foreach (immutable userstring; names)
+                {
+                    string slice = userstring;
+                    string nickname;
+
+                    if (userstring.contains('!') && userstring.contains('@'))
+                    {
+                        import lu.string : nom;
+                        // SpotChat-like, names are in full nick!ident@address form
+                        nickname = slice.nom('!');
+                    }
+                    else
+                    {
+                        // Freenode-like, only a nickname with possible @%+ prefix
+                        nickname = userstring;
+                    }
+
+                    import dialect.common : stripModesign;
+
+                    string modesigns;
+                    nickname = service.state.server.stripModesign(nickname, modesigns);
+
+                    // Register operators, half-ops, voiced etc
+                    // Can be more than one if multi-prefix capability is enabled
+                    // Server-sent string, can assume ASCII (@,%,+...) and go char by char
+                    foreach (immutable modesign; modesigns.representation)
+                    {
+                        if (modesign in service.state.server.prefixchars)
+                        {
+                            if (nickname == service.state.client.nickname) continue;
+
+                            if ((modesign == '@') && (user.class_ < IRCUser.Class.operator))
+                            {
+                                import std.stdio;
+                                writeln(user.nickname, " IS OPERATOR @@@@");
+                                user.class_ = IRCUser.Class.operator;
+                                service.transientUsers[event.channel][user.nickname] = IRCUser.Class.operator;
+                                service.userClassCurrentChannelCache[user.nickname] = event.channel;
+                            }
+                        }
+                    }
+                }
                 break;
 
             default:
@@ -139,6 +257,21 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             // An account of "*" means the user logged out of services
             if (user.account == "*") stored.account = string.init;
 
+            if (user.class_ == IRCUser.Class.admin)
+            {
+                // Do nothing, admin is program-wide
+            }
+            else if (event.type == IRCEvent.Type.QUERY)
+            {
+                stored.class_ = IRCUser.Class.anyone;
+                service.userClassCurrentChannelCache[user.nickname] = string.init;
+            }
+            else if ((stored.class_ == IRCUser.Class.unset) ||
+                (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel))
+            {
+                applyClassifiersDg(stored);
+            }
+
             // Inject the modified user into the event
             *user = *stored;
         }
@@ -147,9 +280,18 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             // New entry
             if (user.account == "*") user.account = string.init;
 
-            if (user.account.length)
+            if (user.class_ == IRCUser.Class.admin)
             {
-                // Initial user already has account info
+                // Do nothing, admin is permanent and program-wide
+            }
+            else if (event.type == IRCEvent.Type.QUERY)
+            {
+                user.class_ = IRCUser.Class.anyone;
+                service.userClassCurrentChannelCache[user.nickname] = string.init;
+            }
+            else if ((user.class_ == IRCUser.Class.unset) ||
+                (service.userClassCurrentChannelCache.get(user.nickname, string.init) != event.channel))
+            {
                 applyClassifiersDg(user);
             }
 
