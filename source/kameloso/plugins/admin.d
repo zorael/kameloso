@@ -524,11 +524,53 @@ void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
     "$command [add|del] [account or nickname]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    return plugin.manageWhitelistBlacklist(event, "whitelist");
+    return plugin.manageClassLists(event, "whitelist");
 }
 
 
-// manageWhitelistBlacklist
+// onCommandOperator
+/++
+ +  Adds a nickname or account to the list of users who may trigger lower
+ +  functions of the bot, without being a full admin.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "operator")
+@Description("Add or remove an account to/from the operator list of operators/moderators.",
+    "$command [add|del] [account or nickname]")
+void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
+{
+    return plugin.manageClassLists(event, "operator");
+}
+
+
+// onCommandBlacklist
+/++
+ +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
+ +  even on actions annotated `kameloso.plugins.common.PrivilegeLevel.anyone`.
+ +
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
+ +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
+ +  `kameloso.plugins.common.PrivilegeLevel.admin`.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "blacklist")
+@Description("Add or remove an account to/from the blacklist of people who may " ~
+    "explicitly not trigger the bot", "$command [add|del] [account or nickname]")
+void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
+{
+    return plugin.manageClassLists(event, "blacklist");
+}
+
+
+// manageClassLists
 /++
  +  Common code for whitelisting and blacklisting nicknames/accounts.
  +
@@ -851,29 +893,6 @@ void delist(AdminPlugin plugin, const string account, const string list,
             break;
         }
     }
-}
-
-
-// onCommandBlacklist
-/++
- +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
- +  even on actions annotated `kameloso.plugins.common.PrivilegeLevel.anyone`.
- +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
- +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
- +  `kameloso.plugins.common.PrivilegeLevel.admin`.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "blacklist")
-@Description("Add or remove an account to/from the blacklist of people who may " ~
-    "explicitly not trigger the bot", "$command [add|del] [account or nickname]")
-void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
-{
-    return plugin.manageWhitelistBlacklist(event, "blacklist");
 }
 
 
