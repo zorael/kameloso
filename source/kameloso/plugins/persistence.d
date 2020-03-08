@@ -354,7 +354,7 @@ void onEndOfMotd(PersistenceService service)
 
 // reload
 /++
- +  Reloads the plugin, rehashing the user array and loading
+ +  Reloads the service, rehashing the user array and loading
  +  admin/whitelist/blacklist classifier definitions from disk.
  +/
 void reload(PersistenceService service)
