@@ -44,12 +44,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             import std.algorithm.searching : canFind;
             import std.stdio;
 
-            scope(exit)
-            {
-                service.userClassCurrentChannelCache[user.nickname] = channel;
-                //writefln("... %s(%s):%s@%s", user.nickname, user.account, user.class_, channel);
-            }
-
             if (user.class_ == IRCUser.Class.admin)
             {
                 // Do nothing
@@ -87,6 +81,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 writeln(":( DEFAULTING TO anyone");
                 user.class_ = IRCUser.Class.anyone;
             }
+
+            //writefln("... %s(%s):%s@%s", user.nickname, user.account, user.class_, channel);
+            service.userClassCurrentChannelCache[user.nickname] = channel;
         }
 
         version(TwitchSupport)
