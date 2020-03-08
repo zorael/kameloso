@@ -625,7 +625,7 @@ do
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      specified = The nickname or account to white-/blacklist.
- +      list = Which of "whitelist" or "blacklist" to add to.
+ +      list = Which of "whitelist", "operator" or "blacklist" to add to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
@@ -920,7 +920,7 @@ enum AlterationResult
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      add = Whether to add to or remove from lists.
- +      list = Which list to add to or remove from; `whitelist` or `blacklist`.
+ +      list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
  +      account = Services account name to add or remove.
  +      channel = Channel the account-class applies to.
  +
@@ -1630,10 +1630,12 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.state.mainThread.send(ThreadMessage.Save());
 
     case "whitelist":
+    case "operator":
     case "blacklist":
         return plugin.lookupEnlist(slice, verb);
 
     case "dewhitelist":
+    case "deoperator":
     case "deblacklist":
         return plugin.delist(slice, verb[2..$]);
 
