@@ -155,8 +155,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 break;
 
             case RPL_WHOREPLY:
-                if (user.nickname == service.state.client.nickname) break;
-
                 if (event.aux.length)
                 {
                     import std.string : representation;
