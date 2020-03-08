@@ -185,7 +185,29 @@ void messageFiber(ref Kameloso instance)
         {
             foreach (plugin; instance.plugins)
             {
-                plugin.reload();
+                try
+                {
+                    plugin.reload();
+                }
+                catch (Exception e)
+                {
+                    string logtint, errortint;
+
+                    version(Colours)
+                    {
+                        if (!settings.monochrome)
+                        {
+                            import kameloso.logger : KamelosoLogger;
+
+                            logtint = (cast(KamelosoLogger)logger).logtint;
+                            errortint = (cast(KamelosoLogger)logger).errortint;
+                        }
+                    }
+
+                    logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
+                        "configuration: %1$s%4$s", logtint, plugin.name, errortint, e.msg);
+                    version(PrintStacktraces) logger.trace(e.info);
+                }
             }
         }
 
