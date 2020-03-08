@@ -440,8 +440,14 @@ private:
     /// File with user definitions.
     @Resource string userFile = "users.json";
 
-    /// Associative array of user classifications, per account string name.
-    IRCUser.Class[string] userClasses;
+    /// Associative array of permanent user classifications, per account and channel name.
+    IRCUser.Class[string][string] channelUsers;
+
+    /// Associative array of transient user classifications, per account and channel name.
+    IRCUser.Class[string][string] transientUsers;
+
+    /// Associative array of which channel the latest class lookup for an account related to.
+    string[string] userClassCurrentChannelCache;
 
     mixin IRCPluginImpl;
 }
