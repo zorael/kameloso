@@ -407,18 +407,6 @@ void reloadClassifiersFromDisk(PersistenceService service)
 
         try
         {
-            /*foreach (immutable account, const accountChannelJSON; listFromJSON.object)
-            {
-                foreach (immutable channelJSON; accountChannelJSON.array)
-                {
-                    if (account !in service.userClasses)
-                    {
-                        service.userClasses[account] = (IRCUser.Class[string]).init;
-                    }
-
-                    service.userClasses[account][channelJSON.str] = class_;
-                }
-            }*/
             foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
             {
                 foreach (immutable accountJSON; channelAccountJSON.array)
