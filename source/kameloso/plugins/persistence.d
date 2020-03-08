@@ -517,34 +517,22 @@ void initResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
     }+/
 
-    /*if ("admin" !in json)
-    {
-        json["admin"] = null;
-        json["admin"].array = null;
-    }
-    else
-    {
-        json["admin"] = deduplicate(json["admin"]);
-    }*/
+    import std.range : only;
 
-    if ("whitelist" !in json)
+    foreach (liststring; only("whitelist", "operator", "blacklist"))
     {
-        json["whitelist"] = null;
-        json["whitelist"].array = null;
-    }
-    else
-    {
-        json["whitelist"] = deduplicate(json["whitelist"]);
-    }
-
-    if ("blacklist" !in json)
-    {
-        json["blacklist"] = null;
-        json["blacklist"].array = null;
-    }
-    else
-    {
-        json["blacklist"] = deduplicate(json["blacklist"]);
+        if (liststring !in json)
+        {
+            json[liststring] = null;
+            json[liststring].object = null;
+        }
+        else
+        {
+            foreach (immutable channel, ref channelAccountsJSON; json[liststring].object)
+            {
+                channelAccountsJSON = deduplicate(json[liststring][channel]);
+            }
+        }
     }
 
     // Force whitelist to appear before blacklist in the .json
