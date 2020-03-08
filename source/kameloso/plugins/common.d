@@ -1281,7 +1281,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writeln("-- ", name);
+                    writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                     if (settings.flush) stdout.flush();
                 }
 
