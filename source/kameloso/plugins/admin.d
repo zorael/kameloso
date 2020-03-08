@@ -669,7 +669,7 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
     if (user && user.account.length)
     {
         // user.nickname == specified
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, event.channel);
         return report(result, user.account);
     }
     else if (!specified.isValidNickname(plugin.state.server))
@@ -706,7 +706,7 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
 
     void onSuccess(const string id)
     {
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, id);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, id, event.channel);
         report(result, id);
     }
 
@@ -764,7 +764,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
         return;
     }
 
-    immutable result = plugin.alterAccountClassifier(No.add, list, account);
+    immutable result = plugin.alterAccountClassifier(No.add, list, account, event.channel);
 
     if (event.sender.nickname.length)
     {
