@@ -1001,6 +1001,25 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
 }
 
 
+// onCommandReload
+/++
+ +  Asks plugins to reload their resources and/or configuration as they see fit.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "reload")
+@Description("Asks plugins to reload their resources and/or configuration as they see fit.")
+void onCommandReload(AdminPlugin plugin)
+{
+    import kameloso.thread : ThreadMessage;
+
+    logger.info("Reloading plugins.");
+    plugin.state.mainThread.send(ThreadMessage.Reload());
+}
+
+
 // onCommandResetTerminal
 /++
  +  Outputs the ASCII control character *`15`* to the terminal.
