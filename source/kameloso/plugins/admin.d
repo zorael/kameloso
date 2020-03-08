@@ -880,16 +880,19 @@ enum AlterationResult
  +      add = Whether to add to or remove from lists.
  +      list = Which list to add to or remove from; `whitelist` or `blacklist`.
  +      account = Services account name to add or remove.
+ +      channel = Channel the account-class applies to.
  +
  +  Returns:
  +      `AlterationResult.alreadyInList` if enlisting (`Yes.add`) and the account
  +      was already in the specified list.
  +      `AlterationResult.noSuchAccount` if delisting (`No.add`) and no such
  +      account could be found in the specified list.
+ +      `AlterationResult.noSuchChannel` if delisting (`No.add`) and no such
+ +      channel could be found in the specified list.
  +      `AlterationResult.success` if enlisting or delisting succeeded.
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string list, const string account)
+    const string list, const string account, const string channel)
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage;
@@ -902,37 +905,28 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
     json.reset();
     json.load(plugin.userFile);
 
-    /*if ("admin" !in json)
-    {
-        json["admin"] = null;
-        json["admin"].array = null;
-    }*/
-
-    if ("whitelist" !in json)
-    {
-        json["whitelist"] = null;
-        json["whitelist"].array = null;
-    }
-
-    if ("blacklist" !in json)
-    {
-        json["blacklist"] = null;
-        json["blacklist"].array = null;
-    }
-
-    immutable accountAsJSON = JSONValue(account);
-
     if (add)
     {
         import std.algorithm.searching : canFind;
 
-        if (json[list].array.canFind(accountAsJSON))
+        const accountAsJSON = JSONValue(account);
+
+        if (channel in json[list].object)
         {
-            return AlterationResult.alreadyInList;
+            if (json[list][channel].array.canFind(accountAsJSON))
+            {
+                return AlterationResult.alreadyInList;
+            }
+            else
+            {
+                json[list][channel].array ~= accountAsJSON;
+            }
         }
         else
         {
-            json[list].array ~= accountAsJSON;
+            json[list][channel] = null;
+            json[list][channel].array = null;
+            json[list][channel].array ~= accountAsJSON;
         }
     }
     else
@@ -940,14 +934,21 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        immutable index = json[list].array.countUntil(accountAsJSON);
-
-        if (index == -1)
+        if (channel in json[list].object)
         {
-            return AlterationResult.noSuchAccount;
-        }
+            immutable index = json[list][channel].array.countUntil(JSONValue(account));
 
-        json[list] = json[list].array.remove!(SwapStrategy.unstable)(index);
+            if (index == -1)
+            {
+                return AlterationResult.noSuchAccount;
+            }
+
+            json[list][channel] = json[list][channel].array.remove!(SwapStrategy.unstable)(index);
+        }
+        else
+        {
+            return AlterationResult.noSuchChannel;
+        }
     }
 
     json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.userFile);
