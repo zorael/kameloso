@@ -3761,31 +3761,6 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
     if (!newUser.nickname.length) return;
 
-    version(TwitchSupport)
-    {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            // There's no need to meld Twitch users, they never change.
-
-            if (newUser.nickname !in plugin.state.users)
-            {
-                import std.datetime.systime : Clock;
-
-                newUser.updated = Clock.currTime.toUnixTime;
-                plugin.state.users[newUser.nickname] = newUser;
-            }
-            return;
-        }
-        else
-        {
-            if (newUser.nickname == plugin.state.client.nickname) return;
-        }
-    }
-    else
-    {
-        if (newUser.nickname == plugin.state.client.nickname) return;
-    }
-
     if (auto user = newUser.nickname in plugin.state.users)
     {
         import lu.meld : meldInto;
