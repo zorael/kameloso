@@ -85,63 +85,18 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             service.userClassCurrentChannelCache[user.nickname] = event.channel;
         }
 
-        version(TwitchSupport)
+        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+            (user.nickname == service.state.client.nickname)) continue;
+
+        auto stored = user.nickname in service.state.users;
+
+        if (!stored)
         {
-            if (service.state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                auto stored = user.nickname in service.state.users;
-
-                if (stored)
-                {
-                    import lu.meld : MeldingStrategy, meldInto;
-                    (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
-                }
-                else
-                {
-                    service.state.users[user.nickname] = *user;
-                    stored = user.nickname in service.state.users;
-                }
-
-                // Clear badges if it has the empty placeholder asterisk
-                if (user.badges == "*") stored.badges = string.init;
-
-                if (user.class_ == IRCUser.Class.admin)
-                {
-                    // Do nothing, admin is permanent and program-wide
-                }
-                else if (event.type == IRCEvent.Type.QUERY)
-                {
-                    applyClassifiersDg(stored);
-                }
-                else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
-                {
-                    // Not a channel or not a home. Additionally not an admin
-                    stored.class_ = IRCUser.Class.anyone;
-                }
-                else
-                {
-                    const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
-
-                    if (!cachedChannel)
-                    {
-                        // User has no cached channel
-                        applyClassifiersDg(stored);
-                    }
-                    else if (*cachedChannel != event.channel)
-                    {
-                        // User's cached channel is different from this one, class likely differs
-                        applyClassifiersDg(stored);
-                    }
-                }
-
-                *user = *stored;
-                continue;
-            }
+            service.state.users[user.nickname] = *user;
+            stored = user.nickname in service.state.users;
         }
 
-        if (user.nickname == service.state.client.nickname) continue;
-
-        if (auto stored = user.nickname in service.state.users)
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
             with (IRCEvent.Type)
             switch (event.type)
@@ -190,83 +145,67 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 break;
             }
+        }
 
-            import lu.meld : MeldingStrategy, meldInto;
+        import lu.meld : MeldingStrategy, meldInto;
 
-            // Meld into the stored user, and store the union in the event
-            (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
+        // Store initial class and restore after meld. The origin user.class_
+        // can ever only be IRCUser.Class.unset.
+        immutable preMeldClass = stored.class_;
 
-            // An account of "*" means the user logged out of services
-            if (user.account == "*") stored.account = string.init;
+        // Meld into the stored user, and store the union in the event
+        (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
 
-            if (user.class_ == IRCUser.Class.admin)
+        stored.class_ = preMeldClass;
+
+        // An account of "*" means the user logged out of services
+        if (stored.account == "*") stored.account = string.init;
+
+        version(TwitchSupport)
+        {
+            // Clear badges if it has the empty placeholder asterisk
+            if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+                (stored.badges == "*"))
             {
-                // Do nothing, admin is permanent and program-wide
+                stored.badges = string.init;
             }
-            else if (event.type == IRCEvent.Type.QUERY)
+        }
+
+        if (stored.class_ == IRCUser.Class.admin)
+        {
+            // Do nothing, admin is permanent and program-wide
+        }
+        else if (user.nickname == service.state.client.nickname)
+        {
+            stored.class_ = IRCUser.Class.admin;
+        }
+        else if (event.type == IRCEvent.Type.QUERY)
+        {
+            applyClassifiersDg(stored);
+        }
+        else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
+        {
+            // Not a channel or not a home. Additionally not an admin
+            stored.class_ = IRCUser.Class.anyone;
+        }
+        else
+        {
+            const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
+
+            if (!cachedChannel)
             {
+                // User has no cached channel
                 applyClassifiersDg(stored);
             }
-            else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
+            else if (*cachedChannel != event.channel)
             {
-                // Not a channel or not a home. Additionally not an admin
-                stored.class_ = IRCUser.Class.anyone;
+                // User's cached channel is different from this one, class likely differs
+                applyClassifiersDg(stored);
             }
-            else
-            {
-                const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
-
-                if (!cachedChannel)
-                {
-                    // User has no cached channel
-                    applyClassifiersDg(stored);
-                }
-                else if (*cachedChannel != event.channel)
-                {
-                    // User's cached channel is different from this one, class likely differs
-                    applyClassifiersDg(stored);
-                }
-            }
-
-            // Inject the modified user into the event
-            *user = *stored;
         }
-        else if (event.type != IRCEvent.Type.QUIT)
-        {
-            // New entry
-            if (user.account == "*") user.account = string.init;
 
-            if (user.class_ == IRCUser.Class.admin)
-            {
-                // Do nothing, admin is permanent and program-wide
-            }
-            else if (event.type == IRCEvent.Type.QUERY)
-            {
-                applyClassifiersDg(user);
-            }
-            else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
-            {
-                // Not a channel or not a home. Additionally not an admin
-                user.class_ = IRCUser.Class.anyone;
-            }
-            else
-            {
-                const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
-
-                if (!cachedChannel)
-                {
-                    // User has no cached channel
-                    applyClassifiersDg(user);
-                }
-                else if (*cachedChannel != event.channel)
-                {
-                    // User's cached channel is different from this one, class likely differs
-                    applyClassifiersDg(user);
-                }
-            }
-
-            service.state.users[user.nickname] = *user;
-        }
+        // Inject the modified user into the event
+        *user = *stored;
     }
 }
 
