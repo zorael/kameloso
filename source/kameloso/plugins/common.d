@@ -2949,11 +2949,24 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             string slice = userstring;
             IRCUser newUser;
 
-            if (!slice.contains('!') || !slice.contains('@'))
+            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) ||
+                !slice.contains('!') || !slice.contains('@'))
             {
                 // Freenode-like, only nicknames with possible modesigns
                 immutable nickname = plugin.state.server.stripModesign(slice);
-                if (nickname == plugin.state.client.nickname) continue;
+
+                version(TwitchSupport)
+                {
+                    if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+                    {
+                        if (nickname == plugin.state.client.nickname) continue;
+                    }
+                }
+                else
+                {
+                    if (nickname == plugin.state.client.nickname) continue;
+                }
+
                 newUser.nickname = nickname;
             }
             else
@@ -3440,9 +3453,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 }
             }
 
-            if (nickname == plugin.state.client.nickname) continue;
-
-            // In case no mode was applied
             channel.users[nickname] = true;
         }
     }
@@ -3749,10 +3759,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
-    if (!newUser.nickname.length || (newUser.nickname == plugin.state.client.nickname))
-    {
-        return;
-    }
+    if (!newUser.nickname.length) return;
 
     version(TwitchSupport)
     {
@@ -3769,6 +3776,14 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
             }
             return;
         }
+        else
+        {
+            if (newUser.nickname == plugin.state.client.nickname) return;
+        }
+    }
+    else
+    {
+        if (newUser.nickname == plugin.state.client.nickname) return;
     }
 
     if (auto user = newUser.nickname in plugin.state.users)
