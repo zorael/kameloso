@@ -863,7 +863,11 @@ Next mainLoop(ref Kameloso instance)
 
                     version(TwitchSupport)
                     {
-                        if (event.channel.length && (event.channel[1..$] == instance.parser.client.nickname))
+                        import std.algorithm.searching : canFind;
+
+                        // Send faster in home channels. Assume we're a mod and won't be throttled.
+                        // (There's no easy way to tell from here.)
+                        if (event.channel.length && instance.bot.homes.canFind(event.channel))
                         {
                             instance.throttleline(instance.fastbuffer, Yes.onlyIncrement, Yes.sendFaster);
                         }
