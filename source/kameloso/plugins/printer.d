@@ -55,7 +55,7 @@ struct PrinterSettings
         bool twitchBadges = true;
 
         /// Whether to show Twitch badges abbreviated into single characters or in full.
-        bool abbreviatedBadges = true;
+        bool abbreviatedBadges = false;
 
         /// Whether or not emotes should be highlit in colours.
         bool colourfulEmotes = true;
