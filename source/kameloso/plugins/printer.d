@@ -1074,7 +1074,14 @@ if (isOutputRange!(Sink, char[]))
 
                         default:
                             sink.put(" [");
-                            sink.abbreviateBadges(sender.badges);
+                            if (plugin.printerSettings.abbreviatedBadges)
+                            {
+                                sink.abbreviateBadges(sender.badges);
+                            }
+                            else
+                            {
+                                sink.put(sender.badges);
+                            }
                             sink.put(']');
                         }
                     }
@@ -1116,7 +1123,14 @@ if (isOutputRange!(Sink, char[]))
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     sink.put(" [");
-                    sink.abbreviateBadges(target.badges);
+                    if (plugin.printerSettings.abbreviatedBadges)
+                    {
+                        sink.abbreviateBadges(target.badges);
+                    }
+                    else
+                    {
+                        sink.put(target.badges);
+                    }
                     sink.put(']');
                 }
             }
@@ -1477,7 +1491,14 @@ if (isOutputRange!(Sink, char[]))
 
                         default:
                             .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                            sink.abbreviateBadges(sender.badges);
+                            if (plugin.printerSettings.abbreviatedBadges)
+                            {
+                                sink.abbreviateBadges(sender.badges);
+                            }
+                            else
+                            {
+                                sink.put(sender.badges);
+                            }
                             sink.put(']');
                         }
                     }
@@ -1534,7 +1555,14 @@ if (isOutputRange!(Sink, char[]))
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                    sink.abbreviateBadges(target.badges);
+                    if (plugin.printerSettings.abbreviatedBadges)
+                    {
+                        sink.abbreviateBadges(target.badges);
+                    }
+                    else
+                    {
+                        sink.put(target.badges);
+                    }
                     sink.put(']');
                 }
             }
