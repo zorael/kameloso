@@ -1920,11 +1920,13 @@ if (isOutputRange!(Sink, char[]))
             break;
 
         case "bits":
+        case "bits-leader":
             // rewrite to the cheer it is represented as in the normal chat
             badgechar = 'C';
             break;
 
         case "sub-gifter":
+        case "sub-gift-leader":
             badgechar = 'G';
             break;
 
@@ -1966,6 +1968,10 @@ if (isOutputRange!(Sink, char[]))
         case "twitchconEU2019":
         case "twitchconNA2019":
             badgechar = '9';
+            break;
+
+        case "twitchconAmsterdam2020":
+            badgechar = '0';
             break;
 
         case "staff":
@@ -2066,7 +2072,7 @@ unittest
     {
         immutable badges = "bits-leader/1";
         sink.abbreviateBadges(badges);
-        assert((sink.data == "l"), sink.data);
+        assert((sink.data == "C"), sink.data);
         sink.clear();
     }
 }
