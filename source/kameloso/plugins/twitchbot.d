@@ -1,9 +1,9 @@
 /++
- +  This is an example Twitch streamer bot. It supports basic authentication,
- +  allowing for channel-specific regulars that are not necessarily in the
- +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
- +  has been live, banned phrases and timered announcements. If run in a
- +  local terminal it can also emit some terminal bells on certain events, to
+ +  This is an example Twitch streamer bot. It supports querying uptime or how
+ +  long a streamer has been live, banned phrases, timered announcements and
+ +  voting.
+ +
+ +  If run in a local terminal it can also emit some terminal bells on certain events, to
  +  draw attention.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
@@ -1126,7 +1126,7 @@ do
  +  plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
  +  send them to it for lookups and reporting.
  +
- +  Whitelisted, regulars, admins and special users are so far allowed to trigger this, as are
+ +  Operators, whitelisted and admin users are so far allowed to trigger this, as are
  +  any user who has been given a temporary permit via `onCommandPermit`.
  +  Those without permission will have the message deleted and be served a timeout.
  +/
@@ -1361,7 +1361,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Populate the regulars and phrases array after we have successfully
+ +  Populate the banned phrases array after we have successfully
  +  logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1388,14 +1388,14 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 /++
  +  Saves the passed resource to disk, but in JSON format.
  +
- +  This is used with the associative arrays for regulars and banned phrases.
+ +  This is used with the associative arrays for banned phrases.
  +
  +  Example:
  +  ---
- +  plugin.regularsByChannel["#channel"] ~= "kameloso";
- +  plugin.regularsByChannel["#channel"] ~= "hirrsteff";
+ +  plugin.bannedPhrasesByChannel["#channel"] ~= "kameloso";
+ +  plugin.bannedPhrasesByChannel["#channel"] ~= "hirrsteff";
  +
- +  saveResource(plugin.regularsByChannel, plugin.regularsFile);
+ +  saveResource(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
  +  ---
  +
  +  Params:
@@ -1413,7 +1413,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
 
 // initResources
 /++
- +  Reads and writes the file of regulars, phrases and timers to disk, ensuring
+ +  Reads and writes the file of banned phrases and timers to disk, ensuring
  +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
