@@ -61,7 +61,7 @@ struct TwitchBotSettings
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "permit")
 @Description("Permits a specified user to post links for a brief period of time.",
@@ -328,7 +328,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
@@ -502,7 +502,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
@@ -713,7 +713,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "enable")
 @BotCommand(PrefixPolicy.prefixed, "disable")
@@ -786,7 +786,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "start")
 @Description("Marks the start of a broadcast.")
@@ -817,7 +817,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stop")
 @Description("Marks the stop of a broadcast.")
@@ -883,7 +883,7 @@ void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "vote")
 @BotCommand(PrefixPolicy.prefixed, "poll")
@@ -1095,7 +1095,7 @@ do
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "abortvote")
 @BotCommand(PrefixPolicy.prefixed, "abortpoll")
