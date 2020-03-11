@@ -1519,7 +1519,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
 
-                    static if (privilegeLevel != PrivilegeLevel.ignore)
+                    static if ((privilegeLevel != PrivilegeLevel.ignore) &&
+                        (privilegeLevel != PrivilegeLevel.anyone))
                     {
                         static assert (__traits(compiles, .hasMinimalAuthentication),
                             module_ ~ " is missing MinimalAuthentication mixin " ~
