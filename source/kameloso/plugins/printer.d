@@ -51,8 +51,11 @@ struct PrinterSettings
 
     version(TwitchSupport)
     {
-        /// Whether or not to display (abbreviated) Twitch badges.
+        /// Whether or not to display Twitch badges next to sender/target names.
         bool twitchBadges = true;
+
+        /// Whether to show Twitch badges abbreviated into single characters or in full.
+        bool abbreviatedBadges = true;
 
         /// Whether or not emotes should be highlit in colours.
         bool colourfulEmotes = true;
