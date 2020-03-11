@@ -97,6 +97,19 @@ void messageFiber(ref Kameloso instance)
     // yield (which is upon messenger.call()).
     yield(Next.init);
 
+    string logtint, errortint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            errortint = (cast(KamelosoLogger)logger).errortint;
+        }
+    }
+
     // Loop forever; we'll just terminate the Generator when we want to quit.
     while (true)
     {
@@ -191,19 +204,6 @@ void messageFiber(ref Kameloso instance)
                 }
                 catch (Exception e)
                 {
-                    string logtint, errortint;
-
-                    version(Colours)
-                    {
-                        if (!settings.monochrome)
-                        {
-                            import kameloso.logger : KamelosoLogger;
-
-                            logtint = (cast(KamelosoLogger)logger).logtint;
-                            errortint = (cast(KamelosoLogger)logger).errortint;
-                        }
-                    }
-
                     logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
                         "configuration: %1$s%4$s", logtint, plugin.name, errortint, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
@@ -469,7 +469,6 @@ void messageFiber(ref Kameloso instance)
          +/
         void flagWantLiveSummary(ThreadMessage.WantLiveSummary) scope
         {
-            if (!settings.exitSummary) return;
             instance.wantLiveSummary = true;
         }
 
@@ -598,28 +597,18 @@ Next mainLoop(ref Kameloso instance)
         }
     }
 
-    /++
-     +  A snapshot of `settings.exitSummary` to use instead of it, so that
-     +  toggling it mid-execution does nothing. It would not know the connection
-     +  established timestamp and so would give an invalid connection duration.
-     +/
-    immutable exitSummary = settings.exitSummary;
-
     /// The history entry for the current connection.
     Kameloso.ConnectionHistoryEntry* historyEntry;
 
-    if (exitSummary)
-    {
-        immutable historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
-        instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
-        historyEntry = &instance.connectionHistory[historyEntryIndex];
-        historyEntry.startTime = Clock.currTime.toUnixTime;
+    immutable historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
+    instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
+    historyEntry = &instance.connectionHistory[historyEntryIndex];
+    historyEntry.startTime = Clock.currTime.toUnixTime;
 
-        // Set wantLiveSummary to false just in case a change happened in the middle
-        // of the last connection. Otherwise the first thing to happen would be
-        // that a summary gets printed.
-        instance.wantLiveSummary = false;
-    }
+    // Set wantLiveSummary to false just in case a change happened in the middle
+    // of the last connection. Otherwise the first thing to happen would be
+    // that a summary gets printed.
+    instance.wantLiveSummary = false;
 
     bool readWasShortened;
 
@@ -629,7 +618,7 @@ Next mainLoop(ref Kameloso instance)
 
         if (*instance.abort) return Next.returnFailure;
 
-        if (exitSummary && instance.wantLiveSummary)
+        if (instance.wantLiveSummary)
         {
             // Live connection summary requested.
             instance.printSummary();
@@ -695,12 +684,9 @@ Next mainLoop(ref Kameloso instance)
                 return Next.returnFailure;
             }
 
-            if (exitSummary)
-            {
-                // Successful read; record as such
-                historyEntry.stopTime = nowInUnix;
-                ++historyEntry.numEvents;
-            }
+            // Successful read; record as such
+            historyEntry.stopTime = nowInUnix;
+            ++historyEntry.numEvents;
 
             IRCEvent event;
 
