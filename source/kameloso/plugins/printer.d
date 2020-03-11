@@ -1276,6 +1276,7 @@ unittest
 
     version(TwitchSupport)
     {
+        plugin.printerSettings.abbreviatedBadges = true;
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
