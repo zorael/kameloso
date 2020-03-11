@@ -54,7 +54,7 @@ struct HelpSettings
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
-@BotCommand(PrefixPolicy.nickname, "help")
+@BotCommand(PrefixPolicy.prefixed, "help")
 @Description("Shows a list of all available commands.", "$command [plugin] [command]")
 void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 {
