@@ -35,9 +35,6 @@ struct TwitchBotSettings
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
-    /// Whether or not regulars are impliictly whitelisted.
-    bool regularsAreWhitelisted = true;
-
     /// Whether or not to bell on every message.
     bool bellOnMessage = false;
 
@@ -1121,153 +1118,6 @@ do
 }
 
 
-// onCommandRegular
-/++
- +  Adds, lists and removes regulars to/from the current channel.
- +
- +  Merely passes the event onto `handleRegularCommand` with the current channel
- +  as the target channel.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "regular")
-@Description("Adds or removes a Twitch regulars to/from the current channel. (Channel message wrapper)",
-    "$command [add|del|list] [nickname]")
-void onCommandRegular(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    return handleRegularCommand(plugin, event, event.channel);
-}
-
-
-// handleRegularCommand
-/++
- +  Implements adding, listing and removing regulars for a channel.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      targetChannel = The channel we're adding/listing/removing regulars to/from.
- +/
-void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
-{
-    import lu.string : contains, nom;
-    import std.algorithm.searching : count;
-    import std.format : format;
-    import std.uni : toLower;
-
-    if (!event.content.length || (event.content.count(' ') > 1))
-    {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: [add|del|list] [nickname]");
-            //                    1
-        return;
-    }
-
-    string slice = event.content;
-    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
-
-    switch (verb)
-    {
-    case "add":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [nickname]".format(verb));
-            return;
-        }
-
-        immutable nickname = slice.toLower;
-
-        if (auto regularArray = targetChannel in plugin.regularsByChannel)
-        {
-            import std.algorithm.searching : canFind;
-
-            if ((*regularArray).canFind(nickname))
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    slice ~ " is already a channel regular.");
-                return;
-            }
-            else
-            {
-                *regularArray ~= nickname;
-                // Drop down for report
-            }
-        }
-        else
-        {
-            plugin.regularsByChannel[targetChannel] ~= nickname;
-            // Drop down for report
-        }
-
-        if (nickname in plugin.activeChannels[targetChannel].linkBans)
-        {
-            // Was or is timed out, remove it just in case
-            plugin.activeChannels[targetChannel].linkBans.remove(nickname);
-            chan(plugin.state, targetChannel, "/timeout " ~ nickname ~ " 0");
-        }
-
-        saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            slice ~ " is now a regular.");
-        break;
-
-    case "del":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [nickname]".format(verb));
-            return;
-        }
-
-        immutable nickname = slice.toLower;
-
-        if (auto regularArray = targetChannel in plugin.regularsByChannel)
-        {
-            import std.algorithm.mutation : SwapStrategy, remove;
-            import std.algorithm.searching : countUntil;
-
-            immutable index = (*regularArray).countUntil(nickname);
-
-            if (index != -1)
-            {
-                *regularArray = (*regularArray).remove!(SwapStrategy.unstable)(index);
-                saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Regular removed.");
-            }
-            else
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "No such regular: " ~ slice);
-            }
-        }
-        break;
-
-    case "list":
-        if (const regularList = targetChannel in plugin.regularsByChannel)
-        {
-            import std.format : format;
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current regulars: %-(%s, %)".format(*regularList));
-        }
-        else
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "There are no regulars registered for this channel.");
-        }
-        break;
-
-    default:
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Available actions: add, del, list");
-        break;
-    }
-}
-
-
 // onLink
 /++
  +  Parses a message to see if the message contains one or more URLs.
@@ -1523,11 +1373,6 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     with (plugin)
     {
-        JSONStorage channelRegularsJSON;
-        channelRegularsJSON.load(regularsFile);
-        regularsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelRegularsJSON);
-        regularsByChannel.rehash();
-
         JSONStorage channelBannedPhrasesJSON;
         channelBannedPhrasesJSON.load(bannedPhrasesFile);
         bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
@@ -1577,17 +1422,6 @@ void initResources(TwitchBotPlugin plugin)
     import std.json : JSONException;
     import std.path : baseName;
 
-    JSONStorage regularsJSON;
-
-    try
-    {
-        regularsJSON.load(plugin.regularsFile);
-    }
-    catch (JSONException e)
-    {
-        throw new IRCPluginInitialisationException(plugin.regularsFile.baseName ~ " may be malformed.");
-    }
-
     JSONStorage bannedPhrasesJSON;
 
     try
@@ -1612,7 +1446,6 @@ void initResources(TwitchBotPlugin plugin)
 
     // Let other Exceptions pass.
 
-    regularsJSON.save(plugin.regularsFile);
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
     timersJSON.save(plugin.timersFile);
 }
@@ -1834,52 +1667,6 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 }
 
 
-// postprocess
-/++
- +  Postprocesses `dialect.defs.IRCEvent`s, changing the user classes to
- +  reflect whether or not a user is a regular.
- +
- +  The Persistence service doesn't have access to `TwitchBotPlugin.regularsByChannel`
- +  and so cannot set a user's class to `IRCUser.Class.whitelist` if it's in there.
- +  So we do it as a postprocessing step *before* Persistence.
- +
- +  Special care has to be taken inside Persistence to not make it overwrite this
- +  change with whatever it has stored for this particular user.
- +/
-void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
-{
-    import std.algorithm.searching : canFind;
-    import std.range : only;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-    if (!event.sender.nickname.length && !event.target.nickname.length) return;
-    if (event.channel.length && (event.channel !in plugin.activeChannels)) return;
-
-    foreach (user; only(&event.sender, &event.target))
-    {
-        if (event.channel.length && (user.nickname == event.channel[1..$]))
-        {
-            user.class_ = IRCUser.Class.admin;
-        }
-        else if (user.badges.canFind("mode"/*rator*/))
-        {
-            user.class_ = IRCUser.Class.admin;
-        }
-        else if (plugin.twitchBotSettings.regularsAreWhitelisted)
-        {
-            if (const channelRegulars = event.channel in plugin.regularsByChannel)
-            {
-                if ((*channelRegulars).canFind(user.nickname))
-                {
-                    user.class_ = plugin.state.bot.admins.canFind(user.nickname) ?
-                        IRCUser.Class.admin : IRCUser.Class.whitelist;
-                }
-            }
-        }
-    }
-}
-
-
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
@@ -1941,12 +1728,6 @@ private:
 
     /// Array of active bot channels' state.
     Channel[string] activeChannels;
-
-    /// Associative array of regulars; nickname array keyed by channel.
-    string[][string] regularsByChannel;
-
-    /// Filename of file with regulars.
-    @Resource string regularsFile = "twitchregulars.json";
 
     /// Associative array of banned phrases; phrases array keyed by channel.
     string[][string] bannedPhrasesByChannel;
