@@ -246,6 +246,9 @@ private:
     /// Whether or not a channel query Fiber is running.
     bool querying;
 
+    /// Whether or not at least one channel query has been made.
+    bool queriedAtLeastOnce;
+
     mixin IRCPluginImpl;
 
     /++
