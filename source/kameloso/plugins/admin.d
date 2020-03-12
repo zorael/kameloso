@@ -1484,7 +1484,7 @@ void onCommandStatus(AdminPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "summary")
-@Description("[debug] Causes a connection summary to be printed to the terminal.")
+@Description("Causes a connection summary to be printed to the terminal.")
 void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
