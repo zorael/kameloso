@@ -156,14 +156,20 @@ void startChannelQueries(ChanQueriesService service)
             service.channelStates[channelName] = ChannelState.queried;
         }
 
+        import kameloso.constants : Timeout;
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime.toUnixTime;
         bool[string] uniqueUsers;
 
         foreach (immutable channelName, const channel; service.state.channels)
         {
             foreach (immutable nickname; channel.users.byKey)
             {
-                if (!service.state.users[nickname].account.length)
+                if (!service.state.users[nickname].account.length &&
+                    ((now - service.state.users[nickname].updated) > Timeout.whoisRetry))
                 {
+                    // No account and sufficient amount of time passed since last WHOIS
                     uniqueUsers[nickname] = true;
                 }
             }
