@@ -1225,7 +1225,7 @@ do
 {
     size_t[] toRemove;
 
-    foreach (immutable i, ref fiber; plugin.state.timedFibers)
+    foreach (immutable i, fiber; plugin.state.timedFibers)
     {
         if (fiber.id > nowInUnix) continue;
 
