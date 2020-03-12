@@ -1204,8 +1204,6 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                 }
             }
         }
-
-        destroy(expiredFiber);  // Overkill?
     }
 }
 
