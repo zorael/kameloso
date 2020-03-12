@@ -264,6 +264,21 @@ void onEndOfMotd(PersistenceService service)
 }
 
 
+// onJoin
+/++
+ +  Queries the server for a user's information upon them joining a channel.
+ +
+ +  The `PrivilegeLevel.anyone` makes it emit a WHOIS before triggering the function.
+ +/
+@(IRCEvent.Type.JOIN)
+@(ChannelPolicy.home)
+@(PrivilegeLevel.anyone)
+void onJoin()
+{
+    // No-op
+}
+
+
 // reload
 /++
  +  Reloads the service, rehashing the user array and loading
