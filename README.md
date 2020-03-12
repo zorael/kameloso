@@ -240,7 +240,7 @@ $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --writeconfig
 ```
 
-Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!regular`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit`
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit` (alongside `!operator`, `!whitelist`, `!blacklist` and other non-Twitch-specific commands.)
 
 Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
@@ -256,7 +256,7 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 Plugins that access the web, including the webtitles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 
-When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command.
+When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command, or its `quit` command outright to exit immediately.
 
 ## Posix
 
@@ -269,7 +269,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
-* channel-specific whitelists? replace Twitch regulars?
 * more pairs of eyes
 
 # Built with
