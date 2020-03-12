@@ -181,6 +181,12 @@ void startChannelQueries(ChanQueriesService service)
             import kameloso.messaging : whois;
             import kameloso.thread : CarryingFiber;
 
+            if (service.state.users[nickname].account.length)
+            {
+                // Something else WHOISed this user already.
+                continue;
+            }
+
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
