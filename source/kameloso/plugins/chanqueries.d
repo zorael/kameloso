@@ -39,7 +39,7 @@ enum ChannelState : ubyte
 }
 
 
-// onPing
+// startChannelQueries
 /++
  +  Queries channels for information about them and their users.
  +
@@ -47,7 +47,7 @@ enum ChannelState : ubyte
  +  and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
-void onPing(ChanQueriesService service)
+void startChannelQueries(ChanQueriesService service)
 {
     import core.thread : Fiber;
 
@@ -73,13 +73,17 @@ void onPing(ChanQueriesService service)
 
     void dg()
     {
+        import kameloso.messaging : raw;
+        import kameloso.thread : ThreadMessage, busMessage;
+        import core.thread : Fiber;
+        import std.concurrency : send;
+        import std.string : representation;
+
+        scope(exit) service.queriedAtLeastOnce = true;
+
         foreach (immutable i, immutable channelName; querylist)
         {
-            import kameloso.messaging : raw;
-            import kameloso.thread : ThreadMessage, busMessage;
-            import core.thread : Fiber;
-            import std.concurrency : send;
-            import std.string : representation;
+            if (channelName !in service.channelStates) continue;
 
             if (i > 0)
             {
@@ -96,7 +100,7 @@ void onPing(ChanQueriesService service)
                         "printer", busMessage("squelch"));
                 }
 
-                raw(service.state, "TOPIC " ~ channelName, true);
+                raw(service.state, "TOPIC " ~ channelName, false);
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
                 service.delayFiber(service.secondsBetween);
@@ -109,7 +113,7 @@ void onPing(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            raw(service.state, "WHO " ~ channelName, true);
+            raw(service.state, "WHO " ~ channelName, false);
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
             service.delayFiber(service.secondsBetween);
@@ -121,7 +125,7 @@ void onPing(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            raw(service.state, "MODE " ~ channelName, true);
+            raw(service.state, "MODE " ~ channelName, false);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             foreach (immutable modechar; service.state.server.aModes.representation)
@@ -129,7 +133,7 @@ void onPing(ChanQueriesService service)
                 import std.format : format;
                 // Cannot await by event type; there are too many types,
                 // so just delay for twice the normal delay duration
-                service.delayFiber(service.secondsBetween * 2);
+                service.delayFiber(service.secondsBetween);
                 Fiber.yield();  // delay
 
                 version(WithPrinterPlugin)
@@ -142,22 +146,68 @@ void onPing(ChanQueriesService service)
                         "printer", busMessage("squelch"));
                 }
 
-                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
+                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), false);
             }
+
+            if (channelName !in service.channelStates) continue;
 
             // Overwrite state with `ChannelState.queried`;
             // `topicKnown` etc are no longer relevant.
             service.channelStates[channelName] = ChannelState.queried;
         }
 
-        service.querying = false;  // "Unlock"
+        bool[string] uniqueUsers;
 
-        // This Fiber will end with a timed triggering.
-        // Force an awiting fiber clean-up next ping.
-        service.awaitEvent(IRCEvent.Type.PING);
+        foreach (immutable channelName, const channel; service.state.channels)
+        {
+            foreach (immutable nickname; channel.users.byKey)
+            {
+                if (!service.state.users[nickname].account.length)
+                {
+                    uniqueUsers[nickname] = true;
+                }
+            }
+        }
+
+        foreach (immutable nickname; uniqueUsers.byKey)
+        {
+            import kameloso.common : logger;
+            import kameloso.messaging : whois;
+            import kameloso.thread : CarryingFiber;
+
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+            if (thisFiber.payload.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+            {
+                // thisFiber.payload.aux is pretty much guaranteed to be "WHOIS"
+                // Don't even check. Cannot WHOIS on this server
+                logger.warning("Warning: This server does not seem to support user accounts.");
+                logger.warning("If this is wrong, please file a GitHub issue.");
+                logger.warning("As it is, functionality will be greatly limited.");
+                break;
+            }
+
+            // Delay between runs after first since aMode probes don't delay at end
+            service.delayFiber(service.secondsBetween);
+            Fiber.yield();  // delay
+
+            version(WithPrinterPlugin)
+            {
+                service.state.mainThread.send(ThreadMessage.BusMessage(),
+                    "printer", busMessage("squelch"));
+            }
+
+            whois(service.state, nickname, false, false);
+            //raw(service.state, "WHOIS " ~ nickname, false);
+            Fiber.yield();  // Await account types registered above
+        }
+
+        service.querying = false;  // "Unlock"
     }
 
-    Fiber fiber = new Fiber(&dg, 32768);
+    import kameloso.thread : CarryingFiber;
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
 
     // Enlist the fiber *ONCE*
     with (IRCEvent.Type)
@@ -168,6 +218,8 @@ void onPing(ChanQueriesService service)
             RPL_NOTOPIC,
             RPL_ENDOFWHO,
             RPL_CHANNELMODEIS,
+            RPL_ENDOFWHOIS,
+            ERR_UNKNOWNCOMMAND,
         ];
 
         service.awaitEvents(fiber, types);
