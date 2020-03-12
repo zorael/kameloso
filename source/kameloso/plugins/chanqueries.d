@@ -332,6 +332,9 @@ private:
      +/
     enum secondsBetween = 3;
 
+    /// Seconds after MOTD end before the first round of channel-querying will start.
+    enum secondsBeforeInitialQueries = 60;
+
     /++
      +  Short associative array of the channels the bot is in and which state(s)
      +  they are in.
