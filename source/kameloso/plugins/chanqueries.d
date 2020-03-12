@@ -305,7 +305,7 @@ void onEndOfMotd(ChanQueriesService service)
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
-    service.delayFiber(fiber, 60);
+    service.delayFiber(fiber, service.secondsBeforeInitialQueries);
 }
 
 
