@@ -235,7 +235,7 @@ private:
      +  Extra seconds delay between channel mode/user queries. Not delaying may
      +  cause kicks and disconnects if results are returned quickly.
      +/
-    enum secondsBetween = 2;
+    enum secondsBetween = 3;
 
     /++
      +  Short associative array of the channels the bot is in and which state(s)
