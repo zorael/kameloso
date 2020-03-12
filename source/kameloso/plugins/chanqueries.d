@@ -270,6 +270,49 @@ void onTopic(ChanQueriesService service, const IRCEvent event)
 }
 
 
+// onEndOfNames
+/++
+ +  After listing names (upon joining a channel), initiate a channel query run
+ +  unless one is already running. Additionally don't do it before it has been
+ +  done at least once, after login.
+ +/
+@(IRCEvent.Type.RPL_ENDOFNAMES)
+@(ChannelPolicy.any)
+void onEndOfNames(ChanQueriesService service)
+{
+    if (!service.querying && service.queriedAtLeastOnce)
+    {
+        service.startChannelQueries();
+    }
+}
+
+
+// onEndOfMotd
+/++
+ +  After successful connection and MOTD list end, start a delayed channel query
+ +  on all channels at that time.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.RPL_NOMOTD)
+void onEndOfMotd(ChanQueriesService service)
+{
+    import kameloso.thread : CarryingFiber;
+    import core.thread : Fiber;
+
+    void dg()
+    {
+        service.startChannelQueries();
+    }
+
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
+    service.delayFiber(fiber, 60);
+}
+
+
+mixin UserAwareness;
+mixin ChannelAwareness;
+
+
 public:
 
 
