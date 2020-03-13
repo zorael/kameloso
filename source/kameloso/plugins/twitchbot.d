@@ -1,9 +1,9 @@
 /++
- +  This is an example Twitch streamer bot. It supports basic authentication,
- +  allowing for channel-specific regulars that are not necessarily in the
- +  whitelist nor are Twitch moderators, querying uptime or how long a streamer
- +  has been live, banned phrases and timered announcements. If run in a
- +  local terminal it can also emit some terminal bells on certain events, to
+ +  This is an example Twitch streamer bot. It supports querying uptime or how
+ +  long a streamer has been live, banned phrases, timered announcements and
+ +  voting.
+ +
+ +  If run in a local terminal it can also emit some terminal bells on certain events, to
  +  draw attention.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
@@ -35,9 +35,6 @@ struct TwitchBotSettings
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
-    /// Whether or not regulars are impliictly whitelisted.
-    bool regularsAreWhitelisted = true;
-
     /// Whether or not to bell on every message.
     bool bellOnMessage = false;
 
@@ -64,7 +61,7 @@ struct TwitchBotSettings
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "permit")
 @Description("Permits a specified user to post links for a brief period of time.",
@@ -331,7 +328,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
@@ -505,7 +502,7 @@ void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const str
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
@@ -716,7 +713,7 @@ void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const stri
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "enable")
 @BotCommand(PrefixPolicy.prefixed, "disable")
@@ -789,7 +786,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "start")
 @Description("Marks the start of a broadcast.")
@@ -820,7 +817,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stop")
 @Description("Marks the stop of a broadcast.")
@@ -886,7 +883,7 @@ void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "vote")
 @BotCommand(PrefixPolicy.prefixed, "poll")
@@ -1098,7 +1095,7 @@ do
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "abortvote")
 @BotCommand(PrefixPolicy.prefixed, "abortpoll")
@@ -1121,153 +1118,6 @@ do
 }
 
 
-// onCommandRegular
-/++
- +  Adds, lists and removes regulars to/from the current channel.
- +
- +  Merely passes the event onto `handleRegularCommand` with the current channel
- +  as the target channel.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "regular")
-@Description("Adds or removes a Twitch regulars to/from the current channel. (Channel message wrapper)",
-    "$command [add|del|list] [nickname]")
-void onCommandRegular(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    return handleRegularCommand(plugin, event, event.channel);
-}
-
-
-// handleRegularCommand
-/++
- +  Implements adding, listing and removing regulars for a channel.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      targetChannel = The channel we're adding/listing/removing regulars to/from.
- +/
-void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string targetChannel)
-{
-    import lu.string : contains, nom;
-    import std.algorithm.searching : count;
-    import std.format : format;
-    import std.uni : toLower;
-
-    if (!event.content.length || (event.content.count(' ') > 1))
-    {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: [add|del|list] [nickname]");
-            //                    1
-        return;
-    }
-
-    string slice = event.content;
-    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
-
-    switch (verb)
-    {
-    case "add":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [nickname]".format(verb));
-            return;
-        }
-
-        immutable nickname = slice.toLower;
-
-        if (auto regularArray = targetChannel in plugin.regularsByChannel)
-        {
-            import std.algorithm.searching : canFind;
-
-            if ((*regularArray).canFind(nickname))
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    slice ~ " is already a channel regular.");
-                return;
-            }
-            else
-            {
-                *regularArray ~= nickname;
-                // Drop down for report
-            }
-        }
-        else
-        {
-            plugin.regularsByChannel[targetChannel] ~= nickname;
-            // Drop down for report
-        }
-
-        if (nickname in plugin.activeChannels[targetChannel].linkBans)
-        {
-            // Was or is timed out, remove it just in case
-            plugin.activeChannels[targetChannel].linkBans.remove(nickname);
-            chan(plugin.state, targetChannel, "/timeout " ~ nickname ~ " 0");
-        }
-
-        saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            slice ~ " is now a regular.");
-        break;
-
-    case "del":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [nickname]".format(verb));
-            return;
-        }
-
-        immutable nickname = slice.toLower;
-
-        if (auto regularArray = targetChannel in plugin.regularsByChannel)
-        {
-            import std.algorithm.mutation : SwapStrategy, remove;
-            import std.algorithm.searching : countUntil;
-
-            immutable index = (*regularArray).countUntil(nickname);
-
-            if (index != -1)
-            {
-                *regularArray = (*regularArray).remove!(SwapStrategy.unstable)(index);
-                saveResourceToDisk(plugin.regularsByChannel, plugin.regularsFile);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Regular removed.");
-            }
-            else
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "No such regular: " ~ slice);
-            }
-        }
-        break;
-
-    case "list":
-        if (const regularList = targetChannel in plugin.regularsByChannel)
-        {
-            import std.format : format;
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current regulars: %-(%s, %)".format(*regularList));
-        }
-        else
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "There are no regulars registered for this channel.");
-        }
-        break;
-
-    default:
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Available actions: add, del, list");
-        break;
-    }
-}
-
-
 // onLink
 /++
  +  Parses a message to see if the message contains one or more URLs.
@@ -1276,7 +1126,7 @@ void handleRegularCommand(TwitchBotPlugin plugin, const IRCEvent event, string t
  +  plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
  +  send them to it for lookups and reporting.
  +
- +  Whitelisted, regulars, admins and special users are so far allowed to trigger this, as are
+ +  Operators, whitelisted and admin users are so far allowed to trigger this, as are
  +  any user who has been given a temporary permit via `onCommandPermit`.
  +  Those without permission will have the message deleted and be served a timeout.
  +/
@@ -1318,6 +1168,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         break;
 
     case whitelist:
+    case operator:
     case admin:
     case special:
         allowed = true;
@@ -1441,6 +1292,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         break;
 
     case whitelist:
+    case operator:
     case admin:
     case special:
         // Nothing more to do
@@ -1509,7 +1361,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Populate the regulars and phrases array after we have successfully
+ +  Populate the banned phrases array after we have successfully
  +  logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1521,11 +1373,6 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     with (plugin)
     {
-        JSONStorage channelRegularsJSON;
-        channelRegularsJSON.load(regularsFile);
-        regularsByChannel.populateFromJSON!(Yes.lowercaseValues)(channelRegularsJSON);
-        regularsByChannel.rehash();
-
         JSONStorage channelBannedPhrasesJSON;
         channelBannedPhrasesJSON.load(bannedPhrasesFile);
         bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
@@ -1541,14 +1388,14 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 /++
  +  Saves the passed resource to disk, but in JSON format.
  +
- +  This is used with the associative arrays for regulars and banned phrases.
+ +  This is used with the associative arrays for banned phrases.
  +
  +  Example:
  +  ---
- +  plugin.regularsByChannel["#channel"] ~= "kameloso";
- +  plugin.regularsByChannel["#channel"] ~= "hirrsteff";
+ +  plugin.bannedPhrasesByChannel["#channel"] ~= "kameloso";
+ +  plugin.bannedPhrasesByChannel["#channel"] ~= "hirrsteff";
  +
- +  saveResource(plugin.regularsByChannel, plugin.regularsFile);
+ +  saveResource(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
  +  ---
  +
  +  Params:
@@ -1566,7 +1413,7 @@ void saveResourceToDisk(Resource)(const Resource resource, const string filename
 
 // initResources
 /++
- +  Reads and writes the file of regulars, phrases and timers to disk, ensuring
+ +  Reads and writes the file of banned phrases and timers to disk, ensuring
  +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
@@ -1574,17 +1421,6 @@ void initResources(TwitchBotPlugin plugin)
     import lu.json : JSONStorage;
     import std.json : JSONException;
     import std.path : baseName;
-
-    JSONStorage regularsJSON;
-
-    try
-    {
-        regularsJSON.load(plugin.regularsFile);
-    }
-    catch (JSONException e)
-    {
-        throw new IRCPluginInitialisationException(plugin.regularsFile.baseName ~ " may be malformed.");
-    }
 
     JSONStorage bannedPhrasesJSON;
 
@@ -1610,7 +1446,6 @@ void initResources(TwitchBotPlugin plugin)
 
     // Let other Exceptions pass.
 
-    regularsJSON.save(plugin.regularsFile);
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
     timersJSON.save(plugin.timersFile);
 }
@@ -1832,52 +1667,6 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 }
 
 
-// postprocess
-/++
- +  Postprocesses `dialect.defs.IRCEvent`s, changing the user classes to
- +  reflect whether or not a user is a regular.
- +
- +  The Persistence service doesn't have access to `TwitchBotPlugin.regularsByChannel`
- +  and so cannot set a user's class to `IRCUser.Class.whitelist` if it's in there.
- +  So we do it as a postprocessing step *before* Persistence.
- +
- +  Special care has to be taken inside Persistence to not make it overwrite this
- +  change with whatever it has stored for this particular user.
- +/
-void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
-{
-    import std.algorithm.searching : canFind;
-    import std.range : only;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-    if (!event.sender.nickname.length && !event.target.nickname.length) return;
-    if (event.channel.length && (event.channel !in plugin.activeChannels)) return;
-
-    foreach (user; only(&event.sender, &event.target))
-    {
-        if (event.channel.length && (user.nickname == event.channel[1..$]))
-        {
-            user.class_ = IRCUser.Class.admin;
-        }
-        else if (user.badges.canFind("mode"/*rator*/))
-        {
-            user.class_ = IRCUser.Class.admin;
-        }
-        else if (plugin.twitchBotSettings.regularsAreWhitelisted)
-        {
-            if (const channelRegulars = event.channel in plugin.regularsByChannel)
-            {
-                if ((*channelRegulars).canFind(user.nickname))
-                {
-                    user.class_ = plugin.state.bot.admins.canFind(user.nickname) ?
-                        IRCUser.Class.admin : IRCUser.Class.whitelist;
-                }
-            }
-        }
-    }
-}
-
-
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
@@ -1940,12 +1729,6 @@ private:
     /// Array of active bot channels' state.
     Channel[string] activeChannels;
 
-    /// Associative array of regulars; nickname array keyed by channel.
-    string[][string] regularsByChannel;
-
-    /// Filename of file with regulars.
-    @Resource string regularsFile = "twitchregulars.json";
-
     /// Associative array of banned phrases; phrases array keyed by channel.
     string[][string] bannedPhrasesByChannel;
 
@@ -1985,8 +1768,7 @@ private:
      +/
     public void onEvent(const IRCEvent event)
     {
-        if ((state.server.daemon != IRCServer.Daemon.unset) &&
-            (state.server.daemon != IRCServer.Daemon.twitch))
+        if (state.server.daemon != IRCServer.Daemon.twitch)
         {
             // Daemon known and not Twitch
             return;

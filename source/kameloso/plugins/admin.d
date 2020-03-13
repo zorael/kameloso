@@ -6,7 +6,7 @@
  +
  +  It also offers some less debug-y, more administrative functions, like adding
  +  and removing homes on-the-fly, whitelisting or de-whitelisting account
- +  names, joining or leaving channels, and such.
+ +  names, adding/removing from the operator list, joining or leaving channels, and such.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
@@ -150,7 +150,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "user")
 @Description("[debug] Prints out information about one or more specific users " ~
@@ -292,7 +292,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "home")
+@BotCommand(PrefixPolicy.prefixed, "home")
 @Description("Adds or removes a channel to/from the list of homes.",
     "$command [add|del|list] [channel]")
 void onCommandHome(AdminPlugin plugin, const IRCEvent event)
@@ -519,26 +519,69 @@ void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "whitelist")
+@BotCommand(PrefixPolicy.prefixed, "whitelist")
 @Description("Add or remove an account to/from the whitelist of users who may trigger the bot.",
     "$command [add|del] [account or nickname]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    return plugin.manageWhitelistBlacklist(event, "whitelist");
+    return plugin.manageClassLists(event, "whitelist");
 }
 
 
-// manageWhitelistBlacklist
+// onCommandOperator
+/++
+ +  Adds a nickname or account to the list of users who may trigger lower
+ +  functions of the bot, without being a full admin.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "operator")
+@Description("Add or remove an account to/from the operator list of operators/moderators.",
+    "$command [add|del] [account or nickname]")
+void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
+{
+    return plugin.manageClassLists(event, "operator");
+}
+
+
+// onCommandBlacklist
+/++
+ +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
+ +  even on actions annotated `kameloso.plugins.common.PrivilegeLevel.anyone`.
+ +
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
+ +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
+ +  `kameloso.plugins.common.PrivilegeLevel.admin`.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "blacklist")
+@Description("Add or remove an account to/from the blacklist of people who may " ~
+    "explicitly not trigger the bot", "$command [add|del] [account or nickname]")
+void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
+{
+    return plugin.manageClassLists(event, "blacklist");
+}
+
+
+// manageClassLists
 /++
  +  Common code for whitelisting and blacklisting nicknames/accounts.
  +
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      event = The triggering `dialect.defs.IRCEvent`.
- +      list = Which list to add/remove from, "whitelist" or "blacklist".
+ +      list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
-void manageWhitelistBlacklist(AdminPlugin plugin, const IRCEvent event, const string list)
-in (((list == "whitelist") || (list == "blacklist")), list ~ " is not whitelist nor blacklist")
+void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
+in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+    list ~ " is not whitelist, operator nor blacklist")
 do
 {
     import lu.string : nom;
@@ -575,14 +618,14 @@ do
 
 // lookupEnlist
 /++
- +  Adds an account to either the whitelist or the blacklist.
+ +  Adds an account to either the whitelist, operator list or the blacklist.
  +
  +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
  +
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      specified = The nickname or account to white-/blacklist.
- +      list = Which of "whitelist" or "blacklist" to add to.
+ +      list = Which of "whitelist", "operator" or "blacklist" to add to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
@@ -617,7 +660,10 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
                 break;
 
             case noSuchAccount:
-                assert(0, "Invalid delist-only AlterationResult passed to report()");
+                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist");
+
+            case noSuchChannel:
+                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist");
 
             case alreadyInList:
                 enum pattern = "Account %s already %sed.";
@@ -655,7 +701,10 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
                 break;
 
             case noSuchAccount:
-                assert(0, "Invalid enlist-only AlterationResult passed to report()");
+                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist");
+
+            case noSuchChannel:
+                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist");
 
             case alreadyInList:
                 logger.logf("Account %s%s%s already %sed.", infotint, specified, logtint, list);
@@ -669,7 +718,7 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
     if (user && user.account.length)
     {
         // user.nickname == specified
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, event.channel);
         return report(result, user.account);
     }
     else if (!specified.isValidNickname(plugin.state.server))
@@ -706,7 +755,7 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
 
     void onSuccess(const string id)
     {
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, id);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, id, event.channel);
         report(result, id);
     }
 
@@ -734,14 +783,14 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
 
 // delist
 /++
- +  Removes a nickname from either the whitelist or the blacklist.
+ +  Removes a nickname from either the whitelist, operator list or the blacklist.
  +
  +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
  +
  +  Params:
  +      plugin = The current `AdminPlugin`.
- +      account = The account to delist as whitelisted/blacklisted.
- +      list = Which of "whitelist" or "blacklist" to remove from.
+ +      account = The account to delist as whitelisted/blacklisted or as operator.
+ +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
@@ -764,7 +813,7 @@ void delist(AdminPlugin plugin, const string account, const string list,
         return;
     }
 
-    immutable result = plugin.alterAccountClassifier(No.add, list, account);
+    immutable result = plugin.alterAccountClassifier(No.add, list, account, event.channel);
 
     if (event.sender.nickname.length)
     {
@@ -782,6 +831,16 @@ void delist(AdminPlugin plugin, const string account, const string list,
             immutable message = settings.colouredOutgoing ?
                 pattern.format(account.ircColourByHash.ircBold, list) :
                 pattern.format(account, list);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            break;
+
+        case noSuchChannel:
+            enum pattern = "Account %s isn't %sed on %s.";
+
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(account.ircColourByHash.ircBold, list, event.channel) :
+                pattern.format(account, list, event.channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
@@ -824,34 +883,16 @@ void delist(AdminPlugin plugin, const string account, const string list,
             logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, list);
             break;
 
+        case noSuchChannel:
+            logger.logf("Account %s%s%s isn't %sed on %1$s%5$s%3$s",
+                infotint, account, logtint, list, event.channel);
+            break;
+
         case success:
             logger.logf("de%sed %s%s%s.", list, infotint, account, logtint);
             break;
         }
     }
-}
-
-
-// onCommandBlacklist
-/++
- +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
- +  even on actions annotated `kameloso.plugins.common.PrivilegeLevel.anyone`.
- +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
- +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
- +  `kameloso.plugins.common.PrivilegeLevel.admin`.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "blacklist")
-@Description("Add or remove an account to/from the blacklist of people who may " ~
-    "explicitly not trigger the bot", "$command [add|del] [account or nickname]")
-void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
-{
-    return plugin.manageWhitelistBlacklist(event, "blacklist");
 }
 
 
@@ -866,6 +907,7 @@ enum AlterationResult
 {
     alreadyInList,  /// When enlisting, an account already existed.
     noSuchAccount,  /// When delisting, an account could not be found.
+    noSuchChannel,  /// When delisting, a channel count not be found.
     success,        /// Successful enlist/delist.
 }
 
@@ -878,61 +920,55 @@ enum AlterationResult
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      add = Whether to add to or remove from lists.
- +      list = Which list to add to or remove from; `whitelist` or `blacklist`.
+ +      list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
  +      account = Services account name to add or remove.
+ +      channel = Channel the account-class applies to.
  +
  +  Returns:
  +      `AlterationResult.alreadyInList` if enlisting (`Yes.add`) and the account
  +      was already in the specified list.
  +      `AlterationResult.noSuchAccount` if delisting (`No.add`) and no such
  +      account could be found in the specified list.
+ +      `AlterationResult.noSuchChannel` if delisting (`No.add`) and no such
+ +      channel could be found in the specified list.
  +      `AlterationResult.success` if enlisting or delisting succeeded.
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string list, const string account)
+    const string list, const string account, const string channel)
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage;
     import std.concurrency : send;
     import std.json : JSONValue;
 
-    assert(((list == "whitelist") || (list == "blacklist")), list);
+    assert(((list == "whitelist") || (list == "blacklist") || (list == "operator")), list);
 
     JSONStorage json;
     json.reset();
     json.load(plugin.userFile);
 
-    /*if ("admin" !in json)
-    {
-        json["admin"] = null;
-        json["admin"].array = null;
-    }*/
-
-    if ("whitelist" !in json)
-    {
-        json["whitelist"] = null;
-        json["whitelist"].array = null;
-    }
-
-    if ("blacklist" !in json)
-    {
-        json["blacklist"] = null;
-        json["blacklist"].array = null;
-    }
-
-    immutable accountAsJSON = JSONValue(account);
-
     if (add)
     {
         import std.algorithm.searching : canFind;
 
-        if (json[list].array.canFind(accountAsJSON))
+        const accountAsJSON = JSONValue(account);
+
+        if (channel in json[list].object)
         {
-            return AlterationResult.alreadyInList;
+            if (json[list][channel].array.canFind(accountAsJSON))
+            {
+                return AlterationResult.alreadyInList;
+            }
+            else
+            {
+                json[list][channel].array ~= accountAsJSON;
+            }
         }
         else
         {
-            json[list].array ~= accountAsJSON;
+            json[list][channel] = null;
+            json[list][channel].array = null;
+            json[list][channel].array ~= accountAsJSON;
         }
     }
     else
@@ -940,14 +976,21 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        immutable index = json[list].array.countUntil(accountAsJSON);
-
-        if (index == -1)
+        if (channel in json[list].object)
         {
-            return AlterationResult.noSuchAccount;
-        }
+            immutable index = json[list][channel].array.countUntil(JSONValue(account));
 
-        json[list] = json[list].array.remove!(SwapStrategy.unstable)(index);
+            if (index == -1)
+            {
+                return AlterationResult.noSuchAccount;
+            }
+
+            json[list][channel] = json[list][channel].array.remove!(SwapStrategy.unstable)(index);
+        }
+        else
+        {
+            return AlterationResult.noSuchChannel;
+        }
     }
 
     json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.userFile);
@@ -955,6 +998,25 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
     return AlterationResult.success;
+}
+
+
+// onCommandReload
+/++
+ +  Asks plugins to reload their resources and/or configuration as they see fit.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "reload")
+@Description("Asks plugins to reload their resources and/or configuration as they see fit.")
+void onCommandReload(AdminPlugin plugin)
+{
+    import kameloso.thread : ThreadMessage;
+
+    logger.info("Reloading plugins.");
+    plugin.state.mainThread.send(ThreadMessage.Reload());
 }
 
 
@@ -1422,7 +1484,7 @@ void onCommandStatus(AdminPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "summary")
-@Description("[debug] Causes a connection summary to be printed to the terminal.")
+@Description("Causes a connection summary to be printed to the terminal.")
 void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
@@ -1587,10 +1649,12 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.state.mainThread.send(ThreadMessage.Save());
 
     case "whitelist":
+    case "operator":
     case "blacklist":
         return plugin.lookupEnlist(slice, verb);
 
     case "dewhitelist":
+    case "deoperator":
     case "deblacklist":
         return plugin.delist(slice, verb[2..$]);
 

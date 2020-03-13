@@ -51,8 +51,11 @@ struct PrinterSettings
 
     version(TwitchSupport)
     {
-        /// Whether or not to display (abbreviated) Twitch badges.
+        /// Whether or not to display Twitch badges next to sender/target names.
         bool twitchBadges = true;
+
+        /// Whether to show Twitch badges abbreviated into single characters or in full.
+        bool abbreviatedBadges = false;
 
         /// Whether or not emotes should be highlit in colours.
         bool colourfulEmotes = true;
@@ -1071,7 +1074,14 @@ if (isOutputRange!(Sink, char[]))
 
                         default:
                             sink.put(" [");
-                            sink.abbreviateBadges(sender.badges);
+                            if (plugin.printerSettings.abbreviatedBadges)
+                            {
+                                sink.abbreviateBadges(sender.badges);
+                            }
+                            else
+                            {
+                                sink.put(sender.badges);
+                            }
                             sink.put(']');
                         }
                     }
@@ -1113,7 +1123,14 @@ if (isOutputRange!(Sink, char[]))
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     sink.put(" [");
-                    sink.abbreviateBadges(target.badges);
+                    if (plugin.printerSettings.abbreviatedBadges)
+                    {
+                        sink.abbreviateBadges(target.badges);
+                    }
+                    else
+                    {
+                        sink.put(target.badges);
+                    }
                     sink.put(']');
                 }
             }
@@ -1259,6 +1276,7 @@ unittest
 
     version(TwitchSupport)
     {
+        plugin.printerSettings.abbreviatedBadges = true;
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
@@ -1474,7 +1492,14 @@ if (isOutputRange!(Sink, char[]))
 
                         default:
                             .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                            sink.abbreviateBadges(sender.badges);
+                            if (plugin.printerSettings.abbreviatedBadges)
+                            {
+                                sink.abbreviateBadges(sender.badges);
+                            }
+                            else
+                            {
+                                sink.put(sender.badges);
+                            }
                             sink.put(']');
                         }
                     }
@@ -1531,7 +1556,14 @@ if (isOutputRange!(Sink, char[]))
                 if (plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                    sink.abbreviateBadges(target.badges);
+                    if (plugin.printerSettings.abbreviatedBadges)
+                    {
+                        sink.abbreviateBadges(target.badges);
+                    }
+                    else
+                    {
+                        sink.put(target.badges);
+                    }
                     sink.put(']');
                 }
             }
@@ -1889,11 +1921,13 @@ if (isOutputRange!(Sink, char[]))
             break;
 
         case "bits":
+        case "bits-leader":
             // rewrite to the cheer it is represented as in the normal chat
             badgechar = 'C';
             break;
 
         case "sub-gifter":
+        case "sub-gift-leader":
             badgechar = 'G';
             break;
 
@@ -1935,6 +1969,10 @@ if (isOutputRange!(Sink, char[]))
         case "twitchconEU2019":
         case "twitchconNA2019":
             badgechar = '9';
+            break;
+
+        case "twitchconAmsterdam2020":
+            badgechar = '0';
             break;
 
         case "staff":
@@ -2035,7 +2073,7 @@ unittest
     {
         immutable badges = "bits-leader/1";
         sink.abbreviateBadges(badges);
-        assert((sink.data == "l"), sink.data);
+        assert((sink.data == "C"), sink.data);
         sink.clear();
     }
 }

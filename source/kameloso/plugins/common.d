@@ -710,7 +710,8 @@ enum PrivilegeLevel
      +  class may trigger this event.
      +/
     whitelist = 3,
-    admin = 4, /// Only the administrators may trigger this event.
+    operator = 4,  /// Only operators (or moderators) may trigger this event.
+    admin = 5, /// Only the administrators may trigger this event.
 }
 
 
@@ -964,10 +965,9 @@ struct Configuration;
 struct Enabler;
 
 
-// filterUser
+// filterSender
 /++
- +  Decides if a nickname is known good (whitelisted/admin), known bad (not
- +  whitelisted/admin), or needs `WHOIS` (to tell if whitelisted/admin).
+ +  Decides if a nickname is known good, known bad, or needs `WHOIS` to tell.
  +
  +  This is used to tell whether or not a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return `FilterResult.whois`.
@@ -976,6 +976,7 @@ struct Enabler;
  +  and deny use.
  +
  +  Params:
+ +      state = The `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +
@@ -983,27 +984,33 @@ struct Enabler;
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a `WHOIS` call.
  +/
-FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
+FilterResult filterSender(IRCPluginState state, const IRCEvent event,
+    const PrivilegeLevel level) @safe
 {
     import kameloso.constants : Timeout;
+    import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
 
-    immutable isBlacklisted = (event.sender.class_ == IRCUser.Class.blacklist);
-    if (isBlacklisted) return FilterResult.fail;
+    immutable class_ = event.sender.class_;
 
-    immutable user = event.sender;
+    if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+
     immutable now = Clock.currTime.toUnixTime;
-    immutable timediff = (now - user.updated);
+    immutable timediff = (now - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
-    if (user.account.length)
+    if (event.sender.account.length)
     {
-        immutable isAdmin = (user.class_ == IRCUser.Class.admin);  // Trust in persistence.d
-        immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
-        immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
-        //immutable isSpecial = (user.class_ == IRCUser.Class.special);
+        immutable isAdmin = state.bot.admins.canFind(event.sender.nickname);
+        immutable isOperator = (class_ == IRCUser.Class.operator);
+        immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
+        immutable isAnyone = (class_ == IRCUser.Class.anyone);
 
-        if (isAdmin && (level <= PrivilegeLevel.admin))
+        if (isAdmin)
+        {
+            return FilterResult.pass;
+        }
+        else if (isOperator && (level <= PrivilegeLevel.operator))
         {
             return FilterResult.pass;
         }
@@ -1011,11 +1018,12 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         {
             return FilterResult.pass;
         }
-        else if (level == PrivilegeLevel.registered)
+        else if (level <= PrivilegeLevel.registered)
         {
+            // event.sender.account is not empty and level <= registered
             return FilterResult.pass;
         }
-        else if (isAnyone && (level == PrivilegeLevel.anyone))
+        else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
@@ -1034,6 +1042,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
         final switch (level)
         {
         case admin:
+        case operator:
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
@@ -1047,45 +1056,6 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
             return FilterResult.pass;
         }
     }
-}
-
-///
-unittest
-{
-    import lu.conv : Enum;
-    import std.datetime.systime : Clock;
-
-    IRCEvent event;
-    PrivilegeLevel level = PrivilegeLevel.admin;
-
-    event.type = IRCEvent.Type.CHAN;
-    event.sender.nickname = "zorael";
-
-    immutable res1 = filterUser(event, level);
-    assert((res1 == FilterResult.whois), Enum!FilterResult.toString(res1));
-
-    event.sender.class_ = IRCUser.Class.admin;
-    event.sender.account = "zorael";
-
-    immutable res2 = filterUser(event, level);
-    assert((res2 == FilterResult.pass), Enum!FilterResult.toString(res2));
-
-    event.sender.class_ = IRCUser.Class.whitelist;
-
-    immutable res3 = filterUser(event, level);
-    assert((res3 == FilterResult.fail), Enum!FilterResult.toString(res3));
-
-    event.sender.class_ = IRCUser.Class.anyone;
-    event.sender.updated = Clock.currTime.toUnixTime;
-
-    immutable res4 = filterUser(event, level);
-    assert((res4 == FilterResult.fail), Enum!FilterResult.toString(res4));
-
-    event.sender.class_ = IRCUser.Class.blacklist;
-    event.sender.updated = 0L;
-
-    immutable res5 = filterUser(event, level);
-    assert((res5 == FilterResult.fail), Enum!FilterResult.toString(res5));
 }
 
 
@@ -1163,7 +1133,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Judges whether an event may be triggered, based on the event itself and
      +  the annotated `PrivilegeLevel` of the handler in question.
      +
-     +  Pass the passed arguments to `filterUser`, doing nothing otherwise.
+     +  Pass the passed arguments to `filterSender`, doing nothing otherwise.
      +
      +  Sadly we can't keep an `allow` around to override since calling it from
      +  inside the same mixin always seems to resolve the original. So instead,
@@ -1192,7 +1162,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
         }
 
-        return filterUser(event, privilegeLevel);
+        return filterSender(privateState, event, privilegeLevel);
     }
 
 
@@ -1261,6 +1231,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
+                import kameloso.common : settings;
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
             }
@@ -1310,7 +1281,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writeln("-- ", name);
+                    writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                     if (settings.flush) stdout.flush();
                 }
 
@@ -1548,7 +1519,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
 
-                    static if (privilegeLevel != PrivilegeLevel.ignore)
+                    static if ((privilegeLevel != PrivilegeLevel.ignore) &&
+                        (privilegeLevel != PrivilegeLevel.anyone))
                     {
                         static assert (__traits(compiles, .hasMinimalAuthentication),
                             module_ ~ " is missing MinimalAuthentication mixin " ~
@@ -2674,6 +2646,16 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     continue;
                 }
 
+                if (request.event.sender.nickname == event.target.nickname)
+                {
+                    request.event.sender = event.target;
+                }
+
+                if (request.event.target.nickname == event.target.nickname)
+                {
+                    request.event.target = event.target;
+                }
+
                 version(ExplainReplay)
                 void explainReplay()
                 {
@@ -2704,7 +2686,16 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 final switch (request.privilegeLevel)
                 {
                 case admin:
-                    if (event.target.class_ == IRCUser.Class.admin)
+                    if (event.target.class_ >= IRCUser.Class.admin)
+                    {
+                        version(ExplainReplay) explainReplay();
+                        request.trigger();
+                        garbageIndexes ~= i;
+                    }
+                    break;
+
+                case operator:
+                    if (event.target.class_ >= IRCUser.Class.operator)
                     {
                         version(ExplainReplay) explainReplay();
                         request.trigger();
@@ -2713,8 +2704,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     break;
 
                 case whitelist:
-                    if ((event.target.class_ == IRCUser.Class.admin) ||
-                        (event.target.class_ == IRCUser.Class.whitelist))
+                    if (event.target.class_ >= IRCUser.Class.whitelist)
                     {
                         version(ExplainReplay) explainReplay();
                         request.trigger();
@@ -2732,12 +2722,13 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     break;
 
                 case anyone:
-                    if (event.target.class_ != IRCUser.Class.blacklist)
+                    if (event.target.class_ >= IRCUser.Class.anyone)
                     {
                         version(ExplainReplay) explainReplay();
                         request.trigger();
                     }
 
+                    // event.target.class_ is either anyone or blacklist here
                     // Always remove queued request even if blacklisted
                     garbageIndexes ~= i;
                     break;
@@ -2959,11 +2950,24 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             string slice = userstring;
             IRCUser newUser;
 
-            if (!slice.contains('!') || !slice.contains('@'))
+            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) ||
+                !slice.contains('!') || !slice.contains('@'))
             {
                 // Freenode-like, only nicknames with possible modesigns
                 immutable nickname = plugin.state.server.stripModesign(slice);
-                if (nickname == plugin.state.client.nickname) continue;
+
+                version(TwitchSupport)
+                {
+                    if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+                    {
+                        if (nickname == plugin.state.client.nickname) continue;
+                    }
+                }
+                else
+                {
+                    if (nickname == plugin.state.client.nickname) continue;
+                }
+
                 newUser.nickname = nickname;
             }
             else
@@ -3333,6 +3337,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         auto channel = event.channel in plugin.state.channels;
         if (!channel) return;
 
+        immutable nickname = event.target.nickname;
+
         // User awareness bits add the IRCUser
         if (event.aux.length)
         {
@@ -3347,20 +3353,28 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
-                    (*channel).setMode(modestring, event.target.nickname, plugin.state.server);
+                    (*channel).setMode(modestring, nickname, plugin.state.server);
+
+                    if (nickname == plugin.state.client.nickname) continue;
+
+                    if ((modesign == '@') &&
+                        (plugin.state.users[nickname].class_ <= IRCUser.Class.operator))
+                    {
+                        // Specialcase operator
+                        plugin.state.users[nickname].class_ = IRCUser.Class.operator;
+                    }
+                }
+                else
+                {
+                    //logger.warning("Invalid modesign in RPL_WHOREPLY: ", modesign);
                 }
             }
         }
 
-        if (event.target.nickname == plugin.state.client.nickname) return;
+        if (nickname == plugin.state.client.nickname) return;
 
-        if (event.target.nickname in channel.users)
-        {
-            // Already registered
-            return;
-        }
-
-        channel.users[event.target.nickname] = true;
+        // In case no mode was applied
+        channel.users[nickname] = true;
     }
 
 
@@ -3424,19 +3438,20 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.server);
+
+                    if (nickname == plugin.state.client.nickname) continue;
+
+                    if ((modesign == '@') &&
+                        (plugin.state.users[nickname].class_ <= IRCUser.Class.operator))
+                    {
+                        // Specialcase operator
+                        plugin.state.users[nickname].class_ = IRCUser.Class.operator;
+                    }
                 }
                 else
                 {
                     //logger.warning("Invalid modesign in RPL_NAMREPLY: ", modesign);
                 }
-            }
-
-            if (nickname == plugin.state.client.nickname) continue;
-
-            if (nickname in channel.users)
-            {
-                // Already registered
-                continue;
             }
 
             channel.users[nickname] = true;
@@ -3745,27 +3760,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
-    if (!newUser.nickname.length || (newUser.nickname == plugin.state.client.nickname))
-    {
-        return;
-    }
-
-    version(TwitchSupport)
-    {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            // There's no need to meld Twitch users, they never change.
-
-            if (newUser.nickname !in plugin.state.users)
-            {
-                import std.datetime.systime : Clock;
-
-                newUser.updated = Clock.currTime.toUnixTime;
-                plugin.state.users[newUser.nickname] = newUser;
-            }
-            return;
-        }
-    }
+    if (!newUser.nickname.length) return;
 
     if (auto user = newUser.nickname in plugin.state.users)
     {

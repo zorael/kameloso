@@ -389,6 +389,22 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 }
 
 
+// onNotRegistered
+/++
+ +  Requeues joining channels if we receive an
+ +  `dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED` error.
+ +
+ +  This can happen if the authentication process turns out to be particularly slow.
+ +  Recover by schedling to join channels again later.
+ +/
+@(IRCEvent.Type.ERR_NOTREGISTERED)
+void onNotRegistered(ConnectService service)
+{
+    logger.info("Did we try to join too early?");
+    service.delayJoinsAfterFailedAuth();
+}
+
+
 // onEndOfMotd
 /++
  +  Joins channels at the end of the message of the day (`MOTD`), and tries to
