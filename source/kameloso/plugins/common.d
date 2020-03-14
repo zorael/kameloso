@@ -976,7 +976,7 @@ struct Enabler;
  +  and deny use.
  +
  +  Params:
- +      state = The `IRCPluginState` of the invoking plugin.
+ +      state = Reference to the `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +
@@ -984,7 +984,7 @@ struct Enabler;
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a `WHOIS` call.
  +/
-FilterResult filterSender(IRCPluginState state, const IRCEvent event,
+FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     const PrivilegeLevel level) @safe
 {
     import kameloso.constants : Timeout;
@@ -1102,7 +1102,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         static if (getSymbolsByUDA!(typeof(this), Settings).length)
         {
             top:
-            foreach (immutable i, immutable member; this.tupleof)
+            foreach (immutable i, const ref member; this.tupleof)
             {
                 static if (hasUDA!(this.tupleof[i], Settings))
                 {
@@ -1881,7 +1881,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         string[][string] invalidEntries;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i, const ref symbol; this.tupleof)
         {
             static if (hasUDA!(this.tupleof[i], Settings) &&
                 (is(typeof(this.tupleof[i]) == struct)))
@@ -1973,7 +1973,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.traits : hasUDA;
         import std.typecons : No, Yes;
 
-        foreach (immutable i, symbol; this.tupleof)
+        foreach (immutable i, const ref symbol; this.tupleof)
         {
             static if (hasUDA!(this.tupleof[i], Settings) &&
                 (is(typeof(this.tupleof[i]) == struct)))
@@ -2007,7 +2007,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import lu.serialisation : serialise;
         import std.traits : hasUDA;
 
-        foreach (immutable i, symbol; this.tupleof)
+        foreach (immutable i, ref symbol; this.tupleof)
         {
             static if (hasUDA!(this.tupleof[i], Settings) &&
                 (is(typeof(this.tupleof[i]) == struct)))
