@@ -666,7 +666,7 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
                 assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist");
 
             case alreadyInList:
-                enum pattern = "Account %s already %sed.";
+                enum pattern = "%s already %sed.";
 
                 immutable message = settings.colouredOutgoing ?
                     pattern.format(id.ircColourByHash.ircBold, list) :
@@ -707,7 +707,7 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
                 assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist");
 
             case alreadyInList:
-                logger.logf("Account %s%s%s already %sed.", infotint, specified, logtint, list);
+                logger.logf("%s%s%s already %sed.", infotint, specified, logtint, list);
                 break;
             }
         }
