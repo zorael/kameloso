@@ -43,7 +43,7 @@ enum KamelosoDefaultStrings
     /// The default GEOC/"real name" string.
     realName = "kameloso IRC bot",
     /// The default quit reason, when the bot exits normally (not through Ctrl+C).
-    quitReason = "beep boop I am a bot",
+    quitReason = "kameloso IRC bot @ https://github.com/zorael/kameloso",
     /// When a nickname is taken, append this to get a new name.
     altNickSign = "^",
 }
