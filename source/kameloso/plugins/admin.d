@@ -719,6 +719,12 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
     {
         // user.nickname == specified
         immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, event.channel);
+
+        version(TwitchSupport)
+        {
+            if (user.displayName.length) return report(result, user.displayName);
+        }
+
         return report(result, user.account);
     }
     else if (!specified.isValidNickname(plugin.state.server))
@@ -755,6 +761,35 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
 
     void onSuccess(const string id)
     {
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                import std.algorithm.iteration : filter;
+
+                if (const userInList = id in plugin.state.users)
+                {
+                    immutable result = plugin.alterAccountClassifier(Yes.add, list, id, event.channel);
+                    return report(result, userInList.displayName.length ?
+                        userInList.displayName : id);
+                }
+
+                // If we're here, assume a display name was specified and look up the account
+                auto usersWithThisDisplayName = plugin.state.users
+                    .byValue
+                    .filter!(u => u.displayName == id);
+
+                if (!usersWithThisDisplayName.empty)
+                {
+                    immutable result = plugin.alterAccountClassifier(Yes.add,
+                        list, usersWithThisDisplayName.front.account, event.channel);
+                    return report(result, id);
+                }
+
+                // Assume a valid account was specified even if we can't see it, and drop down
+            }
+        }
+
         immutable result = plugin.alterAccountClassifier(Yes.add, list, id, event.channel);
         report(result, id);
     }
