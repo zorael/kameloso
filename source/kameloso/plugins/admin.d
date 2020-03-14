@@ -660,10 +660,10 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
                 break;
 
             case noSuchAccount:
-                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist");
+                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist.report");
 
             case noSuchChannel:
-                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist");
+                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist.report");
 
             case alreadyInList:
                 enum pattern = "%s already %sed.";
@@ -701,10 +701,10 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
                 break;
 
             case noSuchAccount:
-                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist");
+                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist.report");
 
             case noSuchChannel:
-                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist");
+                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist.report");
 
             case alreadyInList:
                 logger.logf("%s%s%s already %sed.", infotint, specified, logtint, list);
