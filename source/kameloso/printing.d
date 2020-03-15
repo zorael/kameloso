@@ -67,7 +67,8 @@ public:
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
  +/
-void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)(Things things) @trusted
+void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)
+    (auto ref Things things) @trusted
 {
     import kameloso.common : settings;
     import std.stdio : stdout;
@@ -136,7 +137,7 @@ alias printObject = printObjects;
  +/
 void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
-    (auto ref Sink sink, const bool bright, Things things)
+    (auto ref Sink sink, const bool bright, auto ref Things things)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.comparison : max;
@@ -175,7 +176,7 @@ if (isOutputRange!(Sink, char[]))
         (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
     enum ptrdiff_t namewidth = max(minimumNameWidth, compensatedWidth);
 
-    foreach (immutable n, thing; things)
+    foreach (immutable n, const ref thing; things)
     {
         import lu.string : stripSuffix;
         import std.format : formattedWrite;

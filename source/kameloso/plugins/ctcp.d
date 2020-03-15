@@ -216,7 +216,8 @@ unittest
     // `dialect.defs.IRCEvent.Type`s.
     import std.traits : getUDAs;
 
-    auto service = new CTCPService(IRCPluginState.init);
+    IRCPluginState state;
+    auto service = new CTCPService(state);
 
     foreach (immutable type; getUDAs!(onCTCPs, IRCEvent.Type))
     {
