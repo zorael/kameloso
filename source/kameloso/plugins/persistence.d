@@ -175,7 +175,13 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         }
 
         // An account of "*" means the user logged out of services
-        if (stored.account == "*") stored.account = string.init;
+        // It's not strictly true but consider him/her as unknown again.
+        if (stored.account == "*")
+        {
+            stored.account = string.init;
+            stored.class_ = IRCUser.Class.anyone;
+            service.userClassCurrentChannelCache.remove(user.nickname);
+        }
 
         version(TwitchSupport)
         {
