@@ -243,42 +243,51 @@ void startChannelQueries(ChanQueriesService service)
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-            while (thisFiber.payload.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+            while (true)
             {
-                if (thisFiber.payload.aux == "WHOIS")
+                with (IRCEvent.Type)
+                switch (thisFiber.payload.type)
                 {
-                    // Cannot WHOIS on this server
-                    logger.warning("Warning: This server does not seem to support user accounts.");
-                    logger.warning("If this is wrong, please file a GitHub issue.");
-                    logger.warning("As it is, functionality will be greatly limited.");
-                    return;
-                }
-                else if (!thisFiber.payload.aux.length)
-                {
-                    // Different flavour of ERR_UNKNOWNCOMMAND that doesn't include the command
-                    // We don't know for sure but consider it a success for now.
-                    continue whoisloop;
-                }
-                else
-                {
-                    // Something else issued an unknown command; yield and try again
-                    Fiber.yield();
+                case RPL_ENDOFWHOIS:
+                    if (thisFiber.payload.target.nickname == nickname)
+                    {
+                        // Saw the expected response
+                        continue whoisloop;
+                    }
+                    else
+                    {
+                        // Someting else caused a WHOIS; yield until the right one comes along
+                        Fiber.yield();
+                        continue;
+                    }
+
+                case ERR_UNKNOWNCOMMAND:
+                    if (!thisFiber.payload.aux.length || (thisFiber.payload.aux == "WHOIS"))
+                    {
+                        // Cannot WHOIS on this server
+                        // A different flavour of ERR_UNKNOWNCOMMAND doesn't include the command
+                        // We can't say for sure but assume it's erroring on "WHOIS"
+                        logger.warning("Warning: This server does not seem to support user accounts.");
+                        logger.warning("If this is wrong, please file a GitHub issue.");
+                        logger.warning("As it is, functionality will be greatly limited.");
+                        service.serverSupportsWHOIS = false;
+                        return;
+                    }
+                    else
+                    {
+                        // Something else issued an unknown command; yield and try again
+                        Fiber.yield();
+                        continue;
+                    }
+
+                default:
+                    import lu.conv : Enum;
+                    assert(0, "Unexpected event type triggered query Fiber: " ~
+                        Enum!(IRCEvent.Type).toString(thisFiber.payload.type));
                 }
             }
 
-            while (thisFiber.payload.type == IRCEvent.Type.RPL_ENDOFWHOIS)
-            {
-                if (thisFiber.payload.target.nickname == nickname)
-                {
-                    // Saw the expected response
-                    continue whoisloop;
-                }
-                else
-                {
-                    // Someting else caused a WHOIS; yield until the right one comes along
-                    Fiber.yield();
-                }
-            }
+            assert(0, "Escaped while (true) loop in query Fiber delegate");
         }
     }
 
