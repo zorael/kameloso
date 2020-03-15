@@ -3897,6 +3897,59 @@ void delayFiber(IRCPlugin plugin, const long secs)
 }
 
 
+// removeDelayedFiber
+/++
+ +  Removes a `core.thread.Fiber` from being called at any point later.
+ +
+ +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
+ +  when to process the array of `core.thread.Fiber`s.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to dequeue from being executed at a later point in time.
+ +/
+void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
+{
+    import std.algorithm.mutation : SwapStrategy, remove;
+    import std.algorithm.searching : countUntil;
+
+    size_t[] toRemove;
+
+    foreach (immutable i, labeledFiber; plugin.state.timedFibers)
+    {
+        if (labeledFiber.thing is fiber)
+        {
+            toRemove ~= i;
+        }
+    }
+
+    if (!toRemove.length) return;
+
+    foreach_reverse (immutable i; toRemove)
+    {
+        plugin.state.timedFibers = plugin.state.timedFibers
+            .remove!(SwapStrategy.unstable)(i);
+    }
+
+    plugin.updateNextFiberTimestamp();
+}
+
+
+// removeDelayedFiber
+/++
+ +  Removes a `core.thread.Fiber` from being called at any point later.
+ +
+ +  Overload that implicitly removes `core.thread.Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +/
+void removeDelayedFiber(IRCPlugin plugin)
+{
+    return plugin.removeDelayedFiber(Fiber.getThis);
+}
+
+
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
@@ -3944,7 +3997,7 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `dialect.defs.IRCEvent` matches all of the passed
+ +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
@@ -3970,7 +4023,7 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `dialect.defs.IRCEvent` matches all of the passed
+ +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
@@ -3989,6 +4042,132 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
     foreach (immutable type; types)
     {
         plugin.state.awaitingFibers[type] ~= Fiber.getThis;
+    }
+}
+
+
+// unlistFiberAwaitingEvent
+/++
+ +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to dequeue from being executed when the next
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `dialect.defs.IRCEvent` that would trigger the
+ +          passed awaiting fiber.
+ +/
+void unlistFiberAwaitingEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+{
+    import std.algorithm.searching : countUntil;
+    import std.algorithm.mutation : SwapStrategy, remove;
+
+    void removeFiberForType(const IRCEvent.Type type)
+    {
+        foreach (immutable i, awaitingFiber; plugin.state.awaitingFibers[type])
+        {
+            if (awaitingFiber is fiber)
+            {
+                plugin.state.awaitingFibers[type] = plugin.state.awaitingFibers[type]
+                    .remove!(SwapStrategy.unstable)(i);
+                break;
+            }
+        }
+    }
+
+    if (type == IRCEvent.Type.ANY)
+    {
+        import std.traits : EnumMembers;
+
+        static immutable allTypes = [ EnumMembers!(IRCEvent.Type) ];
+
+        foreach (immutable thisType; allTypes)
+        {
+            removeFiberForType(thisType);
+        }
+    }
+    else
+    {
+        removeFiberForType(type);
+    }
+}
+
+
+// unlistFiberAwaitingEvent
+/++
+ +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +
+ +  Overload that implicitly dequeues `core.thread.Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      type = The kind of `dialect.defs.IRCEvent` that would trigger this
+ +          implicit awaiting fiber (in the current context).
+ +/
+void unlistFiberAwaitingEvent(IRCPlugin plugin, const IRCEvent.Type type)
+{
+    return plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
+}
+
+
+// unlistFiberAwaitingEvents
+/++
+ +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  triggering `dialect.defs.IRCEvent` matches any of the passed
+ +  `dialect.defs.IRCEvent.Type` types.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to dequeue from being executed when the next
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
+ +          the passed awaiting fiber, in an array with elements of type
+ +          `dialect.defs.IRCEvent.Type`.
+ +/
+void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+{
+    foreach (immutable type; types)
+    {
+        plugin.unlistFiberAwaitingEvent(fiber, type);
+    }
+}
+
+
+// unlistFiberAwaitingEvents
+/++
+ +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  triggering `dialect.defs.IRCEvent` matches any of the passed
+ +  `dialect.defs.IRCEvent.Type` types.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +
+ +  Overload that implicitly dequeues `core.thread.Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
+ +          this implicit awaiting fiber (in the current context), in an array
+ +          with elements of type `dialect.defs.IRCEvent.Type`.
+ +/
+void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
+{
+    foreach (immutable type; types)
+    {
+        plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
     }
 }
 
