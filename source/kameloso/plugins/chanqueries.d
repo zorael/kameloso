@@ -209,6 +209,7 @@ void startChannelQueries(ChanQueriesService service)
         service.unlistFiberAwaitingEvents(queryTypes);
         service.awaitEvents(whoisTypes);
 
+        whoisloop:
         foreach (immutable nickname; uniqueUsers.byKey)
         {
             import kameloso.common : logger;
@@ -232,25 +233,46 @@ void startChannelQueries(ChanQueriesService service)
             }
 
             whois(service.state, nickname, false, true);
-            Fiber.yield();  // Await account types registered above
+            Fiber.yield();  // Await whois types registered above
 
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-            if (thisFiber.payload.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+            while (thisFiber.payload.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
             {
-                // thisFiber.payload.aux is pretty much guaranteed to be "WHOIS"
-                // Don't even check. Cannot WHOIS on this server
-                logger.warning("Warning: This server does not seem to support user accounts.");
-                logger.warning("If this is wrong, please file a GitHub issue.");
-                logger.warning("As it is, functionality will be greatly limited.");
-                break;
+                if (thisFiber.payload.aux == "WHOIS")
+                {
+                    // Cannot WHOIS on this server
+                    logger.warning("Warning: This server does not seem to support user accounts.");
+                    logger.warning("If this is wrong, please file a GitHub issue.");
+                    logger.warning("As it is, functionality will be greatly limited.");
+                    return;
+                }
+                else if (!thisFiber.payload.aux.length)
+                {
+                    // Different flavour of ERR_UNKNOWNCOMMAND that doesn't include the command
+                    // We don't know for sure but consider it a success for now.
+                    continue whoisloop;
+                }
+                else
+                {
+                    // Something else issued an unknown command; yield and try again
+                    Fiber.yield();
+                }
             }
 
-            while (thisFiber.payload.target.nickname != nickname)
+            while (thisFiber.payload.type == IRCEvent.Type.RPL_ENDOFWHOIS)
             {
-                // Someting else caused a WHOIS; yield until the right one comes along
-                Fiber.yield();
+                if (thisFiber.payload.target.nickname == nickname)
+                {
+                    // Saw the expected response
+                    continue whoisloop;
+                }
+                else
+                {
+                    // Someting else caused a WHOIS; yield until the right one comes along
+                    Fiber.yield();
+                }
             }
         }
 
