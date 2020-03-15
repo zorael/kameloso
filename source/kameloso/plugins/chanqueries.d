@@ -71,6 +71,22 @@ void startChannelQueries(ChanQueriesService service)
 
     if (!querylist.length) return;
 
+    /// Event types that signal the end of a query response.
+    static immutable queryTypes =
+    [
+        IRCEvent.Type.RPL_TOPIC,
+        IRCEvent.Type.RPL_NOTOPIC,
+        IRCEvent.Type.RPL_ENDOFWHO,
+        IRCEvent.Type.RPL_CHANNELMODEIS,
+    ];
+
+    /// Event types that signal the end of a WHOIS response.
+    static immutable whoisTypes =
+    [
+        IRCEvent.Type.RPL_ENDOFWHOIS,
+        IRCEvent.Type.ERR_UNKNOWNCOMMAND,
+    ];
+
     void dg()
     {
         import kameloso.messaging : raw;
@@ -175,6 +191,11 @@ void startChannelQueries(ChanQueriesService service)
             }
         }
 
+        // Clear triggers and await the WHOIS types.
+        service.removeDelayedFiber();
+        service.unlistFiberAwaitingEvents(queryTypes);
+        service.awaitEvents(whoisTypes);
+
         foreach (immutable nickname; uniqueUsers.byKey)
         {
             import kameloso.common : logger;
@@ -186,6 +207,19 @@ void startChannelQueries(ChanQueriesService service)
                 // Something else WHOISed this user already.
                 continue;
             }
+
+            // Delay between runs after first since aMode probes don't delay at end
+            service.delayFiber(service.secondsBetween);
+            Fiber.yield();  // delay
+
+            version(WithPrinterPlugin)
+            {
+                service.state.mainThread.send(ThreadMessage.BusMessage(),
+                    "printer", busMessage("squelch"));
+            }
+
+            whois(service.state, nickname, false, false);
+            Fiber.yield();  // Await account types registered above
 
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
@@ -200,43 +234,20 @@ void startChannelQueries(ChanQueriesService service)
                 break;
             }
 
-            // Delay between runs after first since aMode probes don't delay at end
-            service.delayFiber(service.secondsBetween);
-            Fiber.yield();  // delay
-
-            version(WithPrinterPlugin)
+            while (thisFiber.payload.target.nickname != nickname)
             {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("squelch"));
+                // Someting else caused a WHOIS; yield until the right one comes along
+                Fiber.yield();
             }
-
-            whois(service.state, nickname, false, false);
-            //raw(service.state, "WHOIS " ~ nickname, false);
-            Fiber.yield();  // Await account types registered above
         }
 
         service.querying = false;  // "Unlock"
     }
 
     import kameloso.thread : CarryingFiber;
+
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
-
-    // Enlist the fiber *ONCE*
-    with (IRCEvent.Type)
-    {
-        static immutable types =
-        [
-            RPL_TOPIC,
-            RPL_NOTOPIC,
-            RPL_ENDOFWHO,
-            RPL_CHANNELMODEIS,
-            RPL_ENDOFWHOIS,
-            ERR_UNKNOWNCOMMAND,
-        ];
-
-        service.awaitEvents(fiber, types);
-    }
-
+    service.awaitEvents(fiber, queryTypes);
     fiber.call();
 }
 
