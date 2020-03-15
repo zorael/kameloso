@@ -375,16 +375,40 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
         // Strip channel whitespace and make lowercase
         import lu.string : stripped;
-        import std.algorithm.iteration : map;
+        import std.algorithm.iteration : map, uniq;
+        import std.algorithm.sorting : sort;
         import std.array : array;
         import std.uni : toLower;
 
         bot.channels = bot.channels
             .map!(channelName => channelName.stripped.toLower)
+            .array
+            .sort
+            .uniq
             .array;
+
         bot.homes = bot.homes
             .map!(channelName => channelName.stripped.toLower)
+            .array
+            .sort
+            .uniq
             .array;
+
+        // Remove duplicate channels (where a home is also featured as a normal channel)
+        size_t[] duplicates;
+
+        foreach (immutable channelName; bot.homes)
+        {
+            import std.algorithm.searching : countUntil;
+            immutable chanIndex = bot.channels.countUntil(channelName);
+            if (chanIndex != -1) duplicates ~= chanIndex;
+        }
+
+        foreach_reverse (immutable chanIndex; duplicates)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+            bot.channels = bot.channels.remove!(SwapStrategy.unstable)(chanIndex);
+        }
 
         // Clear entries that are dashes
         import lu.objmanip : zeroMembers;
