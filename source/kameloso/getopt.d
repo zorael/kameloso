@@ -255,10 +255,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     bool shouldWriteConfig;
     bool shouldShowVersion;
     bool shouldShowSettings;
-    bool shouldAppendChannels;
+    bool shouldAppendToArrays;
 
     string[] inputChannels;
     string[] inputHomes;
+    string[] inputAdmins;
 
     arraySep = ",";
 
@@ -302,14 +303,14 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "pass",         "Registration pass",
                             &bot.pass,
             "admins",       "Administrators' services accounts, comma-separated",
-                            &bot.admins,
+                            &inputAdmins,
             "H|homes",      "Home channels to operate in, comma-separated " ~
                             "(escape or enquote any octothorpe #s)",
                             &inputHomes,
             "C|channels",   "Non-home channels to idle in, comma-separated (ditto)",
                             &inputChannels,
-            "a|append",     "Append input homes and channels instead of overriding",
-                            &shouldAppendChannels,
+            "a|append",     "Append input homes, channels and admins instead of overriding",
+                            &shouldAppendToArrays,
             "hideOutgoing", "Hide outgoing messages",
                             &settings.hideOutgoing,
             "hide",         &settings.hideOutgoing,
@@ -359,15 +360,17 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
-        if (shouldAppendChannels)
+        if (shouldAppendToArrays)
         {
             if (inputHomes.length) bot.homes ~= inputHomes;
             if (inputChannels.length) bot.channels ~= inputChannels;
+            if (inputAdmins.length) bot.admins ~= inputAdmins;
         }
         else
         {
             if (inputHomes.length) bot.homes = inputHomes;
             if (inputChannels.length) bot.channels = inputChannels;
+            if (inputAdmins.length) bot.admins = inputAdmins;
         }
 
         // Strip channel whitespace and make lowercase
