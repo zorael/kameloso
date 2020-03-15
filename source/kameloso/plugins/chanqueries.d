@@ -405,6 +405,9 @@ private:
     /// Whether or not at least one channel query has been made.
     bool queriedAtLeastOnce;
 
+    /// Whether or not the server is known to support WHOIS queries. (Default to true.)
+    bool serverSupportsWHOIS = true;
+
     mixin IRCPluginImpl;
 
     /++
