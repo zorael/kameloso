@@ -198,7 +198,6 @@ void startChannelQueries(ChanQueriesService service)
         }
 
         // Clear triggers and await the WHOIS types.
-        service.removeDelayedFiber();
         service.unlistFiberAwaitingEvents(queryTypes);
         service.awaitEvents(whoisTypes);
 
