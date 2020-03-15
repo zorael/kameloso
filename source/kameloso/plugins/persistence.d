@@ -39,6 +39,15 @@ void postprocess(PersistenceService service, ref IRCEvent event)
     {
         if (!user.nickname.length) continue;  // Ignore server events
 
+        version(TwitchSupport)
+        {
+            if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+                (user.nickname == "jtv"))
+            {
+                continue;
+            }
+        }
+
         /++
          +  Tries to apply any permanent class for a user in a channel, and if
          +  none available, tries to set one that seems to apply based on what
