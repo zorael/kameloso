@@ -253,6 +253,8 @@ void startChannelQueries(ChanQueriesService service)
                 Fiber.yield();
             }
         }
+
+        service.unlistFiberAwaitingEvents(whoisTypes);
     }
 
     import kameloso.thread : CarryingFiber;
