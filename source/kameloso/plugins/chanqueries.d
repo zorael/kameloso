@@ -209,6 +209,8 @@ void startChannelQueries(ChanQueriesService service)
         service.unlistFiberAwaitingEvents(queryTypes);
         service.awaitEvents(whoisTypes);
 
+        scope(exit) service.unlistFiberAwaitingEvents(whoisTypes);
+
         whoisloop:
         foreach (immutable nickname; uniqueUsers.byKey)
         {
@@ -275,8 +277,6 @@ void startChannelQueries(ChanQueriesService service)
                 }
             }
         }
-
-        service.unlistFiberAwaitingEvents(whoisTypes);
     }
 
     import kameloso.thread : CarryingFiber;
