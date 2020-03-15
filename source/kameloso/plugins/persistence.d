@@ -162,13 +162,17 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         import lu.meld : MeldingStrategy, meldInto;
 
         // Store initial class and restore after meld. The origin user.class_
-        // can ever only be IRCUser.Class.unset.
+        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
         immutable preMeldClass = stored.class_;
 
         // Meld into the stored user, and store the union in the event
         (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
 
-        stored.class_ = preMeldClass;
+        if (user.class_ == IRCUser.Class.unset)
+        {
+            // The class was not changed, restore the previously saved one
+            stored.class_ = preMeldClass;
+        }
 
         // An account of "*" means the user logged out of services
         if (stored.account == "*") stored.account = string.init;
