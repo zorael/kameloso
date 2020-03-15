@@ -116,7 +116,7 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage("squelch"));
                 }
 
-                raw(service.state, "TOPIC " ~ channelName, false);
+                raw(service.state, "TOPIC " ~ channelName, true);
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
                 service.delayFiber(service.secondsBetween);
@@ -129,7 +129,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            raw(service.state, "WHO " ~ channelName, false);
+            raw(service.state, "WHO " ~ channelName, true);
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
             service.delayFiber(service.secondsBetween);
@@ -141,7 +141,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            raw(service.state, "MODE " ~ channelName, false);
+            raw(service.state, "MODE " ~ channelName, true);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             foreach (immutable modechar; service.state.server.aModes.representation)
@@ -162,7 +162,7 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage("squelch"));
                 }
 
-                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), false);
+                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
             }
 
             if (channelName !in service.channelStates) continue;
@@ -218,7 +218,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            whois(service.state, nickname, false, false);
+            whois(service.state, nickname, false, true);
             Fiber.yield();  // Await account types registered above
 
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
