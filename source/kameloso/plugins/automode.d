@@ -253,7 +253,7 @@ unittest
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "addmode")
 @Description("Adds an automatic mode change for a user account.",
@@ -370,7 +370,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "clearmodes")
 @BotCommand(PrefixPolicy.prefixed, "delmodes")
