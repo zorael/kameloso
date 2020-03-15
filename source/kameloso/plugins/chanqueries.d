@@ -207,6 +207,9 @@ void startChannelQueries(ChanQueriesService service)
 
         // Clear triggers and await the WHOIS types.
         service.unlistFiberAwaitingEvents(queryTypes);
+
+        if (!service.serverSupportsWHOIS) return;
+
         service.awaitEvents(whoisTypes);
 
         scope(exit) service.unlistFiberAwaitingEvents(whoisTypes);
