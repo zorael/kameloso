@@ -161,6 +161,7 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
     const string nickname, const string account)
 {
     import std.algorithm.searching : canFind;
+    import std.string : representation;
 
     auto accountmodes = channelName in plugin.automodes;
     if (!accountmodes) return;
@@ -170,34 +171,6 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
 
     auto channel = channelName in plugin.state.channels;
     if (!channel) return;
-
-    // We could check aux for `+o` to see if we were made op, but the syntax differs
-    // on some servers. Moreover, more than one modechar (like `+ov`) and more than
-    // one target (like `+oo kameloso zorael`) are valid use-cases.
-    if (!channel.ops.canFind(plugin.state.client.nickname))
-    {
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            import kameloso.common : settings;
-
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
-        logger.log("Could not apply this automode because we are not an operator in the channel:");
-        logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
-            infotint, channel.name, logtint, *modes, nickname);
-        return;
-    }
-
-    import std.string : representation;
 
     char[] missingModes;
 
@@ -217,10 +190,32 @@ void applyAutomodes(AutomodePlugin plugin, const string channelName,
         }
     }
 
-    if (missingModes.length)
+    if (missingModes.length) return;
+
+    if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        mode(plugin.state, channel.name, "+" ~ missingModes, nickname);
+        string infotint, logtint;
+
+        version(Colours)
+        {
+            import kameloso.common : settings;
+
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.log("Could not apply this automode because we are not an operator in the channel:");
+        logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
+            infotint, channel.name, logtint, missingModes, nickname);
+        return;
     }
+
+    mode(plugin.state, channel.name, "+" ~ missingModes, nickname);
 }
 
 unittest
