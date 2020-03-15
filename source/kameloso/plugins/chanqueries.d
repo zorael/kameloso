@@ -182,6 +182,12 @@ void startChannelQueries(ChanQueriesService service)
         {
             foreach (immutable nickname; channel.users.byKey)
             {
+                if (nickname !in service.state.users)
+                {
+                    // Should never happen, but just in case so we don't error out.
+                    continue;
+                }
+
                 if (!service.state.users[nickname].account.length &&
                     ((now - service.state.users[nickname].updated) > Timeout.whoisRetry))
                 {
