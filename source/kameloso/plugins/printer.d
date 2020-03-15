@@ -280,6 +280,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_ENDOFEXCEPTLIST:
     case ENDOFSPAMFILTERLIST:
     case ERR_CHANOPRIVSNEEDED:
+    case RPL_AWAY:
         immutable shouldSquelch = updateSquelchstamp(plugin);
         if (shouldSquelch) return;
         else
