@@ -69,7 +69,11 @@ void startChannelQueries(ChanQueriesService service)
         querylist ~= channelName;
     }
 
-    if (!querylist.length) return;
+    if (!querylist.length)
+    {
+        service.querying = false;  // "Unlock"
+        return;
+    }
 
     /// Event types that signal the end of a query response.
     static immutable queryTypes =
@@ -95,7 +99,11 @@ void startChannelQueries(ChanQueriesService service)
         import std.concurrency : send;
         import std.string : representation;
 
-        scope(exit) service.queriedAtLeastOnce = true;
+        scope(exit)
+        {
+            service.queriedAtLeastOnce = true;
+            service.querying = false;  // "Unlock"
+        }
 
         foreach (immutable i, immutable channelName; querylist)
         {
@@ -245,8 +253,6 @@ void startChannelQueries(ChanQueriesService service)
                 Fiber.yield();
             }
         }
-
-        service.querying = false;  // "Unlock"
     }
 
     import kameloso.thread : CarryingFiber;
