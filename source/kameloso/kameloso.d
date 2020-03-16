@@ -1332,6 +1332,14 @@ void handleReplays(IRCPlugin plugin, ref Kameloso instance)
 
     foreach (immutable i, replay; plugin.state.replays)
     {
+        version(WithPersistenceService)
+        {
+            // Postprocessing will reapply class, but not if there is already
+            // a custom class (assuming channel cache hit)
+            replay.event.sender.class_ = IRCUser.Class.unset;
+            replay.event.target.class_ = IRCUser.Class.unset;
+        }
+
         foreach (postprocessor; instance.plugins)
         {
             postprocessor.postprocess(replay.originalEvent);
