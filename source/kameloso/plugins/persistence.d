@@ -138,9 +138,10 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         // Meld into the stored user, and store the union in the event
         (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
 
-        if (stored.class_ == IRCUser.Class.unset)
+        if ((stored.class_ == IRCUser.Class.unset) || (stored.class_ == IRCUser.Class.anyone))
         {
-            // The class was not changed, restore the previously saved one
+            // The class was not changed, or it was (likely) a double postprocess.
+            // This should work, but it smells. Consider revisiting.
             stored.class_ = preMeldClass;
         }
 
