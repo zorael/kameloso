@@ -190,11 +190,7 @@ void startChannelQueries(ChanQueriesService service)
         {
             foreach (immutable nickname; channel.users.byKey)
             {
-                if (nickname !in service.state.users)
-                {
-                    // Should never happen, but just in case so we don't error out.
-                    continue;
-                }
+                if (nickname !in service.state.users) continue;
 
                 if (!service.state.users[nickname].account.length &&
                     ((now - service.state.users[nickname].updated) > Timeout.whoisRetry))
@@ -221,9 +217,10 @@ void startChannelQueries(ChanQueriesService service)
             import kameloso.messaging : whois;
             import kameloso.thread : CarryingFiber;
 
-            if (service.state.users[nickname].account.length)
+            if ((nickname !in service.state.users) ||
+                (service.state.users[nickname].account.length))
             {
-                // Something else WHOISed this user already.
+                // User disappeared, or something else WHOISed it already.
                 continue;
             }
 
