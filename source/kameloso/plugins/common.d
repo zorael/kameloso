@@ -2709,7 +2709,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 }
 
                 version(ExplainReplay)
-                void explainReplay()
+                void explainReplay(const IRCUser user)
                 {
                     import kameloso.common : logger, settings;
                     import lu.conv : Enum;
@@ -2731,63 +2731,71 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                         "based on WHOIS results (user is %1$s%5$s%3$s class)",
                         infotint, plugin.name, logtint,
                         Enum!PrivilegeLevel.toString(request.privilegeLevel),
-                        Enum!(IRCUser.Class).toString(event.target.class_));
+                        Enum!(IRCUser.Class).toString(user.class_));
                 }
 
-                with (PrivilegeLevel)
-                final switch (request.privilegeLevel)
+                void dg()
                 {
-                case admin:
-                    if (event.target.class_ >= IRCUser.Class.admin)
+                    import kameloso.thread : CarryingFiber;
+                    import core.thread : Fiber;
+
+                    auto thisFiber = cast(CarryingFiber!Replay)(Fiber.getThis);
+                    assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+                    assert((thisFiber.payload != thisFiber.payload.init),
+                        "init payload in " ~ typeof(thisFiber).stringof);
+
+                    request.event = thisFiber.payload.originalEvent;
+
+                    with (PrivilegeLevel)
+                    final switch (request.privilegeLevel)
                     {
-                        version(ExplainReplay) explainReplay();
-                        request.trigger();
+                    case admin:
+                        if (request.event.sender.class_ >= IRCUser.Class.admin)
+                        {
+                            goto case anyone;
+                        }
+                        break;
+
+                    case operator:
+                        if (request.event.sender.class_ >= IRCUser.Class.operator)
+                        {
+                            goto case anyone;
+                        }
+                        break;
+
+                    case whitelist:
+                        if (request.event.sender.class_ >= IRCUser.Class.whitelist)
+                        {
+                            goto case anyone;
+                        }
+                        break;
+
+                    case registered:
+                        if (request.event.sender.account.length)
+                        {
+                            goto case anyone;
+                        }
+                        break;
+
+                    case anyone:
+                        if (request.event.sender.class_ >= IRCUser.Class.anyone)
+                        {
+                            version(ExplainReplay) explainReplay(request.event.sender);
+                            request.trigger();
+                        }
+
+                        // reuest.event.sender.class_ is either anyone or blacklist here
+                        // Always remove queued request even if blacklisted
                         garbageIndexes ~= i;
+                        break;
+
+                    case ignore:
+                        break;
                     }
-                    break;
-
-                case operator:
-                    if (event.target.class_ >= IRCUser.Class.operator)
-                    {
-                        version(ExplainReplay) explainReplay();
-                        request.trigger();
-                        garbageIndexes ~= i;
-                    }
-                    break;
-
-                case whitelist:
-                    if (event.target.class_ >= IRCUser.Class.whitelist)
-                    {
-                        version(ExplainReplay) explainReplay();
-                        request.trigger();
-                        garbageIndexes ~= i;
-                    }
-                    break;
-
-                case registered:
-                    if (event.target.account.length)
-                    {
-                        version(ExplainReplay) explainReplay();
-                        request.trigger();
-                        garbageIndexes ~= i;
-                    }
-                    break;
-
-                case anyone:
-                    if (event.target.class_ >= IRCUser.Class.anyone)
-                    {
-                        version(ExplainReplay) explainReplay();
-                        request.trigger();
-                    }
-
-                    // event.target.class_ is either anyone or blacklist here
-                    // Always remove queued request even if blacklisted
-                    garbageIndexes ~= i;
-                    break;
-
-                case ignore:
-                    break;
                 }
+
+                plugin.queueToReplay(&dg, event);
+                garbageIndexes ~= i;
             }
 
             foreach_reverse (immutable i; garbageIndexes)
