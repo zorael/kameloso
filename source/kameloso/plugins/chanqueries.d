@@ -204,7 +204,8 @@ void startChannelQueries(ChanQueriesService service)
         // Clear triggers and await the WHOIS types.
         service.unlistFiberAwaitingEvents(queryTypes);
 
-        if (!service.serverSupportsWHOIS) return;
+        import kameloso.common : settings;
+        if (!service.serverSupportsWHOIS || !settings.eagerLookups) return;
 
         service.awaitEvents(whoisTypes);
 
