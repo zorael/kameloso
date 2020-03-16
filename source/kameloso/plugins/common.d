@@ -1205,10 +1205,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             if (privateState.server.daemon == IRCServer.Daemon.twitch)
             {
-                if (privilegeLevel == PrivilegeLevel.anyone)
+                if ((privilegeLevel == PrivilegeLevel.anyone) ||
+                    (privilegeLevel == PrivilegeLevel.registered))
                 {
                     // We can't WHOIS on Twitch, and PrivilegeLevel.anyone is just
                     // PrivilegeLevel.ignore with an extra WHOIS for good measure.
+                    // Also everyone is registered on Twitch, by definition.
                     return FilterResult.pass;
                 }
             }
