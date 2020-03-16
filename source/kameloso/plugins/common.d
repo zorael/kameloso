@@ -443,6 +443,9 @@ struct IRCPluginState
      +/
     TriggerRequest[][string] triggerRequestQueue;
 
+    /// This plugin's array of `Replay`s to let the main loop play back.
+    Replay[] replays;
+
     import std.traits : EnumMembers;
 
     /++
