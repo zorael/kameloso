@@ -13,6 +13,8 @@ module kameloso.plugins.chanqueries;
 version(WithPlugins):
 version(WithChanQueriesService):
 
+/// Whether or not to do channel queries for non-home channels.
+//version = OmniscientQueries;
 
 private:
 
@@ -377,8 +379,16 @@ void onEndOfMotd(ChanQueriesService service)
 }
 
 
-mixin UserAwareness;
-mixin ChannelAwareness;
+version(OmniscientQueries)
+{
+    mixin UserAwareness!(ChannelPolicy.any);
+    mixin ChannelAwareness!(ChannelPolicy.any);
+}
+else
+{
+    mixin UserAwareness;
+    mixin ChannelAwareness;
+}
 
 
 public:
