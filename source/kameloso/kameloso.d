@@ -809,6 +809,28 @@ Next mainLoop(ref Kameloso instance)
 
                     checkUpdatesAndPropagate(instance, plugin);
 
+                    // Process replays
+                    try
+                    {
+                        plugin.handleReplays(instance);
+                    }
+                    catch (UTFException e)
+                    {
+                        logger.warningf("UTFException %s.handleReplays: %s%s",
+                            plugin.name, logtint, e.msg);
+                        version(PrintStacktraces) logger.trace(e.info);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warningf("Exception %s.handleReplays: %s%s",
+                            plugin.name, logtint, e.msg);
+                        printObject(event);
+                        version(PrintStacktraces) logger.trace(e.toString);
+                    }
+
+                    checkUpdatesAndPropagate(instance, plugin);
+
+                    // Process awaiting Fibers
                     try
                     {
                         plugin.handleAwaitingFibers(event);
