@@ -3881,6 +3881,24 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 }
 
 
+// queueToReplay
+/++
+ +  Queues a `core.thread.Fiber` (actually a `kameloso.thread.CarryingFiber`
+ +  with a `Replay` payload) to replay a passed `dialect.defs.IRCEvent` from the
+ +  context of the main loop, after postprocessing the event once more.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      dg = Delegate pointer to wrap the `core.thread.Fiber` around.
+ +      event = The `dialect.defs.IRCEvent` to replay.
+ +/
+void queueToReplay(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
+{
+    import kameloso.thread : CarryingFiber;
+    plugin.state.replays ~= Replay(new CarryingFiber!Replay(dg, 32768), event);
+}
+
+
 // rehashUsers
 /++
  +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
