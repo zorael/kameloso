@@ -372,8 +372,8 @@ public:
         return cast(CarryingFiber!Replay)fiber !is null;
     }
 
+    /// The `dialect.defs.IRCEvent` to replay.
     IRCEvent event;
-    alias originalEvent = event;
 
     /// UNIX timestamp of when this replay event was created.
     long created;
@@ -384,7 +384,7 @@ public:
         import std.datetime.systime : Clock;
         created = Clock.currTime.toUnixTime;
         this.fiber = fiber;
-        this.originalEvent = event;
+        this.event = event;
     }
 }
 
@@ -2736,7 +2736,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     assert((thisFiber.payload != thisFiber.payload.init),
                         "init payload in " ~ typeof(thisFiber).stringof);
 
-                    request.event = thisFiber.payload.originalEvent;
+                    request.event = thisFiber.payload.event;
 
                     with (PrivilegeLevel)
                     final switch (request.privilegeLevel)

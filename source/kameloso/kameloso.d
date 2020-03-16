@@ -1342,7 +1342,7 @@ void handleReplays(IRCPlugin plugin, ref Kameloso instance)
 
         foreach (postprocessor; instance.plugins)
         {
-            postprocessor.postprocess(replay.originalEvent);
+            postprocessor.postprocess(replay.event);
         }
 
         if (replay.isCarrying)
