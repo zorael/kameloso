@@ -358,7 +358,13 @@ public:
     /// `core.thread.Fiber` to call to invoke this replay.
     Fiber fiber;
 
-    /// Returns `fiber` as a `CarryingFiber!Replay`, blindly assuming it can be cast thus.
+    /++
+     +  Returns `fiber` as a `kameloso.thread.CarryingFiber`, blindly assuming
+     +  it can be cast thus.
+     +
+     +  Returns:
+     +      `fiber`, cast as a `kameloso.thread.CarryingFiber`!`Replay`.
+     +/
     CarryingFiber!Replay carryingFiber()
     {
         auto carrying = cast(CarryingFiber!Replay)fiber;
@@ -366,7 +372,13 @@ public:
         return carrying;
     }
 
-    /// Returns whether or not `fiber` is actually a `CarryingFiber!Replay` subclass.
+    /++
+     +  Returns whether or not `fiber` is actually a
+     +  `kameloso.thread.CarryingFiber`!`Replay`.
+     +
+     +  Returns:
+     +      `true` if it is of such a subclass, `false` if not.
+     +/
     bool isCarrying() const @nogc @property
     {
         return cast(CarryingFiber!Replay)fiber !is null;
