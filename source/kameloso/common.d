@@ -128,6 +128,12 @@ struct CoreSettings
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
 
+    /++
+     +  Whether or not to exhaustively WHOIS all participants in home channels,
+     +  and not do a just-in-time lookup when needed.
+     +/
+    bool eagerLookups = false;
+
     /// Character(s) that prefix a bot chat command.
     @Quoted string prefix = "!";
 
