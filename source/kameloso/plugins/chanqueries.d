@@ -126,7 +126,7 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage("squelch"));
                 }
 
-                raw(service.state, "TOPIC " ~ channelName, true);
+                raw(service.state, "TOPIC " ~ channelName, service.hideOutgoingQueries);
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
                 service.delayFiber(service.secondsBetween);
@@ -139,7 +139,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            raw(service.state, "WHO " ~ channelName, true);
+            raw(service.state, "WHO " ~ channelName, service.hideOutgoingQueries);
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
             service.delayFiber(service.secondsBetween);
@@ -151,7 +151,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            raw(service.state, "MODE " ~ channelName, true);
+            raw(service.state, "MODE " ~ channelName, service.hideOutgoingQueries);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             foreach (immutable modechar; service.state.server.aModes.representation)
@@ -172,7 +172,8 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage("squelch"));
                 }
 
-                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
+                raw(service.state, "MODE %s +%c".format(channelName,
+                    cast(char)modechar), service.hideOutgoingQueries);
             }
 
             if (channelName !in service.channelStates) continue;
@@ -237,7 +238,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch"));
             }
 
-            whois(service.state, nickname, false, true);
+            whois(service.state, nickname, false, service.hideOutgoingQueries);
             Fiber.yield();  // Await whois types registered above
 
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
