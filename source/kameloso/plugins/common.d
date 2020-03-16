@@ -2796,7 +2796,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     }
                 }
 
-                plugin.queueToReplay(&dg, event);
+                plugin.queueToReplay(&dg, request.event);
                 garbageIndexes ~= i;
             }
 
