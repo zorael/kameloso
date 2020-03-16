@@ -1289,6 +1289,55 @@ do
 }
 
 
+// handleReplays
+/++
+ +  Handles the replay queue, replaying events from the current (main loop)
+ +  context, outside of any plugin.
+ +
+ +  Note: Exceptions are let past; they are to be caught by the caller.
+ +
+ +  Params:
+ +      plugin = The current `kameloso.plugins.common.IRCPlugin`.
+ +      instance = Reference to the current bot instance.
+ +/
+void handleReplays(IRCPlugin plugin, ref Kameloso instance)
+{
+    import core.thread : Fiber;
+
+    if (!plugin.state.replays.length) return;
+
+    size_t[] spentReplays;
+
+    foreach (immutable i, replay; plugin.state.replays)
+    {
+        foreach (postprocessor; instance.plugins)
+        {
+            postprocessor.postprocess(replay.originalEvent);
+        }
+
+        if (replay.isCarrying)
+        {
+            replay.carryingFiber.payload = replay;
+        }
+
+        replay.fiber.call();
+
+        if (replay.fiber.state == Fiber.State.TERM)
+        {
+            spentReplays ~= i;
+        }
+    }
+
+    // Clean exhausted replays
+    foreach_reverse (immutable i; spentReplays)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        plugin.state.replays = plugin.state.replays
+            .remove!(SwapStrategy.unstable)(i);
+    }
+}
+
+
 import kameloso.plugins.common : TriggerRequest;
 
 // processTriggerRequestQueue
