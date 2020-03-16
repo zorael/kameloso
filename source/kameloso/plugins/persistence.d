@@ -39,6 +39,13 @@ void postprocess(PersistenceService service, ref IRCEvent event)
     {
         if (!user.nickname.length) continue;  // Ignore server events
 
+        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+            (user.nickname == service.state.client.nickname))
+        {
+            // On non-Twitch, ignore events originating from us
+            continue;
+        }
+
         version(TwitchSupport)
         {
             if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -53,23 +60,18 @@ void postprocess(PersistenceService service, ref IRCEvent event)
          +  none available, tries to set one that seems to apply based on what
          +  the user looks like.
          +/
-        void applyClassifiersDg(IRCUser* user)
+        static void applyClassifiers(PersistenceService service,
+            const IRCEvent event, IRCUser* user)
         {
             if (user.class_ == IRCUser.Class.admin)
             {
                 // Do nothing, admin is permanent and program-wide
                 return;
             }
-            else if (!user.account.length)
+            else if (!user.account.length || (user.account == "*"))
             {
                 // No account means it's just a random
                 user.class_ = IRCUser.Class.anyone;
-            }
-            else if (event.type == IRCEvent.Type.QUERY)
-            {
-                // Let everyone except admins be considered a random for now
-                user.class_ = service.state.bot.admins.canFind(user.account) ?
-                    IRCUser.Class.admin : IRCUser.Class.anyone;
             }
             else if (service.state.bot.admins.canFind(user.account))
             {
@@ -94,9 +96,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             service.userClassCurrentChannelCache[user.nickname] = event.channel;
         }
 
-        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
-            (user.nickname == service.state.client.nickname)) continue;
-
         auto stored = user.nickname in service.state.users;
 
         if (!stored)
@@ -107,52 +106,23 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
+            // Apply class here on events that carry new account information.
+
             with (IRCEvent.Type)
             switch (event.type)
             {
             case JOIN:
-                if (!service.state.bot.homes.canFind(event.channel)) break;
-                else if (user.account.length) goto case RPL_WHOISACCOUNT;
-                break;
-
             case ACCOUNT:
-                if (user.account == "*")
-                {
-                    // User logged out, reset updated so the user can be WHOISed again later
-                    // A value of 0L won't be melded...
-                    user.updated = 1L;
-                }
-                else if (user.nickname in service.userClassCurrentChannelCache)
-                {
-                    // User is already tracked
-                    goto case RPL_WHOISACCOUNT;
-                }
-                break;
-
             case RPL_WHOISACCOUNT:
             case RPL_WHOISUSER:
             case RPL_WHOISREGNICK:
-                applyClassifiersDg(user);
-                break;
-
-            case RPL_ENDOFWHOIS:
-                // Record updated timestamp; this is the end of a WHOIS
-                import std.datetime.systime : Clock;
-                user.updated = Clock.currTime.toUnixTime;
-                break;
-
-            case RPL_WHOREPLY:
-                // WHO replies are one per user and carries a channel.
-                if (service.state.bot.homes.canFind(event.channel))
-                {
-                    applyClassifiersDg(user);
-                }
+                applyClassifiers(service, event, user);
                 break;
 
             default:
-                if (event.channel.length && !service.state.bot.homes.canFind(event.channel)) break;
-                else if (user.account.length && (user.account != "*") && !stored.account.length)
+                if (user.account.length && (user.account != "*") && !stored.account.length)
                 {
+                    // Unexpected event bearing new account
                     goto case RPL_WHOISACCOUNT;
                 }
                 break;
@@ -168,19 +138,30 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         // Meld into the stored user, and store the union in the event
         (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
 
-        if (user.class_ == IRCUser.Class.unset)
+        if (stored.class_ == IRCUser.Class.unset)
         {
             // The class was not changed, restore the previously saved one
             stored.class_ = preMeldClass;
         }
 
-        // An account of "*" means the user logged out of services
-        // It's not strictly true but consider him/her as unknown again.
-        if (stored.account == "*")
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            stored.account = string.init;
-            stored.class_ = IRCUser.Class.anyone;
-            service.userClassCurrentChannelCache.remove(user.nickname);
+            if (event.type == IRCEvent.Type.RPL_ENDOFWHOIS)
+            {
+                // Record updated timestamp; this is the end of a WHOIS
+                import std.datetime.systime : Clock;
+                user.updated = Clock.currTime.toUnixTime;
+            }
+            else if (stored.account == "*")
+            {
+                // An account of "*" means the user logged out of services
+                // It's not strictly true but consider him/her as unknown again.
+
+                stored.account = string.init;
+                stored.class_ = IRCUser.Class.anyone;
+                stored.updated = 1L;  // To facilitate melding
+                service.userClassCurrentChannelCache.remove(user.nickname);
+            }
         }
 
         version(TwitchSupport)
@@ -197,32 +178,25 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         {
             // Do nothing, admin is permanent and program-wide
         }
-        else if (user.nickname == service.state.client.nickname)
+        else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+            (user.nickname == service.state.client.nickname))
         {
             stored.class_ = IRCUser.Class.admin;
         }
-        else if (event.type == IRCEvent.Type.QUERY)
-        {
-            applyClassifiersDg(stored);
-        }
         else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
         {
-            // Not a channel or not a home. Additionally not an admin
+            // Not a channel or not a home. Additionally not an admin nor us
             stored.class_ = IRCUser.Class.anyone;
         }
         else
         {
             const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
 
-            if (!cachedChannel)
+            if (!cachedChannel || (*cachedChannel != event.channel))
             {
-                // User has no cached channel
-                applyClassifiersDg(stored);
-            }
-            else if (*cachedChannel != event.channel)
-            {
-                // User's cached channel is different from this one, class likely differs
-                applyClassifiersDg(stored);
+                // User has no cached channel. Alternatively, user's cached channel
+                // is different from this one; class likely differs.
+                applyClassifiers(service, event, stored);
             }
         }
 
