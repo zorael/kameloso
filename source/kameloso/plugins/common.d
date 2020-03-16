@@ -340,6 +340,55 @@ unittest
 }
 
 
+// Replay
+/++
+ +  An event to be replayed from the context of the main loop, optionally after
+ +  having re-postprocessed it.
+ +
+ +  With this plugins get an ability to postprocess on demand, which is needed
+ +  to apply user classes to stored events, such as those saved before issuing
+ +  WHOIS queries.
+ +/
+struct Replay
+{
+private:
+    import kameloso.thread : CarryingFiber;
+
+public:
+    /// `core.thread.Fiber` to call to invoke this replay.
+    Fiber fiber;
+
+    /// Returns `fiber` as a `CarryingFiber!Replay`, blindly assuming it can be cast thus.
+    CarryingFiber!Replay carryingFiber()
+    {
+        auto carrying = cast(CarryingFiber!Replay)fiber;
+        assert(carrying, "Tried to get a CarryingFiber!Replay out of a normal Fiber");
+        return carrying;
+    }
+
+    /// Returns whether or not `fiber` is actually a `CarryingFiber!Replay` subclass.
+    bool isCarrying() const @nogc @property
+    {
+        return cast(CarryingFiber!Replay)fiber !is null;
+    }
+
+    IRCEvent event;
+    alias originalEvent = event;
+
+    /// UNIX timestamp of when this replay event was created.
+    long created;
+
+    /// Constructor taking a `core.thread.Fiber` and an `dialect.defs.IRCEvent`.
+    this(Fiber fiber, const IRCEvent event)
+    {
+        import std.datetime.systime : Clock;
+        created = Clock.currTime.toUnixTime;
+        this.fiber = fiber;
+        this.originalEvent = event;
+    }
+}
+
+
 // IRCPluginState
 /++
  +  An aggregate of all variables that make up the common state of plugins.
