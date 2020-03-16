@@ -428,6 +428,9 @@ private:
     /// Whether or not the server is known to support WHOIS queries. (Default to true.)
     bool serverSupportsWHOIS = true;
 
+    /// Whether or not to display outgoing queries, as a debugging tool.
+    enum hideOutgoingQueries = true;
+
     mixin IRCPluginImpl;
 
     /++
