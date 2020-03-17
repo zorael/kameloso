@@ -2835,26 +2835,24 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
     void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent event)
     {
-        if (event.aux == "WHOIS")
+        if (event.aux != "WHOIS") return;
+
+        // We're on a server that doesn't support WHOIS
+        // Trigger queued requests of a PrivilegeLevel.anyone nature, since
+        // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
+        // Then clear everything
+
+        mixin Replayer;
+
+        foreach (requests; plugin.state.triggerRequestQueue)
         {
-            // We're on a server that doesn't support WHOIS
-            // Trigger queued requests of a PrivilegeLevel.anyone nature, since
-            // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
-            // Then clear everything
-
-            foreach (requests; plugin.state.triggerRequestQueue)
+            foreach (request; requests)
             {
-                foreach (request; requests)
-                {
-                    if (request.privilegeLevel == PrivilegeLevel.anyone)
-                    {
-                        request.trigger();
-                    }
-                }
+                queueToReplay(request);
             }
-
-            plugin.state.triggerRequestQueue.clear();
         }
+
+        plugin.state.triggerRequestQueue.clear();
     }
 }
 
