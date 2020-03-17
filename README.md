@@ -269,6 +269,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
+* investigate replacing `TriggerRequest` with `Replay` to some extent
 * more pairs of eyes
 
 # Built with
