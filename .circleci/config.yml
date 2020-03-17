@@ -8,7 +8,7 @@ general:
 jobs:
   build:
     docker:
-      - image: circleci/buildpack-deps:19.04
+      - image: cimg/base:2020.01
     steps:
       - checkout
       - run:

@@ -14,7 +14,7 @@ install_deps() {
     sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
     sudo apt update
     sudo apt install dmd-compiler dub
-    #sudo apt install ldc
+    sudo apt install ldc
 }
 
 build() {
@@ -113,7 +113,7 @@ case "$1" in
         ;;
     build)
         time build dmd;
-        #build ldc2;  # 0.14.0; too old
+        time build ldc2;
         ;;
     *)
         echo "Unknown command: $1";
