@@ -2859,6 +2859,149 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 }
 
 
+// Replayer
+/++
+ +  Implements queueing of replay events.
+ +
+ +  This allows us to deal with triggers both in `dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT`
+ +  and `dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND` while keeping the code
+ +  in one place.
+ +
+ +  Params:
+ +      debug_ = Whether or not to print debug output to the terminal.
+ +/
+version(WithPlugins)
+mixin template Replayer(bool debug_ = false)
+{
+    static assert((__traits(compiles, plugin) || __traits(compiles, service)),
+        "Replayer should be mixed into the context of an event handler. " ~
+        `(Could not access variables named neither "plugin" nor "service" from within ` ~
+        __FUNCTION__ ~ ")");
+
+    import std.conv : text;
+
+    private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
+    mixin("TriggerRequest " ~ requestVariableName ~ ';');
+
+    static if (__traits(compiles, plugin))
+    {
+        alias context = plugin;
+        enum contextName = "plugin";
+    }
+    else static if (__traits(compiles, service))
+    {
+        alias context = service;
+        enum contextName = "service";
+    }
+    else
+    {
+        static assert(0);  // Should never get here, error message already given
+    }
+
+    /++
+     +  Verbosely explains a replay, including what `PrivilegeLevel` and
+     +  `dialect.defs.IRCUser.Class` were involved.
+     +/
+    version(ExplainReplay)
+    void explainReplay(const IRCUser user)
+    {
+        import kameloso.common : logger, settings;
+        import lu.conv : Enum;
+
+        string infotint, logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.logf("%s%s%s %s replaying %1$s%5$s%3$s-level event " ~
+            "based on WHOIS results (user is %1$s%6$s%3$s class)",
+            infotint, context.name, logtint, contextName,
+            Enum!PrivilegeLevel.toString(mixin(requestVariableName).privilegeLevel),
+            Enum!(IRCUser.Class).toString(user.class_));
+    }
+
+    /++
+     +  Delegate to call from inside a `kameloso.thread.CarryingFiber`.
+     +/
+    void replayerDelegate()
+    {
+        import kameloso.thread : CarryingFiber;
+        import core.thread : Fiber;
+
+        auto thisFiber = cast(CarryingFiber!Replay)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert((thisFiber.payload != thisFiber.payload.init),
+            "init payload in " ~ typeof(thisFiber).stringof);
+
+        auto request = mixin(requestVariableName);
+        request.event = thisFiber.payload.event;
+
+        with (PrivilegeLevel)
+        final switch (request.privilegeLevel)
+        {
+        case admin:
+            if (request.event.sender.class_ >= IRCUser.Class.admin)
+            {
+                goto case anyone;
+            }
+            break;
+
+        case operator:
+            if (request.event.sender.class_ >= IRCUser.Class.operator)
+            {
+                goto case anyone;
+            }
+            break;
+
+        case whitelist:
+            if (request.event.sender.class_ >= IRCUser.Class.whitelist)
+            {
+                goto case anyone;
+            }
+            break;
+
+        case registered:
+            if (request.event.sender.account.length)
+            {
+                goto case anyone;
+            }
+            break;
+
+        case anyone:
+            if (request.event.sender.class_ >= IRCUser.Class.anyone)
+            {
+                version(ExplainReplay) explainReplay(request.event.sender);
+                request.trigger();
+            }
+
+            // request.event.sender.class_ is either anyone or blacklist here
+            break;
+
+        case ignore:
+            break;
+        }
+    }
+
+    /++
+     +  Queues the delegate `replayerDelegate` with the passed `TriggerRequest`
+     +  attached to it.
+     +/
+    void queueToReplay(TriggerRequest request)
+    {
+        mixin(requestVariableName) = request;
+        context.queueToReplay(&replayerDelegate, request.event);
+    }
+}
+
+
 // UserAwareness
 /++
  +  Implements *user awareness* in a plugin module.
