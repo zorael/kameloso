@@ -8,80 +8,80 @@ environment:
       DSubversion:
       arch: x64
       dubArgs: --build-mode=singleFile
-      DFLAGS: -lowmem
+      Ddflags: -lowmem
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.091.0
       DSubversion:
       arch: x86
       dubArgs: --build-mode=singleFile
-      DFLAGS: -lowmem
+      Ddflags: -lowmem
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.090.1
       DSubversion:
       arch: x64
       dubArgs: --build-mode=singleFile
-      DFLAGS: -lowmem
+      Ddflags: -lowmem
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.090.1
       DSubversion:
       arch: x86
       dubArgs: --build-mode=singleFile
-      DFLAGS: -lowmem
+      Ddflags: -lowmem
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.089.1
       DSubversion:
       arch: x64
       dubArgs: --build-mode=singleFile
-      DFLAGS:
+      Ddflags:
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.089.1
       DSubversion:
       arch: x86
       dubArgs: --build-mode=singleFile
-      DFLAGS:
+      Ddflags:
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.084.0
       DSubversion:
       arch: x64
       dubArgs:
-      DFLAGS:
+      Ddflags:
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.084.0
       DSubversion:
       arch: x86
       dubArgs:
-      DFLAGS:
+      Ddflags:
     - DC: ldc
       DVersion: 1.20.0
       DSubversion:
       arch: x64
       dubArgs:
-      DFLAGS:
+      Ddflags:
     - DC: ldc
       DVersion: 1.19.0
       DSubversion:
       arch: x64
       dubArgs:
-      DFLAGS:
+      Ddflags:
     - DC: ldc
       DVersion: 1.18.0
       DSubversion:
       arch: x64
       dubArgs:
-      DFLAGS:
+      Ddflags:
     - DC: ldc
       DVersion: 1.14.0
       DSubversion:
       arch: x64
       dubArgs:
-      DFLAGS:
+      Ddflags:
 
 skip_tags: true
 branches:
@@ -155,12 +155,14 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - echo %dubArgs%
- - echo %DFLAGS%
+ - echo %Ddflags%
  - '%DC% --version'
  - dub --version
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
+ - set DFLAGS = %Ddflags% -unittest
  - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
+ - set DFLAGS = %Ddflags%
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev || true
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla || true
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
