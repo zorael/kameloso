@@ -4364,7 +4364,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
         assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-        const whoisEvent = thisFiber.payload;
+        immutable whoisEvent = thisFiber.payload;
 
         with (IRCEvent.Type)
         with (whoisEvent)
