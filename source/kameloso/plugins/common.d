@@ -394,7 +394,7 @@ public:
     long created;
 
     /// Constructor taking a `core.thread.Fiber` and an `dialect.defs.IRCEvent`.
-    this(Fiber fiber, const IRCEvent event) @safe nothrow
+    this(Fiber fiber, const IRCEvent event) @safe
     {
         import std.datetime.systime : Clock;
         created = Clock.currTime.toUnixTime;
