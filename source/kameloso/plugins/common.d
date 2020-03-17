@@ -4498,7 +4498,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
         else
         {
-            assert(0);  // Should never get here, error message already given
+            static assert(0);  // Should never get here, error message already given
         }
 
         with (IRCEvent.Type)
