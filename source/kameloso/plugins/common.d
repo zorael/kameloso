@@ -4343,21 +4343,51 @@ import std.traits : isSomeFunction;
 mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
-    static assert((__traits(compiles, plugin) || __traits(compiles, service)),
-        "WHOISFiberDelegate should be mixed into the context of an event handler. " ~
-        `(Could not access variables named neither "plugin" nor "service" from within ` ~
-        __FUNCTION__ ~ ")");
-
     import std.conv : text;
 
+    static if (__traits(compiles, plugin))
+    {
+        alias context = plugin;
+    }
+    else static if (__traits(compiles, service))
+    {
+        alias context = service;
+    }
+    else
+    {
+        static assert(0, "WHOISFiberDelegate should be mixed into the context " ~
+            "of an event handler. (Could not access variables named neither " ~
+            `"plugin" nor "service" from within ` ~ __FUNCTION__ ~ ")");
+    }
+
+    /++
+     +  Nickname being looked up, stored outside of any separate function to make
+     +  it available to all of them.
+     +
+     +  Randomly generated name so as not to accidentally collide with the
+     +  mixing in site.
+     +/
     private enum carriedVariableName = text("_carriedNickname", hashOf(__FUNCTION__) % 100);
     mixin("string " ~ carriedVariableName ~ ';');
+
+    /// Event types that we may encounter as responses to WHOIS queries.
+    static immutable whoisEventTypes =
+    [
+        IRCEvent.Type.RPL_WHOISACCOUNT,
+        IRCEvent.Type.RPL_WHOISREGNICK,
+        IRCEvent.Type.RPL_ENDOFWHOIS,
+        IRCEvent.Type.ERR_NOSUCHNICK,
+        IRCEvent.Type.ERR_UNKNOWNCOMMAND,
+    ];
 
     /// Reusable mixin that catches WHOIS results.
     void whoisFiberDelegate()
     {
         import kameloso.thread : CarryingFiber;
+        import dialect.common : toLowerCase;
         import dialect.defs : IRCEvent, IRCUser;
+        import lu.conv : Enum;
+        import std.algorithm.searching : canFind;
         import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
@@ -4366,18 +4396,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable whoisEvent = thisFiber.payload;
 
-        with (IRCEvent.Type)
-        with (whoisEvent)
-        {
-            import lu.conv : Enum;
-            assert(((type == RPL_WHOISACCOUNT) ||
-                (type == RPL_WHOISREGNICK) ||
-                (type == RPL_ENDOFWHOIS) ||
-                (type == ERR_NOSUCHNICK) ||
-                (type == ERR_UNKNOWNCOMMAND)),
-                "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
-                Enum!(IRCEvent.Type).toString(type));
-        }
+        assert(whoisEventTypes.canFind(whoisEvent.type),
+            "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
+            Enum!(IRCEvent.Type).toString(whoisEvent.type));
 
         if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
         {
@@ -4397,8 +4418,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        import dialect.common : toLowerCase;
-
         immutable m = plugin.state.server.caseMapping;
 
         if (toLowerCase(mixin(carriedVariableName), m) !=
@@ -4408,6 +4427,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             Fiber.yield();
             return whoisFiberDelegate();  // Recurse
         }
+
+        // Clean up awaiting fiber entries on exit, just to be neat.
+        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes);
 
         import std.meta : AliasSeq;
         import std.traits : Parameters, Unqual, arity, staticMap;
@@ -4504,33 +4526,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32768);
 
-        static if (__traits(compiles, plugin))
-        {
-            alias context = plugin;
-        }
-        else static if (__traits(compiles, service))
-        {
-            alias context = service;
-        }
-        else
-        {
-            static assert(0);  // Should never get here, error message already given
-        }
-
-        with (IRCEvent.Type)
-        {
-            static immutable types =
-            [
-                RPL_WHOISACCOUNT,
-                RPL_WHOISREGNICK,
-                RPL_ENDOFWHOIS,
-                ERR_NOSUCHNICK,
-                ERR_UNKNOWNCOMMAND,
-            ];
-
-            context.awaitEvents(fiber, types);
-        }
-
+        context.awaitEvents(fiber, whoisEventTypes);
         whois!(Yes.priority)(context.state, nickname, true);
         mixin(carriedVariableName) = nickname;
     }
