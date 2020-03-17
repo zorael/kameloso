@@ -353,6 +353,9 @@ struct Replay
 {
 private:
     import kameloso.thread : CarryingFiber;
+    import std.traits : Unqual;
+
+    alias This = Unqual!(typeof(this));
 
 public:
     /// `core.thread.Fiber` to call to invoke this replay.
@@ -365,9 +368,9 @@ public:
      +  Returns:
      +      `fiber`, cast as a `kameloso.thread.CarryingFiber`!`Replay`.
      +/
-    CarryingFiber!Replay carryingFiber()
+    CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
-        auto carrying = cast(CarryingFiber!Replay)fiber;
+        auto carrying = cast(CarryingFiber!This)fiber;
         assert(carrying, "Tried to get a CarryingFiber!Replay out of a normal Fiber");
         return carrying;
     }
@@ -379,9 +382,9 @@ public:
      +  Returns:
      +      `true` if it is of such a subclass, `false` if not.
      +/
-    bool isCarrying() const @nogc @property
+    bool isCarrying() const pure @nogc @property
     {
-        return cast(CarryingFiber!Replay)fiber !is null;
+        return cast(CarryingFiber!This)fiber !is null;
     }
 
     /// The `dialect.defs.IRCEvent` to replay.
@@ -391,7 +394,7 @@ public:
     long created;
 
     /// Constructor taking a `core.thread.Fiber` and an `dialect.defs.IRCEvent`.
-    this(Fiber fiber, const IRCEvent event)
+    this(Fiber fiber, const IRCEvent event) @safe nothrow
     {
         import std.datetime.systime : Clock;
         created = Clock.currTime.toUnixTime;
