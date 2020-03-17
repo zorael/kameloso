@@ -4379,7 +4379,23 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 Enum!(IRCEvent.Type).toString(type));
         }
 
-        if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND) return;
+        if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+        {
+            if (whoisEvent.aux.length && (whoisEvent.aux == "WHOIS"))
+            {
+                // WHOIS query failed due to unknown command.
+                // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
+                // command was, so we'll have to assume it's the right one.
+                // Return and end Fiber.
+                return;
+            }
+            else
+            {
+                // Wrong unknown command; await a new one
+                Fiber.yield();
+                return whoisFiberDelegate();  // Recurse
+            }
+        }
 
         import dialect.common : toLowerCase;
 
