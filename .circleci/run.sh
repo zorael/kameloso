@@ -37,6 +37,9 @@ build() {
     time dub build $A $S -b debug -c full
     mv kameloso artifacts/kameloso
 
+    time dub build $A $S -b debug -c dev
+    mv kameloso artifacts/kameloso-dev
+
     time dub build $A $S -b debug -c twitch
     mv kameloso artifacts/kameloso-twitch
 
@@ -54,6 +57,10 @@ build() {
     time dub build $A $S -b plain -c full || true
     mv kameloso artifacts/kameloso-plain || \
         touch artifacts/kameloso-plain.failed
+
+    time dub build $A $S -b plain -c dev || true
+    mv kameloso artifacts/kameloso-plain-dev || \
+        touch artifacts/kameloso-plain-dev.failed
 
     time dub build $A $S -b plain -c twitch || true
     mv kameloso artifacts/kameloso-plain-twitch || \
@@ -76,6 +83,10 @@ build() {
     time dub build $A $S -b release -c full || true
     mv kameloso artifacts/kameloso-release || \
         touch artifacts/kameloso-release.failed
+
+    time dub build $A $S -b release -c dev || true
+    mv kameloso artifacts/kameloso-release-dev || \
+        touch artifacts/kameloso-release-dev.failed
 
     time dub build $A $S -b release -c twitch || true
     mv kameloso artifacts/kameloso-release-twitch || \
