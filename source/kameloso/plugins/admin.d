@@ -381,6 +381,23 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
+    static immutable IRCEvent.Type[13] joinTypes =
+    [
+        IRCEvent.Type.ERR_BANNEDFROMCHAN,
+        IRCEvent.Type.ERR_INVITEONLYCHAN,
+        IRCEvent.Type.ERR_BADCHANNAME,
+        IRCEvent.Type.ERR_LINKCHANNEL,
+        IRCEvent.Type.ERR_TOOMANYCHANNELS,
+        IRCEvent.Type.ERR_FORBIDDENCHANNEL,
+        IRCEvent.Type.ERR_CHANNELISFULL,
+        IRCEvent.Type.ERR_BADCHANNELKEY,
+        IRCEvent.Type.ERR_BADCHANNAME,
+        IRCEvent.Type.RPL_BADCHANPASS,
+        IRCEvent.Type.ERR_SECUREONLYCHAN,
+        IRCEvent.Type.ERR_SSLONLYCHAN,
+        IRCEvent.Type.SELFJOIN,
+    ];
+
     void dg()
     {
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
@@ -432,31 +449,12 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
         {
             logger.error("Tried to remove non-existent home channel.");
         }
+
+        plugin.unlistFiberAwaitingEvents(thisFiber, joinTypes);
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
-
-    with (IRCEvent.Type)
-    {
-        static immutable IRCEvent.Type[13] types =
-        [
-            ERR_BANNEDFROMCHAN,
-            ERR_INVITEONLYCHAN,
-            ERR_BADCHANNAME,
-            ERR_LINKCHANNEL,
-            ERR_TOOMANYCHANNELS,
-            ERR_FORBIDDENCHANNEL,
-            ERR_CHANNELISFULL,
-            ERR_BADCHANNELKEY,
-            ERR_BADCHANNAME,
-            RPL_BADCHANPASS,
-            ERR_SECUREONLYCHAN,
-            ERR_SSLONLYCHAN,
-            SELFJOIN,
-        ];
-
-        plugin.awaitEvents(fiber, types);
-    }
+    plugin.awaitEvents(fiber, joinTypes);
 }
 
 
