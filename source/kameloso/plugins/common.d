@@ -4467,7 +4467,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +/
     void enqueueAndWHOIS(const string nickname)
     {
-        import kameloso.messaging : raw;
+        import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
         import core.thread : Fiber;
         import std.typecons : No, Yes;
@@ -4515,7 +4515,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             context.awaitEvents(fiber, types);
         }
 
-        raw!(Yes.priority)(context.state, "WHOIS " ~ nickname);
+        whois!(Yes.priority)(context.state, nickname, true);
         mixin(carriedVariableName) = nickname;
     }
 }
