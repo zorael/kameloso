@@ -2689,6 +2689,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         // No need to catchUser; just inherit
         plugin.state.users[event.target.nickname] = event.target;
 
+        mixin Replayer;
         string[] garbageNicknames;
 
         // See if there are any queued WHOIS requests to trigger
@@ -2712,93 +2713,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     continue;
                 }
 
-                version(ExplainReplay)
-                void explainReplay(const IRCUser user)
-                {
-                    import kameloso.common : logger, settings;
-                    import lu.conv : Enum;
-
-                    string infotint, logtint;
-
-                    version(Colours)
-                    {
-                        if (!settings.monochrome)
-                        {
-                            import kameloso.logger : KamelosoLogger;
-
-                            infotint = (cast(KamelosoLogger)logger).infotint;
-                            logtint = (cast(KamelosoLogger)logger).logtint;
-                        }
-                    }
-
-                    logger.logf("%s%s%s plugin replaying %1$s%4$s%3$s-level event " ~
-                        "based on WHOIS results (user is %1$s%5$s%3$s class)",
-                        infotint, plugin.name, logtint,
-                        Enum!PrivilegeLevel.toString(request.privilegeLevel),
-                        Enum!(IRCUser.Class).toString(user.class_));
-                }
-
-                void dg()
-                {
-                    import kameloso.thread : CarryingFiber;
-                    import core.thread : Fiber;
-
-                    auto thisFiber = cast(CarryingFiber!Replay)(Fiber.getThis);
-                    assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
-                    assert((thisFiber.payload != thisFiber.payload.init),
-                        "init payload in " ~ typeof(thisFiber).stringof);
-
-                    request.event = thisFiber.payload.event;
-
-                    with (PrivilegeLevel)
-                    final switch (request.privilegeLevel)
-                    {
-                    case admin:
-                        if (request.event.sender.class_ >= IRCUser.Class.admin)
-                        {
-                            goto case anyone;
-                        }
-                        break;
-
-                    case operator:
-                        if (request.event.sender.class_ >= IRCUser.Class.operator)
-                        {
-                            goto case anyone;
-                        }
-                        break;
-
-                    case whitelist:
-                        if (request.event.sender.class_ >= IRCUser.Class.whitelist)
-                        {
-                            goto case anyone;
-                        }
-                        break;
-
-                    case registered:
-                        if (request.event.sender.account.length)
-                        {
-                            goto case anyone;
-                        }
-                        break;
-
-                    case anyone:
-                        if (request.event.sender.class_ >= IRCUser.Class.anyone)
-                        {
-                            version(ExplainReplay) explainReplay(request.event.sender);
-                            request.trigger();
-                        }
-
-                        // reuest.event.sender.class_ is either anyone or blacklist here
-                        // Always remove queued request even if blacklisted
-                        garbageIndexes ~= i;
-                        break;
-
-                    case ignore:
-                        break;
-                    }
-                }
-
-                plugin.queueToReplay(&dg, request.event);
+                queueToReplay(request);
                 garbageIndexes ~= i;
             }
 
