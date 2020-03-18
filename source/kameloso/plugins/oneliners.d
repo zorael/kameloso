@@ -23,12 +23,6 @@ struct OnelinersSettings
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
-
-    /++
-     +  Toggle whether or not a class of `dialect.defs.IRCUser.Class.whitelist`
-     +  is enough to be allowed to modify oneliners.
-     +/
-    bool whitelistMayModify = true;
 }
 
 
@@ -91,9 +85,6 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : count;
     import std.format : format;
     import std.typecons : No, Yes;
-
-    if (!plugin.onelinersSettings.whitelistMayModify &&
-        (event.sender.class_ == IRCUser.Class.whitelist)) return;
 
     if (!event.content.length)
     {
