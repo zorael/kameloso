@@ -642,7 +642,7 @@ Next mainLoop(ref Kameloso instance)
         {
             if (!plugin.state.timedFibers.length) continue;
 
-            if (plugin.nextFiberTimestamp <= nowInUnix)
+            if (plugin.state.nextFiberTimestamp <= nowInUnix)
             {
                 plugin.handleTimedFibers(nowInUnix);
                 plugin.updateNextFiberTimestamp();

@@ -2287,13 +2287,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         // Reset the next timestamp to an invalid value, then update it as we
         // iterate the fibers' labels.
 
-        privateNextFiberTimestamp = long.max;
+        privateState.nextFiberTimestamp = long.max;
 
         foreach (const timedFiber; privateState.timedFibers)
         {
-            if (timedFiber.id < privateNextFiberTimestamp)
+            if (timedFiber.id < privateState.nextFiberTimestamp)
             {
-                privateNextFiberTimestamp = timedFiber.id;
+                privateState.nextFiberTimestamp = timedFiber.id;
             }
         }
     }
