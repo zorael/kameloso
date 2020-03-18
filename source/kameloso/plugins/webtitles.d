@@ -205,7 +205,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
  +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    ulong delayMsecs, WebtitlesSettings webtitlesSettings, bool colouredOutgoing)
+    const ulong delayMsecs, const WebtitlesSettings webtitlesSettings, const bool colouredOutgoing)
 {
     import core.memory : GC;
 
