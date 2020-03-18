@@ -453,20 +453,15 @@ void reportTitle(TitleLookupRequest request, const bool colouredOutput)
 {
     with (request)
     {
-        import std.format : format;
-
         string line;
 
         if (results.domain.length)
         {
-            if (colouredOutput)
-            {
-                line = "[%s] %s".format(results.domain.ircBold, results.title);
-            }
-            else
-            {
-                line = "[%s] %s".format(results.domain, results.title);
-            }
+            import std.format : format;
+
+            line = colouredOutput ?
+                "[%s] %s".format(results.domain.ircBold, results.title) :
+                "[%s] %s".format(results.domain, results.title);
         }
         else
         {
@@ -490,21 +485,15 @@ void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
 {
     with (request)
     {
+        import kameloso.irccolours : ircColourByHash;
         import std.format : format;
 
-        string line;
-
-        if (colouredOutput)
-        {
-            import kameloso.irccolours : ircColourByHash;
-            line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold, results.youtubeTitle,
-                colouredOutput ? results.youtubeAuthor.ircColourByHash : results.youtubeAuthor.ircBold);
-        }
-        else
-        {
-            line = "[youtube.com] %s (uploaded by %s)"
+        immutable line = colouredOutput ?
+            "[%s] %s (uploaded by %s)"
+                .format("youtube.com".ircBold, results.youtubeTitle,
+                colouredOutput ? results.youtubeAuthor.ircColourByHash : results.youtubeAuthor.ircBold) :
+            "[youtube.com] %s (uploaded by %s)"
                 .format(results.youtubeTitle, results.youtubeAuthor);
-        }
 
         chan(state, event.channel, line);
     }

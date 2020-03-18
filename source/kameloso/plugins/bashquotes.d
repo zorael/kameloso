@@ -134,16 +134,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
             .replace(`<br />`, string.init)
             .splitter("\n");
 
-        string message;
-
-        if (colouredOutgoing)
-        {
-            message = "%s #%s".format("[bash.org]".ircBold, num);
-        }
-        else
-        {
-            message = "[bash.org] #%s".format(num);
-        }
+        immutable message = colouredOutgoing ?
+            "%s #%s".format("[bash.org]".ircBold, num) :
+            "[bash.org] #%s".format(num);
 
         privmsg(state, event.channel, event.sender.nickname, message);
 
