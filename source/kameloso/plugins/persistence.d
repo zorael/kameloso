@@ -336,7 +336,6 @@ void reloadClassifiersFromDisk(PersistenceService service)
     json.reset();
     json.load(service.userFile);
 
-    //service.userClasses.clear();
     service.channelUsers.clear();
 
     import lu.conv : Enum;
