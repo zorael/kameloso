@@ -475,6 +475,9 @@ struct IRCPluginState
     /// The next (Unix time) timestamp at which to call `periodically`.
     long nextPeriodical;
 
+    /// The UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
+    long nextFiberTimestamp;
+
     /// Whether or not `bot` was altered. Must be reset manually.
     bool botUpdated;
 
