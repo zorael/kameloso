@@ -213,11 +213,14 @@ void postprocess(PersistenceService service, ref IRCEvent event)
  +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
  +  associative array of the current `PersistenceService`'s
  +  `kameloso.plugins.common.IRCPluginState` upon them disconnecting.
+ +
+ +  Additionally from the nickname-chanel cache.
  +/
 @(IRCEvent.Type.QUIT)
 void onQuit(PersistenceService service, const IRCEvent event)
 {
     service.state.users.remove(event.sender.nickname);
+    service.userClassCurrentChannelCache.remove(event.sender.nickname);
 }
 
 
