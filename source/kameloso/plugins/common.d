@@ -2295,7 +2295,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (TakesParams!(.periodically, typeof(this)))
             {
-                if (now >= state.nextPeriodical)
+                if (now >= privateState.nextPeriodical)
                 {
                     .periodically(this);
                 }
