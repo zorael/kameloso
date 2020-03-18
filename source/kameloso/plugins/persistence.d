@@ -152,7 +152,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 // Record updated timestamp; this is the end of a WHOIS
                 import std.datetime.systime : Clock;
-                user.updated = Clock.currTime.toUnixTime;
+                stored.updated = Clock.currTime.toUnixTime;
             }
             else if (stored.account == "*")
             {
@@ -162,7 +162,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 stored.account = string.init;
                 stored.class_ = IRCUser.Class.anyone;
                 stored.updated = 1L;  // To facilitate melding
-                service.userClassCurrentChannelCache.remove(user.nickname);
+                service.userClassCurrentChannelCache.remove(stored.nickname);
             }
         }
 
@@ -181,7 +181,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             // Do nothing, admin is permanent and program-wide
         }
         else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (user.nickname == service.state.client.nickname))
+            (stored.nickname == service.state.client.nickname))
         {
             stored.class_ = IRCUser.Class.admin;
         }
@@ -192,7 +192,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         }
         else
         {
-            const cachedChannel = user.nickname in service.userClassCurrentChannelCache;
+            const cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
 
             if (!cachedChannel || (*cachedChannel != event.channel))
             {
