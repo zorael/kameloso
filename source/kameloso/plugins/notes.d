@@ -55,7 +55,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     import std.range : only;
     import std.uni : toLower;
 
-    foreach (immutable channel; only(event.channel, ""))
+    foreach (immutable channel; only(event.channel, string.init))
     {
         try
         {
