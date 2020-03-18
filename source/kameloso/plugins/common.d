@@ -1068,7 +1068,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
 
     if (event.sender.account.length)
     {
-        immutable isAdmin = state.bot.admins.canFind(event.sender.nickname);
+        immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
         immutable isOperator = (class_ == IRCUser.Class.operator);
         immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
         immutable isAnyone = (class_ == IRCUser.Class.anyone);
