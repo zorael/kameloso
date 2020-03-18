@@ -97,8 +97,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         }
 
         auto stored = user.nickname in service.state.users;
+        immutable foundNoStored = stored is null;
 
-        if (!stored)
+        if (foundNoStored)
         {
             service.state.users[user.nickname] = *user;
             stored = user.nickname in service.state.users;
@@ -136,7 +137,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         immutable preMeldClass = stored.class_;
 
         // Meld into the stored user, and store the union in the event
-        (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
+        // Skip if the current stored is just a direct copy of user
+        if (!foundNoStored) (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
 
         if (stored.class_ == IRCUser.Class.unset)
         {
