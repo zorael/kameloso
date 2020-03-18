@@ -42,7 +42,7 @@ struct BashQuotesSettings
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "bash")
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
