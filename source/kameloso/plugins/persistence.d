@@ -238,16 +238,24 @@ void onNick(PersistenceService service, const IRCEvent event)
 {
     with (service.state)
     {
-        if (auto stored = event.sender.nickname in users)
+        if (const stored = event.sender.nickname in users)
         {
             users[event.target.nickname] = *stored;
             users[event.target.nickname].nickname = event.target.nickname;
             users.remove(event.sender.nickname);
         }
-        else
+        /*else
         {
+            // Logically this should never happen, as postprocess creates a user
+            // if none already exists.
             users[event.target.nickname] = event.sender;
             users[event.target.nickname].nickname = event.target.nickname;
+        }*/
+
+        if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
+        {
+            service.userClassCurrentChannelCache[event.target.nickname] = *channel;
+            service.userClassCurrentChannelCache.remove(event.sender.nickname);
         }
     }
 }
