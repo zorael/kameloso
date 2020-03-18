@@ -55,8 +55,6 @@ void startChannelQueries(ChanQueriesService service)
 
     if (service.querying) return;  // Try again next PING
 
-    service.querying = true;  // "Lock"
-
     string[] querylist;
 
     foreach (immutable channelName, ref state; service.channelStates)
@@ -71,11 +69,9 @@ void startChannelQueries(ChanQueriesService service)
         querylist ~= channelName;
     }
 
-    if (!querylist.length)
-    {
-        service.querying = false;  // "Unlock"
-        return;
-    }
+    if (!querylist.length) return;
+
+    service.querying = true;  // "Lock", unlocked on delegate end
 
     /// Event types that signal the end of a query response.
     static immutable queryTypes =
