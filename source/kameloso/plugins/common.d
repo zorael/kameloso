@@ -1395,6 +1395,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 IRCEvent mutEvent = event;  // mutable
+                bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
 
                 // Evaluate each BotCommand UDAs with the current event
                 static if (hasUDA!(fun, BotCommand))
@@ -1452,6 +1453,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             }
 
                             mutEvent.aux = thisCommand;
+                            commandMatch = true;
                             break;  // finish this BotCommand
                         }
                     }
@@ -1460,7 +1462,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 // Iff no match from BotCommands, evaluate BotRegexes
                 static if (hasUDA!(fun, BotRegex))
                 {
-                    if (!mutEvent.aux.length)
+                    if (!commandMatch)
                     {
                         if (!event.content.length)
                         {
@@ -1513,6 +1515,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     }
 
                                     mutEvent.aux = hits[0];
+                                    commandMatch = true;
                                     break;  // finish this BotRegex
                                 }
                             }
@@ -1527,7 +1530,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
                 {
-                    if (!mutEvent.aux.length)
+                    if (!commandMatch)
                     {
                         // Bot{Command,Regex} exists but neither matched; skip
                         static if (verbose)
