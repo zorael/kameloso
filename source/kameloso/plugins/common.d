@@ -3856,7 +3856,7 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
  +      plugin = Current `IRCPlugin`.
  +      newUser = The `dialect.defs.IRCUser` to catch.
  +/
-void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
+void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 {
     if (!newUser.nickname.length) return;
 
@@ -3888,7 +3888,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +      fn = Function/delegate pointer to call when the results return.
  +/
 void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
-    PrivilegeLevel privilegeLevel, Fn fn)
+    const PrivilegeLevel privilegeLevel, Fn fn)
 {
     version(TwitchSupport)
     {
@@ -3936,7 +3936,7 @@ void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEven
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
  +/
-void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilegeLevel, Fn fn)
+void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, const PrivilegeLevel privilegeLevel, Fn fn)
 {
     return doWhois(plugin, null, event, privilegeLevel, fn);
 }
