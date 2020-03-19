@@ -4539,6 +4539,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.
  +/
+pragma(inline)
 string nameOf(const IRCUser user) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
