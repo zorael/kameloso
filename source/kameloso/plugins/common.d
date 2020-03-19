@@ -3452,15 +3452,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.server);
-
-                    if (nickname == plugin.state.client.nickname) continue;
-
-                    if ((modesign == '@') &&
-                        (plugin.state.users[nickname].class_ <= IRCUser.Class.operator))
-                    {
-                        // Specialcase operator
-                        plugin.state.users[nickname].class_ = IRCUser.Class.operator;
-                    }
                 }
                 else
                 {
@@ -3536,15 +3527,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
                     immutable modestring = (*modechar).to!string;
                     (*channel).setMode(modestring, nickname, plugin.state.server);
-
-                    if (nickname == plugin.state.client.nickname) continue;
-
-                    if ((modesign == '@') &&
-                        (plugin.state.users[nickname].class_ <= IRCUser.Class.operator))
-                    {
-                        // Specialcase operator
-                        plugin.state.users[nickname].class_ = IRCUser.Class.operator;
-                    }
                 }
                 else
                 {
