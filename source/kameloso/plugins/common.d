@@ -1859,8 +1859,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
-
             static if (TakesParams!(.initialise, typeof(this)))
             {
                 .initialise(this);
