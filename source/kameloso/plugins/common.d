@@ -458,13 +458,11 @@ struct IRCPluginState
     /// This plugin's array of `Replay`s to let the main loop play back.
     Replay[] replays;
 
-    import std.traits : EnumMembers;
-
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
      +  `dialect.defs.IRCEvent.Type`.
      +/
-    Fiber[][EnumMembers!(IRCEvent.Type).length] awaitingFibers;
+    Fiber[][] awaitingFibers;
 
     /// The list of timed `core.thread.Fiber`s, labeled by UNIX time.
     Labeled!(Fiber, long)[] timedFibers;
@@ -1832,9 +1830,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         import kameloso.common : settings;
         import lu.traits : isConfigurableVariable;
-        import std.traits : hasUDA;
+        import std.traits : EnumMembers, hasUDA;
 
         this.privateState = state;
+        this.privateState.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
 
         foreach (immutable i, ref member; this.tupleof)
         {
