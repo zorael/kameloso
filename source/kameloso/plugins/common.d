@@ -785,10 +785,11 @@ enum PrivilegeLevel
 // triggerRequest
 /++
  +  Convenience function that returns a `TriggerRequestImpl` of the right type,
- +  *with* a payload attached.
+ +  *with* a subclass plugin reference attached.
  +
  +  Params:
- +      payload = Payload to attach to the `TriggerRequest`.
+ +      subPlugin = Subclass `IRCPlugin` to call the function pointer `fn` with
+ +          as first argument, when the WHOIS results return.
  +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
@@ -797,17 +798,17 @@ enum PrivilegeLevel
  +      A `TriggerRequest` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
-    PrivilegeLevel privilegeLevel, F fn) @safe
+TriggerRequest triggerRequest(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
+    const PrivilegeLevel privilegeLevel, Fn fn) @safe
 {
-    return new TriggerRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
+    return new TriggerRequestImpl!(Fn, SubPlugin)(subPlugin, event, privilegeLevel, fn);
 }
 
 
 // triggerRequest
 /++
  +  Convenience function that returns a `TriggerRequestImpl` of the right type,
- +  *without* a payload attached.
+ +  *without* a subclass plugin reference attached.
  +
  +  Params:
  +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
@@ -818,9 +819,9 @@ TriggerRequest triggerRequest(F, Payload)(Payload payload, IRCEvent event,
  +      A `TriggerRequest` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-TriggerRequest triggerRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
+TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel, Fn fn) @safe
 {
-    return new TriggerRequestImpl!F(event, privilegeLevel, fn);
+    return new TriggerRequestImpl!Fn(event, privilegeLevel, fn);
 }
 
 
