@@ -2706,11 +2706,10 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             foreach_reverse (immutable i; garbageIndexes)
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
-                auto inQueue = event.target.nickname in plugin.state.triggerRequestQueue;
-                *inQueue = (*inQueue).remove!(SwapStrategy.unstable)(i);
+                *requestsForNickname = (*requestsForNickname).remove!(SwapStrategy.unstable)(i);
             }
 
-            if (!plugin.state.triggerRequestQueue[event.target.nickname].length)
+            if (!requestsForNickname.length)
             {
                 // All requests were processed, flag for removal
                 garbageNicknames ~= event.target.nickname;
