@@ -3888,15 +3888,15 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +  replay the event.
  +
  +  Params:
- +      plugin = Current `IRCPlugin`.
- +      payload = Payload to attach to the `TriggerRequest`, generally an
- +          `dialect.defs.IRCEvent` to replay once the `WHOIS` results return.
+ +      plugin = Current `IRCPlugin` as a base class.
+ +      subPlugin = Subclass `IRCPlugin` to call the function pointer `fn` with
+ +          as first argument, when the WHOIS results return.
  +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
  +/
-void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event,
-    PrivilegeLevel privilegeLevel, F fn)
+void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
+    PrivilegeLevel privilegeLevel, Fn fn)
 {
     version(TwitchSupport)
     {
@@ -3918,20 +3918,35 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in doWhois (no nickname.length)");
 
-    static if (!is(Payload == typeof(null)))
-    {
-        plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(payload, event, privilegeLevel, fn);
-    }
-    else
+    static if (is(SubPlugin == typeof(null)))
     {
         plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(event, privilegeLevel, fn);
     }
+    else
+    {
+        plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(subPlugin, event, privilegeLevel, fn);
+    }
 }
 
-/// Ditto
-void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
+
+// doWhois
+/++
+ +  Construct and queue a `WHOIS` request in the local request queue.
+ +
+ +  The main loop will catch up on it and do the necessary `WHOIS` calls, then
+ +  replay the event.
+ +
+ +  Overload that does not take an `IRCPlugin` subclass parameter.
+ +
+ +  Params:
+ +      plugin = Current `IRCPlugin` as a base class.
+ +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
+ +      privilegeLevel = Privilege level to compare the user with.
+ +      fn = Function/delegate pointer to call when the results return.
+ +/
+void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilegeLevel, Fn fn)
 {
-    return doWhois!(F, typeof(null))(plugin, null, event, privilegeLevel, fn);
+    return doWhois(plugin, null, event, privilegeLevel, fn);
 }
 
 
