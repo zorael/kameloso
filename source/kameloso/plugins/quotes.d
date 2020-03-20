@@ -269,33 +269,39 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 }
 
 
-// addQuote
+// addQuoteAndReport
 /++
- +  Adds a quote for the specified user and saves the list to disk.
+ +  Adds a quote for the specified user and saves the list to disk. Reports
+ +  success to the channel in which the command took place, or user directly
+ +  if in a query.
  +
  +  Params:
  +      plugin = The current `QuotesPlugin`.
+ +      event = The instigating `dialect.defs.IRCEvent`.
  +      specified = The specified nickname or (preferably) account.
  +      line = The quote string to add.
  +/
-void addQuote(QuotesPlugin plugin, const string specified, const string line)
+void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
+    const string specified, const string line)
 in (specified.length, "Tried to add a quote for an empty user")
 in (line.length, "Tried to add an empty quote")
 {
+    import std.json : JSONException, JSONValue;
+
     try
     {
         import std.conv : text;
-        import std.json : JSONValue;
+        import std.format : format;
 
-        if (nickname in plugin.quotes)
+        if (specified in plugin.quotes)
         {
             // cannot modify const expression (*nickquotes).array
-            plugin.quotes[nickname].array ~= JSONValue(line);
+            plugin.quotes[specified].array ~= JSONValue(line);
         }
         else
         {
             // No previous quotes for nickname
-            plugin.quotes[nickname] = JSONValue([ line ]);
+            plugin.quotes[specified] = JSONValue([ line ]);
         }
 
         plugin.quotes.save(plugin.quotesFile);
@@ -303,9 +309,9 @@ in (line.length, "Tried to add an empty quote")
         enum pattern = "Quote for %s saved (%s on record)";
 
         immutable message = settings.colouredOutgoing ?
-            pattern.format(id.ircColourByHash.ircBold,
-                plugin.quotes[id].array.length.text.ircBold) :
-            pattern.format(id, plugin.quotes[id].array.length);
+            pattern.format(specified.ircColourByHash.ircBold,
+                plugin.quotes[specified].array.length.text.ircBold) :
+            pattern.format(specified, plugin.quotes[specified].array.length);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
