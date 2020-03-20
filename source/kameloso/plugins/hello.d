@@ -1,6 +1,6 @@
 module kameloso.plugins.hello;
 
-version(none):  // Remove to enable
+version(none):                              // Remove to enable
 
 import kameloso.plugins.common;
 import kameloso.messaging;
