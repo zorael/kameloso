@@ -759,7 +759,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     immutable now = Clock.currTime.toUnixTime;
 
-    foreach (immutable nickname, immutable nil; uniqueUsers)
+    foreach (immutable nickname; uniqueUsers.byKey)
     {
         plugin.updateUser(nickname, now);
     }
