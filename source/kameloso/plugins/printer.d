@@ -2640,16 +2640,15 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
  +  event.clearTargetNicknameIfUs(plugin.state.client.nickname);
  +  ---
  +/
-void clearTargetNicknameIfUs(ref IRCEvent event, const string nickname)
+void clearTargetNicknameIfUs(ref IRCEvent event, const ref IRCPluginState state)
 {
-    if (event.target.nickname == nickname)
+    if (event.target.nickname == state.client.nickname)
     {
         with (IRCEvent.Type)
         switch (event.type)
         {
         case MODE:
         case QUERY:
-        case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
         case RPL_WHOISUSER:
@@ -2662,14 +2661,27 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const string nickname)
         case RPL_WHOISREGNICK:
         case RPL_ENDOFWHOIS:
         case RPL_WELCOME:
-        case CLEARCHAT:
-        case CLEARMSG:
+
+        version(TwitchSupport)
+        {
+            case CLEARCHAT:
+            case CLEARMSG:
+            case TWITCH_BAN:
+            case TWITCH_GIFTCHAIN:
+            case TWITCH_GIFTRECEIVED:
+            case TWITCH_SUBGIFT:
+            case TWITCH_TIMEOUT:
+            case TWITCH_RAID:
+            case TWITCH_UNRAID:
+            case TWITCH_HOSTSTART:
+            case TWITCH_HOSTEND:
+        }
             // Keep bot's nickname as target for these event types.
             break;
 
         default:
             event.target.nickname = string.init;
-            break;
+            return;
         }
     }
 
