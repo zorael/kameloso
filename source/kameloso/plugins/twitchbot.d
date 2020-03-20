@@ -103,18 +103,11 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
         target = user.displayName;
     }
 
-    if (plugin.twitchBotSettings.permitOneLinkOnly)
-    {
-        chan(plugin.state, event.channel,
-            "@%s, you are now allowed to post a link for 60 seconds."
-            .format(target));
-    }
-    else
-    {
-        chan(plugin.state, event.channel,
-            "@%s, you are now allowed to post links for 60 seconds."
-            .format(target));
-    }
+    immutable pattern = plugin.twitchBotSettings.permitOneLinkOnly ?
+        "@%s, you are now allowed to post a link for 60 seconds." :
+        "@%s, you are now allowed to post links for 60 seconds.";
+
+    chan(plugin.state, event.channel, pattern.format(target));
 }
 
 
