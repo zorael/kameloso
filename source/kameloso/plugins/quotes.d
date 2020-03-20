@@ -329,6 +329,56 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 }
 
 
+// addQuote
+/++
+ +  Adds a quote for the specified user and saves the list to disk.
+ +
+ +  Params:
+ +      plugin = The current `QuotesPlugin`.
+ +      specified = The specified nickname or (preferably) account.
+ +      line = The quote string to add.
+ +/
+void addQuote(QuotesPlugin plugin, const string specified, const string line)
+in (specified.length, "Tried to add a quote for an empty user")
+in (line.length, "Tried to add an empty quote")
+{
+    try
+    {
+        import std.conv : text;
+
+        plugin.addQuote(specified, line);
+        plugin.quotes.save(plugin.quotesFile);
+
+        enum pattern = "Quote for %s saved (%s on record)";
+
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(id.ircColourByHash.ircBold,
+                plugin.quotes[id].array.length.text.ircBold) :
+            pattern.format(id, plugin.quotes[id].array.length);
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+    catch (JSONException e)
+    {
+        string logtint, errortint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                errortint = (cast(KamelosoLogger)logger).errortint;
+            }
+        }
+
+        logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
+            logtint, specified, errortint, e.msg);
+    }
+}
+
+
 // onCommandPrintQuotes
 /++
  +  Prints the in-memory quotes JSON storage to the local terminal.
