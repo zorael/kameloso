@@ -68,43 +68,6 @@ string getRandomQuote(QuotesPlugin plugin, const string nickname)
 }
 
 
-// addQuote
-/++
- +  Adds a quote to the in-memory JSON storage.
- +
- +  It does not save it to disk; this has to be done separately.
- +
- +  Example:
- +  ---
- +  string nickname = "kameloso";
- +  string line = "This is a line";
- +  plugin.addQuote(nickname, line);
- +  ---
- +
- +  Params:
- +      plugin = Current `QuotesPlugin`.
- +      nickname = Nickname of the quoted user.
- +      line = Quote to add.
- +/
-void addQuote(QuotesPlugin plugin, const string nickname, const string line)
-in (nickname.length, "Tried to add a quote for an empty nickname")
-in (line.length, "Tried to add an empty quote")
-{
-    import std.json : JSONValue;
-
-    if (nickname in plugin.quotes)
-    {
-        // cannot modify const expression (*nickquotes).array
-        plugin.quotes[nickname].array ~= JSONValue(line);
-    }
-    else
-    {
-        // No quotes for nickname
-        plugin.quotes[nickname] = JSONValue([ line ]);
-    }
-}
-
-
 // onCommandQuote
 /++
  +  Fetches and repeats a random quote of a supplied nickname.
