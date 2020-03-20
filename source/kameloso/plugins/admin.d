@@ -608,7 +608,7 @@ do
     {
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s [add|del]".format(list));
+            "Usage: %s [add|del|list]".format(list));
     }
 
     if (!event.content.length)
@@ -626,6 +626,11 @@ do
 
     case "del":
         return plugin.delist(slice, list, event);
+
+    case "list":
+        immutable channel = slice.length ? slice : event.channel;
+        if (!channel.length) return sendUsage();
+        return plugin.listList(channel, list, event);
 
     default:
         return sendUsage();
