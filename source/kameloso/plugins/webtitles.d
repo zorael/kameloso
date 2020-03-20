@@ -215,9 +215,6 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         setThreadName("webtitles");
     }
 
-    // This thread is short-lived so we can safely disable the GC.
-    GC.disable();
-
     if (delayMsecs > 0)
     {
         import core.thread : Thread;
