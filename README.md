@@ -194,15 +194,21 @@ kameloso | kameloso | I am a snek
 kameloso | Note added.
      you | !seen OfflinePerson
 kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago.
+     you | !opertor add bob
+kameloso | operatored BOB.
+     you | !whitelist alice
+kameloso | whitelisted Alice.
+     you | !blacklist steve
+kameloso | blacklisted steve.
      you | kameloso: sudo PRIVMSG #channel :this is a raw IRC command
 kameloso | this is a raw IRC command
-     you | https://www.youtube.com/watch?v=s-mOy8VUEBk
-kameloso | [youtube.com] Danish language (uploaded by snurre)
+     you | https://youtu.be/ykj3Kpm3O0g
+kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
 ```
 
 ### Online help and commands
 
-Send `help` to the bot in a private message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
+Use the `help` command for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
 
 The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
