@@ -362,7 +362,6 @@ struct SeenSettings
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
-@(IRCEvent.Type.SELFCHAN)
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.PART)
 @(PrivilegeLevel.ignore)
