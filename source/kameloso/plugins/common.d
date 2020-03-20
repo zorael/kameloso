@@ -3871,6 +3871,8 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
  +/
 void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn)
+in ((event != IRCEvent.init), "Tried to doWhois with an init IRCEvent")
+in ((fn !is null), "Tried to doWhois with a null funtion pointer")
 {
     version(TwitchSupport)
     {
@@ -3936,6 +3938,8 @@ void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, const PrivilegeLevel pr
  +      event = The `dialect.defs.IRCEvent` to replay.
  +/
 void queueToReplay(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
+in ((dg !is null), "Tried to queue a replay with a null delegate pointer")
+in ((event != IRCEvent.init), "Tried to queue a replay with an init IRCEvent")
 {
     import kameloso.thread : CarryingFiber;
     plugin.state.replays ~= Replay(new CarryingFiber!Replay(dg, 32768), event);
@@ -3983,6 +3987,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +      secs = Number of seconds to delay the `fiber`.
  +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
+in ((fiber !is null), "Tried to delay a null Fiber")
 {
     import lu.common : labeled;
     import std.datetime.systime : Clock;
@@ -4022,6 +4027,7 @@ void delayFiber(IRCPlugin plugin, const long secs)
  +      fiber = `core.thread.Fiber` to dequeue from being executed at a later point in time.
  +/
 void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
+in ((fiber !is null), "Tried to remove a delayed null Fiber")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
@@ -4080,6 +4086,8 @@ void removeDelayedFiber(IRCPlugin plugin)
  +          passed awaiting fiber.
  +/
 void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+in ((fiber !is null), "Tried to set up a null Fiber to await events")
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET")
 {
     plugin.state.awaitingFibers[type] ~= fiber;
 }
@@ -4102,6 +4110,7 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
  +          implicit awaiting fiber (in the current context).
  +/
 void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
 }
@@ -4125,9 +4134,11 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
  +          `dialect.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+in ((fiber !is null), "Tried to set up a null Fiber to await events")
 {
     foreach (immutable type; types)
     {
+        assert((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET");
         plugin.state.awaitingFibers[type] ~= fiber;
     }
 }
@@ -4154,6 +4165,7 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {
+        assert((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET");
         plugin.state.awaitingFibers[type] ~= Fiber.getThis;
     }
 }
@@ -4176,6 +4188,8 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
  +          passed awaiting fiber.
  +/
 void unlistFiberAwaitingEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+in ((fiber !is null), "Tried to unlist a null Fiber from awaiting events")
+in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting UNSET")
 {
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;

@@ -348,6 +348,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
  +      rawChannel = The channel to be added, potentially in unstripped, cased form.
  +/
 void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
+in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import dialect.common : isValidChannel;
     import lu.string : stripped;
@@ -484,6 +485,7 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
+in (rawChannel.length, "Tried to delete a home but the channel string was empty")
 {
     import lu.string : stripped;
     import std.algorithm.searching : countUntil;
@@ -689,6 +691,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
     const IRCEvent event = IRCEvent.init)
+in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+    list ~ " is not whitelist, operator nor blacklist")
 {
     import kameloso.common : settings;
     import dialect.common : isValidNickname;
@@ -889,6 +893,8 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const IRCEvent event = IRCEvent.init)
+in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+    list ~ " is not whitelist, operator nor blacklist")
 {
     import std.format : format;
 
@@ -1029,6 +1035,8 @@ enum AlterationResult
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account, const string channel)
+in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+    list ~ " is not whitelist, operator nor blacklist")
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage;

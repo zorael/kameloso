@@ -159,6 +159,9 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
  +/
 void applyAutomodes(AutomodePlugin plugin, const string channelName,
     const string nickname, const string account)
+in (channelName.length, "Tried to apply automodes to an empty channel string")
+in (nickname.length, "Tried to apply automodes to an empty nickname")
+in (account.length, "Tried to apply automodes to an empty account")
 {
     import std.algorithm.searching : canFind;
     import std.string : representation;

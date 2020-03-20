@@ -398,6 +398,8 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
  +      channel = Channel for which the notes were stored.
  +/
 void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
+in (nickname.length, "Tried to clear notes for an empty nickname")
+//in (channel.length, "Tried to clear notes with an empty channel string")
 {
     import std.file : FileException;
     import std.format : format;
@@ -489,6 +491,10 @@ void pruneNotes(NotesPlugin plugin)
  +/
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string channel, const string line)
+in (nickname.length, "Tried to add a note for an empty nickname")
+in (sender.length, "Tried to add a note from an empty sender")
+//in (channel.length, "Tried to add a note with an empty channel")
+in (line.length, "Tried to add an empty note")
 {
     import lu.string : encode64;
     import std.datetime.systime : Clock;

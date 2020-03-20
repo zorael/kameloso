@@ -87,6 +87,8 @@ string getRandomQuote(QuotesPlugin plugin, const string nickname)
  +      line = Quote to add.
  +/
 void addQuote(QuotesPlugin plugin, const string nickname, const string line)
+in (nickname.length, "Tried to add a quote for an empty nickname")
+in (line.length, "Tried to add an empty quote")
 {
     import std.json : JSONValue;
 

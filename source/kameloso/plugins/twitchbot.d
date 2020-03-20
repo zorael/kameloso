@@ -172,6 +172,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
  +      channelName = The name of the channel we're supposedly joining.
  +/
 void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.activeChannels) return;
 
@@ -327,6 +328,7 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
  +      targetChannel = The channel we're handling phrase bans for.
  +/
 void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+in (targetChannel.length, "Tried to handle phrases with an empty target channel string")
 {
     import lu.string : contains, nom;
     import std.format : format;
@@ -501,6 +503,7 @@ void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
  +      targetChannels = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
     import lu.string : contains, nom;
     import std.format : format;
@@ -832,6 +835,7 @@ void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
  +  Reports how long the recently ongoing, now ended broadcast lasted.
  +/
 void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
+in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 {
     import core.time : msecs;
     import std.datetime.systime : Clock, SysTime;
@@ -1381,6 +1385,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
  +      filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(Resource)(const Resource resource, const string filename)
+in (filename.length, "Tried to save resources to an empty filename")
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
@@ -1566,6 +1571,7 @@ struct TimerDefinition
  +      filename = Filename of the JSON file to read definitions from.
  +/
 void populateTimers(TwitchBotPlugin plugin, const string filename)
+in (filename.length, "Tried to populate timers from an empty filename")
 {
     import std.conv : to;
     import std.format : format;

@@ -209,6 +209,7 @@ void onEndOfMotd(OnelinersPlugin plugin)
  +      filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(const string[string][string] aa, const string filename)
+in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;

@@ -70,6 +70,7 @@ struct PipelineSettings
  +      filename = String filename of the FIFO to read from.
  +/
 void pipereader(shared IRCPluginState newState, const string filename)
+in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import std.file : FileException, exists, remove;
 
@@ -238,6 +239,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
  +      exists with the same name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
+in (filename.length, "Tried to create a FIFO with an empty filename")
 {
     import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
     import std.file : exists;

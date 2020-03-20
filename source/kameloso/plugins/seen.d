@@ -725,6 +725,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +      time = UNIX timestamp of when the user was seen.
  +/
 void updateUser(SeenPlugin plugin, const string signed, const long time)
+in (signed.length, "Tried to update a user with an empty (signed) nickname")
 {
     import dialect.common : stripModesign;
 
@@ -843,6 +844,7 @@ long[string] loadSeen(const string filename)
  +      filename = Filename of the file to write to.
  +/
 void saveSeen(const long[string] seenUsers, const string filename)
+in (filename.length, "Tried to save seen users to an empty filename")
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
