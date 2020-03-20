@@ -111,40 +111,6 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onUserState
-/++
- +  On `IRCEvent.Type.USERSTATE` events, manually catch if we seem to be a moderator,
- +  and update the `TwitchBotPlugin.state.channels` associative array to add us
- +  as an operator if so.
- +
- +  We can use this later to speed up messages, as moderators and broadcasters
- +  aren't as rate-limited as normal users are.
- +
- +  Sadly we receives one of these every time we send a message. So this is a hotspot.
- +/
-@(IRCEvent.Type.USERSTATE)
-@(PrivilegeLevel.ignore) // Sender is server
-@(ChannelPolicy.home)
-void onUserState(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import lu.string : contains;
-
-    // We're implicitly moderator if we match the channel name, so exempt that case
-
-    if ((event.channel[1..$] != plugin.state.client.nickname) &&
-        event.target.badges.contains("mode"/*rator*/))
-    {
-        import std.algorithm.searching : canFind;
-        auto channel = event.channel in plugin.state.channels;
-
-        if (!(*channel).ops.canFind(plugin.state.client.nickname))
-        {
-            channel.ops ~= plugin.state.client.nickname;
-        }
-    }
-}
-
-
 // onImportant
 /++
  +  Bells on any important event, like subscriptions, cheers and raids, if the
