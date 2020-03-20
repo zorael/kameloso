@@ -714,7 +714,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +  Example:
  +  ---
  +  string potentiallySignedNickname = "@kameloso";
- +  const now = Clock.currTime;
+ +  long now = Clock.currTime.toUnixTime;
  +  plugin.updateUser(potentiallySignedNickname, now);
  +  ---
  +
