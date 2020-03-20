@@ -633,6 +633,43 @@ do
 }
 
 
+// listList
+/++
+ +  Sends a list of the current users in the whitelist, operator list or the
+ +  blacklist to the querying user or channel.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      channel = The channel the list relates to.
+ +      list = Which list to list; "whitelist", "operator" or "blacklist".
+ +      event = Optional `dialect.defs.IRCEvent` that instigated the listing.
+ +/
+void listList(AdminPlugin plugin, const string channel, const string list,
+    const IRCEvent event = IRCEvent.init)
+in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+    list ~ " is not whitelist, operator nor blacklist")
+{
+    import lu.json : JSONStorage;
+    import std.format : format;
+
+    JSONStorage json;
+    json.reset();
+    json.load(plugin.userFile);
+
+    if (channel in json[list].object)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Current %sed users in %s: %-(%s, %)"
+            .format(list, channel, json[list][channel].array));
+    }
+    else
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "There are no %sed users in %s.".format(list, channel));
+    }
+}
+
+
 // lookupEnlist
 /++
  +  Adds an account to either the whitelist, operator list or the blacklist.
