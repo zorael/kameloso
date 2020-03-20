@@ -297,7 +297,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     "$command [add|del|list] [channel]")
 void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.string : nom;
+    import lu.string : nom, strippedRight;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
@@ -311,7 +311,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
         return sendUsage();
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.strippedRight;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
 
     switch (verb)
