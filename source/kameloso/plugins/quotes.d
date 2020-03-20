@@ -141,7 +141,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             {
                 // There is trailing text, assume it was a quote to be added
                 // and the user mistook quote for addquote.
-                return plugin.addQuote(endAccount, slice);
+                return plugin.addQuoteAndReport(event, endAccount, slice);
             }
 
             immutable quote = plugin.getRandomQuote(endAccount);
@@ -246,7 +246,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     void onSuccess(const string id)
     {
-        plugin.addQuote(id, slice);
+        plugin.addQuoteAndReport(event, id, slice);
     }
 
     void onFailure(const IRCUser failureUser)
