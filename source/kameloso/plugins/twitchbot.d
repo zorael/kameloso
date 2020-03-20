@@ -1679,6 +1679,46 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 }
 
 
+import kameloso.thread : Sendable;
+
+// onBusMessage
+/++
+ +  Catches bus messages with a "`home (add|del)`" header requesting to add or
+ +  remove home channels.
+ +
+ +  This is to allow for homes to be added on the fly without leaving them first.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
+ +/
+void onBusMessage(TwitchBotPlugin plugin, const string header, shared Sendable content)
+{
+    import kameloso.thread : BusMessage;
+
+    if ((header != "home add") || (header != "home del")) return;
+
+    auto message = cast(BusMessage!string)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    immutable channel = message.payload;
+
+    switch (header)
+    {
+    case "home add":
+        return plugin.handleSelfjoin(channel);
+
+    case "home del":
+        plugin.activeChannels.remove(channel);
+        break;
+
+    default:
+        assert(0, "Unexpected Twitch bot bus message header: " ~ header);
+    }
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
