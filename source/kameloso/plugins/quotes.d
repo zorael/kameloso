@@ -130,7 +130,8 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     import std.json : JSONException;
 
     // stripModesign to allow for quotes from @nickname and +dudebro
-    immutable signed = event.content.stripped;
+    string slice = event.content.stripped;
+    immutable signed = slice.nom!(Yes.inherit)(' ');
     string specified;
 
     version(TwitchSupport)
@@ -172,6 +173,14 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         void onSuccess(const IRCUser replyUser)
         {
             immutable endAccount = replyUser.account.length ? replyUser.account : replyUser.nickname;
+
+            if (slice.length)
+            {
+                // There is trailing text, assume it was a quote to be added
+                // and the user mistook quote for addquote.
+                return plugin.addQuote(endAccount, slice);
+            }
+
             immutable quote = plugin.getRandomQuote(endAccount);
 
             if (quote.length)
