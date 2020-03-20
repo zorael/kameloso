@@ -601,30 +601,33 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         `query` message.
      +/
 
+    immutable requestedUser = event.content;
+
     with (plugin)
     {
-        if (!event.content.length)
+        if (!requestedUser.length)
         {
-            // No nickname supplied...
+            immutable message = "Usage: " ~ settings.prefix ~ event.aux ~ " [nickname]";
+            privmsg(event.channel, event.sender.nickname, message);
             return;
         }
-        else if (!event.content.isValidNickname(plugin.state.server))
+        else if (!requestedUser.isValidNickname(plugin.state.server))
         {
-            // Nickname contained a space
+            // Nickname contained a space or other invalid character
             immutable message = settings.colouredOutgoing ?
-                "Invalid user: " ~ event.content.ircBold :
-                "Invalid user: " ~ event.content;
+                "Invalid user: " ~ requestedUser.ircBold :
+                "Invalid user: " ~ requestedUser;
 
             privmsg(event.channel, event.sender.nickname, message);
             return;
         }
-        else if (state.client.nickname == event.content)
+        else if (requestedUser == state.client.nickname)
         {
             // The requested nick is the bot's.
             privmsg(event.channel, event.sender.nickname, "T-that's me though...");
             return;
         }
-        else if (event.sender.nickname == event.content)
+        else if (requestedUser == event.sender.nickname)
         {
             // The person is asking for seen information about him-/herself.
             privmsg(event.channel, event.sender.nickname, "That's you!");
@@ -633,14 +636,14 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
         foreach (const channel; state.channels)
         {
-            if (event.content in channel.users)
+            if (requestedUser in channel.users)
             {
-                immutable line = event.channel.length && (channel.name == event.channel) ?
+                immutable line = (event.channel.length && (event.channel == channel.name)) ?
                     " is here right now!" : " is online right now.";
 
                 immutable message = settings.colouredOutgoing ?
-                    event.content.ircColourByHash.ircBold ~ line :
-                    event.content ~ line;
+                    requestedUser.ircColourByHash.ircBold ~ line :
+                    requestedUser ~ line;
 
                 privmsg(event.channel, event.sender.nickname, message);
                 return;
@@ -649,31 +652,30 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
         // No matches
 
-        const userTimestamp = event.content in seenUsers;
+        if (const userTimestamp = requestedUser in seenUsers)
+        {
+            enum pattern =  "I last saw %s %s ago.";
 
-        if (!userTimestamp)
+            const timestamp = SysTime.fromUnixTime(*userTimestamp);
+            immutable elapsed = timeSince(Clock.currTime - timestamp);
+
+            immutable message = settings.colouredOutgoing ?
+                pattern.format(requestedUser.ircColourByHash.ircBold, elapsed) :
+                pattern.format(requestedUser, elapsed);
+
+            privmsg(event.channel, event.sender.nickname, message);
+        }
+        else
         {
             enum pattern = "I have never seen %s.";
 
             // No matches for nickname `event.content` in `plugin.seenUsers`.
             immutable message = settings.colouredOutgoing ?
-                pattern.format(event.content.ircColourByHash.ircBold) :
-                pattern.format(event.content);
+                pattern.format(requestedUser.ircColourByHash.ircBold) :
+                pattern.format(requestedUser);
 
             privmsg(event.channel, event.sender.nickname, message);
-            return;
         }
-
-        enum pattern =  "I last saw %s %s ago.";
-
-        const timestamp = SysTime.fromUnixTime(*userTimestamp);
-        immutable elapsed = timeSince(Clock.currTime - timestamp);
-
-        immutable message = settings.colouredOutgoing ?
-            pattern.format(event.content.ircColourByHash.ircBold, elapsed) :
-            pattern.format(event.content, elapsed);
-
-        privmsg(event.channel, event.sender.nickname, message);
     }
 }
 
