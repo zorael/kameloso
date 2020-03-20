@@ -102,16 +102,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
 
         if (!numBlock.length)
         {
-            string message;
-
-            if (colouredOutgoing)
-            {
-                message = "No such bash.org quote: " ~ event.content.ircBold;
-            }
-            else
-            {
-                message = "No such bash.org quote: " ~ event.content;
-            }
+            immutable message = colouredOutgoing ?
+                "No such bash.org quote: " ~ event.content.ircBold :
+                "No such bash.org quote: " ~ event.content;
 
             privmsg(state, event.channel, event.sender.nickname, message);
             return;
