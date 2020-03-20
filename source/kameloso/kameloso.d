@@ -649,9 +649,9 @@ Next mainLoop(ref Kameloso instance)
             }
         }
 
-        // Once every 24h (24*3600s), clear the `previousWhoisTimestamps` AA.
+        // Once every 24h, clear the `previousWhoisTimestamps` AA.
         // That should be enough to stop it from being a memory leak.
-        if ((nowInUnix % 86_400) == 0)
+        if ((nowInUnix % 24*3600) == 0)
         {
             instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
         }
@@ -767,7 +767,7 @@ Next mainLoop(ref Kameloso instance)
                     }
                 }
 
-                event.time = Clock.currTime.toUnixTime;
+                event.time = nowInUnix;
 
                 foreach (plugin; instance.plugins)
                 {
