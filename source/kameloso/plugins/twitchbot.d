@@ -882,6 +882,12 @@ do
 
     auto channel = event.channel in plugin.activeChannels;
 
+    if (event.content == "abort")
+    {
+        // "!vote abort" command instead of "!abortvote"
+        return plugin.onCommandAbortVote(event);
+    }
+
     if (channel.voteInstance > 0)
     {
         chan(plugin.state, event.channel, "A vote is already in progress!");

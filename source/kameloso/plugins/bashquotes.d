@@ -85,9 +85,6 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
         setThreadName("bashquotes");
     }
 
-    // This thread is short-lived so we can safely disable the GC.
-    GC.disable();
-
     auto state = cast()sState;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :
