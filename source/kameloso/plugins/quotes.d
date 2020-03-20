@@ -125,7 +125,7 @@ in (line.length, "Tried to add an empty quote")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign;
-    import lu.string : stripped;
+    import lu.string : nom, stripped;
     import std.format : format;
     import std.json : JSONException;
 
