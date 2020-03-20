@@ -322,8 +322,19 @@ in (line.length, "Tried to add an empty quote")
     try
     {
         import std.conv : text;
+        import std.json : JSONValue;
 
-        plugin.addQuote(specified, line);
+        if (nickname in plugin.quotes)
+        {
+            // cannot modify const expression (*nickquotes).array
+            plugin.quotes[nickname].array ~= JSONValue(line);
+        }
+        else
+        {
+            // No previous quotes for nickname
+            plugin.quotes[nickname] = JSONValue([ line ]);
+        }
+
         plugin.quotes.save(plugin.quotesFile);
 
         enum pattern = "Quote for %s saved (%s on record)";
