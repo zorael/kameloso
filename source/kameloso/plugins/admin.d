@@ -420,14 +420,13 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
         {
         case SELFJOIN:
             // Success!
-            /*plugin.state.bot.homes ~= followupChannel;
-            plugin.state.botUpdated = true;*/
+            // return so as to not drop down and undo the addition below.
             return;
 
         case ERR_LINKCHANNEL:
             // We were redirected. Still assume we wanted to add this one?
-            logger.log("Redirected!");
-            plugin.state.bot.homes ~= followupEvent.content.toLower;
+            logger.info("Redirected!");
+            plugin.state.bot.homes ~= followupEvent.content.toLower;  // note: content
             // Drop down and undo original addition
             break;
 
@@ -441,6 +440,7 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
         import std.algorithm.searching : countUntil;
 
         immutable homeIndex = plugin.state.bot.homes.countUntil(followupEvent.channel);
+
         if (homeIndex != -1)
         {
             plugin.state.bot.homes = plugin.state.bot.homes
