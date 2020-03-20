@@ -413,6 +413,8 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
             return dg();
         }
 
+        scope(exit) plugin.unlistFiberAwaitingEvents(thisFiber, joinTypes);
+
         with (IRCEvent.Type)
         switch (followupEvent.type)
         {
@@ -449,8 +451,6 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
         {
             logger.error("Tried to remove non-existent home channel.");
         }
-
-        plugin.unlistFiberAwaitingEvents(thisFiber, joinTypes);
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
