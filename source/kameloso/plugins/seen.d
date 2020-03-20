@@ -476,19 +476,15 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 
     immutable now = Clock.currTime.toUnixTime;
 
-    foreach (const signed; event.content.splitter(" "))
+    foreach (immutable entry; event.content.splitter(" "))
     {
         import dialect.common : stripModesign;
-        import lu.string : contains, nom;
+        import lu.string : nom;
+        import std.typecons : Flag, No, Yes;
 
-        string nickname = signed;
-
-        if (nickname.contains('!'))
-        {
-            // SpotChat-like, signed is in full nick!ident@address form
-            nickname = nickname.nom('!');
-        }
-
+        string slice = entry;  // mutable
+        slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
+        immutable nickname = plugin.state.server.stripModesign(slice);
         plugin.updateUser(nickname, now);
     }
 }
