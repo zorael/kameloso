@@ -351,7 +351,7 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 {
     import dialect.common : isValidChannel;
     import lu.string : stripped;
-    import std.algorithm.searching : canFind;
+    import std.algorithm.searching : canFind, countUntil;
     import std.uni : toLower;
 
     immutable channel = rawChannel.stripped.toLower;
@@ -372,8 +372,27 @@ void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
     // ChannelAwareness to pick up the SELFJOIN.
     plugin.state.bot.homes ~= channel;
     plugin.state.botUpdated = true;
-    join(plugin.state, channel);
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
+
+    immutable existingChannelIndex = plugin.state.bot.channels.countUntil(channel);
+
+    if (existingChannelIndex != -1)
+    {
+        import kameloso.thread : ThreadMessage, busMessage;
+        import std.algorithm.mutation : SwapStrategy, remove;
+
+        // We're converting a normal channel into a home. Let other plugins know
+        // (as there is no SELFJOIN trigger).
+        logger.log("We're already in this channel. Converting it in-place to a home.");
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(), "home add", busMessage(channel));
+
+        // Make sure there are no duplicates between homes and channels.
+        plugin.state.bot.channels = plugin.state.bot.channels
+            .remove!(SwapStrategy.unstable)(existingChannelIndex);
+        return;
+    }
+
+    join(plugin.state, channel);
 
     // We have to follow up and see if we actually managed to join the channel
     // There are plenty ways for it to fail.
