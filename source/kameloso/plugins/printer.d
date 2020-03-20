@@ -2640,30 +2640,16 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
  +  event.clearTargetNicknameIfUs(plugin.state.client.nickname);
  +  ---
  +/
-void clearTargetNicknameIfUs(ref IRCEvent event, const ref IRCPluginState state)
+void clearTargetNicknameIfUs(ref IRCEvent event, const string nickname)
 {
-    version(TwitchSupport)
-    {
-        if (state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            /+
-                Twitch event type coverage is small, but it has some stuff
-                where we don't want to clear the target nick, such as
-                TWITCH_SUBGIFT. Instead of adding cases for all of these
-                (and potentially missing some), just blanket leave
-                everything on Twitch. The low coverage should make it safe.
-             +/
-            return;
-        }
-    }
-
-    if (event.target.nickname == state.client.nickname)
+    if (event.target.nickname == nickname)
     {
         with (IRCEvent.Type)
         switch (event.type)
         {
         case MODE:
         case QUERY:
+        case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
         case RPL_WHOISUSER:
@@ -2676,6 +2662,8 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const ref IRCPluginState state)
         case RPL_WHOISREGNICK:
         case RPL_ENDOFWHOIS:
         case RPL_WELCOME:
+        case CLEARCHAT:
+        case CLEARMSG:
             // Keep bot's nickname as target for these event types.
             break;
 
@@ -2684,7 +2672,8 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const ref IRCPluginState state)
             break;
         }
     }
-    else if (event.target.nickname == "*")
+
+    if (event.target.nickname == "*")
     {
         // Some events have an asterisk in what we consider the target nickname field. Sometimes.
         // [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
