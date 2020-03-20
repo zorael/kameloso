@@ -376,7 +376,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
         `dialect.defs.IRCEvent.Type.JOIN`, and `dialect.defs.IRCEvent.Type.PART`
         events. Furthermore, it will only trigger if it took place in a home channel.
      +/
-    plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
+    plugin.updateUser(event.sender.nickname, event.time);
 }
 
 
@@ -400,7 +400,7 @@ void onQuit(SeenPlugin plugin, const IRCEvent event)
 {
     if (event.sender.nickname in plugin.seenUsers)
     {
-        plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
+        plugin.updateUser(event.sender.nickname, event.time);
     }
 }
 
@@ -427,7 +427,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     if (event.sender.nickname in plugin.seenUsers)
     {
-        plugin.seenUsers[event.target.nickname] = Clock.currTime.toUnixTime;
+        plugin.seenUsers[event.target.nickname] = event.time;
         plugin.seenUsers.remove(event.sender.nickname);
     }
 }
@@ -448,7 +448,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
     // Update the user's entry
-    plugin.updateUser(event.target.nickname, Clock.currTime.toUnixTime);
+    plugin.updateUser(event.target.nickname, event.time);
 }
 
 
@@ -474,8 +474,6 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
         `SeenPlugin.seenUsers` associative array.
      +/
 
-    immutable now = Clock.currTime.toUnixTime;
-
     foreach (immutable entry; event.content.splitter(" "))
     {
         import dialect.common : stripModesign;
@@ -485,7 +483,7 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
         immutable nickname = plugin.state.server.stripModesign(slice);
-        plugin.updateUser(nickname, now);
+        plugin.updateUser(nickname, event.time);
     }
 }
 

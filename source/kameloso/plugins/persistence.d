@@ -151,8 +151,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             if (event.type == IRCEvent.Type.RPL_ENDOFWHOIS)
             {
                 // Record updated timestamp; this is the end of a WHOIS
-                import std.datetime.systime : Clock;
-                stored.updated = Clock.currTime.toUnixTime;
+                stored.updated = event.time;
             }
             else if (stored.account == "*")
             {

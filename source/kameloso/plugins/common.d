@@ -1055,14 +1055,12 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock, SysTime;
 
     immutable class_ = event.sender.class_;
 
     if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
 
-    immutable now = Clock.currTime.toUnixTime;
-    immutable timediff = (now - event.sender.updated);
+    immutable timediff = (event.time - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
     if (event.sender.account.length)
@@ -2687,12 +2685,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             {
                 import kameloso.constants : Timeout;
                 import std.algorithm.searching : canFind;
-                import std.datetime.systime : Clock;
 
-                immutable now = Clock.currTime.toUnixTime;
-                immutable then = request.when;
-
-                if ((now - then) > Timeout.whoisRetry)
+                if ((event.time - request.when) > Timeout.whoisRetry)
                 {
                     // Entry is too old, request timed out. Flag it for removal.
                     garbageIndexes ~= i;

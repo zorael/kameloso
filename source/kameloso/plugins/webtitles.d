@@ -230,6 +230,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         import std.datetime.systime : Clock;
         import std.typecons : No, Yes;
 
+        immutable now = Clock.currTime.toUnixTime;
+
         /// Calls the passed report function in the correct order with regards to Reddit-reporting.
         void reportDispatch(alias reportImpl)()
         {
@@ -283,7 +285,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
                     reportDispatch!reportYouTubeTitle();
 
-                    request.results.when = Clock.currTime.toUnixTime;
+                    request.results.when = now;
                     cache[request.url] = cast(shared)request.results;
                     return;
                 }
@@ -310,7 +312,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         {
             request.results = lookupTitle(request.url);
             reportDispatch!reportTitle();
-            request.results.when = Clock.currTime.toUnixTime;
+            request.results.when = now;
             cache[request.url] = cast(shared)request.results;
         }
 

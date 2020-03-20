@@ -69,7 +69,6 @@ struct TwitchBotSettings
 void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import lu.string : stripped;
-    import std.datetime.systime : Clock;
     import std.format : format;
     import std.uni : toLower;
 
@@ -84,10 +83,9 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (nickname[0] == '@') nickname = nickname[1..$];
 
-    immutable now = Clock.currTime.toUnixTime;
     auto channel = event.channel in plugin.activeChannels;
 
-    channel.linkPermits[nickname] = now;
+    channel.linkPermits[nickname] = event.time;
 
     if (nickname in channel.linkBans)
     {
@@ -773,8 +771,6 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the start of a broadcast.")
 void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import std.datetime.systime : Clock;
-
     auto channel = event.channel in plugin.activeChannels;
 
     if (channel.broadcastStart != 0L)
@@ -784,7 +780,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    channel.broadcastStart = Clock.currTime.toUnixTime;
+    channel.broadcastStart = event.time;
     chan(plugin.state, event.channel, "Broadcast start registered!");
 }
 
@@ -1127,7 +1123,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.common : findURLs, settings;
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock;
 
     if (!plugin.twitchBotSettings.filterURLs) return;
 
@@ -1145,7 +1140,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         if (const permitTimestamp = event.sender.nickname in
             plugin.activeChannels[event.channel].linkPermits)
         {
-            allowed = (Clock.currTime.toUnixTime - *permitTimestamp) <= 60;
+            allowed = (event.time - *permitTimestamp) <= 60;
 
             if (allowed && plugin.twitchBotSettings.permitOneLinkOnly)
             {
@@ -1176,8 +1171,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
             "Go cool off.",
         ];
 
-        immutable now = Clock.currTime.toUnixTime;
-
         auto channel = event.channel in plugin.activeChannels;
         auto ban = event.sender.nickname in channel.linkBans;
 
@@ -1187,9 +1180,9 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         {
             immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
 
-            if (banEndTime > now)
+            if (banEndTime > event.time)
             {
-                ban.timestamp = now;
+                ban.timestamp = event.time;
                 if (ban.offense < 2) ++ban.offense;
             }
             else
@@ -1202,7 +1195,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         if (!ban)
         {
             TwitchBotPlugin.Channel.Ban newBan;
-            newBan.timestamp = now;
+            newBan.timestamp = event.time;
             channel.linkBans[event.sender.nickname] = newBan;
             ban = event.sender.nickname in channel.linkBans;
         }
@@ -1289,9 +1282,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
     {
-        import std.datetime.systime : Clock;
-        immutable now = Clock.currTime.toUnixTime;
-
         foreach (immutable phrase; *bannedPhrases)
         {
             import lu.string : contains;
@@ -1318,9 +1308,9 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
                 {
                     immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
 
-                    if (banEndTime > now)
+                    if (banEndTime > event.time)
                     {
-                        ban.timestamp = now;
+                        ban.timestamp = event.time;
                         if (ban.offense < 2) ++ban.offense;
                     }
                     else
@@ -1333,7 +1323,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
                 if (!ban)
                 {
                     TwitchBotPlugin.Channel.Ban newBan;
-                    newBan.timestamp = now;
+                    newBan.timestamp = event.time;
                     channel.phraseBans[event.sender.nickname] = newBan;
                     ban = event.sender.nickname in channel.phraseBans;
                 }

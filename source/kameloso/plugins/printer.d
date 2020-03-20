@@ -132,17 +132,13 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
      +  Update the squelchstamp and return whether or not the current event
      +  should be squelched.
      +/
-    static bool updateSquelchstamp(PrinterPlugin plugin)
+    static bool updateSquelchstamp(PrinterPlugin plugin, const long time)
     {
-        import std.datetime.systime : Clock;
-
         if (plugin.squelchstamp == 0L) return false;
 
-        immutable now = Clock.currTime.toUnixTime;
-
-        if ((now - plugin.squelchstamp) <= plugin.squelchTimeout)
+        if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)
         {
-            plugin.squelchstamp = now;
+            plugin.squelchstamp = time;
             return true;
         }
 
@@ -281,7 +277,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ENDOFSPAMFILTERLIST:
     case ERR_CHANOPRIVSNEEDED:
     case RPL_AWAY:
-        immutable shouldSquelch = updateSquelchstamp(plugin);
+        immutable shouldSquelch = updateSquelchstamp(plugin, event.time);
         if (shouldSquelch) return;
         else
         {
@@ -291,7 +287,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     case RPL_TOPIC:
     case RPL_NOTOPIC:
-        immutable shouldSquelch = updateSquelchstamp(plugin);
+        immutable shouldSquelch = updateSquelchstamp(plugin, event.time);
         if (shouldSquelch) return;
         else
         {

@@ -374,15 +374,15 @@ unittest
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import lu.string : beginsWith, stripped;
-    import std.datetime.systime : Clock;
 
     immutable stripped_ = event.content.stripped;
 
-    static void recordLineAsLast(SedReplacePlugin plugin, const string sender, const string string_)
+    static void recordLineAsLast(SedReplacePlugin plugin, const string sender,
+        const string string_, const long time)
     {
         Line line;
         line.content = string_;
-        line.timestamp = Clock.currTime.toUnixTime;
+        line.timestamp = time;
         plugin.prevlines[sender] = line;
     }
 
@@ -401,7 +401,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case ';':
             if (const line = event.sender.nickname in plugin.prevlines)
             {
-                if ((Clock.currTime.toUnixTime - line.timestamp) > replaceTimeoutSeconds)
+                if ((event.time - line.timestamp) > replaceTimeoutSeconds)
                 {
                     // Entry is too old, remove it
                     plugin.prevlines.remove(event.sender.nickname);
@@ -418,7 +418,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 import std.format : format;
 
                 chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
-                recordLineAsLast(plugin, event.sender.nickname, result);
+                recordLineAsLast(plugin, event.sender.nickname, result, event.time);
             }
 
             // Processed a sed-replace command (successfully or not); return
@@ -433,7 +433,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
     // We're either here because !stripped_.beginsWith("s") *or* stripped_[1]
     // is not '/', '|' nor '#'
     // --> normal message, store as previous line
-    recordLineAsLast(plugin, event.sender.nickname, stripped_);
+    recordLineAsLast(plugin, event.sender.nickname, stripped_, event.time);
 }
 
 

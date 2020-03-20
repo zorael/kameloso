@@ -65,11 +65,12 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
             if (!noteArray.length) continue;
 
             immutable senderName = nameOf(event.sender);
+            immutable currTime = Clock.currTime;
 
             if (noteArray.length == 1)
             {
                 const note = noteArray[0];
-                immutable timestamp = (Clock.currTime - note.when).timeSince;
+                immutable timestamp = (currTime - note.when).timeSince;
 
                 enum pattern = "%s! %s left note %s ago: %s";
 
@@ -94,7 +95,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
                 foreach (const note; noteArray)
                 {
-                    immutable timestamp = (Clock.currTime - note.when)
+                    immutable timestamp = (currTime - note.when)
                         .timeSince!(Yes.abbreviate);
 
                     enum entryPattern = "%s %s ago: %s";
