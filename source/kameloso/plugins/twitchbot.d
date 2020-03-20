@@ -183,24 +183,43 @@ void onImportant(TwitchBotPlugin plugin)
  +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
  +  always a state struct available.
  +
- +  Creates the timer `core.thread.Fiber`s that there are definitions for in
- +  `TwitchBotPlugin.timerDefsByChannel`.
+ +  Simply passes on execution to `handleSelfjoin`.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
 void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (event.channel in plugin.activeChannels) return;
+    return plugin.handleSelfjoin(event.channel);
+}
 
-    plugin.activeChannels[event.channel] = TwitchBotPlugin.Channel.init;
-    auto channel = event.channel in plugin.activeChannels;
 
-    const timerDefs = event.channel in plugin.timerDefsByChannel;
-    if (!timerDefs || !(*timerDefs).length) return;
+// handleSelfjoin
+/++
+ +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
+ +  always a state struct available.
+ +
+ +  Creates the timer `core.thread.Fiber`s that there are definitions for in
+ +  `TwitchBotPlugin.timerDefsByChannel`.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      channelName = The name of the channel we're supposedly joining.
+ +/
+void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+{
+    if (channelName in plugin.activeChannels) return;
+
+    plugin.activeChannels[channelName] = TwitchBotPlugin.Channel.init;
+
+    // Apply the timer definitions we have stored
+    const timerDefs = channelName in plugin.timerDefsByChannel;
+    if (!timerDefs || !timerDefs.length) return;
+
+    auto channel = channelName in plugin.activeChannels;
 
     foreach (const timerDef; *timerDefs)
     {
-        channel.timers ~= plugin.createTimerFiber(timerDef, event.channel);
+        channel.timers ~= plugin.createTimerFiber(timerDef, channelName);
     }
 }
 
