@@ -274,39 +274,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     void onSuccess(const string id)
     {
-        try
-        {
-            import std.conv : text;
-
-            plugin.addQuote(id, slice);
-            plugin.quotes.save(plugin.quotesFile);
-
-            enum pattern = "Quote for %s saved (%s on record)";
-
-            immutable message = settings.colouredOutgoing ?
-                pattern.format(id.ircColourByHash.ircBold,
-                    plugin.quotes[id].array.length.text.ircBold) :
-                pattern.format(id, plugin.quotes[id].array.length);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-        catch (JSONException e)
-        {
-            string logtint, errortint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                    errortint = (cast(KamelosoLogger)logger).errortint;
-                }
-            }
-
-            logger.errorf("Could not add quote for %s%s%s: %1$s%4$s", logtint, id, errortint, e.msg);
-        }
+        plugin.addQuote(id, slice);
     }
 
     void onFailure(const IRCUser failureUser)
