@@ -703,6 +703,18 @@ Next mainLoop(ref Kameloso instance)
                 {
                     // Offending line included in event, in raw
                     printObject(event);
+
+                    if (event.sender != IRCUser.init)
+                    {
+                        logger.trace("sender:");
+                        printObject(event.sender);
+                    }
+
+                    if (event.target != IRCUser.init)
+                    {
+                        logger.trace("target:");
+                        printObject(event.target);
+                    }
                 }
             }
 
