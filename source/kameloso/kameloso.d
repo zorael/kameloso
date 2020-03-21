@@ -775,6 +775,12 @@ Next mainLoop(ref Kameloso instance)
                     {
                         plugin.postprocess(event);
                     }
+                    catch (UTFException e)
+                    {
+                        logger.warningf("UTFException %s.postprocess: %s%s",
+                            plugin.name, logtint, e.msg);
+                        version(PrintStacktraces) logger.trace(e.info);
+                    }
                     catch (Exception e)
                     {
                         logger.warningf("Exception %s.postprocess: %s%s",
