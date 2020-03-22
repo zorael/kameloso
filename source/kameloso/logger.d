@@ -203,7 +203,7 @@ final class KamelosoLogger : Logger
         }
 
         sink.put('[');
-        sink.put((cast(DateTime)timestamp).timeOfDay.toString());
+        (cast(DateTime)timestamp).timeOfDay.toString(sink);
         sink.put("] ");
 
         if (monochrome) return;
