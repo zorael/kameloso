@@ -347,7 +347,7 @@ if (isOutputRange!(Sink, char[]))
 
         static if (coloured)
         {
-            enum defaultColour = F.default_.colour;
+            enum defaultColour = F.default_.colour.idup;
             sink.put(defaultColour);
         }
 

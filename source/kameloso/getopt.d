@@ -62,9 +62,9 @@ void printHelp(GetoptResult results) @system
 
         if (!settings.monochrome)
         {
-            enum headertintColourBright = TerminalForeground.black.colour;
-            enum headertintColourDark = TerminalForeground.white.colour;
-            enum defaulttintColour = TerminalForeground.default_.colour;
+            enum headertintColourBright = TerminalForeground.black.colour.idup;
+            enum headertintColourDark = TerminalForeground.white.colour.idup;
+            enum defaulttintColour = TerminalForeground.default_.colour.idup;
             pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
         }
@@ -135,7 +135,7 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
             infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;
-            enum defaulttintColour = TerminalForeground.default_.colour;
+            enum defaulttintColour = TerminalForeground.default_.colour.idup;
             post = defaulttintColour;
         }
     }
@@ -191,9 +191,9 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
 
         if (!settings.monochrome)
         {
-            enum headertintColourBright = TerminalForeground.black.colour;
-            enum headertintColourDark = TerminalForeground.white.colour;
-            enum defaulttintColour = TerminalForeground.default_.colour;
+            enum headertintColourBright = TerminalForeground.black.colour.idup;
+            enum headertintColourDark = TerminalForeground.white.colour.idup;
+            enum defaulttintColour = TerminalForeground.default_.colour.idup;
             pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
         }

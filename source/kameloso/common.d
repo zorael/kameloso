@@ -705,7 +705,7 @@ void printVersionInfo(TerminalForeground colourCode) @system
 {
     import kameloso.terminal : colour;
 
-    enum fgDefault = TerminalForeground.default_.colour;
+    enum fgDefault = TerminalForeground.default_.colour.idup;
     return printVersionInfo(colourCode.colour, fgDefault);
 }
 

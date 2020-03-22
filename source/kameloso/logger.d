@@ -141,12 +141,12 @@ final class KamelosoLogger : Logger
         {
             if (brightTerminal)
             {
-                static immutable ctTintBright = tint(level, true).colour;
+                enum ctTintBright = tint(level, true).colour.idup;
                 return ctTintBright;
             }
             else
             {
-                static immutable ctTintDark = tint(level, false).colour;
+                enum ctTintDark = tint(level, false).colour.idup;
                 return ctTintDark;
             }
         }

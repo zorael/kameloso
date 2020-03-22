@@ -2333,9 +2333,9 @@ int initBot(string[] args)
             import kameloso.logger : KamelosoLogger;
             import kameloso.terminal : TerminalForeground, colour;
 
-            enum headertintColourBright = TerminalForeground.black.colour;
-            enum headertintColourDark = TerminalForeground.white.colour;
-            enum defaulttintColour = TerminalForeground.default_.colour;
+            enum headertintColourBright = TerminalForeground.black.colour.idup;
+            enum headertintColourDark = TerminalForeground.white.colour.idup;
+            enum defaulttintColour = TerminalForeground.default_.colour.idup;
             pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
 
