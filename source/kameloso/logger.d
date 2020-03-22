@@ -240,36 +240,36 @@ final class KamelosoLogger : Logger
         return logMsgPart(stdout.lockingTextWriter, msg);
     }
 
-    /// Outputs the tail of a logger message.
+    /++
+     +  Outputs the tail of a logger message.
+     +
+     +  Overload that takes an output range sink.
+     +/
+    version(Colours)
     protected void finishLogMsg(Sink)(auto ref Sink sink) const
     if (isOutputRange!(Sink, char[]))
     {
-        static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
-        version(Colours)
+        if (!monochrome)
         {
-            if (!monochrome)
-            {
-                // Reset.blink in case a fatal message was thrown
-                sink.colourWith(TerminalForeground.default_, TerminalReset.blink);
-            }
-        }
-
-        static if (__traits(hasMember, Sink, "data"))
-        {
-            writeln(sink.data);
-            sink.clear();
-        }
-        else
-        {
-            sink.put('\n');
+            // Reset.blink in case a fatal message was thrown
+            sink.colourWith(TerminalForeground.default_, TerminalReset.blink);
         }
     }
 
-    /// ditto
+    /++
+     +  Outputs the tail of a logger message.
+     +
+     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
+     +  the other `finishLogMsg`.
+     +/
     override protected void finishLogMsg() @trusted const
     {
-        finishLogMsg(stdout.lockingTextWriter);
+        version(Colours)
+        {
+            finishLogMsg(stdout.lockingTextWriter);
+        }
+
+        stdout.lockingTextWriter.put('\n');
         if (flush) stdout.flush();
     }
 }
