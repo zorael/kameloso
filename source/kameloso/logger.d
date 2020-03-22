@@ -183,7 +183,11 @@ final class KamelosoLogger : Logger
      +/
     override void writeLogMsg(ref LogEntry payload) pure nothrow const @nogc {}
 
-    /// Outputs the head of a logger message.
+    /++
+     +  Outputs the header of a logger message.
+     +
+     +  Overload that takes an output range sink.
+     +/
     protected void beginLogMsg(Sink)(auto ref Sink sink,
         string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
@@ -214,7 +218,12 @@ final class KamelosoLogger : Logger
         }
     }
 
-    /// ditto
+    /++
+     +  Outputs the header of a logger message.
+     +
+     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
+     +  the other `beginLogMsg`.
+     +/
     override protected void beginLogMsg(string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
         Tid threadId, SysTime timestamp, Logger logger) @trusted const
@@ -223,7 +232,11 @@ final class KamelosoLogger : Logger
             prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
     }
 
-    /// Outputs the message part of a logger message; the content.
+    /++
+     +  Outputs the message part of a logger message; the content.
+     +
+     +  Overload that takes an output range sink.
+     +/
     protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
     if (isOutputRange!(Sink, char[]))
     {
@@ -232,7 +245,12 @@ final class KamelosoLogger : Logger
         sink.put(msg);
     }
 
-    /// ditto
+    /++
+     +  Outputs the message part of a logger message; the content.
+     +
+     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
+     +  the other `logMsgPart`.
+     +/
     override protected void logMsgPart(scope const(char)[] msg) @trusted const
     {
         if (!msg.length) return;
