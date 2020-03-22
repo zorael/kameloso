@@ -1244,6 +1244,7 @@ unittest
     Appender!string sink;
 
     IRCPluginState state;
+    state.server.daemon = IRCServer.Daemon.twitch;
     PrinterPlugin plugin = new PrinterPlugin(state);
 
     IRCEvent event;
