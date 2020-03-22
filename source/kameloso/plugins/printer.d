@@ -1027,7 +1027,8 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (sender.displayName.length)
+                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                        sender.displayName.length)
                     {
                         sink.put(sender.displayName);
                         putAlias = true;
@@ -1050,7 +1051,8 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (plugin.printerSettings.twitchBadges && sender.badges.length)
+                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                        plugin.printerSettings.twitchBadges && sender.badges.length)
                     {
                         with (IRCEvent.Type)
                         switch (type)
@@ -1088,7 +1090,8 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if (target.displayName.length)
+                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                    target.displayName.length)
                 {
                     .put(sink, target.displayName, ')');
                     putAlias = true;
@@ -1110,7 +1113,8 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if (plugin.printerSettings.twitchBadges && target.badges.length)
+                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                    plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     sink.put(" [");
                     if (plugin.printerSettings.abbreviatedBadges)
@@ -1435,7 +1439,8 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (sender.displayName.length)
+                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                        sender.displayName.length)
                     {
                         sink.put(sender.displayName);
                         putAlias = true;
@@ -1505,7 +1510,8 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if (target.displayName.length)
+                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                    target.displayName.length)
                 {
                     .put!(Yes.colours)(sink, target.displayName, FG.default_, ')');
                     putAlias = true;
