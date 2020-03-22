@@ -1001,11 +1001,6 @@ if (isOutputRange!(Sink, char[]))
     import std.format : formattedWrite;
     import std.uni : asLowerCase, asUpperCase;
 
-    immutable timestamp = (cast(DateTime)SysTime
-        .fromUnixTime(event.time))
-        .timeOfDay
-        .toString();
-
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
 
     bool shouldBell;
@@ -1180,7 +1175,14 @@ if (isOutputRange!(Sink, char[]))
 
         event.content = stripEffects(event.content);
 
-        .put(sink, '[', timestamp, "] [");
+        sink.put('[');
+
+        (cast(DateTime)SysTime
+            .fromUnixTime(event.time))
+            .timeOfDay
+            .toString(sink);
+
+        sink.put("] [");
 
         if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
         else sink.put(typestring.asLowerCase);
@@ -1343,11 +1345,6 @@ if (isOutputRange!(Sink, char[]))
 
     alias Bright = DefaultColours.EventPrintingBright;
     alias Dark = DefaultColours.EventPrintingDark;
-
-    immutable timestamp = (cast(DateTime)SysTime
-        .fromUnixTime(event.time))
-        .timeOfDay
-        .toString();
 
     immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
     immutable typestring = rawTypestring.withoutTypePrefix;
@@ -1660,8 +1657,14 @@ if (isOutputRange!(Sink, char[]))
             }
         }
 
-        .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp,
-            '[', timestamp, ']');
+        .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp, '[');
+
+        (cast(DateTime)SysTime
+            .fromUnixTime(event.time))
+            .timeOfDay
+            .toString(sink);
+
+        sink.put(']');
 
         import lu.string : beginsWith;
 
