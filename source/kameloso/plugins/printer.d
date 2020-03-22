@@ -1032,8 +1032,6 @@ if (isOutputRange!(Sink, char[]))
                         sink.put(sender.displayName);
                         putAlias = true;
 
-                        if (sender.class_ == IRCUser.Class.special) sink.put('*');
-
                         if ((sender.displayName != sender.nickname) &&
                             !sender.displayName.asLowerCase.equal(sender.nickname))
                         {
@@ -1046,8 +1044,9 @@ if (isOutputRange!(Sink, char[]))
                 {
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(sender.nickname);
-                    if (sender.class_ == IRCUser.Class.special) sink.put('*');
                 }
+
+                if (sender.class_ == IRCUser.Class.special) sink.put('*');
 
                 version(TwitchSupport)
                 {
@@ -1094,8 +1093,6 @@ if (isOutputRange!(Sink, char[]))
                     .put(sink, target.displayName, ')');
                     putAlias = true;
 
-                    if (target.class_ == IRCUser.Class.special) sink.put('*');
-
                     if ((target.displayName != target.nickname) &&
                         !target.displayName.asLowerCase.equal(target.nickname))
                     {
@@ -1107,8 +1104,9 @@ if (isOutputRange!(Sink, char[]))
             if (!putAlias)
             {
                 .put(sink, target.nickname, ')');
-                if (target.class_ == IRCUser.Class.special) sink.put('*');
             }
+
+            if (target.class_ == IRCUser.Class.special) sink.put('*');
 
             version(TwitchSupport)
             {
@@ -1442,11 +1440,6 @@ if (isOutputRange!(Sink, char[]))
                         sink.put(sender.displayName);
                         putAlias = true;
 
-                        if (sender.class_ == IRCUser.Class.special)
-                        {
-                            .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                        }
-
                         import std.algorithm.comparison : equal;
                         import std.uni : asLowerCase;
 
@@ -1464,11 +1457,11 @@ if (isOutputRange!(Sink, char[]))
                 {
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(sender.nickname);
+                }
 
-                    if (sender.class_ == IRCUser.Class.special)
-                    {
-                        .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                    }
+                if (sender.class_ == IRCUser.Class.special)
+                {
+                    .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
                 }
 
                 version(TwitchSupport)
@@ -1515,12 +1508,7 @@ if (isOutputRange!(Sink, char[]))
                 if (target.displayName.length)
                 {
                     .put!(Yes.colours)(sink, target.displayName, FG.default_, ')');
-
                     putAlias = true;
-                    if (target.class_ == IRCUser.Class.special)
-                    {
-                        .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                    }
 
                     import std.algorithm.comparison : equal;
                     import std.uni : asLowerCase;
@@ -1528,7 +1516,6 @@ if (isOutputRange!(Sink, char[]))
                     if ((target.displayName != target.nickname) &&
                         !target.displayName.asLowerCase.equal(target.nickname))
                     {
-                        //sink.colourWith(FG.default_);
                         sink.put(" <");
                         colourUserTruecolour(sink, event.target);
                         .put!(Yes.colours)(sink, target.nickname, FG.default_, '>');
@@ -1539,11 +1526,11 @@ if (isOutputRange!(Sink, char[]))
             if (!putAlias)
             {
                 .put!(Yes.colours)(sink, target.nickname, FG.default_, ')');
+            }
 
-                if (target.class_ == IRCUser.Class.special)
-                {
-                    .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                }
+            if (target.class_ == IRCUser.Class.special)
+            {
+                .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
             }
 
             version(TwitchSupport)
