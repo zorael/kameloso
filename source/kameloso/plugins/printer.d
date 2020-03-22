@@ -1473,7 +1473,8 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    if (plugin.printerSettings.twitchBadges && sender.badges.length)
+                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                        plugin.printerSettings.twitchBadges && sender.badges.length)
                     {
                         with (IRCEvent.Type)
                         switch (type)
@@ -1547,7 +1548,8 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if (plugin.printerSettings.twitchBadges && target.badges.length)
+                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                    plugin.printerSettings.twitchBadges && target.badges.length)
                 {
                     .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
                     if (plugin.printerSettings.abbreviatedBadges)
