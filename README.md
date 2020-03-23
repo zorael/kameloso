@@ -45,11 +45,13 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
 Minimal test:
 
 ```bash
-$ dub build
-$ ./kameloso --channels "#d,#freenode"
+$ dub run kameloso -- --channels "#d,#freenode"
 
 # alternatively
-$ dub run kameloso -- --channels "#d,#freenode"
+$ git clone https://github.com/zorael/kameloso.git
+$ cd kameloso
+$ dub build
+$ ./kameloso --channels "#d,#freenode"
 ```
 
 ---
