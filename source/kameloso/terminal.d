@@ -320,7 +320,7 @@ if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, C
 
         if (++numCodes > 1) sink.put(';');
 
-        if (__traits(compiles, lu.string.integerToAlpha))
+        static if (__traits(compiles, { import lu.string : integerToAlpha; }))
         {
             import lu.string : integerToAlpha;
 
