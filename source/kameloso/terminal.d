@@ -284,7 +284,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 }
 
 
-// colour
+// colourWith
 /++
  +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
  +  `TerminalFormat` and/or a `TerminalReset` and composes them into a format code token.
@@ -320,7 +320,17 @@ if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, C
 
         if (++numCodes > 1) sink.put(';');
 
-        sink.put((cast(uint)code).to!string);
+        if (__traits(compiles, lu.string.integerToAlpha))
+        {
+            import lu.string : integerToAlpha;
+
+            // Remove when we release a new version of lu
+            sink.integerToAlpha(cast(uint)code);
+        }
+        else
+        {
+            sink.put((cast(uint)code).to!string);
+        }
     }
 
     sink.put('m');
