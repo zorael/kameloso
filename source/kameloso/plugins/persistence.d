@@ -184,7 +184,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         {
             stored.class_ = IRCUser.Class.admin;
         }
-        else if (!event.channel.length || !service.state.bot.homes.canFind(event.channel))
+        else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
         {
             // Not a channel or not a home. Additionally not an admin nor us
             stored.class_ = IRCUser.Class.anyone;

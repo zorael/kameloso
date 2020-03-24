@@ -157,7 +157,7 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
 
-    if (!instance.bot.admins.length && !instance.bot.homes.length)
+    if (!instance.bot.admins.length && !instance.bot.homeChannels.length)
     {
         import kameloso.common : complainAboutIncompleteConfiguration;
         logger.log("Edit it and make sure it contains at least one of the following:");
@@ -257,8 +257,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     bool shouldShowSettings;
     bool shouldAppendToArrays;
 
-    string[] inputChannels;
-    string[] inputHomes;
+    string[] inputGuestChannels;
+    string[] inputHomeChannels;
     string[] inputAdmins;
 
     arraySep = ",";
@@ -306,9 +306,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             &inputAdmins,
             "H|homes",      "Home channels to operate in, comma-separated " ~
                             "(escape or enquote any octothorpe #s)",
-                            &inputHomes,
+                            &inputHomeChannels,
             "C|channels",   "Non-home channels to idle in, comma-separated (ditto)",
-                            &inputChannels,
+                            &inputGuestChannels,
             "a|append",     "Append input homes, channels and admins instead of overriding",
                             &shouldAppendToArrays,
             "hideOutgoing", "Hide outgoing messages",
@@ -362,14 +362,14 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
         {
-            if (inputHomes.length) bot.homes ~= inputHomes;
-            if (inputChannels.length) bot.channels ~= inputChannels;
+            if (inputHomeChannels.length) bot.homeChannels ~= inputHomeChannels;
+            if (inputGuestChannels.length) bot.guestChannels ~= inputGuestChannels;
             if (inputAdmins.length) bot.admins ~= inputAdmins;
         }
         else
         {
-            if (inputHomes.length) bot.homes = inputHomes;
-            if (inputChannels.length) bot.channels = inputChannels;
+            if (inputHomeChannels.length) bot.homeChannels = inputHomeChannels;
+            if (inputGuestChannels.length) bot.guestChannels = inputGuestChannels;
             if (inputAdmins.length) bot.admins = inputAdmins;
         }
 
@@ -380,14 +380,14 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         import std.array : array;
         import std.uni : toLower;
 
-        bot.channels = bot.channels
+        bot.guestChannels = bot.guestChannels
             .map!(channelName => channelName.stripped.toLower)
             .array
             .sort
             .uniq
             .array;
 
-        bot.homes = bot.homes
+        bot.homeChannels = bot.homeChannels
             .map!(channelName => channelName.stripped.toLower)
             .array
             .sort
@@ -397,17 +397,17 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         // Remove duplicate channels (where a home is also featured as a normal channel)
         size_t[] duplicates;
 
-        foreach (immutable channelName; bot.homes)
+        foreach (immutable channelName; bot.homeChannels)
         {
             import std.algorithm.searching : countUntil;
-            immutable chanIndex = bot.channels.countUntil(channelName);
+            immutable chanIndex = bot.guestChannels.countUntil(channelName);
             if (chanIndex != -1) duplicates ~= chanIndex;
         }
 
         foreach_reverse (immutable chanIndex; duplicates)
         {
             import std.algorithm.mutation : SwapStrategy, remove;
-            bot.channels = bot.channels.remove!(SwapStrategy.unstable)(chanIndex);
+            bot.guestChannels = bot.guestChannels.remove!(SwapStrategy.unstable)(chanIndex);
         }
 
         // Clear entries that are dashes

@@ -75,16 +75,16 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        immutable index = bot.channels.countUntil(event.channel);
+        immutable index = bot.guestChannels.countUntil(event.channel);
 
         if (index != -1)
         {
-            bot.channels = bot.channels.remove!(SwapStrategy.unstable)(index);
+            bot.guestChannels = bot.guestChannels.remove!(SwapStrategy.unstable)(index);
             botUpdated = true;
         }
         else
         {
-            immutable homeIndex = bot.homes.countUntil(event.channel);
+            immutable homeIndex = bot.homeChannels.countUntil(event.channel);
 
             if (homeIndex != -1)
             {
@@ -113,10 +113,10 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        if (!bot.homes.canFind(event.channel) && !bot.channels.canFind(event.channel))
+        if (!bot.homeChannels.canFind(event.channel) && !bot.guestChannels.canFind(event.channel))
         {
             // Track new channel in the channels array
-            bot.channels ~= event.channel;
+            bot.guestChannels ~= event.channel;
             botUpdated = true;
         }
     }
@@ -136,7 +136,7 @@ void joinChannels(ConnectService service)
 {
     with (service.state)
     {
-        if (!bot.homes.length && !bot.channels.length)
+        if (!bot.homeChannels.length && !bot.guestChannels.length)
         {
             logger.warning("No channels, no purpose ...");
             return;
@@ -162,17 +162,17 @@ void joinChannels(ConnectService service)
         import std.array : join;
         import std.range : walkLength;
 
-        auto homelist = bot.homes.sort().uniq;
-        auto chanlist = bot.channels.sort().uniq;
-        immutable numChans = homelist.walkLength() + chanlist.walkLength();
+        auto homelist = bot.homeChannels.sort.uniq;
+        auto guestlist = bot.guestChannels.sort.uniq;
+        immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
         logger.logf("Joining %s%d%s %s ...", infotint, numChans, logtint,
             numChans.plurality("channel", "channels"));
 
         // Join in two steps so homes don't get shoved away by the channels
         // FIXME: line should split if it reaches 512 characters
-        if (bot.homes.length) joinChannel(service.state, homelist.join(","), string.init, true);
-        if (bot.channels.length) joinChannel(service.state, chanlist.join(","), string.init, true);
+        if (bot.homeChannels.length) joinChannel(service.state, homelist.join(","), string.init, true);
+        if (bot.guestChannels.length) joinChannel(service.state, guestlist.join(","), string.init, true);
     }
 }
 

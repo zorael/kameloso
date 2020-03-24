@@ -893,7 +893,7 @@ Next mainLoop(ref Kameloso instance)
 
                         // Send faster in home channels. Assume we're a mod and won't be throttled.
                         // (There's no easy way to tell from here.)
-                        if (event.channel.length && instance.bot.homes.canFind(event.channel))
+                        if (event.channel.length && instance.bot.homeChannels.canFind(event.channel))
                         {
                             instance.throttleline(instance.fastbuffer, Yes.onlyIncrement, Yes.sendFaster);
                         }
@@ -2355,7 +2355,7 @@ int initBot(string[] args)
     // Print the current settings to show what's going on.
     printObjects(instance.parser.client, instance.bot, instance.parser.server);
 
-    if (!instance.bot.homes.length && !instance.bot.admins.length)
+    if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
         complainAboutMissingConfiguration(args[0]);
     }

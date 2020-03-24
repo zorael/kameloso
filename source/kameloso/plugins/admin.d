@@ -325,7 +325,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
     case "list":
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current homes: %-(%s, %)".format(plugin.state.bot.homes));
+            "Current homes: %-(%s, %)".format(plugin.state.bot.homeChannels));
         return;
 
     default:
@@ -363,7 +363,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         return;
     }
 
-    if (plugin.state.bot.homes.canFind(channel))
+    if (plugin.state.bot.homeChannels.canFind(channel))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "We are already in that home channel.");
         return;
@@ -371,11 +371,11 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     // We need to add it to the homes array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
-    plugin.state.bot.homes ~= channel;
+    plugin.state.bot.homeChannels ~= channel;
     plugin.state.botUpdated = true;
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
-    immutable existingChannelIndex = plugin.state.bot.channels.countUntil(channel);
+    immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channel);
 
     if (existingChannelIndex != -1)
     {
@@ -388,7 +388,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), "home add", busMessage(channel));
 
         // Make sure there are no duplicates between homes and channels.
-        plugin.state.bot.channels = plugin.state.bot.channels
+        plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(existingChannelIndex);
         return;
     }
@@ -446,7 +446,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         case ERR_LINKCHANNEL:
             // We were redirected. Still assume we wanted to add this one?
             logger.info("Redirected!");
-            plugin.state.bot.homes ~= followupEvent.content.toLower;  // note: content
+            plugin.state.bot.homeChannels ~= followupEvent.content.toLower;  // note: content
             // Drop down and undo original addition
             break;
 
@@ -459,11 +459,11 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        immutable homeIndex = plugin.state.bot.homes.countUntil(followupEvent.channel);
+        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(followupEvent.channel);
 
         if (homeIndex != -1)
         {
-            plugin.state.bot.homes = plugin.state.bot.homes
+            plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
                 .remove!(SwapStrategy.unstable)(homeIndex);
             plugin.state.botUpdated = true;
         }
@@ -493,7 +493,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     import std.uni : toLower;
 
     immutable channel = rawChannel.stripped.toLower;
-    immutable homeIndex = plugin.state.bot.homes.countUntil(channel);
+    immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channel);
 
     if (homeIndex == -1)
     {
@@ -509,7 +509,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
         return;
     }
 
-    plugin.state.bot.homes = plugin.state.bot.homes
+    plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
         .remove!(SwapStrategy.unstable)(homeIndex);
     plugin.state.botUpdated = true;
     part(plugin.state, channel);
