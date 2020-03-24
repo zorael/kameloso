@@ -791,7 +791,8 @@ private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const s
         case 3:
         ..
         case 5:
-            sink.put(TerminalToken.format ~ "[2" ~ TerminalFormatCode.to!string ~ "m");
+            enum tokenstring = TerminalToken.format ~ "[2" ~ TerminalFormatCode.to!string ~ "m";
+            sink.put(tokenstring);
             break;
 
         default:
