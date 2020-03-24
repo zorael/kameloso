@@ -392,6 +392,7 @@ TitleLookupResults lookupTitle(const string url)
     import kameloso.constants : BufferSize;
     import arsd.dom : Document;
     import std.array : Appender;
+    import std.conv : to;
 
     Request req;
     req.useStreaming = true;
@@ -408,15 +409,15 @@ TitleLookupResults lookupTitle(const string url)
     }
 
     Document doc = new Document;
-    Appender!(ubyte[]) sink;
+    Appender!dstring sink;
     sink.reserve(BufferSize.titleLookup);
 
     auto stream = res.receiveAsRange();
 
     foreach (const part; stream)
     {
-        sink.put(part);
-        doc.parseGarbage(cast(string)sink.data.idup);
+        sink.put((cast(char[])part).to!dstring);
+        doc.parseGarbage(sink.data.to!string);
         if (doc.title.length) break;
     }
 
