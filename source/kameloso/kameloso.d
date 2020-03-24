@@ -348,7 +348,7 @@ void messageFiber(ref Kameloso instance)
                 return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.special));
 
             case NICK:
-                line = "NICK %s".format(target.nickname);
+                line = "NICK " ~ target.nickname;
                 break;
 
             case PRIVMSG:
