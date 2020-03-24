@@ -320,12 +320,12 @@ if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, C
 
         if (++numCodes > 1) sink.put(';');
 
-        static if (__traits(compiles, { import lu.string : integerToAlphaInto; }))
+        static if (__traits(compiles, { import lu.string : toAlphaInto; }))
         {
-            import lu.string : integerToAlphaInto;
+            import lu.string : toAlphaInto;
 
             // Remove when we release a new version of lu
-            sink.integerToAlphaInto(cast(uint)code);
+            (cast(uint)code).toAlphaInto(sink);
         }
         else
         {
