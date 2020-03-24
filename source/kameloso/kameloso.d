@@ -316,6 +316,7 @@ void messageFiber(ref Kameloso instance)
             case JOIN:
                 if (aux.length)
                 {
+                    // Key, assume only one channel
                     line = channel ~ " " ~ aux;
                 }
                 else
@@ -331,8 +332,16 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case PART:
-                immutable reason = content.length ? " :" ~ content : string.init;
-                line = "PART %s%s".format(channel, reason);
+                if (content.length)
+                {
+                    // Reason given, assume only one channel
+                    line = "PART " ~ channel ~ " :" ~ content;
+                }
+                else
+                {
+                    prelude = "PART ";
+                    lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
+                }
                 break;
 
             case QUIT:
