@@ -1026,9 +1026,14 @@ void sendMessages(ref Kameloso instance, out bool readWasShortened)
 
     version(TwitchSupport)
     {
-        if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
-        else if (!instance.fastbuffer.empty) untilNext =
-            instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
+        if (!instance.priorityBuffer.empty)
+        {
+            untilNext = instance.throttleline(instance.priorityBuffer);
+        }
+        else if (!instance.fastbuffer.empty)
+        {
+            untilNext = instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
+        }
         else
         {
             untilNext = instance.throttleline(instance.outbuffer);
@@ -1036,7 +1041,10 @@ void sendMessages(ref Kameloso instance, out bool readWasShortened)
     }
     else
     {
-        if (!instance.priorityBuffer.empty) untilNext = instance.throttleline(instance.priorityBuffer);
+        if (!instance.priorityBuffer.empty)
+        {
+            untilNext = instance.throttleline(instance.priorityBuffer);
+        }
         else
         {
             untilNext = instance.throttleline(instance.outbuffer);
