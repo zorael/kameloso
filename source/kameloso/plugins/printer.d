@@ -945,6 +945,18 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(arg);
         }
+        else static if (is(T == bool))
+        {
+            sink.put(arg ? "true" : "false");
+        }
+        else static if ((is(T : int) &&
+            __traits(compiles, { import lu.string : toAlphaInto; })))
+        {
+            import lu.string : toAlphaInto;
+
+            // Remove when we release a new version of lu
+            arg.toAlphaInto(sink);
+        }
         else
         {
             sink.put(arg.to!string);
