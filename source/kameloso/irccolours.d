@@ -582,7 +582,18 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
         Appender!string sink;
         sink.reserve(8);
         sink.put("\033[");
-        sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
+
+        static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+        {
+            import lu.string : toAlphaInto;
+
+            // Remove when we release a new version of lu
+            (cast(uint)weechatForegroundMap[fgIndex]).toAlphaInto(sink);
+        }
+        else
+        {
+            sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
+        }
 
         if (hit[2].length)
         {
@@ -594,7 +605,18 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
             }
 
             sink.put(';');
-            sink.put((cast(ubyte)weechatBackgroundMap[bgIndex]).to!string);
+
+            static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+            {
+                import lu.string : toAlphaInto;
+
+                // Remove when we release a new version of lu
+                (cast(uint)weechatBackgroundMap[bgIndex]).toAlphaInto(sink);
+            }
+            else
+            {
+                sink.put((cast(ubyte)weechatBackgroundMap[bgIndex]).to!string);
+            }
         }
 
         sink.put('m');
