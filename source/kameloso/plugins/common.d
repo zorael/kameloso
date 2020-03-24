@@ -3201,6 +3201,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        if (event.channel in plugin.state.channels) return;
+
         plugin.state.channels[event.channel] = IRCChannel.init;
         plugin.state.channels[event.channel].name = event.channel;
     }
@@ -3254,7 +3256,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        plugin.state.channels[event.channel].users[event.sender.nickname] = true;
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
+        channel.users[event.sender.nickname] = true;
     }
 
 
@@ -3275,6 +3280,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
         auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
 
         if (event.sender.nickname !in channel.users)
         {
@@ -3356,10 +3362,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        if (auto channel = event.channel in plugin.state.channels)
-        {
-            channel.topic = event.content;
-        }
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
+        channel.topic = event.content;
     }
 
 
@@ -3373,10 +3379,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        if (auto channel = event.channel in plugin.state.channels)
-        {
-            channel.created = event.count;
-        }
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
+        channel.created = event.count;
     }
 
 
@@ -3397,16 +3403,16 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         {
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
-                // Twitch modes are unpredictable. Ignore and reply on badges instead.
+                // Twitch modes are unpredictable. Ignore and rely on badges instead.
                 return;
             }
         }
 
-        if (auto channel = event.channel in plugin.state.channels)
-        {
-            import dialect.common : setMode;
-            (*channel).setMode(event.aux, event.content, plugin.state.server);
-        }
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
+        import dialect.common : setMode;
+        (*channel).setMode(event.aux, event.content, plugin.state.server);
     }
 
 
@@ -3587,13 +3593,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import dialect.common : setMode;
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
 
-        if (auto channel = event.channel in plugin.state.channels)
-        {
-            // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-            (*channel).setMode(event.aux, event.content, plugin.state.server);
-        }
+        import dialect.common : setMode;
+        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        (*channel).setMode(event.aux, event.content, plugin.state.server);
     }
 }
 
