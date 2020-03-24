@@ -327,7 +327,7 @@ void messageFiber(ref Kameloso instance)
 
             case KICK:
                 immutable reason = content.length ? " :" ~ content : string.init;
-                line = "KICK %s%s".format(channel, reason);
+                line = "KICK %s %s%s".format(channel, target.nickname, reason);
                 break;
 
             case PART:
