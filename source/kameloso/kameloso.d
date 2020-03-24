@@ -892,8 +892,10 @@ Next mainLoop(ref Kameloso instance)
                     // rate-limit the account itself. This stops Twitch from
                     // giving spam warnings. We can easily tell whether it's a channel
                     // we're the broadcaster in, but no such luck with whether
-                    // we're a moderator.
+                    // we're a moderator. For now, just assume we're moderator
+                    // in all our home channels.
                     // FIXME: Revisit with a better solution that's broken out of throttleline.
+
                     import std.typecons : Flag, No, Yes;
 
                     version(TwitchSupport)
