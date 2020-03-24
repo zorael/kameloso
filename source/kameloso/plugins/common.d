@@ -3429,8 +3429,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         auto channel = event.channel in plugin.state.channels;
         if (!channel) return;
 
-        immutable nickname = event.target.nickname;
-
         // User awareness bits add the IRCUser
         if (event.aux.length)
         {
@@ -3445,7 +3443,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     import std.conv : to;
 
                     immutable modestring = (*modechar).to!string;
-                    (*channel).setMode(modestring, nickname, plugin.state.server);
+                    (*channel).setMode(modestring, event.target.nickname, plugin.state.server);
                 }
                 else
                 {
@@ -3454,10 +3452,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             }
         }
 
-        if (nickname == plugin.state.client.nickname) return;
+        if (event.target.nickname == plugin.state.client.nickname) return;
 
         // In case no mode was applied
-        channel.users[nickname] = true;
+        channel.users[event.target.nickname] = true;
     }
 
 
