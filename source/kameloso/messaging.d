@@ -83,20 +83,21 @@ do
     {
         if (state.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (channelName[1..$] == state.client.nickname)
+            import std.algorithm.searching : canFind;
+
+            if ((channelName[1..$] == state.client.nickname) ||
+                state.bot.homeChannels.canFind(channelName))
             {
-                // User is broadcaster
+                // User is broadcaster or we're in a home channel
                 event.aux = "fast";
             }
-            else if (auto channel = channelName in state.channels)
+            /*else if (auto channel = channelName in state.channels)
             {
-                import std.algorithm.searching : canFind;
-
                 if ((*channel).ops.canFind(state.client.nickname))
                 {
                     event.aux = "fast";
                 }
-            }
+            }*/
         }
     }
 
