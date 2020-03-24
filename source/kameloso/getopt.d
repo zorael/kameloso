@@ -334,6 +334,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             &settings.exitSummary,
             "force",        "Force connect (skips some sanity checks)",
                             &settings.force,
+            "flush",        "Flush screen output after each write to it. "
+                            ~"(Use this if the screen only occasionally updates.)",
+                            &settings.flush,
             "w|writeconfig","Write configuration to file",
                             &shouldWriteConfig,
             "save",         &shouldWriteConfig,
