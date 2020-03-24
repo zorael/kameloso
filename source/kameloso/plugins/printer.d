@@ -2666,10 +2666,7 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const ref IRCPluginState state)
             case TWITCH_GIFTRECEIVED:
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
-            case TWITCH_RAID:
-            case TWITCH_UNRAID:
             case TWITCH_HOSTSTART:
-            case TWITCH_HOSTEND:
         }
             // Keep bot's nickname as target for these event types.
             break;
