@@ -180,11 +180,19 @@ struct IRCBot
 
         /// List of homes, in a bot-like context.
         @CannotContainComments
-        string[] homes;
+        string[] homeChannels;
+
+        @Hidden
+        deprecated("Use `homeChannels` instead")
+        alias homes = homeChannels;
 
         /// Currently inhabited non-home channels.
         @CannotContainComments
-        string[] channels;
+        string[] guestChannels;
+
+        @Hidden
+        deprecated("Use `guestChannels` instead")
+        alias channels = guestChannels;
     }
 }
 
