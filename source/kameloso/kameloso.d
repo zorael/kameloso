@@ -935,14 +935,28 @@ Next mainLoop(ref Kameloso instance)
                 logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
                     logtint, e.haystack, warningtint, e.needle);
 
-                if (event != IRCEvent.init)
-                {
-                    printObject(event);
-                }
-                else
+                if (event == IRCEvent.init)
                 {
                     logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
                 }
+                else
+                {
+                    // Offending line included in event, in raw
+                    printObject(event);
+
+                    if (event.sender != IRCUser.init)
+                    {
+                        logger.trace("sender:");
+                        printObject(event.sender);
+                    }
+
+                    if (event.target != IRCUser.init)
+                    {
+                        logger.trace("target:");
+                        printObject(event.target);
+                    }
+                }
+
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
@@ -960,13 +974,26 @@ Next mainLoop(ref Kameloso instance)
                 logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
 
-                if (event != IRCEvent.init)
+                if (event == IRCEvent.init)
                 {
-                    printObject(event);
+                    logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
                 }
                 else
                 {
-                    logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
+                    // Offending line included in event, in raw
+                    printObject(event);
+
+                    if (event.sender != IRCUser.init)
+                    {
+                        logger.trace("sender:");
+                        printObject(event.sender);
+                    }
+
+                    if (event.target != IRCUser.init)
+                    {
+                        logger.trace("target:");
+                        printObject(event.target);
+                    }
                 }
 
                 version(PrintStacktraces) logger.trace(e.toString);
