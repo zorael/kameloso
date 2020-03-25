@@ -1654,7 +1654,7 @@ import kameloso.thread : Sendable;
  +  Catches bus messages with a "`home (add|del)`" header requesting to add or
  +  remove home channels.
  +
- +  This is to allow for homes to be added on the fly without leaving them first.
+ +  This is to allow for home channels to be added on the fly without leaving them first.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.

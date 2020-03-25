@@ -739,7 +739,7 @@ enum PrefixPolicy
 }
 
 
-/// Whether an annotated function should work in all channels or just in homes.
+/// Whether an annotated function should work in all channels or just in home channels.
 enum ChannelPolicy
 {
     /++

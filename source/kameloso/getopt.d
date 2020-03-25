@@ -304,12 +304,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             &bot.pass,
             "admins",       "Administrators' services accounts, comma-separated",
                             &inputAdmins,
-            "H|homes",      "Home channels to operate in, comma-separated " ~
+            "H|homeChannels","Home channels to operate in, comma-separated " ~
                             "(escape or enquote any octothorpe #s)",
                             &inputHomeChannels,
-            "C|channels",   "Non-home channels to idle in, comma-separated (ditto)",
+            "C|guestChannels","Non-home channels to idle in, comma-separated (ditto)",
                             &inputGuestChannels,
-            "a|append",     "Append input homes, channels and admins instead of overriding",
+            "a|append",     "Append input home channels, guest channels and " ~
+                            "admins instead of overriding",
                             &shouldAppendToArrays,
             "hideOutgoing", "Hide outgoing messages",
                             &settings.hideOutgoing,
@@ -334,8 +335,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             &settings.exitSummary,
             "force",        "Force connect (skips some sanity checks)",
                             &settings.force,
-            "flush",        "Flush screen output after each write to it. "
-                            ~"(Use this if the screen only occasionally updates.)",
+            "flush",        "Flush screen output after each write to it. " ~
+                            "(Use this if the screen only occasionally updates.)",
                             &settings.flush,
             "w|writeconfig","Write configuration to file",
                             &shouldWriteConfig,

@@ -178,7 +178,7 @@ struct IRCBot
         /// The nickname services accounts of *administrators*, in a bot-like context.
         string[] admins;
 
-        /// List of homes, in a bot-like context.
+        /// List of home channels, in a bot-like context.
         @CannotContainComments
         string[] homeChannels;
 
@@ -849,7 +849,7 @@ void writeToDisk(const string filename, const string configurationText,
 /++
  +  Displays an error on how to complete a minimal configuration file.
  +
- +  It assumes that the client's `admins` and `homes` are both empty.
+ +  It assumes that the client's `admins` and `homeChannels` are both empty.
  +
  +  Used in both `kameloso.getopt` and `kameloso.kameloso.kamelosoMain`,
  +  so place it here.
@@ -870,7 +870,7 @@ void complainAboutIncompleteConfiguration() @system
     }
 
     logger.logf("...one or more %sadmins%s who get administrative control over the bot.", infotint, logtint);
-    logger.logf("...one or more %shomes%s in which to operate.", infotint, logtint);
+    logger.logf("...one or more %shomeChannels%s in which to operate.", infotint, logtint);
 }
 
 

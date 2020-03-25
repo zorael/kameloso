@@ -125,8 +125,8 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
 // joinChannels
 /++
- +  Joins all channels listed as homes *and* channels in the arrays in
- +  `dialect.defs.IRCClient` of the current `ConnectService`'s
+ +  Joins all channels listed as home channels *and* guest channels in the arrays in
+ +  `kameoso.common.IRCBot` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Params:
@@ -169,7 +169,7 @@ void joinChannels(ConnectService service)
         logger.logf("Joining %s%d%s %s ...", infotint, numChans, logtint,
             numChans.plurality("channel", "channels"));
 
-        // Join in two steps so homes don't get shoved away by the channels
+        // Join in two steps so home channels don't get shoved away by guest channels
         // FIXME: line should split if it reaches 512 characters
         if (bot.homeChannels.length) joinChannel(service.state, homelist.join(","), string.init, true);
         if (bot.guestChannels.length) joinChannel(service.state, guestlist.join(","), string.init, true);

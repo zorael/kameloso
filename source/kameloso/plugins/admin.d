@@ -282,7 +282,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandHome
 /++
  +  Adds or removes channels to/from the list of currently active home channels, in the
- +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.common.IRCBot.homeChannels` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Merely passes on execution to `addHome` and `delHome`.
@@ -293,7 +293,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "home")
-@Description("Adds or removes a channel to/from the list of homes.",
+@Description("Adds or removes a channel to/from the list of home channels.",
     "$command [add|del|list] [channel]")
 void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 {
@@ -325,7 +325,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
     case "list":
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current homes: %-(%s, %)".format(plugin.state.bot.homeChannels));
+            "Current home channels: %-(%s, %)".format(plugin.state.bot.homeChannels));
         return;
 
     default:
@@ -337,7 +337,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 // addHome
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
@@ -369,7 +369,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         return;
     }
 
-    // We need to add it to the homes array so as to get ChannelPolicy.home
+    // We need to add it to the homeChannels array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
     plugin.state.bot.homeChannels ~= channel;
     plugin.state.botUpdated = true;
@@ -481,7 +481,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 // delHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `dialect.defs.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)

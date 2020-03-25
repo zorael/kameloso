@@ -16,8 +16,8 @@
 -- IRCBot
    string account                "kameloso"(8)
  string[] admins                ["zorael"](1)
- string[] homes                 ["#flerrp"](1)
- string[] channels              ["#d"](1)
+ string[] homeChannels          ["#flerrp"](1)
+ string[] guestChannels         ["#d"](1)
 
 -- IRCServer
    string address                "irc.freenode.net"(16)
