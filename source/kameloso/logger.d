@@ -94,6 +94,7 @@ final class KamelosoLogger : Logger
      +      A `kameloso.terminal.TerminalForeground` of the right colour. Use with
      +      `kameloso.terminal.colour` to get a string.
      +/
+    pragma(inline)
     version(Colours)
     static auto tint(const LogLevel level, const bool bright)
     {
@@ -134,6 +135,7 @@ final class KamelosoLogger : Logger
      +  Returns:
      +      A tint string.
      +/
+    pragma(inline)
     version(Colours)
     private string tintImpl(LogLevel level)() const @property
     {
@@ -188,6 +190,7 @@ final class KamelosoLogger : Logger
      +
      +  Overload that takes an output range sink.
      +/
+    pragma(inline)
     protected void beginLogMsg(Sink)(auto ref Sink sink,
         string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
@@ -237,6 +240,7 @@ final class KamelosoLogger : Logger
      +
      +  Overload that takes an output range sink.
      +/
+    pragma(inline)
     protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
     if (isOutputRange!(Sink, char[]))
     {
@@ -263,6 +267,7 @@ final class KamelosoLogger : Logger
      +
      +  Overload that takes an output range sink.
      +/
+    pragma(inline)
     version(Colours)
     protected void finishLogMsg(Sink)(auto ref Sink sink) const
     if (isOutputRange!(Sink, char[]))
