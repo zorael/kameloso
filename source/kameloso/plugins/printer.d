@@ -1227,7 +1227,22 @@ if (isOutputRange!(Sink, char[]))
             sink.put('}');
         }
 
-        if (num > 0) sink.formattedWrite(" (#%03d)", num);
+        if (num > 0)
+        {
+            static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+            {
+                import lu.string : toAlphaInto;
+
+                // Remove when we release a new version of lu
+                sink.put(" (#");
+                num.toAlphaInto!(3, 3)(sink);
+                sink.put(')');
+            }
+            else
+            {
+                sink.formattedWrite(" (#%03d)", num);
+            }
+        }
 
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
@@ -1738,7 +1753,20 @@ if (isOutputRange!(Sink, char[]))
         if (num > 0)
         {
             sink.colourWith(bright ? Bright.num : Dark.num);
-            sink.formattedWrite(" (#%03d)", num);
+
+            static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+            {
+                import lu.string : toAlphaInto;
+
+                // Remove when we release a new version of lu
+                sink.put(" (#");
+                num.toAlphaInto!(3, 3)(sink);
+                sink.put(')');
+            }
+            else
+            {
+                sink.formattedWrite(" (#%03d)", num);
+            }
         }
 
         if (errors.length && !plugin.printerSettings.silentErrors)
