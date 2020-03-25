@@ -1,14 +1,13 @@
 version: 2
 
-general:
-  branches:
-    ignore:
-      - gh-pages
-
 jobs:
   build:
     docker:
       - image: cimg/base:2020.01
+    branches:
+      ignore:
+        - gh-pages
+        - /appveyor-.*/
     steps:
       - checkout
       - run:
@@ -20,3 +19,8 @@ jobs:
       - store_artifacts:
           path: ./artifacts
 
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
