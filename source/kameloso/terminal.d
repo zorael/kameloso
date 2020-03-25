@@ -639,8 +639,6 @@ void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b, const bool bright = false)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.format : formattedWrite;
-
     // \033[
     // 38 foreground
     // 2 truecolour?
@@ -658,7 +656,25 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.format, r, g, b);
+    static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+    {
+        import lu.string : toAlphaInto;
+
+        // Remove when we release a new version of lu
+        sink.put(cast(char)TerminalToken.format);
+        sink.put("[38;2;");
+        r.toAlphaInto(sink);
+        sink.put(';');
+        g.toAlphaInto(sink);
+        sink.put(';');
+        b.toAlphaInto(sink);
+        sink.put('m');
+    }
+    else
+    {
+        import std.format : formattedWrite;
+        sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.format, r, g, b);
+    }
 }
 
 
