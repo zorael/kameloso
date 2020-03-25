@@ -23,6 +23,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - gh-pages
                 - /appveyor-.*/
                 - /travis-.*/
+                - gh-pages

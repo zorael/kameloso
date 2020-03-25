@@ -88,6 +88,7 @@ branches:
   except:
     - /circleci-.*/
     - /travis-.*/
+    - gh-pages
 
 artifacts:
   - path: kameloso.exe

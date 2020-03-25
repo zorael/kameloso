@@ -5,8 +5,9 @@ dist: bionic
 
 branches:
   except:
-    /appveyor-.*/
-    /circleci-.*/
+    - /appveyor-.*/
+    - /circleci-.*/
+    - gh-pages
 
 d:
   - dmd
