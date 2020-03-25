@@ -26,98 +26,81 @@ build() {
     mkdir -p artifacts
 
     ## test
-    time dub test $A || time dub test $A $S
+    time dub test $A $S
     A="$A --nodeps --force"
-    ##time dub test $A -c pluginless || time dub test $A $S -c pluginless
-    #time dub test $A -c colours || time dub test $A $S -c colours
-    time dub test $A -c vanilla || time dub test $A $S -c vanilla
+    #time dub test $A $S -c pluginless
+    #time dub test $A $S -c colours
+    time dub test $A $S -c vanilla
 
 
     ## debug
-    time dub build $A -b debug -c full || \
-        time dub build $A $S -b debug -c full
+    time dub build $A $S -b debug -c full
     mv kameloso artifacts/kameloso
 
-    time dub build $A -b debug -c dev || \
-        time dub build $A $S -b debug -c dev
+    time dub build $A $S -b debug -c dev
     mv kameloso artifacts/kameloso-dev
 
-    time dub build $A -b debug -c twitch || \
-        time dub build $A $S -b debug -c twitch
+    time dub build $A $S -b debug -c twitch
     mv kameloso artifacts/kameloso-twitch
 
-    #time dub build $A -b debug -c pluginless || \
-        time dub build $A $S -b debug -c pluginless
+    #time dub build $A $S -b debug -c pluginless
     #mv kameloso artifacts/kameloso-pluginless
 
-    time dub build $A -b debug -c colours || \
-        time dub build $A $S -b debug -c colours
+    time dub build $A $S -b debug -c colours
     mv kameloso artifacts/kameloso-colours
 
-    time dub build $A -b debug -c vanilla || \
-        time dub build $A $S -b debug -c vanilla
+    time dub build $A $S -b debug -c vanilla
     mv kameloso artifacts/kameloso-vanilla
 
 
     ## plain
-    time dub build $A -b plain -c full || \
-        time dub build $A $S -b plain -c full || true
+    time dub build $A $S -b plain -c full || true
     mv kameloso artifacts/kameloso-plain || \
         touch artifacts/kameloso-plain.failed
 
-    time dub build $A -b plain -c dev || \
-        time dub build $A $S -b plain -c dev || true
+    time dub build $A $S -b plain -c dev || true
     mv kameloso artifacts/kameloso-plain-dev || \
         touch artifacts/kameloso-plain-dev.failed
 
-    time dub build $A -b plain -c twitch || \
-        time dub build $A $S -b plain -c twitch || true
+    time dub build $A $S -b plain -c twitch || true
     mv kameloso artifacts/kameloso-plain-twitch || \
         touch artifacts/kameloso-plain-twitch.failed
 
-    ##time dub build $A -b plain -c pluginless || time dub build $A $S -b plain -c pluginless || true
+    #time dub build $A $S -b plain -c pluginless || true
     #mv kameloso artifacts/kameloso-plain-pluginless || \
         #touch artifacts/kameloso-plain-pluginless.failed
 
-    time dub build $A -b plain -c colours || \
-        time dub build $A $S -b plain -c colours || true
+    time dub build $A $S -b plain -c colours || true
     mv kameloso artifacts/kameloso-plain-colours || \
         touch artifacts/kameloso-plain-colours.failed
 
-    time dub build $A -b plain -c vanilla || \
-        time dub build $A $S -b plain -c vanilla || true
+    time dub build $A $S -b plain -c vanilla || true
     mv kameloso artifacts/kameloso-plain-vanilla || \
         touch artifacts/kameloso-plain-vanilla.failed
 
 
     ## release
-    time dub build $A -b release -c full || \
-        time dub build $A $S -b release -c full || true
+    time dub build $A $S -b release -c full || true
     mv kameloso artifacts/kameloso-release || \
         touch artifacts/kameloso-release.failed
 
-    time dub build $A -b release -c dev || \
-        time dub build $A $S -b release -c dev || true
+    time dub build $A $S -b release -c dev || true
     mv kameloso artifacts/kameloso-release-dev || \
         touch artifacts/kameloso-release-dev.failed
 
-    time dub build $A -b release -c twitch || \
-        time dub build $A $S -b release -c twitch || true
+    time dub build $A $S -b release -c twitch || true
     mv kameloso artifacts/kameloso-release-twitch || \
         touch artifacts/kameloso-release-twitch.failed
 
-    #time dub build $A -b release -c pluginless || \
-        time dub build $A $S -b release -c pluginless || true
+    #time dub build $A $S -b release -c pluginless || true
     #mv kameloso artifacts/kameloso-release-pluginless || \
         #touch artifacts/kameloso-release-pluginless.failed
 
-    time dub build $A -b release -c colours || \
-        time dub build $A $S -b release -c colours || true
+    time dub build $A $S -b release -c colours || true
     mv kameloso artifacts/kameloso-release-colours || \
         touch artifacts/kameloso-release-colours.failed
 
-    time dub build $A -b release -c vanilla || \
-        time dub build $A $S -b release -c vanilla || true
+    time dub build $A $S -b release -c vanilla || true
     mv kameloso artifacts/kameloso-release-vanilla || \
         touch artifacts/kameloso-release-vanilla.failed
 }
