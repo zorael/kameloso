@@ -85,10 +85,9 @@ environment:
 
 skip_tags: true
 branches:
-  only:
-    - master
-    - stable
-    - /appveyor-.+/
+  except:
+    - /circleci-.*/
+    - /travis-.*/
 
 artifacts:
   - path: kameloso.exe
