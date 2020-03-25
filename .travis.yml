@@ -39,7 +39,9 @@ deploy:
   skip_cleanup: true
   github_token: $GH_REPO_TOKEN
   on:
-    branch: master
+    branch:
+      - master
+      - /travis-.*/
     condition:
       - ${DC} = dmd
       - ${TRAVIS_OS_NAME} = linux
