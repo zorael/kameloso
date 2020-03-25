@@ -25,7 +25,8 @@ script:
   - dub build --compiler=${DC} --nodeps -b plain   -c vanilla || true
   - dub build --compiler=${DC} --nodeps -b release -c dev  || true
   - dub build --compiler=${DC} --nodeps -b release -c vanilla || true
-  - test ${DC} = ldc2 || dub build --compiler=${DC} --nodeps -b ddox -c pluginless-vanilla
+  - test ! -e ~/.dub/packages/ddox-0.16.13 || sed -i 's/^import std.conv;/public \0/' ~/.dub/packages/ddox-0.16.13/ddox/source/ddox/api.d
+  - test ! ${DC} = dmd -a ! ${TRAVIS_OS_NAME} = linux || dub build --compiler=${DC} --nodeps -b ddox -c pluginless-vanilla
 
 before_deploy:
   - cp -rv .circleci docs/
