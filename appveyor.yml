@@ -85,10 +85,10 @@ environment:
 
 skip_tags: true
 branches:
-  only:
-    - master
-    - stable
-    - /appveyor-.+/
+  except:
+    - /circleci-.*/
+    - /travis-.*/
+    - gh-pages
 
 artifacts:
   - path: kameloso.exe

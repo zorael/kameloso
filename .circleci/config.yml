@@ -1,10 +1,5 @@
 version: 2
 
-general:
-  branches:
-    ignore:
-      - gh-pages
-
 jobs:
   build:
     docker:
@@ -20,3 +15,14 @@ jobs:
       - store_artifacts:
           path: ./artifacts
 
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore:
+                - /appveyor-.*/
+                - /travis-.*/
+                - gh-pages
