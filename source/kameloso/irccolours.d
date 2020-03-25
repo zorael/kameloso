@@ -76,11 +76,33 @@ do
     assert((fg != IRCColour.unset), "Tried to IRC colour with an unset colour");
 
     sink.put(cast(char)IRCControlCharacter.colour);
-    sink.formattedWrite("%02d", fg);
+
+    static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+    {
+        import lu.string : toAlphaInto;
+
+        // Remove when we release a new version of lu
+        (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
+    }
+    else
+    {
+        sink.formattedWrite("%02d", fg);
+    }
 
     if (bg != IRCColour.unset)
     {
-        sink.formattedWrite(",%02d", bg);
+        static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+        {
+            import lu.string : toAlphaInto;
+
+            // Remove when we release a new version of lu
+            sink.put(',');
+            (cast(int)bg).toAlphaInto!(2, 2)(sink);
+        }
+        else
+        {
+            sink.formattedWrite(",%02d", bg);
+        }
     }
 
     sink.put(line);
