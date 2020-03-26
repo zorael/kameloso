@@ -320,9 +320,9 @@ if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, C
 
         if (++numCodes > 1) sink.put(';');
 
-        static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+        static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
         {
-            import lu.string : toAlphaInto;
+            import lu.conv : toAlphaInto;
 
             // Remove when we release a new version of lu
             (cast(uint)code).toAlphaInto(sink);
@@ -656,9 +656,9 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+    static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
     {
-        import lu.string : toAlphaInto;
+        import lu.conv : toAlphaInto;
 
         // Remove when we release a new version of lu
         sink.put(cast(char)TerminalToken.format);

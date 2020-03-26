@@ -77,9 +77,9 @@ do
 
     sink.put(cast(char)IRCControlCharacter.colour);
 
-    static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+    static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
     {
-        import lu.string : toAlphaInto;
+        import lu.conv : toAlphaInto;
 
         // Remove when we release a new version of lu
         (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
@@ -91,9 +91,9 @@ do
 
     if (bg != IRCColour.unset)
     {
-        static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+        static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
         {
-            import lu.string : toAlphaInto;
+            import lu.conv : toAlphaInto;
 
             // Remove when we release a new version of lu
             sink.put(',');
@@ -605,9 +605,9 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
         sink.reserve(8);
         sink.put("\033[");
 
-        static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+        static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
         {
-            import lu.string : toAlphaInto;
+            import lu.conv : toAlphaInto;
 
             // Remove when we release a new version of lu
             (cast(uint)weechatForegroundMap[fgIndex]).toAlphaInto(sink);
@@ -628,9 +628,9 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
 
             sink.put(';');
 
-            static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+            static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
             {
-                import lu.string : toAlphaInto;
+                import lu.conv : toAlphaInto;
 
                 // Remove when we release a new version of lu
                 (cast(uint)weechatBackgroundMap[bgIndex]).toAlphaInto(sink);

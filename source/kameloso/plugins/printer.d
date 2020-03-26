@@ -950,9 +950,9 @@ if (isOutputRange!(Sink, char[]))
             sink.put(arg ? "true" : "false");
         }
         else static if ((is(T : int) &&
-            __traits(compiles, { import lu.string : toAlphaInto; })))
+            __traits(compiles, { import lu.conv : toAlphaInto; })))
         {
-            import lu.string : toAlphaInto;
+            import lu.conv : toAlphaInto;
 
             // Remove when we release a new version of lu
             arg.toAlphaInto(sink);
@@ -1229,9 +1229,9 @@ if (isOutputRange!(Sink, char[]))
 
         if (num > 0)
         {
-            static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+            static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
             {
-                import lu.string : toAlphaInto;
+                import lu.conv : toAlphaInto;
 
                 // Remove when we release a new version of lu
                 sink.put(" (#");
@@ -1754,9 +1754,9 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.colourWith(bright ? Bright.num : Dark.num);
 
-            static if (__traits(compiles, { import lu.string : toAlphaInto; }))
+            static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
             {
-                import lu.string : toAlphaInto;
+                import lu.conv : toAlphaInto;
 
                 // Remove when we release a new version of lu
                 sink.put(" (#");
