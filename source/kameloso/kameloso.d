@@ -1152,7 +1152,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         import core.time : seconds;
 
         logger.warningf("Connection error! (%s%s%s)", logtint,
-            attempt.lastSocketError_, warningtint);
+            attempt.error, warningtint);
 
         // Sleep briefly so it won't flood the screen on chains of errors
         Thread.sleep(1.seconds);
@@ -1167,12 +1167,12 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         if (attempt.bytesReceived == 0)
         {
             logger.errorf("Connection error: empty server response! (%s%s%s)",
-                logtint, attempt.lastSocketError_, errortint);
+                logtint, attempt.error, errortint);
         }
         else
         {
             logger.errorf("Connection error: invalid server response! (%s%s%s)",
-                logtint, attempt.lastSocketError_, errortint);
+                logtint, attempt.error, errortint);
         }
 
         instance.conn.connected = false;
