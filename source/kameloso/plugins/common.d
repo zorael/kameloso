@@ -2765,11 +2765,6 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 version(WithPlugins)
 mixin template Replayer(bool debug_ = false)
 {
-    static assert((__traits(compiles, plugin) || __traits(compiles, service)),
-        "Replayer should be mixed into the context of an event handler. " ~
-        `(Could not access variables named neither "plugin" nor "service" from within ` ~
-        __FUNCTION__ ~ ")");
-
     import std.conv : text;
 
     private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
@@ -2787,7 +2782,9 @@ mixin template Replayer(bool debug_ = false)
     }
     else
     {
-        static assert(0);  // Should never get here, error message already given
+        static assert(0, "Replayer should be mixed into the context of an event handler. " ~
+            "(Could not access variables named neither `plugin` nor `service` from within " ~
+            __FUNCTION__ ~ ")");
     }
 
     /++
