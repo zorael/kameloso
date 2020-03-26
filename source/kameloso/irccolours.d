@@ -68,6 +68,7 @@ if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 do
 {
+    import lu.conv : toAlphaInto;
     import std.conv : to;
     import std.format : formattedWrite;
 
@@ -77,32 +78,14 @@ do
 
     sink.put(cast(char)IRCControlCharacter.colour);
 
-    static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
-    {
-        import lu.conv : toAlphaInto;
-
-        // Remove when we release a new version of lu
-        (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
-    }
-    else
-    {
-        sink.formattedWrite("%02d", fg);
-    }
+    //sink.formattedWrite("%02d", fg);
+    (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
 
     if (bg != IRCColour.unset)
     {
-        static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
-        {
-            import lu.conv : toAlphaInto;
-
-            // Remove when we release a new version of lu
-            sink.put(',');
-            (cast(int)bg).toAlphaInto!(2, 2)(sink);
-        }
-        else
-        {
-            sink.formattedWrite(",%02d", bg);
-        }
+        //sink.formattedWrite(",%02d", bg);
+        sink.put(',');
+        (cast(int)bg).toAlphaInto!(2, 2)(sink);
     }
 
     sink.put(line);
@@ -583,6 +566,7 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
 
     foreach (const hit; line.matchAll(engine))
     {
+        import lu.conv : toAlphaInto;
         import std.array : Appender;
         import std.conv : to;
 
@@ -605,17 +589,8 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
         sink.reserve(8);
         sink.put("\033[");
 
-        static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
-        {
-            import lu.conv : toAlphaInto;
-
-            // Remove when we release a new version of lu
-            (cast(uint)weechatForegroundMap[fgIndex]).toAlphaInto(sink);
-        }
-        else
-        {
-            sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
-        }
+        //sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
+        (cast(uint)weechatForegroundMap[fgIndex]).toAlphaInto(sink);
 
         if (hit[2].length)
         {
@@ -628,17 +603,8 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
 
             sink.put(';');
 
-            static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
-            {
-                import lu.conv : toAlphaInto;
-
-                // Remove when we release a new version of lu
-                (cast(uint)weechatBackgroundMap[bgIndex]).toAlphaInto(sink);
-            }
-            else
-            {
-                sink.put((cast(ubyte)weechatBackgroundMap[bgIndex]).to!string);
-            }
+            //sink.put((cast(ubyte)weechatBackgroundMap[bgIndex]).to!string);
+            (cast(uint)weechatBackgroundMap[bgIndex]).toAlphaInto(sink);
         }
 
         sink.put('m');

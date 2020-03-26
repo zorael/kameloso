@@ -949,12 +949,9 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(arg ? "true" : "false");
         }
-        else static if ((is(T : int) &&
-            __traits(compiles, { import lu.conv : toAlphaInto; })))
+        else static if (is(T : int))
         {
             import lu.conv : toAlphaInto;
-
-            // Remove when we release a new version of lu
             arg.toAlphaInto(sink);
         }
         else
@@ -1229,19 +1226,12 @@ if (isOutputRange!(Sink, char[]))
 
         if (num > 0)
         {
-            static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
-            {
-                import lu.conv : toAlphaInto;
+            import lu.conv : toAlphaInto;
 
-                // Remove when we release a new version of lu
-                sink.put(" (#");
-                num.toAlphaInto!(3, 3)(sink);
-                sink.put(')');
-            }
-            else
-            {
-                sink.formattedWrite(" (#%03d)", num);
-            }
+            //sink.formattedWrite(" (#%03d)", num);
+            sink.put(" (#");
+            num.toAlphaInto!(3, 3)(sink);
+            sink.put(')');
         }
 
         if (errors.length && !plugin.printerSettings.silentErrors)
@@ -1752,21 +1742,14 @@ if (isOutputRange!(Sink, char[]))
 
         if (num > 0)
         {
+            import lu.conv : toAlphaInto;
+
             sink.colourWith(bright ? Bright.num : Dark.num);
 
-            static if (__traits(compiles, { import lu.conv : toAlphaInto; }))
-            {
-                import lu.conv : toAlphaInto;
-
-                // Remove when we release a new version of lu
-                sink.put(" (#");
-                num.toAlphaInto!(3, 3)(sink);
-                sink.put(')');
-            }
-            else
-            {
-                sink.formattedWrite(" (#%03d)", num);
-            }
+            //sink.formattedWrite(" (#%03d)", num);
+            sink.put(" (#");
+            num.toAlphaInto!(3, 3)(sink);
+            sink.put(')');
         }
 
         if (errors.length && !plugin.printerSettings.silentErrors)
