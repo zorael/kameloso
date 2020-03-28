@@ -694,29 +694,6 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandPrintSeen
-/++
- +  As a tool to help debug, prints the current `SeenPlugin.seenUsers`
- +  associative array to the local terminal.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "printseen")
-@Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
-void onCommandPrintSeen(SeenPlugin plugin)
-{
-    import std.json : JSONValue;
-    import std.stdio : stdout, writeln;
-
-    writeln(JSONValue(plugin.seenUsers).toPrettyString);
-    if (settings.flush) stdout.flush();
-}
-
-
 // updateUser
 /++
  +  Updates a given nickname's entry in the seen array with the passed time,
@@ -983,11 +960,6 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
 
     switch (verb)
     {
-    case "print":
-        logger.info("Currently seen users:");
-        plugin.onCommandPrintSeen();
-        break;
-
     case "reload":
         plugin.seenUsers = loadSeen(plugin.seenFile);
         logger.info("Seen users reloaded from disk.");
