@@ -2773,6 +2773,9 @@ private:
     /// How many seconds before a request to squelch list events times out.
     enum squelchTimeout = 10;  // seconds
 
+    /// From which channel or for which user events are being squelched.
+    string squelchTarget;
+
     /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
