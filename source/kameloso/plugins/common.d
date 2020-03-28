@@ -1700,7 +1700,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         static if (verbose)
                         {
-                            writefln("...%s WHOIS", typeof(this).stringof);
+                            writefln("...%s WHOIS", This.stringof);
                             if (settings.flush) stdout.flush();
                         }
 
