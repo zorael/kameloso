@@ -28,9 +28,7 @@ script:
   - dub build --compiler=${DC} --nodeps -b release -c vanilla || true
 
 before_deploy:
-  - dub fetch ddox
-  - test ! -e "$HOME/.dub/packages/ddox-0.16.13" || sed -i "s/import std.conv;/public \0/" "$HOME/.dub/packages/ddox-0.16.13/ddox/source/ddox/api.d"
-  - dub build --compiler=${DC} --nodeps -b ddox -c pluginless-vanilla
+  - dub build --compiler=${DC} --nodeps -b ddox #-c pluginless-vanilla
   - cp -rv .circleci docs/
 
 deploy:
