@@ -110,7 +110,7 @@ interface IRCPlugin
      +  Returns:
      +      The string name of the plugin.
      +/
-    string name() @property const;
+    string name() @property const pure;
 
     /++
      +  Returns an array of the descriptions of the commands a plugin offers.
