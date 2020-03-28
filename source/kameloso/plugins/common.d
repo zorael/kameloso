@@ -191,6 +191,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         /// Command payload aside from the `dialect.defs.IRCEvent`.
         Payload payload;
 
+
         /++
          +  Create a new `TriggerRequestImpl` with the passed variables.
          +
@@ -235,6 +236,8 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         }
     }
 
+
+    // trigger
     /++
      +  Call the passed function/delegate pointer, optionally with the stored
      +  `dialect.defs.IRCEvent` and/or `Payload`.
@@ -355,6 +358,8 @@ public:
     /// `core.thread.Fiber` to call to invoke this replay.
     Fiber fiber;
 
+
+    // carryingFiber
     /++
      +  Returns `fiber` as a `kameloso.thread.CarryingFiber`, blindly assuming
      +  it can be cast thus.
@@ -369,6 +374,8 @@ public:
         return carrying;
     }
 
+
+    // isCarrying
     /++
      +  Returns whether or not `fiber` is actually a
      +  `kameloso.thread.CarryingFiber`!`Replay`.
@@ -1161,6 +1168,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /// This plugin's `IRCPluginState` structure. Has to be public for some things to work.
     public IRCPluginState privateState;
 
+
+    // isEnabled
     /++
      +  Introspects the current plugin, looking for a `Settings`-annotated struct
      +  member that has a bool annotated with `Enabler`, which denotes it as the
@@ -1308,6 +1317,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             return_,
         }
 
+        /++
+         +  Process a function.
+         +/
         Next handle(alias fun)(const IRCEvent event)
         {
             enum verbose = hasUDA!(fun, Verbose) || debug_;
@@ -1794,7 +1806,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     case repeat:
                         // only repeat once so we don't endlessly loop
-                        if (handle!fun(event) == continue_) continue;
+                        if (handle!fun(event) == continue_)
+                        {
+                            continue;
+                        }
                         else
                         {
                             return;
@@ -2260,6 +2275,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return isEnabled ? ctCommands : (Description[string]).init;
     }
 
+
     // state
     /++
      +  Accessor and mutator, returns a reference to the current private
@@ -2399,6 +2415,7 @@ version(unittest)
     }
 }
 
+
 // MessagingProxy
 /++
  +  Mixin to give shorthands to the functions in `kameloso.messaging`, for
@@ -2423,12 +2440,20 @@ public:
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
+    static if (__traits(compiles, this.hasMessagingProxy))
+    {
+        static assert(0, "Double mixin of MessagingProxy in " ~ typeof(this.stringof));
+    }
+    else
+    {
+        private enum hasMessagingProxy = true;
+    }
+
     static assert(is(typeof(this) : IRCPlugin), "MessagingProxy should be " ~
         "mixed into the context of a plugin or service.");
 
-    private enum hasMessagingProxy = true;
-
     pragma(inline):
+
 
     // chan
     /++
@@ -2440,6 +2465,7 @@ public:
         return kameloso.messaging.chan!priority(privateState, channel, content, quiet);
     }
 
+
     // query
     /++
      +  Sends a private query message to a user.
@@ -2449,6 +2475,7 @@ public:
     {
         return kameloso.messaging.query!priority(privateState, nickname, content, quiet);
     }
+
 
     // privmsg
     /++
@@ -2464,6 +2491,7 @@ public:
         return kameloso.messaging.privmsg!priority(privateState, channel, nickname, content, quiet);
     }
 
+
     // emote
     /++
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
@@ -2473,6 +2501,7 @@ public:
     {
         return kameloso.messaging.emote!priority(privateState, emoteTarget, content, quiet);
     }
+
 
     // mode
     /++
@@ -2487,6 +2516,7 @@ public:
         return kameloso.messaging.mode!priority(privateState, channel, modes, content, quiet);
     }
 
+
     // topic
     /++
      +  Sets the topic of a channel.
@@ -2496,6 +2526,7 @@ public:
     {
         return kameloso.messaging.topic!priority(privateState, channel, content, quiet);
     }
+
 
     // invite
     /++
@@ -2507,6 +2538,7 @@ public:
         return kameloso.messaging.invite!priority(privateState, channel, nickname, quiet);
     }
 
+
     // join
     /++
      +  Joins a channel.
@@ -2516,6 +2548,7 @@ public:
     {
         return kameloso.messaging.join!priority(privateState, channel, key, quiet);
     }
+
 
     // kick
     /++
@@ -2528,6 +2561,7 @@ public:
         return kameloso.messaging.kick!priority(privateState, channel, nickname, reason, quiet);
     }
 
+
     // part
     /++
      +  Leaves a channel.
@@ -2538,6 +2572,7 @@ public:
         return kameloso.messaging.part!priority(privateState, channel, reason, quiet);
     }
 
+
     // quit
     /++
      +  Disconnects from the server, optionally with a quit reason.
@@ -2547,6 +2582,7 @@ public:
     {
         return kameloso.messaging.quit!priority(privateState, reason, quiet);
     }
+
 
     // whois
     /++
@@ -2571,6 +2607,7 @@ public:
         return kameloso.messaging.raw!priority(privateState, line, quiet);
     }
 
+
     // immediate
     /++
      +  Sends raw text to the server, verbatim, bypassing all queues and
@@ -2581,11 +2618,13 @@ public:
         return kameloso.messaging.immediate(privateState, line);
     }
 
+
     // askToWriteln
     /++
      +  Asks the main thread to print text to the local terminal.
      +/
     alias askToWriteln = partial!(kameloso.messaging.askToWriteln, privateState);
+
 
     // askToTrace
     /++
@@ -2593,11 +2632,13 @@ public:
      +/
     alias askToTrace = partial!(kameloso.messaging.askToTrace, privateState);
 
+
     // askToLog
     /++
      +  Asks the main thread to `logger.log` text to the local terminal.
      +/
     alias askToLog = partial!(kameloso.messaging.askToLog, privateState);
+
 
     // askToInfo
     /++
@@ -2605,12 +2646,14 @@ public:
      +/
     alias askToInfo = partial!(kameloso.messaging.askToInfo, privateState);
 
+
     // askToWarn
     /++
      +  Asks the main thread to `logger.warning` text to the local terminal.
      +/
     alias askToWarn = partial!(kameloso.messaging.askToWarn, privateState);
     alias askToWarning = askToWarn;
+
 
     // askToError
     /++
@@ -2649,6 +2692,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     {
         private enum hasMinimalAuthentication = true;
     }
+
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
@@ -2789,9 +2833,13 @@ mixin template Replayer(bool debug_ = false)
             __FUNCTION__ ~ ")");
     }
 
+
+    // explainReplain
     /++
      +  Verbosely explains a replay, including what `PrivilegeLevel` and
      +  `dialect.defs.IRCUser.Class` were involved.
+     +
+     +  Gated behind version `ExplainReplay`.
      +/
     version(ExplainReplay)
     void explainReplay(const IRCUser user)
@@ -2819,6 +2867,8 @@ mixin template Replayer(bool debug_ = false)
             Enum!(IRCUser.Class).toString(user.class_));
     }
 
+
+    // replayerDelegate
     /++
      +  Delegate to call from inside a `kameloso.thread.CarryingFiber`.
      +/
@@ -2926,6 +2976,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         mixin MinimalAuthentication!(debug_, module_);
     }
+
 
     // onUserAwarenessQuitMixin
     /++
@@ -3145,6 +3196,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             _nextPingRehashTimestamp = now + (hoursBetweenRehashes * 3600);
         }
     }
+
 
     /++
      +  UNIX timestamp of when the `IRCPluginState.users` array is next to be
@@ -3726,7 +3778,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 version(TwitchSupport) {}
 else
 /++
- +  No-op mixin of version `!TwitchSupport` TwitchAwareness.
+ +  No-op mixin of version `!TwitchSupport` `TwitchAwareness`.
  +/
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
@@ -4348,6 +4400,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             `"plugin" nor "service" from within ` ~ __FUNCTION__ ~ ")");
     }
 
+
+    // carriedVariable
     /++
      +  Nickname being looked up, stored outside of any separate function to make
      +  it available to all of them.
@@ -4358,7 +4412,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     private enum carriedVariableName = text("_carriedNickname", hashOf(__FUNCTION__) % 100);
     mixin("string " ~ carriedVariableName ~ ';');
 
-    /// Event types that we may encounter as responses to WHOIS queries.
+
+    /++
+     +  Event types that we may encounter as responses to WHOIS queries.
+     +/
     static immutable whoisEventTypes =
     [
         IRCEvent.Type.RPL_WHOISACCOUNT,
@@ -4368,7 +4425,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         IRCEvent.Type.ERR_UNKNOWNCOMMAND,
     ];
 
-    /// Reusable mixin that catches WHOIS results.
+
+    // whoisFiberDelegate
+    /++
+     +  Reusable mixin that catches WHOIS results.
+     +/
     void whoisFiberDelegate()
     {
         import kameloso.thread : CarryingFiber;
@@ -4483,6 +4544,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
     }
 
+
+    // enqueueAndWHOIS
     /++
      +  Constructs a `kameloso.thread.CarryingFiber!(dialect.defs.IRCEvent)`
      +  and enqueues it into the `awaitingFibers` associative array, then issues
