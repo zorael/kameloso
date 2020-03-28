@@ -237,6 +237,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_LOCALUSERS:
     case RPL_STATSCONN:
     case RPL_MYINFO:
+    case RPL_CREATED:
     case CAP:
     case GLOBALUSERSTATE:
     //case USERSTATE:
@@ -282,7 +283,6 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_ENDOFWHO:
     case RPL_TOPICWHOTIME:
     case RPL_CHANNELMODEIS:
-    case RPL_CREATED:
     case RPL_CREATIONTIME:
     case RPL_BANLIST:
     case RPL_QUIETLIST:
