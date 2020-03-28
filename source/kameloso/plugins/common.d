@@ -110,7 +110,7 @@ interface IRCPlugin
      +  Returns:
      +      The string name of the plugin.
      +/
-    string name() @property const pure;
+    string name() @property const pure nothrow @nogc;
 
     /++
      +  Returns an array of the descriptions of the commands a plugin offers.
@@ -2188,7 +2188,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  TODO:
      +      Use `std.traits.moduleName`?
      +/
-    public string name() @property const pure
+    public string name() @property const pure nothrow @nogc
     {
         enum ctName =
         {
