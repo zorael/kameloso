@@ -2630,21 +2630,34 @@ import kameloso.thread : Sendable;
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
     import kameloso.thread : BusMessage;
+    import lu.string : nom;
+    import std.typecons : Flag, No, Yes;
 
     if (header != "printer") return;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
-    immutable verb = message.payload;
 
-    if (verb == "squelch")
+    string slice = message.payload;
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable target = slice;
+
+    switch (verb)
     {
+    case "squelch":
         import std.datetime.systime : Clock;
         plugin.squelchstamp = Clock.currTime.toUnixTime;
-    }
-    else
-    {
+        plugin.squelchTarget = target;  // May be empty
+        break;
+
+    case "resetsquelch":
+        plugin.squelchstamp = 0L;
+        plugin.squelchTarget = string.init;
+        break;
+
+    default:
         logger.error("[printer] Unimplemented bus message verb: ", verb);
+        break;
     }
 }
 
