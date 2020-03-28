@@ -64,7 +64,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import lu.string : contains, nom;
+        import lu.string : beginsWith, contains, nom;
         import core.thread : Fiber;
         import std.algorithm.sorting : sort;
         import std.format : format;
@@ -116,9 +116,32 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             }
             else
             {
+                if (content.beginsWith(settings.prefix))
+                {
+                    // Not a plugin, just a command (probably)
+                    string slice = content;
+                    slice.nom!(Yes.decode)(settings.prefix);
+                    immutable specifiedCommand = slice;
+
+                    foreach (p; plugins)
+                    {
+                        if (const description = specifiedCommand in p.commands)
+                        {
+                            plugin.sendCommandHelp(p, event, specifiedCommand, *description);
+                            return;
+                        }
+                    }
+
+                    // If we're here there were no command matches
+                    // Drop down and treat as normal
+                }
+
                 foreach (p; plugins)
                 {
-                    if (p.name != content) continue;
+                    if (p.name != content)
+                    {
+                        continue;
+                    }
                     else if (!p.commands.length)
                     {
                         immutable message = settings.colouredOutgoing ?
