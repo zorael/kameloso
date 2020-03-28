@@ -51,6 +51,7 @@ enum ChannelState : ubyte
 @(IRCEvent.Type.PING)
 void startChannelQueries(ChanQueriesService service)
 {
+    import kameloso.common : settings;
     import core.thread : Fiber;
 
     if (service.querying) return;  // Try again next PING
@@ -69,33 +70,20 @@ void startChannelQueries(ChanQueriesService service)
         querylist ~= channelName;
     }
 
-    if (!querylist.length) return;
+    if (!querylist.length && !settings.eagerLookups) return;  // Continue anyway if eagerLookups
 
     service.querying = true;  // "Lock", unlocked on delegate end
 
-    /// Event types that signal the end of a query response.
-    static immutable queryTypes =
-    [
-        IRCEvent.Type.RPL_TOPIC,
-        IRCEvent.Type.RPL_NOTOPIC,
-        IRCEvent.Type.RPL_ENDOFWHO,
-        IRCEvent.Type.RPL_CHANNELMODEIS,
-    ];
-
-    /// Event types that signal the end of a WHOIS response.
-    static immutable whoisTypes =
-    [
-        IRCEvent.Type.RPL_ENDOFWHOIS,
-        IRCEvent.Type.ERR_UNKNOWNCOMMAND,
-    ];
-
     void dg()
     {
-        import kameloso.messaging : raw;
-        import kameloso.thread : ThreadMessage, busMessage;
+        import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
         import core.thread : Fiber;
         import std.concurrency : send;
+        import std.datetime.systime : Clock;
         import std.string : representation;
+
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         scope(exit)
         {
@@ -114,49 +102,73 @@ void startChannelQueries(ChanQueriesService service)
                 Fiber.yield();  // delay
             }
 
-            if (!(service.channelStates[channelName] & ChannelState.topicKnown))
+            version(WithPrinterPlugin)
             {
+                immutable squelchMessage = "squelch " ~ channelName;
+            }
+
+            /// Common code to send a query, await the results and unlist the fiber.
+            void queryAwaitAndUnlist(Types)(const string command, const Types types)
+            {
+                import kameloso.messaging : raw;
+                import std.traits : isArray;
+
+                static if (isArray!Types)
+                {
+                    service.awaitEvents(types);
+                }
+                else
+                {
+                    service.awaitEvent(types);
+                }
+
                 version(WithPrinterPlugin)
                 {
                     service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage("squelch"));
+                        "printer", busMessage(squelchMessage));
                 }
 
-                raw(service.state, "TOPIC " ~ channelName, service.hideOutgoingQueries);
-                Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
+                raw(service.state, command ~ ' ' ~ channelName);
+                Fiber.yield();  // Awaiting specified types
+
+                while (thisFiber.payload.channel != channelName) Fiber.yield();
+
+                static if (isArray!Types)
+                {
+                    service.unlistFiberAwaitingEvents(types);
+                }
+                else
+                {
+                    service.unlistFiberAwaitingEvent(types);
+                }
 
                 service.delayFiber(service.secondsBetween);
                 Fiber.yield();  // delay
             }
 
-            version(WithPrinterPlugin)
-            {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("squelch"));
-            }
+            /// Event types that signal the end of a query response.
+            static immutable topicTypes =
+            [
+                IRCEvent.Type.RPL_TOPIC,
+                IRCEvent.Type.RPL_NOTOPIC,
+            ];
 
-            raw(service.state, "WHO " ~ channelName, service.hideOutgoingQueries);
-            Fiber.yield();  // awaiting RPL_ENDOFWHO
+            queryAwaitAndUnlist("TOPIC", topicTypes);
+            queryAwaitAndUnlist("WHO", IRCEvent.Type.RPL_ENDOFWHO);
+            queryAwaitAndUnlist("MODE", IRCEvent.Type.RPL_CHANNELMODEIS);
 
-            service.delayFiber(service.secondsBetween);
-            Fiber.yield();  // delay
+            // MODE generic
 
-            version(WithPrinterPlugin)
-            {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("squelch"));
-            }
-
-            raw(service.state, "MODE " ~ channelName, service.hideOutgoingQueries);
-            Fiber.yield();  // awaiting RPL_CHANNELMODEIS
-
-            foreach (immutable modechar; service.state.server.aModes.representation)
+            foreach (immutable n, immutable modechar; service.state.server.aModes.representation)
             {
                 import std.format : format;
-                // Cannot await by event type; there are too many types,
-                // so just delay for twice the normal delay duration
-                service.delayFiber(service.secondsBetween);
-                Fiber.yield();  // delay
+
+                if (n > 0)
+                {
+                    // Cannot await by event type; there are too many types.
+                    service.delayFiber(service.secondsBetween);
+                    Fiber.yield();  // delay
+                }
 
                 version(WithPrinterPlugin)
                 {
@@ -165,11 +177,11 @@ void startChannelQueries(ChanQueriesService service)
                     // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                     // Ask the Printer to squelch those messages too.
                     service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage("squelch"));
+                        "printer", busMessage(squelchMessage));
                 }
 
-                raw(service.state, "MODE %s +%c".format(channelName,
-                    cast(char)modechar), service.hideOutgoingQueries);
+                import kameloso.messaging : mode;
+                mode(service.state, channelName, "+%c".format((cast(char)modechar)));
             }
 
             if (channelName !in service.channelStates) continue;
@@ -179,8 +191,10 @@ void startChannelQueries(ChanQueriesService service)
             service.channelStates[channelName] = ChannelState.queried;
         }
 
+        // Stop here if we can't or are not interested in going further
+        if (!service.serverSupportsWHOIS || !settings.eagerLookups) return;
+
         import kameloso.constants : Timeout;
-        import std.datetime.systime : Clock;
 
         immutable now = Clock.currTime.toUnixTime;
         bool[string] uniqueUsers;
@@ -200,22 +214,26 @@ void startChannelQueries(ChanQueriesService service)
             }
         }
 
-        // Clear triggers and await the WHOIS types.
-        service.unlistFiberAwaitingEvents(queryTypes);
+        uniqueUsers.rehash();
 
-        import kameloso.common : settings;
-        if (!service.serverSupportsWHOIS || !settings.eagerLookups) return;
+        /// Event types that signal the end of a WHOIS response.
+        static immutable whoisTypes =
+        [
+            IRCEvent.Type.RPL_ENDOFWHOIS,
+            IRCEvent.Type.ERR_UNKNOWNCOMMAND,
+        ];
 
         service.awaitEvents(whoisTypes);
 
         scope(exit) service.unlistFiberAwaitingEvents(whoisTypes);
+
+        long lastQueryResults;
 
         whoisloop:
         foreach (immutable nickname; uniqueUsers.byKey)
         {
             import kameloso.common : logger;
             import kameloso.messaging : whois;
-            import kameloso.thread : CarryingFiber;
 
             if ((nickname !in service.state.users) ||
                 (service.state.users[nickname].account.length))
@@ -228,17 +246,20 @@ void startChannelQueries(ChanQueriesService service)
             service.delayFiber(service.secondsBetween);
             Fiber.yield();  // delay
 
+            while ((Clock.currTime.toUnixTime - lastQueryResults) < service.secondsBetween-1)
+            {
+                service.delayFiber(1);
+                Fiber.yield();
+            }
+
             version(WithPrinterPlugin)
             {
                 service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("squelch"));
+                    "printer", busMessage("squelch " ~ nickname));
             }
 
-            whois(service.state, nickname, false, service.hideOutgoingQueries);
+            whois(service.state, nickname, false);
             Fiber.yield();  // Await whois types registered above
-
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             while (true)
             {
@@ -249,6 +270,7 @@ void startChannelQueries(ChanQueriesService service)
                     if (thisFiber.payload.target.nickname == nickname)
                     {
                         // Saw the expected response
+                        lastQueryResults = Clock.currTime.toUnixTime;
                         continue whoisloop;
                     }
                     else
@@ -291,7 +313,6 @@ void startChannelQueries(ChanQueriesService service)
     import kameloso.thread : CarryingFiber;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
-    service.awaitEvents(fiber, queryTypes);
     fiber.call();
 }
 
