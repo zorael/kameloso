@@ -473,6 +473,28 @@ struct IRCPluginState
     /// The UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
     long nextFiberTimestamp;
 
+
+    // updateNextFiberTimestamp
+    /++
+     +  Updates the saved UNIX timestamp of when the next `core.thread.Fiber`
+     +  should be triggered.
+     +/
+    void updateNextFiberTimestamp() pure nothrow @nogc
+    {
+        // Reset the next timestamp to an invalid value, then update it as we
+        // iterate the fibers' labels.
+
+        nextFiberTimestamp = long.max;
+
+        foreach (const timedFiber; timedFibers)
+        {
+            if (timedFiber.id < nextFiberTimestamp)
+            {
+                nextFiberTimestamp = timedFiber.id;
+            }
+        }
+    }
+
     /// Whether or not `bot` was altered. Must be reset manually.
     bool botUpdated;
 
