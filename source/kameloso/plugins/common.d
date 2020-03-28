@@ -2222,7 +2222,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public Description[string] commands() pure nothrow @property const
     {
-        enum ctCommands =
+        enum ctCommandsEnumLiteral =
         {
             import lu.traits : getSymbolsByUDA;
             import std.meta : Filter;
@@ -2272,7 +2272,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             return descriptions;
         }();
 
-        return isEnabled ? ctCommands : (Description[string]).init;
+        // This is an associative array literal. We can't make it static immutable
+        // because of AAs' runtime-ness. We could make it runtime immutable once
+        // and then just the address, but this is really not a hotspot.
+        // So just let it allocate when it wants.
+        return isEnabled ? ctCommandsEnumLiteral : (Description[string]).init;
     }
 
 
