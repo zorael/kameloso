@@ -4652,6 +4652,7 @@ unittest
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.
  +/
+pragma(inline)
 string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
