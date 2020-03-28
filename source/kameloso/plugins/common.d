@@ -2288,26 +2288,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            import lu.traits : TakesParams;
-
-            static if (TakesParams!(.periodically, typeof(this)))
+            if (now >= privateState.nextPeriodical)
             {
-                if (now >= privateState.nextPeriodical)
+                import lu.traits : TakesParams;
+
+                static if (TakesParams!(.periodically, typeof(this)))
                 {
                     .periodically(this);
                 }
-            }
-            else static if (TakesParams!(.periodically, typeof(this), long))
-            {
-                if (now >= privateState.nextPeriodical)
+                else static if (TakesParams!(.periodically, typeof(this), long))
                 {
                     .periodically(this, now);
                 }
-            }
-            else
-            {
-                static assert(0, module_ ~ ".periodically has an unsupported " ~
-                    "function signature: " ~ typeof(.periodically).stringof);
+                else
+                {
+                    static assert(0, module_ ~ ".periodically has an unsupported " ~
+                        "function signature: " ~ typeof(.periodically).stringof);
+                }
             }
         }
     }
