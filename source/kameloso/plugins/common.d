@@ -2299,6 +2299,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     .periodically(this);
                 }
             }
+            else static if (TakesParams!(.periodically, typeof(this), long))
+            {
+                if (now >= privateState.nextPeriodical)
+                {
+                    .periodically(this, now);
+                }
+            }
             else
             {
                 static assert(0, module_ ~ ".periodically has an unsupported " ~
