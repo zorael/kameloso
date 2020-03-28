@@ -92,33 +92,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                     if (const description = specifiedCommand in p.commands)
                     {
-                        enum pattern = "[%s] %s: %s";
-
-                        immutable message = settings.colouredOutgoing ?
-                            pattern.format(p.name.ircBold, specifiedCommand.ircBold, description.string_) :
-                            pattern.format(p.name, specifiedCommand, description.string_);
-
-                        privmsg(plugin.state, channel, sender.nickname, message);
-
-                        if (description.syntax.length)
-                        {
-                            import lu.string : beginsWith;
-                            import std.array : replace;
-
-                            immutable udaSyntax = description.syntax
-                                .replace("$nickname", plugin.state.client.nickname)
-                                .replace("$command", specifiedCommand);
-
-                            // Prepend the prefix to non-PrefixPolicy.nickname commands
-                            immutable prefixedSyntax = description.syntax.beginsWith("$nickname") ?
-                                udaSyntax : settings.prefix ~ udaSyntax;
-
-                            immutable syntax = settings.colouredOutgoing ?
-                                "Usage".ircBold ~ ": " ~ prefixedSyntax :
-                                "Usage: " ~ prefixedSyntax;
-
-                            privmsg(plugin.state, channel, sender.nickname, syntax);
-                        }
+                        plugin.sendCommandHelp(p, event, specifiedCommand, *description);
                     }
                     else
                     {
