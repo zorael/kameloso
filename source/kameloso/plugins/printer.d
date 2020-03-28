@@ -2644,7 +2644,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     }
     else
     {
-        assert(0, "Printer caught unknown bus message verb: " ~ verb);
+        logger.error("[printer] Unimplemented bus message verb: ", verb);
     }
 }
 

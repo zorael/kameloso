@@ -1174,6 +1174,10 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
     {
         service.tryAuth();
     }
+    else
+    {
+        logger.error("[connect] Unimplemented bus message verb: ", message.payload);
+    }
 }
 
 

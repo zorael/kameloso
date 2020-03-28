@@ -421,7 +421,7 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
     }
     else
     {
-        logger.errorf(`Pipeline received unknown "%s" bus message.`, message.payload);
+        logger.error("[pipeline] Unimplemented bus message verb: ", message.payload);
     }
 }
 

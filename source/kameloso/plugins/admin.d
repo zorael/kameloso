@@ -1764,7 +1764,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("Unimplemented piped verb: ", verb);
+        logger.error("[admin] Unimplemented bus message verb: ", verb);
         break;
     }
 }
