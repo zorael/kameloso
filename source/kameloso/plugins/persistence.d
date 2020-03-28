@@ -306,11 +306,10 @@ void reload(PersistenceService service)
  +  This is normally done as part of user-awareness, but we're not mixing that
  +  in so we have to reinvent it.
  +/
-void periodically(PersistenceService service)
+void periodically(PersistenceService service, const long now)
 {
     import std.datetime.systime : Clock;
 
-    immutable now = Clock.currTime.toUnixTime;
     enum hoursBetweenRehashes = 3;
 
     service.state.users.rehash();

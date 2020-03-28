@@ -1435,14 +1435,8 @@ void initResources(TwitchBotPlugin plugin)
  +  Periodically calls timer `core.thread.Fiber`s with a periodicity of
  +  `TwitchBotPlugin.timerPeriodicity`.
  +/
-void periodically(TwitchBotPlugin plugin)
+void periodically(TwitchBotPlugin plugin, const long now)
 {
-    import std.datetime : DateTime;
-    import std.datetime.systime : Clock, SysTime;
-
-    immutable currTime = Clock.currTime;
-    immutable now = currTime.toUnixTime;
-
     if ((plugin.state.server.daemon != IRCServer.Daemon.unset) &&
         (plugin.state.server.daemon != IRCServer.Daemon.twitch))
     {
@@ -1507,12 +1501,16 @@ void periodically(TwitchBotPlugin plugin)
         pruneByTimestamp(channel.phraseBans, now, 7200);
     }
 
-    // Schedule next prune to next midnight
-    const next = SysTime(DateTime(currTime.year, currTime.month,
-        currTime.day, 0, 0, 0), currTime.timezone)
-        .roll!"days"(1);
+    import std.datetime : DateTime;
+    import std.datetime.systime : Clock, SysTime;
 
-    plugin.nextPrune = next.toUnixTime;
+    immutable currTime = Clock.currTime;
+
+    // Schedule next prune to next midnight
+    plugin.nextPrune = SysTime(DateTime(currTime.year, currTime.month,
+        currTime.day, 0, 0, 0), currTime.timezone)
+        .roll!"days"(1)
+        .toUnixTime;
 }
 
 

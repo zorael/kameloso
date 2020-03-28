@@ -878,11 +878,10 @@ void onEndOfMotd(SeenPlugin plugin)
  +  `periodically` is a function that is automatically called whenever the
  +  current UNIX timestamp matches or exceeds the value of `plugin.state.nextPeriodical`.
  +/
-void periodically(SeenPlugin plugin)
+void periodically(SeenPlugin plugin, const long now)
 {
     enum hoursBetweenSaves = 3;
 
-    immutable now = Clock.currTime.toUnixTime;
     plugin.state.nextPeriodical = now + (hoursBetweenSaves * 3600);
 
     if (plugin.isEnabled)
