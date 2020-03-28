@@ -1172,6 +1172,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      `true` if the plugin is deemed enabled (or cannot be disabled),
      +      `false` if not.
      +/
+    pragma(inline)
     public bool isEnabled() const @property pure nothrow @nogc
     {
         import lu.traits : getSymbolsByUDA;
