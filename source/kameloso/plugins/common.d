@@ -135,9 +135,6 @@ interface IRCPlugin
 
     /// Returns whether or not the plugin is enabled in its configuration section.
     bool isEnabled() const @property pure nothrow @nogc;
-
-    /// Updates the saved UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
-    void updateNextFiberTimestamp() pure nothrow @nogc;
 }
 
 
@@ -2274,28 +2271,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
     {
         return this.privateState;
-    }
-
-
-    // updateNextFiberTimestamp
-    /++
-     +  Updates the saved UNIX timestamp of when the next `core.thread.Fiber`
-     +  should be triggered.
-     +/
-    public void updateNextFiberTimestamp() pure nothrow @nogc
-    {
-        // Reset the next timestamp to an invalid value, then update it as we
-        // iterate the fibers' labels.
-
-        privateState.nextFiberTimestamp = long.max;
-
-        foreach (const timedFiber; privateState.timedFibers)
-        {
-            if (timedFiber.id < privateState.nextFiberTimestamp)
-            {
-                privateState.nextFiberTimestamp = timedFiber.id;
-            }
-        }
     }
 
 
