@@ -654,7 +654,7 @@ Next mainLoop(ref Kameloso instance)
             if (plugin.state.nextFiberTimestamp <= nowInUnix)
             {
                 plugin.handleTimedFibers(nowInUnix);
-                plugin.updateNextFiberTimestamp();
+                plugin.state.updateNextFiberTimestamp();
             }
         }
 

@@ -4020,7 +4020,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 
     immutable time = Clock.currTime.toUnixTime + secs;
     plugin.state.timedFibers ~= labeled(fiber, time);
-    plugin.updateNextFiberTimestamp();
+    plugin.state.updateNextFiberTimestamp();
 }
 
 
@@ -4076,7 +4076,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
             .remove!(SwapStrategy.unstable)(i);
     }
 
-    plugin.updateNextFiberTimestamp();
+    plugin.state.updateNextFiberTimestamp();
 }
 
 
