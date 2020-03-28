@@ -225,7 +225,16 @@ void startChannelQueries(ChanQueriesService service)
 
         service.awaitEvents(whoisTypes);
 
-        scope(exit) service.unlistFiberAwaitingEvents(whoisTypes);
+        scope(exit)
+        {
+            service.unlistFiberAwaitingEvents(whoisTypes);
+
+            version(WithPrinterPlugin)
+            {
+                service.state.mainThread.send(ThreadMessage.BusMessage(),
+                    "printer", busMessage("resetsquelch"));
+            }
+        }
 
         long lastQueryResults;
 
