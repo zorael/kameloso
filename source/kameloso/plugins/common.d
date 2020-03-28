@@ -1161,7 +1161,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     private import core.thread : Fiber;
 
-    private enum hasIRCPluginImpl = true;
+    static if (__traits(compiles, this.hasIRCPluginImpl))
+    {
+        static assert(0, "Double mixin of IRCPluginImpl in " ~ typeof(this.stringof));
+    }
+    else
+    {
+        private enum hasIRCPluginImpl = true;
+    }
 
     @safe:
 
