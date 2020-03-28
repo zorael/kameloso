@@ -47,7 +47,7 @@ import kameloso.irccolours : ircBold, ircColourByHash;
 // `kameloso.common` for some globals.
 import kameloso.common : logger, settings;
 
-// `std.datetime` for the `Clock`, to update times with.
+// `std.datetime.systime` for the `Clock`, to update times with.
 import std.datetime.systime : Clock;
 
 
