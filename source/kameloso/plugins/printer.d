@@ -132,18 +132,39 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
      +  Update the squelchstamp and return whether or not the current event
      +  should be squelched.
      +/
-    static bool updateSquelchstamp(PrinterPlugin plugin, const long time)
+    static bool updateSquelchstamp(PrinterPlugin plugin, const long time,
+        const string channel, const string sender, const string target)
+    in ((channel.length || sender.length || target.length),
+        "Tried to update squelchstamp but with no channel or user information passed")
     {
-        if (plugin.squelchstamp == 0L) return false;
+        if (channel.length)
+        {
+            if (channel != plugin.squelchTarget) return false;
+        }
+        else if (sender.length)
+        {
+            if (sender != plugin.squelchTarget) return false;
+        }
+        else if (target.length)
+        {
+            if (target != plugin.squelchTarget) return false;
+        }
+        else
+        {
+            assert(0);
+        }
 
         if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)
         {
             plugin.squelchstamp = time;
             return true;
         }
-
-        plugin.squelchstamp = 0L;
-        return false;
+        else
+        {
+            plugin.squelchstamp = 0L;
+            plugin.squelchTarget = string.init;
+            return false;
+        }
     }
 
     with (IRCEvent.Type)
@@ -277,8 +298,14 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ENDOFSPAMFILTERLIST:
     case ERR_CHANOPRIVSNEEDED:
     case RPL_AWAY:
-        immutable shouldSquelch = updateSquelchstamp(plugin, event.time);
-        if (shouldSquelch) return;
+        immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
+            updateSquelchstamp(plugin, event.time, event.channel,
+                event.sender.nickname, event.target.nickname);
+
+        if (shouldSquelch)
+        {
+            return;
+        }
         else
         {
             // Obey normal filterMost rules for unsquelched
@@ -287,8 +314,14 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     case RPL_TOPIC:
     case RPL_NOTOPIC:
-        immutable shouldSquelch = updateSquelchstamp(plugin, event.time);
-        if (shouldSquelch) return;
+        immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
+            updateSquelchstamp(plugin, event.time, event.channel,
+                event.sender.nickname, event.target.nickname);
+
+        if (shouldSquelch)
+        {
+            return;
+        }
         else
         {
             // Always display unsquelched
