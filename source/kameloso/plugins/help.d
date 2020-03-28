@@ -219,6 +219,54 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 }
 
 
+// sendCommandHelp
+/++
+ +  Sends the help text for a command to the querying channel or user.
+ +
+ +  Params:
+ +      plugin = The current `HelpPlugin`.
+ +      otherPlugin = The plugin that hosts the command we're to send the help text for.
+ +      event = The triggering `dialect.defs.IRCEvent`.
+ +      command = String of the command we're to send help text for (sans prefix).
+ +      description = The `kameloso.plugins.common.Description` that anotates
+ +          the command's function.
+ +/
+void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
+    const IRCEvent event, const string command, const Description description)
+{
+    import kameloso.irccolours : ircBold;
+    import std.format : format;
+
+    enum pattern = "[%s] %s: %s";
+
+    immutable message = settings.colouredOutgoing ?
+        pattern.format(otherPlugin.name.ircBold, command.ircBold, description.string_) :
+        pattern.format(otherPlugin.name, command, description.string_);
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+    if (description.syntax.length)
+    {
+        import lu.string : beginsWith;
+        import std.array : replace;
+
+        immutable udaSyntax = description.syntax
+            .replace("$nickname", plugin.state.client.nickname)
+            .replace("$command", command);
+
+        // Prepend the prefix to non-PrefixPolicy.nickname commands
+        immutable prefixedSyntax = description.syntax.beginsWith("$nickname") ?
+            udaSyntax : settings.prefix ~ udaSyntax;
+
+        immutable syntax = settings.colouredOutgoing ?
+            "Usage".ircBold ~ ": " ~ prefixedSyntax :
+            "Usage: " ~ prefixedSyntax;
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, syntax);
+    }
+}
+
+
 mixin MinimalAuthentication;
 
 public:
