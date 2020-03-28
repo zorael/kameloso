@@ -1600,19 +1600,31 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         alias U = eventTypeUDA;
 
-                        enum message = module_ ~ '.' ~ __traits(identifier, fun) ~
-                            " is annotated with user-facing IRCEvent.Type." ~
-                            Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.";
+                        // Use this to detect potential additions to the whitelist below
+                        /*import lu.string : beginsWith;
 
-                        static assert(!((U == CHAN) ||
+                        static if (!Enum!(IRCEvent.Type).toString(U).beginsWith("ERR_") &&
+                            !Enum!(IRCEvent.Type).toString(U).beginsWith("RPL_"))
+                        {
+                            pragma(msg, module_ ~ '.' ~ __traits(identifier, fun) ~
+                                " is annotated with IRCEvent.Type." ~
+                                Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
+                        }*/
+
+                        static assert (!(
+                            (U == CHAN) ||
                             (U == QUERY) ||
                             (U == EMOTE) ||
                             (U == JOIN) ||
                             (U == PART) ||
                             //(U == QUIT) ||
                             //(U == NICK) ||
-                            (U == AWAY)),
-                            message);
+                            (U == AWAY) ||
+                            (U == BACK) //||
+                            ),
+                            module_ ~ '.' ~ __traits(identifier, fun) ~
+                                " is annotated with user-facing IRCEvent.Type." ~
+                                Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
                     }
                 }
 
