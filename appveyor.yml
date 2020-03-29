@@ -158,6 +158,10 @@ test_script:
  - echo %Ddflags%
  - '%DC% --version'
  - dub --version
+ - git clone https://github.com/zorael/lu.git
+ - git clone https://github.com/zorael/dialect.git
+ - dub add-local lu
+ - dub add-local dialect
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
  - set DFLAGS = %Ddflags% -unittest
  - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%

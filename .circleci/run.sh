@@ -14,6 +14,11 @@ install_deps() {
     sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
     sudo apt update
     sudo apt install -y dmd-compiler dub
+
+    git clone https://github.com/zorael/lu.git
+    git clone https://github.com/zorael/dialect.git
+    dub add-local lu
+    dub add-local dialect
 }
 
 build() {
