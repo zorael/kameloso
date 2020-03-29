@@ -1999,10 +1999,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // deserialiseConfigFrom
     /++
-     +  Loads configuration from disk.
+     +  Loads configuration for this plugin from disk.
      +
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
+     +
+     +  Overload that returns the invalid entry AA and discards the one for
+     +  missing entries. Merely wraps the other overload.
      +
      +  Params:
      +      configFile = String of the configuration file to read.
@@ -2023,10 +2026,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // deserialiseConfigFrom
     /++
-     +  Loads configuration from disk.
+     +  Loads configuration for this plugin from disk.
      +
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
+     +
+     +  Overload that "returns" both the AAs for missing entries and invalid
+     +  entries via its two out parameters. Unlike the other overload it returns void.
      +
      +  Params:
      +      configFile = String of the configuration file to read.
