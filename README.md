@@ -54,6 +54,18 @@ $ dub build
 $ ./kameloso --channels "#d,#freenode"
 ```
 
+The default `master` development branch should ideally *never* be in a state where it cannot be compiled. However, this project and its depedencies are only guaranteed to be in sync at point of releases; during active development they may progress in a way that makes pre-release kameloso only build with pre-release dependencies. It's rare but occasionally happens, and new releases usually follow shortly after any such changes.
+
+If you get errors you can check out a release commit instead, alternatively make a local development clone of the dependencies.
+
+```bash
+$ git clone https://github.com/zorael/dialect.git
+$ git clone https://github.com/zorael/lu.git
+$ dub add-local dialect
+$ dub add-local lu
+[...]
+```
+
 ---
 
 # Table of contents
