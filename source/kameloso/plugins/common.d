@@ -2183,16 +2183,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         static if (__traits(compiles, .start))
         {
             import lu.traits : TakesParams;
-            import std.datetime.systime : SysTime;
 
             if (!isEnabled) return;
 
-            static if (TakesParams!(.start, typeof(this), SysTime))
-            {
-                import std.datetime.systime : Clock;
-                .start(this, Clock.currTime);
-            }
-            else static if (TakesParams!(.start, typeof(this)))
+            static if (TakesParams!(.start, typeof(this)))
             {
                 .start(this);
             }
