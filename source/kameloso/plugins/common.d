@@ -1195,7 +1195,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             enum parentType = "function";
             enum parentName = __FUNCTION__;
         }
-        else static if (__traits(isModule, parent))
+        else static if ((__VERSION__ >= 2087L) && __traits(isModule, parent))
         {
             enum parentType = "module";
             enum parentName = module_;
@@ -2599,7 +2599,7 @@ public:
             enum parentType = "function";
             enum parentName = __FUNCTION__;
         }
-        else static if (__traits(isModule, parent))
+        else static if ((__VERSION__ >= 2087L) && __traits(isModule, parent))
         {
             enum parentType = "module";
             enum parentName = module_;
@@ -2868,7 +2868,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         private enum hasMinimalAuthentication = true;
     }
 
-    static if(!__traits(isModule, __traits(parent, hasMinimalAuthentication)))
+    static if((__VERSION__ >= 2087L) && !__traits(isModule, __traits(parent, hasMinimalAuthentication)))
     {
         import std.format : format;
 
@@ -3038,7 +3038,7 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
 
         alias parent = __traits(parent, hasReplayer);
 
-        static if (__traits(isModule, parent))
+        static if ((__VERSION__ >= 2087L) && __traits(isModule, parent))
         {
             enum parentType = "module";
             enum parentName = module_;
@@ -3225,7 +3225,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         private enum hasUserAwareness = true;
     }
 
-    static if(!__traits(isModule, __traits(parent, hasUserAwareness)))
+    static if((__VERSION__ >= 2087L) && !__traits(isModule, __traits(parent, hasUserAwareness)))
     {
         import std.format : format;
 
@@ -3532,7 +3532,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         private enum hasChannelAwareness = true;
     }
 
-    static if(!__traits(isModule, __traits(parent, hasChannelAwareness)))
+    static if((__VERSION__ >= 2087L) && !__traits(isModule, __traits(parent, hasChannelAwareness)))
     {
         import std.format : format;
 
@@ -4021,7 +4021,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         private enum hasTwitchAwareness = true;
     }
 
-    static if(!__traits(isModule, __traits(parent, hasTwitchAwareness)))
+    static if((__VERSION__ >= 2087L) && !__traits(isModule, __traits(parent, hasTwitchAwareness)))
     {
         import std.format : format;
 
@@ -4178,7 +4178,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         private enum hasTwitchAwareness = true;
     }
 
-    static if(!__traits(isModule, __traits(parent, hasTwitchAwareness)))
+    static if((__VERSION__ >= 2087L) && !__traits(isModule, __traits(parent, hasTwitchAwareness)))
     {
         import std.format : format;
 
@@ -4828,7 +4828,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         alias parent = __traits(parent, hasWHOISFiber);
 
-        static if (__traits(isModule, parent))
+        static if ((__VERSION__ >= 2087L) && __traits(isModule, parent))
         {
             enum parentType = "module";
             enum parentName = module_;
