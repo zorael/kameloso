@@ -284,8 +284,9 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         else
         {
             import std.format : format;
-            static assert(0, "Unknown function signature in `TriggerRequestImpl`: `%s`"
-                .format(typeof(fn).stringof));
+            static assert(0, ("`TriggerRequestImpl` instantiated with an invalid " ~
+                "trigger function signature: `%s`")
+                .format(F.stringof));
         }
     }
 }
@@ -1412,7 +1413,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.PRIVMMSG`, " ~
+                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.PRIVMSG`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
                         "or `IRCEvent.Type.QUERY` instead")
                         .format(module_, __traits(identifier, fun)));
@@ -1422,8 +1423,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import std.format : format;
                     static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.WHISPER`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
-                        .format(module_, __traits(identifier, fun),
-                        Enum!(IRCEvent.Type).stringof(eventTypeUDA)));
+                        .format(module_, __traits(identifier, fun)));
                 }
                 else
                 {
@@ -1574,7 +1574,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (!regexUDA.expression.length)
                             {
                                 import std.format : format;
-                                static assert(0, "`%s.%s` has an incomplete `BotRegex` annotation"
+                                static assert(0, "`%s.%s` has an empty `BotRegex` expression"
                                     .format(module_, __traits(identifier, fun)));
                             }
 
@@ -1735,9 +1735,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             IRCEvent, PrivilegeLevel))
                         {
                             import std.format : format;
-                            static assert(0, "Custom `allow` in `%s.%s` has an invalid signature: `%s`"
-                                .format(module_, typeof(this).stringof,
-                                    stringofParams!(__traits(getMember, this, "allow"))));
+                            static assert(0, ("Custom `allow` function in `%s.%s` " ~
+                                "has an invalid signature: `%s`")
+                                .format(module_, typeof(this).stringof, typeof(allow).stringof));
                         }
 
                         static if (verbose)
@@ -1799,9 +1799,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         else static if (Filter!(isIRCPluginParam, Params).length)
                         {
                             import std.format : format;
-                            static assert(0, ("`%s.%s takes a superclass `IRCPlugin` " ~
-                                "instead of a subclass `%s`")
-                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
+                            static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
+                                "parameter instead of a subclass `%s`")
+                                .format(module_, __traits(identifier, fun), This.stringof));
                         }
                         else
                         {
