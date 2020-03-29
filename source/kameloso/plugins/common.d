@@ -3259,26 +3259,31 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
         immutable now = Clock.currTime.toUnixTime;
 
-        if (_nextPingRehashTimestamp == 0L)
+        if (mixin(pingRehashVariableName) == 0L)
         {
             // First PING encountered
             // Delay rehashing to let the client join all channels
-            _nextPingRehashTimestamp = now + (minutesBeforeInitialRehash * 60);
+            mixin(pingRehashVariableName) = now + (minutesBeforeInitialRehash * 60);
         }
-        else if (now >= _nextPingRehashTimestamp)
+        else if (now >= mixin(pingRehashVariableName))
         {
             // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
             rehashUsers(plugin);
-            _nextPingRehashTimestamp = now + (hoursBetweenRehashes * 3600);
+            mixin(pingRehashVariableName) = now + (hoursBetweenRehashes * 3600);
         }
     }
 
 
+    import std.conv : text;
+
     /++
      +  UNIX timestamp of when the `IRCPluginState.users` array is next to be
      +  rehashed in `onUserAwarenessPingMixin`.
+     +
+     +  Randomise the name to avoid any collisions, however far-fetched.
      +/
-    long _nextPingRehashTimestamp;
+    private enum pingRehashVariableName = text("_nextPingRehashTimestamp", hashOf(module_) % 100);
+    mixin("long " ~ pingRehashVariableName ~ ';');
 }
 
 
