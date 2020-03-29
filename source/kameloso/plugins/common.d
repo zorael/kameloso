@@ -1175,6 +1175,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     private import core.thread : Fiber;
 
+    /*static assert (__traits(compiles, is(typeof(this))),
+        module_ ~ " mixes in IRCPluginImpl but it is supposed to be mixed in " ~
+        "inside an IRCPlugin subclass");*/
+
     static if (__traits(compiles, this.hasIRCPluginImpl))
     {
         static assert(0, "Double mixin of IRCPluginImpl in " ~ typeof(this.stringof));
@@ -2494,6 +2498,10 @@ public:
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
+    /*static assert (__traits(compiles, typeof(this)),
+        module_ ~ " mixes in MessagingProxy but it is supposed to be mixed in " ~
+        "inside an IRCPlugin subclass");*/
+
     static if (__traits(compiles, this.hasMessagingProxy))
     {
         static assert(0, "Double mixin of MessagingProxy in " ~ typeof(this.stringof));
@@ -2738,6 +2746,10 @@ public:
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
+    static assert (!__traits(compiles, typeof(this).stringof),
+        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in MinimalAuthentication " ~
+        "but it is supposed to be mixed in at module scope");
+
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
         static assert(0, "Double mixin of MinimalAuthentication in module " ~ module_);
@@ -3017,6 +3029,10 @@ version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    static assert (!__traits(compiles, typeof(this)),
+        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in UserAwareness " ~
+        "but it is supposed to be mixed in at module scope");
+
     static if (__traits(compiles, .hasUserAwareness))
     {
         static assert(0, "Double mixin of UserAwareness in module " ~ module_);
@@ -3285,6 +3301,10 @@ version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    static assert (!__traits(compiles, typeof(this)),
+        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in ChannelAwareness " ~
+        "but it is supposed to be mixed in at module scope");
+
     static assert(__traits(compiles, .hasUserAwareness), module_ ~
         " is missing UserAwareness mixin (needed for ChannelAwareness).");
 
@@ -3736,6 +3756,10 @@ version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    static assert (!__traits(compiles, typeof(this)),
+        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in TwitchAwareness " ~
+        "but it is supposed to be mixed in at module scope");
+
     static assert(__traits(compiles, .hasChannelAwareness), module_ ~
         " is missing ChannelAwareness mixin (needed for TwitchAwareness).");
 
@@ -3837,6 +3861,10 @@ else
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    static assert (!__traits(compiles, typeof(this)),
+        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in TwitchAwareness " ~
+        "but it is supposed to be mixed in at module scope");
+
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
