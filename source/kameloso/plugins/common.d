@@ -1995,8 +1995,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".initialise has an unsupported " ~
-                    "function signature: " ~ typeof(.initialise).stringof);
+                import std.format : format;
+                static assert(0, "`%s.initialise` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.initialise).stringof));
             }
         }
     }
@@ -2024,8 +2025,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".postprocess has an unsupported " ~
-                    "function signature: " ~ typeof(.postprocess).stringof);
+                import std.format : format;
+                static assert(0, "`%s.postprocess` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.postprocess).stringof));
             }
         }
     }
@@ -2049,8 +2051,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".initResources has an unsupported " ~
-                    "function signature: " ~ typeof(.initResources).stringof);
+                import std.format : format;
+                static assert(0, "`%s.initResources` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.initResources).stringof));
             }
         }
     }
@@ -2261,8 +2264,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".start has an unsupported " ~
-                    "function signature: " ~ typeof(.start).stringof);
+                import std.format : format;
+                static assert(0, "`%s.start` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.start).stringof));
             }
         }
     }
@@ -2286,8 +2290,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".teardown has an unsupported " ~
-                    "function signature: " ~ typeof(.teardown).stringof);
+                import std.format : format;
+                static assert(0, "`%s.teardown` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.teardown).stringof));
             }
         }
     }
@@ -2441,8 +2446,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    static assert(0, module_ ~ ".periodically has an unsupported " ~
-                        "function signature: " ~ typeof(.periodically).stringof);
+                    import std.format : format;
+                    static assert(0, "`%s.periodically` has an unsupported function signature: `%s`"
+                        .format(module_, typeof(.periodically).stringof));
                 }
             }
         }
@@ -2467,8 +2473,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".reload has an unsupported " ~
-                    "function signature: " ~ typeof(.reload).stringof);
+                import std.format : format;
+                static assert(0, "`%s.reload` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.reload).stringof));
             }
         }
     }
@@ -2501,8 +2508,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".onBusMessage has an unsupported " ~
-                    "function signature: " ~ typeof(.onBusMessage).stringof);
+                import std.format : format;
+                static assert(0, "`%s.onBusMessage` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.onBusMessage).stringof));
             }
         }
     }
