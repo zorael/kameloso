@@ -42,9 +42,9 @@ static if (__VERSION__ == 2079L)
 
     static if (getSymbolsByUDA!(Foo_2079, UDA_2079).length != 3)
     {
-        pragma(msg, "WARNING: You are using a 2.079.0 compiler with a broken " ~
+        pragma(msg, "WARNING: You are using a `2.079.0` compiler with a broken " ~
             "crucial trait in its standard library. The program will not " ~
-            "function normally. Please upgrade to 2.079.1.");
+            "function normally. Please upgrade to `2.079.1` or later.");
     }
 }
 
