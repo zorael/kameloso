@@ -1654,8 +1654,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import std.format : format;
 
                     enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
-                    pragma(msg, "Note: %s is a wildcard %s event but is not Chainable nor Terminating"
-                        .format(name, typestring));
+                    pragma(msg, ("Note: `%s.%s` is a wildcard `IRCEvent.Type.%s` event " ~
+                        "but is not `Chainable` nor `Terminating`")
+                        .format(module_, __traits(identifier, fun), typestring));
                 }
 
                 static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
