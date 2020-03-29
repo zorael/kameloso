@@ -951,36 +951,30 @@ struct BotRegex
     /// The regular expression in string form.
     string expression;
 
-    /// Creates a new `BotRegex` with the passed `policy` and regex `engine`.
-    this(const PrefixPolicy policy, Regex!char engine) pure
-    {
-        this.policy = policy;
-        this.engine = engine;
-    }
-
     /++
      +  Creates a new `BotRegex` with the passed `policy` and regex `expression` string.
      +/
     this(const PrefixPolicy policy, const string expression)
     {
         this.policy = policy;
-        this.engine = expression.regex;
-        this.expression = expression;
-    }
 
-    /// Creates a new `BotRegex` with the passed regex `engine`.
-    this(Regex!char engine) pure
-    {
-        this.policy = PrefixPolicy.prefixed;
-        this.engine = engine;
+        if (expression.length)
+        {
+            this.engine = expression.regex;
+            this.expression = expression;
+        }
     }
 
     /// Creates a new `BotRegex` with the passed regex `expression` string.
     this(const string expression)
     {
         this.policy = PrefixPolicy.prefixed;
-        this.engine = expression.regex;
-        this.expression = expression;
+
+        if (expression.length)
+        {
+            this.engine = expression.regex;
+            this.expression = expression;
+        }
     }
 }
 
