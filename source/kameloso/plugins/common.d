@@ -1175,17 +1175,53 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     private import core.thread : Fiber;
 
-    /*static assert (__traits(compiles, is(typeof(this))),
-        module_ ~ " mixes in IRCPluginImpl but it is supposed to be mixed in " ~
-        "inside an IRCPlugin subclass");*/
-
     static if (__traits(compiles, this.hasIRCPluginImpl))
     {
-        static assert(0, "Double mixin of IRCPluginImpl in " ~ typeof(this.stringof));
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("IRCPluginImpl", typeof(this).stringof));
     }
     else
     {
         private enum hasIRCPluginImpl = true;
+    }
+
+    static if(!is(__traits(parent, hasIRCPluginImpl) : IRCPlugin))
+    {
+        import std.format : format;
+        import std.traits : isSomeFunction;
+
+        alias parent = __traits(parent, hasIRCPluginImpl);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (__traits(isModule, parent))
+        {
+            enum parentType = "module";
+            enum parentName = module_;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass")
+            .format(parentType, parentName, "IRCPluginImpl"));
     }
 
     @safe:
@@ -2504,21 +2540,54 @@ public:
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
-    /*static assert (__traits(compiles, typeof(this)),
-        module_ ~ " mixes in MessagingProxy but it is supposed to be mixed in " ~
-        "inside an IRCPlugin subclass");*/
-
     static if (__traits(compiles, this.hasMessagingProxy))
     {
-        static assert(0, "Double mixin of MessagingProxy in " ~ typeof(this.stringof));
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("MessagingProxy", typeof(this).stringof));
     }
     else
     {
         private enum hasMessagingProxy = true;
     }
 
-    static assert(is(typeof(this) : IRCPlugin), "MessagingProxy should be " ~
-        "mixed into the context of a plugin or service.");
+    static if(!is(__traits(parent, hasMessagingProxy) : IRCPlugin))
+    {
+        import std.format : format;
+        import std.traits : isSomeFunction;
+
+        alias parent = __traits(parent, chan);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (__traits(isModule, parent))
+        {
+            enum parentType = "module";
+            enum parentName = module_;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass")
+            .format(parentType, parentName, "MessagingProxy"));
+    }
 
     pragma(inline):
 
@@ -2752,17 +2821,47 @@ public:
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this).stringof),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in MinimalAuthentication " ~
-        "but it is supposed to be mixed in at module scope");
-
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
-        static assert(0, "Double mixin of MinimalAuthentication in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("MinimalAuthentication", module_));
     }
     else
     {
         private enum hasMinimalAuthentication = true;
+    }
+
+    static if(!__traits(isModule, __traits(parent, hasMinimalAuthentication)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasMinimalAuthentication);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a module-level scope")
+            .format(parentType, parentName, "MinimalAuthentication"));
     }
 
 
@@ -2881,12 +2980,53 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
  +      debug_ = Whether or not to print debug output to the terminal.
  +/
 version(WithPlugins)
-mixin template Replayer(bool debug_ = false)
+mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
 {
     import std.conv : text;
+    import std.traits : isSomeFunction;
 
-    private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
-    mixin("TriggerRequest " ~ requestVariableName ~ ';');
+    static if (__traits(compiles, hasReplayer))
+    {
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("Replayer", __FUNCTION__));
+    }
+    else
+    {
+        enum hasReplayer = true;
+    }
+
+    static if(!isSomeFunction!(__traits(parent, hasReplayer)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasReplayer);
+
+        static if (__traits(isModule, parent))
+        {
+            enum parentType = "module";
+            enum parentName = module_;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a function")
+            .format(parentType, parentName, "Replayer"));
+    }
 
     static if (__traits(compiles, plugin))
     {
@@ -2900,11 +3040,14 @@ mixin template Replayer(bool debug_ = false)
     }
     else
     {
-        static assert(0, "Replayer should be mixed into the context of an event handler. " ~
-            "(Could not access variables named neither `plugin` nor `service` from within " ~
-            __FUNCTION__ ~ ")");
+        import std.format : format;
+        static assert(0, ("`Replayer` should be mixed into the context of an event handler. " ~
+            "(Could not access variables named neither `plugin` nor `service` " ~
+            "from within `%s`)").format(__FUNCTION__));
     }
 
+    private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
+    mixin("TriggerRequest " ~ requestVariableName ~ ';');
 
     // explainReplain
     /++
@@ -3035,17 +3178,47 @@ version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in UserAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
     static if (__traits(compiles, .hasUserAwareness))
     {
-        static assert(0, "Double mixin of UserAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("UserAwareness", module_));
     }
     else
     {
         private enum hasUserAwareness = true;
+    }
+
+    static if(!__traits(isModule, __traits(parent, hasUserAwareness)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasUserAwareness);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a module-level scope")
+            .format(parentType, parentName, "UserAwareness"));
     }
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
@@ -3312,22 +3485,56 @@ version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in ChannelAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
-    static assert(__traits(compiles, .hasUserAwareness), module_ ~
-        " is missing UserAwareness mixin (needed for ChannelAwareness).");
-
     static if (__traits(compiles, .hasChannelAwareness))
     {
-        static assert(0, "Double mixin of ChannelAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("ChannelAwareness", module_));
     }
     else
     {
         private enum hasChannelAwareness = true;
     }
 
+    static if(!__traits(isModule, __traits(parent, hasChannelAwareness)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasChannelAwareness);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a module-level scope")
+            .format(parentType, parentName, "ChannelAwareness"));
+    }
+
+    static if (!__traits(compiles, .hasUserAwareness))
+    {
+        import std.format : format;
+        static assert(0, ("`%s` is missing a `UserAwareness` mixin " ~
+            "(needed for `ChannelAwareness`)")
+            .format(module_));
+    }
 
     // onChannelAwarenessSelfjoinMixin
     /++
@@ -3767,20 +3974,55 @@ version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in TwitchAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
-    static assert(__traits(compiles, .hasChannelAwareness), module_ ~
-        " is missing ChannelAwareness mixin (needed for TwitchAwareness).");
-
     static if (__traits(compiles, .hasTwitchAwareness))
     {
-        static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("TwitchAwareness", module_));
     }
     else
     {
         private enum hasTwitchAwareness = true;
+    }
+
+    static if(!__traits(isModule, __traits(parent, hasTwitchAwareness)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasTwitchAwareness);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a module-level scope")
+            .format(parentType, parentName, "TwitchAwareness"));
+    }
+
+    static if (!__traits(compiles, .hasChannelAwareness))
+    {
+        import std.format : format;
+        static assert(0, ("`%s` is missing a `ChannelAwareness` mixin " ~
+            "(needed for `TwitchAwareness`)")
+            .format(module_));
     }
 
 
@@ -3889,17 +4131,47 @@ else
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in TwitchAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
     static if (__traits(compiles, .hasTwitchAwareness))
     {
-        static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("TwitchAwareness", module_));
     }
     else
     {
         private enum hasTwitchAwareness = true;
+    }
+
+    static if(!__traits(isModule, __traits(parent, hasTwitchAwareness)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasTwitchAwareness);
+
+        static if (isSomeFunction!parent)
+        {
+            enum parentType = "function";
+            enum parentName = __FUNCTION__;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a module-level scope")
+            .format(parentType, parentName, "TwitchAwareness"));
     }
 }
 
@@ -4494,6 +4766,49 @@ mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import std.conv : text;
+
+    static if (__traits(compiles, hasWHOISFiber))
+    {
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("WHOISFiberDelegate", __FUNCTION__));
+    }
+    else
+    {
+        enum hasWHOISFiber = true;
+    }
+
+    static if(!isSomeFunction!(__traits(parent, hasWHOISFiber)))
+    {
+        import std.format : format;
+
+        alias parent = __traits(parent, hasWHOISFiber);
+
+        static if (__traits(isModule, parent))
+        {
+            enum parentType = "module";
+            enum parentName = module_;
+        }
+        else static if (is(parent == class))
+        {
+            enum parentType = "class";
+            enum parentName = parent.stringof;
+        }
+        else static if (is(parent == struct))
+        {
+            enum parentType = "struct";
+            enum parentName = parent.stringof;
+        }
+        else
+        {
+            enum parentType = "(unknown)";
+            enum parentName = __traits(identifier, parent);
+        }
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into a function")
+            .format(parentType, parentName, "WHOISFiberDelegate"));
+    }
 
     static if (__traits(compiles, plugin))
     {
