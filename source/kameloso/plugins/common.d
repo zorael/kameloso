@@ -2237,6 +2237,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  TODO:
      +      Use `std.traits.moduleName`?
      +/
+    pragma(inline)
     public string name() @property const pure nothrow @nogc
     {
         enum ctName =
