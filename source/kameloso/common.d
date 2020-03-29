@@ -422,15 +422,16 @@ struct Kameloso
      +  Params:
      +      customSettings = String array of custom settings to apply to plugins
      +          in addition to those read from the configuration file.
-     +
-     +  Returns:
-     +      An associative array of `string[]`s of invalid configuration entries,
-     +      keyed by `string` plugin names.
+     +      missingEntries = Out reference of an associative array of string arrays
+     +          of expected configuration entries that were missing.
+     +      invalidEntries = Out reference of an associative array of string arrays
+     +          of unexpected configuration entries that did not belong.
      +
      +  Throws:
      +      `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
      +/
-    string[][string] initPlugins(const string[] customSettings) @system
+    void initPlugins(const string[] customSettings, out string[][string] missingEntries,
+        out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : EnabledPlugins;
         import kameloso.plugins.common : IRCPluginState, applyCustomSettings;
@@ -454,16 +455,24 @@ struct Kameloso
             plugins ~= new Plugin(state);
         }
 
-        string[][string] allInvalidEntries;
-
         foreach (plugin; plugins)
         {
-            auto theseInvalidEntries = plugin.deserialiseConfigFrom(settings.configFile);
+            import lu.meld : meldInto;
+
+            string[][string] theseMissingEntries;
+            string[][string] theseInvalidEntries;
+
+            plugin.deserialiseConfigFrom(settings.configFile,
+                theseMissingEntries, theseInvalidEntries);
+
+            if (theseMissingEntries.length)
+            {
+                theseMissingEntries.meldInto(missingEntries);
+            }
 
             if (theseInvalidEntries.length)
             {
-                import lu.meld : meldInto;
-                theseInvalidEntries.meldInto(allInvalidEntries);
+                theseInvalidEntries.meldInto(invalidEntries);
             }
 
             if (plugin.state.nextPeriodical == 0)
@@ -483,8 +492,6 @@ struct Kameloso
             import kameloso.plugins.common : IRCPluginSettingsException;
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
-
-        return allInvalidEntries;
     }
 
 
