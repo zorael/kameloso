@@ -261,7 +261,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         import std.meta : AliasSeq, staticMap;
         import std.traits : Parameters, Unqual, arity;
 
-        assert((fn !is null), "null fn in TriggerRequestImpl!" ~ F.stringof);
+        assert((fn !is null), "null fn in `TriggerRequestImpl!" ~ F.stringof ~ "`");
 
         alias Params = staticMap!(Unqual, Parameters!fn);
 
@@ -283,7 +283,9 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         }
         else
         {
-            static assert(0, "Unknown function signature in TriggerRequestImpl: " ~ typeof(fn).stringof);
+            import std.format : format;
+            static assert(0, "Unknown function signature in `TriggerRequestImpl`: `%s`"
+                .format(typeof(fn).stringof));
         }
     }
 }
