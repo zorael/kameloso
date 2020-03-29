@@ -1415,15 +1415,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
-                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                        " is annotated IRCEvent.Type.PRIVMSG, which is not a valid event type. " ~
-                        "Use CHAN or QUERY (or both) instead");
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.PRIVMMSG`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
+                        "or `IRCEvent.Type.QUERY` instead")
+                        .format(module_, __traits(identifier, fun)));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
                 {
-                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                        " is annotated IRCEvent.Type.WHISPER, which is not a valid event type. " ~
-                        "Use QUERY instead");
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.WHISPER`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
+                        .format(module_, __traits(identifier, fun),
+                        Enum!(IRCEvent.Type).stringof(eventTypeUDA)));
                 }
                 else
                 {
@@ -1501,8 +1505,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                     {
-                        static assert(commandUDA.string_.length, name ~
-                            " has an empty BotCommand string");
+                        static if (!commandUDA.string_.length)
+                        {
+                            import std.format : format;
+                            static assert(0, "`%s` has an empty `BotCommand.string_`".format(name));
+                        }
 
                         static if (verbose)
                         {
@@ -1567,8 +1574,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                             import std.regex : Regex;
 
-                            static assert((regexUDA.engine != Regex!char.init),
-                                name ~ " has an incomplete BotRegex");
+                            static if (regexUDA.engine == Regex!char.init)
+                            {
+                                import std.format : format;
+                                static assert(0, "`%s` has an incomplete `BotRegex`".format(name));
+                            }
 
                             static if (verbose)
                             {
@@ -1665,7 +1675,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
                         }*/
 
-                        static assert (!(
+                        static if (
                             (U == CHAN) ||
                             (U == QUERY) ||
                             (U == EMOTE) ||
@@ -1675,10 +1685,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             //(U == NICK) ||
                             (U == AWAY) ||
                             (U == BACK) //||
-                            ),
-                            module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " is annotated with user-facing IRCEvent.Type." ~
-                                Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
+                            )
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s.%s` is annotated with a user-facing " ~
+                                "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+                                .format(module_, __traits(identifier, fun),
+                                Enum!(IRCEvent.Type).toString(U)));
+                        }
                     }
                 }
 
@@ -1692,9 +1706,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if ((privilegeLevel != PrivilegeLevel.ignore) &&
                         (privilegeLevel != PrivilegeLevel.anyone))
                     {
-                        static assert (__traits(compiles, .hasMinimalAuthentication),
-                            module_ ~ " is missing MinimalAuthentication mixin " ~
-                            "(needed for PrivilegeLevel checks).");
+                        static if (!__traits(compiles, .hasMinimalAuthentication))
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
+                                "mixin (needed for `PrivilegeLevel` checks")
+                                .format(module_));
+                        }
                     }
 
                     static if (verbose)
@@ -1708,11 +1726,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         import lu.traits : TakesParams, stringofParams;
 
-                        static assert(TakesParams!(__traits(getMember, this, "allow"),
-                            IRCEvent, PrivilegeLevel),
-                            "Custom allow in " ~ module_ ~ '.' ~ typeof(this).stringof ~
-                            " has an invalid signature: " ~
-                            stringofParams!(__traits(getMember, this, "allow")));
+                        static if (!TakesParams!(__traits(getMember, this, "allow"),
+                            IRCEvent, PrivilegeLevel))
+                        {
+                            import std.format : format;
+                            static assert(0, "Custom `allow` in `%s.%s` has an invalid signature: `%s`"
+                                .format(module_, typeof(this).stringof,
+                                    stringofParams!(__traits(getMember, this, "allow"))));
+                        }
 
                         static if (verbose)
                         {
@@ -1772,15 +1793,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
                         else static if (Filter!(isIRCPluginParam, Params).length)
                         {
-                            static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " takes an IRCPlugin instead of subclass plugin: " ~
-                                typeof(fun).stringof);
+                            import std.format : format;
+                            static assert(0, ("`%s.%s takes a superclass `IRCPlugin` " ~
+                                "instead of a subclass `%s`")
+                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
                         }
                         else
                         {
-                            static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " has an unsupported function signature: " ~
-                                typeof(fun).stringof);
+                            import std.format : format;
+                            static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
                         }
 
                     case fail:
@@ -1818,8 +1840,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                        " has an unsupported function signature: " ~ typeof(fun).stringof);
+                    import std.format : format;
+                    static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                        .format(module_, __traits(identifier, fun), typeof(fun).stringof));
                 }
 
                 static if (hasUDA!(fun, Chainable))
