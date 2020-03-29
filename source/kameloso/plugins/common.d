@@ -2001,6 +2001,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  Params:
      +      configFile = String of the configuration file to read.
+     +      missingEntries = Out reference of an associative array of string arrays
+     +          of expected configuration entries that were missing.
+     +      invalidEntries = Out reference of an associative array of string arrays
+     +          of unexpected configuration entries that did not belong.
      +
      +  Returns:
      +      A `string[][string]` associative array of arrays of invalid entries
@@ -2008,11 +2012,34 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public string[][string] deserialiseConfigFrom(const string configFile)
     {
+        string[][string] missingEntries;
+        string[][string] invalidEntries;
+
+        deserialiseConfigFrom(configFile, missingEntries, invalidEntries);
+        return invalidEntries;
+    }
+
+
+    // deserialiseConfigFrom
+    /++
+     +  Loads configuration from disk.
+     +
+     +  This does not proxy a call but merely loads configuration from disk for
+     +  all struct variables annotated `Settings`.
+     +
+     +  Params:
+     +      configFile = String of the configuration file to read.
+     +      missingEntries = Out reference of an associative array of string arrays
+     +          of expected configuration entries that were missing.
+     +      invalidEntries = Out reference of an associative array of string arrays
+     +          of unexpected configuration entries that did not belong.
+     +/
+    public void deserialiseConfigFrom(const string configFile,
+        out string[][string] missingEntries, out string[][string] invalidEntries)
+    {
         import lu.meld : MeldingStrategy, meldInto;
         import lu.serialisation : readConfigInto;
         import std.traits : hasUDA;
-
-        string[][string] invalidEntries;
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
@@ -2028,7 +2055,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 T tempSymbol;
-                const theseInvalidEntries = configFile.readConfigInto(tempSymbol);
+                string[][string] theseMissingEntries;
+                string[][string] theseInvalidEntries;
+
+                configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, tempSymbol);
+
+                foreach (immutable section, const sectionEntries; theseMissingEntries)
+                {
+                    missingEntries[section] ~= sectionEntries;
+                }
 
                 foreach (immutable section, const sectionEntries; theseInvalidEntries)
                 {
@@ -2038,8 +2073,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
             }
         }
-
-        return invalidEntries;
     }
 
 
