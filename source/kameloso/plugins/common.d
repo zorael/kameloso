@@ -3826,7 +3826,10 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
+        if (!event.sender.nickname) return;
+
         auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
 
         if (event.sender.nickname !in channel.users)
         {
@@ -3866,6 +3869,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         if (!event.target.nickname) return;
 
         auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
 
         if (event.target.nickname !in channel.users)
         {
