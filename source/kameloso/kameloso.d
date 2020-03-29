@@ -2141,7 +2141,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             if (*instance.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt
-            instance.initPlugins(customSettings);
+            string[][string] ignore;
+            instance.initPlugins(customSettings, ignore, ignore);
 
             // Reset throttling, in case there were queued messages.
             instance.throttle = typeof(instance.throttle).init;
@@ -2439,8 +2440,21 @@ int initBot(string[] args)
 
     try
     {
-        const invalidEntries = instance.initPlugins(attempt.customSettings);
-        complainAboutInvalidConfigurationEntries(invalidEntries);
+        string[][string] missingEntries;
+        string[][string] invalidEntries;
+
+        instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
+
+        if (missingEntries.length) complainAboutMissingConfigurationEntries(missingEntries);
+        if (invalidEntries.length) complainAboutInvalidConfigurationEntries(invalidEntries);
+
+        if (missingEntries.length || invalidEntries.length)
+        {
+            logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
+                infotint, logtint, settings.configFile);
+            logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+            logger.trace("---");
+        }
     }
     catch (ConvException e)
     {
