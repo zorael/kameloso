@@ -2056,16 +2056,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, tempSymbol);
 
-                foreach (immutable section, const sectionEntries; theseMissingEntries)
-                {
-                    missingEntries[section] ~= sectionEntries;
-                }
-
-                foreach (immutable section, const sectionEntries; theseInvalidEntries)
-                {
-                    invalidEntries[section] ~= sectionEntries;
-                }
-
+                theseMissingEntries.meldInto(missingEntries);
+                theseInvalidEntries.meldInto(invalidEntries);
                 tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
             }
         }
