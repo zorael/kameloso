@@ -1619,7 +1619,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             }
                             catch (Exception e)
                             {
-                                logger.warning("BotRegex exception: ", e.msg);
+                                static if (verbose)
+                                {
+                                    writeln("...BotRegex exception: ", e.msg);
+                                    version(PrintStacktraces) writeln(e.toString);
+                                    if (settings.flush) stdout.flush();
+                                }
                                 continue;  // next BotRegex
                             }
                         }
