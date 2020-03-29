@@ -1504,7 +1504,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (!commandUDA.string_.length)
                         {
                             import std.format : format;
-                            static assert(0, "`%s` has an empty `BotCommand.string_`".format(name));
+                            static assert(0, "`%s.%s` has an empty `BotCommand` string"
+                                .format(module_, __traits(identifier, fun)));
                         }
 
                         static if (verbose)
