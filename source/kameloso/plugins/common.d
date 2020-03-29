@@ -1570,16 +1570,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                             import std.regex : Regex;
 
-                            static if (regexUDA.engine == Regex!char.init)
+                            static if (!regexUDA.expression.length)
                             {
                                 import std.format : format;
-                                static assert(0, "`%s` has an incomplete `BotRegex`".format(name));
+                                static assert(0, "`%s.%s` has an incomplete `BotRegex` annotation"
+                                    .format(module_, __traits(identifier, fun)));
                             }
 
                             static if (verbose)
                             {
-                                writeln("BotRegex: ", regexUDA.expression.length ?
-                                    regexUDA.expression : "(cannot get expression)");
+                                writeln("BotRegex: `", regexUDA.expression, "`");
                                 if (settings.flush) stdout.flush();
                             }
 
