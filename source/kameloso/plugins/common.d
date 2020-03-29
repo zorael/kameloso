@@ -2001,10 +2001,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  Params:
      +      configFile = String of the configuration file to read.
-     +      missingEntries = Out reference of an associative array of string arrays
-     +          of expected configuration entries that were missing.
-     +      invalidEntries = Out reference of an associative array of string arrays
-     +          of unexpected configuration entries that did not belong.
      +
      +  Returns:
      +      A `string[][string]` associative array of arrays of invalid entries
