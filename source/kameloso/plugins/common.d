@@ -1715,7 +1715,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                             import std.format : format;
                             static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
-                                "mixin (needed for `PrivilegeLevel` checks")
+                                "mixin (needed for `PrivilegeLevel` checks)")
                                 .format(module_));
                         }
                     }
