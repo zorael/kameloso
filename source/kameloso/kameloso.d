@@ -1868,9 +1868,7 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
  +/
 void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
 {
-    if (!invalidEntries.length) return;
-
-    logger.log("Found invalid configuration entries:");
+    logger.log("Found INVALID configuration entries:");
 
     string infotint, logtint;
 
@@ -1893,10 +1891,7 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 
     logger.log("They are either malformed, no longer in use or belong to " ~
         "plugins not currently compiled in.");
-    logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-        infotint, logtint, settings.configFile);
-    logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
-    logger.trace("---");
+    logger.trace();
 }
 
 
