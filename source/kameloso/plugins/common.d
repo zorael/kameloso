@@ -4209,6 +4209,14 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             "mixed into a module-level scope")
             .format(parentType, parentName, "TwitchAwareness"));
     }
+
+    static if (!__traits(compiles, .hasChannelAwareness))
+    {
+        import std.format : format;
+        static assert(0, ("`%s` is missing a `ChannelAwareness` mixin " ~
+            "(needed for `TwitchAwareness`)")
+            .format(module_));
+    }
 }
 
 
