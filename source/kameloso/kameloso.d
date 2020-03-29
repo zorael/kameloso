@@ -1819,6 +1819,45 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
 }
 
 
+// complainAboutMissingConfigurationEntries
+/++
+ +  Prints some information about missing configuration entries to the local terminal.
+ +
+ +  Params:
+ +      missingEntries = A `string[][string]` associative array of dynamic
+ +          `string[]` arrays, keyed by strings. These contain missing settings.
+ +/
+void complainAboutMissingConfigurationEntries(const string[][string] missingEntries)
+{
+    import lu.string : stripSuffix;
+
+    logger.log("Found MISSING configuration entries:");
+
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+        }
+    }
+
+    foreach (immutable section, const sectionEntries; missingEntries)
+    {
+        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+            infotint, section.stripSuffix("Settings"), logtint, infotint, sectionEntries);
+    }
+
+    logger.log("They are either new, or your configuration file was generated " ~
+        "with not as many plugins compiled in as now.");
+    logger.trace();
+}
+
+
 // complainAboutInvalidConfigurationEntries
 /++
  +  Prints some information about invalid configuration entries to the local terminal.
