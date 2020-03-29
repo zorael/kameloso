@@ -4851,9 +4851,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        static assert(0, "WHOISFiberDelegate should be mixed into the context " ~
+        static assert(0, "`WHOISFiberDelegate` should be mixed into the context " ~
             "of an event handler. (Could not access variables named neither " ~
-            `"plugin" nor "service" from within ` ~ __FUNCTION__ ~ ")");
+            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
     }
 
 
@@ -4962,9 +4962,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else
             {
-                static assert(0, "Unexpected signature of success function " ~
-                    "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__ ~
-                    ": " ~ typeof(onSuccess).stringof ~ " " ~ __traits(identifier, onSuccess));
+                import std.format : format;
+                static assert(0, ("Unexpected signature of success function/delegate " ~
+                    "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
+                    .format(__FUNCTION__, typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
             }
         }
         else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
@@ -4992,9 +4993,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
                 else
                 {
-                    static assert(0, "Unexpected signature of failure function " ~
-                        "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__ ~
-                        ": " ~ typeof(onFailure).stringof ~ " " ~ __traits(identifier, onFailure));
+                    import std.format : format;
+                    static assert(0, ("Unexpected signature of failure function/delegate " ~
+                        "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
+                        .format(__FUNCTION__, typeof(onFailure).stringof, __traits(identifier, onFailure)));
                 }
             }
         }
