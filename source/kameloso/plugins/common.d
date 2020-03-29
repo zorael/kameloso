@@ -1266,7 +1266,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
                             {
                                 static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
-                                    Unqual!(typeof(this)).stringof ~ " has a non-bool Enabler");
+                                    '`' ~ Unqual!(typeof(this)).stringof ~ "` has a non-bool `Enabler`");
 
                                 retval = submember;
                                 break top;
