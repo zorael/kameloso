@@ -80,8 +80,22 @@ interface IRCPlugin
     /// Executed when the plugin is requested to initialise its disk resources.
     void initResources() @system;
 
-    /// Executed during setup to let plugins read settings from disk.
+    /++
+     +  Read serialised configuration text into the plugin's settings struct.
+     +
+     +  Wrapper around the other `deserialiseConfigFrom` overload that takes
+     +  out reference associative array parameters.
+     +/
     string[][string] deserialiseConfigFrom(const string);
+
+    /++
+     +  Read serialised configuration text into the plugin's settings struct.
+     +
+     +  Stores an associative array of `string[]`s of missing entries in its
+     +  first `out string[][string]` parameter, and the invalid encountered
+     +  entries in the second.
+     +/
+    void deserialiseConfigFrom(const string, out string[][string], out string[][string]);
 
     import std.array : Appender;
     /// Executed when gathering things to put in the configuration file.
