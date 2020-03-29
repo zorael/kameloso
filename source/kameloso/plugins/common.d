@@ -2392,7 +2392,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     else
                     {
                         import std.format : format;
-                        pragma(msg, `Warning: %s.%s is missing a Description annotation for command "%s"`
+                        pragma(msg, "Warning: `%s.%s` is missing a `Description` annotation for command \"%s\""
                             .format(module_, __traits(identifier, fun), commandUDA.string_));
                     }
                 }
