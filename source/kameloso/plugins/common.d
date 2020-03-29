@@ -1642,9 +1642,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                 }
 
-                import lu.traits : TakesParams, stringofParams;
                 import std.meta : AliasSeq, staticMap;
-                import std.traits : Parameters, Unqual, arity, staticMap;
+                import std.traits : Parameters, Unqual, arity;
 
                 static if (hasUDA!(fun, PrivilegeLevel))
                 {
@@ -1667,6 +1666,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (__traits(hasMember, this, "allow") &&
                         isSomeFunction!(__traits(getMember, this, "allow")))
                     {
+                        import lu.traits : TakesParams, stringofParams;
+
                         static assert(TakesParams!(__traits(getMember, this, "allow"),
                             IRCEvent, PrivilegeLevel),
                             "Custom allow in " ~ module_ ~ '.' ~ typeof(this).stringof ~
