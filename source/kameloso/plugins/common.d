@@ -1673,9 +1673,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (!Enum!(IRCEvent.Type).toString(U).beginsWith("ERR_") &&
                             !Enum!(IRCEvent.Type).toString(U).beginsWith("RPL_"))
                         {
-                            pragma(msg, module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " is annotated with IRCEvent.Type." ~
-                                Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
+                            import std.format : format;
+                            pragma(msg, ("`%s.%s` is annotated with " ~
+                                "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+                                .format(module_, __traits(identifier, fun),
+                                Enum!(IRCEvent.Type).toString(U)));
                         }*/
 
                         static if (
