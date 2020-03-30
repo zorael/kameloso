@@ -20,9 +20,16 @@ private:
 
 import kameloso.plugins.common;
 import dialect.defs;
-
 import std.typecons : No, Yes;
 
+version(OmniscientQueries)
+{
+    enum omniscientChannelPolicy = ChannelPolicy.any;
+}
+else
+{
+    enum omniscientChannelPolicy = ChannelPolicy.home;
+}
 
 // ChannelState
 /++
@@ -128,7 +135,7 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage(squelchMessage));
                 }
 
-                raw(service.state, command ~ ' ' ~ channelName);
+                raw(service.state, command ~ ' ' ~ channelName, service.hideOutgoingQueries);
                 Fiber.yield();  // Awaiting specified types
 
                 while (thisFiber.payload.channel != channelName) Fiber.yield();
@@ -181,7 +188,8 @@ void startChannelQueries(ChanQueriesService service)
                 }
 
                 import kameloso.messaging : mode;
-                mode(service.state, channelName, "+%c".format((cast(char)modechar)));
+                mode(service.state, channelName, "+%c".format((cast(char)modechar)),
+                    string.init, service.hideOutgoingQueries);
             }
 
             if (channelName !in service.channelStates) continue;
@@ -267,7 +275,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch " ~ nickname));
             }
 
-            whois(service.state, nickname, false);
+            whois(service.state, nickname, false, service.hideOutgoingQueries);
             Fiber.yield();  // Await whois types registered above
 
             while (true)
@@ -332,7 +340,7 @@ void startChannelQueries(ChanQueriesService service)
  +  channel states.
  +/
 @(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.any)
+@omniscientChannelPolicy
 void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
@@ -346,7 +354,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
-@(ChannelPolicy.any)
+@omniscientChannelPolicy
 void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {
     service.channelStates.remove(event.channel);

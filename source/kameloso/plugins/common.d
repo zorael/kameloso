@@ -42,9 +42,9 @@ static if (__VERSION__ == 2079L)
 
     static if (getSymbolsByUDA!(Foo_2079, UDA_2079).length != 3)
     {
-        pragma(msg, "WARNING: You are using a 2.079.0 compiler with a broken " ~
+        pragma(msg, "WARNING: You are using a `2.079.0` compiler with a broken " ~
             "crucial trait in its standard library. The program will not " ~
-            "function normally. Please upgrade to 2.079.1.");
+            "function normally. Please upgrade to `2.079.1` or later.");
     }
 }
 
@@ -261,7 +261,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         import std.meta : AliasSeq, staticMap;
         import std.traits : Parameters, Unqual, arity;
 
-        assert((fn !is null), "null fn in TriggerRequestImpl!" ~ F.stringof);
+        assert((fn !is null), "null fn in `TriggerRequestImpl!" ~ F.stringof ~ "`");
 
         alias Params = staticMap!(Unqual, Parameters!fn);
 
@@ -283,7 +283,10 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         }
         else
         {
-            static assert(0, "Unknown function signature in TriggerRequestImpl: " ~ typeof(fn).stringof);
+            import std.format : format;
+            static assert(0, ("`TriggerRequestImpl` instantiated with an invalid " ~
+                "trigger function signature: `%s`")
+                .format(F.stringof));
         }
     }
 }
@@ -949,36 +952,30 @@ struct BotRegex
     /// The regular expression in string form.
     string expression;
 
-    /// Creates a new `BotRegex` with the passed `policy` and regex `engine`.
-    this(const PrefixPolicy policy, Regex!char engine) pure
-    {
-        this.policy = policy;
-        this.engine = engine;
-    }
-
     /++
      +  Creates a new `BotRegex` with the passed `policy` and regex `expression` string.
      +/
     this(const PrefixPolicy policy, const string expression)
     {
         this.policy = policy;
-        this.engine = expression.regex;
-        this.expression = expression;
-    }
 
-    /// Creates a new `BotRegex` with the passed regex `engine`.
-    this(Regex!char engine) pure
-    {
-        this.policy = PrefixPolicy.prefixed;
-        this.engine = engine;
+        if (expression.length)
+        {
+            this.engine = expression.regex;
+            this.expression = expression;
+        }
     }
 
     /// Creates a new `BotRegex` with the passed regex `expression` string.
     this(const string expression)
     {
         this.policy = PrefixPolicy.prefixed;
-        this.engine = expression.regex;
-        this.expression = expression;
+
+        if (expression.length)
+        {
+            this.engine = expression.regex;
+            this.expression = expression;
+        }
     }
 }
 
@@ -1175,17 +1172,28 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     private import core.thread : Fiber;
 
-    /*static assert (__traits(compiles, is(typeof(this))),
-        module_ ~ " mixes in IRCPluginImpl but it is supposed to be mixed in " ~
-        "inside an IRCPlugin subclass");*/
-
     static if (__traits(compiles, this.hasIRCPluginImpl))
     {
-        static assert(0, "Double mixin of IRCPluginImpl in " ~ typeof(this.stringof));
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("IRCPluginImpl", typeof(this).stringof));
     }
     else
     {
         private enum hasIRCPluginImpl = true;
+    }
+
+    // Use a custom constraint to force the scope to be an IRCPlugin
+    static if(!is(__traits(parent, hasIRCPluginImpl) : IRCPlugin))
+    {
+        import std.format : format;
+
+        alias pluginImplParent = __traits(parent, hasIRCPluginImpl);
+        alias pluginImplParentInfo = CategoryName!pluginImplParent;
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass")
+            .format(pluginImplParentInfo.type, pluginImplParentInfo.fqn, "IRCPluginImpl"));
     }
 
     @safe:
@@ -1228,7 +1236,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
                             {
                                 static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
-                                    Unqual!(typeof(this)).stringof ~ " has a non-bool Enabler");
+                                    '`' ~ Unqual!(typeof(this)).stringof ~ "` has a non-bool `Enabler`");
 
                                 retval = submember;
                                 break top;
@@ -1347,6 +1355,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
          +/
         Next handle(alias fun)(const IRCEvent event)
         {
+            import std.format : format;
+
             enum verbose = hasUDA!(fun, Verbose) || debug_;
 
             static if (verbose)
@@ -1354,21 +1364,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import kameloso.common : settings;
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
+
+                enum name = "[%s] %s".format(__traits(identifier, thisModule),
+                        __traits(identifier, fun));
             }
-
-            enum name = ()
-            {
-                import lu.conv : Enum;
-                import std.format : format;
-
-                string pluginName = module_;  // mutable
-                while (pluginName.contains('.'))
-                {
-                    pluginName.nom('.');
-                }
-
-                return "[%s] %s".format(pluginName, __traits(identifier, fun));
-            }();
 
             udaloop:
             foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
@@ -1379,15 +1378,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
-                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                        " is annotated IRCEvent.Type.PRIVMSG, which is not a valid event type. " ~
-                        "Use CHAN or QUERY (or both) instead");
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.PRIVMSG`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
+                        "or `IRCEvent.Type.QUERY` instead")
+                        .format(module_, __traits(identifier, fun)));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
                 {
-                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                        " is annotated IRCEvent.Type.WHISPER, which is not a valid event type. " ~
-                        "Use QUERY instead");
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.WHISPER`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
+                        .format(module_, __traits(identifier, fun)));
                 }
                 else
                 {
@@ -1401,7 +1403,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                    writefln("-- %s @ %s", name, Enum!(IRCEvent.Type).toString(event.type));
                     if (settings.flush) stdout.flush();
                 }
 
@@ -1465,8 +1467,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                     {
-                        static assert(commandUDA.string_.length, name ~
-                            " has an empty BotCommand string");
+                        static if (!commandUDA.string_.length)
+                        {
+                            import std.format : format;
+                            static assert(0, "`%s.%s` has an empty `BotCommand` string"
+                                .format(module_, __traits(identifier, fun)));
+                        }
 
                         static if (verbose)
                         {
@@ -1531,13 +1537,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                             import std.regex : Regex;
 
-                            static assert((regexUDA.engine != Regex!char.init),
-                                name ~ " has an incomplete BotRegex");
+                            static if (!regexUDA.expression.length)
+                            {
+                                import std.format : format;
+                                static assert(0, "`%s.%s` has an empty `BotRegex` expression"
+                                    .format(module_, __traits(identifier, fun)));
+                            }
 
                             static if (verbose)
                             {
-                                writeln("BotRegex: ", regexUDA.expression.length ?
-                                    regexUDA.expression : "(cannot get expression)");
+                                writeln("BotRegex: `", regexUDA.expression, "`");
                                 if (settings.flush) stdout.flush();
                             }
 
@@ -1576,7 +1585,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             }
                             catch (Exception e)
                             {
-                                logger.warning("BotRegex exception: ", e.msg);
+                                static if (verbose)
+                                {
+                                    writeln("...BotRegex exception: ", e.msg);
+                                    version(PrintStacktraces) writeln(e.toString);
+                                    if (settings.flush) stdout.flush();
+                                }
                                 continue;  // next BotRegex
                             }
                         }
@@ -1606,8 +1620,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import std.format : format;
 
                     enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
-                    pragma(msg, "Note: %s is a wildcard %s event but is not Chainable nor Terminating"
-                        .format(name, typestring));
+                    pragma(msg, ("Note: `%s.%s` is a wildcard `IRCEvent.Type.%s` event " ~
+                        "but is not `Chainable` nor `Terminating`")
+                        .format(module_, __traits(identifier, fun), typestring));
                 }
 
                 static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
@@ -1624,12 +1639,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (!Enum!(IRCEvent.Type).toString(U).beginsWith("ERR_") &&
                             !Enum!(IRCEvent.Type).toString(U).beginsWith("RPL_"))
                         {
-                            pragma(msg, module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " is annotated with IRCEvent.Type." ~
-                                Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
+                            import std.format : format;
+                            pragma(msg, ("`%s.%s` is annotated with " ~
+                                "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+                                .format(module_, __traits(identifier, fun),
+                                Enum!(IRCEvent.Type).toString(U)));
                         }*/
 
-                        static assert (!(
+                        static if (
                             (U == CHAN) ||
                             (U == QUERY) ||
                             (U == EMOTE) ||
@@ -1639,10 +1656,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             //(U == NICK) ||
                             (U == AWAY) ||
                             (U == BACK) //||
-                            ),
-                            module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " is annotated with user-facing IRCEvent.Type." ~
-                                Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.");
+                            )
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s.%s` is annotated with a user-facing " ~
+                                "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+                                .format(module_, __traits(identifier, fun),
+                                Enum!(IRCEvent.Type).toString(U)));
+                        }
                     }
                 }
 
@@ -1656,9 +1677,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if ((privilegeLevel != PrivilegeLevel.ignore) &&
                         (privilegeLevel != PrivilegeLevel.anyone))
                     {
-                        static assert (__traits(compiles, .hasMinimalAuthentication),
-                            module_ ~ " is missing MinimalAuthentication mixin " ~
-                            "(needed for PrivilegeLevel checks).");
+                        static if (!__traits(compiles, .hasMinimalAuthentication))
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
+                                "mixin (needed for `PrivilegeLevel` checks)")
+                                .format(module_));
+                        }
                     }
 
                     static if (verbose)
@@ -1672,11 +1697,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         import lu.traits : TakesParams, stringofParams;
 
-                        static assert(TakesParams!(__traits(getMember, this, "allow"),
-                            IRCEvent, PrivilegeLevel),
-                            "Custom allow in " ~ module_ ~ '.' ~ typeof(this).stringof ~
-                            " has an invalid signature: " ~
-                            stringofParams!(__traits(getMember, this, "allow")));
+                        static if (!TakesParams!(__traits(getMember, this, "allow"),
+                            IRCEvent, PrivilegeLevel))
+                        {
+                            import std.format : format;
+                            static assert(0, ("Custom `allow` function in `%s.%s` " ~
+                                "has an invalid signature: `%s`")
+                                .format(module_, typeof(this).stringof, typeof(allow).stringof));
+                        }
 
                         static if (verbose)
                         {
@@ -1736,15 +1764,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
                         else static if (Filter!(isIRCPluginParam, Params).length)
                         {
-                            static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " takes an IRCPlugin instead of subclass plugin: " ~
-                                typeof(fun).stringof);
+                            import std.format : format;
+                            static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
+                                "parameter instead of a subclass `%s`")
+                                .format(module_, __traits(identifier, fun), This.stringof));
                         }
                         else
                         {
-                            static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                                " has an unsupported function signature: " ~
-                                typeof(fun).stringof);
+                            import std.format : format;
+                            static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
                         }
 
                     case fail:
@@ -1782,8 +1811,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    static assert(0, module_ ~ '.' ~ __traits(identifier, fun) ~
-                        " has an unsupported function signature: " ~ typeof(fun).stringof);
+                    import std.format : format;
+                    static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                        .format(module_, __traits(identifier, fun), typeof(fun).stringof));
                 }
 
                 static if (hasUDA!(fun, Chainable))
@@ -1936,8 +1966,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".initialise has an unsupported " ~
-                    "function signature: " ~ typeof(.initialise).stringof);
+                import std.format : format;
+                static assert(0, "`%s.initialise` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.initialise).stringof));
             }
         }
     }
@@ -1965,8 +1996,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".postprocess has an unsupported " ~
-                    "function signature: " ~ typeof(.postprocess).stringof);
+                import std.format : format;
+                static assert(0, "`%s.postprocess` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.postprocess).stringof));
             }
         }
     }
@@ -1990,8 +2022,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".initResources has an unsupported " ~
-                    "function signature: " ~ typeof(.initResources).stringof);
+                import std.format : format;
+                static assert(0, "`%s.initResources` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.initResources).stringof));
             }
         }
     }
@@ -2202,8 +2235,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".start has an unsupported " ~
-                    "function signature: " ~ typeof(.start).stringof);
+                import std.format : format;
+                static assert(0, "`%s.start` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.start).stringof));
             }
         }
     }
@@ -2227,8 +2261,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".teardown has an unsupported " ~
-                    "function signature: " ~ typeof(.teardown).stringof);
+                import std.format : format;
+                static assert(0, "`%s.teardown` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.teardown).stringof));
             }
         }
     }
@@ -2250,21 +2285,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     public string name() @property const pure nothrow @nogc
     {
-        enum ctName =
-        {
-            import lu.string : contains, nom;
-
-            string moduleName = module_;  // mutable
-
-            while (moduleName.contains('.'))
-            {
-                moduleName.nom('.');
-            }
-
-            return moduleName;
-        }().idup;
-
-        return ctName;
+        mixin("static import thisModule = " ~ module_ ~ ";");
+        return __traits(identifier, thisModule);
     }
 
 
@@ -2323,7 +2345,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     else
                     {
                         import std.format : format;
-                        pragma(msg, `Warning: %s.%s is missing a Description annotation for command "%s"`
+                        pragma(msg, "Warning: `%s.%s` is missing a `Description` annotation for command \"%s\""
                             .format(module_, __traits(identifier, fun), commandUDA.string_));
                     }
                 }
@@ -2382,8 +2404,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    static assert(0, module_ ~ ".periodically has an unsupported " ~
-                        "function signature: " ~ typeof(.periodically).stringof);
+                    import std.format : format;
+                    static assert(0, "`%s.periodically` has an unsupported function signature: `%s`"
+                        .format(module_, typeof(.periodically).stringof));
                 }
             }
         }
@@ -2408,8 +2431,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".reload has an unsupported " ~
-                    "function signature: " ~ typeof(.reload).stringof);
+                import std.format : format;
+                static assert(0, "`%s.reload` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.reload).stringof));
             }
         }
     }
@@ -2442,8 +2466,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             else
             {
-                static assert(0, module_ ~ ".onBusMessage has an unsupported " ~
-                    "function signature: " ~ typeof(.onBusMessage).stringof);
+                import std.format : format;
+                static assert(0, "`%s.onBusMessage` has an unsupported function signature: `%s`"
+                    .format(module_, typeof(.onBusMessage).stringof));
             }
         }
     }
@@ -2504,24 +2529,31 @@ public:
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
-    /*static assert (__traits(compiles, typeof(this)),
-        module_ ~ " mixes in MessagingProxy but it is supposed to be mixed in " ~
-        "inside an IRCPlugin subclass");*/
-
     static if (__traits(compiles, this.hasMessagingProxy))
     {
-        static assert(0, "Double mixin of MessagingProxy in " ~ typeof(this.stringof));
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("MessagingProxy", typeof(this).stringof));
     }
     else
     {
         private enum hasMessagingProxy = true;
     }
 
-    static assert(is(typeof(this) : IRCPlugin), "MessagingProxy should be " ~
-        "mixed into the context of a plugin or service.");
+    // Use a custom constraint to force the scope to be an IRCPlugin
+    static if(!is(__traits(parent, hasMessagingProxy) : IRCPlugin))
+    {
+        import std.format : format;
+
+        alias messagingParent = __traits(parent, hasMessagingProxy);
+        alias messagingParentInfo = CategoryName!messagingParent;
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass")
+            .format(messagingParentInfo.type, messagingParentInfo.fqn, "MessagingProxy"));
+    }
 
     pragma(inline):
-
 
     // chan
     /++
@@ -2752,18 +2784,18 @@ public:
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this).stringof),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in MinimalAuthentication " ~
-        "but it is supposed to be mixed in at module scope");
-
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
-        static assert(0, "Double mixin of MinimalAuthentication in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("MinimalAuthentication", module_));
     }
     else
     {
         private enum hasMinimalAuthentication = true;
     }
+
+    mixin MixinConstraints!("MinimalAuthentication", MixinScope.module_);
 
 
     // onMinimalAuthenticationAccountInfoTargetMixin
@@ -2881,12 +2913,23 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
  +      debug_ = Whether or not to print debug output to the terminal.
  +/
 version(WithPlugins)
-mixin template Replayer(bool debug_ = false)
+mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
 {
     import std.conv : text;
+    import std.traits : isSomeFunction;
 
-    private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
-    mixin("TriggerRequest " ~ requestVariableName ~ ';');
+    static if (__traits(compiles, hasReplayer))
+    {
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("Replayer", __FUNCTION__));
+    }
+    else
+    {
+        private enum hasReplayer = true;
+    }
+
+    mixin MixinConstraints!("Replayer", MixinScope.function_);
 
     static if (__traits(compiles, plugin))
     {
@@ -2900,11 +2943,14 @@ mixin template Replayer(bool debug_ = false)
     }
     else
     {
-        static assert(0, "Replayer should be mixed into the context of an event handler. " ~
-            "(Could not access variables named neither `plugin` nor `service` from within " ~
-            __FUNCTION__ ~ ")");
+        import std.format : format;
+        static assert(0, ("`Replayer` should be mixed into the context of an event handler. " ~
+            "(Could not access variables named neither `plugin` nor `service` " ~
+            "from within `%s`)").format(__FUNCTION__));
     }
 
+    private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
+    mixin("TriggerRequest " ~ requestVariableName ~ ';');
 
     // explainReplain
     /++
@@ -3035,18 +3081,18 @@ version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in UserAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
     static if (__traits(compiles, .hasUserAwareness))
     {
-        static assert(0, "Double mixin of UserAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("UserAwareness", module_));
     }
     else
     {
         private enum hasUserAwareness = true;
     }
+
+    mixin MixinConstraints!("UserAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
     {
@@ -3312,22 +3358,26 @@ version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in ChannelAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
-    static assert(__traits(compiles, .hasUserAwareness), module_ ~
-        " is missing UserAwareness mixin (needed for ChannelAwareness).");
-
     static if (__traits(compiles, .hasChannelAwareness))
     {
-        static assert(0, "Double mixin of ChannelAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("ChannelAwareness", module_));
     }
     else
     {
         private enum hasChannelAwareness = true;
     }
 
+    mixin MixinConstraints!("ChannelAwareness", MixinScope.module_);
+
+    static if (!__traits(compiles, .hasUserAwareness))
+    {
+        import std.format : format;
+        static assert(0, ("`%s` is missing a `UserAwareness` mixin " ~
+            "(needed for `ChannelAwareness`)")
+            .format(module_));
+    }
 
     // onChannelAwarenessSelfjoinMixin
     /++
@@ -3767,20 +3817,25 @@ version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in TwitchAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
-    static assert(__traits(compiles, .hasChannelAwareness), module_ ~
-        " is missing ChannelAwareness mixin (needed for TwitchAwareness).");
-
     static if (__traits(compiles, .hasTwitchAwareness))
     {
-        static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("TwitchAwareness", module_));
     }
     else
     {
         private enum hasTwitchAwareness = true;
+    }
+
+    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
+
+    static if (!__traits(compiles, .hasChannelAwareness))
+    {
+        import std.format : format;
+        static assert(0, ("`%s` is missing a `ChannelAwareness` mixin " ~
+            "(needed for `TwitchAwareness`)")
+            .format(module_));
     }
 
 
@@ -3889,17 +3944,25 @@ else
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert (!__traits(compiles, typeof(this)),
-        module_ ~ '.' ~ typeof(this).stringof ~ " mixes in TwitchAwareness " ~
-        "but it is supposed to be mixed in at module scope");
-
     static if (__traits(compiles, .hasTwitchAwareness))
     {
-        static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("TwitchAwareness", module_));
     }
     else
     {
         private enum hasTwitchAwareness = true;
+    }
+
+    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
+
+    static if (!__traits(compiles, .hasChannelAwareness))
+    {
+        import std.format : format;
+        static assert(0, ("`%s` is missing a `ChannelAwareness` mixin " ~
+            "(needed for `TwitchAwareness`)")
+            .format(module_));
     }
 }
 
@@ -4495,6 +4558,19 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 {
     import std.conv : text;
 
+    static if (__traits(compiles, hasWHOISFiber))
+    {
+        import std.format : format;
+        static assert(0, "Double mixin of `%s` in `%s`"
+            .format("WHOISFiberDelegate", __FUNCTION__));
+    }
+    else
+    {
+        private enum hasWHOISFiber = true;
+    }
+
+    mixin MixinConstraints!("WHOISFiberDelegate", MixinScope.function_);
+
     static if (__traits(compiles, plugin))
     {
         alias context = plugin;
@@ -4505,9 +4581,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        static assert(0, "WHOISFiberDelegate should be mixed into the context " ~
+        static assert(0, "`WHOISFiberDelegate` should be mixed into the context " ~
             "of an event handler. (Could not access variables named neither " ~
-            `"plugin" nor "service" from within ` ~ __FUNCTION__ ~ ")");
+            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
     }
 
 
@@ -4616,9 +4692,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else
             {
-                static assert(0, "Unexpected signature of success function " ~
-                    "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__ ~
-                    ": " ~ typeof(onSuccess).stringof ~ " " ~ __traits(identifier, onSuccess));
+                import std.format : format;
+                static assert(0, ("Unexpected signature of success function/delegate " ~
+                    "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
+                    .format(__FUNCTION__, typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
             }
         }
         else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
@@ -4646,9 +4723,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
                 else
                 {
-                    static assert(0, "Unexpected signature of failure function " ~
-                        "alias passed to mixin WHOISFiberDelegate in " ~ __FUNCTION__ ~
-                        ": " ~ typeof(onFailure).stringof ~ " " ~ __traits(identifier, onFailure));
+                    import std.format : format;
+                    static assert(0, ("Unexpected signature of failure function/delegate " ~
+                        "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
+                        .format(__FUNCTION__, typeof(onFailure).stringof, __traits(identifier, onFailure)));
                 }
             }
         }
@@ -4777,4 +4855,248 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
     }
 
     return nickname;
+}
+
+
+// MixinScope
+/++
+ +  The types of scope into which we might mix in one of our mixin templates.
+ +/
+enum MixinScope
+{
+    function_,  /// Mixed in inside a function.
+    class_,     /// Mixed in inside a class.
+    struct_,    /// Mixed in inside a struct.
+    module_,    /// Mixed in inside a module.
+}
+
+
+// CategoryName
+/++
+ +  Provides string representations of the category of a symbol, where such is not
+ +  a fundamental primitive variable but a module, a function, a delegate,
+ +  a class or a struct.
+ +
+ +  Module detection only works on compilers 2.087 and later, due to missing
+ +  support for `__traits(isModule)`.
+ +
+ +  Example:
+ +  ---
+ +  void foo() {}
+ +
+ +  alias categoryName = CategoryName!foo;
+ +
+ +  writeln(categoryName.type);
+ +  writeln(categoryName.name);
+ +  writeln(categoryName.fqn);
+ +  ---
+ +
+ +  Params:
+ +      sym = Symbol to provide the strings for.
+ +/
+template CategoryName(alias sym)
+{
+    import std.traits : fullyQualifiedName;
+
+
+    // type
+    /++
+     +  String representation of the fundamental type of `sym`.
+     +/
+    enum type = ()
+    {
+        import std.traits : isDelegate, isFunction;
+
+
+        static if ((__VERSION__ >= 2087L) && __traits(isModule, sym))
+        {
+            return "module";
+        }
+        else static if (isFunction!sym)
+        {
+            return "function";
+        }
+        else static if (isDelegate!sym)
+        {
+            return "delegate";
+        }
+        else static if (is(sym == class) || is(typeof(sym) == class))
+        {
+            return "class";
+        }
+        else static if (is(sym == struct) || is(typeof(sym) == struct))
+        {
+            return "struct";
+        }
+        else static if (__VERSION__ < 2087L)
+        {
+            return "(module?)";
+        }
+        else
+        {
+            return "(unknown)";
+        }
+    }();
+
+
+    // name
+    /++
+     +  A short name for `sym`.
+     +/
+    enum name = __traits(identifier, sym);
+
+
+    // fqn
+    /++
+     +  The fully qualified name for `sym`.
+     +/
+    enum fqn = fullyQualifiedName!sym;
+}
+
+unittest
+{
+    bool localSymbol;
+
+    void fn() {}
+
+    auto dg = () => localSymbol;
+
+    class C {}
+    C c;
+
+    struct S {}
+    S s;
+
+    alias Ffn = CategoryName!fn;
+    static assert(Ffn.type == "function");
+    static assert(Ffn.name == "fn");
+    // Can't test fqn from inside a unittest
+
+    alias Fdg = CategoryName!dg;
+    static assert(Fdg.type == "delegate");
+    static assert(Fdg.name == "dg");
+    // Ditto
+
+    alias Fc = CategoryName!c;
+    static assert(Fc.type == "class");
+    static assert(Fc.name == "c");
+    // Ditto
+
+    alias Fs = CategoryName!s;
+    static assert(Fs.type == "struct");
+    static assert(Fs.name == "s");
+
+    alias Fm = CategoryName!(kameloso.plugins.common);
+
+    static if (__VERSION__ >= 2087L)
+    {
+        static assert(Fm.type == "module");
+    }
+    else
+    {
+        static assert(Fm.type == "(module?)");
+    }
+
+    static assert(Fm.name == "common");
+    static assert(Fm.fqn == "kameloso.plugins.common");
+}
+
+
+// MixinConstraints
+/++
+ +  Mixes in static constraints into another mixin template, to provide static
+ +  guarantees that it is not mixed into a type of scope other than the one specified.
+ +
+ +  Using this you can ensure that a mixin template meant to be mixed into a
+ +  class isn't mixed into a module-level scope, or into a function, etc.
+ +
+ +  Example:
+ +  ---
+ +  module foo;
+ +
+ +  mixin template Foo()
+ +  {
+ +      mixin MixinConstraints!("Foo", MixinScope.module_);  // Constrained to module-level scope
+ +  }
+ +
+ +  mixin Foo;  // no problem
+ +
+ +  void bar()
+ +  {
+ +      mixin Foo;  // static assert(0): scope is MixinScope.function_, not MixinSCope.module_
+ +  }
+ +  ---
+ +
+ +  Params:
+ +      mixinName = String name of the mixing in mixin. Can be anything; it's
+ +          just used for the static assert error messages.
+ +      mixinScope = The scope into which to only allow the mixin to be mixed in.
+ +          All other kinds of scopes will be statically rejected.
+ +/
+mixin template MixinConstraints(string mixinName, MixinScope mixinScope)
+{
+private:
+    import std.format : format;
+
+    /// Sentinel value as anchor to get the parent scope from.
+    enum mixinSentinel = true;
+
+    alias mixinParent = __traits(parent, mixinSentinel);
+    alias mixinParentInfo = CategoryName!mixinParent;
+
+    static if (mixinScope == MixinScope.function_)
+    {
+        import std.traits : isSomeFunction;
+
+        static if (!isSomeFunction!mixinParent)
+        {
+            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+                "mixed into a function")
+                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
+        }
+    }
+    else static if (mixinScope == MixinScope.class_)
+    {
+        static if(!is(mixinParent == class))
+        {
+            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+                "mixed into a class")
+                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
+        }
+    }
+    else static if (mixinScope == MixinScope.struct_)
+    {
+        static if(!is(mixinParent == struct))
+        {
+            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+                "mixed into a struct")
+                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
+        }
+    }
+    else static if (mixinScope == MixinScope.module_)
+    {
+        static if (__VERSION__ < 2087L)
+        {
+            import std.traits : isSomeFunction;
+
+            static if (isSomeFunction!mixinParent ||
+                is(mixinParent == class) ||
+                is(mixinParent == struct))
+            {
+                static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+                    "mixed into a module-level scope")
+                    .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
+            }
+        }
+        else static if (!__traits(isModule, mixinParent))
+        {
+            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+                "mixed into a module-level scope")
+                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
+        }
+    }
+    else
+    {
+        static assert(0, "Logic error; unexpected member of `MixinScope`");
+    }
 }
