@@ -4987,7 +4987,16 @@ unittest
     static assert(Fs.name == "s");
 
     alias Fm = CategoryName!(kameloso.plugins.common);
-    static assert(Fm.type == "module");
+
+    static if (__VERSION__ >= 2087L)
+    {
+        static assert(Fm.type == "module");
+    }
+    else
+    {
+        static assert(Fm.type == "(module?)");
+    }
+
     static assert(Fm.name == "common");
     static assert(Fm.fqn == "kameloso.plugins.common");
 }
