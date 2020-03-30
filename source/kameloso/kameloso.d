@@ -1629,9 +1629,25 @@ Next tryConnect(ref Kameloso instance)
         {
         case preconnect:
             import lu.string : sharedDomains;
-            import std.socket : AddressFamily;
+            import std.socket : AddressException, AddressFamily;
 
-            immutable resolvedHost = attempt.ip.toHostNameString;
+            string resolvedHost;
+
+            try
+            {
+                resolvedHost = attempt.ip.toHostNameString;
+            }
+            catch (AddressException e)
+            {
+                /*
+                std.socket.AddressException@std/socket.d(1301): Could not get host name: Success
+                ----------------
+                ??:? pure @safe bool std.exception.enforce!(bool).enforce(bool, lazy object.Throwable) [0x2cf5f0]
+                ??:? const @trusted immutable(char)[] std.socket.Address.toHostString(bool) [0x4b2d7c6]
+                */
+                // Just let the string be empty
+            }
+
             immutable pattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
                 "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
