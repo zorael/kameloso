@@ -43,16 +43,6 @@ configuration "posix" {
     buildRequirements "silenceDeprecations"
 }
 
-configuration "windows-lowmem" {
-    platforms "windows"
-    toolchainRequirements dmd="yes" ldc="no" gdc="no" frontend=">=2.089"
-    dflags "-lowmem"
-    versions "WithPlugins" "Colours" "Web"
-    dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
-    buildRequirements "silenceDeprecations"
-}
-
 configuration "windows" {
     platforms "windows"
     versions "WithPlugins" "Colours" "Web"
