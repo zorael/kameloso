@@ -5007,9 +5007,7 @@ unittest
  +
  +  mixin template Foo()
  +  {
- +      enum sentinelValue = true;  // One symbol required to get the parent scope
- +
- +      mixin MixinConstraints!("Foo", sentinelValue, MixinScope.module_);  // Constrained to module-level scope
+ +      mixin MixinConstraints!("Foo", MixinScope.module_);  // Constrained to module-level scope
  +  }
  +
  +  mixin Foo;  // no problem
@@ -5023,28 +5021,25 @@ unittest
  +  Params:
  +      mixinName = String name of the mixing in mixin. Can be anything; it's
  +          just used for the static assert error messages.
- +      sentinel = Alias to a symbol inside the mixing in mixin. This is required
- +          and can be anything; an enum literal, a variable, a function.
  +      mixinScope = The scope into which to only allow the mixin to be mixed in.
  +          All other kinds of scopes will be statically rejected.
  +/
-mixin template MixinConstraints(string mixinName, alias sentinel, MixinScope mixinScope)
+mixin template MixinConstraints(string mixinName, MixinScope mixinScope)
 {
 private:
     import std.format : format;
 
-    static assert((is(typeof(sentinel)) && !__traits(isTemplate, sentinel))
-    ,   "Invalid sentinel symbol `%s` passed to `MixinConstraints` (mixed in from `%s`)"
-        .format(__traits(identifier, sentinel), mixinName));
+    /// Sentinel value as anchor to get the parent scope from.
+    enum mixinSentinel = true;
 
-    alias mixinParent = __traits(parent, sentinel);
+    alias mixinParent = __traits(parent, mixinSentinel);
     alias mixinParentInfo = CategoryName!mixinParent;
 
     static if (mixinScope == MixinScope.function_)
     {
         import std.traits : isSomeFunction;
 
-        static if (!isSomeFunction!(__traits(parent, sentinel)))
+        static if (!isSomeFunction!mixinParent)
         {
             static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
                 "mixed into a function")
@@ -5053,7 +5048,7 @@ private:
     }
     else static if (mixinScope == MixinScope.class_)
     {
-        static if(!is(__traits(parent, sentinel) == class))
+        static if(!is(mixinParent == class))
         {
             static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
                 "mixed into a class")
@@ -5062,7 +5057,7 @@ private:
     }
     else static if (mixinScope == MixinScope.struct_)
     {
-        static if(!is(__traits(parent, sentinel) == struct))
+        static if(!is(mixinParent == struct))
         {
             static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
                 "mixed into a struct")
@@ -5075,16 +5070,16 @@ private:
         {
             import std.traits : isSomeFunction;
 
-            static if (isSomeFunction!(__traits(parent, sentinel)) ||
-                is(__traits(parent, sentinel) == class) ||
-                is(__traits(parent, sentinel) == struct))
+            static if (isSomeFunction!mixinParent ||
+                is(mixinParent == class) ||
+                is(mixinParent == struct))
             {
                 static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
                     "mixed into a module-level scope")
                     .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
             }
         }
-        else static if (!__traits(isModule, __traits(parent, sentinel)))
+        else static if (!__traits(isModule, mixinParent))
         {
             static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
                 "mixed into a module-level scope")
