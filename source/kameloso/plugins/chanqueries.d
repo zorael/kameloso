@@ -20,9 +20,16 @@ private:
 
 import kameloso.plugins.common;
 import dialect.defs;
-
 import std.typecons : No, Yes;
 
+version(OmniscientQueries)
+{
+    enum omniscientChannelPolicy = ChannelPolicy.any;
+}
+else
+{
+    enum omniscientChannelPolicy = ChannelPolicy.home;
+}
 
 // ChannelState
 /++
@@ -333,7 +340,7 @@ void startChannelQueries(ChanQueriesService service)
  +  channel states.
  +/
 @(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.any)
+@omniscientChannelPolicy
 void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
@@ -347,7 +354,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
-@(ChannelPolicy.any)
+@omniscientChannelPolicy
 void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {
     service.channelStates.remove(event.channel);
