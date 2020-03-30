@@ -2523,7 +2523,7 @@ version(unittest)
 version(WithPlugins)
 mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 {
-public:
+private:
     static import kameloso.messaging;
     static import kameloso.common;
 
