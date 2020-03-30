@@ -2795,7 +2795,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         private enum hasMinimalAuthentication = true;
     }
 
-    mixin MixinConstraints!("MinimalAuthentication", hasMinimalAuthentication, MixinScope.module_);
+    mixin MixinConstraints!("MinimalAuthentication", MixinScope.module_);
 
 
     // onMinimalAuthenticationAccountInfoTargetMixin
@@ -2929,7 +2929,7 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
         private enum hasReplayer = true;
     }
 
-    mixin MixinConstraints!("Replayer", hasReplayer, MixinScope.function_);
+    mixin MixinConstraints!("Replayer", MixinScope.function_);
 
     static if (__traits(compiles, plugin))
     {
@@ -3092,7 +3092,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         private enum hasUserAwareness = true;
     }
 
-    mixin MixinConstraints!("UserAwareness", hasUserAwareness, MixinScope.module_);
+    mixin MixinConstraints!("UserAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
     {
@@ -3369,7 +3369,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         private enum hasChannelAwareness = true;
     }
 
-    mixin MixinConstraints!("ChannelAwareness", hasChannelAwareness, MixinScope.module_);
+    mixin MixinConstraints!("ChannelAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasUserAwareness))
     {
@@ -3828,7 +3828,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         private enum hasTwitchAwareness = true;
     }
 
-    mixin MixinConstraints!("TwitchAwareness", hasTwitchAwareness, MixinScope.module_);
+    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
@@ -3955,7 +3955,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         private enum hasTwitchAwareness = true;
     }
 
-    mixin MixinConstraints!("TwitchAwareness", hasTwitchAwareness, MixinScope.module_);
+    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
@@ -4569,7 +4569,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         private enum hasWHOISFiber = true;
     }
 
-    mixin MixinConstraints!("WHOISFiberDelegate", hasWHOISFiber, MixinScope.function_);
+    mixin MixinConstraints!("WHOISFiberDelegate", MixinScope.function_);
 
     static if (__traits(compiles, plugin))
     {
