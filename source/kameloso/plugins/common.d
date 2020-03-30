@@ -1188,12 +1188,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         import std.format : format;
 
-        alias parent = __traits(parent, hasIRCPluginImpl);
-        alias parentInfo = CategoryName!parent;
+        alias pluginImplParent = __traits(parent, hasIRCPluginImpl);
+        alias pluginImplParentInfo = CategoryName!pluginImplParent;
 
         static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass")
-            .format(parentInfo.type, parentInfo.fqn, "IRCPluginImpl"));
+            .format(pluginImplParentInfo.type, pluginImplParentInfo.fqn, "IRCPluginImpl"));
     }
 
     @safe:
@@ -2567,12 +2567,12 @@ public:
     {
         import std.format : format;
 
-        alias parent = __traits(parent, hasMessagingProxy);
-        alias parentInfo = CategoryName!parent;
+        alias messagingParent = __traits(parent, hasMessagingProxy);
+        alias messagingParentInfo = CategoryName!messagingParent;
 
         static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass")
-            .format(parentInfo.type, parentInfo.fqn, "MessagingProxy"));
+            .format(messagingParentInfo.type, messagingParentInfo.fqn, "MessagingProxy"));
     }
 
     pragma(inline):
