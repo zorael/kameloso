@@ -2926,7 +2926,7 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     }
     else
     {
-        enum hasReplayer = true;
+        private enum hasReplayer = true;
     }
 
     mixin MixinConstraints!("Replayer", hasReplayer, MixinScope.function_);
@@ -4566,7 +4566,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        enum hasWHOISFiber = true;
+        private enum hasWHOISFiber = true;
     }
 
     mixin MixinConstraints!("WHOISFiberDelegate", hasWHOISFiber, MixinScope.function_);
