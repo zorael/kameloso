@@ -1172,6 +1172,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     private import core.thread : Fiber;
 
+    /// Symbol needed for the mixin constraints to work.
+    enum mixinSentinel = true;
+
+    // Use a custom constraint to force the scope to be an IRCPlugin
+    static if(!is(__traits(parent, mixinSentinel) : IRCPlugin))
+    {
+        import lu.traits : CategoryName;
+        import std.format : format;
+
+        alias pluginImplParent = __traits(parent, mixinSentinel);
+        alias pluginImplParentInfo = CategoryName!pluginImplParent;
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass")
+            .format(pluginImplParentInfo.type, pluginImplParentInfo.fqn, "IRCPluginImpl"));
+    }
+
     static if (__traits(compiles, this.hasIRCPluginImpl))
     {
         import std.format : format;
@@ -1181,20 +1198,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     else
     {
         private enum hasIRCPluginImpl = true;
-    }
-
-    // Use a custom constraint to force the scope to be an IRCPlugin
-    static if(!is(__traits(parent, hasIRCPluginImpl) : IRCPlugin))
-    {
-        import lu.traits : CategoryName;
-        import std.format : format;
-
-        alias pluginImplParent = __traits(parent, hasIRCPluginImpl);
-        alias pluginImplParentInfo = CategoryName!pluginImplParent;
-
-        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass")
-            .format(pluginImplParentInfo.type, pluginImplParentInfo.fqn, "IRCPluginImpl"));
     }
 
     @safe:
@@ -2526,9 +2529,25 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 private:
     static import kameloso.messaging;
     static import kameloso.common;
-
     import std.functional : partial;
     import std.typecons : Flag, No, Yes;
+
+    /// Symbol needed for the mixin constraints to work.
+    enum mixinSentinel = true;
+
+    // Use a custom constraint to force the scope to be an IRCPlugin
+    static if(!is(__traits(parent, mixinSentinel) : IRCPlugin))
+    {
+        import lu.traits : CategoryName;
+        import std.format : format;
+
+        alias messagingParent = __traits(parent, mixinSentinel);
+        alias messagingParentInfo = CategoryName!messagingParent;
+
+        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass")
+            .format(messagingParentInfo.type, messagingParentInfo.fqn, "MessagingProxy"));
+    }
 
     static if (__traits(compiles, this.hasMessagingProxy))
     {
@@ -2539,20 +2558,6 @@ private:
     else
     {
         private enum hasMessagingProxy = true;
-    }
-
-    // Use a custom constraint to force the scope to be an IRCPlugin
-    static if(!is(__traits(parent, hasMessagingProxy) : IRCPlugin))
-    {
-        import lu.traits : CategoryName;
-        import std.format : format;
-
-        alias messagingParent = __traits(parent, hasMessagingProxy);
-        alias messagingParentInfo = CategoryName!messagingParent;
-
-        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass")
-            .format(messagingParentInfo.type, messagingParentInfo.fqn, "MessagingProxy"));
     }
 
     pragma(inline):
@@ -2788,6 +2793,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 {
     import lu.traits : MixinConstraints, MixinScope;
 
+    mixin MixinConstraints!("MinimalAuthentication", MixinScope.module_);
+
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
         import std.format : format;
@@ -2798,8 +2805,6 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     {
         private enum hasMinimalAuthentication = true;
     }
-
-    mixin MixinConstraints!("MinimalAuthentication", MixinScope.module_);
 
 
     // onMinimalAuthenticationAccountInfoTargetMixin
@@ -2923,6 +2928,8 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     import std.conv : text;
     import std.traits : isSomeFunction;
 
+    mixin MixinConstraints!("Replayer", MixinScope.function_);
+
     static if (__traits(compiles, hasReplayer))
     {
         import std.format : format;
@@ -2933,8 +2940,6 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     {
         private enum hasReplayer = true;
     }
-
-    mixin MixinConstraints!("Replayer", MixinScope.function_);
 
     static if (__traits(compiles, plugin))
     {
@@ -3088,6 +3093,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 {
     import lu.traits : MixinConstraints, MixinScope;
 
+    mixin MixinConstraints!("UserAwareness", MixinScope.module_);
+
     static if (__traits(compiles, .hasUserAwareness))
     {
         import std.format : format;
@@ -3098,8 +3105,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         private enum hasUserAwareness = true;
     }
-
-    mixin MixinConstraints!("UserAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
     {
@@ -3367,6 +3372,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 {
     import lu.traits : MixinConstraints, MixinScope;
 
+    mixin MixinConstraints!("ChannelAwareness", MixinScope.module_);
+
     static if (__traits(compiles, .hasChannelAwareness))
     {
         import std.format : format;
@@ -3377,8 +3384,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         private enum hasChannelAwareness = true;
     }
-
-    mixin MixinConstraints!("ChannelAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasUserAwareness))
     {
@@ -3828,6 +3833,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 {
     import lu.traits : MixinConstraints, MixinScope;
 
+    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
+
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         import std.format : format;
@@ -3838,8 +3845,6 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         private enum hasTwitchAwareness = true;
     }
-
-    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
@@ -3957,6 +3962,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 {
     import lu.traits : MixinConstraints, MixinScope;
 
+    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
+
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         import std.format : format;
@@ -3967,8 +3974,6 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         private enum hasTwitchAwareness = true;
     }
-
-    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
@@ -4572,6 +4577,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
 
+    mixin MixinConstraints!("WHOISFiberDelegate", MixinScope.function_);
+
     static if (__traits(compiles, hasWHOISFiber))
     {
         import std.format : format;
@@ -4582,8 +4589,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     {
         private enum hasWHOISFiber = true;
     }
-
-    mixin MixinConstraints!("WHOISFiberDelegate", MixinScope.function_);
 
     static if (__traits(compiles, plugin))
     {
