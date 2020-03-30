@@ -2285,21 +2285,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     public string name() @property const pure nothrow @nogc
     {
-        enum ctName =
-        {
-            import lu.string : contains, nom;
-
-            string moduleName = module_;  // mutable
-
-            while (moduleName.contains('.'))
-            {
-                moduleName.nom('.');
-            }
-
-            return moduleName;
-        }().idup;
-
-        return ctName;
+        mixin("static import thisModule = " ~ module_ ~ ";");
+        return __traits(identifier, thisModule);
     }
 
 
