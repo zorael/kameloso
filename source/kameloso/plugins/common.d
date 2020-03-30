@@ -1355,6 +1355,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
          +/
         Next handle(alias fun)(const IRCEvent event)
         {
+            import std.format : format;
+
             enum verbose = hasUDA!(fun, Verbose) || debug_;
 
             static if (verbose)
@@ -1362,21 +1364,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import kameloso.common : settings;
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
+
+                enum name = "[%s] %s".format(__traits(identifier, thisModule),
+                        __traits(identifier, fun));
             }
-
-            enum name = ()
-            {
-                import lu.conv : Enum;
-                import std.format : format;
-
-                string pluginName = module_;  // mutable
-                while (pluginName.contains('.'))
-                {
-                    pluginName.nom('.');
-                }
-
-                return "[%s] %s".format(pluginName, __traits(identifier, fun));
-            }();
 
             udaloop:
             foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
@@ -1412,7 +1403,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                    writefln("-- %s @ %s", name, Enum!(IRCEvent.Type).toString(event.type));
                     if (settings.flush) stdout.flush();
                 }
 
