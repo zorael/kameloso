@@ -1186,6 +1186,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if(!is(__traits(parent, hasIRCPluginImpl) : IRCPlugin))
     {
+        import lu.traits : CategoryName;
         import std.format : format;
 
         alias pluginImplParent = __traits(parent, hasIRCPluginImpl);
@@ -2543,6 +2544,7 @@ public:
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if(!is(__traits(parent, hasMessagingProxy) : IRCPlugin))
     {
+        import lu.traits : CategoryName;
         import std.format : format;
 
         alias messagingParent = __traits(parent, hasMessagingProxy);
@@ -2784,6 +2786,8 @@ public:
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
+    import lu.traits : MixinConstraints, MixinScope;
+
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
         import std.format : format;
@@ -2915,6 +2919,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 version(WithPlugins)
 mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
 {
+    import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
     import std.traits : isSomeFunction;
 
@@ -3081,6 +3086,8 @@ version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    import lu.traits : MixinConstraints, MixinScope;
+
     static if (__traits(compiles, .hasUserAwareness))
     {
         import std.format : format;
@@ -3358,6 +3365,8 @@ version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    import lu.traits : MixinConstraints, MixinScope;
+
     static if (__traits(compiles, .hasChannelAwareness))
     {
         import std.format : format;
@@ -3817,6 +3826,8 @@ version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    import lu.traits : MixinConstraints, MixinScope;
+
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         import std.format : format;
@@ -3944,6 +3955,8 @@ else
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
+    import lu.traits : MixinConstraints, MixinScope;
+
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         import std.format : format;
@@ -4556,6 +4569,7 @@ import std.traits : isSomeFunction;
 mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
+    import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
 
     static if (__traits(compiles, hasWHOISFiber))
@@ -4855,248 +4869,4 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
     }
 
     return nickname;
-}
-
-
-// MixinScope
-/++
- +  The types of scope into which we might mix in one of our mixin templates.
- +/
-enum MixinScope
-{
-    function_,  /// Mixed in inside a function.
-    class_,     /// Mixed in inside a class.
-    struct_,    /// Mixed in inside a struct.
-    module_,    /// Mixed in inside a module.
-}
-
-
-// CategoryName
-/++
- +  Provides string representations of the category of a symbol, where such is not
- +  a fundamental primitive variable but a module, a function, a delegate,
- +  a class or a struct.
- +
- +  Module detection only works on compilers 2.087 and later, due to missing
- +  support for `__traits(isModule)`.
- +
- +  Example:
- +  ---
- +  void foo() {}
- +
- +  alias categoryName = CategoryName!foo;
- +
- +  writeln(categoryName.type);
- +  writeln(categoryName.name);
- +  writeln(categoryName.fqn);
- +  ---
- +
- +  Params:
- +      sym = Symbol to provide the strings for.
- +/
-template CategoryName(alias sym)
-{
-    import std.traits : fullyQualifiedName;
-
-
-    // type
-    /++
-     +  String representation of the fundamental type of `sym`.
-     +/
-    enum type = ()
-    {
-        import std.traits : isDelegate, isFunction;
-
-
-        static if ((__VERSION__ >= 2087L) && __traits(isModule, sym))
-        {
-            return "module";
-        }
-        else static if (isFunction!sym)
-        {
-            return "function";
-        }
-        else static if (isDelegate!sym)
-        {
-            return "delegate";
-        }
-        else static if (is(sym == class) || is(typeof(sym) == class))
-        {
-            return "class";
-        }
-        else static if (is(sym == struct) || is(typeof(sym) == struct))
-        {
-            return "struct";
-        }
-        else static if (__VERSION__ < 2087L)
-        {
-            return "(module?)";
-        }
-        else
-        {
-            return "(unknown)";
-        }
-    }();
-
-
-    // name
-    /++
-     +  A short name for `sym`.
-     +/
-    enum name = __traits(identifier, sym);
-
-
-    // fqn
-    /++
-     +  The fully qualified name for `sym`.
-     +/
-    enum fqn = fullyQualifiedName!sym;
-}
-
-unittest
-{
-    bool localSymbol;
-
-    void fn() {}
-
-    auto dg = () => localSymbol;
-
-    class C {}
-    C c;
-
-    struct S {}
-    S s;
-
-    alias Ffn = CategoryName!fn;
-    static assert(Ffn.type == "function");
-    static assert(Ffn.name == "fn");
-    // Can't test fqn from inside a unittest
-
-    alias Fdg = CategoryName!dg;
-    static assert(Fdg.type == "delegate");
-    static assert(Fdg.name == "dg");
-    // Ditto
-
-    alias Fc = CategoryName!c;
-    static assert(Fc.type == "class");
-    static assert(Fc.name == "c");
-    // Ditto
-
-    alias Fs = CategoryName!s;
-    static assert(Fs.type == "struct");
-    static assert(Fs.name == "s");
-
-    alias Fm = CategoryName!(kameloso.plugins.common);
-
-    static if (__VERSION__ >= 2087L)
-    {
-        static assert(Fm.type == "module");
-    }
-    else
-    {
-        static assert(Fm.type == "(module?)");
-    }
-
-    static assert(Fm.name == "common");
-    static assert(Fm.fqn == "kameloso.plugins.common");
-}
-
-
-// MixinConstraints
-/++
- +  Mixes in static constraints into another mixin template, to provide static
- +  guarantees that it is not mixed into a type of scope other than the one specified.
- +
- +  Using this you can ensure that a mixin template meant to be mixed into a
- +  class isn't mixed into a module-level scope, or into a function, etc.
- +
- +  Example:
- +  ---
- +  module foo;
- +
- +  mixin template Foo()
- +  {
- +      mixin MixinConstraints!("Foo", MixinScope.module_);  // Constrained to module-level scope
- +  }
- +
- +  mixin Foo;  // no problem
- +
- +  void bar()
- +  {
- +      mixin Foo;  // static assert(0): scope is MixinScope.function_, not MixinSCope.module_
- +  }
- +  ---
- +
- +  Params:
- +      mixinName = String name of the mixing in mixin. Can be anything; it's
- +          just used for the static assert error messages.
- +      mixinScope = The scope into which to only allow the mixin to be mixed in.
- +          All other kinds of scopes will be statically rejected.
- +/
-mixin template MixinConstraints(string mixinName, MixinScope mixinScope)
-{
-private:
-    import std.format : format;
-
-    /// Sentinel value as anchor to get the parent scope from.
-    enum mixinSentinel = true;
-
-    alias mixinParent = __traits(parent, mixinSentinel);
-    alias mixinParentInfo = CategoryName!mixinParent;
-
-    static if (mixinScope == MixinScope.function_)
-    {
-        import std.traits : isSomeFunction;
-
-        static if (!isSomeFunction!mixinParent)
-        {
-            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-                "mixed into a function")
-                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
-        }
-    }
-    else static if (mixinScope == MixinScope.class_)
-    {
-        static if(!is(mixinParent == class))
-        {
-            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-                "mixed into a class")
-                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
-        }
-    }
-    else static if (mixinScope == MixinScope.struct_)
-    {
-        static if(!is(mixinParent == struct))
-        {
-            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-                "mixed into a struct")
-                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
-        }
-    }
-    else static if (mixinScope == MixinScope.module_)
-    {
-        static if (__VERSION__ < 2087L)
-        {
-            import std.traits : isSomeFunction;
-
-            static if (isSomeFunction!mixinParent ||
-                is(mixinParent == class) ||
-                is(mixinParent == struct))
-            {
-                static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-                    "mixed into a module-level scope")
-                    .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
-            }
-        }
-        else static if (!__traits(isModule, mixinParent))
-        {
-            static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-                "mixed into a module-level scope")
-                .format(mixinParentInfo.type, mixinParentInfo.fqn, mixinName));
-        }
-    }
-    else
-    {
-        static assert(0, "Logic error; unexpected member of `MixinScope`");
-    }
 }
