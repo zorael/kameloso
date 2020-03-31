@@ -23,12 +23,12 @@ install_deps() {
 }
 
 build() {
-    local C A S ext
+    local C A S
 
     C="--compiler=$1"
     A="--arch=$2"
     S="--build-mode=singleFile"
-    [ "$2" == "x86" ] && ext="-32bit" || ext=""
+    #[ "$2" == "x86" ] && ext="-32bit" || ext=""
 
     mkdir -p artifacts
 
@@ -41,41 +41,41 @@ build() {
 
     ## debug
     time dub build $A $C $S -b debug -c vanilla
-    mv kameloso artifacts/kameloso-vanilla${ext}
+    mv kameloso artifacts/kameloso-vanilla
 
     time dub build $A $C $S -b debug -c full
-    mv kameloso artifacts/kameloso${ext}
+    mv kameloso artifacts/kameloso
 
     time dub build $A $C $S -b debug -c dev
-    mv kameloso artifacts/kameloso-dev${ext}
+    mv kameloso artifacts/kameloso-dev
 
 
     ## plain
     time dub build $A $C $S -b plain -c vanilla || true
-    mv kameloso artifacts/kameloso-plain-vanilla${ext} || \
-        touch artifacts/kameloso-plain-vanilla${ext}.failed
+    mv kameloso artifacts/kameloso-plain-vanilla || \
+        touch artifacts/kameloso-plain-vanilla.failed
 
     time dub build $A $C $S -b plain -c full || true
-    mv kameloso artifacts/kameloso-plain${ext} || \
-        touch artifacts/kameloso-plain${ext}.failed
+    mv kameloso artifacts/kameloso-plain || \
+        touch artifacts/kameloso-plain.failed
 
     time dub build $A $C $S -b plain -c dev || true
-    mv kameloso artifacts/kameloso-plain-dev${ext} || \
-        touch artifacts/kameloso-plain-dev${ext}.failed
+    mv kameloso artifacts/kameloso-plain-dev || \
+        touch artifacts/kameloso-plain-dev.failed
 
 
     ## release
     time dub build $A $C $S -b release -c vanilla || true
-    mv kameloso artifacts/kameloso-release-vanilla${ext} || \
-        touch artifacts/kameloso-release-vanilla${ext}.failed
+    mv kameloso artifacts/kameloso-release-vanilla || \
+        touch artifacts/kameloso-release-vanilla.failed
 
     time dub build $A $C $S -b release -c full || true
-    mv kameloso artifacts/kameloso-release${ext} || \
-        touch artifacts/kameloso-release${ext}.failed
+    mv kameloso artifacts/kameloso-release || \
+        touch artifacts/kameloso-release.failed
 
     time dub build $A $C $S -b release -c dev || true
-    mv kameloso artifacts/kameloso-release-dev${ext} || \
-        touch artifacts/kameloso-release-dev${ext}.failed
+    mv kameloso artifacts/kameloso-release-dev || \
+        touch artifacts/kameloso-release-dev.failed
 }
 
 # execution start
@@ -89,7 +89,7 @@ case "$1" in
         #ldc --version
         ;;
     build)
-        time build dmd x86
+        #time build dmd x86  # CircleCI does not seem to have the needed libs
         time build dmd x86_64
         #time build ldc x86_64
         ;;
