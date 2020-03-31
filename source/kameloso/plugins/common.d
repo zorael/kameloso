@@ -4183,7 +4183,7 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 /++
  +  Construct and queue a `WHOIS` request in the local request queue.
  +
- +  The main loop will catch up on it and do the necessary `WHOIS` calls, then
+ +  The main loop will catch up on it and issue the necessary `WHOIS` queries, then
  +  replay the event.
  +
  +  Params:
@@ -4238,7 +4238,7 @@ in ((fn !is null), "Tried to doWhois with a null funtion pointer")
 /++
  +  Construct and queue a `WHOIS` request in the local request queue.
  +
- +  The main loop will catch up on it and do the necessary `WHOIS` calls, then
+ +  The main loop will catch up on it and issue the necessary `WHOIS` queries, then
  +  replay the event.
  +
  +  Overload that does not take an `IRCPlugin` subclass parameter.
@@ -4263,7 +4263,7 @@ void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, const PrivilegeLevel pr
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      dg = Delegate pointer to wrap the `core.thread.Fiber` around.
+ +      dg = Delegate/function pointer to wrap the `core.thread.Fiber` around.
  +      event = The `dialect.defs.IRCEvent` to replay.
  +/
 void queueToReplay(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
@@ -4286,7 +4286,7 @@ in ((event != IRCEvent.init), "Tried to queue a replay with an init IRCEvent")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      channelName = Optional name of the channel to rehash for. If none given
- +          it will rehash all channels' associative arrays.
+ +          it will rehash the main `IRCPluginState.users` associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 {
@@ -4305,11 +4305,11 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 
 // delayFiber
 /++
- +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
- +  appending it to `plugin.state.timedFibers`.
+ +  Queues a `core.thread.Fiber` to be called at a point `secs` seconds later, by
+ +  appending it to the `plugin`'s `IRCPluginState.timedFibers`.
  +
- +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
- +  when to process the array of `core.thread.Fiber`s.
+ +  Updates the `IRCPluginState.nextFiberTimestamp` UNIX timestamp so that the
+ +  main loop knows when to next process the array of `core.thread.Fiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -4331,7 +4331,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
- +  appending it to `plugin.state.timedFibers`.
+ +  appending it to the `plugin`'s `IRCPluginState.timedFibers`.
  +
  +  Overload that implicitly queues `core.thread.Fiber.getThis`.
  +
