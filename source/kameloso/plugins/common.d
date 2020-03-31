@@ -2866,14 +2866,14 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
         // Catch the user here, before replaying anything.
-        // No need to catchUser; just inherit
-        plugin.state.users[event.target.nickname] = event.target;
+        plugin.catchUser(event.target);
 
         mixin Replayer;
-        string[] garbageNicknames;
 
         // See if there are any queued WHOIS requests to trigger
-        if (auto requestsForNickname = event.target.nickname in plugin.state.triggerRequestQueue)
+        auto requestsForNickname = event.target.nickname in plugin.state.triggerRequestQueue;
+
+        if (requestsForNickname)
         {
             size_t[] garbageIndexes;
 
@@ -2882,15 +2882,15 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 import kameloso.constants : Timeout;
                 import std.algorithm.searching : canFind;
 
+                scope(exit) garbageIndexes ~= i;
+
                 if ((event.time - request.when) > Timeout.whoisRetry)
                 {
                     // Entry is too old, request timed out. Flag it for removal.
-                    garbageIndexes ~= i;
                     continue;
                 }
 
                 queueToReplay(request);
-                garbageIndexes ~= i;
             }
 
             foreach_reverse (immutable i; garbageIndexes)
@@ -2898,17 +2898,11 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 import std.algorithm.mutation : SwapStrategy, remove;
                 *requestsForNickname = (*requestsForNickname).remove!(SwapStrategy.unstable)(i);
             }
-
-            if (!requestsForNickname.length)
-            {
-                // All requests were processed, flag for removal
-                garbageNicknames ~= event.target.nickname;
-            }
         }
 
-        foreach (immutable garbageNick; garbageNicknames)
+        if (requestsForNickname && !requestsForNickname.length)
         {
-            plugin.state.triggerRequestQueue.remove(garbageNick);
+            plugin.state.triggerRequestQueue.remove(event.target.nickname);
         }
     }
 
