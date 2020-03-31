@@ -1629,7 +1629,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 else static if (!hasUDA!(fun, Chainable) &&
                     !hasUDA!(fun, Terminating) &&
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
-                    (eventTypeUDA == IRCEvent.Type.QUERY)))
+                    (eventTypeUDA == IRCEvent.Type.QUERY) ||
+                    (eventTypeUDA == IRCEvent.Type.ANY) ||
+                    (eventTypeUDA == IRCEvent.Type.NUMERIC)))
                 {
                     import lu.conv : Enum;
                     import std.format : format;
