@@ -208,7 +208,7 @@ do
     }
     else
     {
-        assert(0, "Tried to send empty privmsg with no channel nor target nickname");
+        assert(0, "Tried to send empty `privmsg` with no channel nor target nickname");
     }
 }
 
@@ -662,7 +662,7 @@ unittest
     }
     catch (MessageMismatch e)
     {
-        assert(0, "Message mismatch when unit testing messaging.quit");
+        assert(0, "Message mismatch when unit testing `messaging.quit`");
     }
 }
 
@@ -809,7 +809,7 @@ unittest
     }
     catch (Exception e)
     {
-        assert(0, "Receiving an immediateline failed.");
+        assert(0, "Receiving an `immediateline` failed.");
     }
 }
 
@@ -903,7 +903,7 @@ unittest
             },
             (Variant v)
             {
-                assert(0, "Receive loop test in messaging.d failed.");
+                assert(0, "Receive loop test in `messaging.d` failed.");
             }
         );
     }

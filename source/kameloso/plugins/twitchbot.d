@@ -955,7 +955,7 @@ do
         if (channel.voteInstance != id) return;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
         if (thisFiber.payload == IRCEvent.init)
         {
@@ -1030,7 +1030,7 @@ do
         if (channel.voteInstance != id) return;
 
         auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
         chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
             .format(thisFiber.payload, voteChoices.byKey));
@@ -1577,7 +1577,7 @@ in (filename.length, "Tried to populate timers from an empty filename")
     foreach (immutable channel, const channelTimersJSON; timersJSON.object)
     {
         assert((channelTimersJSON.type == JSONType.array),
-            "Twitch timer json file malformed! Invalid channel timers list type for %s: %s"
+            "Twitch timer json file malformed! Invalid channel timers list type for %s: `%s`"
             .format(channel, channelTimersJSON.type));
 
         plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
@@ -1585,7 +1585,7 @@ in (filename.length, "Tried to populate timers from an empty filename")
         foreach (timerArrayEntry; channelTimersJSON.array)
         {
             assert((timerArrayEntry.type == JSONType.object),
-                "Twitch timer json file malformed! Invalid timer type for %s: %s"
+                "Twitch timer json file malformed! Invalid timer type for %s: `%s`"
                 .format(channel, timerArrayEntry.type));
 
             TimerDefinition timer;

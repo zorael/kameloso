@@ -1042,7 +1042,7 @@ void register(ConnectService service)
                 void dg()
                 {
                     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                    assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+                    assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
                     assert((thisFiber.payload.type == IRCEvent.Type.CAP),
                         "Twitch nick negotiation delegate triggered on unknown type");
 

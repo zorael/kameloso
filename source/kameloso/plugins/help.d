@@ -71,7 +71,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
         import std.typecons : No, Yes;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
         const plugins = thisFiber.payload;
 
         IRCEvent mutEvent = event;  // mutable

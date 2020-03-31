@@ -421,7 +421,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     void dg()
     {
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
         assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
         const followupEvent = thisFiber.payload;
@@ -723,10 +723,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 break;
 
             case noSuchAccount:
-                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist.report");
-
             case noSuchChannel:
-                assert(0, "Invalid delist-only AlterationResult passed to lookupEnlist.report");
+                assert(0, "Invalid delist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
                 enum pattern = "%s already %sed.";
@@ -764,10 +762,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 break;
 
             case noSuchAccount:
-                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist.report");
-
             case noSuchChannel:
-                assert(0, "Invalid enlist-only AlterationResult passed to lookupEnlist.report");
+                assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
                 logger.logf("%s%s%s already %sed.", infotint, specified, logtint, list);
@@ -923,7 +919,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         final switch (result)
         {
         case alreadyInList:
-            assert(0, "Invalid enlist-only AlterationResult returned to delist()");
+            assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
             enum pattern = "No such account %s to de%s.";
@@ -977,7 +973,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         final switch (result)
         {
         case alreadyInList:
-            assert(0, "Invalid enlist-only AlterationResult returned to delist()");
+            assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
             logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, list);
@@ -1483,7 +1479,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         import std.conv : ConvException;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
         try
         {
@@ -1734,7 +1730,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             import std.conv : ConvException;
 
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
             immutable success = thisFiber.payload.applyCustomSettings([ slice ]);
             if (success) logger.log("Setting changed.");

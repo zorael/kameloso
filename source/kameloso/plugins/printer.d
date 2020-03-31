@@ -151,7 +151,8 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         }
         else
         {
-            assert(0);
+            assert(0, "Logic error; tried to update squelchstamp but " ~
+                "no `channel`, no `sender`, no `target`");
         }
 
         if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)

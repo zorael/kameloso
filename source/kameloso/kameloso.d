@@ -527,7 +527,7 @@ void messageFiber(ref Kameloso instance)
         yield(next);
     }
 
-    assert(0, "while (true) loop break in messageFiber");
+    assert(0, "`while (true)` loop break in `messageFiber`");
 }
 
 
@@ -687,7 +687,7 @@ Next mainLoop(ref Kameloso instance)
                 break listenerloop;
 
             case returnSuccess:
-                assert(0, "listenAttemptToNext returned Next.returnSuccess");
+                assert(0, "`listenAttemptToNext` returned `Next.returnSuccess`");
 
             case returnFailure:
                 return Next.returnFailure;
@@ -1136,7 +1136,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     final switch (attempt.state)
     {
     case prelisten:  // Should never happen
-        assert(0, "listener attempt yielded state prelisten");
+        assert(0, "listener attempt yielded state `prelisten`");
 
     case isEmpty:
         // Empty line yielded means nothing received; break foreach and try again
@@ -2236,7 +2236,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             break;
 
         case retry:  // should never happen
-            assert(0, "tryResolve returned Next.retry");
+            assert(0, "`tryResolve` returned `Next.retry`");
 
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
@@ -2259,10 +2259,10 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             break;
 
         case returnSuccess:  // should never happen
-            assert(0, "tryConnect returned Next.returnSuccess");
+            assert(0, "`tryConnect` returned `Next.returnSuccess`");
 
         case retry:  // should never happen
-            assert(0, "tryConnect returned Next.retry");
+            assert(0, "`tryConnect` returned `Next.retry`");
 
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
@@ -2421,7 +2421,7 @@ int initBot(string[] args)
         break;
 
     case retry:  // should never happen
-        assert(0, "tryGetopt returned Next.retry");
+        assert(0, "`tryGetopt` returned `Next.retry`");
 
     case returnSuccess:
         return 0;
@@ -2483,7 +2483,7 @@ int initBot(string[] args)
         break;
 
     case retry:  // should never happen
-        assert(0, "verifySettings returned Next.retry");
+        assert(0, "`verifySettings` returned `Next.retry`");
 
     case returnSuccess:
         return 0;

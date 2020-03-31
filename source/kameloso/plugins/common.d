@@ -3053,9 +3053,9 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
         import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!Replay)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
         assert((thisFiber.payload != thisFiber.payload.init),
-            "init payload in " ~ typeof(thisFiber).stringof);
+            "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
         auto request = mixin(requestVariableName);
         request.event = thisFiber.payload.event;
@@ -4751,14 +4751,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        assert((thisFiber.payload != IRCEvent.init),
+            "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
         immutable whoisEvent = thisFiber.payload;
 
         assert(whoisEventTypes.canFind(whoisEvent.type),
             "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
-            Enum!(IRCEvent.Type).toString(whoisEvent.type));
+            "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
 
         if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
         {
@@ -4818,7 +4819,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             else
             {
                 import std.format : format;
-                static assert(0, ("Unexpected signature of success function/delegate " ~
+                static assert(0, ("Unsupported signature of success function/delegate " ~
                     "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
                     .format(__FUNCTION__, typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
             }
@@ -4849,7 +4850,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 else
                 {
                     import std.format : format;
-                    static assert(0, ("Unexpected signature of failure function/delegate " ~
+                    static assert(0, ("Unsupported signature of failure function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
                         .format(__FUNCTION__, typeof(onFailure).stringof, __traits(identifier, onFailure)));
                 }

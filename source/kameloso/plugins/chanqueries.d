@@ -90,7 +90,7 @@ void startChannelQueries(ChanQueriesService service)
         import std.string : representation;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
         scope(exit)
         {
@@ -319,11 +319,11 @@ void startChannelQueries(ChanQueriesService service)
                 default:
                     import lu.conv : Enum;
                     assert(0, "Unexpected event type triggered query Fiber: " ~
-                        Enum!(IRCEvent.Type).toString(thisFiber.payload.type));
+                        "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`');
                 }
             }
 
-            assert(0, "Escaped while (true) loop in query Fiber delegate");
+            assert(0, "Escaped `while (true)` loop in query Fiber delegate");
         }
     }
 

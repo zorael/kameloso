@@ -355,13 +355,13 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
     if (const channelNotes = channel in plugin.notes)
     {
         assert((channelNotes.type == JSONType.object),
-            "Invalid channel notes list type for %s: %s"
+            "Invalid channel notes list type for %s: `%s`"
             .format(channel, channelNotes.type));
 
         if (const nickNotes = nickname in channelNotes.object)
         {
             assert((nickNotes.type == JSONType.array),
-                "Invalid notes list type for %s on %s: %s"
+                "Invalid notes list type for %s on %s: `%s`"
                 .format(nickname, channel, nickNotes.type));
 
             noteArray.length = nickNotes.array.length;
@@ -425,7 +425,7 @@ in (nickname.length, "Tried to clear notes for an empty nickname")
         if (nickname in plugin.notes[channel])
         {
             assert((plugin.notes[channel].type == JSONType.object),
-                "Invalid channel notes list type for %s: %s"
+                "Invalid channel notes list type for %s: `%s`"
                 .format(channel, plugin.notes[channel].type));
 
             logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",

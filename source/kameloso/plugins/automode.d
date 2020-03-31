@@ -134,7 +134,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         return;
 
     default:
-        assert(0, "Invalid IRCEvent annotation on " ~ __FUNCTION__);
+        assert(0, "Invalid `IRCEvent.Type` annotation on `" ~ __FUNCTION__ ~ '`');
     }
 
     foreach (immutable channelName, const accountmodes; plugin.automodes)
