@@ -2830,7 +2830,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 {
     import lu.traits : MixinConstraints, MixinScope;
 
-    mixin MixinConstraints!("MinimalAuthentication", MixinScope.module_);
+    mixin MixinConstraints!(MixinScope.module_, "MinimalAuthentication");
 
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
@@ -2965,7 +2965,7 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     import std.conv : text;
     import std.traits : isSomeFunction;
 
-    mixin MixinConstraints!("Replayer", MixinScope.function_);
+    mixin MixinConstraints!(MixinScope.function_, "Replayer");
 
     static if (__traits(compiles, hasReplayer))
     {
@@ -3130,7 +3130,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 {
     import lu.traits : MixinConstraints, MixinScope;
 
-    mixin MixinConstraints!("UserAwareness", MixinScope.module_);
+    mixin MixinConstraints!(MixinScope.module_, "UserAwareness");
 
     static if (__traits(compiles, .hasUserAwareness))
     {
@@ -3409,7 +3409,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 {
     import lu.traits : MixinConstraints, MixinScope;
 
-    mixin MixinConstraints!("ChannelAwareness", MixinScope.module_);
+    mixin MixinConstraints!(MixinScope.module_, "ChannelAwareness");
 
     static if (__traits(compiles, .hasChannelAwareness))
     {
@@ -3870,7 +3870,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 {
     import lu.traits : MixinConstraints, MixinScope;
 
-    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
+    mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
 
     static if (__traits(compiles, .hasTwitchAwareness))
     {
@@ -3999,7 +3999,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 {
     import lu.traits : MixinConstraints, MixinScope;
 
-    mixin MixinConstraints!("TwitchAwareness", MixinScope.module_);
+    mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
 
     static if (__traits(compiles, .hasTwitchAwareness))
     {
@@ -4614,7 +4614,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
 
-    mixin MixinConstraints!("WHOISFiberDelegate", MixinScope.function_);
+    mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
 
     static if (__traits(compiles, hasWHOISFiber))
     {
