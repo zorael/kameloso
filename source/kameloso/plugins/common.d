@@ -1840,10 +1840,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 // Don't hard return here, just set `next` and break.
-                static if (hasUDA!(fun, Chainable))
+                static if (hasUDA!(fun, Chainable) || isAwarenessFunction!fun)
                 {
                     // onEvent found an event and triggered a function, but
                     // it's Chainable and there may be more, so keep looking
+                    // Alternatively it's an awareness function, which may be
+                    // sharing one or more annotations with another.
                     next = Next.continue_;
                     break udaloop;  // drop down
                 }
