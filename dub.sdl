@@ -2,21 +2,23 @@ name "kameloso"
 description "IRC bot"
 authors "JR"
 copyright "Copyright © 2020, JR"
+homepage "https://www.github.com/zorael/kameloso"
 license "MIT"
+
 targetType "executable"
 mainSourceFile "source/kameloso/main.d"
 dflags "-dip25" "-dip1008"
 libs "phobos2" platform="posix-dmd"
-
 x:ddoxTool "scod"
 
-sourcePaths "source"
-importPaths "source"
+sourcePaths "include" "source"
+importPaths "include" "source"
 
 dependency "lu" version="~>0.2.2"
 dependency "dialect" version="~>0.4.2"
 
 versions \
+    "WithPlugins" \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
     "WithBashQuotesPlugin" \
@@ -35,78 +37,88 @@ versions \
     "WithSeenPlugin" \
     "WithWebtitlesPlugin"
 
-configuration "posix" {
-    platforms "posix"
-    versions "WithPlugins" "Colours" "Web"
+configuration "application" {
     dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
-    buildRequirements "silenceDeprecations"
-}
+    dependency "arsd-official:dom" version="~>7.1.1"
 
-configuration "windows" {
-    platforms "windows"
-    versions "WithPlugins" "Colours" "Web"
-    dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
-    buildRequirements "silenceDeprecations"
+    versions \
+        "Colours" \
+        "Web"
 }
 
 configuration "twitch" {
-    versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin"
     dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
+    dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "twitch"
-    buildRequirements "silenceDeprecations"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin"
 }
 
 configuration "dev" {
-    versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
-        "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
-        "ProfileGC" "AdminAssertGeneration"
     dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
+    dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "dev"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainReplay" \
+        "ProfileGC" \
+        "AdminAssertGeneration"
 }
 
 configuration "vanilla" {
-    versions "WithPlugins"
-    buildRequirements "silenceDeprecations"
+    targetType "executable"
+    // Mustn't be empty
 }
 
 configuration "colours" {
-    versions "WithPlugins" "Colours"
-    buildRequirements "silenceDeprecations"
+    versions \
+        "Colours"
 }
 
 configuration "web" {
-    versions "WithPlugins" "Web"
     dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
-    buildRequirements "silenceDeprecations"
+    dependency "arsd-official:dom" version="~>7.1.1"
+
+    versions \
+        "Web"
 }
 
 configuration "full" {
-    versions "WithPlugins" "Colours" "Web" "TwitchSupport"
     dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
+    dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "twitch"
-    buildRequirements "silenceDeprecations"
-}
 
-configuration "pluginless" {
-    versions "Colours"
-    buildRequirements "silenceDeprecations"
-}
-
-configuration "pluginless-vanilla" {
-    buildRequirements "silenceDeprecations"
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport"
 }
 
 configuration "unittest" {
-    versions "WithPlugins" "Colours" "Web" "TwitchSupport" "WithTwitchBotPlugin" \
-        "TwitchWarnings" "OmniscientAdmin" "PrintStacktraces" "ExplainReplay" \
-        "ProfileGC" "AdminAssertGeneration"
     dependency "requests" version="~>1.0.14"
-    dependency "arsd-official:dom" version="~>5.3.4"
-    subConfiguration "dialect" "dev"
+    dependency "arsd-official:dom" version="~>7.1.1"
+    subConfiguration "dialect" "unittest"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainReplay" \
+        "ProfileGC" \
+        "AdminAssertGeneration"
 }
