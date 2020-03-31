@@ -23,12 +23,12 @@ install_deps() {
 }
 
 build() {
-    local A C S ext
+    local C A S ext
 
-    A="--arch=$1"
-    C="--compiler=$2"
+    C="--compiler=$1"
+    A="--arch=$2"
     S="--build-mode=singleFile"
-    [ $A == "x86" ] && ext="-32bit" || ext=""
+    [ "$2" == "x86" ] && ext="-32bit" || ext=""
 
     mkdir -p artifacts
 
