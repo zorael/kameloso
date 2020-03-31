@@ -4200,6 +4200,10 @@ void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEven
 in ((event != IRCEvent.init), "Tried to doWhois with an init IRCEvent")
 in ((fn !is null), "Tried to doWhois with a null funtion pointer")
 {
+    import std.traits : isSomeFunction;
+
+    static assert (isSomeFunction!Fn, "Tried to call `doWhois` with a non-function function");
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
@@ -4264,6 +4268,7 @@ void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, const PrivilegeLevel pr
  +      event = The `dialect.defs.IRCEvent` to replay.
  +/
 void queueToReplay(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
+if (isSomeFunction!Dg)
 in ((dg !is null), "Tried to queue a replay with a null delegate pointer")
 in ((event != IRCEvent.init), "Tried to queue a replay with an init IRCEvent")
 {
@@ -4413,7 +4418,7 @@ void removeDelayedFiber(IRCPlugin plugin)
  +/
 void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
-in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET")
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= fiber;
 }
@@ -4436,7 +4441,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET")
  +          implicit awaiting fiber (in the current context).
  +/
 void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
-in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET")
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
 }
@@ -4464,7 +4469,8 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
 {
     foreach (immutable type; types)
     {
-        assert((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET");
+        assert((type != IRCEvent.Type.UNSET),
+            "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`");
         plugin.state.awaitingFibers[type] ~= fiber;
     }
 }
@@ -4491,7 +4497,8 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {
-        assert((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await UNSET");
+        assert((type != IRCEvent.Type.UNSET),
+            "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`");
         plugin.state.awaitingFibers[type] ~= Fiber.getThis;
     }
 }
@@ -4515,7 +4522,7 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
  +/
 void unlistFiberAwaitingEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to unlist a null Fiber from awaiting events")
-in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting UNSET")
+in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEvent.Type.UNSET`")
 {
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
