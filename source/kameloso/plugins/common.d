@@ -1756,13 +1756,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     case whois:
                         import kameloso.plugins.common : doWhois;
 
-                        alias This = typeof(this);
                         alias Params = staticMap!(Unqual, Parameters!fun);
                         enum isIRCPluginParam(T) = is(T == IRCPlugin);
 
                         static if (verbose)
                         {
-                            writefln("...%s WHOIS", This.stringof);
+                            writefln("...%s WHOIS", typeof(this).stringof);
                             if (settings.flush) stdout.flush();
                         }
 
@@ -1771,8 +1770,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             this.doWhois(mutEvent, privilegeLevel, &fun);
                             return Next.continue_;
                         }
-                        else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
-                            is(Params : AliasSeq!This))
+                        else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                            is(Params : AliasSeq!(typeof(this))))
                         {
                             this.doWhois(this, mutEvent, privilegeLevel, &fun);
                             return Next.continue_;
@@ -1782,7 +1781,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             import std.format : format;
                             static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
                                 "parameter instead of a subclass `%s`")
-                                .format(module_, __traits(identifier, fun), This.stringof));
+                                .format(module_, __traits(identifier, fun), typeof(this).stringof));
                         }
                         else
                         {
@@ -1804,14 +1803,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     if (settings.flush) stdout.flush();
                 }
 
-                alias This = typeof(this);
-
-                static if (is(Params : AliasSeq!(This, IRCEvent)) ||
+                static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                     is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
                 {
                     fun(this, mutEvent);
                 }
-                else static if (is(Params : AliasSeq!This) ||
+                else static if (is(Params : AliasSeq!(typeof(this))) ||
                     is(Params : AliasSeq!IRCPlugin))
                 {
                     fun(this);
