@@ -3588,7 +3588,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         foreach (ref channel; plugin.state.channels)
         {
-            if (event.sender.nickname !in channel.users) continue;
             channel.users.remove(event.sender.nickname);
         }
     }
