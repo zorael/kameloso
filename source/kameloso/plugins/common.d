@@ -1434,10 +1434,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     if (settings.flush) stdout.flush();
                 }
 
-                with (ChannelPolicy)
-                final switch (policy)
+                static if (policy == ChannelPolicy.home)
                 {
-                case home:
                     import std.algorithm.searching : canFind;
 
                     if (!event.channel.length)
@@ -1455,11 +1453,17 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // channel policy does not match
                         return Next.continue_;  // next function
                     }
-                    break;
-
-                case any:
+                }
+                else static if (policy == ChannelPolicy.any)
+                {
                     // drop down, no need to check
-                    break;
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, ("Logic error; `%s.%s` is annotated with " ~
+                        "an unexpected `ChannelPolicy`")
+                        .format(module_, __traits(identifier, fun)));
                 }
 
                 IRCEvent mutEvent = event;  // mutable
