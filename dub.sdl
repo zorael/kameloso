@@ -108,7 +108,7 @@ configuration "full" {
 configuration "unittest" {
     dependency "requests" version="~>1.0.14"
     dependency "arsd-official:dom" version="~>7.1.1"
-    subConfiguration "dialect" "unittest"
+    subConfiguration "dialect" "dev"
 
     versions \
         "Colours" \
