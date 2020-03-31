@@ -3050,42 +3050,44 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
         case admin:
             if (request.event.sender.class_ >= IRCUser.Class.admin)
             {
-                goto case anyone;
+                goto case ignore;
             }
             break;
 
         case operator:
             if (request.event.sender.class_ >= IRCUser.Class.operator)
             {
-                goto case anyone;
+                goto case ignore;
             }
             break;
 
         case whitelist:
             if (request.event.sender.class_ >= IRCUser.Class.whitelist)
             {
-                goto case anyone;
+                goto case ignore;
             }
             break;
 
         case registered:
             if (request.event.sender.account.length)
             {
-                goto case anyone;
+                goto case ignore;
             }
             break;
 
         case anyone:
             if (request.event.sender.class_ >= IRCUser.Class.anyone)
             {
-                version(ExplainReplay) explainReplay(request.event.sender);
-                request.trigger();
+                goto case ignore;
             }
 
-            // request.event.sender.class_ is either anyone or blacklist here
+            // request.event.sender.class_ is Class.blacklist here (or unset)
+            // Do nothing an drop down
             break;
 
         case ignore:
+            version(ExplainReplay) explainReplay(request.event.sender);
+            request.trigger();
             break;
         }
     }
