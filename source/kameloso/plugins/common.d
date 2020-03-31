@@ -1691,8 +1691,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
 
-                    static if ((privilegeLevel != PrivilegeLevel.ignore) &&
-                        (privilegeLevel != PrivilegeLevel.anyone))
+                    static if (privilegeLevel != PrivilegeLevel.ignore)
                     {
                         static if (!__traits(compiles, .hasMinimalAuthentication))
                         {
@@ -1710,17 +1709,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
 
                     static if (__traits(hasMember, this, "allow") &&
-                        isSomeFunction!(__traits(getMember, this, "allow")))
+                        isSomeFunction!(this.allow))
                     {
-                        import lu.traits : TakesParams, stringofParams;
+                        import lu.traits : TakesParams;
 
-                        static if (!TakesParams!(__traits(getMember, this, "allow"),
-                            IRCEvent, PrivilegeLevel))
+                        static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
                         {
                             import std.format : format;
                             static assert(0, ("Custom `allow` function in `%s.%s` " ~
                                 "has an invalid signature: `%s`")
-                                .format(module_, typeof(this).stringof, typeof(allow).stringof));
+                                .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
                         }
 
                         static if (verbose)
