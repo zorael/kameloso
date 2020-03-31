@@ -1498,7 +1498,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Reset between iterations
                         mutEvent = event;
 
-                        if (!privateState.client.prefixPolicyMatches(commandUDA.policy, mutEvent))
+                        if (!privateState.client.prefixPolicyMatches!verbose(commandUDA.policy, mutEvent))
                         {
                             static if (verbose)
                             {
@@ -1568,7 +1568,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             // Reset between iterations
                             mutEvent = event;
 
-                            if (!privateState.client.prefixPolicyMatches(regexUDA.policy, mutEvent))
+                            if (!privateState.client.prefixPolicyMatches!verbose(regexUDA.policy, mutEvent))
                             {
                                 static if (verbose)
                                 {
