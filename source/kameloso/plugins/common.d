@@ -261,7 +261,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         import std.meta : AliasSeq, staticMap;
         import std.traits : Parameters, Unqual, arity;
 
-        assert((fn !is null), "null fn in `TriggerRequestImpl!" ~ F.stringof ~ "`");
+        assert((fn !is null), "null fn in `" ~ typeof(this).stringof ~ '`');
 
         alias Params = staticMap!(Unqual, Parameters!fn);
 
@@ -387,7 +387,7 @@ public:
     CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
         auto carrying = cast(CarryingFiber!This)fiber;
-        assert(carrying, "Tried to get a CarryingFiber!Replay out of a normal Fiber");
+        assert(carrying, "Tried to get a `CarryingFiber!Replay` out of a normal Fiber");
         return carrying;
     }
 
@@ -1383,14 +1383,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 else static if (eventTypeUDA == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.UNSET`, " ~
+                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.UNSET)`, " ~
                         "which is not a valid event type.")
                         .format(module_, __traits(identifier, fun)));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.PRIVMSG`, " ~
+                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
                         "or `IRCEvent.Type.QUERY` instead")
                         .format(module_, __traits(identifier, fun)));
@@ -1398,7 +1398,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.WHISPER`, " ~
+                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.WHISPER)`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
                         .format(module_, __traits(identifier, fun)));
                 }
@@ -1636,10 +1636,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import lu.conv : Enum;
                     import std.format : format;
 
-                    enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
                     pragma(msg, ("Note: `%s.%s` is a wildcard `IRCEvent.Type.%s` event " ~
                         "but is not `Chainable` nor `Terminating`")
-                        .format(module_, __traits(identifier, fun), typestring));
+                        .format(module_, __traits(identifier, fun),
+                        Enum!(IRCEvent.Type).toString(eventTypeUDA)));
                 }
 
                 static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
@@ -2386,7 +2386,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     else
                     {
                         import std.format : format;
-                        pragma(msg, "Warning: `%s.%s` is missing a `Description` annotation for command \"%s\""
+                        pragma(msg, "Warning: `%s.%s` is missing a `@Description` annotation for command \"`%s`\""
                             .format(module_, __traits(identifier, fun), commandUDA.string_));
                     }
                 }
