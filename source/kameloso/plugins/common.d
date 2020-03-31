@@ -1373,6 +1373,17 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         __traits(identifier, fun));
             }
 
+            /++
+             +  The return value of `handle`, set from inside the foreach loop.
+             +
+             +  If we return directly from inside it, we may get errors of
+             +  statements not reachable if it's not inside a branch.
+             +
+             +  Intead, set this value to what we want to return, then break
+             +  out of the loop.
+             +/
+            Next next = Next.continue_;
+
             udaloop:
             foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
             {
@@ -1828,21 +1839,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         .format(module_, __traits(identifier, fun), typeof(fun).stringof));
                 }
 
+                // Don't hard return here, just set `next` and break.
                 static if (hasUDA!(fun, Chainable))
                 {
                     // onEvent found an event and triggered a function, but
                     // it's Chainable and there may be more, so keep looking
+                    next = Next.continue_;
                     break udaloop;  // drop down
                 }
                 else /*static if (hasUDA!(fun, Terminating))*/
                 {
                     // The triggered function is not Chainable so return and
                     // let the main loop continue with the next plugin.
-                    return Next.return_;
+                    next = Next.return_;
+                    break udaloop;
                 }
             }
 
-            return Next.continue_;
+            return next;
         }
 
         alias setupFuns = Filter!(setupAwareness, funs);
