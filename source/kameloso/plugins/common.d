@@ -3329,7 +3329,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const IRCEvent event)
     {
         // Pass a channel name so only that channel is rehashed
-        rehashUsers(plugin, event.channel);
+        plugin.rehashUsers(event.channel);
     }
 
 
@@ -3367,7 +3367,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         else if (now >= mixin(pingRehashVariableName))
         {
             // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
-            rehashUsers(plugin);
+            plugin.rehashUsers();
             mixin(pingRehashVariableName) = now + (hoursBetweenRehashes * 3600);
         }
     }
