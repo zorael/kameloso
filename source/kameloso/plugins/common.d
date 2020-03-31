@@ -1380,6 +1380,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     // UDA is `dialect.defs.IRCEvent.Type.ANY`, let pass
                 }
+                else static if (eventTypeUDA == IRCEvent.Type.UNSET)
+                {
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `IRCEvent.Type.UNSET`, " ~
+                        "which is not a valid event type.")
+                        .format(module_, __traits(identifier, fun)));
+                }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
