@@ -4035,6 +4035,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
+ +      verbose = Whether or not to output verbose debug information to the local terminal.
  +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
@@ -4042,30 +4043,39 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  Returns:
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
- +
- +  TODO:
- +      Support for verbose.
  +/
-bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
+bool prefixPolicyMatches(bool verbose = false)(const IRCClient client,
+    const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
     import lu.string : beginsWith, nom, stripSeparatedPrefix;
     import std.typecons : No, Yes;
+
+    static if (verbose)
+    {
+        import std.stdio : writefln, writeln;
+
+        writel("...prefixPolicyMatches! policy:", policy);
+    }
 
     with (mutEvent)
     with (PrefixPolicy)
     final switch (policy)
     {
     case direct:
+        static if (verbose)
+        {
+            writefln("direct, to just passes.");
+        }
         return true;
 
     case prefixed:
         if (settings.prefix.length && content.beginsWith(settings.prefix))
         {
-            /*static if (verbose)
+            static if (verbose)
             {
                 writefln("starts with prefix (%s)", settings.prefix);
-            }*/
+            }
 
             content.nom!(Yes.decode)(settings.prefix);
         }
@@ -4073,10 +4083,20 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
         {
             version(PrefixedCommandsFallBackToNickname)
             {
+                static if (verbose)
+                {
+                    writeln("did not start with prefix but falling back to nickname check");
+                }
+
                 goto case nickname;
             }
             else
             {
+                static if (verbose)
+                {
+                    writeln("did not start with prefix, returning false");
+                }
+
                 return false;
             }
         }
@@ -4085,6 +4105,11 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
     case nickname:
         if (content.beginsWith('@'))
         {
+            static if (verbose)
+            {
+                writeln("stripped away prepended '@'");
+            }
+
             // Using @name to refer to someone is not
             // uncommon; allow for it and strip it away
             content = content[1..$];
@@ -4092,18 +4117,36 @@ bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref 
 
         if (content.beginsWith(client.nickname))
         {
+            static if (verbose)
+            {
+                writeln("begins with nickname! stripping it");
+            }
+
             content = content.stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
+            // Drop down
         }
         else if (type == IRCEvent.Type.QUERY)
         {
-            // Doesn't start with nickname but it's a private message; let pass
+            static if (verbose)
+            {
+                writeln("doesn't begin with nickname but it's a QUERY");
+            }
+            // Drop down
         }
         else
         {
-            // Nickname required but not present
+            static if (verbose)
+            {
+                writeln("nickname required but not present... returning false.");
+            }
             return false;
         }
         break;
+    }
+
+    static if (verbose)
+    {
+        writeln("policy checks out!");
     }
 
     return true;
