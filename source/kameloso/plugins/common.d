@@ -2158,11 +2158,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings) &&
-                (is(typeof(this.tupleof[i]) == struct)))
+            static if (hasUDA!(this.tupleof[i], Settings))
             {
-                success = symbol.setMemberByName(setting, value);
-                if (success) break;
+                static if (is(typeof(this.tupleof[i]) == struct))
+                {
+                    success = symbol.setMemberByName(setting, value);
+                    if (success) break;
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
+                        .format(module_, typeof(this).stringof,
+                        __traits(identifier, this.tupleof[i])));
+                }
             }
         }
 
@@ -2185,10 +2194,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings) &&
-                (is(typeof(this.tupleof[i]) == struct)))
+            static if (hasUDA!(this.tupleof[i], Settings))
             {
-                printObject!(No.printAll)(symbol);
+                static if (is(typeof(this.tupleof[i]) == struct))
+                {
+                    printObject!(No.printAll)(symbol);
+                    break;
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
+                        .format(module_, typeof(this).stringof,
+                        __traits(identifier, this.tupleof[i])));
+                }
             }
         }
     }
@@ -2219,10 +2238,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings) &&
-                (is(typeof(this.tupleof[i]) == struct)))
+            static if (hasUDA!(this.tupleof[i], Settings))
             {
-                sink.serialise(symbol);
+                static if (is(typeof(this.tupleof[i]) == struct))
+                {
+                    sink.serialise(symbol);
+                    break;
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
+                        .format(module_, typeof(this).stringof,
+                        __traits(identifier, this.tupleof[i])));
+                }
             }
         }
     }
