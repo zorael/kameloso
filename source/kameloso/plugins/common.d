@@ -3215,26 +3215,34 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
+    @(IRCEvent.Type.AWAY)
+    @(IRCEvent.Type.BACK)
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        if (event.type == IRCEvent.Type.ACCOUNT)
+        with (IRCEvent.Type)
+        switch (event.type)
         {
-            // ACCOUNT events don't carry a channel, so check our channel user
+        case ACCOUNT:
+        case AWAY:
+        case BACK:
+            // These events don't carry a channel, so check our channel user
             // lists to see if we should catch this one or not.
 
             foreach (const channel; plugin.state.channels)
             {
                 if (event.sender.nickname in channel.users)
                 {
-                    // ACCOUNT of a user that's in a relevant channel
+                    // event is from a user that's in a relevant channel
                     return plugin.catchUser(event.sender);
                 }
             }
-        }
-        else
-        {
+            break;
+
+        //case JOIN:
+        default:
             plugin.catchUser(event.sender);
+            break;
         }
     }
 
