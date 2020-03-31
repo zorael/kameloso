@@ -1198,81 +1198,94 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
     import core.thread : Fiber;
 
-    if (!plugin.state.awaitingFibers[event.type].length) return;
-
-    Fiber[] expiredFibers;
-
-    foreach (immutable i, fiber; plugin.state.awaitingFibers[event.type])
+    /++
+     +  Handle awaiting Fibers of a specified type.
+     +/
+    static void handleAwaitingFibersImpl(IRCPlugin plugin, const IRCEvent event,
+        Fiber[] fibersForType, ref Fiber[] expiredFibers)
     {
-        try
+        foreach (immutable i, fiber; fibersForType)
         {
-            if (fiber.state == Fiber.State.HOLD)
+            try
             {
-                import kameloso.thread : CarryingFiber;
-
-                // Specialcase CarryingFiber!IRCEvent to update it to carry
-                // the current IRCEvent.
-
-                if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
+                if (fiber.state == Fiber.State.HOLD)
                 {
-                    if (carryingFiber.payload == IRCEvent.init)
+                    import kameloso.thread : CarryingFiber;
+
+                    // Specialcase CarryingFiber!IRCEvent to update it to carry
+                    // the current IRCEvent.
+
+                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
                     {
-                        carryingFiber.payload = event;
-                    }
-                    carryingFiber.call();
+                        if (carryingFiber.payload == IRCEvent.init)
+                        {
+                            carryingFiber.payload = event;
+                        }
+                        carryingFiber.call();
 
-                    // Reset the payload so a new one will be attached next trigger
-                    carryingFiber.resetPayload();
+                        // Reset the payload so a new one will be attached next trigger
+                        carryingFiber.resetPayload();
+                    }
+                    else
+                    {
+                        fiber.call();
+                    }
                 }
-                else
+
+                if (fiber.state == Fiber.State.TERM)
                 {
-                    fiber.call();
+                    expiredFibers ~= fiber;
                 }
             }
-
-            if (fiber.state == Fiber.State.TERM)
+            catch (IRCParseException e)
             {
+                string logtint;
+
+                version(Colours)
+                {
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.logger : KamelosoLogger;
+                        logtint = (cast(KamelosoLogger)logger).logtint;
+                    }
+                }
+
+                logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
+                    plugin.name, i, logtint, e.msg);
+                printObject(e.event);
+                version(PrintStacktraces) logger.trace(e.info);
+                expiredFibers ~= fiber;
+            }
+            catch (Exception e)
+            {
+                string logtint;
+
+                version(Colours)
+                {
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.logger : KamelosoLogger;
+                        logtint = (cast(KamelosoLogger)logger).logtint;
+                    }
+                }
+
+                logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
+                    plugin.name, i, logtint, e.msg);
+                printObject(event);
+                version(PrintStacktraces) logger.trace(e.toString);
                 expiredFibers ~= fiber;
             }
         }
-        catch (IRCParseException e)
-        {
-            string logtint;
+    }
 
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
+    import std.range : only;
 
-            logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
-                plugin.name, i, logtint, e.msg);
-            printObject(e.event);
-            version(PrintStacktraces) logger.trace(e.info);
-            expiredFibers ~= fiber;
-        }
-        catch (Exception e)
-        {
-            string logtint;
+    Fiber[] expiredFibers;
 
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
-            logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
-                plugin.name, i, logtint, e.msg);
-            printObject(event);
-            version(PrintStacktraces) logger.trace(e.toString);
-            expiredFibers ~= fiber;
-        }
+    foreach (type; only(event.type, IRCEvent.Type.ANY))
+    {
+        handleAwaitingFibersImpl(plugin, event,
+            plugin.state.awaitingFibers[type], expiredFibers);
     }
 
     // Clean up processed Fibers
@@ -1284,7 +1297,7 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
 
-                if (fiber == expiredFiber)
+                if (fiber is expiredFiber)
                 {
                     fibersByType = fibersByType.remove!(SwapStrategy.unstable)(i);
                 }
