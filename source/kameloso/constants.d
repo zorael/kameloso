@@ -5,6 +5,7 @@
  +/
 module kameloso.constants;
 
+import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
 import std.format : format;
 
 
@@ -12,21 +13,12 @@ import std.format : format;
 enum KamelosoInfo
 {
     version_ = "%d.%d.%d%s"
-        .format(KamelosoInfoSemVer.majorVersion,
-            KamelosoInfoSemVer.minorVersion,
-            KamelosoInfoSemVer.patchVersion,
-            prerelease),  /// Version as a string.
+        .format(KamelosoSemVer.majorVersion,
+            KamelosoSemVer.minorVersion,
+            KamelosoSemVer.patchVersion,
+            KamelosoSemVerPrerelease),  /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
-    prerelease = string.init, /// Pre-release subversion, like "-rc2".
-}
-
-/// SemVer versioning of this build.
-enum KamelosoInfoSemVer
-{
-    majorVersion = 1,  /// SemVer major version of the program.
-    minorVersion = 7,  /// SemVer minor version of the program.
-    patchVersion = 0,  /// SemVer patch version of the program.
 }
 
 /++
