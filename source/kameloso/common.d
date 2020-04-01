@@ -1140,54 +1140,6 @@ unittest
 }
 
 
-// getPlatform
-/++
- +  Returns the string of the name of the current platform, adjusted to include
- +  `cygwin` as an alternative next to `win32` and `win64`, as well as embedded
- +  terminal consoles like in Visual Studio Code.
- +
- +  Returns:
- +      String name of the current platform.
- +/
-auto getPlatform()
-{
-    import std.conv : text;
-    import std.process : environment;
-    import std.system : os;
-
-    enum osName = os.text;
-
-    version(Windows)
-    {
-        import std.process : execute;
-
-        immutable term = environment.get("TERM", string.init);
-
-        if (term.length)
-        {
-            try
-            {
-                // Get the uname and strip the newline
-                immutable uname = execute([ "uname", "-o" ]).output;
-                return uname.length ? uname[0..$-1] : osName;
-            }
-            catch (Exception e)
-            {
-                return osName;
-            }
-        }
-        else
-        {
-            return osName;
-        }
-    }
-    else
-    {
-        return environment.get("TERM_PROGRAM", osName);
-    }
-}
-
-
 // printStacktrace
 /++
  +  Prints the current stacktrace to the terminal.
