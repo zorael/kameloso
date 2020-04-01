@@ -434,10 +434,9 @@ public:
  +/
 struct IRCPluginState
 {
-    import kameloso.common : IRCBot;
-    import lu.typecons : Labeled;
-    import core.thread : Fiber;
+    import kameloso.common : IRCBot, ScheduledFiber;
     import std.concurrency : Tid;
+    import core.thread : Fiber;
 
     /++
      +  The current `dialect.defs.IRCClient`, containing information pertaining
@@ -485,13 +484,16 @@ struct IRCPluginState
      +/
     Fiber[][] awaitingFibers;
 
-    /// The list of timed `core.thread.Fiber`s, labeled by UNIX time.
-    Labeled!(Fiber, long)[] timedFibers;
+    /// The list of scheduled `core.thread.Fiber`, UNIX time tuples.
+    ScheduledFiber[] scheduledFibers;
 
-    /// The next (Unix time) timestamp at which to call `periodically`.
+    /// The next (UNIX time) timestamp at which to call `periodically`.
     long nextPeriodical;
 
-    /// The UNIX timestamp of when the next timed `core.thread.Fiber` should be triggered.
+    /++
+     +  The UNIX timestamp of when the next scheduled
+     +  `kameloso.common.ScheduledFiber` should be triggered.
+     +/
     long nextFiberTimestamp;
 
 
