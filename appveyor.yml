@@ -2,34 +2,34 @@ platform: x64
 
 environment:
   matrix:
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.091.0
-      #DSubversion:
-      #arch: x64
-      #dubArgs: --build-mode=singleFile
-      #Ddflags: -lowmem
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.091.0
-      #DSubversion:
-      #arch: x86
-      #dubArgs: --build-mode=singleFile
-      #Ddflags: -lowmem
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.090.1
-      #DSubversion:
-      #arch: x64
-      #dubArgs: --build-mode=singleFile
-      #Ddflags: -lowmem
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.091.0
+      DSubversion:
+      arch: x64
+      dubArgs: --build-mode=singleFile
+      Ddflags: -lowmem
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.091.0
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+      Ddflags: -lowmem
     #- DC: dmd
       #DReleaseType: releases
       #DVersion: 2.090.1
       #DSubversion:
-      #arch: x86
+      #arch: x64
       #dubArgs: --build-mode=singleFile
       #Ddflags: -lowmem
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+      Ddflags: -lowmem
     #- DC: dmd
       #DReleaseType: releases
       #DVersion: 2.089.1
@@ -37,13 +37,13 @@ environment:
       #arch: x64
       #dubArgs: --build-mode=singleFile
       #Ddflags: -lowmem
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.089.1
-      #DSubversion:
-      #arch: x86
-      #dubArgs: --build-mode=singleFile
-      #Ddflags: -lowmem
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.089.1
+      DSubversion:
+      arch: x86
+      dubArgs: --build-mode=singleFile
+      Ddflags: -lowmem
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.084.0
@@ -51,31 +51,31 @@ environment:
       arch: x64
       dubArgs:
       Ddflags:
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.084.0
-      #DSubversion:
-      #arch: x86
-      #dubArgs:
-      #Ddflags:
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.084.0
+      DSubversion:
+      arch: x86
+      dubArgs:
+      Ddflags:
     - DC: ldc
       DVersion: 1.20.0
       DSubversion:
       arch: x64
       dubArgs:
       Ddflags:
-    #- DC: ldc
-      #DVersion: 1.19.0
-      #DSubversion:
-      #arch: x64
-      #dubArgs:
-      #Ddflags:
-    #- DC: ldc
-      #DVersion: 1.18.0
-      #DSubversion:
-      #arch: x64
-      #dubArgs:
-      #Ddflags:
+    - DC: ldc
+      DVersion: 1.19.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+      Ddflags:
+    - DC: ldc
+      DVersion: 1.18.0
+      DSubversion:
+      arch: x64
+      dubArgs:
+      Ddflags:
     - DC: ldc
       DVersion: 1.14.0
       DSubversion:
@@ -167,17 +167,17 @@ test_script:
  - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
  - set DFLAGS = %Ddflags%
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla || true
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c full || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c full || true
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev || true
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c vanilla || true
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c full || true
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev || true
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c vanilla
- #- mv kameloso.exe kameloso-vanilla.exe
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c vanilla || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c full || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c vanilla
+ - mv kameloso.exe kameloso-vanilla.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
- #- mv kameloso.exe kameloso-twitch.exe
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c full
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
+ - mv kameloso.exe kameloso-twitch.exe
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c full
  - #mv kameloso.exe kameloso-full.exe
