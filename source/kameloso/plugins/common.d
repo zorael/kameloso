@@ -509,11 +509,11 @@ struct IRCPluginState
 
         nextFiberTimestamp = long.max;
 
-        foreach (const timedFiber; timedFibers)
+        foreach (const scheduledFiber; scheduledFibers)
         {
-            if (timedFiber.id < nextFiberTimestamp)
+            if (scheduledFiber.timestamp < nextFiberTimestamp)
             {
-                nextFiberTimestamp = timedFiber.id;
+                nextFiberTimestamp = scheduledFiber.timestamp;
             }
         }
     }
@@ -4327,7 +4327,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point `secs` seconds later, by
- +  appending it to the `plugin`'s `IRCPluginState.timedFibers`.
+ +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
  +
  +  Updates the `IRCPluginState.nextFiberTimestamp` UNIX timestamp so that the
  +  main loop knows when to next process the array of `core.thread.Fiber`s.
@@ -4340,11 +4340,11 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
-    import lu.typecons : labeled;
+    import kameloso.common : ScheduledFiber;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currTime.toUnixTime + secs;
-    plugin.state.timedFibers ~= labeled(fiber, time);
+    plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
     plugin.state.updateNextFiberTimestamp();
 }
 
@@ -4352,7 +4352,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
- +  appending it to the `plugin`'s `IRCPluginState.timedFibers`.
+ +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
  +
  +  Overload that implicitly queues `core.thread.Fiber.getThis`.
  +
@@ -4385,9 +4385,9 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 
     size_t[] toRemove;
 
-    foreach (immutable i, labeledFiber; plugin.state.timedFibers)
+    foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
     {
-        if (labeledFiber.thing is fiber)
+        if (scheduledFiber.fiber is fiber)
         {
             toRemove ~= i;
         }
@@ -4397,7 +4397,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 
     foreach_reverse (immutable i; toRemove)
     {
-        plugin.state.timedFibers = plugin.state.timedFibers
+        plugin.state.scheduledFibers = plugin.state.scheduledFibers
             .remove!(SwapStrategy.unstable)(i);
     }
 

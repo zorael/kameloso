@@ -649,11 +649,11 @@ Next mainLoop(ref Kameloso instance)
 
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.state.timedFibers.length) continue;
+            if (!plugin.state.scheduledFibers.length) continue;
 
             if (plugin.state.nextFiberTimestamp <= nowInUnix)
             {
-                plugin.handleTimedFibers(nowInUnix);
+                plugin.handleScheduledFibers(nowInUnix);
                 plugin.state.updateNextFiberTimestamp();
             }
         }
@@ -1310,7 +1310,7 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 }
 
 
-// handleTimedFibers
+// handleScheduledFibers
 /++
  +  Processes the timed `core.thread.Fiber`s of an
  +  `kameloso.plugins.common.IRCPlugin`.
@@ -1321,23 +1321,23 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +      nowInUnix = Current UNIX timestamp to compare the timed
  +          `core.thread.Fiber`'s timestamp with.
  +/
-void handleTimedFibers(IRCPlugin plugin, const long nowInUnix)
+void handleScheduledFibers(IRCPlugin plugin, const long nowInUnix)
 in ((nowInUnix > 0), "Tried to handle timed fibers with an unset timestamp")
 do
 {
     size_t[] toRemove;
 
-    foreach (immutable i, fiber; plugin.state.timedFibers)
+    foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
     {
-        if (fiber.id > nowInUnix) continue;
+        if (scheduledFiber.timestamp > nowInUnix) continue;
 
         try
         {
             import core.thread : Fiber;
 
-            if (fiber.state == Fiber.State.HOLD)
+            if (scheduledFiber.fiber.state == Fiber.State.HOLD)
             {
-                fiber.call();
+                scheduledFiber.fiber.call();
             }
 
             // Always removed a timed Fiber after processing
@@ -1356,7 +1356,7 @@ do
                 }
             }
 
-            logger.warningf("IRC Parse Exception %s.timedFibers[%d]: %s%s",
+            logger.warningf("IRC Parse Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, logtint, e.msg);
             printObject(e.event);
             version(PrintStacktraces) logger.trace(e.info);
@@ -1375,7 +1375,7 @@ do
                 }
             }
 
-            logger.warningf("Exception %s.timedFibers[%d]: %s%s",
+            logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, logtint, e.msg);
             version(PrintStacktraces) logger.trace(e.toString);
             toRemove ~= i;
@@ -1386,7 +1386,8 @@ do
     foreach_reverse (immutable i; toRemove)
     {
         import std.algorithm.mutation : SwapStrategy, remove;
-        plugin.state.timedFibers = plugin.state.timedFibers.remove!(SwapStrategy.unstable)(i);
+        plugin.state.scheduledFibers = plugin.state.scheduledFibers
+            .remove!(SwapStrategy.unstable)(i);
     }
 }
 
