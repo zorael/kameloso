@@ -75,7 +75,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channelName;
     event.content = content;
 
@@ -146,7 +146,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.target.nickname = nickname;
     event.content = content;
 
@@ -267,7 +267,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.EMOTE;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = content;
 
     if (emoteTarget.beginsWithOneOf(state.server.chantypes))
@@ -341,7 +341,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.MODE;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.aux = modes.idup;
     event.content = content;
@@ -392,7 +392,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.TOPIC;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.content = content;
 
@@ -442,7 +442,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.INVITE;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.target.nickname = nickname;
 
@@ -492,7 +492,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.aux = key;
 
@@ -543,7 +543,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.KICK;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.target.nickname = nickname;
     event.content = reason;
@@ -594,7 +594,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.content = reason;
 
@@ -689,7 +689,7 @@ do
 
     IRCEvent event;
     event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.target.nickname = nickname;
     if (force) event.num = 1;
 
@@ -740,7 +740,7 @@ void raw(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
 
     IRCEvent event;
     event.type = IRCEvent.Type.UNSET;
-    if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = line;
 
     state.mainThread.send(event);

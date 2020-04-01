@@ -345,7 +345,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.special));
+                return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.admin));
 
             case NICK:
                 line = "NICK " ~ target.nickname;
@@ -402,13 +402,13 @@ void messageFiber(ref Kameloso instance)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
                         immutable quiet = settings.hideOutgoing ||
-                            (event.target.class_ == IRCUser.Class.special);
+                            (event.target.class_ == IRCUser.Class.admin);
                         instance.fastbuffer.put(OutgoingLine(finalLine, quiet));
                         return;
                     }
                 }
 
-                if (event.target.class_ == IRCUser.Class.special)
+                if (event.target.class_ == IRCUser.Class.admin)
                 {
                     quietline(ThreadMessage.Quietline(), finalLine);
                 }
