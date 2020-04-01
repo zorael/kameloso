@@ -1641,7 +1641,7 @@ Next tryConnect(ref Kameloso instance)
         final switch (attempt.state)
         {
         case preconnect:
-            import lu.string : sharedDomains;
+            import lu.common : sharedDomains;
             import std.socket : AddressException, AddressFamily;
 
             string resolvedHost;
