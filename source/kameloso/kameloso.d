@@ -691,6 +691,9 @@ Next mainLoop(ref Kameloso instance)
 
             case returnFailure:
                 return Next.returnFailure;
+
+            case crash:
+                assert(0, "`listenAttemptToNext` returned `Next.crash`");
             }
 
             // Successful read; record as such
@@ -2247,6 +2250,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             // Ditto
             retval = 0;
             break outerloop;
+
+        case crash:
+            assert(0, "`tryResolve` returned `Next.crash`");
         }
 
         immutable actionAfterConnect = tryConnect(instance);
@@ -2268,6 +2274,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             // No need to saveOnExit, the scopeguard takes care of that
             retval = 1;
             break outerloop;
+
+        case crash:
+            assert(0, "`tryConnect` returned `Next.crash`");
         }
 
         import kameloso.plugins.common : IRCPluginInitialisationException;
@@ -2428,6 +2437,9 @@ int initBot(string[] args)
 
     case returnFailure:
         return 1;
+
+    case crash:
+        assert(0, "`tryGetopt` returned `Next.crash`");
     }
 
     import kameloso.common : applyDefaults;
@@ -2490,6 +2502,9 @@ int initBot(string[] args)
 
     case returnFailure:
         return 1;
+
+    case crash:
+        assert(0, "`verifySettings` returned `Next.crash`");
     }
 
     // Resolve resource directory paths.
