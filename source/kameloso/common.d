@@ -4,19 +4,22 @@
  +/
 module kameloso.common;
 
+private:
+
 import dialect.defs : IRCClient, IRCServer;
 import lu.uda;
-
-import core.time : Duration, seconds;
-
 import std.experimental.logger : Logger;
 import std.range.primitives : isOutputRange;
-import std.typecons : Flag, No, Yes;
+import std.typecons : Flag, No, Tuple, Yes;
+import core.thread : Fiber;
+import core.time : Duration, seconds;
 
 version(Colours)
 {
     private import kameloso.terminal : TerminalForeground;
 }
+
+public:
 
 @safe:
 
@@ -28,6 +31,16 @@ shared static this()
     // This is technically before settings have been read...
     logger = new KamelosoLogger;
 }
+
+
+// ScheduledFiber
+/++
+ +  A tuple of a `core.thread.Fiber` and a `long` UNIX timestamp.
+ +
+ +  If we pair the two together like this, we won't need to use an associative
+ +  array (with UNIX timestamp keys).
+ +/
+alias ScheduledFiber = Tuple!(Fiber, "fiber", long, "timestamp");
 
 
 // logger
