@@ -28,7 +28,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 {
     enum longestMemberNameImpl = ()
     {
-        import std.traits : hasUDA;
+        import lu.traits : isAnnotated;
 
         string longest;
 
@@ -38,11 +38,12 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 
             foreach (immutable i, immutable member; thing.tupleof)
             {
-                static if (!__traits(isDeprecated, thing.tupleof[i]) &&
+                static if (
+                    !__traits(isDeprecated, thing.tupleof[i]) &&
                     !isType!(thing.tupleof[i]) &&
                     isConfigurableVariable!(thing.tupleof[i]) &&
-                    !hasUDA!(thing.tupleof[i], Hidden) &&
-                    (all || !hasUDA!(thing.tupleof[i], Unconfigurable)))
+                    !isAnnotated!(thing.tupleof[i], Hidden) &&
+                    (all || !isAnnotated!(thing.tupleof[i], Unconfigurable)))
                 {
                     enum name = __traits(identifier, thing.tupleof[i]);
 
@@ -154,7 +155,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 {
     enum longestMemberTypeNameImpl = ()
     {
-        import std.traits : hasUDA;
+        import lu.traits : isAnnotated;
 
         string longest;
 
@@ -164,11 +165,12 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 
             foreach (immutable i, immutable member; thing.tupleof)
             {
-                static if (!__traits(isDeprecated, thing.tupleof[i]) &&
+                static if (
+                    !__traits(isDeprecated, thing.tupleof[i]) &&
                     !isType!(thing.tupleof[i]) &&
                     isConfigurableVariable!(thing.tupleof[i]) &&
-                    !hasUDA!(thing.tupleof[i], Hidden) &&
-                    (all || !hasUDA!(thing.tupleof[i], Unconfigurable)))
+                    !isAnnotated!(thing.tupleof[i], Hidden) &&
+                    (all || !isAnnotated!(thing.tupleof[i], Unconfigurable)))
                 {
                     alias T = typeof(thing.tupleof[i]);
 
