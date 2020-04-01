@@ -577,8 +577,8 @@ void onEndOfList(SeenPlugin plugin)
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
+    import kameloso.common : timeSince;
     import dialect.common : isValidNickname;
-    import lu.common : timeSince;
     import lu.string : contains;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;

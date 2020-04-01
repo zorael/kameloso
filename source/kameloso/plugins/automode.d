@@ -536,7 +536,7 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
  +/
 void pruneChannels(ref string[string][string] automodes)
 {
-    import lu.common : pruneAA;
+    import lu.objmanip : pruneAA;
     pruneAA(automodes);
 }
 

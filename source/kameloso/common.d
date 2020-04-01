@@ -208,7 +208,7 @@ struct Kameloso
     import kameloso.constants : BufferSize;
     import kameloso.plugins.common : IRCPlugin;
     import dialect.parsing : IRCParser;
-    import lu.common : Buffer;
+    import lu.container : Buffer;
     import lu.net : Connection;
 
     import std.datetime.systime : SysTime;

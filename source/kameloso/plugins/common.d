@@ -435,7 +435,7 @@ public:
 struct IRCPluginState
 {
     import kameloso.common : IRCBot;
-    import lu.common : Labeled;
+    import lu.typecons : Labeled;
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
@@ -4338,7 +4338,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
-    import lu.common : labeled;
+    import lu.typecons : labeled;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currTime.toUnixTime + secs;

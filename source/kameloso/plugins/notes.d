@@ -48,7 +48,7 @@ struct NotesSettings
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
-    import lu.common : timeSince;
+    import kameloso.common : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
