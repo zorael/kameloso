@@ -2783,6 +2783,66 @@ unittest
 }
 
 
+// containsNickname
+/++
+ +  Searches a string for a substring that isn't surrounded by characters that
+ +  can be part of a nickname. This can detect a nickname in a string without
+ +  getting false positives from similar nicknames.
+ +
+ +  Uses `std.string.indexOf` internally with hopes of being more resilient to
+ +  weird UTF-8.
+ +
+ +  Params:
+ +      haystack = A string to search for the substring nickname.
+ +      needle = The nickname substring to find in `haystack`.
+ +
+ +  Returns:
+ +      True if `haystack` contains `needle` in such a way that it is guaranteed
+ +      to not be a different nickname.
+ +/
+bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
+in (needle.length, "Tried to determine whether an empty nickname was in a string")
+do
+{
+    import dialect.common : isValidNicknameCharacter;
+    import std.string : indexOf;
+
+    if ((haystack.length == needle.length) && (haystack == needle)) return true;
+
+    immutable pos = haystack.indexOf(needle);
+    if (pos == -1) return false;
+
+    // Allow for a prepended @, since @mention is commonplace
+    if ((pos > 0) && haystack[pos-1].isValidNicknameCharacter &&
+        (haystack[pos-1] != '@')) return false;
+
+    immutable end = pos + needle.length;
+
+    if (end > haystack.length)
+    {
+        return false;
+    }
+    else if (end == haystack.length)
+    {
+        return true;
+    }
+
+    return (!haystack[end].isValidNicknameCharacter);
+}
+
+///
+unittest
+{
+    assert("kameloso".containsNickname("kameloso"));
+    assert(" kameloso ".containsNickname("kameloso"));
+    assert(!"kam".containsNickname("kameloso"));
+    assert(!"kameloso^".containsNickname("kameloso"));
+    assert(!string.init.containsNickname("kameloso"));
+    //assert(!"kameloso".containsNickname(""));  // For now let this be false.
+    assert("@kameloso".containsNickname("kameloso"));
+}
+
+
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
 
