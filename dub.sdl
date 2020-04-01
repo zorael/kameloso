@@ -11,21 +11,11 @@ dflags "-dip25" "-dip1008"
 libs "phobos2" platform="posix-dmd"
 x:ddoxTool "scod"
 
+dependency "lu" version="~>0.2.2"
+dependency "dialect" version="~>0.4.2"
+
 sourcePaths "include" "source"
 importPaths "include" "source"
-
-#dependency "lu" version="~>0.2.2"
-dependency "lu:common" version="~>0.2.2"
-dependency "lu:conv" version="~>0.2.2"
-dependency "lu:deltastrings" version="~>0.2.2"
-dependency "lu:json" version="~>0.2.2"
-dependency "lu:meld" version="~>0.2.2"
-dependency "lu:net" version="~>0.2.2"
-dependency "lu:objmanip" version="~>0.2.2"
-dependency "lu:serialisation" version="~>0.2.2"
-dependency "lu:string" version="~>0.2.2"
-dependency "lu:traits" version="~>0.2.2"
-dependency "dialect" version="~>0.4.2"
 
 versions \
     "WithPlugins" \
