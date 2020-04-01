@@ -356,8 +356,8 @@ void tryAuth(ConnectService service)
 
 // delayJoinsAfterFailedAuth
 /++
- +  Creates and enqueues a timed `core.thread.Fiber` that joins channels after
- +  having failed to authenticate for n seconds.
+ +  Creates and schedules a `core.thread.Fiber` (in a `kameloso.common.ScheduledFiber`)
+ +  that joins channels after having failed to authenticate for n seconds.
  +
  +  Params:
  +      service = The current `ConnectService`.

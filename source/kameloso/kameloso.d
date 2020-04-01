@@ -1312,17 +1312,17 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
 // handleScheduledFibers
 /++
- +  Processes the timed `core.thread.Fiber`s of an
+ +  Processes the queued `kameloso.common.ScheduledFiber`s of an
  +  `kameloso.plugins.common.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `kameloso.plugins.common.IRCPlugin` whose timed
- +          `core.thread.Fiber`s to iterate and process.
- +      nowInUnix = Current UNIX timestamp to compare the timed
- +          `core.thread.Fiber`'s timestamp with.
+ +      plugin = The `kameloso.plugins.common.IRCPlugin` whose queued
+ +          `ScheduledFiber`s to iterate and process.
+ +      nowInUnix = Current UNIX timestamp to compare the `ScheduledFiber`'s
+ +          UNIX timestamp with.
  +/
 void handleScheduledFibers(IRCPlugin plugin, const long nowInUnix)
-in ((nowInUnix > 0), "Tried to handle timed fibers with an unset timestamp")
+in ((nowInUnix > 0), "Tried to handle queued `ScheduledFibers` with an unset timestamp")
 do
 {
     size_t[] toRemove;
@@ -1340,7 +1340,7 @@ do
                 scheduledFiber.fiber.call();
             }
 
-            // Always removed a timed Fiber after processing
+            // Always removed a scheduled Fiber after processing
             toRemove ~= i;
         }
         catch (IRCParseException e)

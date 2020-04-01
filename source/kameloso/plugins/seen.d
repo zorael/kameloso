@@ -19,7 +19,7 @@
  +  the function(s) annotated with its type.
  +
  +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
- +  process on incoming events, or timed with a worst-case precision of
+ +  process on incoming events, or scheduled with a worst-case precision of
  +  `kameloso.constants.Timeout.receive` + up to
  +  `kameloso.plugins.package.EnabledPlugins.length` plugins' event handling
  +  execution time. Generally the latter is insignificant.
@@ -92,7 +92,7 @@ public:
  +      TriggerRequest[][string] triggerRequestQueue;
  +      Replay[] replays;
  +      Fiber[][] awaitingFibers;
- +      Labeled!(Fiber, long)[] timedFibers;
+ +      ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is an alias in `kameloso.common`
  +      long nextPeriodical;
  +      long nextFiberTimestamp;
  +      bool botUpdated;
@@ -149,11 +149,11 @@ public:
  +     Fibers in the array of a particular event type will be executed the next
  +     time such an event is incoming. Think of it as Fiber callbacks.
  +
- +  * `kameloso.plugins.common.IRCPluginState.timedFibers` is also an array of
+ +  * `kameloso.plugins.common.IRCPluginState.scheduledFibers` is also an array of
  +     `core.thread.Fiber`s, but not an associative one keyed on event types.
- +     Instead they are wrapped in a `kameloso.common.Labeled` template and
- +     marked with a UNIX timestamp of when they should be run. Use
- +     `kameloso.plugins.common.delayFiber` to enqueue.
+ +     Instead they are tuples of a `core.thread.Fiber` and a `long` UNIX
+ +     timestamp of when they should be run.
+ +     Use `kameloso.plugins.common.delayFiber` to enqueue.
  +
  +  * `kameloso.plugins.common.IRCPluginState.nextPeriodical` is a UNIX timestamp
  +     of when the `periodical(IRCPlugin)` function should be run next. It is a
@@ -161,8 +161,8 @@ public:
  +     users to disk.
  +
  +  * `kameloso.plugins.common.IRCPluginState.nextFiberTimestamp` is also a
- +     UNIX timestamp, here of when the next `core.thread.Fiber` in
- +     `kameloso.plugins.common.IRCPluginState.timedFibers` is due to be
+ +     UNIX timestamp, here of when the next `kameloso.common.ScheduledFiber` in
+ +     `kameloso.plugins.common.IRCPluginState.scheduledFibers` is due to be
  +     processed. Caching it here means we won't have to go through the array
  +     to find out as often.
  +

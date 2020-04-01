@@ -491,7 +491,7 @@ struct IRCPluginState
     long nextPeriodical;
 
     /++
-     +  The UNIX timestamp of when the next scheduled
+     +  The UNIX timestamp of when the next queued
      +  `kameloso.common.ScheduledFiber` should be triggered.
      +/
     long nextFiberTimestamp;
@@ -2443,7 +2443,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Calls `.periodically` on a plugin if the internal private timestamp says
      +  the interval since the last call has passed, letting the plugin do
-     +  scheduled tasks.
+     +  maintenance tasks.
      +
      +  Params:
      +      now = The current time expressed in UNIX time.
@@ -3360,7 +3360,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  `dialect.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
      +
      +  We ride the periodicity of `dialect.defs.IRCEvent.Type.PING` to get
-     +  a natural cadence without having to resort to timed `core.thread.Fiber`s.
+     +  a natural cadence without having to resort to queued
+     +  `kameloso.common.ScheduledFiber`s.
      +
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.
@@ -4330,7 +4331,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
  +
  +  Updates the `IRCPluginState.nextFiberTimestamp` UNIX timestamp so that the
- +  main loop knows when to next process the array of `core.thread.Fiber`s.
+ +  main loop knows when to next process the array of `kameloso.common.ScheduledFiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
