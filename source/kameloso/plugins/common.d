@@ -1332,7 +1332,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import lu.string : contains, nom;
-        import lu.traits : getSymbolsByUDA;
+        import lu.traits : getSymbolsByUDA, isAnnotated;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : isSomeFunction, getUDAs, hasUDA;
 
@@ -1362,7 +1362,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             import std.format : format;
 
-            enum verbose = hasUDA!(fun, Verbose) || debug_;
+            enum verbose = isAnnotated!(fun, Verbose) || debug_;
 
             static if (verbose)
             {
@@ -1638,8 +1638,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         return Next.continue_; // next fun
                     }
                 }
-                else static if (!hasUDA!(fun, Chainable) &&
-                    !hasUDA!(fun, Terminating) &&
+                else static if (!isAnnotated!(fun, Chainable) &&
+                    !isAnnotated!(fun, Terminating) &&
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY) ||
                     (eventTypeUDA == IRCEvent.Type.ANY) ||
@@ -1841,7 +1841,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 // Don't hard return here, just set `next` and break.
-                static if (hasUDA!(fun, Chainable) || isAwarenessFunction!fun)
+                static if (isAnnotated!(fun, Chainable) || isAwarenessFunction!fun)
                 {
                     // onEvent found an event and triggered a function, but
                     // it's Chainable and there may be more, so keep looking
@@ -1850,7 +1850,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     next = Next.continue_;
                     break udaloop;  // drop down
                 }
-                else /*static if (hasUDA!(fun, Terminating))*/
+                else /*static if (isAnnotated!(fun, Terminating))*/
                 {
                     // The triggered function is not Chainable so return and
                     // let the main loop continue with the next plugin.
