@@ -1153,7 +1153,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case whitelist:
     case operator:
     case admin:
-    case special:
         allowed = true;
         break;
     }
@@ -1275,7 +1274,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     case whitelist:
     case operator:
     case admin:
-    case special:
         // Nothing more to do
         return;
     }

@@ -1090,8 +1090,6 @@ if (isOutputRange!(Sink, char[]))
                     sink.put(sender.nickname);
                 }
 
-                if (sender.class_ == IRCUser.Class.special) sink.put('*');
-
                 version(TwitchSupport)
                 {
                     if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -1151,8 +1149,6 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put(sink, target.nickname, ')');
             }
-
-            if (target.class_ == IRCUser.Class.special) sink.put('*');
 
             version(TwitchSupport)
             {
@@ -1516,11 +1512,6 @@ if (isOutputRange!(Sink, char[]))
                     sink.put(sender.nickname);
                 }
 
-                if (sender.class_ == IRCUser.Class.special)
-                {
-                    .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
-                }
-
                 version(TwitchSupport)
                 {
                     if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -1584,11 +1575,6 @@ if (isOutputRange!(Sink, char[]))
             if (!putAlias)
             {
                 .put!(Yes.colours)(sink, target.nickname, FG.default_, ')');
-            }
-
-            if (target.class_ == IRCUser.Class.special)
-            {
-                .put!(Yes.colours)(sink, bright ? Bright.special : Dark.special, '*');
             }
 
             version(TwitchSupport)
