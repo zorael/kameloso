@@ -2366,9 +2366,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         enum ctCommandsEnumLiteral =
         {
-            import lu.traits : getSymbolsByUDA;
+            import lu.traits : getSymbolsByUDA, isAnnotated;
             import std.meta : Filter;
-            import std.traits : getUDAs, hasUDA, isSomeFunction;
+            import std.traits : getUDAs, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -2381,7 +2381,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                 {
-                    static if (hasUDA!(fun, Description))
+                    static if (isAnnotated!(fun, Description))
                     {
                         enum desc = getUDAs!(fun, Description)[0];
                         descriptions[commandUDA.string_] = desc;
