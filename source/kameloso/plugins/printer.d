@@ -1191,7 +1191,6 @@ if (isOutputRange!(Sink, char[]))
                 case CHAN:
                 case EMOTE:
                 case TWITCH_SUBGIFT:
-                    import dialect.common : containsNickname;
                     if (plugin.state.client.nickname.length &&
                         content.containsNickname(plugin.state.client.nickname))
                     {
@@ -1640,7 +1639,6 @@ if (isOutputRange!(Sink, char[]))
                 case TWITCH_SUBGIFT:
                 //case SELFCHAN:
                     import kameloso.terminal : invert;
-                    import dialect.common : containsNickname;
 
                     /// Nick was mentioned (certain)
                     bool match;

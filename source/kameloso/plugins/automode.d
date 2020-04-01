@@ -497,10 +497,7 @@ void onEndOfMotd(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 void onMode(AutomodePlugin plugin, const IRCEvent event)
 {
-    import dialect.common : containsNickname;
     import std.algorithm.searching : canFind;
-
-    if (!event.content.containsNickname(plugin.state.client.nickname)) return;
 
     if (!plugin.state.channels[event.channel].ops
         .canFind(plugin.state.client.nickname)) return;
