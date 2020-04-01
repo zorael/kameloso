@@ -1962,8 +1962,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public this(IRCPluginState state) @system
     {
         import kameloso.common : settings;
-        import lu.traits : isConfigurableVariable;
-        import std.traits : EnumMembers, hasUDA;
+        import lu.traits : isAnnotated, isConfigurableVariable;
+        import std.traits : EnumMembers;
 
         this.privateState = state;
         this.privateState.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
@@ -1972,12 +1972,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             static if (isConfigurableVariable!member)
             {
-                static if (hasUDA!(this.tupleof[i], Resource))
+                static if (isAnnotated!(this.tupleof[i], Resource))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
                     member = buildNormalizedPath(settings.resourceDirectory, member).expandTilde;
                 }
-                else static if (hasUDA!(this.tupleof[i], Configuration))
+                else static if (isAnnotated!(this.tupleof[i], Configuration))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
                     member = buildNormalizedPath(settings.configDirectory, member).expandTilde;
