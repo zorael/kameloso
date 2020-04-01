@@ -1356,3 +1356,229 @@ unittest
         assert((urls == [ "https://google.se", "https://google.se" ]), urls.text);
     }
 }
+
+
+// timeSince
+/++
+ +  Express how much time has passed in a `Duration`, in natural (English) language.
+ +
+ +  Write the result to a passed output range `sink`.
+ +
+ +  Example:
+ +  ---
+ +  Appender!string sink;
+ +
+ +  const then = Clock.currTime;
+ +  Thread.sleep(1.seconds);
+ +  const now = Clock.currTime;
+ +
+ +  const duration = (now - then);
+ +  immutable inEnglish = sink.timeSince(duration);
+ +  ---
+ +
+ +  Params:
+ +      abbreviate = Whether or not to abbreviate the output, using `h` instead
+ +          of `hours`, `m` instead of `minutes`, etc.
+ +      sink = Output buffer sink to write to.
+ +      duration = A period of time.
+ +/
+void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
+    (auto ref Sink sink, const Duration duration) pure
+if (isOutputRange!(Sink, char[]))
+in ((duration >= 0.seconds), "Cannot call timeSince on a negative duration")
+do
+{
+    import std.format : formattedWrite;
+    import std.traits : isIntegral, isSomeString;
+
+    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
+
+    int days, hours, minutes, seconds;
+    duration.split!("days", "hours", "minutes", "seconds")(days, hours, minutes, seconds);
+
+    // Copied from lu.string to avoid importing it
+    pragma(inline)
+    static string plurality(const int num, const string singular, const string plural) pure nothrow @nogc
+    {
+        return ((num == 1) || (num == -1)) ? singular : plural;
+    }
+
+    if (days)
+    {
+        static if (abbreviate)
+        {
+            sink.formattedWrite("%dd", days);
+        }
+        else
+        {
+            sink.formattedWrite("%d %s", days, plurality(days, "day", "days"));
+        }
+    }
+
+    if (hours)
+    {
+        static if (abbreviate)
+        {
+            if (days) sink.put(' ');
+            sink.formattedWrite("%dh", hours);
+        }
+        else
+        {
+            if (days)
+            {
+                if (minutes) sink.put(", ");
+                else sink.put("and ");
+            }
+            sink.formattedWrite("%d %s", hours, plurality(hours, "hour", "hours"));
+        }
+    }
+
+    if (minutes)
+    {
+        static if (abbreviate)
+        {
+            if (hours || days) sink.put(' ');
+            sink.formattedWrite("%dm", minutes);
+        }
+        else
+        {
+            if (hours || days) sink.put(" and ");
+            sink.formattedWrite("%d %s", minutes, plurality(minutes, "minute", "minutes"));
+        }
+    }
+
+    if (!minutes && !hours && !days)
+    {
+        static if (abbreviate)
+        {
+            sink.formattedWrite("%ds", seconds);
+        }
+        else
+        {
+            sink.formattedWrite("%d %s", seconds, plurality(seconds, "second", "seconds"));
+        }
+    }
+}
+
+///
+unittest
+{
+    import core.time;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(64);  // workaround for formattedWrite < 2.076
+
+    {
+        immutable dur = 0.seconds;
+        sink.timeSince(dur);
+        assert((sink.data == "0 seconds"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "0s"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 3_141_519_265.msecs;
+        sink.timeSince(dur);
+        assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "36d 8h 38m"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 3599.seconds;
+        sink.timeSince(dur);
+        assert((sink.data == "59 minutes"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "59m"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 3.days + 35.minutes;
+        sink.timeSince(dur);
+        assert((sink.data == "3 days and 35 minutes"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "3d 35m"), sink.data);
+        sink.clear();
+    }
+}
+
+
+// timeSince
+/++
+ +  Express how much time has passed in a `Duration`, in natural (English) language.
+ +
+ +  Returns the result as a string.
+ +
+ +  Example:
+ +  ---
+ +  const then = Clock.currTime;
+ +  Thread.sleep(1.seconds);
+ +  const now = Clock.currTime;
+ +
+ +  const duration = (now - then);
+ +  immutable inEnglish = timeSince(duration);
+ +  ---
+ +
+ +  Params:
+ +      abbreviate = Whether or not to abbreviate the output, using `h` instead
+ +          of `hours`, `m` instead of `minutes`, etc.
+ +      duration = A period of time.
+ +
+ +  Returns:
+ +      A string with the passed duration expressed in natural English language.
+ +/
+string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration) pure
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(50);
+    sink.timeSince!abbreviate(duration);
+    return sink.data;
+}
+
+///
+unittest
+{
+    import core.time : seconds;
+
+    {
+        immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
+        immutable since = dur.timeSince;
+        immutable abbrev = dur.timeSince!(Yes.abbreviate);
+        assert((since == "9 days, 3 hours and 16 minutes"), since);
+        assert((abbrev == "9d 3h 16m"), abbrev);
+    }
+
+    {
+        immutable dur = 3_620.seconds;  // 1 hour and 20 secs
+        immutable since = dur.timeSince;
+        immutable abbrev = dur.timeSince!(Yes.abbreviate);
+        assert((since == "1 hour"), since);
+        assert((abbrev == "1h"), abbrev);
+    }
+
+    {
+        immutable dur = 30.seconds;  // 30 secs
+        immutable since = dur.timeSince;
+        immutable abbrev = dur.timeSince!(Yes.abbreviate);
+        assert((since == "30 seconds"), since);
+        assert((abbrev == "30s"), abbrev);
+    }
+
+    {
+        immutable dur = 1.seconds;
+        immutable since = dur.timeSince;
+        immutable abbrev = dur.timeSince!(Yes.abbreviate);
+        assert((since == "1 second"), since);
+        assert((abbrev == "1s"), abbrev);
+    }
+}
