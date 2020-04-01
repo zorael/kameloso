@@ -366,8 +366,6 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 {
     import core.thread : Fiber;
 
-    enum authGracePeriod = 15;
-
     void dg()
     {
         if (service.authentication == Progress.started)
@@ -384,8 +382,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
     }
 
     Fiber fiber = new Fiber(&dg, 32768);
-    service.delayFiber(fiber, authGracePeriod);
-    //service.awaitEvent(fiber, IRCEvent.Type.PING);
+    service.delayFiber(fiber, service.authenticationGracePeriod);
 }
 
 
@@ -1197,6 +1194,12 @@ final class ConnectService : IRCPlugin
 private:
     /// All Connect service settings gathered.
     @Settings ConnectSettings connectSettings;
+
+    /++
+     +  How many seconds we should wait before we tire of waiting for authentication
+     +  responses and just start joining channels.
+     +/
+    enum authenticationGracePeriod = 15;
 
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
