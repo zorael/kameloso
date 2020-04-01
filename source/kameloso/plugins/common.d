@@ -2108,11 +2108,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         import lu.meld : MeldingStrategy, meldInto;
         import lu.serialisation : readConfigInto;
-        import std.traits : hasUDA;
+        import lu.traits : isAnnotated;
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings) &&
+            static if (isAnnotated!(this.tupleof[i], Settings) &&
                 (is(typeof(this.tupleof[i]) == struct)))
             {
                 alias T = typeof(symbol);
@@ -2169,13 +2169,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public bool setSettingByName(const string setting, const string value)
     {
         import lu.objmanip : setMemberByName;
-        import std.traits : hasUDA;
+        import lu.traits : isAnnotated;
 
         bool success;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings))
+            static if (isAnnotated!(this.tupleof[i], Settings))
             {
                 static if (is(typeof(this.tupleof[i]) == struct))
                 {
@@ -2206,15 +2206,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public void printSettings() const
     {
         import kameloso.printing : printObject;
-        import std.traits : hasUDA;
-        import std.typecons : No, Yes;
+        import lu.traits : isAnnotated;
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings))
+            static if (isAnnotated!(this.tupleof[i], Settings))
             {
                 static if (is(typeof(this.tupleof[i]) == struct))
                 {
+                    import std.typecons : No, Yes;
+
                     printObject!(No.printAll)(symbol);
                     break;
                 }
@@ -2250,15 +2251,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public void serialiseConfigInto(ref Appender!string sink) const
     {
-        import lu.serialisation : serialise;
-        import std.traits : hasUDA;
+        import lu.traits : isAnnotated;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings))
+            static if (isAnnotated!(this.tupleof[i], Settings))
             {
                 static if (is(typeof(this.tupleof[i]) == struct))
                 {
+                    import lu.serialisation : serialise;
+
                     sink.serialise(symbol);
                     break;
                 }
