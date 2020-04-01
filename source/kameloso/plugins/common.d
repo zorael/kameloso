@@ -1221,8 +1221,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     public bool isEnabled() const @property pure nothrow @nogc
     {
-        import lu.traits : getSymbolsByUDA;
-        import std.traits : Unqual, hasUDA;
+        import lu.traits : getSymbolsByUDA, isAnnotated;
 
         bool retval = true;
 
@@ -1231,14 +1230,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             top:
             foreach (immutable i, const ref member; this.tupleof)
             {
-                static if (hasUDA!(this.tupleof[i], Settings))
+                static if (isAnnotated!(this.tupleof[i], Settings))
                 {
                     static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
                     {
                         foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
                         {
-                            static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
+                            static if (isAnnotated!(this.tupleof[i].tupleof[n], Enabler))
                             {
+                                import std.traits : Unqual;
+
                                 static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
                                     '`' ~ Unqual!(typeof(this)).stringof ~ "` has a non-bool `Enabler`");
 
