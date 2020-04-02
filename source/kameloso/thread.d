@@ -28,7 +28,32 @@
  +/
 module kameloso.thread;
 
+private:
+
+import std.typecons : Tuple;
+import core.thread : Fiber;
+
 public:
+
+
+// ScheduledFiber
+/++
+ +  A tuple of a `core.thread.Fiber` and a `long` UNIX timestamp.
+ +
+ +  If we pair the two together like this, we won't need to use an associative
+ +  array (with UNIX timestamp keys).
+ +
+ +  Example:
+ +  ---
+ +  import std.datetime.systime : Clock;
+ +  import core.thread : Fiber;
+ +
+ +  void dg() { /* ... */ }
+ +
+ +  auto scheduledFiber = ScheduledFiber(new Fiber(&dg), Clock.currTime.toUnixTime + 10L);
+ +  ---
+ +/
+alias ScheduledFiber = Tuple!(Fiber, "fiber", long, "timestamp");
 
 
 version(Posix)
@@ -201,8 +226,6 @@ unittest
     }
 }
 
-
-import core.thread : Fiber;
 
 // CarryingFiber
 /++

@@ -33,16 +33,6 @@ shared static this()
 }
 
 
-// ScheduledFiber
-/++
- +  A tuple of a `core.thread.Fiber` and a `long` UNIX timestamp.
- +
- +  If we pair the two together like this, we won't need to use an associative
- +  array (with UNIX timestamp keys).
- +/
-alias ScheduledFiber = Tuple!(Fiber, "fiber", long, "timestamp");
-
-
 // logger
 /++
  +  Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
