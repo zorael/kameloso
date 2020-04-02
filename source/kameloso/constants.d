@@ -122,7 +122,6 @@ struct DefaultColours
     /// Default colours for printing events on a dark terminal background.
     enum EventPrintingDark : TerminalForeground
     {
-        timestamp = TF.white,
         type    = TF.lightblue,
         error   = TF.lightred,
         sender  = TF.lightgreen,
@@ -142,7 +141,6 @@ struct DefaultColours
     /// Default colours for printing events on a bright terminal background.
     enum EventPrintingBright : TerminalForeground
     {
-        timestamp = TF.black,
         type    = TF.blue,
         error   = TF.red,
         sender  = TF.green,
