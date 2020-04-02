@@ -1081,24 +1081,22 @@ void sendMessages(ref Kameloso instance, out bool readWasShortened)
         }
     }
 
-    with (instance.conn.socket)
-    with (SocketOption)
-    with (SocketOptionLevel)
+    if ((untilNext > 0.0) && (untilNext < instance.throttle.burst))
     {
-        if (untilNext > 0)
+        immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+
+        if (untilNextMsecs < instance.conn.receiveTimeout)
         {
-            if ((untilNext < instance.throttle.burst) &&
-                (untilNext < Timeout.receive))
-            {
-                setOption(SOCKET, RCVTIMEO, (cast(long)(1000*untilNext + 1)).msecs);
-                readWasShortened = true;
-            }
+            instance.conn.receiveTimeout = untilNextMsecs;
+            readWasShortened = true;
         }
-        else if (readWasShortened)
-        {
-            setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
-            readWasShortened = false;
-        }
+    }
+    else if (readWasShortened)
+    {
+        static import lu.net;
+
+        instance.conn.receiveTimeout = lu.net.DefaultTimeout.receive;
+        readWasShortened = false;
     }
 }
 
