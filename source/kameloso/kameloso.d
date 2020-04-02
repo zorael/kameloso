@@ -2013,7 +2013,7 @@ void preInstanceSetup()
  +/
 void setupSettings()
 {
-    import kameloso.common : configurationBaseDirectory, resourceBaseDirectory;
+    import kameloso.platform : configurationBaseDirectory, currentPlatform, resourceBaseDirectory;
     import std.path : buildNormalizedPath;
 
     // Default values
@@ -2024,12 +2024,18 @@ void setupSettings()
     // Some environments require us to flush standard out after writing to it,
     // or else nothing will appear on screen (until it gets automatically flushed
     // at an indeterminate point in the future).
-    immutable platform = getPlatform();
+    immutable platform = currentPlatform;
 
-    if ((platform == "Cygwin") || (platform == "vscode"))
+    switch (platform)
     {
+    case "Cygwin":
+    case "vscode":
         // Whitelist more as we find them.
         settings.flush = true;
+        break;
+
+    default:
+        break;
     }
 }
 
