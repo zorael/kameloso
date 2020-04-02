@@ -29,6 +29,12 @@ struct ChatbotSettings
 {
     /// Whether or not the Chatbot plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    version(Web)
+    {
+        /// Enables fetching of `bash.org` quotes.
+        bool bashQuotes = true;
+    }
 }
 
 
