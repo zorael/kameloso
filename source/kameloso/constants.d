@@ -72,9 +72,6 @@ enum ConnectionDefaultFloats : double
 /// Buffer sizes in bytes.
 enum BufferSize
 {
-    socketOptionReceive = 2048,
-    socketOptionSend = 1024,
-    socketReceive = 2048,
     titleLookup = 8192,
     outbuffer = 512,
     priorityBuffer = 64,
@@ -84,12 +81,6 @@ enum BufferSize
 enum Timeout
 {
     retry = 10,
-    send = 5,
-    receive = 1,
-    keepalive = 300,
-    connectionLost = 600,
-    resolve = 10,
-    ping = 200,
     whoisRetry = 300,
     titleCache = 600,
     initialPeriodical = 3600,
