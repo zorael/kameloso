@@ -93,7 +93,6 @@ version(WithPlugins)
     version(Web)
     {
         mixin(tryImportMixin("kameloso.plugins.webtitles", "WebtitlesPlugin"));
-        mixin(tryImportMixin("kameloso.plugins.bashquotes", "BashQuotesPlugin"));
     }
     else
     {
@@ -130,7 +129,6 @@ version(WithPlugins)
      +/
     public alias EnabledWebPlugins = AliasSeq!(
         WebtitlesPlugin,
-        BashQuotesPlugin,
     );
 
     /++

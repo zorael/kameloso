@@ -21,7 +21,6 @@ versions \
     "WithPlugins" \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
-    "WithBashQuotesPlugin" \
     "WithChanQueriesService" \
     "WithChatbotPlugin" \
     "WithConnectService" \
