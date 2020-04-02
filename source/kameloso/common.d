@@ -908,7 +908,7 @@ else version(FreeBSD)
 }
 
 
-// defaultConfigurationPrefix
+// configurationDirectory
 /++
  +  Divines the default configuration file base directory, depending on what
  +  platform we're currently running.
@@ -923,7 +923,7 @@ else version(FreeBSD)
  +  Returns:
  +      A string path to the default configuration file.
  +/
-auto defaultConfigurationPrefix()
+auto configurationBaseDirectory()
 {
     import std.process : environment;
 
@@ -957,32 +957,32 @@ unittest
 {
     import std.algorithm.searching : endsWith;
 
-    immutable df = defaultConfigurationPrefix;
+    immutable cfgd = configurationDirectory;
 
     version(XDG)
     {
         import std.process : environment;
 
         environment["XDG_CONFIG_HOME"] = "/tmp";
-        immutable dfTmp = defaultConfigurationPrefix;
+        immutable dfTmp = configurationDirectory;
         assert((dfTmp == "/tmp"), dfTmp);
 
         environment.remove("XDG_CONFIG_HOME");
-        immutable dfWithout = defaultConfigurationPrefix;
+        immutable dfWithout = configurationDirectory;
         assert(dfWithout.endsWith("/.config"), dfWithout);
     }
     else version(OSX)
     {
-        assert(df.endsWith("Library/Application Support"), df);
+        assert(cfgd.endsWith("Library/Application Support"), cfgd);
     }
     else version(Windows)
     {
-        assert(df.endsWith("\\Roaming"), df);
+        assert(cfgd.endsWith("\\Roaming"), cfgd);
     }
 }
 
 
-// defaultResourcePrefix
+// resourceBaseDirectory
 /++
  +  Divines the default resource base directory, depending on what platform
  +  we're currently running.
@@ -995,7 +995,7 @@ unittest
  +  Returns:
  +      A string path to the default resource base directory.
  +/
-auto defaultResourcePrefix()
+auto resourceBaseDirectory()
 {
     import std.process : environment;
 
@@ -1035,22 +1035,22 @@ unittest
         import std.process : environment;
 
         environment["XDG_DATA_HOME"] = "/tmp";
-        string df = defaultResourcePrefix;
-        assert((df == "/tmp"), df);
+        string rbd = resourceBaseDirectory;
+        assert((rbd == "/tmp"), rbd);
 
         environment.remove("XDG_DATA_HOME");
-        df = defaultResourcePrefix;
-        assert(df.beginsWith("/home/") && df.endsWith("/.local/share"));
+        rbd = resourceBaseDirectory;
+        assert(rbd.beginsWith("/home/") && rbd.endsWith("/.local/share"));
     }
     else version(OSX)
     {
-        immutable df = defaultResourcePrefix;
-        assert(df.endsWith("Library/Application Support"), df);
+        immutable rbd = resourceBaseDirectory;
+        assert(rbd.endsWith("Library/Application Support"), rbd);
     }
     else version(Windows)
     {
-        immutable df = defaultResourcePrefix;
-        assert(df.endsWith("\\Roaming"), df);
+        immutable rbd = resourceBaseDirectory;
+        assert(rbd.endsWith("\\Roaming"), rbd);
     }
 }
 
