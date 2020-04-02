@@ -1394,6 +1394,7 @@ if (isOutputRange!(Sink, char[]))
 
     alias Bright = DefaultColours.EventPrintingBright;
     alias Dark = DefaultColours.EventPrintingDark;
+    alias Timestamp = DefaultColours.TimestampColour;
 
     immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
     immutable typestring = rawTypestring.withoutTypePrefix;
@@ -1688,7 +1689,7 @@ if (isOutputRange!(Sink, char[]))
             }
         }
 
-        .put!(Yes.colours)(sink, bright ? Bright.timestamp : Dark.timestamp, '[');
+        .put!(Yes.colours)(sink, bright ? Timestamp.bright : Timestamp.dark, '[');
 
         (cast(DateTime)SysTime
             .fromUnixTime(event.time))

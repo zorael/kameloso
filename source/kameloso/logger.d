@@ -205,7 +205,8 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
-                sink.colourWith(brightTerminal ? TerminalForeground.black : TerminalForeground.white);
+                alias Timestamp = DefaultColours.TimestampColour;
+                sink.colourWith(brightTerminal ? Timestamp.bright : Timestamp.dark);
             }
         }
 
