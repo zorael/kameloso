@@ -20,9 +20,9 @@
  +
  +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
  +  process on incoming events, or scheduled with a worst-case precision of
- +  `kameloso.constants.Timeout.receive` + up to
- +  `kameloso.plugins.package.EnabledPlugins.length` plugins' event handling
- +  execution time. Generally the latter is insignificant.
+ +  `lu.net.DefaultTimeout.receive` milliseconds, plus up to
+ +  `kameloso.plugins.package.EnabledPlugins.length` number of plugins' event
+ +  handling execution time. Generally the latter is insignificant.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
