@@ -119,6 +119,117 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandBash
+/++
+ +  Fetch a random or specified `bash.org` quote.
+ +
+ +  Defers to the `worker` subthread.
+ +/
+version(Web)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.anyone)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "bash")
+@Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
+void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
+{
+    import std.concurrency : spawn;
+
+    // Defer all work to the worker thread
+    spawn(&worker, cast(shared)plugin.state, event, settings.colouredOutgoing);
+}
+
+
+// worker
+/++
+ +  Looks up a `bash.org` quote and reports it to the appropriate nickname or channel.
+ +
+ +  Supposed to be run in its own, short-lived thread.
+ +
+ +  Params:
+ +      sState = A `shared` `kameloso.plugins.common.IRCPluginState` containing
+ +          necessary information to pass messages to send messages to the main
+ +          thread, to send text to the server or display text on the screen.
+ +      event = The `dialect.defs.IRCEvent` in flight.
+ +      colouredOutgoing = Whether or not to tint messages going to the server
+ +          with mIRC colouring.
+ +/
+version(Web)
+void worker(shared IRCPluginState sState, const IRCEvent event, const bool colouredOutgoing)
+{
+    import kameloso.irccolours : ircBold;
+    import arsd.dom : Document, htmlEntitiesDecode;
+    import requests : getContent;
+    import core.memory : GC;
+    import std.algorithm.iteration : splitter;
+    import std.array : replace;
+    import std.format : format;
+
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("bashquotes");
+    }
+
+    auto state = cast()sState;
+
+    immutable url = !event.content.length ? "http://bash.org/?random" :
+        "http://bash.org/?" ~ event.content;
+
+    try
+    {
+        import std.exception : assumeUnique;
+
+        immutable content = (cast(char[])getContent(url).data).assumeUnique;
+        auto doc = new Document;
+        doc.parseGarbage(content);
+
+        auto numBlock = doc.getElementsByClassName("quote");
+
+        if (!numBlock.length)
+        {
+            immutable message = colouredOutgoing ?
+                "No such bash.org quote: " ~ event.content.ircBold :
+                "No such bash.org quote: " ~ event.content;
+
+            privmsg(state, event.channel, event.sender.nickname, message);
+            return;
+        }
+
+        immutable num = numBlock[0]
+            .getElementsByTagName("p")[0]
+            .getElementsByTagName("b")[0]
+            .toString[4..$-4];
+
+        auto range = doc
+            .getElementsByClassName("qt")[0]
+            .toString
+            .htmlEntitiesDecode
+            .replace(`<p class="qt">`, string.init)
+            .replace(`</p>`, string.init)
+            .replace(`<br />`, string.init)
+            .splitter("\n");
+
+        immutable message = colouredOutgoing ?
+            "%s #%s".format("[bash.org]".ircBold, num) :
+            "[bash.org] #%s".format(num);
+
+        privmsg(state, event.channel, event.sender.nickname, message);
+
+        foreach (const line; range)
+        {
+            privmsg(state, event.channel, event.sender.nickname, line);
+        }
+    }
+    catch (Exception e)
+    {
+        askToWarn(state, "Chatbot could not fetch bash.org quote at %s: %s".format(url, e.msg));
+    }
+}
+
+
 mixin MinimalAuthentication;
 
 public:
@@ -126,14 +237,8 @@ public:
 
 // Chatbot
 /++
- +  The Chatbot plugin provides common chat functionality. This includes magic
- +  8ball and some other miscellanea.
- +
- +  Administrative actions have been broken out into `kameloso.plugins.admin.AdminPlugin`.
- +
- +  User quotes have been broken out into `kameloso.plugins.quotes.QuotesPlugin`.
- +
- +  Help listing has been broken out into `kameloso.plugins.help.HelpPlugin`.
+ +  The Chatbot plugin provides common chat functionality. Currently this includes magic
+ +  8ball, `bash.org` quotes and some other trivial miscellanea.
  +/
 final class ChatbotPlugin : IRCPlugin
 {
