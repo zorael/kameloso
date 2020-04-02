@@ -110,6 +110,15 @@ struct DefaultColours
 
     alias TF = TerminalForeground;
 
+    /++
+     +  Colours for timestamps, shared between event-printing and logging.
+     +/
+    enum TimestampColour : TerminalForeground
+    {
+        dark = TF.default_,   // TF.white_,
+        bright = TF.default_, // TF.black_,
+    }
+
     /// Default colours for printing events on a dark terminal background.
     enum EventPrintingDark : TerminalForeground
     {
