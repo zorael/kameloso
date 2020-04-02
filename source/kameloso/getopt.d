@@ -15,16 +15,16 @@
  +/
 module kameloso.getopt;
 
+private:
+
 import kameloso.common : CoreSettings, IRCBot, Kameloso;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
+import std.getopt : GetoptResult;
 import std.typecons : No, Yes;
 
 @safe:
 
-private:
-
-import std.getopt : GetoptResult;
 
 // printHelp
 /++

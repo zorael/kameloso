@@ -3,11 +3,14 @@
  +/
 module kameloso.kameloso;
 
+private:
+
 import kameloso.common;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import dialect;
 import lu.common : Next;
+
 
 version(ProfileGC)
 {
@@ -19,7 +22,7 @@ version(ProfileGC)
          +  Enables the precise garbage collector.
          +/
         extern(C)
-        __gshared string[] rt_options =
+        public __gshared string[] rt_options =
         [
             "gcopt=profile:1 gc:precise",
             "scanDataSeg=precise",
@@ -32,7 +35,7 @@ version(ProfileGC)
          +  profiling information at program exit, iff version `ProfileGC`.
          +/
         extern(C)
-        __gshared string[] rt_options =
+        public __gshared string[] rt_options =
         [
             "gcopt=profile:1",
         ];
@@ -48,10 +51,7 @@ version(ProfileGC)
  +  parts of the program will be monitoring it, to take the cue and abort when
  +  it is set.
  +/
-__gshared bool abort;
-
-
-private:
+public __gshared bool abort;
 
 
 // signalHandler

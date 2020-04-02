@@ -16,6 +16,8 @@
  +/
 module kameloso.irccolours;
 
+private:
+
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
 
@@ -23,6 +25,8 @@ version(Colours)
 {
     import kameloso.terminal : TerminalBackground, TerminalForeground;
 }
+
+public:
 
 @safe:
 

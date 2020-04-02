@@ -8,7 +8,6 @@
 module kameloso.plugins.common;
 
 import dialect.defs;
-
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 

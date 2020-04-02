@@ -25,7 +25,6 @@ import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
-
 import std.concurrency : send;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;

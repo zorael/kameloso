@@ -6,12 +6,15 @@
  +/
 module kameloso.traits;
 
+private:
+
 import lu.traits : isConfigurableVariable, isStruct;
 import lu.uda : Hidden, Unconfigurable;
 import std.meta : allSatisfy;
 import std.traits : isArray, isAssociativeArray, isType;
 import std.typecons : Flag, No, Yes;
 
+public:
 
 // longestMemberNameImpl
 /++

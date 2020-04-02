@@ -38,6 +38,8 @@
  +/
 module kameloso.messaging;
 
+private:
+
 import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
 import dialect.defs;
@@ -51,6 +53,8 @@ version(unittest)
     import std.concurrency : receiveOnly, thisTid;
     import std.conv : to;
 }
+
+public:
 
 
 // chan

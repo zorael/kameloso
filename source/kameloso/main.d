@@ -3,6 +3,7 @@
  +/
 module kameloso.main;
 
+public:
 
 /+
     Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()

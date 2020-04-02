@@ -21,11 +21,10 @@ import kameloso.plugins.common;
 import kameloso.common;
 import kameloso.irccolours;
 import dialect.defs;
-
-version(Colours) import kameloso.terminal : TerminalForeground;
-
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
+
+version(Colours) import kameloso.terminal : TerminalForeground;
 
 
 // PrinterSettings

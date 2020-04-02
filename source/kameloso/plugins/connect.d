@@ -21,7 +21,6 @@ import kameloso.common : logger, settings;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-
 import std.format : format;
 import std.typecons : Flag, No, Yes;
 

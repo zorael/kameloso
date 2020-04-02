@@ -20,9 +20,7 @@ import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-
 import requests : Request;
-
 import std.concurrency;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;

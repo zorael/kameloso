@@ -24,7 +24,6 @@ import kameloso.plugins.common;
 import kameloso.common : logger, settings;
 import kameloso.messaging;
 import dialect.defs;
-
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 

@@ -18,7 +18,6 @@ import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
-
 import std.typecons : No, Yes;
 
 

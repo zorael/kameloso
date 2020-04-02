@@ -21,7 +21,6 @@ import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
-
 import std.typecons : Flag, No, Yes;
 
 

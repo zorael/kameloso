@@ -19,8 +19,12 @@
  +/
 module kameloso.logger;
 
+private:
+
 import std.experimental.logger : Logger;
 import std.range.primitives : isOutputRange;
+
+public:
 
 @safe:
 
