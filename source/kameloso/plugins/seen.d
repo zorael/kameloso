@@ -92,7 +92,7 @@ public:
  +      TriggerRequest[][string] triggerRequestQueue;
  +      Replay[] replays;
  +      Fiber[][] awaitingFibers;
- +      ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is an alias in `kameloso.common`
+ +      ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is an alias in `kameloso.thread`
  +      long nextPeriodical;
  +      long nextFiberTimestamp;
  +      bool botUpdated;

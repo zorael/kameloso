@@ -434,7 +434,8 @@ public:
  +/
 struct IRCPluginState
 {
-    import kameloso.common : IRCBot, ScheduledFiber;
+    import kameloso.common : IRCBot;
+    import kameloso.thread : ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
@@ -4331,7 +4332,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
  +
  +  Updates the `IRCPluginState.nextFiberTimestamp` UNIX timestamp so that the
- +  main loop knows when to next process the array of `kameloso.common.ScheduledFiber`s.
+ +  main loop knows when to next process the array of `kameloso.thread.ScheduledFiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -4341,7 +4342,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
-    import kameloso.common : ScheduledFiber;
+    import kameloso.thread : ScheduledFiber;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currTime.toUnixTime + secs;
