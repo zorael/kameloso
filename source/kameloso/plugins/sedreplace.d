@@ -36,11 +36,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;
-
 import std.typecons : Flag, No, Yes;
-
-/// Lifetime of a `Line` in `SedReplacePlugin.prevlines`, in seconds.
-enum replaceTimeoutSeconds = 3600;
 
 
 // SedReplaceSettings
@@ -401,7 +397,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case ';':
             if (const line = event.sender.nickname in plugin.prevlines)
             {
-                if ((event.time - line.timestamp) > replaceTimeoutSeconds)
+                if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
                 {
                     // Entry is too old, remove it
                     plugin.prevlines.remove(event.sender.nickname);
@@ -453,6 +449,9 @@ final class SedReplacePlugin : IRCPlugin
 private:
     /// All sed-replace options gathered.
     @Settings SedReplaceSettings sedReplaceSettings;
+
+    /// Lifetime of a `Line` in `SedReplacePlugin.prevlines`, in seconds.
+    enum replaceTimeoutSeconds = 3600;
 
     /++
      +  A `Line[string]` 1-buffer of the previous line every user said, with
