@@ -4068,8 +4068,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 bool prefixPolicyMatches(bool verbose = false)(const IRCClient client,
     const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
-    import kameloso.common : settings;
-    import lu.string : beginsWith, nom, stripSeparatedPrefix;
+    import kameloso.common : settings, stripSeparatedPrefix;
+    import lu.string : beginsWith, nom;
     import std.typecons : No, Yes;
 
     static if (verbose)
