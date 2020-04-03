@@ -420,10 +420,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         }
 
         // Clear entries that are dashes
-        import lu.objmanip : zeroMembers;
+        import lu.objmanip : replaceMembers;
 
-        zeroMembers!"-"(parser.client);
-        zeroMembers!"-"(bot);
+        parser.client.replaceMembers("-");
+        bot.replaceMembers("-");
 
         // Handle showstopper arguments (that display something and then exits)
         if (shouldWriteConfig)
