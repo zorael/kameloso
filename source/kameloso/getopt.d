@@ -246,8 +246,7 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : applyDefaults, printVersionInfo, settings;
-    import lu.serialisation : readConfigInto;
+    import kameloso.common : applyDefaults, printVersionInfo, readConfigInto, settings;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
@@ -283,7 +282,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "c|config", &settings.configFile,
         );
 
-        settings.configFile.readConfigInto(parser.client, bot, parser.server, settings);
+        string[][string] missing;
+        string[][string] invalid;
+
+        settings.configFile.readConfigInto(missing, invalid,
+            parser.client, bot, parser.server, settings);
         applyDefaults(parser.client, parser.server);
 
         // Cannot be const

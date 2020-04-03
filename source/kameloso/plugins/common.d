@@ -2108,8 +2108,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public void deserialiseConfigFrom(const string configFile,
         out string[][string] missingEntries, out string[][string] invalidEntries)
     {
+        import kameloso.common : readConfigInto;
         import lu.meld : MeldingStrategy, meldInto;
-        import lu.serialisation : readConfigInto;
         import lu.traits : isAnnotated;
 
         foreach (immutable i, const ref symbol; this.tupleof)
