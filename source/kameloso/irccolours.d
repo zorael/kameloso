@@ -290,7 +290,7 @@ unittest
  +  Returns:
  +      The passed string, in IRC bold.
  +/
-string ircBold(const string word) pure
+string ircBold(const string word) pure nothrow
 in (word.length, "Tried to apply IRC bold to a string but no string was given")
 do
 {
@@ -318,7 +318,7 @@ unittest
  +  Returns:
  +      The passed string, in IRC italics.
  +/
-string ircItalics(const string word) pure
+string ircItalics(const string word) pure nothrow
 in (word.length, "Tried to apply IRC italics to a string but no string was given")
 do
 {
@@ -346,7 +346,7 @@ unittest
  +  Returns:
  +      The passed string, in IRC italics.
  +/
-string ircUnderlined(const string word) pure
+string ircUnderlined(const string word) pure nothrow
 in (word.length, "Tried to apply IRC underlined to a string but no string was given")
 do
 {
@@ -371,7 +371,7 @@ unittest
  +  Returns:
  +      An IRC colour/formatting reset token.
  +/
-char ircReset()
+char ircReset() @nogc pure nothrow
 {
     return cast(char)IRCControlCharacter.reset;
 }
