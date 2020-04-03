@@ -115,7 +115,8 @@ void printHelp(GetoptResult results) @system
 Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, const string[] customSettings) @system
 {
-    import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
+    import kameloso.common : logger, printVersionInfo, settings;
+    import kameloso.config : writeConfigurationFile;
     import kameloso.constants : KamelosoDefaultStrings;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
@@ -160,7 +161,7 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length)
     {
-        import kameloso.common : complainAboutIncompleteConfiguration;
+        import kameloso.config : complainAboutIncompleteConfiguration;
         logger.log("Edit it and make sure it contains at least one of the following:");
         complainAboutIncompleteConfiguration();
     }
@@ -246,7 +247,8 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : applyDefaults, printVersionInfo, readConfigInto, settings;
+    import kameloso.common : printVersionInfo, settings;
+    import kameloso.config : applyDefaults, readConfigInto;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;

@@ -173,6 +173,7 @@ void messageFiber(ref Kameloso instance)
         /// Saves current configuration to disk.
         void save(ThreadMessage.Save) scope
         {
+            import kameloso.config : writeConfigurationFile;
             instance.writeConfigurationFile(settings.configFile);
         }
 
@@ -1537,7 +1538,7 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
-    import kameloso.common : ConfigurationFileReadFailureException;
+    import kameloso.config : ConfigurationFileReadFailureException;
     import kameloso.getopt : handleGetopt;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
@@ -1958,6 +1959,8 @@ void complainAboutMissingConfiguration(const string binaryPath)
 
     if (settings.configFile.exists)
     {
+        import kameloso.config : complainAboutIncompleteConfiguration;
+
         logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
             infotint, settings.configFile, logtint);
         complainAboutIncompleteConfiguration();
@@ -2450,7 +2453,7 @@ int initBot(string[] args)
         assert(0, "`tryGetopt` returned `Next.crash`");
     }
 
-    import kameloso.common : applyDefaults;
+    import kameloso.config : applyDefaults;
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
     // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
@@ -2597,6 +2600,7 @@ int initBot(string[] args)
     // Save if we're exiting and configuration says we should.
     if (settings.saveOnExit)
     {
+        import kameloso.config : writeConfigurationFile;
         instance.writeConfigurationFile(settings.configFile);
     }
 
