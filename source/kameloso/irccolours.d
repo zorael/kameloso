@@ -115,14 +115,13 @@ unittest
 // ircColour
 /++
  +  Colour-codes the passed string with mIRC colouring, foreground and background.
- +
- +  Direct overload that leverages he output range version to colour an internal
+ +  Direct overload that leverages the output range version to colour an internal
  +  `std.array.Appender`, and returns the resulting string.
  +
  +  Params:
  +      line = Line to tint.
  +      fg = Foreground `IRCColour`.
- +      bg = Background `IRCColour`.
+ +      bg = Optional background `IRCColour`.
  +
  +  Returns:
  +      The passed line, encased within IRC colour tags.
@@ -159,13 +158,12 @@ unittest
 // ircColour
 /++
  +  Returns a mIRC colour code for the passed foreground and background colour.
- +
  +  Overload that doesn't take a string to tint, only the `IRCColour`s to
  +  produce a colour code from.
  +
  +  Params:
  +      fg = Foreground `IRCColour`.
- +      bg = Background `IRCColour`.
+ +      bg = Optional background `IRCColour`.
  +
  +  Returns:
  +      An opening IRC colour token with the passed colours.
@@ -499,6 +497,8 @@ unittest
 /++
  +  Maps mIRC effect colour tokens to terminal ones.
  +
+ +  FIXME: remove regex.
+ +
  +  Params:
  +      line = String line with IRC colours to translate.
  +      fgReset = Foreground code to reset to after colour-default tokens.
@@ -650,6 +650,8 @@ unittest
 // stripColours
 /++
  +  Removes IRC colouring from a passed string.
+ +
+ +  FIXME: remove regex.
  +
  +  Params:
  +      line = String to strip of IRC colour tags.

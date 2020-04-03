@@ -1,5 +1,6 @@
 /++
- +  Functionality related to reading configuration from and writing it to disk.
+ +  Functionality related to configuration; verifying it, correcting it, and
+ +  reading it from/writing it to disk.
  +/
 module kameloso.config;
 

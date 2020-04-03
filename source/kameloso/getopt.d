@@ -1,8 +1,8 @@
 /++
  +  Basic command-line argument-handling.
  +
- +  We employ the standard `std.getopt` to read arguments from the command line,
- +  and then use `lu.meld` to construct instances of the structs needed for the
+ +  Employs the standard `std.getopt` to read arguments from the command line,
+ +  and then uses `lu.meld` to construct instances of the structs needed for the
  +  bot to function, like `dialect.defs.IRCClient`, `kameloso.common.IRCBot` and
  +  `kameloso.common.CoreSettings`.
  +

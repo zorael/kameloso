@@ -960,7 +960,7 @@ unittest
 void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
     (auto ref Sink sink, const Duration duration) pure
 if (isOutputRange!(Sink, char[]))
-in ((duration >= 0.seconds), "Cannot call timeSince on a negative duration")
+in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
 do
 {
     import std.format : formattedWrite;
