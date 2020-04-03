@@ -103,11 +103,11 @@ unittest
     alias I = IRCControlCharacter;
     Appender!(char[]) sink;
 
-    sink.ircColour("kameloso", IRCColour.red, IRCColour.white);
+    "kameloso".ircColourInto(sink, IRCColour.red, IRCColour.white);
     assert((sink.data == I.colour ~ "04,00kameloso" ~ I.colour), sink.data);
     sink.clear();
 
-    sink.ircColour("harbl", IRCColour.green);
+    "harbl".ircColourInto(sink, IRCColour.green);
     assert((sink.data == I.colour ~ "03harbl" ~ I.colour), sink.data);
 }
 
