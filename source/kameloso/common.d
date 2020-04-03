@@ -7,17 +7,10 @@ module kameloso.common;
 private:
 
 import dialect.defs : IRCClient, IRCServer;
-import lu.uda;
-import std.experimental.logger : Logger;
+import std.experimental.logger.core : Logger;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Tuple, Yes;
-import core.thread : Fiber;
 import core.time : Duration, seconds;
-
-version(Colours)
-{
-    private import kameloso.terminal : TerminalForeground;
-}
 
 public:
 
@@ -708,6 +701,11 @@ struct Kameloso
     ConnectionHistoryEntry[] connectionHistory;
 }
 
+
+version(Colours)
+{
+    private import kameloso.terminal : TerminalForeground;
+}
 
 // printVersionInfo
 /++
