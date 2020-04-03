@@ -1964,7 +1964,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     public this(IRCPluginState state) @system
     {
         import kameloso.common : settings;
-        import lu.traits : isAnnotated, isConfigurableVariable;
+        import lu.traits : isAnnotated, isSerialisable;
         import std.traits : EnumMembers;
 
         this.privateState = state;
@@ -1972,7 +1972,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref member; this.tupleof)
         {
-            static if (isConfigurableVariable!member)
+            static if (isSerialisable!member)
             {
                 static if (isAnnotated!(this.tupleof[i], Resource))
                 {

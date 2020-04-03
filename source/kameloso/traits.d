@@ -8,7 +8,7 @@ module kameloso.traits;
 
 private:
 
-import lu.traits : isConfigurableVariable, isStruct;
+import lu.traits : isStruct;
 import lu.uda : Hidden, Unconfigurable;
 import std.meta : allSatisfy;
 import std.traits : isArray, isAssociativeArray, isType;
@@ -31,7 +31,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 {
     enum longestMemberNameImpl = ()
     {
-        import lu.traits : isAnnotated;
+        import lu.traits : isAnnotated, isSerialisable;
 
         string longest;
 
@@ -43,8 +43,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
             {
                 static if (
                     !__traits(isDeprecated, thing.tupleof[i]) &&
-                    !isType!(thing.tupleof[i]) &&
-                    isConfigurableVariable!(thing.tupleof[i]) &&
+                    isSerialisable!(thing.tupleof[i]) &&
                     !isAnnotated!(thing.tupleof[i], Hidden) &&
                     (all || !isAnnotated!(thing.tupleof[i], Unconfigurable)))
                 {
@@ -158,7 +157,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 {
     enum longestMemberTypeNameImpl = ()
     {
-        import lu.traits : isAnnotated;
+        import lu.traits : isAnnotated, isSerialisable;
 
         string longest;
 
@@ -170,8 +169,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
             {
                 static if (
                     !__traits(isDeprecated, thing.tupleof[i]) &&
-                    !isType!(thing.tupleof[i]) &&
-                    isConfigurableVariable!(thing.tupleof[i]) &&
+                    isSerialisable!(thing.tupleof[i]) &&
                     !isAnnotated!(thing.tupleof[i], Hidden) &&
                     (all || !isAnnotated!(thing.tupleof[i], Unconfigurable)))
                 {

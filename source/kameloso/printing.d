@@ -196,14 +196,13 @@ if (isOutputRange!(Sink, char[]))
 
         foreach (immutable i, member; thing.tupleof)
         {
-            import lu.traits : isAnnotated, isConfigurableVariable;
+            import lu.traits : isAnnotated, isSerialisable;
             import lu.uda : Hidden, Unconfigurable;
             import std.traits : isAssociativeArray, isType;
 
             enum shouldNormallyBePrinted =
                 !__traits(isDeprecated, thing.tupleof[i]) &&
-                !isType!member &&
-                isConfigurableVariable!member &&
+                isSerialisable!member &&
                 !isAnnotated!(thing.tupleof[i], Hidden) &&
                 !isAnnotated!(thing.tupleof[i], Unconfigurable);
 
