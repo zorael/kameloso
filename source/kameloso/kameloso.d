@@ -234,7 +234,7 @@ void messageFiber(ref Kameloso instance)
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(IRCEvent event) scope
         {
-            import lu.string : splitOnWord;
+            import lu.string : splitLineAtPosition;
             import std.format : format;
 
             enum maxIRCLineLength = 512;
@@ -261,7 +261,7 @@ void messageFiber(ref Kameloso instance)
                 }
 
                 prelude = "PRIVMSG %s :".format(channel);
-                lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
+                lines = content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
 
             case QUERY:
@@ -280,7 +280,7 @@ void messageFiber(ref Kameloso instance)
                 }
 
                 if (!prelude.length) prelude = "PRIVMSG %s :".format(target.nickname);
-                lines = content.splitOnWord(' ', maxIRCLineLength-prelude.length);
+                lines = content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
 
             case EMOTE:
@@ -322,7 +322,7 @@ void messageFiber(ref Kameloso instance)
                 else
                 {
                     prelude = "JOIN ";
-                    lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
+                    lines = channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
                 }
                 break;
 
@@ -340,7 +340,7 @@ void messageFiber(ref Kameloso instance)
                 else
                 {
                     prelude = "PART ";
-                    lines = channel.splitOnWord(',', maxIRCLineLength-prelude.length);
+                    lines = channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
                 }
                 break;
 
