@@ -780,7 +780,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
-    import lu.serialisation : justifiedConfigurationText, serialise;
+    import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
 
@@ -801,7 +801,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             plugin.serialiseConfigInto(sink);
         }
 
-        immutable justified = sink.data.justifiedConfigurationText;
+        immutable justified = sink.data.justifiedEntryValueText;
         writeToDisk(filename, justified, Yes.addBanner);
     }
 }
@@ -817,7 +817,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
  +  ---
  +  Appender!string sink;
  +  sink.serialise(client, server, settings);
- +  immutable configText = sink.data.justifiedConfigurationText;
+ +  immutable configText = sink.data.justifiedEntryValueText;
  +  writeToDisk("kameloso.conf", configText, Yes.addBanner);
  +  ---
  +
