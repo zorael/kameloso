@@ -1537,10 +1537,10 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
+    import kameloso.common : ConfigurationFileReadFailureException;
     import kameloso.getopt : handleGetopt;
     import lu.common : FileTypeMismatchException;
-    import lu.serialisation : ConfigurationFileReadFailureException,
-        ConfigurationFileParsingException;
+    import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
@@ -1580,7 +1580,7 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
         logger.errorf("Error reading and decoding configuration file [%s%s%s]: %1$s%4$s",
             logtint, e.filename, errortint, e.msg);
     }
-    catch (ConfigurationFileParsingException e)
+    catch (DeserialisationException e)
     {
         logger.errorf("Error parsing configuration file: %s%s", logtint, e.msg);
     }
