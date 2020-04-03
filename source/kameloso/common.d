@@ -282,7 +282,7 @@ struct Kameloso
      +  The buffer size is "how many string pointers", now how many bytes. So
      +  we can comfortably keep it arbitrarily high.
      +/
-    Buffer!(OutgoingLine, BufferSize.outbuffer) outbuffer;
+    Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
     /++
      +  Buffer of outgoing priority message strings.
@@ -290,7 +290,7 @@ struct Kameloso
      +  The buffer size is "how many string pointers", now how many bytes. So
      +  we can comfortably keep it arbitrarily high.
      +/
-    Buffer!(OutgoingLine, BufferSize.priorityBuffer) priorityBuffer;
+    Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
 
     version(TwitchSupport)
     {
@@ -300,7 +300,7 @@ struct Kameloso
          +  The buffer size is "how many string pointers", now how many bytes. So
          +  we can comfortably keep it arbitrarily high.
          +/
-        Buffer!(OutgoingLine, BufferSize.outbuffer*2) fastbuffer;
+        Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
     }
 
     /// Never copy this.
