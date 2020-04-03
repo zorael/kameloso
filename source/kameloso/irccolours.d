@@ -281,9 +281,6 @@ unittest
     }
 }
 
-deprecated("Use `ircColourByHash`")
-alias ircColourNick = ircColourByHash;
-
 
 // ircBold
 /++
