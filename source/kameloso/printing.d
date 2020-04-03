@@ -62,7 +62,7 @@ public:
  +
  +  Params:
  +      printAll = Whether or not to also display members marked as
- +          `lu.uda.Unconfigurable`, usually transitive information that
+ +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs.
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
@@ -127,7 +127,7 @@ alias printObject = printObjects;
  +
  +  Params:
  +      printAll = Whether or not to also display members marked as
- +          `lu.uda.Unconfigurable`, usually transitive information that
+ +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs.
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
@@ -161,9 +161,9 @@ if (isOutputRange!(Sink, char[]))
 
     static if (printAll)
     {
-        import kameloso.traits : longestUnconfigurableMemberName, longestUnconfigurableMemberTypeName;
-        enum typewidth = max(minimumTypeWidth, (longestUnconfigurableMemberTypeName!Things.length + 1));
-        enum initialWidth = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
+        import kameloso.traits : longestUnserialisableMemberName, longestUnserialisableMemberTypeName;
+        enum typewidth = max(minimumTypeWidth, (longestUnserialisableMemberTypeName!Things.length + 1));
+        enum initialWidth = !widthArg ? longestUnserialisableMemberName!Things.length : widthArg;
     }
     else
     {
@@ -197,14 +197,14 @@ if (isOutputRange!(Sink, char[]))
         foreach (immutable i, member; thing.tupleof)
         {
             import lu.traits : isAnnotated, isSerialisable;
-            import lu.uda : Hidden, Unconfigurable;
+            import lu.uda : Hidden, Unserialisable;
             import std.traits : isAssociativeArray, isType;
 
             enum shouldNormallyBePrinted =
                 !__traits(isDeprecated, thing.tupleof[i]) &&
                 isSerialisable!member &&
                 !isAnnotated!(thing.tupleof[i], Hidden) &&
-                !isAnnotated!(thing.tupleof[i], Unconfigurable);
+                !isAnnotated!(thing.tupleof[i], Unserialisable);
 
             enum shouldMaybeBePrinted = printAll && !isAnnotated!(thing.tupleof[i], Hidden);
 
@@ -533,7 +533,7 @@ if (isOutputRange!(Sink, char[]))
  +
  +  Params:
  +      printAll = Whether or not to also display members marked as
- +          `lu.uda.Unconfigurable`, usually transitive information that
+ +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs.
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.

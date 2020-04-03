@@ -36,12 +36,12 @@ import std.typecons : Flag, No, Yes;
  +/
 struct AdminSettings
 {
-    import lu.uda : Unconfigurable;
+    import lu.uda : Unserialisable;
 
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
-    @Unconfigurable
+    @Unserialisable
     {
         /++
          +  Toggles whether `onAnyEvent` prints the raw strings of all incoming

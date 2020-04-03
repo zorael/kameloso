@@ -98,6 +98,8 @@ __gshared CoreSettings settings;
  +/
 struct CoreSettings
 {
+    import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
+
     version(Colours)
     {
         bool monochrome = false;  /// Logger monochrome setting.
@@ -140,7 +142,7 @@ struct CoreSettings
     /// Character(s) that prefix a bot chat command.
     @Quoted string prefix = "!";
 
-    @Unconfigurable
+    @Unserialisable
     @Hidden
     {
         string configFile;  /// Main configuration file.
@@ -159,6 +161,8 @@ struct CoreSettings
  +/
 struct IRCBot
 {
+    import lu.uda : CannotContainComments, Hidden, Separator, Quoted, Unserialisable;
+
     /// Username to use as services account login name.
     string account;
 

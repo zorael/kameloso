@@ -9,9 +9,7 @@ module kameloso.traits;
 private:
 
 import lu.traits : isStruct;
-import lu.uda : Hidden, Unconfigurable;
 import std.meta : allSatisfy;
-import std.traits : isArray, isAssociativeArray, isType;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -32,6 +30,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
     enum longestMemberNameImpl = ()
     {
         import lu.traits : isAnnotated, isSerialisable;
+        import lu.uda : Hidden, Unserialisable;
 
         string longest;
 
@@ -45,7 +44,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
                     !__traits(isDeprecated, thing.tupleof[i]) &&
                     isSerialisable!(thing.tupleof[i]) &&
                     !isAnnotated!(thing.tupleof[i], Hidden) &&
-                    (all || !isAnnotated!(thing.tupleof[i], Unconfigurable)))
+                    (all || !isAnnotated!(thing.tupleof[i], Unserialisable)))
                 {
                     enum name = __traits(identifier, thing.tupleof[i]);
 
@@ -77,11 +76,13 @@ alias longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
 ///
 unittest
 {
+    import lu.uda : Hidden, Unserialisable;
+
     struct Foo
     {
         string veryLongName;
         int i;
-        @Unconfigurable string veryVeryVeryLongNameThatIsInvalid;
+        @Unserialisable string veryVeryVeryLongNameThatIsInvalid;
         @Hidden float likewiseWayLongerButInvalid;
         deprecated bool alsoVeryLongButDeprecated;
     }
@@ -91,7 +92,7 @@ unittest
         string evenLongerName;
         float f;
 
-        @Unconfigurable
+        @Unserialisable
         @Hidden
         long looooooooooooooooooooooong;
     }
@@ -102,26 +103,28 @@ unittest
 }
 
 
-// longestUnconfigurableMemberName
+// longestUnserialisableMemberName
 /++
  +  Gets the name of the longest member in one or more structs, including
- +  `lu.uda.Unconfigurable` ones.
+ +  `lu.uda.Unserialisable` ones.
  +
  +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
  +      Things = Types to introspect and count member name lengths of.
  +/
-alias longestUnconfigurableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
+alias longestUnserialisableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
 
 ///
 unittest
 {
+    import lu.uda : Hidden, Unserialisable;
+
     struct Foo
     {
         string veryLongName;
         int i;
-        @Unconfigurable string veryVeryVeryLongNameThatIsValidNow;
+        @Unserialisable string veryVeryVeryLongNameThatIsValidNow;
         @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
         deprecated bool alsoVeryLongButDeprecated;
     }
@@ -131,14 +134,14 @@ unittest
         string evenLongerName;
         float f;
 
-        @Unconfigurable
+        @Unserialisable
         @Hidden
         long looooooooooooooooooooooong;
     }
 
-    static assert(longestUnconfigurableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
-    static assert(longestUnconfigurableMemberName!Bar == "evenLongerName");
-    static assert(longestUnconfigurableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
+    static assert(longestUnserialisableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
+    static assert(longestUnserialisableMemberName!Bar == "evenLongerName");
+    static assert(longestUnserialisableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
 }
 
 
@@ -149,7 +152,7 @@ unittest
  +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
- +      all = Whether to consider all members or only those not hidden or unconfigurable.
+ +      all = Whether to consider all members or only those not hidden or Unserialisable.
  +      Things = Types to introspect and count member type name lengths of.
  +/
 private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
@@ -158,6 +161,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
     enum longestMemberTypeNameImpl = ()
     {
         import lu.traits : isAnnotated, isSerialisable;
+        import lu.uda : Hidden, Unserialisable;
 
         string longest;
 
@@ -171,8 +175,10 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
                     !__traits(isDeprecated, thing.tupleof[i]) &&
                     isSerialisable!(thing.tupleof[i]) &&
                     !isAnnotated!(thing.tupleof[i], Hidden) &&
-                    (all || !isAnnotated!(thing.tupleof[i], Unconfigurable)))
+                    (all || !isAnnotated!(thing.tupleof[i], Unserialisable)))
                 {
+                    import std.traits : isArray, isAssociativeArray;
+
                     alias T = typeof(thing.tupleof[i]);
 
                     import lu.traits : isTrulyString;
@@ -216,11 +222,13 @@ alias longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Thin
 ///
 unittest
 {
+    import lu.uda : Unserialisable;
+
     struct S1
     {
         string s;
         char[][string] css;
-        @Unconfigurable string[][string] ss;
+        @Unserialisable string[][string] ss;
     }
 
     enum longestConfigurable = longestMemberTypeName!S1;
@@ -228,7 +236,7 @@ unittest
 }
 
 
-// longestUnconfigurableMemberTypeName
+// longestUnserialisableMemberTypeName
 /++
  +  Gets the name of the longest type of a member in one or more structs.
  +
@@ -238,18 +246,20 @@ unittest
  +  Params:
  +      Things = Types to introspect and count member type name lengths of.
  +/
-alias longestUnconfigurableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
+alias longestUnserialisableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
 
 ///
 unittest
 {
+    import lu.uda : Unserialisable;
+
     struct S1
     {
         string s;
         char[][string] css;
-        @Unconfigurable string[][string] ss;
+        @Unserialisable string[][string] ss;
     }
 
-    enum longestUnconfigurable = longestUnconfigurableMemberTypeName!S1;
-    assert((longestUnconfigurable == "string[][string]"), longestUnconfigurable);
+    enum longestUnserialisable = longestUnserialisableMemberTypeName!S1;
+    assert((longestUnserialisable == "string[][string]"), longestUnserialisable);
 }
