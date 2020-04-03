@@ -1504,3 +1504,76 @@ if (allSatisfy!(isStruct, T))
         .splitter("\n")
         .deserialise(missingEntries, invalidEntries, things);
 }
+
+
+// stripSeparatedPrefix
+/++
+ +  Strips a prefix word from a string, optionally also stripping away some
+ +  non-word characters (`:?! `).
+ +
+ +  This is to make a helper for stripping away bot prefixes, where such may be
+ +  "`kameloso:`".
+ +
+ +  Example:
+ +  ---
+ +  string prefixed = "kameloso: sudo MODE +o #channel :user";
+ +  string command = prefixed.stripSeparatedPrefix("kameloso");
+ +  assert((command == "sudo MODE +o #channel :user"), command);
+ +  ---
+ +
+ +  Params:
+ +      demandSeparatingChars = Makes it a necessity that `line` is followed
+ +          by one of the prefix letters `:?! `. If it isn't, the `line` string
+ +          will be returned as is.
+ +      line = String line prefixed with `prefix`, potentially including separating characters.
+ +      prefix = Prefix to strip.
+ +
+ +  Returns:
+ +      The passed line with the `prefix` sliced away.
+ +/
+string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
+    (const string line, const string prefix) pure @nogc
+in (prefix.length, "Tried to strip separated prefix but no prefix was given")
+do
+{
+    import lu.string : beginsWithOneOf, nom, strippedLeft;
+
+    enum separatingChars = ": !?";
+
+    string slice = line.strippedLeft;  // mutable
+
+    // the onus is on the caller that slice begins with prefix, else this will throw
+    slice.nom!(Yes.decode)(prefix);
+
+    static if (demandSeparatingChars)
+    {
+        // Return the whole line, a non-match, if there are no separating characters
+        // (at least one of the chars in separatingChars
+        if (!slice.beginsWithOneOf(separatingChars)) return line;
+        slice = slice[1..$];
+    }
+
+    return slice.strippedLeft(separatingChars);
+}
+
+///
+unittest
+{
+    immutable lorem = "say: lorem ipsum".stripSeparatedPrefix("say");
+    assert((lorem == "lorem ipsum"), lorem);
+
+    immutable notehello = "note!!!! zorael hello".stripSeparatedPrefix("note");
+    assert((notehello == "zorael hello"), notehello);
+
+    immutable sudoquit = "sudo quit :derp".stripSeparatedPrefix("sudo");
+    assert((sudoquit == "quit :derp"), sudoquit);
+
+    /*immutable eightball = "8ball predicate?".stripSeparatedPrefix("");
+    assert((eightball == "8ball predicate?"), eightball);*/
+
+    immutable isnotabot = "kamelosois a bot".stripSeparatedPrefix("kameloso");
+    assert((isnotabot == "kamelosois a bot"), isnotabot);
+
+    immutable isabot = "kamelosois a bot".stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
+    assert((isabot == "is a bot"), isabot);
+}
