@@ -54,19 +54,18 @@ enum IRCColour
 }
 
 
-// ircColour
+// ircColourInto
 /++
  +  Colour-codes the passed string with mIRC colouring, foreground and background.
- +
- +  Output range overload that outputs to a passed auto ref sink.
+ +  Takes an output range sink and writes to it instead of allocating a new string.
  +
  +  Params:
- +      sink = Output range sink to fill with the function's output.
  +      line = Line to tint.
+ +      sink = Output range sink to fill with the function's output.
  +      fg = Foreground `IRCColour`.
- +      bg = Background `IRCColour`.
+ +      bg = Optional background `IRCColour`.
  +/
-void ircColour(Sink)(auto ref Sink sink, const string line, const IRCColour fg,
+void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour fg,
     const IRCColour bg = IRCColour.unset) pure
 if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
@@ -139,7 +138,7 @@ do
     Appender!string sink;
 
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
-    sink.ircColour(line, fg, bg);
+    line.ircColourInto(sink, fg, bg);
 
     return sink.data;
 }
