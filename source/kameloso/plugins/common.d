@@ -2558,12 +2558,12 @@ version(unittest)
 {
     // These need to be module-level.
 
-    struct TestSettings
+    private struct TestSettings
     {
         @Enabler bool enuubled = false;
     }
 
-    final class TestPlugin : IRCPlugin
+    private final class TestPlugin : IRCPlugin
     {
         @Settings TestSettings testSettings;
 
