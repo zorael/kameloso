@@ -56,9 +56,11 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 
     if (const channelOneliners = event.channel in plugin.onelinersByChannel)
     {
-        // Insert .toLower here if we want case-insensitive oneliners
-        //import std.uni : toLower;
-        if (const response = slice/*.toLower*/ in *channelOneliners)
+        import std.uni : toLower;
+
+        immutable key = plugin.onelinersSettings.caseSensitiveTriggers ? slice : slice.toLower;
+
+        if (const response = key in *channelOneliners)
         {
             import std.array : replace;
 
@@ -90,6 +92,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : count;
     import std.format : format;
     import std.typecons : No, Yes;
+    import std.uni : toLower;
 
     if (!event.content.length)
     {
@@ -109,13 +112,17 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
             return;
         }
 
-        immutable trigger = slice.nom!(Yes.decode)(' ');
+        string trigger = slice.nom!(Yes.decode)(' ');
+
+        if (plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
 
         plugin.onelinersByChannel[event.channel][trigger] = slice;
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        chan(plugin.state, event.channel, "Oneliner %s%s added."
-            .format(settings.prefix, trigger));
+        chan(plugin.state, event.channel, "Oneliner %s%s added%s."
+            .format(settings.prefix, trigger,
+                plugin.onelinersSettings.caseSensitiveTriggers ?
+                " (made lowercase)" : string.init));
         break;
 
     case "del":
@@ -124,18 +131,21 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
             chan(plugin.state, event.channel, "Usage: %s [trigger]".format(verb));
             return;
         }
-        else if (slice !in plugin.onelinersByChannel[event.channel])
+
+        immutable trigger = plugin.onelinersSettings.caseSensitiveTriggers ? slice.toLower : slice;
+
+        if (trigger !in plugin.onelinersByChannel[event.channel])
         {
             chan(plugin.state, event.channel, "No such trigger: %s%s"
                 .format(settings.prefix, slice));
             return;
         }
 
-        plugin.onelinersByChannel[event.channel].remove(slice);
+        plugin.onelinersByChannel[event.channel].remove(trigger);
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
         chan(plugin.state, event.channel, "Oneliner %s%s removed."
-            .format(settings.prefix, slice));
+            .format(settings.prefix, trigger));
         break;
 
     default:
@@ -189,7 +199,9 @@ void onEndOfMotd(OnelinersPlugin plugin)
         JSONStorage channelOnelinerJSON;
         channelOnelinerJSON.load(onelinerFile);
         //onelinersByChannel.clear();
-        onelinersByChannel.populateFromJSON(channelOnelinerJSON);
+        onelinersByChannel.populateFromJSON(channelOnelinerJSON,
+            plugin.onelinersSettings.caseSensitiveTriggers ?
+            Yes.lowercaseKeys : No.lowercaseKeys);
         onelinersByChannel.rehash();
     }
 }
