@@ -581,7 +581,50 @@ Next mainLoop(ref Kameloso instance)
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
 
-    /// Enum denoting what we should do next loop.
+    /++
+     +  Print what we know about the event. Called on errors.
+     +/
+    static void printEventDebugDetails(const IRCEvent event, const ListenAttempt attempt)
+    {
+        if (event == IRCEvent.init)
+        {
+            string logtint, warningtint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                    warningtint = (cast(KamelosoLogger)logger).warningtint;
+                }
+            }
+
+            logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
+        }
+        else
+        {
+            import std.typecons : Flag, No, Yes;
+
+            // Offending line included in event, in raw
+            printObject!(Yes.printAll)(event);
+
+            if (event.sender != IRCUser.init)
+            {
+                logger.trace("sender:");
+                printObject(event.sender);
+            }
+
+            if (event.target != IRCUser.init)
+            {
+                logger.trace("target:");
+                printObject(event.target);
+            }
+        }
+    }
+
+    /// Variable denoting what we should do next loop.
     Next next;
 
     alias State = ListenAttempt.State;
