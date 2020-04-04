@@ -1193,7 +1193,8 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
                 logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
                     plugin.name, i, logtint, e.msg);
-                printObject(e.event);
+
+                printEventDebugDetails(e.event, e.event.raw);
                 version(PrintStacktraces) logger.trace(e.info);
                 expiredFibers ~= fiber;
             }
@@ -1212,7 +1213,8 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
                 logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
                     plugin.name, i, logtint, e.msg);
-                printObject(event);
+
+                printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e.toString);
                 expiredFibers ~= fiber;
             }
@@ -1296,7 +1298,8 @@ do
 
             logger.warningf("IRC Parse Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, logtint, e.msg);
-            printObject(e.event);
+
+            printEventDebugDetails(e.event, e.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
             toRemove ~= i;
         }
