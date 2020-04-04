@@ -167,12 +167,12 @@ test_script:
  - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
  - set DFLAGS = %Ddflags%
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c full || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c vanilla || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c full || true
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c full
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c vanilla
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c full
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c vanilla
  - mv kameloso.exe kameloso-vanilla.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
