@@ -1089,6 +1089,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
     case warning:
         // Benign socket error; break foreach and try again
+        import kameloso.constants : Timeout;
         import core.thread : Thread;
         import core.time : seconds;
 
@@ -1096,7 +1097,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
             attempt.error, warningtint);
 
         // Sleep briefly so it won't flood the screen on chains of errors
-        Thread.sleep(1.seconds);
+        Thread.sleep(Timeout.readErrorGracePeriod.seconds);
         return Next.retry;
 
     case timeout:
