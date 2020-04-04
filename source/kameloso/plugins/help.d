@@ -209,7 +209,6 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 "Use help [plugin] [command] for information about a command.";
 
             privmsg(plugin.state, channel, sender.nickname, message);
-            //privmsg(plugin.state, channel, sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 

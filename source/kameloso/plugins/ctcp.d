@@ -254,7 +254,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
         Response:  CLIENTINFO ACTION DCC CLIENTINFO FINGER PING SOURCE TIME USERINFO VERSION
      */
 
-    enum string allCTCPTypes = ()
+    enum allCTCPTypes = ()
     {
         import lu.string : beginsWith, strippedRight;
         import lu.traits : getSymbolsByUDA;
@@ -280,7 +280,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
         }
 
         return allTypes.strippedRight;
-    }();
+    }().idup;
 
     // Don't forget to add ACTION, it's handed elsewhere
 

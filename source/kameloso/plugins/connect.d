@@ -201,10 +201,9 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 /++
  +  Pongs the server upon `dialect.defs.IRCEvent.Type.PING`.
  +
- +  We make sure to ping with the sender as target, and not the necessarily
+ +  Ping with the sender as target, and not the necessarily
  +  the server as saved in the `dialect.defs.IRCServer` struct. For
- +  example, `dialect.defs.IRCEvent.Type.ERR_BADPING` (or is it
- +  `dialect.defs.IRCEvent.Type.ERR_NEEDPONG`?) generally wants you to
+ +  example, `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` generally wants you to
  +  ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
@@ -986,6 +985,7 @@ version(TwitchSupport)
 void onReconnect(ConnectService service)
 {
     import std.concurrency : send;
+
     logger.info("Reconnecting upon server request.");
     service.state.mainThread.send(ThreadMessage.Reconnect());
 }

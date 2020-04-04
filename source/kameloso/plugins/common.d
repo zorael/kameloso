@@ -19,7 +19,6 @@ version = PrefixedCommandsFallBackToNickname;
 //version = ExplainReplay;
 
 
-// 2.079.0 getSymolsByUDA
 /++
  +  2.079.0 has a bug that breaks plugin processing completely. It's fixed in
  +  patch .1 (2.079.1), but there's no API for knowing the patch number.
@@ -2226,16 +2225,14 @@ unittest
 // nameOf
 /++
  +  Returns either the nickname or the display name of a user, depending on whether the
- +  display name is known or not.
- +
- +  Overload that looks up the passed nickname in the passed plugin's
- +  `users` associative array of `dialect.defs.IRCUser`s.
+ +  display name is known or not. Overload that looks up the passed nickname in
+ +  the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
  +
  +  If not version `TwitchSupport` then it always returns the nickname.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`, whatever it is.
- +      nickname = `dialect.defs.IRCUser` to look up.
+ +      nickname = The name of a user to look up.
  +
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.
