@@ -735,6 +735,8 @@ final class IRCPluginSettingsException : Exception
 
 package:
 
+
+// filterResult
 /++
  +  The tristate results from comparing a username with the admin or whitelist lists.
  +/
@@ -751,69 +753,107 @@ enum FilterResult
 }
 
 
+// PrefixPolicy
 /++
  +  In what way the contents of a `dialect.defs.IRCEvent` should start (be "prefixed")
- +  to be considered as triggering a function.
- +
- +  * With `PrefixPolicy.direct`, an event handler will not examine the
- +    `dialect.defs.IRCEvent.content` member at all and always trigger.
- +  * With `PrefixPolicy.prefixed`, the event handler will only trigger if the
- +    `dialect.defs.IRCEvent.content` member starts with the
- +    `kameloso.common.CoreSettings.prefix` (e.g. "`!`").
- +  * With  PrefixPolicy.nickname`, it will only trigger if the
- +    `dialect.defs.IRCEvent.content` member starts with the bot's nickname
- +    (as in `kameloso: command args`).
+ +  for an annotated function to be allowed to trigger.
  +/
 enum PrefixPolicy
 {
-    direct,   /// Message will be treated as-is without looking for prefixes.
-    prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
     /++
-     +  Message should begin with the bot's name, addressing the bot, except in
-     +  `dialect.defs.IRCEvent.Type.QUERY` events.
+     +  The annotated event handler will not examine the `dialect.defs.IRCEvent.content`
+     +  member at all and will always trigger, as long as all other annotations match.
+     +/
+    direct,
+
+    /++
+     +  The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
+     +  member starts with the `kameloso.common.CoreSettings.prefix` (e.g. "!").
+     +  All other annotations must also match.
+     +/
+    prefixed,
+
+    /++
+     +  The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
+     +  member starts with the bot's name, as if addressed to it.
+     +
+     +  In `dialect.defs.IRCEvent.Type.QUERY` events this instead behaves as
+     +  `PrefixPolicy.direct`.
      +/
     nickname,
 }
 
 
-/// Whether an annotated function should work in all channels or just in home channels.
+// ChannelPolicy
+/++
+ +  Whether an annotated function should be allowed to trigger on events in only
+ +  home channels or in guest ones as well.
+ +/
 enum ChannelPolicy
 {
     /++
-     +  The annotated function will only trigger if the event happened in a
-     +  home, where applicable (not all events have channels).
+     +  The annotated function will only be allowed to trigger if the event
+     +  happened in a home channel, where applicable. Not all events carry channels.
      +/
     home,
 
-    /// The annotated function will trigger regardless of channel.
+    /++
+     +  The annotated function will be allowed to trigger regardless of channel.
+     +/
     any,
 }
 
 
+// PrivilegeLevel
 /++
  +  What level of privilege is needed to trigger an event handler.
  +
  +  In any event handler context, the triggering user has a *level of privilege*.
- +  This decides whether or not they are allowed to trigger the function. In
- +  general privileges are application-wide; meaning, a user with a privilege
- +  of `PrivilegeLevel.whitelist` with regards to event handlers in plugin A has the
- +  same privilege level in plugin B, but this does not necessarily need to be
- +  the case and isn't in the case of the Twitch bot plugin.
- +
+ +  This decides whether or not they are allowed to trigger the function.
  +  Put simply this is the "barrier of entry" for event handlers.
+ +
+ +  Privileges are set on a per-channel basis and are stored in the "users.json"
+ +  file in the resource directory.
  +/
 enum PrivilegeLevel
 {
-    ignore = 0, /// Override privilege checks.
-    anyone = 1, /// Anyone may trigger this event.
-    registered = 2,  /// Anyone registered with services may trigger this event.
     /++
-     +  Only those of the `dialect.defs.IRCClient.Class.whitelist`
-     +  class may trigger this event.
+     +  Override privilege checks, allowing anyone to trigger the annotated function.
+     +/
+    ignore = 0,
+
+    /++
+     +  Anyone not explicitly blacklisted (with a `dialect.defs.IRCClient.Class.blacklist`
+     +  classifier) may trigger the annotated function. As such, to know if they're
+     +  blacklisted, unknown users will first be looked up with a WHOIS query
+     +  before allowing the function to trigger.
+     +/
+    anyone = 1,
+
+    /++
+     +  Anyone logged onto services may trigger the annotated function.
+     +/
+    registered = 2,
+
+    /++
+     +  Only users with a `dialect.defs.IRCClient.Class.whitelist` classifier
+     +  may trigger the annotated function.
      +/
     whitelist = 3,
-    operator = 4,  /// Only operators (or moderators) may trigger this event.
-    admin = 5, /// Only the administrators may trigger this event.
+
+    /++
+     +  Only users with a `dialect.defs.IRCClient.Class.operator` classifier
+     +  may trigger the annotated function.
+     +
+     +  Note: this does not mean IRC "+o" operators.
+     +/
+    operator = 4,
+
+    /++
+     +  Only users defined in the configuration file as an administrator may
+     +  trigger the annotated function.
+     +/
+    admin = 5,
 }
 
 
@@ -866,7 +906,7 @@ TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel pri
  +
  +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
  +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
- +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
+ +  messages, to prefix the command `word`. (Usually "`!`", making it "`!command`".)
  +
  +  Example:
  +  ---
@@ -874,7 +914,7 @@ TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel pri
  +  @(ChannelPolicy.home)
  +  @BotCommand(PrefixPolicy.prefixed, "foo")
  +  @BotCommand(PrefixPolicy.prefixed, "bar")
- +  void onCommandFooOrBar(IRCPlugin plugin, const IRCEvent event)
+ +  void onCommandFooOrBar(MyPlugin plugin, const IRCEvent event)
  +  {
  +      // ...
  +  }
@@ -916,16 +956,15 @@ struct BotCommand
 /++
  +  Defines an IRC bot regular expression, for people to trigger with messages.
  +
- +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
- +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
- +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
+ +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.direct`
+ +  and try to match the regex on all messages, regardless of how they start.
  +
  +  Example:
  +  ---
  +  @(IRCEvent.Type.CHAN)
  +  @(ChannelPolicy.home)
- +  @BotRegex(PrefixPolicy.direct, ".+MonkaS.+")
- +  void onSawMonkaS(IRCPlugin plugin, const IRCEvent event)
+ +  @BotRegex(PrefixPolicy.direct, r"(?:^|\s)MonkaS(?:$|\s)")
+ +  void onSawMonkaS(MyPlugin plugin, const IRCEvent event)
  +  {
  +      // ...
  +  }
@@ -943,29 +982,30 @@ struct BotRegex
 
     /++
      +  Regex engine to match incoming messages with.
-     +
-     +  May be compile-time `ctRegex` or normal `Regex`.
      +/
     Regex!char engine;
 
-    /// The regular expression in string form.
+    /++
+     +  The regular expression in string form.
+     +/
     string expression;
 
     /++
-     +  Creates a new `BotRegex` with the passed `policy` and regex `expression` string.
+     +  Creates a new `BotRegex` with the passed policy and regex expression.
      +/
     this(const PrefixPolicy policy, const string expression)
     {
         this.policy = policy;
 
-        if (expression.length)
-        {
-            this.engine = expression.regex;
-            this.expression = expression;
-        }
+        if (!expression.length) return;
+
+        this.engine = expression.regex;
+        this.expression = expression;
     }
 
-    /// Creates a new `BotRegex` with the passed regex `expression` string.
+    /++
+     +  Creates a new `BotRegex` with the passed regex expression.
+     +/
     this(const string expression)
     {
         if (!expression.length) return;
@@ -976,6 +1016,7 @@ struct BotRegex
 }
 
 
+// Chainable
 /++
  +  Annotation denoting that an event-handling function let other functions in
  +  the same module process after it.
@@ -983,17 +1024,19 @@ struct BotRegex
 struct Chainable;
 
 
+// Terminating
 /++
  +  Annotation denoting that an event-handling function is the end of a chain,
  +  letting no other functions in the same module be triggered after it has been.
  +
  +  This is not strictly necessary since anything non-`Chainable` is implicitly
- +  `Terminating`, but we add it to silence warnings and in hopes of the code
+ +  `Terminating`, but it's here to silence warnings and in hopes of the code
  +  becoming more self-documenting.
  +/
 struct Terminating;
 
 
+// Verbose
 /++
  +  Annotation denoting that we want verbose debug output of the plumbing when
  +  handling events, iterating through the module's event handler functions.
@@ -1001,22 +1044,43 @@ struct Terminating;
 struct Verbose;
 
 
+// Awareness
 /++
  +  Annotation denoting that a function is part of an awareness mixin, and at
  +  what point it should be processed.
  +/
 enum Awareness
 {
-    setup,   /// Event handlers setting the stage for following `Awareness.early` ones.
-    early,   /// Event handlers meant to fire earlier than plugin-specific ones.
-    late,    /// Event handlers meant to fire after plugin-specific ones have finished.
-    cleanup, /// Event handlers meant to finish and clean up after all handlers have been called.
+    /++
+     +  First stage: setup. The annotated event handlers will process first,
+     +  setting the stage for the following `Awareness.early`-annotated handlers.
+     +/
+    setup,
+
+    /++
+     +  Second stage: early. The annotated event handlers will have their chance
+     +  to process before the plugin-specific handlers will.
+     +/
+    early,
+
+    /++
+     +  Fourth stage: late. The annotated event handlers will process after
+     +  the plugin-specific handlers have all processed.
+     +/
+    late,
+
+    /++
+     +  Fifth and last stage: cleanup. The annotated event handlers will process
+     +  after everything else has been called.
+     +/
+    cleanup,
 }
 
 
+// Settings
 /++
- +  Annotation denoting that a variable is to be as considered as settings for a
- +  plugin and thus should be serialised and saved in the configuration file.
+ +  Annotation denoting that a struct variable is to be as considered as housing
+ +  settings for a plugin and should thus be serialised and saved in the configuration file.
  +/
 struct Settings;
 
@@ -1031,28 +1095,28 @@ struct Settings;
 struct Description
 {
     /// Description string.
-    string string_;
+    string line;
 
     /// Command usage syntax help string.
     string syntax;
 
-    /// Creates a new `Description` with the passed `string_` description text.
-    this(const string string_, const string syntax = string.init)
+    /// Creates a new `Description` with the passed `line` description text.
+    this(const string line, const string syntax = string.init)
     {
-        this.string_ = string_;
+        this.line = line;
         this.syntax = syntax;
     }
 }
 
 
 /++
- +  Annotation denoting that a variable is the basename of a *resource* file or directory.
+ +  Annotation denoting that a variable is the basename of a resource file or directory.
  +/
 struct Resource;
 
 
 /++
- +  Annotation denoting that a variable is the basename of a *configuration*
+ +  Annotation denoting that a variable is the basename of a configuration
  +  file or directory.
  +/
 struct Configuration;
@@ -1066,13 +1130,10 @@ struct Enabler;
 
 // filterSender
 /++
- +  Decides if a nickname is known good, known bad, or needs `WHOIS` to tell.
+ +  Decides if a sender meets a `PrivilegeLevel` and is allowed to trigger an event
+ +  handler, or if a WHOIS query is needed to be able to tell.
  +
- +  This is used to tell whether or not a user is allowed to use the bot's services.
- +  If the user is not in the in-memory user array, return `FilterResult.whois`.
- +  If the user's NickServ account is in the whitelist (or equals one of the
- +  bot's admins'), return `FilterResult.pass`. Else, return `FilterResult.fail`
- +  and deny use.
+ +  This requires the Persistence service to be active to work.
  +
  +  Params:
  +      state = Reference to the `IRCPluginState` of the invoking plugin.
@@ -1167,8 +1228,22 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
 /++
  +  Mixin that fully implements an `IRCPlugin`.
  +
- +  Uses compile-time introspection to call top-level functions to extend behaviour.
- +  Transparently emulates all such as being member methods of the mixing-in class.
+ +  Uses compile-time introspection to call module-level functions to extend behaviour.
+ +
+ +  With UFCS, transparently emulates all such as being member methods of the
+ +  mixing-in class.
+ +
+ +  Example:
+ +  ---
+ +  final class MyPlugin : IRCPlugin
+ +  {
+ +      @Settings MyPluginSettings myPluginSettings;
+ +
+ +      // ...implementation...
+ +
+ +      mixin IRCPluginImpl;
+ +  }
+ +  ---
  +/
 version(WithPlugins)
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
@@ -1205,7 +1280,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     @safe:
 
-    /// This plugin's `IRCPluginState` structure. Has to be public for some things to work.
+    /++
+     +  This plugin's `IRCPluginState` structure. Has to be public for some things to work.
+     +/
     public IRCPluginState privateState;
 
 
@@ -1321,8 +1398,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEventImpl
     /++
-     +  Pass on the supplied `dialect.defs.IRCEvent` to functions annotated
-     +  with the right `dialect.defs.IRCEvent.Type`s.
+     +  Pass on the supplied `dialect.defs.IRCEvent` to module-level functions
+     +  annotated with the matching `dialect.defs.IRCEvent.Type`s.
      +
      +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
      +  `PrefixPolicy` where such is appropriate.
@@ -1970,7 +2047,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Basic constructor for a plugin.
      +
-     +  It passes execution to the top-level `.initialise(IRCPlugin)` if it exists.
+     +  It passes execution to the module-level `initialise` if it exists.
      +
      +  There's no point in checking whether the plugin is enabled or not, as it
      +  will only be possible to change the setting after having created the
@@ -2192,10 +2269,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // printSettings
     /++
-     +  Prints the plugin's `Settings`-annotated structs.
-     +
-     +  It both prints module-level structs as well as structs in the
-     +  `dialect.defs.IRCPlugin` (subtype) itself.
+     +  Prints the plugin's `Settings`-annotated settings struct.
      +/
     public void printSettings() const
     {
@@ -2325,16 +2399,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // name
     /++
-     +  Returns the name of the plugin.
-     +
-     +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
-     +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
+     +  Returns the name of the plugin. (Technically it's the name of the module.)
      +
      +  Returns:
      +      The module name of the mixing-in class.
-     +
-     +  TODO:
-     +      Use `std.traits.moduleName`?
      +/
     pragma(inline)
     public string name() @property const pure nothrow @nogc
@@ -2483,6 +2551,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // reload
     /++
      +  Reloads the plugin, where such makes sense.
+     +
+     +  What this means is implementation-defined.
      +/
     public void reload() @system
     {
@@ -3532,12 +3602,11 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
 /++
  +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
- +  `dialect.defs.IRCEvent.Type` type.
+ +  `dialect.defs.IRCEvent.Type` type. Overload that implicitly dequeues
+ +  `core.thread.Fiber.getThis`.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
- +
- +  Overload that implicitly dequeues `core.thread.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -3580,12 +3649,11 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Typ
 /++
  +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
- +  `dialect.defs.IRCEvent.Type` types.
+ +  `dialect.defs.IRCEvent.Type` types. Overload that implicitly dequeues
+ +  `core.thread.Fiber.getThis`.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
- +
- +  Overload that implicitly dequeues `core.thread.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
