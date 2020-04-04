@@ -7,6 +7,9 @@
  +/
 module kameloso.plugins.common;
 
+private:
+
+import kameloso.plugins.ircplugin;
 import dialect.defs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
@@ -23,7 +26,6 @@ version = PrefixedCommandsFallBackToNickname;
  +
  +  Infer it by testing for the broken behaviour and warn (during compilation).
  +/
-private
 static if (__VERSION__ == 2079L)
 {
     import lu.traits : getSymbolsByUDA;

@@ -16,6 +16,7 @@ version(WithConnectService):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.common : logger, settings;
 import kameloso.messaging;

@@ -6,7 +6,7 @@
  +
  +  It is qualified as a service, so while it is not technically mandatory, it
  +  is highly recommended if you plan on mixing in
- +  `kameloso.plugins.common.ChannelAwareness` in your plugins.
+ +  `kameloso.plugins.awareness.ChannelAwareness` in your plugins.
  +/
 module kameloso.plugins.chanqueries;
 
@@ -18,6 +18,7 @@ version(WithChanQueriesService):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;

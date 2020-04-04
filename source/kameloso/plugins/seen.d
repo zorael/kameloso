@@ -35,7 +35,10 @@ version(WithPlugins):
 // ...and also if compiling in specifically this plugin.
 version(WithSeenPlugin):
 
-// We need crucial things from `kameloso.plugins.common`.
+// We need the definition of an `IRCPlugin`.
+import kameloso.plugins.ircplugin;
+
+// And crucial things from `kameloso.plugins.common`.
 import kameloso.plugins.common;
 
 // Awareness mixins, for plumbing.

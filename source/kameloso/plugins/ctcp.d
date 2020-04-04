@@ -15,6 +15,7 @@ version(WithCTCPService):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;

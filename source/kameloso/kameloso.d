@@ -177,7 +177,7 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(settings.configFile);
         }
 
-        import kameloso.plugins.common : IRCPlugin;
+        import kameloso.plugins.ircplugin : IRCPlugin;
         import kameloso.thread : CarryingFiber;
 
         /++
@@ -1183,7 +1183,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
-import kameloso.plugins.common : IRCPlugin;
+import kameloso.plugins.ircplugin : IRCPlugin;
 
 // handleAwaitingFibers
 /++

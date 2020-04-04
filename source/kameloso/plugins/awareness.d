@@ -8,6 +8,7 @@
  +
  +  private:
  +
+ +  import kameloso.plugins.ircplugin;
  +  import kameloso.plugins.common;
  +  import kameloso.plugins.awareness;
  +
@@ -41,6 +42,7 @@ version(WithPlugins):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import dialect.defs;
 

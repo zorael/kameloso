@@ -206,7 +206,7 @@ struct Kameloso
 {
     import kameloso.common : OutgoingLine;
     import kameloso.constants : BufferSize;
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins.ircplugin : IRCPlugin;
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import lu.net : Connection;

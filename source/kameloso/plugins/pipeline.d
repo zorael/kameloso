@@ -17,6 +17,7 @@ version(WithPipelinePlugin):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.common;
 import kameloso.messaging;

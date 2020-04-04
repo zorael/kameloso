@@ -17,6 +17,7 @@ version(WithPrinterPlugin):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common;

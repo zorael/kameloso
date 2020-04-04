@@ -13,6 +13,7 @@ version(WithChatbotPlugin):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.common : settings;

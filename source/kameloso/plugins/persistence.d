@@ -19,6 +19,7 @@ version(WithPersistenceService):
 
 private:
 
+import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import dialect.defs;
 
