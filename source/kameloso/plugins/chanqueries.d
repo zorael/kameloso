@@ -19,6 +19,7 @@ version(WithChanQueriesService):
 private:
 
 import kameloso.plugins.common;
+import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;
 

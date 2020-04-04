@@ -34,6 +34,7 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins.common;
+import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;

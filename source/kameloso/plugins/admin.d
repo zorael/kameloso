@@ -21,6 +21,7 @@ version(WithAdminPlugin):
 private:
 
 import kameloso.plugins.common;
+import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;

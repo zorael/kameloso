@@ -14,6 +14,7 @@ version(WithChatbotPlugin):
 private:
 
 import kameloso.plugins.common;
+import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.common : settings;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;

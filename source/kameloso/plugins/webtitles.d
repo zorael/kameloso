@@ -16,6 +16,7 @@ version(WithWebtitlesPlugin):
 private:
 
 import kameloso.plugins.common;
+import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;

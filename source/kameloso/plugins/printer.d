@@ -18,6 +18,7 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.common;
+import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common;
 import kameloso.irccolours;
 import dialect.defs;

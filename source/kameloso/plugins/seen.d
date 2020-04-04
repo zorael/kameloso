@@ -38,6 +38,9 @@ version(WithSeenPlugin):
 // We need crucial things from `kameloso.plugins.common`.
 import kameloso.plugins.common;
 
+// Awareness mixins, for plumbing.
+import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+
 // Likewise `dialect.defs`, for the definitions of an IRC event.
 import dialect.defs;
 
