@@ -2346,23 +2346,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // commands
     /++
-     +  Collects all `BotCommand` strings that this plugin offers at compile
-     +  time, then at runtime returns them alongside their `Description`s as an
-     +  associative `Description[string]` array.
-     +
-     +  Regular expression `BotRegex`es are not enumerated.
+     +  Collects all `BotCommand` command words and `BotRegex` regex expressions
+     +  that this plugin offers at compile time, then at runtime returns them
+     +  alongside their `Description`s as an associative `Description[string]` array.
      +
      +  Returns:
      +      Associative array of all `Descriptions`, keyed by
-     +      `BotCommand.string_`s.
+     +      `BotCommand.word`s and `BotRegex.expression`s.
      +/
     public Description[string] commands() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
             import lu.traits : getSymbolsByUDA, isAnnotated;
-            import std.meta : Filter;
-            import std.traits : getUDAs, isSomeFunction;
+            import std.meta : AliasSeq, Filter;
+            import std.traits : getUDAs, hasUDA, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -2373,35 +2371,50 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             foreach (fun; funs)
             {
-                foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
+                foreach (immutable uda; AliasSeq!(getUDAs!(fun, BotCommand),
+                    getUDAs!(fun, BotRegex)))
                 {
-                    static if (isAnnotated!(fun, Description))
+                    static if (hasUDA!(fun, Description))
                     {
-                        enum desc = getUDAs!(fun, Description)[0];
-                        descriptions[commandUDA.string_] = desc;
+                        static if (is(typeof(uda) : BotCommand))
+                        {
+                            enum key = uda.word;
+                        }
+                        else /*static if (is(typeof(uda) : BotRegex))*/
+                        {
+                            enum key = `r"` ~ uda.expression ~ `"`;
+                        }
 
-                        static if (commandUDA.policy == PrefixPolicy.nickname)
+                        enum desc = getUDAs!(fun, Description)[0];
+                        descriptions[key] = desc;
+
+                        static if (uda.policy == PrefixPolicy.nickname)
                         {
                             static if (desc.syntax.length)
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                descriptions[commandUDA.string_].syntax = "$nickname: " ~ desc.syntax;
+                                descriptions[key].syntax = "$nickname: " ~ desc.syntax;
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                descriptions[commandUDA.string_].syntax = "$nickname: $command";
+                                descriptions[key].syntax = "$nickname: $command";
                             }
                         }
                     }
                     else
                     {
-                        import std.format : format;
-                        pragma(msg, "Warning: `%s.%s` is missing a `@Description` annotation for command \"`%s`\""
-                            .format(module_, __traits(identifier, fun), commandUDA.string_));
+                        static if (!hasUDA!(fun, Description))
+                        {
+                            import std.format : format;
+                            import std.traits : fullyQualifiedName;
+                            pragma(msg, "Warning: `%s` is missing a `@Description` annotation"
+                                .format(fullyQualifiedName!fun));
+                        }
                     }
+
                 }
             }
 
