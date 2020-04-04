@@ -936,8 +936,10 @@ struct BotRegex
 {
     import std.regex : Regex, regex;
 
-    /// The policy to which extent the command needs the bot's nickname.
-    PrefixPolicy policy;
+    /++
+     +  In what way the message is required to start for the annotated function to trigger.
+     +/
+    PrefixPolicy policy = PrefixPolicy.direct;
 
     /++
      +  Regex engine to match incoming messages with.
@@ -966,13 +968,10 @@ struct BotRegex
     /// Creates a new `BotRegex` with the passed regex `expression` string.
     this(const string expression)
     {
-        this.policy = PrefixPolicy.prefixed;
+        if (!expression.length) return;
 
-        if (expression.length)
-        {
-            this.engine = expression.regex;
-            this.expression = expression;
-        }
+        this.engine = expression.regex;
+        this.expression = expression;
     }
 }
 
