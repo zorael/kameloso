@@ -890,7 +890,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
-    const IRCEvent event = IRCEvent.init)
+    const string channel, const IRCEvent event = IRCEvent.init)
 in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     list ~ " is not whitelist, operator nor blacklist")
 {
@@ -911,7 +911,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         return;
     }
 
-    immutable result = plugin.alterAccountClassifier(No.add, list, account, event.channel);
+    immutable result = plugin.alterAccountClassifier(No.add, list, account, channel);
 
     if (event.sender.nickname.length)
     {
@@ -924,31 +924,31 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            enum pattern = "No such account %s to de%s.";
+            enum pattern = "No such account %s to remove as %s in %s.";
 
             immutable message = settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, list) :
-                pattern.format(account, list);
+                pattern.format(account.ircColourByHash.ircBold, list, channel) :
+                pattern.format(account, list, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case noSuchChannel:
-            enum pattern = "Account %s isn't %sed on %s.";
+            enum pattern = "Account %s isn't a %s user in %s.";
 
             immutable message = settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, list, event.channel) :
-                pattern.format(account, list, event.channel);
+                pattern.format(account.ircColourByHash.ircBold, list, channel) :
+                pattern.format(account, list, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
-            enum pattern = "de%sed %s.";
+            enum pattern = "Removed %s as %s user in %s.";
 
             immutable message = settings.colouredOutgoing ?
-                pattern.format(list, account.ircColourByHash.ircBold) :
-                pattern.format(list, account);
+                pattern.format(account.ircColourByHash.ircBold, list, channel) :
+                pattern.format(account, list, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
@@ -978,16 +978,18 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, list);
+            logger.logf("No such account %s%s%s was found as %s user in %s.",
+                infotint, account, logtint, list, channel);
             break;
 
         case noSuchChannel:
-            logger.logf("Account %s%s%s isn't %sed on %1$s%5$s%3$s",
-                infotint, account, logtint, list, event.channel);
+            logger.logf("Account %s%s%s isn't a %s user in %s.",
+                infotint, account, logtint, list, channel);
             break;
 
         case success:
-            logger.logf("de%sed %s%s%s.", list, infotint, account, logtint);
+            logger.logf("Removed %s%s%s as a %s user in %s",
+                infotint, account, logtint, list, channel);
             break;
         }
     }
