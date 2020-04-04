@@ -1087,6 +1087,13 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
 
+    version(WithPersistenceService) {}
+    else
+    {
+        pragma(msg, "WARNING: The Persistence service is disabled. " ~
+            "Event triggers may or may not work. You get to keep the shards.");
+    }
+
     immutable class_ = event.sender.class_;
 
     if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
