@@ -882,29 +882,32 @@ TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel pri
  +/
 struct BotCommand
 {
-    /// The policy to which extent the command needs the bot's nickname.
-    PrefixPolicy policy;
-
-    /// The prefix string, one word with no spaces.
-    string string_;
+    /++
+     +  In what way the message is required to start for the annotated function to trigger.
+     +/
+    PrefixPolicy policy = PrefixPolicy.prefixed;
 
     /++
-     +  Create a new `BotCommand` with the passed `policy` and trigger `string_`.
+     +  The command word, without spaces.
      +/
-    this(const PrefixPolicy policy, const string string_) pure
+    string word;
+
+    /++
+     +  Create a new `BotCommand` with the passed policy and trigger word.
+     +/
+    this(const PrefixPolicy policy, const string word) pure
     {
         this.policy = policy;
-        this.string_ = string_;
+        this.word = word;
     }
 
     /++
-     +  Create a new `BotCommand` with a default `prefixed` policy and the passed
-     +  trigger `string_`.
+     +  Create a new `BotCommand` with a default `PrefixPolicy.prefixed` policy
+     +  and the passed trigger word.
      +/
-    this(const string string_) pure
+    this(const string word) pure
     {
-        this.policy = PrefixPolicy.prefixed;
-        this.string_ = string_;
+        this.word = word;
     }
 }
 
