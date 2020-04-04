@@ -42,13 +42,44 @@ version(WithPlugins):
 
 private:
 
-import kameloso.plugins.ircplugin;
-import kameloso.plugins.common;
-import dialect.defs;
+import kameloso.plugins.common : ChannelPolicy;
 
 public:
 
 @safe:
+
+
+// Awareness
+/++
+ +  Annotation denoting that a function is part of an awareness mixin, and at
+ +  what point it should be processed.
+ +/
+enum Awareness
+{
+    /++
+     +  First stage: setup. The annotated event handlers will process first,
+     +  setting the stage for the following `Awareness.early`-annotated handlers.
+     +/
+    setup,
+
+    /++
+     +  Second stage: early. The annotated event handlers will have their chance
+     +  to process before the plugin-specific handlers will.
+     +/
+    early,
+
+    /++
+     +  Fourth stage: late. The annotated event handlers will process after
+     +  the plugin-specific handlers have all processed.
+     +/
+    late,
+
+    /++
+     +  Fifth and last stage: cleanup. The annotated event handlers will process
+     +  after everything else has been called.
+     +/
+    cleanup,
+}
 
 
 // MinimalAuthentication
