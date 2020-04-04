@@ -1621,6 +1621,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     commandMatch = true;
                                     break;  // finish this BotRegex
                                 }
+                                else
+                                {
+                                    static if (verbose)
+                                    {
+                                        writefln(`...matching "%s" against expression "%s" failed.`,
+                                            mutEvent.content, regexUDA.expression);
+                                    }
+                                }
                             }
                             catch (Exception e)
                             {
