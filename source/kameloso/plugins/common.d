@@ -1183,9 +1183,8 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
         {
             return FilterResult.pass;
         }
-        else if (level <= PrivilegeLevel.registered)
+        else if (/*event.sender.account.length &&*/ level <= PrivilegeLevel.registered)
         {
-            // event.sender.account is not empty and level <= registered
             return FilterResult.pass;
         }
         else if (isAnyone && (level <= PrivilegeLevel.anyone))
@@ -1194,6 +1193,8 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
         }
         else if (level == PrivilegeLevel.ignore)
         {
+            /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
+                "to it could have been skippped");*/
             return FilterResult.pass;
         }
         else
@@ -1218,6 +1219,8 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
 
         case ignore:
+            /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
+                "to it could have been skippped");*/
             return FilterResult.pass;
         }
     }
