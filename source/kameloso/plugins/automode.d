@@ -484,7 +484,7 @@ void onEndOfMotd(AutomodePlugin plugin)
         JSONStorage automodesJSON;
         automodesJSON.load(automodeFile);
         //automodes.clear();
-        automodes.populateFromJSON!(No.lowercaseValues, Yes.lowercaseKeys)(automodesJSON);
+        automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
         automodes.rehash();
     }
 }
