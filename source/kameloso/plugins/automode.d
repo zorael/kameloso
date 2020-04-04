@@ -192,7 +192,7 @@ in (account.length, "Tried to apply automodes to an empty account")
         }
     }
 
-    if (missingModes.length) return;
+    if (!missingModes.length) return;
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
