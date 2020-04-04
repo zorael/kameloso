@@ -1497,16 +1497,25 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                     {
-                        static if (!commandUDA.string_.length)
+                        import lu.string : contains;
+
+                        static if (!commandUDA.word.length)
                         {
                             import std.format : format;
-                            static assert(0, "`%s.%s` has an empty `BotCommand` string"
+                            static assert(0, "`%s.%s` has an empty `BotCommand` word"
+                                .format(module_, __traits(identifier, fun)));
+                        }
+                        else static if (commandUDA.word.contains(" "))
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s.%s` has a `BotCommand` word " ~
+                                "that has spaces in it")
                                 .format(module_, __traits(identifier, fun)));
                         }
 
                         static if (verbose)
                         {
-                            writefln(`...BotCommand "%s"`, commandUDA.string_);
+                            writefln(`...BotCommand "%s"`, commandUDA.word);
                             if (settings.flush) stdout.flush();
                         }
 
@@ -1532,7 +1541,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         mutEvent.content = mutEvent.content.strippedLeft;
                         immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
 
-                        enum lowercaseUDAString = commandUDA.string_.toLower;
+                        enum lowercaseUDAString = commandUDA.word.toLower;
 
                         if ((thisCommand.length == lowercaseUDAString.length) &&
                             thisCommand.asLowerCase.equal(lowercaseUDAString))
