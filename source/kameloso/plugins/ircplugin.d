@@ -327,6 +327,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
+        import kameloso.plugins.awareness : Awareness;
         import lu.string : contains, nom;
         import lu.traits : getSymbolsByUDA, isAnnotated;
         import std.meta : Filter, templateNot, templateOr;
