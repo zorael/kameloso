@@ -493,7 +493,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +
      +  Randomise the name to avoid any collisions, however far-fetched.
      +/
-    private enum pingRehashVariableName = text("_nextPingRehashTimestamp", hashOf(module_) % 100);
+    private enum pingRehashVariableName = text("_kamelosoNextPingRehashTimestamp", hashOf(module_) % 100);
     mixin("long " ~ pingRehashVariableName ~ ';');
 }
 

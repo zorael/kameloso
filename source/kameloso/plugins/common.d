@@ -1315,7 +1315,7 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
             "from within `%s`)").format(__FUNCTION__));
     }
 
-    private enum requestVariableName = text("_request", hashOf(__FUNCTION__) % 100);
+    private enum requestVariableName = text("_kamelosoRequest", hashOf(__FUNCTION__) % 100);
     mixin("TriggerRequest " ~ requestVariableName ~ ';');
 
     // explainReplain
@@ -1979,7 +1979,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +  Randomly generated name so as not to accidentally collide with the
      +  mixing in site.
      +/
-    private enum carriedVariableName = text("_carriedNickname", hashOf(__FUNCTION__) % 100);
+    private enum carriedVariableName = text("_kamelosoCarriedNickname", hashOf(__FUNCTION__) % 100);
     mixin("string " ~ carriedVariableName ~ ';');
 
 
