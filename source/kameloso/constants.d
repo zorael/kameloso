@@ -84,6 +84,7 @@ enum Timeout
     whoisRetry = 300,
     titleCache = 600,
     initialPeriodical = 3600,
+    readErrorGracePeriod = 1,
 }
 
 
