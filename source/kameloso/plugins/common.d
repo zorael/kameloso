@@ -1842,7 +1842,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 // Don't hard return here, just set `next` and break.
-                static if (isAnnotated!(fun, Chainable) || isAwarenessFunction!fun)
+                static if (isAnnotated!(fun, Chainable) ||
+                    (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
                 {
                     // onEvent found an event and triggered a function, but
                     // it's Chainable and there may be more, so keep looking
