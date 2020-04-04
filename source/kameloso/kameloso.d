@@ -703,7 +703,7 @@ Next mainLoop(ref Kameloso instance)
             {
                 // Something asserted
                 logger.error("scopeguard tripped.");
-                printEventDebugDetails(event, attempt);
+                printEventDebugDetails(event, attempt.line);
             }
 
             import lu.string : NomException;
@@ -788,7 +788,7 @@ Next mainLoop(ref Kameloso instance)
                     {
                         logger.warningf("Exception %s.postprocess: %s%s",
                             plugin.name, logtint, e.msg);
-                        printEventDebugDetails(event, attempt);
+                        printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
@@ -812,7 +812,7 @@ Next mainLoop(ref Kameloso instance)
                     {
                         logger.warningf("Exception %s.onEvent: %s%s",
                             plugin.name, logtint, e.msg);
-                        printEventDebugDetails(event, attempt);
+                        printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
@@ -834,7 +834,7 @@ Next mainLoop(ref Kameloso instance)
                         logger.warningf("Exception %s.handleReplays: %s%s",
                             plugin.name, logtint, e.msg);
 
-                        printEventDebugDetails(event, attempt);
+                        printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
@@ -856,7 +856,7 @@ Next mainLoop(ref Kameloso instance)
                         logger.warningf("Exception %s.handleAwaitingFibers: %s%s",
                             plugin.name, logtint, e.msg);
 
-                        printEventDebugDetails(event, attempt);
+                        printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
@@ -912,7 +912,7 @@ Next mainLoop(ref Kameloso instance)
                 logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
 
-                printEventDebugDetails(event, attempt);
+                printEventDebugDetails(event, attempt.line);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (NomException e)
@@ -920,7 +920,7 @@ Next mainLoop(ref Kameloso instance)
                 logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
                     logtint, e.haystack, warningtint, e.needle);
 
-                printEventDebugDetails(event, attempt);
+                printEventDebugDetails(event, attempt.line);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
@@ -938,7 +938,7 @@ Next mainLoop(ref Kameloso instance)
                 logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
 
-                printEventDebugDetails(event, attempt);
+                printEventDebugDetails(event, attempt.line);
                 version(PrintStacktraces) logger.trace(e.toString);
             }
         }
