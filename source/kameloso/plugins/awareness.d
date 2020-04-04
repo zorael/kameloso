@@ -101,8 +101,8 @@ enum Awareness
  +/
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.plugins.awareness : Awareness;
-    import lu.traits : MixinConstraints, MixinScope;
+    private import kameloso.plugins.awareness : Awareness;
+    private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "MinimalAuthentication");
 
@@ -234,8 +234,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.plugins.awareness : Awareness, MinimalAuthentication;
-    import lu.traits : MixinConstraints, MixinScope;
+    private import kameloso.plugins.awareness : Awareness, MinimalAuthentication;
+    private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "UserAwareness");
 
@@ -523,8 +523,8 @@ version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.plugins.awareness : Awareness;
-    import lu.traits : MixinConstraints, MixinScope;
+    private import kameloso.plugins.awareness : Awareness;
+    private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "ChannelAwareness");
 
@@ -984,8 +984,8 @@ version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.plugins.awareness : Awareness;
-    import lu.traits : MixinConstraints, MixinScope;
+    private import kameloso.plugins.awareness : Awareness;
+    private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
 
@@ -1114,7 +1114,7 @@ else
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    import lu.traits : MixinConstraints, MixinScope;
+    private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
 
