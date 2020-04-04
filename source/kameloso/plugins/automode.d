@@ -164,26 +164,27 @@ in (account.length, "Tried to apply automodes to an empty account")
     auto accountmodes = channelName in plugin.automodes;
     if (!accountmodes) return;
 
-    const modes = account in *accountmodes;
-    if (!modes || !modes.length) return;
+    const wantedModes = account in *accountmodes;
+    if (!wantedModes || !wantedModes.length) return;
 
     auto channel = channelName in plugin.state.channels;
     if (!channel) return;
 
     char[] missingModes;
 
-    foreach (const mode; (*modes).representation)
+    foreach (const mode; (*wantedModes).representation)
     {
         if (const usersWithThisMode = cast(char)mode in channel.mods)
         {
             if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(account))
             {
+                // User doesn't have this mode
                 missingModes ~= mode;
             }
         }
         else
         {
-            // No one has this mode
+            // No one has this mode, which by implication means the user doen't either
             missingModes ~= mode;
         }
     }
@@ -270,9 +271,9 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     immutable channelName = line.nom!(Yes.decode)(" ").toLower;
 
-    while (line.beginsWith("+"))
+    while (line.beginsWith('+'))
     {
-        line.nom!(Yes.decode)("+");
+        line = line[1..$];
     }
 
     immutable mode = line.nom!(Yes.decode)(" ");
@@ -307,7 +308,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
         import std.format : format;
 
         const accountmodes = channelName in plugin.automodes;
-        immutable verb = accountmodes && (id in *accountmodes) ? "updated" : "added";
+        immutable verb = (accountmodes && (id in *accountmodes)) ? "updated" : "added";
 
         plugin.automodes[channelName][id] = mode;
 
