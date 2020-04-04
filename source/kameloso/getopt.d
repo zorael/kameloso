@@ -426,7 +426,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
-            return writeConfig(instance, parser.client, parser.server, bot, customSettings);
+            writeConfig(instance, parser.client, parser.server, bot, customSettings);
+            return Next.returnSuccess;
         }
 
         if (shouldShowSettings)
