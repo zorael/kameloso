@@ -1372,7 +1372,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
         }
 
-        return filterSender(privateState, event, privilegeLevel);
+        // PrivilegeLevel.ignore always passes, even for Class.blacklist.
+        return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
+            filterSender(privateState, event, privilegeLevel);
     }
 
 
