@@ -740,10 +740,6 @@ Next mainLoop(ref Kameloso instance)
                 assert(0, "`listenAttemptToNext` returned `Next.crash`");
             }
 
-            // Successful read; record as such
-            historyEntry.stopTime = nowInUnix;
-            ++historyEntry.numEvents;
-
             IRCEvent event;
 
             scope(failure)
@@ -814,6 +810,9 @@ Next mainLoop(ref Kameloso instance)
                     }
                 }
 
+                // Successful parse; record as such
+                ++historyEntry.numEvents;
+                historyEntry.stopTime = nowInUnix;
                 event.time = nowInUnix;
 
                 foreach (plugin; instance.plugins)
