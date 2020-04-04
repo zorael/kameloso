@@ -31,12 +31,6 @@ struct AutomodeSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
-
-    /++
-     +  Toggles whether or not the `op` command always forces a WHOIS, regardless
-     +  of queues and throttling.
-     +/
-    bool opForcesWhois = false;
 }
 
 
@@ -464,7 +458,7 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
     else
     {
         import kameloso.messaging : whois;
-        whois(plugin.state, event.sender.nickname, plugin.automodeSettings.opForcesWhois);
+        whois(plugin.state, event.sender.nickname);
     }
 }
 
