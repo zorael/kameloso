@@ -82,14 +82,6 @@ interface IRCPlugin
     /++
      +  Read serialised configuration text into the plugin's settings struct.
      +
-     +  Wrapper around the other `deserialiseConfigFrom` overload that takes
-     +  out reference associative array parameters.
-     +/
-    string[][string] deserialiseConfigFrom(const string);
-
-    /++
-     +  Read serialised configuration text into the plugin's settings struct.
-     +
      +  Stores an associative array of `string[]`s of missing entries in its
      +  first `out string[][string]` parameter, and the invalid encountered
      +  entries in the second.
@@ -2068,35 +2060,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
      +
-     +  Overload that returns the invalid entry AA and discards the one for
-     +  missing entries. Merely wraps the other overload.
-     +
-     +  Params:
-     +      configFile = String of the configuration file to read.
-     +
-     +  Returns:
-     +      A `string[][string]` associative array of arrays of invalid entries
-     +      found when reading the passed configuration file.
-     +/
-    public string[][string] deserialiseConfigFrom(const string configFile)
-    {
-        string[][string] missingEntries;
-        string[][string] invalidEntries;
-
-        deserialiseConfigFrom(configFile, missingEntries, invalidEntries);
-        return invalidEntries;
-    }
-
-
-    // deserialiseConfigFrom
-    /++
-     +  Loads configuration for this plugin from disk.
-     +
-     +  This does not proxy a call but merely loads configuration from disk for
-     +  all struct variables annotated `Settings`.
-     +
-     +  Overload that "returns" both the AAs for missing entries and invalid
-     +  entries via its two out parameters. Unlike the other overload it returns void.
+     +  "Returns" two associative arrays for missing entries and invalid
+     +  entries via its two out parameters.
      +
      +  Params:
      +      configFile = String of the configuration file to read.
