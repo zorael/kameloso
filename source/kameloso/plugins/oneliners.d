@@ -25,6 +25,9 @@ struct OnelinersSettings
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
+
+    /// Whether or not trigger words should be matched case-sensitively.
+    bool caseSensitiveTriggers = false;
 }
 
 
