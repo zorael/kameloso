@@ -7,10 +7,6 @@
  +
  +  Example:
  +  ---
- +  module kameloso.plugins.foo;
- +
- +  private:
- +
  +  import kameloso.plugins.ircplugin;
  +  import kameloso.plugins.common;
  +  import kameloso.plugins.awareness;
