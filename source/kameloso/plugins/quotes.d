@@ -136,7 +136,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         void onSuccess(const IRCUser replyUser)
         {
-            immutable endAccount = replyUser.account.length ? replyUser.account : replyUser.nickname;
+            immutable endAccount = idOf(replyUser);
 
             if (slice.length)
             {

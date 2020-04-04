@@ -777,13 +777,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     {
         // user.nickname == specified
         immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channel);
-
-        version(TwitchSupport)
-        {
-            if (user.displayName.length) return report(result, user.displayName);
-        }
-
-        return report(result, user.account);
+        return report(result, nameOf(*user));
     }
     else if (!specified.isValidNickname(plugin.state.server))
     {
