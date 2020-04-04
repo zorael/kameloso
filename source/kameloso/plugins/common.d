@@ -2256,3 +2256,57 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
 
     return nickname;
 }
+
+
+// idOf
+/++
+ +  Returns either the nickname or the account of a user, depending on whether
+ +  the account is known.
+ +
+ +  Params:
+ +      user = `dialect.defs.IRCUser` to examine.
+ +
+ +  Returns:
+ +
+ +/
+pragma(inline)
+string idOf(const IRCUser user) pure @safe nothrow @nogc
+in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
+{
+    return user.account.length ? user.account : user.nickname;
+}
+
+
+// idOf
+/++
+ +  Returns either the nickname or the account of a user, depending on whether
+ +  the account is known. Overload that looks up the passed nickname in
+ +  the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`, whatever it is.
+ +      nickname = The name of a user to look up.
+ +
+ +  Returns:
+ +
+ +/
+pragma(inline)
+string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
+{
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            return nickname;
+        }
+    }
+
+    if (const user = nickname in plugin.state.users)
+    {
+        return idOf(*user);
+    }
+    else
+    {
+        return nickname;
+    }
+}
