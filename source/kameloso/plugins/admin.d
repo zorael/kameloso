@@ -625,10 +625,10 @@ do
     switch (verb)
     {
     case "add":
-        return plugin.lookupEnlist(slice, list, event);
+        return plugin.lookupEnlist(slice, list, event.channel, event);
 
     case "del":
-        return plugin.delist(slice, list, event);
+        return plugin.delist(slice, list, event.channel, event);
 
     case "list":
         immutable channel = slice.length ? slice : event.channel;
