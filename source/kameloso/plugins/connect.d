@@ -956,16 +956,16 @@ void onWelcome(ConnectService service, const IRCEvent event)
 
 // onISUPPORT
 /++
- +  Requests an UTF-8 codepage after we've figured out that the server supports changing such.
+ +  Requests a UTF-8 codepage if it seems that the server supports changing such.
  +
- +  Currently only RusNet is known to support codepages. If more show up,
- +  consider creating an `dialect.defs.IRCServer``.hasCodepages` bool and set
- +  it if `CODEPAGES` is included in `dialect.defs.IRCEvent.Type.RPL_MYINFO`.
+ +  Currently only RusNet is known to support codepages.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
-void onISUPPORT(ConnectService service)
+void onISUPPORT(ConnectService service, const IRCEvent event)
 {
-    if (service.state.server.daemon == IRCServer.Daemon.rusnet)
+    import lu.string : contains;
+
+    if (event.content.contains("CODEPAGES"))
     {
         raw(service.state, "CODEPAGE UTF-8", true);
     }
