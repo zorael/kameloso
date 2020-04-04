@@ -238,8 +238,8 @@ void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
     enum pattern = "[%s] %s: %s";
 
     immutable message = settings.colouredOutgoing ?
-        pattern.format(otherPlugin.name.ircBold, command.ircBold, description.string_) :
-        pattern.format(otherPlugin.name, command, description.string_);
+        pattern.format(otherPlugin.name.ircBold, command.ircBold, description.line) :
+        pattern.format(otherPlugin.name, command, description.line);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
