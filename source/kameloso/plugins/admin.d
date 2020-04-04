@@ -1753,12 +1753,49 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     case "whitelist":
     case "operator":
     case "blacklist":
-        return plugin.lookupEnlist(slice, verb);
+        import std.algorithm.searching : count;
 
-    case "dewhitelist":
-    case "deoperator":
-    case "deblacklist":
-        return plugin.delist(slice, verb[2..$]);
+        if (slice.count(' ') >= 1)
+        {
+            // verb_channel_nickname
+            logger.warningf("Invalid bus message syntax; expected %s " ~
+                "[verb] [channel] [nickname if add/del], got \"%s\"",
+                verb, message.payload.strippedRight);
+            return;
+        }
+
+        immutable subverb = slice.nom!(Yes.inherit)(' ');
+        immutable channel = slice.nom!(Yes.inherit)(' ');
+        immutable user = slice;
+
+        switch (subverb)
+        {
+        case "add":
+        case "del":
+            if (!user.length)
+            {
+                logger.warning("Invalid bus message syntax; no user supplied, " ~
+                    "only channel ", channel);
+                return;
+            }
+
+            if (subverb == "add")
+            {
+                return plugin.lookupEnlist(user, subverb, channel);
+            }
+            else /*if (subverb == "del")*/
+            {
+                return plugin.delist(user, subverb, channel);
+            }
+
+        case "list":
+            return plugin.listList(channel, verb);
+
+        default:
+            logger.warningf("Invalid bus message %s subverb: %s", verb, subverb);
+            break;
+        }
+        break;
 
     case "summary":
         return plugin.onCommandSummary();
