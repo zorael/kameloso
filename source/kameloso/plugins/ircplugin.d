@@ -44,8 +44,6 @@ import dialect.defs;
 
 public:
 
-@safe:
-
 
 // IRCPlugin
 /++
@@ -1557,5 +1555,231 @@ version(unittest)
         @Settings TestSettings testSettings;
 
         mixin IRCPluginImpl;
+    }
+}
+
+
+// prefixPolicyMatches
+/++
+ +  Evaluates whether or not the message in an event satisfies the `PrefixPolicy`
+ +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
+ +
+ +  If it doesn't match, the `onEvent` routine shall consider the UDA as not
+ +  matching and continue with the next one.
+ +
+ +  Params:
+ +      verbose = Whether or not to output verbose debug information to the local terminal.
+ +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      policy = Policy to apply.
+ +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
+ +
+ +  Returns:
+ +      `true` if the message is in a context where the event matches the
+ +      `policy`, `false` if not.
+ +/
+bool prefixPolicyMatches(bool verbose = false)(const IRCClient client,
+    const PrefixPolicy policy, ref IRCEvent mutEvent)
+{
+    import kameloso.common : settings, stripSeparatedPrefix;
+    import lu.string : beginsWith, nom;
+    import std.typecons : No, Yes;
+
+    static if (verbose)
+    {
+        import std.stdio : writefln, writeln;
+
+        writeln("...prefixPolicyMatches! policy:", policy);
+    }
+
+    with (mutEvent)
+    with (PrefixPolicy)
+    final switch (policy)
+    {
+    case direct:
+        static if (verbose)
+        {
+            writefln("direct, so just passes.");
+        }
+        return true;
+
+    case prefixed:
+        if (settings.prefix.length && content.beginsWith(settings.prefix))
+        {
+            static if (verbose)
+            {
+                writefln("starts with prefix (%s)", settings.prefix);
+            }
+
+            content.nom!(Yes.decode)(settings.prefix);
+        }
+        else
+        {
+            version(PrefixedCommandsFallBackToNickname)
+            {
+                static if (verbose)
+                {
+                    writeln("did not start with prefix but falling back to nickname check");
+                }
+
+                goto case nickname;
+            }
+            else
+            {
+                static if (verbose)
+                {
+                    writeln("did not start with prefix, returning false");
+                }
+
+                return false;
+            }
+        }
+        break;
+
+    case nickname:
+        if (content.beginsWith('@'))
+        {
+            static if (verbose)
+            {
+                writeln("stripped away prepended '@'");
+            }
+
+            // Using @name to refer to someone is not
+            // uncommon; allow for it and strip it away
+            content = content[1..$];
+        }
+
+        if (content.beginsWith(client.nickname))
+        {
+            static if (verbose)
+            {
+                writeln("begins with nickname! stripping it");
+            }
+
+            content = content.stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
+            // Drop down
+        }
+        else if (type == IRCEvent.Type.QUERY)
+        {
+            static if (verbose)
+            {
+                writeln("doesn't begin with nickname but it's a QUERY");
+            }
+            // Drop down
+        }
+        else
+        {
+            static if (verbose)
+            {
+                writeln("nickname required but not present... returning false.");
+            }
+            return false;
+        }
+        break;
+    }
+
+    static if (verbose)
+    {
+        writeln("policy checks out!");
+    }
+
+    return true;
+}
+
+
+// filterSender
+/++
+ +  Decides if a sender meets a `PrivilegeLevel` and is allowed to trigger an event
+ +  handler, or if a WHOIS query is needed to be able to tell.
+ +
+ +  This requires the Persistence service to be active to work.
+ +
+ +  Params:
+ +      state = Reference to the `IRCPluginState` of the invoking plugin.
+ +      event = `dialect.defs.IRCEvent` to filter.
+ +      level = The `PrivilegeLevel` context in which this user should be filtered.
+ +
+ +  Returns:
+ +      A `FilterResult` saying the event should `pass`, `fail`, or that more
+ +      information about the sender is needed via a `WHOIS` call.
+ +/
+FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
+    const PrivilegeLevel level) @safe
+{
+    import kameloso.constants : Timeout;
+    import std.algorithm.searching : canFind;
+
+    version(WithPersistenceService) {}
+    else
+    {
+        pragma(msg, "WARNING: The Persistence service is disabled. " ~
+            "Event triggers may or may not work. You get to keep the shards.");
+    }
+
+    immutable class_ = event.sender.class_;
+
+    if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+
+    immutable timediff = (event.time - event.sender.updated);
+    immutable whoisExpired = (timediff > Timeout.whoisRetry);
+
+    if (event.sender.account.length)
+    {
+        immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
+        immutable isOperator = (class_ == IRCUser.Class.operator);
+        immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
+        immutable isAnyone = (class_ == IRCUser.Class.anyone);
+
+        if (isAdmin)
+        {
+            return FilterResult.pass;
+        }
+        else if (isOperator && (level <= PrivilegeLevel.operator))
+        {
+            return FilterResult.pass;
+        }
+        else if (isWhitelisted && (level <= PrivilegeLevel.whitelist))
+        {
+            return FilterResult.pass;
+        }
+        else if (/*event.sender.account.length &&*/ level <= PrivilegeLevel.registered)
+        {
+            return FilterResult.pass;
+        }
+        else if (isAnyone && (level <= PrivilegeLevel.anyone))
+        {
+            return whoisExpired ? FilterResult.whois : FilterResult.pass;
+        }
+        else if (level == PrivilegeLevel.ignore)
+        {
+            /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
+                "to it could have been skippped");*/
+            return FilterResult.pass;
+        }
+        else
+        {
+            return FilterResult.fail;
+        }
+    }
+    else
+    {
+        with (PrivilegeLevel)
+        final switch (level)
+        {
+        case admin:
+        case operator:
+        case whitelist:
+        case registered:
+            // Unknown sender; WHOIS if old result expired, otherwise fail
+            return whoisExpired ? FilterResult.whois : FilterResult.fail;
+
+        case anyone:
+            // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
+            return whoisExpired ? FilterResult.whois : FilterResult.pass;
+
+        case ignore:
+            /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
+                "to it could have been skippped");*/
+            return FilterResult.pass;
+        }
     }
 }
