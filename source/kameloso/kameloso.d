@@ -581,49 +581,6 @@ Next mainLoop(ref Kameloso instance)
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
 
-    /++
-     +  Print what we know about the event. Called on errors.
-     +/
-    static void printEventDebugDetails(const IRCEvent event, const ListenAttempt attempt)
-    {
-        if (event == IRCEvent.init)
-        {
-            string logtint, warningtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                    warningtint = (cast(KamelosoLogger)logger).warningtint;
-                }
-            }
-
-            logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
-        }
-        else
-        {
-            import std.typecons : Flag, No, Yes;
-
-            // Offending line included in event, in raw
-            printObject!(Yes.printAll)(event);
-
-            if (event.sender != IRCUser.init)
-            {
-                logger.trace("sender:");
-                printObject(event.sender);
-            }
-
-            if (event.target != IRCUser.init)
-            {
-                logger.trace("target:");
-                printObject(event.target);
-            }
-        }
-    }
-
     /// Variable denoting what we should do next loop.
     Next next;
 
@@ -2653,4 +2610,53 @@ void printSummary(const ref Kameloso instance)
     }
 
     logger.info("Total time connected: ", logtint, totalTime);
+}
+
+
+// printEventDebugDetails
+/++
+ +  Print what we know about an event, from an error perspective.
+ +
+ +  Params:
+ +      event = The `dialect.defs.IRCEvent` in question.
+ +      raw = The raw string that `event` was parsed from, as read from the IRC server.
+ +/
+private void printEventDebugDetails(const IRCEvent event, const string raw)
+{
+    if (event == IRCEvent.init)
+    {
+        string logtint, warningtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                warningtint = (cast(KamelosoLogger)logger).warningtint;
+            }
+        }
+
+        logger.warningf(`Offending line: "%s%s%s"`, logtint, raw, warningtint);
+    }
+    else
+    {
+        import std.typecons : Flag, No, Yes;
+
+        // Offending line included in event, in raw
+        printObject!(Yes.printAll)(event);
+
+        if (event.sender != IRCUser.init)
+        {
+            logger.trace("sender:");
+            printObject(event.sender);
+        }
+
+        if (event.target != IRCUser.init)
+        {
+            logger.trace("target:");
+            printObject(event.target);
+        }
+    }
 }
