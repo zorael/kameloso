@@ -108,11 +108,8 @@ void printHelp(GetoptResult results) @system
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      customSettings = const string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
- +
- +  Returns:
- +      `kameloso.common.Next.returnSuccess` so the caller knows to return and exit.
  +/
-Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
+void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, const string[] customSettings) @system
 {
     import kameloso.common : logger, printVersionInfo, settings;
@@ -165,8 +162,6 @@ Next writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
         logger.log("Edit it and make sure it contains at least one of the following:");
         complainAboutIncompleteConfiguration();
     }
-
-    return Next.returnSuccess;
 }
 
 
