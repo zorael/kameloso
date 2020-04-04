@@ -68,14 +68,14 @@ struct AdminSettings
 
 // onAnyEvent
 /++
- +  Prints all incoming events to the local terminal, in forms depending on
+ +  Prints incoming events to the local terminal, in forms depending on
  +  which flags have been set with bot commands.
  +
  +  If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
  +  prints all incoming server strings.
  +
  +  If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
- +  prints all incoming server strings byte per byte.
+ +  prints all incoming server strings byte by byte.
  +
  +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
  +  prints all incoming events as assert statements, for use in generating source
@@ -257,8 +257,8 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Sends a `dialect.defs.IRCEvent.Type.QUIT` event to the server.
  +
- +  If any extra text is following the "`quit`" prefix, it uses that as the quit
- +  reason, otherwise it falls back to the default as specified in the configuration file.
+ +  If any extra text is following the "quit" command, it uses that as the quit
+ +  reason. Otherwise it falls back to what is specified in the configuration file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -385,7 +385,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
         // We're converting a normal channel into a home. Let other plugins know
         // (as there is no SELFJOIN trigger).
-        logger.log("We're already in this channel. Converting it in-place to a home.");
+        logger.info("We're already in this channel as a guest. Converting it to a home.");
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), "home add", busMessage(channel));
 
         // Make sure there are no duplicates between homes and channels.
@@ -468,10 +468,10 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
                 .remove!(SwapStrategy.unstable)(homeIndex);
             plugin.state.botUpdated = true;
         }
-        else
+        /*else
         {
             logger.error("Tried to remove non-existent home channel.");
-        }
+        }*/
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
@@ -530,9 +530,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
  +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
- +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
- +  `kameloso.plugins.common.PrivilegeLevel.admin`.
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.operator` level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -550,7 +548,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandOperator
 /++
- +  Adds a nickname or account to the list of users who may trigger lower
+ +  Adds a nickname or account to the list of users who may trigger lower-level
  +  functions of the bot, without being a full admin.
  +/
 @(IRCEvent.Type.CHAN)
@@ -570,11 +568,9 @@ void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 // onCommandBlacklist
 /++
  +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
- +  even on actions annotated `kameloso.plugins.common.PrivilegeLevel.anyone`.
+ +  except on actions annotated `kameloso.plugins.common.PrivilegeLevel.ignore`.
  +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.whitelist` level, as
- +  opposed to `kameloso.plugins.common.PrivilegeLevel.anyone` and
- +  `kameloso.plugins.common.PrivilegeLevel.admin`.
+ +  This is on a `kameloso.plugins.common.PrivilegeLevel.operator` level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -611,7 +607,7 @@ do
     {
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s [add|del|list]".format(list));
+            "Usage: %s%s [add|del|list]".format(settings.prefix, list));
     }
 
     if (!event.content.length)
@@ -667,13 +663,13 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     if (channel in json[list].object)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current %sed users in %s: %-(%s, %)"
+            "Current %s users in %s: %-(%s, %)"
             .format(list, channel, json[list][channel].array));
     }
     else
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are no %sed users in %s.".format(list, channel));
+            "There are no %s users in %s.".format(list, channel));
     }
 }
 
@@ -1042,8 +1038,6 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     import lu.json : JSONStorage;
     import std.concurrency : send;
     import std.json : JSONValue;
-
-    assert(((list == "whitelist") || (list == "blacklist") || (list == "operator")), list);
 
     JSONStorage json;
     json.reset();
@@ -1496,7 +1490,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
             else
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Invalid syntax or plugin/settings name.");
+                    "Invalid syntax or plugin/setting name.");
             }
         }
         catch (ConvException e)
