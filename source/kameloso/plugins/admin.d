@@ -691,7 +691,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
-    const IRCEvent event = IRCEvent.init)
+    const string channel, const IRCEvent event = IRCEvent.init)
 in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     list ~ " is not whitelist, operator nor blacklist")
 {
@@ -714,11 +714,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             final switch (result)
             {
             case success:
-                enum pattern = "%sed %s.";
+                enum pattern = "Added %s as a %s user in %s.";
 
                 immutable message = settings.colouredOutgoing ?
-                    pattern.format(list, id.ircColourByHash.ircBold) :
-                    pattern.format(list, id);
+                    pattern.format(id.ircColourByHash.ircBold, list, channel) :
+                    pattern.format(id, list, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -728,11 +728,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 assert(0, "Invalid delist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                enum pattern = "%s already %sed.";
+                enum pattern = "%s was already a %s user in %s.";
 
                 immutable message = settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, list) :
-                    pattern.format(id, list);
+                    pattern.format(id.ircColourByHash.ircBold, list, channel) :
+                    pattern.format(id, list, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -759,7 +759,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             final switch (result)
             {
             case success:
-                logger.logf("%sed %s%s%s.", list, infotint, specified, logtint);
+                logger.logf("Added %s%s%s as a %s user in %s.",
+                    infotint, specified, logtint, list, channel);
                 break;
 
             case noSuchAccount:
@@ -767,7 +768,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                logger.logf("%s%s%s already %sed.", infotint, specified, logtint, list);
+                logger.logf("%s%s%s is already a %s user in %s.",
+                    infotint, specified, logtint, list, channel);
                 break;
             }
         }
@@ -778,7 +780,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     if (user && user.account.length)
     {
         // user.nickname == specified
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, event.channel);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channel);
 
         version(TwitchSupport)
         {
@@ -829,9 +831,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
                 if (const userInList = id in plugin.state.users)
                 {
-                    immutable result = plugin.alterAccountClassifier(Yes.add, list, id, event.channel);
-                    return report(result, userInList.displayName.length ?
-                        userInList.displayName : id);
+                    immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channel);
+                    return report(result, nameOf(*userInList));
                 }
 
                 // If we're here, assume a display name was specified and look up the account
@@ -842,7 +843,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 if (!usersWithThisDisplayName.empty)
                 {
                     immutable result = plugin.alterAccountClassifier(Yes.add,
-                        list, usersWithThisDisplayName.front.account, event.channel);
+                        list, usersWithThisDisplayName.front.account, channel);
                     return report(result, id);
                 }
 
@@ -850,7 +851,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             }
         }
 
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, id, event.channel);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channel);
         report(result, id);
     }
 
