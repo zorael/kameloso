@@ -512,7 +512,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Reset between iterations
                         mutEvent = event;
 
-                        if (!privateState.client.prefixPolicyMatches!verbose(commandUDA.policy, mutEvent))
+                        if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy, privateState.client))
                         {
                             static if (verbose)
                             {
@@ -582,7 +582,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             // Reset between iterations
                             mutEvent = event;
 
-                            if (!privateState.client.prefixPolicyMatches!verbose(regexUDA.policy, mutEvent))
+                            if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy, privateState.client))
                             {
                                 static if (verbose)
                                 {
@@ -1566,16 +1566,16 @@ version(unittest)
  +
  +  Params:
  +      verbose = Whether or not to output verbose debug information to the local terminal.
- +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
- +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
+ +      policy = Policy to apply.
+ +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +
  +  Returns:
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(bool verbose = false)(const IRCClient client,
-    const PrefixPolicy policy, ref IRCEvent mutEvent)
+bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
+    const PrefixPolicy policy, const IRCClient client)
 {
     import kameloso.common : settings, stripSeparatedPrefix;
     import lu.string : beginsWith, nom;
