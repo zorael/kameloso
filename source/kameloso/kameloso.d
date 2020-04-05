@@ -1825,12 +1825,12 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
-        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+        logger.logf(`...under [%s%s%s]: %s%-(%s%|, %)`,
             infotint, section.stripSuffix("Settings"), logtint, infotint, sectionEntries);
     }
 
     logger.log("They are either new, or your configuration file was generated " ~
-        "with not as many plugins compiled in as now.");
+        "with not as many plugins compiled in as is now.");
     logger.trace();
 }
 
@@ -1862,11 +1862,11 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 
     foreach (immutable section, const sectionEntries; invalidEntries)
     {
-        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+        logger.logf(`...under [%s%s%s]: %s%-(%s%|, %)`,
             infotint, section, logtint, infotint, sectionEntries);
     }
 
-    logger.log("They are either malformed, no longer in use or belong to " ~
+    logger.log("They are either malformed, no longer in use, or belong to " ~
         "plugins not currently compiled in.");
     logger.trace();
 }
