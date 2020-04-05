@@ -115,21 +115,8 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         }
         catch (JSONException e)
         {
-            string logtint, errortint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                    errortint = (cast(KamelosoLogger)logger).errortint;
-                }
-            }
-
             logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-                logtint, event.sender.nickname, errortint, event.channel, e.msg);
+                Tint.log, event.sender.nickname, Tint.error, event.channel, e.msg);
 
             if (e.msg == "JSONValue is not an object")
             {
@@ -226,18 +213,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     }
     catch (JSONException e)
     {
-        string logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
-        logger.error("Failed to add note: ", logtint, e.msg);
+        logger.error("Failed to add note: ", Tint.log, e.msg);
     }
 }
 
@@ -369,19 +345,6 @@ in (nickname.length, "Tried to clear notes for an empty nickname")
     import std.exception : ErrnoException;
     import std.json : JSONException, JSONType;
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
     try
     {
         if (nickname in plugin.notes[channel])
@@ -391,22 +354,22 @@ in (nickname.length, "Tried to clear notes for an empty nickname")
                 .format(channel, plugin.notes[channel].type));
 
             logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-                infotint, nickname, logtint, channel.length ? channel : "(private messages)");
+                Tint.info, nickname, Tint.log, channel.length ? channel : "(private messages)");
             plugin.notes[channel].object.remove(nickname);
             plugin.pruneNotes();
         }
     }
     catch (JSONException e)
     {
-        logger.error("Failed to clear notes: ", logtint, e.msg);
+        logger.error("Failed to clear notes: ", Tint.log, e.msg);
     }
     catch (FileException e)
     {
-        logger.error("Failed to save notes: ", logtint, e.msg);
+        logger.error("Failed to save notes: ", Tint.log, e.msg);
     }
     catch (ErrnoException e)
     {
-        logger.error("Failed to open/close notes file: ", logtint, e.msg);
+        logger.error("Failed to open/close notes file: ", Tint.log, e.msg);
     }
 }
 

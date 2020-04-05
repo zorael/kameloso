@@ -97,19 +97,6 @@ void messageFiber(ref Kameloso instance)
     // yield (which is upon messenger.call()).
     yield(Next.init);
 
-    string logtint, errortint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
-        }
-    }
-
     // Loop forever; we'll just terminate the Generator when we want to quit.
     while (true)
     {
@@ -206,7 +193,7 @@ void messageFiber(ref Kameloso instance)
                 catch (Exception e)
                 {
                     logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
-                        "configuration: %1$s%4$s", logtint, plugin.name, errortint, e.msg);
+                        "configuration: %1$s%4$s", Tint.log, plugin.name, Tint.error, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
                 }
             }
@@ -594,20 +581,6 @@ Next mainLoop(ref Kameloso instance)
     auto messenger = new Generator!Next(() =>
         messageFiber(instance));
 
-    string logtint, errortint, warningtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-        }
-    }
-
     /// The history entry for the current connection.
     Kameloso.ConnectionHistoryEntry* historyEntry;
 
@@ -782,13 +755,13 @@ Next mainLoop(ref Kameloso instance)
                     catch (UTFException e)
                     {
                         logger.warningf("UTFException %s.postprocess: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
                         logger.warningf("Exception %s.postprocess: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
                         printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
@@ -806,13 +779,13 @@ Next mainLoop(ref Kameloso instance)
                     catch (UTFException e)
                     {
                         logger.warningf("UTFException %s.onEvent: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
                         logger.warningf("Exception %s.onEvent: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
                         printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
@@ -827,13 +800,13 @@ Next mainLoop(ref Kameloso instance)
                     catch (UTFException e)
                     {
                         logger.warningf("UTFException %s.handleReplays: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
                         logger.warningf("Exception %s.handleReplays: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
 
                         printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
@@ -849,13 +822,13 @@ Next mainLoop(ref Kameloso instance)
                     catch (UTFException e)
                     {
                         logger.warningf("UTFException %s.handleAwaitingFibers: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
                         logger.warningf("Exception %s.handleAwaitingFibers: %s%s",
-                            plugin.name, logtint, e.msg);
+                            plugin.name, Tint.log, e.msg);
 
                         printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
@@ -911,7 +884,7 @@ Next mainLoop(ref Kameloso instance)
             catch (IRCParseException e)
             {
                 logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                    logtint, e.msg, warningtint, e.file, e.line);
+                    Tint.log, e.msg, Tint.warning, e.file, e.line);
 
                 printEventDebugDetails(event, attempt.line);
                 version(PrintStacktraces) logger.trace(e.info);
@@ -919,25 +892,25 @@ Next mainLoop(ref Kameloso instance)
             catch (NomException e)
             {
                 logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
-                    logtint, e.haystack, warningtint, e.needle);
+                    Tint.log, e.haystack, Tint.warning, e.needle);
 
                 printEventDebugDetails(event, attempt.line);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
             {
-                logger.warning("UTFException: ", logtint, e.msg);
+                logger.warning("UTFException: ", Tint.log, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UnicodeException e)
             {
-                logger.warning("UnicodeException: ", logtint, e.msg);
+                logger.warning("UnicodeException: ", Tint.log, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (Exception e)
             {
                 logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                    logtint, e.msg, warningtint, e.file, e.line);
+                    Tint.log, e.msg, Tint.warning, e.file, e.line);
 
                 printEventDebugDetails(event, attempt.line);
                 version(PrintStacktraces) logger.trace(e.toString);
@@ -1059,20 +1032,6 @@ import lu.net : ListenAttempt;
  +/
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
-    string logtint, errortint, warningtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-        }
-    }
-
     // Handle the attempt; switch on its state
     with (ListenAttempt.State)
     final switch (attempt.state)
@@ -1094,8 +1053,8 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         import core.thread : Thread;
         import core.time : seconds;
 
-        logger.warningf("Connection error! (%s%s%s)", logtint,
-            attempt.error, warningtint);
+        logger.warningf("Connection error! (%s%s%s)", Tint.log,
+            attempt.error, Tint.warning);
 
         // Sleep briefly so it won't flood the screen on chains of errors
         Thread.sleep(Timeout.readErrorGracePeriod.seconds);
@@ -1110,12 +1069,12 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         if (attempt.bytesReceived == 0)
         {
             logger.errorf("Connection error: empty server response! (%s%s%s)",
-                logtint, attempt.error, errortint);
+                Tint.log, attempt.error, Tint.error);
         }
         else
         {
             logger.errorf("Connection error: invalid server response! (%s%s%s)",
-                logtint, attempt.error, errortint);
+                Tint.log, attempt.error, Tint.error);
         }
 
         instance.conn.connected = false;
@@ -1182,19 +1141,8 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
             }
             catch (IRCParseException e)
             {
-                string logtint;
-
-                version(Colours)
-                {
-                    if (!settings.monochrome)
-                    {
-                        import kameloso.logger : KamelosoLogger;
-                        logtint = (cast(KamelosoLogger)logger).logtint;
-                    }
-                }
-
                 logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
-                    plugin.name, i, logtint, e.msg);
+                    plugin.name, i, Tint.log, e.msg);
 
                 printEventDebugDetails(e.event, e.event.raw);
                 version(PrintStacktraces) logger.trace(e.info);
@@ -1202,19 +1150,8 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
             }
             catch (Exception e)
             {
-                string logtint;
-
-                version(Colours)
-                {
-                    if (!settings.monochrome)
-                    {
-                        import kameloso.logger : KamelosoLogger;
-                        logtint = (cast(KamelosoLogger)logger).logtint;
-                    }
-                }
-
                 logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
-                    plugin.name, i, logtint, e.msg);
+                    plugin.name, i, Tint.log, e.msg);
 
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e.toString);
@@ -1287,19 +1224,8 @@ do
         }
         catch (IRCParseException e)
         {
-            string logtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
             logger.warningf("IRC Parse Exception %s.scheduledFibers[%d]: %s%s",
-                plugin.name, i, logtint, e.msg);
+                plugin.name, i, Tint.log, e.msg);
 
             printEventDebugDetails(e.event, e.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
@@ -1307,19 +1233,8 @@ do
         }
         catch (Exception e)
         {
-            string logtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
-                plugin.name, i, logtint, e.msg);
+                plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.toString);
             toRemove ~= i;
         }
@@ -1489,19 +1404,6 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
-    string logtint, errortint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
-        }
-    }
-
     try
     {
         // Act on arguments getopt, pass return value to main
@@ -1509,29 +1411,29 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     }
     catch (GetOptException e)
     {
-        logger.error("Error parsing command-line arguments: ", logtint, e.msg);
+        logger.error("Error parsing command-line arguments: ", Tint.log, e.msg);
     }
     catch (ConvException e)
     {
-        logger.error("Error converting command-line arguments: ", logtint, e.msg);
+        logger.error("Error converting command-line arguments: ", Tint.log, e.msg);
     }
     catch (FileTypeMismatchException e)
     {
         logger.errorf("Specified configuration file %s%s%s is not a file!",
-            logtint, e.filename, errortint);
+            Tint.log, e.filename, Tint.error);
     }
     catch (ConfigurationFileReadFailureException e)
     {
         logger.errorf("Error reading and decoding configuration file [%s%s%s]: %1$s%4$s",
-            logtint, e.filename, errortint, e.msg);
+            Tint.log, e.filename, Tint.error, e.msg);
     }
     catch (DeserialisationException e)
     {
-        logger.errorf("Error parsing configuration file: %s%s", logtint, e.msg);
+        logger.errorf("Error parsing configuration file: %s%s", Tint.log, e.msg);
     }
     catch (Exception e)
     {
-        logger.error("Unhandled exception handling command-line arguments: ", logtint, e.msg);
+        logger.error("Unhandled exception handling command-line arguments: ", Tint.log, e.msg);
     }
 
     return Next.returnFailure;
@@ -1558,19 +1460,6 @@ Next tryConnect(ref Kameloso instance)
     import kameloso.thread : interruptibleSleep;
     import lu.net : ConnectionAttempt, connectFiber;
     import std.concurrency : Generator;
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
 
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, settings.endlesslyConnect,
@@ -1618,7 +1507,7 @@ Next tryConnect(ref Kameloso instance)
                 (sharedDomains(parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
-            logger.logf(pattern, infotint, address, logtint, attempt.ip.toPortString);
+            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString);
             continue;
 
         case connected:
@@ -1633,12 +1522,12 @@ Next tryConnect(ref Kameloso instance)
             if (attempt.retryNum == 0)
             {
                 logger.logf("Retrying in %s%d%s seconds...",
-                    infotint, incrementedRetryDelay, logtint);
+                    Tint.info, incrementedRetryDelay, Tint.log);
             }
             else
             {
                 logger.logf("Retrying in %s%d%s seconds (attempt %1$s%4$d%3$s)...",
-                    infotint, incrementedRetryDelay, logtint, attempt.retryNum+1);
+                    Tint.info, incrementedRetryDelay, Tint.log, attempt.retryNum+1);
             }
 
             interruptibleSleep(incrementedRetryDelay.seconds, *abort);
@@ -1653,7 +1542,7 @@ Next tryConnect(ref Kameloso instance)
 
         case delayThenNextIP:
             logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
-                infotint, Timeout.retry, logtint);
+                Tint.info, Timeout.retry, Tint.log);
             interruptibleSleep(Timeout.retry.seconds, *abort);
             if (*abort) return Next.returnFailure;
             continue;
@@ -1696,21 +1585,6 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
     import lu.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
 
-    string infotint, logtint, warningtint, errortint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
-        }
-    }
-
     enum defaultResolveAttempts = 15;
     immutable resolveAttempts = settings.endlesslyConnect ? int.max : defaultResolveAttempts;
 
@@ -1729,7 +1603,7 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
             import core.time : seconds;
 
             logger.logf("Network down? Retrying in %s%d%s seconds.",
-                infotint, incrementedRetryDelay, logtint);
+                Tint.info, incrementedRetryDelay, Tint.log);
             interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
             if (*instance.abort) return;
 
@@ -1754,27 +1628,27 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
         case success:
             import lu.string : plurality;
             logger.infof("%s%s resolved into %s%s%2$s %5$s.",
-                parser.server.address, logtint, infotint, conn.ips.length,
+                parser.server.address, Tint.log, Tint.info, conn.ips.length,
                 conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
 
         case exception:
             logger.warningf("Could not resolve server address. (%s%s%s)",
-                logtint, attempt.error, warningtint);
+                Tint.log, attempt.error, Tint.warning);
             delayOnNetworkDown(attempt);
             if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
             logger.errorf("Could not resolve server address. (%s%s%s)",
-                logtint, attempt.error, errortint);
+                Tint.log, attempt.error, Tint.error);
 
             if (firstConnect)
             {
                 // First attempt and a failure; something's wrong, abort
                 logger.logf("Failed to resolve host. Verify that you are connected to " ~
                     "the Internet and that the server address (%s%s%s) is correct.",
-                    infotint, parser.server.address, logtint);
+                    Tint.info, parser.server.address, Tint.log);
                 return Next.returnFailure;
             }
             else
@@ -1809,23 +1683,10 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
 
     logger.log("Found MISSING configuration entries:");
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
     foreach (immutable section, const sectionEntries; missingEntries)
     {
         logger.logf(`...under [%s%s%s]: %s%-(%s%|, %)`,
-            infotint, section.stripSuffix("Settings"), logtint, infotint, sectionEntries);
+            Tint.info, section.stripSuffix("Settings"), Tint.log, Tint.info, sectionEntries);
     }
 
     logger.log("They are either new, or your configuration file was generated " ~
@@ -1846,23 +1707,10 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 {
     logger.log("Found INVALID configuration entries:");
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
     foreach (immutable section, const sectionEntries; invalidEntries)
     {
         logger.logf(`...under [%s%s%s]: %s%-(%s%|, %)`,
-            infotint, section, logtint, infotint, sectionEntries);
+            Tint.info, section, Tint.log, Tint.info, sectionEntries);
     }
 
     logger.log("They are either malformed, no longer in use, or belong to " ~
@@ -1888,31 +1736,18 @@ void complainAboutMissingConfiguration(const string binaryPath)
 
     logger.warning("Warning: No administrators nor home channels configured!");
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
     if (settings.configFile.exists)
     {
         import kameloso.config : complainAboutIncompleteConfiguration;
 
         logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            infotint, settings.configFile, logtint);
+            Tint.info, settings.configFile, Tint.log);
         complainAboutIncompleteConfiguration();
     }
     else
     {
         logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-            infotint, binaryPath.baseName, logtint);
+            Tint.info, binaryPath.baseName, Tint.log);
     }
 }
 
@@ -2036,21 +1871,8 @@ Next verifySettings(ref Kameloso instance)
 
     if (!settings.force && !addressIsResolvable)
     {
-        string logtint, errortint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                errortint = (cast(KamelosoLogger)logger).errortint;
-            }
-        }
-
-        logger.errorf("Invalid address! [%s%s%s]", logtint,
-            instance.parser.server.address, errortint);
+        logger.errorf("Invalid address! [%s%s%s]", Tint.log,
+            instance.parser.server.address, Tint.error);
         return Next.returnFailure;
     }
 
@@ -2081,19 +1903,8 @@ void resolveResourceDirectory(ref Kameloso instance)
     {
         import std.file : mkdirRecurse;
 
-        string infotint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-                infotint = (cast(KamelosoLogger)logger).infotint;
-            }
-        }
-
         mkdirRecurse(settings.resourceDirectory);
-        logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
+        logger.logf("Created resource directory %s%s", Tint.info, settings.resourceDirectory);
     }
 }
 
@@ -2111,19 +1922,6 @@ void resolveResourceDirectory(ref Kameloso instance)
  +/
 void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 {
-    string logtint, warningtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-        }
-    }
-
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
@@ -2249,7 +2047,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file.baseName, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
@@ -2260,7 +2058,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             logger.warningf("An error occured while initialising the %s%s%s " ~
                 "plugin's resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
@@ -2281,7 +2079,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to start up: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file.baseName, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
@@ -2291,7 +2089,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("An error occured while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                logtint, e.file.baseName[0..$-2], warningtint, e.msg, e.file.baseName, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
@@ -2404,7 +2202,7 @@ int initBot(string[] args)
     // Skip if --force was passed.
     if (!settings.force) applyDefaults(instance.parser.client, instance.parser.server);
 
-    string pre, post, infotint, logtint, warningtint, errortint;
+    string pre, post;
 
     version(Colours)
     {
@@ -2418,11 +2216,6 @@ int initBot(string[] args)
             enum defaulttintColour = TerminalForeground.default_.colour.idup;
             pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-            errortint = (cast(KamelosoLogger)logger).errortint;
         }
     }
 
@@ -2487,7 +2280,7 @@ int initBot(string[] args)
         if (missingEntries.length || invalidEntries.length)
         {
             logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-                infotint, logtint, settings.configFile);
+                Tint.info, Tint.log, settings.configFile);
             logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
             logger.trace("---");
         }
@@ -2538,7 +2331,7 @@ int initBot(string[] args)
         !settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
-        logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
+        logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", Tint.info, Tint.log);
     }
 
     // Save if we're exiting and configuration says we should.
@@ -2585,19 +2378,6 @@ void printSummary(const ref Kameloso instance)
 
     logger.info("-- Connection summary --");
 
-    string logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-            import kameloso.terminal : TerminalForeground, colour;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
     foreach (immutable i, const entry; instance.connectionHistory)
     {
         import std.datetime.systime : SysTime;
@@ -2614,7 +2394,7 @@ void printSummary(const ref Kameloso instance)
             i+1, duration, entry.numEvents, start, stop);
     }
 
-    logger.info("Total time connected: ", logtint, totalTime);
+    logger.info("Total time connected: ", Tint.log, totalTime);
 }
 
 
@@ -2630,20 +2410,7 @@ private void printEventDebugDetails(const IRCEvent event, const string raw)
 {
     if (event == IRCEvent.init)
     {
-        string logtint, warningtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                warningtint = (cast(KamelosoLogger)logger).warningtint;
-            }
-        }
-
-        logger.warningf(`Offending line: "%s%s%s"`, logtint, raw, warningtint);
+        logger.warningf(`Offending line: "%s%s%s"`, Tint.log, raw, Tint.warning);
     }
     else
     {

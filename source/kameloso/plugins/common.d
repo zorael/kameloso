@@ -447,22 +447,9 @@ struct IRCPluginState
  +/
 bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
 {
-    import kameloso.common : logger, settings;
+    import kameloso.common : Tint, logger;
     import lu.string : contains, nom;
     import std.conv : ConvException;
-
-    string logtint, warningtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-        }
-    }
 
     bool noErrors = true;
 
@@ -472,7 +459,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
         if (!line.contains!(Yes.decode)('.'))
         {
             logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
-                logtint, warningtint, line);
+                Tint.log, Tint.warning, line);
             noErrors = false;
             continue;
         }
@@ -496,7 +483,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                 if (!success)
                 {
                     logger.warningf("No such %score%s setting: %1$s%3$s",
-                        logtint, warningtint, setting);
+                        Tint.log, Tint.warning, setting);
                     noErrors = false;
                 }
                 else if ((setting == "monochrome") || (setting == "brightTerminal"))
@@ -507,7 +494,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
             catch (ConvException e)
             {
                 logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
-                    logtint, warningtint, setting, value);
+                    Tint.log, Tint.warning, setting, value);
                 noErrors = false;
             }
 
@@ -526,14 +513,14 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                     if (!success)
                     {
                         logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
-                            logtint, pluginstring, warningtint, setting);
+                            Tint.log, pluginstring, Tint.warning, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
                     logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
-                        logtint, pluginstring, warningtint, setting, value);
+                        Tint.log, pluginstring, Tint.warning, setting, value);
                     noErrors = false;
                 }
 
@@ -541,7 +528,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
             }
         }
 
-        logger.warning("Invalid plugin: ", logtint, pluginstring);
+        logger.warning("Invalid plugin: ", Tint.log, pluginstring);
         noErrors = false;
     }
 
@@ -1327,25 +1314,12 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     version(ExplainReplay)
     void explainReplay(const IRCUser user)
     {
-        import kameloso.common : logger, settings;
+        import kameloso.common : Tint, logger;
         import lu.conv : Enum;
-
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
 
         logger.logf("%s%s%s %s replaying %1$s%5$s%3$s-level event " ~
             "based on WHOIS results (user is %1$s%6$s%3$s class)",
-            infotint, context.name, logtint, contextName,
+            Tint.info, context.name, Tint.log, contextName,
             Enum!PrivilegeLevel.toString(mixin(requestVariableName).privilegeLevel),
             Enum!(IRCUser.Class).toString(user.class_));
     }

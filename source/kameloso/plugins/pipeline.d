@@ -290,19 +290,6 @@ void onMotd(PipelinePlugin plugin)
 {
     with (plugin)
     {
-        string logtint, warningtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                warningtint = (cast(KamelosoLogger)logger).warningtint;
-            }
-        }
-
         // Save the filename *once* so it persists across nick changes.
         // If !fifoInWorkingDir then in /tmp or $TMPDIR
         fifoFilename = state.client.nickname ~ "@" ~ state.server.address;
@@ -351,17 +338,17 @@ void onMotd(PipelinePlugin plugin)
         catch (ReturnValueException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
-                e.msg, logtint, e.command, warningtint, e.retval);
+                e.msg, Tint.log, e.command, Tint.warning, e.retval);
         }
         catch (FileExistsException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-                e.msg, logtint, e.filename, warningtint);
+                e.msg, Tint.log, e.filename, Tint.warning);
         }
         catch (FileTypeMismatchException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-                e.msg, logtint, e.filename, warningtint);
+                e.msg, Tint.log, e.filename, Tint.warning);
         }
 
         // Let other Exceptions pass
