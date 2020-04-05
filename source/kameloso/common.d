@@ -1264,6 +1264,7 @@ struct Tint
          +/
         pragma(inline)
         static string opDispatch(string tint)(const bool monochrome = settings.monochrome)
+        in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
             import kameloso.logger : KamelosoLogger;
 
@@ -1292,5 +1293,34 @@ struct Tint
         alias warning = log;
         alias error = log;
         alias fatal = log;
+    }
+}
+
+///
+unittest
+{
+    import kameloso.logger : KamelosoLogger;
+
+    if (logger !is null)
+    {
+        KamelosoLogger kl = cast(KamelosoLogger)logger;
+        assert(kl);
+
+        version(Colours)
+        {
+            assert(Tint.log is kl.logtint);
+            assert(Tint.info is kl.infotint);
+            assert(Tint.warning is kl.warningtint);
+            assert(Tint.error is kl.errortint);
+            assert(Tint.fatal is kl.fataltint);
+        }
+        else
+        {
+            assert(Tint.log == string.init);
+            assert(Tint.info == string.init);
+            assert(Tint.warning == string.init);
+            assert(Tint.error == string.init);
+            assert(Tint.fatal == string.init);
+        }
     }
 }
