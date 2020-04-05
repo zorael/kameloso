@@ -246,10 +246,22 @@ enum TerminalReset
     hidden      = 28,
 }
 
-/// Bool of whether or not a type is a colour code enum.
+
+// isAColourCode
+/++
+ +  Bool of whether or not a type is a colour code enum.
+ +
+ +  The `is(T == int)` is unfortunate but it's needed to be able to have statements like:
+ +
+ +  ---
+ +  sink.colourWith(bright ? Bright.error : Dark.error;
+ +  ---
+ +
+ +  ...where `Dark` and `Bright` are two different enums.
+ +/
 enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
                         is(T : TerminalFormat) || is(T : TerminalReset) ||
-                        is(T == int);  // FIXME
+                        is(T == int);
 
 
 // colour
