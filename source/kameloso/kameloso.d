@@ -291,7 +291,9 @@ void messageFiber(ref Kameloso instance)
                 {
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        line = "PRIVMSG %s :/me %s".format(emoteTarget, content);
+                        prelude = "PRIVMSG %s :/me ".format(emoteTarget);
+                        line = content;
+                        fast = (event.num == 999);
                     }
                 }
 
