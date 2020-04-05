@@ -1257,56 +1257,24 @@ struct Tint
 {
     version(Colours)
     {
-        import kameloso.logger : KamelosoLogger;
-
-        // log
+        // opDispatch
         /++
-         +  Provides the string that corresponds to a `LogLevel.all` tint.
+         +  Provides the string that corresponds to the tint of the `LogLevel`
+         +  that was passed in string form.
          +/
         pragma(inline)
-        static string log(const bool monochrome = settings.monochrome)
+        static string opDispatch(string tint)(const bool monochrome = settings.monochrome)
         {
-            return monochrome ? string.init : (cast(KamelosoLogger)logger).logtint;
-        }
+            import kameloso.logger : KamelosoLogger;
 
-        // log
-        /++
-         +  Provides the string that corresponds to a `LogLevel.info` tint.
-         +/
-        pragma(inline)
-        static string info(const bool monochrome = settings.monochrome)
-        {
-            return monochrome ? string.init : (cast(KamelosoLogger)logger).infotint;
-        }
-
-        // warning
-        /++
-         +  Provides the string that corresponds to a `LogLevel.warning` tint.
-         +/
-        pragma(inline)
-        static string warning(const bool monochrome = settings.monochrome)
-        {
-            return monochrome ? string.init : (cast(KamelosoLogger)logger).warningtint;
-        }
-
-        // error
-        /++
-         +  Provides the string that corresponds to a `LogLevel.error` tint.
-         +/
-        pragma(inline)
-        static string error(const bool monochrome = settings.monochrome)
-        {
-            return monochrome ? string.init : (cast(KamelosoLogger)logger).errortint;
-        }
-
-        // fatal
-        /++
-         +  Provides the string that corresponds to a `LogLevel.fatal` tint.
-         +/
-        pragma(inline)
-        static string fatal(const bool monochrome = settings.monochrome)
-        {
-            return monochrome ? string.init : (cast(KamelosoLogger)logger).fataltint;
+            static if (__traits(compiles, mixin("(cast(KamelosoLogger)logger)." ~ tint ~ "tint")))
+            {
+                return monochrome ? string.init : mixin("(cast(KamelosoLogger)logger)." ~ tint ~ "tint");
+            }
+            else
+            {
+                static assert(0, "Unknown tint `" ~ tint ~ "` passed to `Tint.opDispatch`");
+            }
         }
     }
     else
