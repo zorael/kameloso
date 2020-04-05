@@ -320,7 +320,7 @@ void messageFiber(ref Kameloso instance)
                 if (aux.length)
                 {
                     // Key, assume only one channel
-                    line = channel ~ " " ~ aux;
+                    line = channel ~ ' ' ~ aux;
                 }
                 else
                 {
@@ -393,7 +393,6 @@ void messageFiber(ref Kameloso instance)
                 // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
                 logger.warning("No outgoing event case for type ",
                     Enum!(IRCEvent.Type).toString(type));
-                line = content;
                 break;
             }
 
