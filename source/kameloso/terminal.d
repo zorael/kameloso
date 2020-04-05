@@ -949,17 +949,17 @@ unittest
     // Case-insensitive tests
 
     {
-        immutable line = "KAMELOSO".invert!(Yes.caseInsensitive)("kameloso");
+        immutable line = "KAMELOSO".invert!(No.caseSensitive)("kameloso");
         immutable expected = pre ~ "kameloso" ~ post;
         assert((line == expected), line);
     }
     {
-        immutable line = "KamelosoTV".invert!(Yes.caseInsensitive)("kameloso");
+        immutable line = "KamelosoTV".invert!(No.caseSensitive)("kameloso");
         immutable expected = "KamelosoTV";
         assert((line == expected), line);
     }
     {
-        immutable line = "Blah blah kAmElOsO Blah blah".invert!(Yes.caseInsensitive)("kameloso");
+        immutable line = "Blah blah kAmElOsO Blah blah".invert!(No.caseSensitive)("kameloso");
         immutable expected = "Blah blah " ~ pre ~ "kameloso" ~ post ~ " Blah blah";
         assert((line == expected), line);
     }
