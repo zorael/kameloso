@@ -385,7 +385,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
                 !slice.contains('!') || !slice.contains('@'))
             {
                 // Freenode-like, only nicknames with possible modesigns
-                immutable nickname = plugin.state.server.stripModesign(slice);
+                immutable nickname = slice.stripModesign(plugin.state.server);
 
                 version(TwitchSupport)
                 {
@@ -401,7 +401,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             {
                 // SpotChat-like, names are in full nick!ident@address form
                 immutable signed = slice.nom('!');
-                immutable nickname = plugin.state.server.stripModesign(signed);
+                immutable nickname = signed.stripModesign(plugin.state.server);
                 if (nickname == plugin.state.client.nickname) continue;
 
                 immutable ident = slice.nom('@');
@@ -862,7 +862,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             import dialect.common : stripModesign;
 
             string modesigns;
-            nickname = plugin.state.server.stripModesign(nickname, modesigns);
+            nickname = nickname.stripModesign(plugin.state.server, modesigns);
 
             // Register operators, half-ops, voiced etc
             // Can be more than one if multi-prefix capability is enabled

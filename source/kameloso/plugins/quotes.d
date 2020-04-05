@@ -106,7 +106,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         }
     }
 
-    if (!specified.length) specified = plugin.state.server.stripModesign(signed);
+    if (!specified.length) specified = signed.stripModesign(plugin.state.server);
 
     if (!specified.isValidNickname(plugin.state.server))
     {
@@ -229,7 +229,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     string slice = event.content;  // need mutable
     immutable signed = slice.nom!(Yes.decode)(' ');
-    immutable specified = plugin.state.server.stripModesign(signed);
+    immutable specified = signed.stripModesign(plugin.state.server);
 
     if (!specified.length || !slice.length) return;
 

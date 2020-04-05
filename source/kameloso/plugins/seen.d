@@ -504,7 +504,7 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
-        immutable nickname = plugin.state.server.stripModesign(slice);
+        immutable nickname = slice.stripModesign(plugin.state.server);
         plugin.updateUser(nickname, event.time);
     }
 }
@@ -727,7 +727,7 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
     import dialect.common : stripModesign;
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
-    immutable nickname = plugin.state.server.stripModesign(signed);
+    immutable nickname = signed.stripModesign(plugin.state.server);
     if (nickname == plugin.state.client.nickname) return;
     plugin.seenUsers[nickname] = time;
 }
