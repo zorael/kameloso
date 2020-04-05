@@ -1230,3 +1230,99 @@ unittest
     immutable isabot = "kamelosois a bot".stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
     assert((isabot == "is a bot"), isabot);
 }
+
+
+// Tint
+/++
+ +  Provides an easy way to access the `*tint` members of our `KamelosoLogger`
+ +  instance `logger`.
+ +
+ +  Currently you need visibility of three things to be able to tint text;
+ +  *   `kameloso.common.logger`, as an instance of `kameloso.logger.KamelosoLogger`.
+ +  *   `kameloso.logger.KamelosoLogger` itself, to cast `logger` to its subclass.
+ +  *   `kameloso.common.settings`, to know whether we want monochrome output or not.
+ +
+ +  By placing this here where there is visibility of `logger` and `settings`,
+ +  the caller need just import this.
+ +
+ +  Example:
+ +  ---
+ +  logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
+ +  ---
+ +
+ +  If `settings.monochrome` is true, `Tint.log` will just return an empty string.
+ +  It can be overriden with `Tint.log(false)`.
+ +/
+struct Tint
+{
+    version(Colours)
+    {
+        import kameloso.logger : KamelosoLogger;
+
+        // log
+        /++
+         +  Provides the string that corresponds to a `LogLevel.all` tint.
+         +/
+        pragma(inline)
+        static string log(const bool monochrome = settings.monochrome)
+        {
+            return monochrome ? string.init : (cast(KamelosoLogger)logger).logtint;
+        }
+
+        // log
+        /++
+         +  Provides the string that corresponds to a `LogLevel.info` tint.
+         +/
+        pragma(inline)
+        static string info(const bool monochrome = settings.monochrome)
+        {
+            return monochrome ? string.init : (cast(KamelosoLogger)logger).infotint;
+        }
+
+        // warning
+        /++
+         +  Provides the string that corresponds to a `LogLevel.warning` tint.
+         +/
+        pragma(inline)
+        static string warning(const bool monochrome = settings.monochrome)
+        {
+            return monochrome ? string.init : (cast(KamelosoLogger)logger).warningtint;
+        }
+
+        // error
+        /++
+         +  Provides the string that corresponds to a `LogLevel.error` tint.
+         +/
+        pragma(inline)
+        static string error(const bool monochrome = settings.monochrome)
+        {
+            return monochrome ? string.init : (cast(KamelosoLogger)logger).errortint;
+        }
+
+        // fatal
+        /++
+         +  Provides the string that corresponds to a `LogLevel.fatal` tint.
+         +/
+        pragma(inline)
+        static string fatal(const bool monochrome = settings.monochrome)
+        {
+            return monochrome ? string.init : (cast(KamelosoLogger)logger).fataltint;
+        }
+    }
+    else
+    {
+        /++
+         +  Returns an empty string, since we're not versioned `Colours`.
+         +/
+        pragma(inline)
+        static string log()
+        {
+            return string.init;
+        }
+
+        alias info = log;
+        alias warning = log;
+        alias error = log;
+        alias fatal = log;
+    }
+}
