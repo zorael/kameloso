@@ -735,7 +735,7 @@ unittest
  +  ---
  +
  +  Params:
- +      caseInsensitive = Whether or not to look for matches case-insensitively,
+ +      caseSensitive = Whether or not to look for matches case-insensitively,
  +          yet invert with the casing passed.
  +      line = Line to examine and invert a substring of.
  +      toInvert = Substring to invert.
@@ -745,7 +745,7 @@ unittest
  +      else (a duplicate of) the line unchanged.
  +/
 version(Colours)
-string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
+string invert(Flag!"caseSensitive" caseSensitive = Yes.caseSensitive)
     (const string line, const string toInvert)
 {
     import dialect.common : isValidNicknameCharacter;
@@ -753,15 +753,15 @@ string invert(Flag!"caseInsensitive" caseInsensitive = No.caseInsensitive)
     import std.format : format;
     import std.string : indexOf;
 
-    static if (caseInsensitive)
+    static if (caseSensitive)
+    {
+        ptrdiff_t startpos = line.indexOf(toInvert);
+    }
+    else
     {
         import std.algorithm.searching : countUntil;
         import std.uni : asLowerCase;
         ptrdiff_t startpos = line.asLowerCase.countUntil(toInvert.asLowerCase);
-    }
-    else
-    {
-        ptrdiff_t startpos = line.indexOf(toInvert);
     }
 
     //assert((startpos != -1), "Tried to invert nonexistent text");
