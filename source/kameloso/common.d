@@ -1250,8 +1250,8 @@ unittest
  +  logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
  +  ---
  +
- +  If `settings.monochrome` is true, `Tint.log` will just return an empty string.
- +  It can be overriden with `Tint.log(false)`.
+ +  If `settings.monochrome` is true, `Tint.*` will just return an empty string.
+ +  The monochrome-ness can be overridden with `Tint.*(false)`.
  +/
 struct Tint
 {
@@ -1259,8 +1259,12 @@ struct Tint
     {
         // opDispatch
         /++
-         +  Provides the string that corresponds to the tint of the `LogLevel`
-         +  that was passed in string form.
+         +  Provides the string that corresponds to the tint of the
+         +  `std.experimental.logger.core.LogLevel` that was passed in string form
+         +  as the `tint` `opDispatch` template parameter.
+         +
+         +  This saves us the boilerplate of copy/pasting one function for each
+         +  `std.experimental.logger.core.LogLevel`.
          +/
         pragma(inline)
         static string opDispatch(string tint)(const bool monochrome = settings.monochrome)
