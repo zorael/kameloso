@@ -89,17 +89,16 @@ do
         {
             import std.algorithm.searching : canFind;
 
-            if ((channelName[1..$] == state.client.nickname) ||
-                state.bot.homeChannels.canFind(channelName))
+            if (state.bot.homeChannels.canFind(channelName))
             {
-                // User is broadcaster or we're in a home channel
-                event.aux = "fast";
+                // We're in a home channel
+                event.num = 999;
             }
             /*else if (auto channel = channelName in state.channels)
             {
                 if ((*channel).ops.canFind(state.client.nickname))
                 {
-                    event.aux = "fast";
+                    event.num = 999;
                 }
             }*/
         }

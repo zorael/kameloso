@@ -258,7 +258,7 @@ void messageFiber(ref Kameloso instance)
                 version(TwitchSupport)
                 {
                     fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
-                        (event.aux.length > 0);
+                        (event.num == 999);
                 }
 
                 prelude = "PRIVMSG %s :".format(channel);
