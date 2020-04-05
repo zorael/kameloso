@@ -254,7 +254,7 @@ enum TerminalReset
  +  The `is(T == int)` is unfortunate but it's needed to be able to have statements like:
  +
  +  ---
- +  sink.colourWith(bright ? Bright.error : Dark.error;
+ +  sink.colourWith(bright ? Bright.error : Dark.error);
  +  ---
  +
  +  ...where `Dark` and `Bright` are two different enums.
