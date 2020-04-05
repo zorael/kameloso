@@ -286,45 +286,6 @@ void onCommandReloadNotes(NotesPlugin plugin)
 }
 
 
-// onCommandFakeJoin
-/++
- +  Fakes the supplied user joining a channel.
- +
- +  This is for debugging purposes.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "fakejoin")
-@Description("[debug] Fakes a user joining a channel.",
-    "$command [nickname to fake a join for]")
-void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
-{
-    import lu.string : contains, nom;
-    import std.typecons : No, Yes;
-
-    logger.info("Faking an event.");
-
-    IRCEvent newEvent = event;
-    newEvent.type = IRCEvent.Type.JOIN;
-    string nickname = event.content;
-
-    if (nickname.contains!(Yes.decode)(' '))
-    {
-        // contains more than one word
-        newEvent.sender.nickname = nickname.nom!(Yes.decode)(' ');
-    }
-    else
-    {
-        newEvent.sender.nickname = event.content;
-    }
-
-    return plugin.onReplayEvent(newEvent);  // or onEvent?
-}
-
-
 // getNotes
 /++
  +  Fetches the notes for a specified user, from the in-memory JSON storage.
