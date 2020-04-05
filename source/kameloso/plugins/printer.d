@@ -41,17 +41,17 @@ struct PrinterSettings
     /// Toggles whether or not the plugin should print to screen (as opposed to just log).
     bool printToScreen = true;
 
-    /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
-    bool truecolour = true;
-
-    /// Whether or not to normalise truecolours; make dark brighter and bright darker.
-    bool normaliseTruecolour = true;
-
     /// Whether or not to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
     version(TwitchSupport)
     {
+        /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
+        bool truecolour = true;
+
+        /// Whether or not to normalise truecolours; make dark brighter and bright darker.
+        bool normaliseTruecolour = true;
+
         /// Whether or not to display Twitch badges next to sender/target names.
         bool twitchBadges = true;
 
