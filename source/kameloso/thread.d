@@ -158,11 +158,10 @@ interface Sendable {}
 // BusMessage
 /++
  +  A payload of type `T` wrapped in a class implementing the `Sendable` interface.
- +
- +  Used to wrap values for sending via the message bus.
+ +  Used to box values for sending via the message bus.
  +
  +  Params:
- +      T = Type to embed into the `BusMessage` as payload.
+ +      T = Type to embed into the `BusMessage` as the type of the `BusMessage.payload`.
  +/
 final class BusMessage(T) : Sendable
 {
@@ -247,12 +246,12 @@ unittest
  +  ---
  +
  +  Params:
- +      T = Type to embed into the `CarryingFiber` as payload.
+ +      T = Type to embed into the `CarryingFiber` as the type of `CarryingFiber.payload`.
  +/
 final class CarryingFiber(T) : Fiber
 {
     /++
-     +  Embedded payload value in this `core.thread.Fiber`, what distinguishes
+     +  Embedded payload value in this `core.thread.Fiber`; what distinguishes
      +  it from normal ones.
      +/
     T payload;
@@ -298,7 +297,7 @@ import core.time : Duration;
  +
  +  This is useful when a different signal handler has been set up, as triggering
  +  it won't break sleeps. This way it does, assuming the `abort` bool is the
- +  signal handler one.
+ +  same one the signal handler monitors. As such, take it by `ref`.
  +
  +  Example:
  +  ---
