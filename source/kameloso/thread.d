@@ -311,10 +311,10 @@ import core.time : Duration;
  +/
 void interruptibleSleep(const Duration dur, const ref bool abort) @system
 {
-    import core.thread : Thread, msecs, seconds;
+    import core.thread : Thread, msecs;
 
     static immutable step = 100.msecs;
-    static immutable nothing = 0.seconds;
+    static immutable nothing = (-1).msecs;
 
     Duration left = dur;
 
