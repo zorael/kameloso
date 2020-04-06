@@ -1908,8 +1908,10 @@ import std.traits : isSomeFunction;
  +          account information from the server's WHOIS response.
  +      onFailure = Function alias to call when the server didn't respond with
  +          account information, or when the user is offline.
+ +      alwaysLookup = Whether or not to always issue a WHOIS query, even if
+ +          the requested user's account is already known.
  +/
-mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
+mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null, bool alwaysLookup = false)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import lu.traits : MixinConstraints, MixinScope;
