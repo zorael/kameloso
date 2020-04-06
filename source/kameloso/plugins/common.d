@@ -2227,7 +2227,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32768);
 
         context.awaitEvents(fiber, whoisEventTypes);
-        whois!(Yes.priority)(context.state, nickname, true);
+        whois!(Yes.priority)(context.state, nickname, true);  // Need force to not miss events
         mixin(carriedVariableName) = nickname;
     }
 }
