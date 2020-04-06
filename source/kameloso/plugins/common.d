@@ -2121,20 +2121,106 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
-        import core.thread : Fiber;
+        import std.meta : AliasSeq;
+        import std.traits : Parameters, Unqual, arity, staticMap;
         import std.typecons : No, Yes;
+        import core.thread : Fiber;
+
+        alias Params = staticMap!(Unqual, Parameters!onSuccess);
 
         version(TwitchSupport)
         {
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
+                // Define Twitch queries as always succeeding, since WHOIS isn't applicable
+
                 version(TwitchWarnings)
                 {
                     import kameloso.common : logger, printStacktrace;
                     logger.warning("Tried to enqueue and WHOIS on Twitch");
                     version(PrintStacktraces) printStacktrace();
                 }
-                return;
+
+                static if (__traits(compiles, .hasUserAwareness))
+                {
+                    if (const user = nickname in context.state.users)
+                    {
+                        static if (is(Params : AliasSeq!IRCEvent))
+                        {
+                            // No can do
+                            return;
+                        }
+                        else static if (is(Params : AliasSeq!IRCUser))
+                        {
+                            return onSuccess(*user);
+                        }
+                        else static if (is(Params : AliasSeq!string))
+                        {
+                            return onSuccess(user.account);
+                        }
+                        else static if (arity!onSuccess == 0)
+                        {
+                            return onSuccess();
+                        }
+                        else
+                        {
+                            // Will already have asserted previously
+                        }
+                    }
+                }
+
+                static if (is(Params : AliasSeq!IRCEvent))
+                {
+                    // No can do
+                    return;
+                }
+                else static if (is(Params : AliasSeq!IRCUser))
+                {
+                    // No can do
+                    return;
+                }
+                else static if (is(Params : AliasSeq!string))
+                {
+                    return onSuccess(nickname);
+                }
+                else static if (arity!onSuccess == 0)
+                {
+                    return onSuccess();
+                }
+                else
+                {
+                    // Will already have asserted previously
+                }
+            }
+        }
+
+        static if (!alwaysLookup && __traits(compiles, .hasUserAwareness))
+        {
+            if (const user = nickname in context.state.users)
+            {
+                if (user.account.length)
+                {
+                    static if (is(Params : AliasSeq!IRCEvent))
+                    {
+                        // No can do, drop down and WHOIS
+                    }
+                    else static if (is(Params : AliasSeq!IRCUser))
+                    {
+                        return onSuccess(*user);
+                    }
+                    else static if (is(Params : AliasSeq!string))
+                    {
+                        return onSuccess(user.account);
+                    }
+                    else static if (arity!onSuccess == 0)
+                    {
+                        return onSuccess();
+                    }
+                    else
+                    {
+                        // Will already have asserted previously
+                    }
+                }
             }
         }
 
