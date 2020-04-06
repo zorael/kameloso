@@ -50,11 +50,11 @@ struct NotesSettings
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : timeSince;
+    import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
     import std.range : only;
-    import std.uni : toLower;
 
     version(TwitchSupport)
     {
@@ -70,73 +70,101 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
     foreach (immutable channel; only(event.channel, string.init))
     {
-        try
+        void onSuccess(const IRCUser user)
         {
-            immutable lowerNickname = event.sender.nickname.toLower;
-            const noteArray = plugin.getNotes(channel, lowerNickname);
-
-            if (!noteArray.length) continue;
-
-            immutable senderName = nameOf(event.sender);
-            immutable currTime = Clock.currTime;
-
-            if (noteArray.length == 1)
+            try
             {
-                const note = noteArray[0];
-                immutable timestamp = (currTime - note.when).timeSince;
+                immutable id = idOf(user)
+                    .toLowerCase(plugin.state.server.caseMapping);
 
-                enum pattern = "%s%s! %s left note %s ago: %s";
+                const noteArray = plugin.getNotes(channel, id);
 
-                immutable message = settings.colouredOutgoing ?
-                    pattern.format(atSign, senderName.ircBold,
-                        note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
-                    pattern.format(atSign, senderName, note.sender, timestamp, note.line);
+                if (!noteArray.length) return;
 
-                privmsg(plugin.state, channel, event.sender.nickname, message);
-            }
-            else
-            {
-                import std.conv : text;
+                immutable senderName = nameOf(user);
+                immutable currTime = Clock.currTime;
 
-                enum pattern = "%s%s! You have %s notes.";
-
-                immutable message = settings.colouredOutgoing ?
-                    pattern.format(atSign, senderName.ircBold, noteArray.length.text.ircBold) :
-                    pattern.format(atSign, senderName, noteArray.length);
-
-                privmsg(plugin.state, channel, event.sender.nickname, message);
-
-                foreach (const note; noteArray)
+                if (noteArray.length == 1)
                 {
-                    immutable timestamp = (currTime - note.when)
-                        .timeSince!(Yes.abbreviate);
+                    const note = noteArray[0];
+                    immutable timestamp = (currTime - note.when).timeSince;
 
-                    enum entryPattern = "%s %s ago: %s";
+                    enum pattern = "%s%s! %s left note %s ago: %s";
 
-                    immutable report = settings.colouredOutgoing ?
-                        entryPattern.format(note.sender.ircColourByHash.ircBold,
-                            timestamp, note.line) :
-                        entryPattern.format(note.sender, timestamp, note.line);
+                    immutable message = settings.colouredOutgoing ?
+                        pattern.format(atSign, senderName.ircBold,
+                            note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
+                        pattern.format(atSign, senderName, note.sender, timestamp, note.line);
 
-                    privmsg(plugin.state, channel, event.sender.nickname, report);
+                    privmsg(plugin.state, channel, user.nickname, message);
                 }
-            }
+                else
+                {
+                    import std.conv : text;
 
-            plugin.clearNotes(lowerNickname, channel);
-            plugin.notes.save(plugin.notesFile);
-        }
-        catch (JSONException e)
-        {
-            logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-                Tint.log, event.sender.nickname, Tint.error, event.channel, e.msg);
+                    enum pattern = "%s%s! You have %s notes.";
 
-            if (e.msg == "JSONValue is not an object")
-            {
-                logger.warning("Notes file corrupt. Starting from scratch.");
-                plugin.notes.reset();
+                    immutable message = settings.colouredOutgoing ?
+                        pattern.format(atSign, senderName.ircBold, noteArray.length.text.ircBold) :
+                        pattern.format(atSign, senderName, noteArray.length);
+
+                    privmsg(plugin.state, channel, user.nickname, message);
+
+                    foreach (const note; noteArray)
+                    {
+                        immutable timestamp = (currTime - note.when)
+                            .timeSince!(Yes.abbreviate);
+
+                        enum entryPattern = "%s %s ago: %s";
+
+                        immutable report = settings.colouredOutgoing ?
+                            entryPattern.format(note.sender.ircColourByHash.ircBold,
+                                timestamp, note.line) :
+                            entryPattern.format(note.sender, timestamp, note.line);
+
+                        privmsg(plugin.state, channel, user.nickname, report);
+                    }
+                }
+
+                plugin.clearNotes(id, channel);
                 plugin.notes.save(plugin.notesFile);
             }
+            catch (JSONException e)
+            {
+                logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
+                    Tint.log, user.nickname, Tint.error, event.channel, e.msg);
+
+                if (e.msg == "JSONValue is not an object")
+                {
+                    logger.warning("Notes file corrupt. Starting from scratch.");
+                    plugin.notes.reset();
+                    plugin.notes.save(plugin.notesFile);
+                }
+            }
         }
+
+        void onFailure(const IRCUser failureUser)
+        {
+            //logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+            return onSuccess(failureUser);
+        }
+
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                return onSuccess(event.sender);
+            }
+        }
+
+        if (event.sender.account.length)
+        {
+            return onSuccess(event.sender);
+        }
+
+        mixin WHOISFiberDelegate!(onSuccess, onFailure);
+
+        enqueueAndWHOIS(event.sender.nickname);
 
         // Break early and save us a loop and a lookup
         if (!channel.length) break;

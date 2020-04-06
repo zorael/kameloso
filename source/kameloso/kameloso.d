@@ -350,23 +350,13 @@ void messageFiber(ref Kameloso instance)
                 import std.datetime.systime : Clock;
 
                 immutable now = Clock.currTime.toUnixTime;
+                immutable then = instance.previousWhoisTimestamps.get(target.nickname, 0);
+                immutable hysteresis = (num > 0) ? 1 : Timeout.whoisRetry;
 
-                if (num > 0)
+                if ((now - then) > hysteresis)
                 {
-                    // Force
                     line = "WHOIS " ~ target.nickname;
                     instance.previousWhoisTimestamps[target.nickname] = now;
-                }
-                else
-                {
-                    // Copy/paste from processTriggerRequestQueue
-                    immutable then = instance.previousWhoisTimestamps.get(target.nickname, 0);
-
-                    if ((now - then) > Timeout.whoisRetry)
-                    {
-                        line = "WHOIS " ~ target.nickname;
-                        instance.previousWhoisTimestamps[target.nickname] = now;
-                    }
                 }
                 break;
 
