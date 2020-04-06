@@ -247,12 +247,12 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
         return;
     }
 
-    immutable senderName = nameOf(event.sender);
+    immutable id = idOf(event.sender);
     immutable line = slice;
 
     try
     {
-        plugin.addNote(lowerNickname, senderName, event.channel, line);
+        plugin.addNote(lowerNickname, id, event.channel, line);
         privmsg(plugin.state, event.channel, event.sender.nickname, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
@@ -320,7 +320,7 @@ void onCommandReloadNotes(NotesPlugin plugin)
  +      A Voldemort `Note[]` array, where `Note` is a struct containing a note
  +      and metadata thereto.
  +/
-auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
+auto getNotes(NotesPlugin plugin, const string channel, const string id)
 {
     import lu.string : decode64;
     import std.datetime.systime : SysTime;
@@ -341,11 +341,11 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
             "Invalid channel notes list type for %s: `%s`"
             .format(channel, channelNotes.type));
 
-        if (const nickNotes = nickname in channelNotes.object)
+        if (const nickNotes = id in channelNotes.object)
         {
             assert((nickNotes.type == JSONType.array),
                 "Invalid notes list type for %s on %s: `%s`"
-                .format(nickname, channel, nickNotes.type));
+                .format(id, channel, nickNotes.type));
 
             noteArray.length = nickNotes.array.length;
 
@@ -381,8 +381,8 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
  +      nickname = Nickname whose notes to clear.
  +      channel = Channel for which the notes were stored.
  +/
-void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
-in (nickname.length, "Tried to clear notes for an empty nickname")
+void clearNotes(NotesPlugin plugin, const string id, const string channel)
+in (id.length, "Tried to clear notes for an empty id")
 //in (channel.length, "Tried to clear notes with an empty channel string")
 {
     import std.file : FileException;
@@ -392,15 +392,15 @@ in (nickname.length, "Tried to clear notes for an empty nickname")
 
     try
     {
-        if (nickname in plugin.notes[channel])
+        if (id in plugin.notes[channel])
         {
             assert((plugin.notes[channel].type == JSONType.object),
                 "Invalid channel notes list type for %s: `%s`"
                 .format(channel, plugin.notes[channel].type));
 
             logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-                Tint.info, nickname, Tint.log, channel.length ? channel : "(private messages)");
-            plugin.notes[channel].object.remove(nickname);
+                Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");
+            plugin.notes[channel].object.remove(id);
             plugin.pruneNotes();
         }
     }
@@ -455,14 +455,14 @@ void pruneNotes(NotesPlugin plugin)
  +
  +  Params:
  +      plugin = Current `NotesPlugin`.
- +      nickname = Nickname for whom the note is meant.
+ +      id = Identifier (nickname/account) for whom the note is meant.
  +      sender = Originating user who places the note.
  +      content = Channel for which we should save the note.
  +      line = Note text.
  +/
-void addNote(NotesPlugin plugin, const string nickname, const string sender,
+void addNote(NotesPlugin plugin, const string id, const string sender,
     const string channel, const string line)
-in (nickname.length, "Tried to add a note for an empty nickname")
+in (id.length, "Tried to add a note for an empty id")
 in (sender.length, "Tried to add a note from an empty sender")
 //in (channel.length, "Tried to add a note with an empty channel")
 in (line.length, "Tried to add an empty note")
@@ -496,13 +496,13 @@ in (line.length, "Tried to add an empty note")
         plugin.notes[channel].object = null;
     }
 
-    if (nickname !in plugin.notes[channel])
+    if (id !in plugin.notes[channel])
     {
-        plugin.notes[channel][nickname] = null;
-        plugin.notes[channel][nickname].array = null;
+        plugin.notes[channel][id] = null;
+        plugin.notes[channel][id].array = null;
     }
 
-    plugin.notes[channel][nickname].array ~= asJSON;
+    plugin.notes[channel][id].array ~= asJSON;
 }
 
 
