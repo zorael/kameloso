@@ -12,7 +12,7 @@ libs "phobos2" platform="posix-dmd"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>0.3.0"
-dependency "dialect" version="~>0.4.2"
+dependency "dialect" version="~>0.5.1"
 
 sourcePaths "include" "source"
 importPaths "include" "source"
@@ -37,7 +37,7 @@ versions \
     "WithWebtitlesPlugin"
 
 configuration "application" {
-    dependency "requests" version="~>1.0.14"
+    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.1.1"
 
     versions \
@@ -46,7 +46,7 @@ configuration "application" {
 }
 
 configuration "twitch" {
-    dependency "requests" version="~>1.0.14"
+    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "twitch"
 
@@ -58,7 +58,7 @@ configuration "twitch" {
 }
 
 configuration "dev" {
-    dependency "requests" version="~>1.0.14"
+    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "dev"
 
@@ -86,7 +86,7 @@ configuration "colours" {
 }
 
 configuration "web" {
-    dependency "requests" version="~>1.0.14"
+    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.1.1"
 
     versions \
@@ -94,7 +94,7 @@ configuration "web" {
 }
 
 configuration "full" {
-    dependency "requests" version="~>1.0.14"
+    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "twitch"
 
@@ -105,7 +105,7 @@ configuration "full" {
 }
 
 configuration "unittest" {
-    dependency "requests" version="~>1.0.14"
+    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.1.1"
     subConfiguration "dialect" "dev"
 
