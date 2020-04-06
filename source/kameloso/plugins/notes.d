@@ -72,11 +72,10 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     {
         void onSuccess(const IRCUser user)
         {
+            immutable id = idOf(user).toLowerCase(plugin.state.server.caseMapping);
+
             try
             {
-                immutable id = idOf(user)
-                    .toLowerCase(plugin.state.server.caseMapping);
-
                 const noteArray = plugin.getNotes(channel, id);
 
                 if (!noteArray.length) return;
@@ -132,7 +131,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
             catch (JSONException e)
             {
                 logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-                    Tint.log, user.nickname, Tint.error, event.channel, e.msg);
+                    Tint.log, id, Tint.error, channel.length ? channel : "<no channel>", e.msg);
 
                 if (e.msg == "JSONValue is not an object")
                 {
