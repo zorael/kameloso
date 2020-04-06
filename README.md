@@ -1,4 +1,4 @@
-# kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX and documentation](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.org/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600)](https://github.com/zorael/kameloso/issues/46) [![GitHub commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.7.0.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.7.0...master)
+# kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX and documentation](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600)](https://github.com/zorael/kameloso/issues/46) [![GitHub commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.7.0.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.7.0...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -42,8 +42,6 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
 ```
 
-Minimal test:
-
 ```bash
 $ dub run kameloso -- --channels "#d,#freenode"
 
@@ -52,18 +50,6 @@ $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 $ dub build
 $ ./kameloso --channels "#d,#freenode"
-```
-
-The default `master` development branch should ideally *never* be in a state where it cannot be compiled. However, this project and its depedencies are only guaranteed to be in sync at point of releases; during active development they may progress in a way that makes pre-release kameloso only build with pre-release dependencies. It's rare but occasionally happens, and new releases usually follow shortly after any such changes.
-
-If you get errors you can check out a release commit instead, alternatively make a local development clone of the dependencies.
-
-```bash
-$ git clone https://github.com/zorael/dialect.git
-$ git clone https://github.com/zorael/lu.git
-$ dub add-local dialect
-$ dub add-local lu
-[...]
 ```
 
 ---
@@ -291,7 +277,8 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
-* investigate replacing `TriggerRequest` with `Replay` to some extent
+* tweak `notes`
+* revamp `quotes`
 * more pairs of eyes
 
 # Built with
