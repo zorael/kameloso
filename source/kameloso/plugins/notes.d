@@ -227,16 +227,18 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
+    import dialect.common : toLowerCase;
     import lu.string : contains, nom;
     import std.algorithm.comparison : equal;
     import std.json : JSONException;
     import std.typecons : No, Yes;
-    import std.uni : asLowerCase, toLower;
+    import std.uni : asLowerCase;
 
     if (!event.content.contains!(Yes.decode)(" ")) return;
 
     string slice = event.content;
-    immutable lowerNickname = slice.nom!(Yes.decode)(" ").toLower;
+    immutable lowerNickname = slice.nom!(Yes.decode)(" ")
+        .toLowerCase(plugin.state.server.caseMapping);
 
     if (lowerNickname.equal(plugin.state.client.nickname.asLowerCase))
     {
