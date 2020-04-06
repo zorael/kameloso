@@ -18,7 +18,7 @@ private:
 
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
-import kameloso.common : logger, settings;
+import kameloso.common : Tint, logger, settings;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
@@ -142,19 +142,6 @@ void joinChannels(ConnectService service)
             return;
         }
 
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
         import kameloso.messaging : joinChannel = join;
         import lu.string : plurality;
         import std.algorithm.iteration : uniq;
@@ -166,7 +153,7 @@ void joinChannels(ConnectService service)
         auto guestlist = bot.guestChannels.sort.uniq;
         immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-        logger.logf("Joining %s%d%s %s ...", infotint, numChans, logtint,
+        logger.logf("Joining %s%d%s %s ...", Tint.info, numChans, Tint.log,
             numChans.plurality("channel", "channels"));
 
         // Join in two steps so home channels don't get shoved away by guest channels
@@ -265,20 +252,6 @@ void tryAuth(ConnectService service)
             break;
         }
 
-        string infotint, logtint, warningtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                warningtint = (cast(KamelosoLogger)logger).warningtint;
-            }
-        }
-
         service.authentication = Progress.started;
 
         with (IRCServer.Daemon)
@@ -292,7 +265,7 @@ void tryAuth(ConnectService service)
             if (client.nickname != client.origNickname)
             {
                 logger.warningf("Cannot auth when you have changed your nickname. " ~
-                    "(%s%s%s != %1$s%4$s%3$s)", logtint, client.nickname, warningtint, client.origNickname);
+                    "(%s%s%s != %1$s%4$s%3$s)", Tint.log, client.nickname, Tint.warning, client.origNickname);
 
                 service.authentication = Progress.finished;
                 return;
@@ -311,7 +284,7 @@ void tryAuth(ConnectService service)
 
             if (!bot.account.length)
             {
-                logger.logf("No account specified! Trying %s%s%s ...", infotint, client.origNickname, logtint);
+                logger.logf("No account specified! Trying %s%s%s ...", Tint.info, client.origNickname, Tint.log);
                 account = client.origNickname;
             }
 
@@ -469,7 +442,6 @@ version(TwitchSupport)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotdTwitch(ConnectService service)
 {
-    import kameloso.common : logger, settings;
     import lu.string : beginsWith;
 
     if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
@@ -478,22 +450,9 @@ void onEndOfMotdTwitch(ConnectService service)
 
     if (settings.prefix.beginsWith(".") || settings.prefix.beginsWith("/"))
     {
-        string logtint, warningtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                warningtint = (cast(KamelosoLogger)logger).warningtint;
-            }
-        }
-
         logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
             `on Twitch servers, as "." and "/" are reserved for Twitch's own commands.`,
-            logtint, settings.prefix, warningtint);
+            Tint.log, settings.prefix, Tint.warning);
     }
 }
 
@@ -650,20 +609,7 @@ void onInvite(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
-        logger.logf("Invited, but the %sjoinOnInvite%s setting is false so not joining.", infotint, logtint);
+        logger.logf("Invited, but the %sjoinOnInvite%s setting is false so not joining.", Tint.info, Tint.log);
         return;
     }
 

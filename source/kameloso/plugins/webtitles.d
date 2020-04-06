@@ -136,21 +136,8 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +/
 void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 {
-    import kameloso.common : logger, settings;
+    import kameloso.common : Tint, logger, settings;
     import lu.string : beginsWith, contains, nom;
-
-    string infotint;
-
-    version(Colours)
-    {
-        import kameloso.common : settings;
-
-        if (!settings.monochrome && !infotint.length)
-        {
-            import kameloso.logger : KamelosoLogger;
-            infotint = (cast(KamelosoLogger)logger).infotint;
-        }
-    }
 
     foreach (immutable i, url; urls)
     {
@@ -159,7 +146,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         // then strip that.
         url = url.nom!(Yes.inherit, Yes.decode)('#');
 
-        logger.log("Caught URL: ", infotint, url);
+        logger.log("Caught URL: ", Tint.info, url);
 
         TitleLookupRequest request;
         request.state = plugin.state;

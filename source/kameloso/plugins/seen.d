@@ -51,7 +51,7 @@ import dialect.defs;
 import kameloso.irccolours : ircBold, ircColourByHash;
 
 // `kameloso.common` for some globals.
-import kameloso.common : logger, settings;
+import kameloso.common : Tint, logger, settings;
 
 // `std.datetime.systime` for the `Clock`, to update times with.
 import std.datetime.systime : Clock;
@@ -781,32 +781,18 @@ long[string] loadSeen(const string filename)
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
 
-    string infotint, logtint, warningtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-            warningtint = (cast(KamelosoLogger)logger).warningtint;
-        }
-    }
-
     long[string] aa;
 
     scope(exit)
     {
         import lu.string : plurality;
         logger.logf("Currently %s%d%s %s seen.",
-            infotint, aa.length, logtint, aa.length.plurality("user", "users"));
+            Tint.info, aa.length, Tint.log, aa.length.plurality("user", "users"));
     }
 
     if (!filename.exists || !filename.isFile)
     {
-        logger.warningf("%s%s%s does not exist or is not a file", logtint, filename, warningtint);
+        logger.warningf("%s%s%s does not exist or is not a file", Tint.log, filename, Tint.warning);
         return aa;
     }
 
@@ -822,7 +808,7 @@ long[string] loadSeen(const string filename)
     }
     catch (JSONException e)
     {
-        logger.error("Could not load seen JSON from file: ", logtint, e.msg);
+        logger.error("Could not load seen JSON from file: ", Tint.log, e.msg);
     }
 
     // Rehash the AA, since we potentially added a *lot* of users.

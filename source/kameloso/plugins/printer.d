@@ -756,22 +756,8 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
-            string logtint, warningtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                    warningtint = (cast(KamelosoLogger)logger).warningtint;
-                }
-            }
-
             logger.warningf("Specified log directory (%s%s%s) is not a directory.",
-                logtint, logLocation, warningtint);
-
+                Tint.log, logLocation, Tint.warning);
             plugin.naggedAboutDir = true;
         }
 
@@ -783,19 +769,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(logLocation);
-
-        string infotint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-                infotint = (cast(KamelosoLogger)logger).infotint;
-            }
-        }
-
-        logger.logf("Created log directory: %s%s", infotint, logLocation);
+        logger.logf("Created log directory: %s%s", Tint.info, logLocation);
     }
 
     return true;
@@ -910,30 +884,27 @@ void onISUPPORT(PrinterPlugin plugin)
 
     with (plugin.state.server)
     {
+        import lu.conv : Enum;
         import std.string : capitalize;
         import std.uni : isLower;
 
         immutable networkName = network[0].isLower ? capitalize(network) : network;
-        string infotint, logtint, tintreset;
+
+        string tintreset;
 
         version(Colours)
         {
             if (!settings.monochrome)
             {
-                import kameloso.logger : KamelosoLogger;
                 import kameloso.terminal : TerminalReset, colour;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
                 enum tintresetColour = TerminalReset.all.colour.idup;
                 tintreset = tintresetColour;
             }
         }
 
-        import lu.conv : Enum;
         logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
-            infotint, networkName, logtint,
-            infotint, Enum!(IRCServer.Daemon).toString(daemon),
+            Tint.info, networkName, Tint.log,
+            Tint.info, Enum!(IRCServer.Daemon).toString(daemon),
             tintreset, daemonstring);
     }
 }

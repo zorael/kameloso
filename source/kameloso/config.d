@@ -119,25 +119,12 @@ void writeToDisk(const string filename, const string configurationText,
  +  Used in both `kameloso.getopt` and `kameloso.kameloso.kamelosoMain`,
  +  so place it here.
  +/
-void complainAboutIncompleteConfiguration() @system  // for __gshared settings
+void complainAboutIncompleteConfiguration()
 {
-    import kameloso.common : logger, settings;
+    import kameloso.common : Tint, logger;
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
-
-    logger.logf("...one or more %sadmins%s who get administrative control over the bot.", infotint, logtint);
-    logger.logf("...one or more %shomeChannels%s in which to operate.", infotint, logtint);
+    logger.logf("...one or more %sadmins%s who get administrative control over the bot.", Tint.info, Tint.log);
+    logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
 }
 
 

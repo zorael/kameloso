@@ -16,7 +16,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common : logger, settings;
+import kameloso.common : Tint, logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -193,24 +193,10 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            import kameloso.common : settings;
-
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
         logger.log("Could not apply this automode because we are not an operator in the channel:");
         logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
-            infotint, channel.name, logtint, missingModes, nickname);
+            Tint.info, channel.name, Tint.log, missingModes, nickname);
+
         return;
     }
 

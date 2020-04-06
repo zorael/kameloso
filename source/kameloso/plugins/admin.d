@@ -23,7 +23,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger, settings;
+import kameloso.common : Tint, logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -738,25 +738,12 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         {
             // Terminal report
 
-            string infotint, logtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    infotint = (cast(KamelosoLogger)logger).infotint;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
             with (AlterationResult)
             final switch (result)
             {
             case success:
                 logger.logf("Added %s%s%s as a %s user in %s.",
-                    infotint, specified, logtint, list, channel);
+                    Tint.info, specified, Tint.log, list, channel);
                 break;
 
             case noSuchAccount:
@@ -765,7 +752,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
             case alreadyInList:
                 logger.logf("%s%s%s is already a %s user in %s.",
-                    infotint, specified, logtint, list, channel);
+                    Tint.info, specified, Tint.log, list, channel);
                 break;
             }
         }
@@ -794,19 +781,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         else
         {
             // Terminal report
-
-            string logtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
-            logger.warning("Invalid nickname/account: ", logtint, specified);
+            logger.warning("Invalid nickname/account: ", Tint.log, specified);
         }
         return;
     }
@@ -948,19 +923,6 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     {
         // Terminal report
 
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
         with (AlterationResult)
         final switch (result)
         {
@@ -969,17 +931,17 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
         case noSuchAccount:
             logger.logf("No such account %s%s%s was found as %s user in %s.",
-                infotint, account, logtint, list, channel);
+                Tint.info, account, Tint.log, list, channel);
             break;
 
         case noSuchChannel:
             logger.logf("Account %s%s%s isn't a %s user in %s.",
-                infotint, account, logtint, list, channel);
+                Tint.info, account, Tint.log, list, channel);
             break;
 
         case success:
             logger.logf("Removed %s%s%s as a %s user in %s",
-                infotint, account, logtint, list, channel);
+                Tint.info, account, Tint.log, list, channel);
             break;
         }
     }

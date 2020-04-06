@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
-import kameloso.common : logger, settings;
+import kameloso.common : Tint, logger, settings;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -188,20 +188,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     }
     catch (JSONException e)
     {
-        string logtint, errortint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                errortint = (cast(KamelosoLogger)logger).errortint;
-            }
-        }
-
-        logger.errorf("Could not quote %s%s%s: %1$s%4$s", logtint, specified, errortint, e.msg);
+        logger.errorf("Could not quote %s%s%s: %1$s%4$s", Tint.log, specified, Tint.error, e.msg);
     }
 }
 
@@ -318,21 +305,8 @@ in (line.length, "Tried to add an empty quote")
     }
     catch (JSONException e)
     {
-        string logtint, errortint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                errortint = (cast(KamelosoLogger)logger).errortint;
-            }
-        }
-
         logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
-            logtint, specified, errortint, e.msg);
+            Tint.log, specified, Tint.error, e.msg);
     }
 }
 

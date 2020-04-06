@@ -112,7 +112,7 @@ void printHelp(GetoptResult results) @system
 void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, const string[] customSettings) @system
 {
-    import kameloso.common : logger, printVersionInfo, settings;
+    import kameloso.common : Tint, logger, printVersionInfo, settings;
     import kameloso.config : writeConfigurationFile;
     import kameloso.constants : KamelosoDefaultStrings;
     import kameloso.printing : printObjects;
@@ -120,7 +120,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     // --writeconfig was passed; write configuration to file and quit
 
-    string logtint, infotint, post;
+    string post;
 
     version(Colours)
     {
@@ -128,17 +128,14 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
         if (!settings.monochrome)
         {
-            import kameloso.logger : KamelosoLogger;
             import kameloso.terminal : colour;
 
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
             enum defaulttintColour = TerminalForeground.default_.colour.idup;
             post = defaulttintColour;
         }
     }
 
-    printVersionInfo(logtint, post);
+    printVersionInfo(Tint.log, post);
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
@@ -154,7 +151,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     instance.writeConfigurationFile(settings.configFile);
 
-    logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
+    logger.logf("Configuration written to %s%s\n", Tint.info, settings.configFile);
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length)
     {

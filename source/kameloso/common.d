@@ -1230,3 +1230,101 @@ unittest
     immutable isabot = "kamelosois a bot".stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
     assert((isabot == "is a bot"), isabot);
 }
+
+
+// Tint
+/++
+ +  Provides an easy way to access the `*tint` members of our `KamelosoLogger`
+ +  instance `logger`.
+ +
+ +  Currently you need visibility of three things to be able to tint text;
+ +  *   `kameloso.common.logger`, as an instance of `kameloso.logger.KamelosoLogger`.
+ +  *   `kameloso.logger.KamelosoLogger` itself, to cast `logger` to its subclass.
+ +  *   `kameloso.common.settings`, to know whether we want monochrome output or not.
+ +
+ +  By placing this here where there is visibility of `logger` and `settings`,
+ +  the caller need just import this.
+ +
+ +  Example:
+ +  ---
+ +  logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
+ +  ---
+ +
+ +  If `settings.monochrome` is true, `Tint.*` will just return an empty string.
+ +  The monochrome-ness can be overridden with `Tint.*(false)`.
+ +/
+struct Tint
+{
+    version(Colours)
+    {
+        // opDispatch
+        /++
+         +  Provides the string that corresponds to the tint of the
+         +  `std.experimental.logger.core.LogLevel` that was passed in string form
+         +  as the `tint` `opDispatch` template parameter.
+         +
+         +  This saves us the boilerplate of copy/pasting one function for each
+         +  `std.experimental.logger.core.LogLevel`.
+         +/
+        pragma(inline)
+        static string opDispatch(string tint)(const bool monochrome = settings.monochrome)
+        in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            static if (__traits(compiles, mixin("(cast(KamelosoLogger)logger)." ~ tint ~ "tint")))
+            {
+                return monochrome ? string.init : mixin("(cast(KamelosoLogger)logger)." ~ tint ~ "tint");
+            }
+            else
+            {
+                static assert(0, "Unknown tint `" ~ tint ~ "` passed to `Tint.opDispatch`");
+            }
+        }
+    }
+    else
+    {
+        /++
+         +  Returns an empty string, since we're not versioned `Colours`.
+         +/
+        pragma(inline)
+        static string log()
+        {
+            return string.init;
+        }
+
+        alias info = log;
+        alias warning = log;
+        alias error = log;
+        alias fatal = log;
+    }
+}
+
+///
+unittest
+{
+    import kameloso.logger : KamelosoLogger;
+
+    if (logger !is null)
+    {
+        KamelosoLogger kl = cast(KamelosoLogger)logger;
+        assert(kl);
+
+        version(Colours)
+        {
+            assert(Tint.log is kl.logtint);
+            assert(Tint.info is kl.infotint);
+            assert(Tint.warning is kl.warningtint);
+            assert(Tint.error is kl.errortint);
+            assert(Tint.fatal is kl.fataltint);
+        }
+        else
+        {
+            assert(Tint.log == string.init);
+            assert(Tint.info == string.init);
+            assert(Tint.warning == string.init);
+            assert(Tint.error == string.init);
+            assert(Tint.fatal == string.init);
+        }
+    }
+}
