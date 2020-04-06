@@ -11,7 +11,7 @@ dflags "-dip25" "-dip1008"
 libs "phobos2" platform="posix-dmd"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>0.2.2"
+dependency "lu" version="~>0.3.0"
 dependency "dialect" version="~>0.4.2"
 
 sourcePaths "include" "source"
