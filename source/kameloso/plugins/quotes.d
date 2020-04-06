@@ -88,7 +88,7 @@ string getRandomQuote(QuotesPlugin plugin, const string nickname)
     "$command [nickname]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    import dialect.common : isValidNickname, stripModesign;
+    import dialect.common : isValidNickname, stripModesign, toLowerCase;
     import lu.string : nom, stripped;
     import std.format : format;
     import std.json : JSONException;
@@ -136,7 +136,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         void onSuccess(const IRCUser replyUser)
         {
-            immutable endAccount = idOf(replyUser);
+            immutable endAccount = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 
             if (slice.length)
             {
