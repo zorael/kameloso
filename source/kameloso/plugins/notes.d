@@ -56,6 +56,18 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     import std.range : only;
     import std.uni : toLower;
 
+    version(TwitchSupport)
+    {
+        // On Twitch, prepend the nickname a message is aimed towards with a @
+        // Make it a string "@" so the alternative can be string.init (and not char.init)
+        immutable atSign = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
+            "@" : string.init;
+    }
+    else
+    {
+        enum atSign = string.init;
+    }
+
     foreach (immutable channel; only(event.channel, string.init))
     {
         try
@@ -73,12 +85,12 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (currTime - note.when).timeSince;
 
-                enum pattern = "%s! %s left note %s ago: %s";
+                enum pattern = "%s%s! %s left note %s ago: %s";
 
                 immutable message = settings.colouredOutgoing ?
-                    pattern.format(senderName.ircBold,
+                    pattern.format(atSign, senderName.ircBold,
                         note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
-                    pattern.format(senderName, note.sender, timestamp, note.line);
+                    pattern.format(atSign, senderName, note.sender, timestamp, note.line);
 
                 privmsg(plugin.state, channel, event.sender.nickname, message);
             }
@@ -86,11 +98,11 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
             {
                 import std.conv : text;
 
-                enum pattern = "%s! You have %s notes.";
+                enum pattern = "%s%s! You have %s notes.";
 
                 immutable message = settings.colouredOutgoing ?
-                    pattern.format(senderName.ircBold, noteArray.length.text.ircBold) :
-                    pattern.format(senderName, noteArray.length);
+                    pattern.format(atSign, senderName.ircBold, noteArray.length.text.ircBold) :
+                    pattern.format(atSign, senderName, noteArray.length);
 
                 privmsg(plugin.state, channel, event.sender.nickname, message);
 
