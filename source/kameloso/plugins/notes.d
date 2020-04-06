@@ -270,22 +270,22 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     if (!event.content.contains!(Yes.decode)(" ")) return;
 
     string slice = event.content;
-    immutable lowerNickname = slice.nom!(Yes.decode)(" ")
+    immutable target = slice.nom!(Yes.decode)(" ")
         .toLowerCase(plugin.state.server.caseMapping);
 
-    if (lowerNickname.equal(plugin.state.client.nickname.asLowerCase))
+    if (target.equal(plugin.state.client.nickname.asLowerCase))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
         return;
     }
 
-    immutable id = idOf(event.sender);
+    immutable sender = nameOf(event.sender);
     immutable line = slice;
 
     try
     {
-        plugin.addNote(lowerNickname, id, event.channel, line);
+        plugin.addNote(target, sender, event.channel, line);
         privmsg(plugin.state, event.channel, event.sender.nickname, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
