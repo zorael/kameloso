@@ -35,10 +35,7 @@ struct NotesSettings
 
 // onReplayEvent
 /++
- +  Sends notes queued for a user to a channel when they join or show activity.
- +  Private notes are also sent, when some exist.
- +
- +  Nothing is sent if no notes are stored.
+ +  Plays back notes on signs of activity.
  +/
 @(Chainable)
 @(IRCEvent.Type.JOIN)
@@ -48,6 +45,42 @@ struct NotesSettings
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
+{
+    if (event.channel !in plugin.notes) return;
+
+    return plugin.playbackNotes(event.sender, event.channel);
+}
+
+
+// onWhoReply
+/++
+ +  Plays backs notes upon replies of a WHO query.
+ +
+ +  These carry a sender, so it's possible we know the account without lookups.
+ +/
+@(IRCEvent.Type.RPL_WHOREPLY)
+@(ChannelPolicy.home)
+void onWhoReply(NotesPlugin plugin, const IRCEvent event)
+{
+    if (event.channel !in plugin.notes) return;
+
+    return plugin.playbackNotes(event.target, event.channel);
+}
+
+
+// playbackNotes
+/++
+ +  Sends notes queued for a user to a channel when they join or show activity.
+ +  Private notes are also sent, when some exist.
+ +
+ +  Nothing is sent if no notes are stored.
+ +
+ +  Params:
+ +      plugin = The current `NotesPlugin`.
+ +      givenUser = The `dialect.defs.IRCUser` for whom we want to replay notes.
+ +      givenChannel = Name of the channel we want the notes related to.
+ +/
+void playbackNotes(NotesPlugin plugin, const IRCUser givenUser, const string givenChannel)
 {
     import kameloso.common : timeSince;
     import dialect.common : toLowerCase;
@@ -68,7 +101,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         enum atSign = string.init;
     }
 
-    foreach (immutable channel; only(event.channel, string.init))
+    foreach (immutable channel; only(givenChannel, string.init))
     {
         void onSuccess(const IRCUser user)
         {
@@ -152,20 +185,20 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         {
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
-                return onSuccess(event.sender);
+                return onSuccess(givenUser);
             }
         }
 
-        if (event.sender.account.length)
+        if (givenUser.account.length)
         {
-            return onSuccess(event.sender);
+            return onSuccess(givenUser);
         }
 
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
-        enqueueAndWHOIS(event.sender.nickname);
+        enqueueAndWHOIS(givenUser.nickname);
 
-        // Break early and save us a loop and a lookup
+        // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channel.length) break;
     }
 }
