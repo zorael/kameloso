@@ -14,8 +14,8 @@ x:ddoxTool "scod"
 dependency "lu" version="~>0.3.0"
 dependency "dialect" version="~>0.5.1"
 
-sourcePaths "include" "source"
-importPaths "include" "source"
+sourcePaths "source"
+importPaths "source"
 
 versions \
     "WithPlugins" \
