@@ -187,6 +187,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
     if (event.channel !in plugin.notes) return;
 
+    mixin Replayer;
+
     foreach (immutable signed; event.content.splitter)
     {
         immutable nickname = signed.stripModesign(plugin.state.server);
@@ -201,7 +203,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
             channel = event.channel;
         }
 
-        plugin.onReplayEvent(fakeEvent);
+        // Use a replay to fill in known information about the user by use of Persistence
+        auto req = triggerRequest(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
+        queueToReplay(req);
     }
 }
 
