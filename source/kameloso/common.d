@@ -1271,10 +1271,14 @@ struct Tint
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
             import kameloso.logger : KamelosoLogger;
+            import std.traits : isSomeFunction;
 
-            static if (__traits(compiles, mixin("(cast(KamelosoLogger)logger)." ~ tint ~ "tint")))
+            enum tintfun = "(cast(KamelosoLogger)logger)." ~ tint ~ "tint";
+
+            static if (__traits(hasMember, cast(KamelosoLogger)logger, tint ~ "tint") &&
+                isSomeFunction!(mixin(tintfun)))
             {
-                return monochrome ? string.init : mixin("(cast(KamelosoLogger)logger)." ~ tint ~ "tint");
+                return monochrome ? string.init : mixin(tintfun);
             }
             else
             {
