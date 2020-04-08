@@ -1150,15 +1150,21 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
         }
     }
 
-    import std.range : only;
-
     Fiber[] expiredFibers;
 
-    foreach (type; only(event.type, IRCEvent.Type.ANY))
+    if (plugin.state.awaitingFibers[event.type].length)
     {
         handleAwaitingFibersImpl(plugin, event,
-            plugin.state.awaitingFibers[type], expiredFibers);
+            plugin.state.awaitingFibers[event.type], expiredFibers);
     }
+
+    if (plugin.state.awaitingFibers[IRCEvent.Type.ANY].length)
+    {
+        handleAwaitingFibersImpl(plugin, event,
+            plugin.state.awaitingFibers[IRCEvent.Type.ANY], expiredFibers);
+    }
+
+    if (!expiredFibers.length) return;
 
     // Clean up processed Fibers
     foreach (expiredFiber; expiredFibers)
