@@ -215,27 +215,26 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         bool retval = true;
 
-        static if (getSymbolsByUDA!(typeof(this), Settings).length)
+        top:
+        foreach (immutable i, const ref member; this.tupleof)
         {
-            top:
-            foreach (immutable i, const ref member; this.tupleof)
+            static if (isAnnotated!(this.tupleof[i], Settings) ||
+                (is(typeof(this.tupleof[i]) == struct) &&
+                isAnnotated!(typeof(this.tupleof[i]), Settings)))
             {
-                static if (isAnnotated!(this.tupleof[i], Settings))
+                static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
                 {
-                    static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
+                    foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
                     {
-                        foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
+                        static if (isAnnotated!(this.tupleof[i].tupleof[n], Enabler))
                         {
-                            static if (isAnnotated!(this.tupleof[i].tupleof[n], Enabler))
-                            {
-                                import std.traits : Unqual;
+                            import std.traits : Unqual;
 
-                                static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
-                                    '`' ~ Unqual!(typeof(this)).stringof ~ "` has a non-bool `Enabler`");
+                            static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
+                                '`' ~ Unqual!(typeof(this)).stringof ~ "` has a non-bool `Enabler`");
 
-                                retval = submember;
-                                break top;
-                            }
+                            retval = submember;
+                            break top;
                         }
                     }
                 }
@@ -1096,8 +1095,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (isAnnotated!(this.tupleof[i], Settings) &&
-                (is(typeof(this.tupleof[i]) == struct)))
+            static if (is(typeof(this.tupleof[i]) == struct) &&
+                (isAnnotated!(this.tupleof[i], Settings) ||
+                isAnnotated!(typeof(this.tupleof[i]), Settings)))
             {
                 alias T = typeof(symbol);
 
@@ -1159,20 +1159,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (isAnnotated!(this.tupleof[i], Settings))
+            static if (is(typeof(this.tupleof[i]) == struct) &&
+                (isAnnotated!(this.tupleof[i], Settings) ||
+                isAnnotated!(typeof(this.tupleof[i]), Settings)))
             {
-                static if (is(typeof(this.tupleof[i]) == struct))
-                {
-                    success = symbol.setMemberByName(setting, value);
-                    if (success) break;
-                }
-                else
-                {
-                    import std.format : format;
-                    static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
-                        .format(module_, typeof(this).stringof,
-                        __traits(identifier, this.tupleof[i])));
-                }
+                success = symbol.setMemberByName(setting, value);
+                if (success) break;
             }
         }
 
@@ -1191,22 +1183,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (isAnnotated!(this.tupleof[i], Settings))
+            static if (is(typeof(this.tupleof[i]) == struct) &&
+                (isAnnotated!(this.tupleof[i], Settings) ||
+                isAnnotated!(typeof(this.tupleof[i]), Settings)))
             {
-                static if (is(typeof(this.tupleof[i]) == struct))
-                {
-                    import std.typecons : No, Yes;
+                import std.typecons : No, Yes;
 
-                    printObject!(No.printAll)(symbol);
-                    break;
-                }
-                else
-                {
-                    import std.format : format;
-                    static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
-                        .format(module_, typeof(this).stringof,
-                        __traits(identifier, this.tupleof[i])));
-                }
+                printObject!(No.printAll)(symbol);
+                break;
             }
         }
     }
@@ -1236,22 +1220,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (isAnnotated!(this.tupleof[i], Settings))
+            static if (is(typeof(this.tupleof[i]) == struct) &&
+                (isAnnotated!(this.tupleof[i], Settings) ||
+                isAnnotated!(typeof(this.tupleof[i]), Settings)))
             {
-                static if (is(typeof(this.tupleof[i]) == struct))
-                {
-                    import lu.serialisation : serialise;
+                import lu.serialisation : serialise;
 
-                    sink.serialise(symbol);
-                    break;
-                }
-                else
-                {
-                    import std.format : format;
-                    static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
-                        .format(module_, typeof(this).stringof,
-                        __traits(identifier, this.tupleof[i])));
-                }
+                sink.serialise(symbol);
+                break;
+            }
+            else static if (isAnnotated!(this.tupleof[i], Settings))
+            {
+                import std.format : format;
+
+                // Warn here but nowhere else about this.
+                static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
+                    .format(module_, typeof(this).stringof,
+                    __traits(identifier, this.tupleof[i])));
             }
         }
     }
