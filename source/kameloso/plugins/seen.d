@@ -192,9 +192,7 @@ private:  // Module-level private.
     /++
      +  An instance of *settings* for the Seen plugin. We will define this
      +  later. The members of it will be saved to and loaded from the
-     +  configuration file, for use in our module. We need to annotate it
-     +  @`kameloso.plugins.common.Settings` to ensure it ends up there, and the
-     +  wizardry will pick it up.
+     +  configuration file, for use in our module.
      +/
     SeenSettings seenSettings;
 
@@ -282,12 +280,14 @@ private:
  +  configuration file. For this purpose we create a "Settings" struct housing
  +  our configurable bits, which we already made an instance of in `SeenPlugin`.
  +
+ +  If it's annotated with `kameloso.plugins.common.Settings`, the wizardry will
+ +  pick it up and each member of the struct will be given its own line in the
+ +  configuration file. Note that not all types are supported, such as
+ +  associative arrays or nested structs/classes.
+ +
  +  If the name ends with "Settings", that will be stripped from its section
  +  header in the file. Hence, this plugin's `SeenSettings` will get the header
  +  `[Seen]`.
- +
- +  Each member of the struct will be given its own line in there. Note that not
- +  all types are supported, such as associative arrays or nested structs/classes.
  +/
 @Settings struct SeenSettings
 {
