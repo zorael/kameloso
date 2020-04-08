@@ -33,18 +33,17 @@ import dialect.defs;
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    import std.algorithm.searching : canFind;
-    import std.range : only;
-
-    foreach (user; only(&event.sender, &event.target))
+    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
-        if (!user.nickname.length) continue;  // Ignore server events
+        import std.algorithm.searching : canFind;
+
+        if (!user.nickname.length) return;  // Ignore server events
 
         if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
             (user.nickname == service.state.client.nickname))
         {
             // On non-Twitch, ignore events originating from us
-            continue;
+            return;
         }
 
         version(TwitchSupport)
@@ -52,7 +51,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
                 (user.nickname == "jtv"))
             {
-                continue;
+                return;
             }
         }
 
@@ -62,7 +61,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
          +  the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const IRCEvent event, IRCUser* user)
+            const IRCEvent event, ref IRCUser user)
         {
             if (user.class_ == IRCUser.Class.admin)
             {
@@ -102,7 +101,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         if (foundNoStored)
         {
-            service.state.users[user.nickname] = *user;
+            service.state.users[user.nickname] = user;
             stored = user.nickname in service.state.users;
         }
 
@@ -139,7 +138,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
-        if (!foundNoStored) (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
+        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
 
         if (stored.class_ == IRCUser.Class.unset)
         {
@@ -198,13 +197,16 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 // User has no cached channel. Alternatively, user's cached channel
                 // is different from this one; class likely differs.
-                applyClassifiers(service, event, stored);
+                applyClassifiers(service, event, *stored);
             }
         }
 
         // Inject the modified user into the event
-        *user = *stored;
+        user = *stored;
     }
+
+    postprocessImpl(service, event, event.sender);
+    postprocessImpl(service, event, event.target);
 }
 
 
