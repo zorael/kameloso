@@ -2103,6 +2103,44 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 }
 
 
+// printEventDebugDetails
+/++
+ +  Print what we know about an event, from an error perspective.
+ +
+ +  Params:
+ +      event = The `dialect.defs.IRCEvent` in question.
+ +      raw = The raw string that `event` was parsed from, as read from the IRC server.
+ +/
+void printEventDebugDetails(const IRCEvent event, const string raw)
+in (((event != IRCEvent.init) || !raw.length),
+    "Tried to print event debug details but was passed an empty event and no raw string")
+{
+    if (event == IRCEvent.init)
+    {
+        logger.warningf(`Offending line: "%s%s%s"`, Tint.log, raw, Tint.warning);
+    }
+    else
+    {
+        import std.typecons : Flag, No, Yes;
+
+        // Offending line included in event, in raw
+        printObject!(Yes.printAll)(event);
+
+        if (event.sender != IRCUser.init)
+        {
+            logger.trace("sender:");
+            printObject(event.sender);
+        }
+
+        if (event.target != IRCUser.init)
+        {
+            logger.trace("target:");
+            printObject(event.target);
+        }
+    }
+}
+
+
 public:
 
 
@@ -2391,40 +2429,4 @@ void printSummary(const ref Kameloso instance)
     }
 
     logger.info("Total time connected: ", Tint.log, totalTime);
-}
-
-
-// printEventDebugDetails
-/++
- +  Print what we know about an event, from an error perspective.
- +
- +  Params:
- +      event = The `dialect.defs.IRCEvent` in question.
- +      raw = The raw string that `event` was parsed from, as read from the IRC server.
- +/
-private void printEventDebugDetails(const IRCEvent event, const string raw)
-{
-    if (event == IRCEvent.init)
-    {
-        logger.warningf(`Offending line: "%s%s%s"`, Tint.log, raw, Tint.warning);
-    }
-    else
-    {
-        import std.typecons : Flag, No, Yes;
-
-        // Offending line included in event, in raw
-        printObject!(Yes.printAll)(event);
-
-        if (event.sender != IRCUser.init)
-        {
-            logger.trace("sender:");
-            printObject(event.sender);
-        }
-
-        if (event.target != IRCUser.init)
-        {
-            logger.trace("target:");
-            printObject(event.target);
-        }
-    }
 }
