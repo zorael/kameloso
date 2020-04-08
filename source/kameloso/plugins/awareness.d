@@ -8,7 +8,7 @@
  +  import kameloso.plugins.common;
  +  import kameloso.plugins.awareness;
  +
- +  struct FooSettings { /* ... */ }
+ +  @Settings struct FooSettings { /* ... */ }
  +
  +  @(IRCEvent.Type.CHAN)
  +  @(ChannelPolicy.home)
@@ -24,7 +24,7 @@
  +
  +  final class FooPlugin : IRCPlugin
  +  {
- +      @Settings FooSettings fooSettings;
+ +      FooSettings fooSettings;
  +
  +      // ...
  +

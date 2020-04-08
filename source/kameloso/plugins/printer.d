@@ -33,7 +33,7 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 /++
  +  All Printer plugin options gathered in a struct.
  +/
-struct PrinterSettings
+@Settings struct PrinterSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -2832,7 +2832,7 @@ final class PrinterPlugin : IRCPlugin
 {
 private:
     /// All Printer plugin options gathered.
-    @Settings PrinterSettings printerSettings;
+    PrinterSettings printerSettings;
 
     /// How many seconds before a request to squelch list events times out.
     enum squelchTimeout = 10;  // seconds

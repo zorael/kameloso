@@ -23,7 +23,7 @@ import dialect.defs;
 /++
  +  Settings for the Help plugin, to toggle it enabled or disabled.
  +/
-struct HelpSettings
+@Settings struct HelpSettings
 {
     /// Whether or not the Help plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -282,7 +282,7 @@ final class HelpPlugin : IRCPlugin
 {
 private:
     /// All Help plugin settings gathered.
-    @Settings HelpSettings helpSettings;
+    HelpSettings helpSettings;
 
     mixin IRCPluginImpl;
 }

@@ -27,7 +27,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  Settings for a chatbot, to toggle its features.
  +/
-struct ChatbotSettings
+@Settings struct ChatbotSettings
 {
     /// Whether or not the Chatbot plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -246,7 +246,7 @@ final class ChatbotPlugin : IRCPlugin
 {
 private:
     /// All Chatbot plugin settings gathered.
-    @Settings ChatbotSettings chatbotSettings;
+    ChatbotSettings chatbotSettings;
 
     mixin IRCPluginImpl;
 }

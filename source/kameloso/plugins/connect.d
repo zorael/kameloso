@@ -30,7 +30,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  Settings for a `ConnectService`.
  +/
-struct ConnectSettings
+@Settings struct ConnectSettings
 {
     import lu.uda : CannotContainComments, Separator;
 
@@ -1139,7 +1139,7 @@ final class ConnectService : IRCPlugin
 {
 private:
     /// All Connect service settings gathered.
-    @Settings ConnectSettings connectSettings;
+    ConnectSettings connectSettings;
 
     /++
      +  How many seconds we should wait before we tire of waiting for authentication

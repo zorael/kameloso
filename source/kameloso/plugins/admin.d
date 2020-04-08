@@ -36,7 +36,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  All Admin plugin settings, gathered in a struct.
  +/
-struct AdminSettings
+@Settings struct AdminSettings
 {
     import lu.uda : Unserialisable;
 
@@ -1815,7 +1815,7 @@ final class AdminPlugin : IRCPlugin
 {
 private:
     /// All Admin options gathered.
-    @Settings AdminSettings adminSettings;
+    AdminSettings adminSettings;
 
     debug
     version(AdminAssertGeneration)

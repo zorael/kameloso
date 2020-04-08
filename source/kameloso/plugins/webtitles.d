@@ -32,7 +32,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  All Webtitles settings, gathered in a struct.
  +/
-struct WebtitlesSettings
+@Settings struct WebtitlesSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -789,7 +789,7 @@ final class WebtitlesPlugin : IRCPlugin
 {
 private:
     /// All Webtitles options gathered.
-    @Settings WebtitlesSettings webtitlesSettings;
+    WebtitlesSettings webtitlesSettings;
 
     /// Cache of recently looked-up web titles.
     shared TitleLookupResults[string] cache;

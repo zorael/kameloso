@@ -31,7 +31,7 @@ import std.typecons : Flag, No, Yes;
 
 
 /// All Twitch bot plugin runtime settings.
-struct TwitchBotSettings
+@Settings struct TwitchBotSettings
 {
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
@@ -1741,7 +1741,7 @@ private:
     }
 
     /// All Twitch Bot plugin settings.
-    @Settings TwitchBotSettings twitchBotSettings;
+    TwitchBotSettings twitchBotSettings;
 
     /// Array of active bot channels' state.
     Channel[string] activeChannels;

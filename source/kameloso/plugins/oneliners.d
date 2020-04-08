@@ -21,7 +21,7 @@ import dialect.defs;
 
 
 /// All Oneliner plugin runime settings.
-struct OnelinersSettings
+@Settings struct OnelinersSettings
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
@@ -283,7 +283,7 @@ public:
 final class OnelinersPlugin : IRCPlugin
 {
     /// All Oneliners plugin settings.
-    @Settings OnelinersSettings onelinersSettings;
+    OnelinersSettings onelinersSettings;
 
     /// Associative array of oneliners; oneliners array keyed by channel.
     string[string][string] onelinersByChannel;

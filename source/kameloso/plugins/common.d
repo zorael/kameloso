@@ -570,7 +570,7 @@ version(unittest)
 {
     // These need to be module-level.
 
-    private struct MyPluginSettings
+    @Settings private struct MyPluginSettings
     {
         @Enabler bool enabled;
 
@@ -583,7 +583,7 @@ version(unittest)
 
     private final class MyPlugin : IRCPlugin
     {
-        @Settings MyPluginSettings myPluginSettings;
+        MyPluginSettings myPluginSettings;
 
         string name() @property const
         {

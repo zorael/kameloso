@@ -45,7 +45,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  All sed-replace plugin settings, gathered in a struct.
  +/
-struct SedReplaceSettings
+@Settings struct SedReplaceSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -450,7 +450,7 @@ final class SedReplacePlugin : IRCPlugin
 {
 private:
     /// All sed-replace options gathered.
-    @Settings SedReplaceSettings sedReplaceSettings;
+    SedReplaceSettings sedReplaceSettings;
 
     /// Lifetime of a `Line` in `SedReplacePlugin.prevlines`, in seconds.
     enum replaceTimeoutSeconds = 3600;

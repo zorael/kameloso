@@ -42,7 +42,7 @@ import std.stdio : File;
 /++
  +  All settings for a `PipelinePlugin`, aggregated.
  +/
-struct PipelineSettings
+@Settings struct PipelineSettings
 {
     /// Whether or not the Pipeline plugin should do anything at all.
     @Enabler bool enabled = true;
@@ -425,7 +425,7 @@ final class PipelinePlugin : IRCPlugin
 {
 private:
     /// All Pipeline settings gathered.
-    @Settings PipelineSettings pipelineSettings;
+    PipelineSettings pipelineSettings;
 
     /// Thread ID of the thread reading the named pipe.
     Tid fifoThread;

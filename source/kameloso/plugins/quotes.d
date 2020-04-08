@@ -30,7 +30,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  All settings for a Quotes plugin, gathered in a struct.
  +/
-struct QuotesSettings
+@Settings struct QuotesSettings
 {
     /// Whether or not the Quotes plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -412,7 +412,7 @@ final class QuotesPlugin : IRCPlugin
 {
 private:
     /// All Quotes plugin settings gathered.
-    @Settings QuotesSettings quotesSettings;
+    QuotesSettings quotesSettings;
 
     /++
      +  The in-memory JSON storage of all user quotes.

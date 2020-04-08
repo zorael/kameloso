@@ -196,7 +196,7 @@ private:  // Module-level private.
      +  @`kameloso.plugins.common.Settings` to ensure it ends up there, and the
      +  wizardry will pick it up.
      +/
-    @Settings SeenSettings seenSettings;
+    SeenSettings seenSettings;
 
 
     // seenUsers
@@ -289,7 +289,7 @@ private:
  +  Each member of the struct will be given its own line in there. Note that not
  +  all types are supported, such as associative arrays or nested structs/classes.
  +/
-struct SeenSettings
+@Settings struct SeenSettings
 {
     /++
      +  Toggles whether or not the plugin should react to events at all.

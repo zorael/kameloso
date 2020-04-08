@@ -26,7 +26,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  Notes plugin settings.
  +/
-struct NotesSettings
+@Settings struct NotesSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -594,7 +594,7 @@ private:
     import lu.json : JSONStorage;
 
     /// All Notes plugin settings gathered.
-    @Settings NotesSettings notesSettings;
+    NotesSettings notesSettings;
 
     // notes
     /++

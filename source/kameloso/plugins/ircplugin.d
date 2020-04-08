@@ -1131,12 +1131,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  Example:
      +  ---
-     +  struct FooSettings
+     +  @Settings struct FooSettings
      +  {
      +      int bar;
      +  }
      +
-     +  @Settings FooSettings settings;
+     +  FooSettings settings;
      +
      +  setSettingByName("bar", 42);
      +  assert(settings.bar == 42);
@@ -1527,14 +1527,14 @@ version(unittest)
 {
     // These need to be module-level.
 
-    private struct TestSettings
+    @Settings private struct TestSettings
     {
         @Enabler bool enuubled = false;
     }
 
     private final class TestPlugin : IRCPlugin
     {
-        @Settings TestSettings testSettings;
+        TestSettings testSettings;
 
         mixin IRCPluginImpl;
     }
