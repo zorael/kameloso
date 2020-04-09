@@ -15,11 +15,11 @@ install_deps() {
     sudo apt update
     sudo apt install -y dmd-compiler dub
 
-    git clone https://github.com/zorael/lu.git
-    git clone https://github.com/zorael/dialect.git
+    #git clone https://github.com/zorael/lu.git
+    #git clone https://github.com/zorael/dialect.git
 
-    dub add-local lu
-    dub add-local dialect
+    #dub add-local lu
+    #dub add-local dialect
 }
 
 build() {
