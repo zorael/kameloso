@@ -940,7 +940,7 @@ Next mainLoop(ref Kameloso instance)
 
         if (bufferHasMessages)
         {
-            sendMessages(instance, readWasShortened);
+            sendLines(instance, readWasShortened);
         }
     }
 
@@ -948,7 +948,7 @@ Next mainLoop(ref Kameloso instance)
 }
 
 
-// sendMessages
+// sendLines
 /++
  +  Sends strings to the server from the message buffers.
  +
@@ -959,7 +959,7 @@ Next mainLoop(ref Kameloso instance)
  +      readWasShortened = Flag bool of whether or not the read timeout was
  +          lowered to allow us to send a message earlier.
  +/
-void sendMessages(ref Kameloso instance, out bool readWasShortened)
+void sendLines(ref Kameloso instance, out bool readWasShortened)
 {
     import kameloso.constants : Timeout;
     import core.time : msecs, seconds;
