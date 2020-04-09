@@ -9,7 +9,9 @@ import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
 import std.format : format;
 
 
-/// Meta-information about the program.
+/++
+ +  Meta-information about the program.
+ +/
 enum KamelosoInfo
 {
     version_ = "%d.%d.%d%s"
@@ -35,7 +37,7 @@ enum KamelosoDefaultStrings
     /// The default GEOC/"real name" string.
     realName = "kameloso IRC bot",
     /// The default quit reason, when the bot exits normally (not through Ctrl+C).
-    quitReason = "kameloso IRC bot @ https://github.com/zorael/kameloso",
+    quitReason = "kameloso IRC bot @ " ~ KamelosoInfo.source,
     /// When a nickname is taken, append this to get a new name.
     altNickSign = "^",
 }
@@ -69,21 +71,70 @@ enum ConnectionDefaultFloats : double
     delayIncrementMultiplier = 1.5,
 }
 
-/// Buffer sizes in bytes.
+/++
+ +  Buffer sizes in bytes.
+ +/
 enum BufferSize
 {
+    /++
+     +  How long a Webtitles title lookup lasts before it is considered to
+     +  have expired, and should be looked up anew.
+     +/
     titleLookup = 8192,
+
+    /++
+     +  The maximum number of queued outgoing lines to buffer. Anything above
+     +  this will crash the program with a buffer overrun. It can be arbitrarily big.
+     +/
     outbuffer = 512,
+
+    /++
+     +  The maximum number of queued priority lines to buffer. These are rare.
+     +/
     priorityBuffer = 64,
 }
 
-/// Various timeouts in seconds.
+/++
+ +  Various timeouts in seconds.
+ +/
 enum Timeout
 {
+    /++
+     +  The amount of seconds to wait before retrying after a failed connection attempt.
+     +/
     retry = 10,
+
+    /++
+     +  How long to wait before allowing to re-issue a WHOIS query for a user.
+     +
+     +  This is merely to stop us from spamming queries for the same person
+     +  without hysteresis.
+     +/
     whoisRetry = 300,
+
+    /++
+     +  How long before a cached Webtitles title lookup expires and its address
+     +  has to be looked up again.
+     +
+     +  FIXME: move to webtitles
+     +/
     titleCache = 600,
+
+    /++
+     +  How long to wait before calling plugins' `periodical` for the first time.
+     +
+     +  Since it is meant for maintenance and cleanup tasks we can hold on a while
+     +  before calling it the first time.
+     +/
     initialPeriodical = 3600,
+
+    /++
+     +  How long to wait after encountering an error when reading from the server,
+     +  before trying anew.
+     +
+     +  Not having a small delay could cause it to spam the screen with errors
+     +  as fast as it can.
+     +/
     readErrorGracePeriod = 1,
 }
 
