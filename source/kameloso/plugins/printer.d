@@ -2534,22 +2534,22 @@ unittest
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
-        assert((sink.data == "高所恐怖症 \033[35mLUL\033[39m なにぬねの " ~
-            "\033[35mLUL\033[39m \033[36m:)\033[39m"), sink.data);
+        assert((sink.data == "高所恐怖症 \033[34mLUL\033[39m なにぬねの " ~
+            "\033[34mLUL\033[39m \033[91m:)\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
-        assert((sink.data == "Moody the god \033[37mpownyFine\033[39m \033[94mpownyL\033[39m"), sink.data);
+        assert((sink.data == "Moody the god \033[37mpownyFine\033[39m \033[96mpownyL\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
-        assert((sink.data == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink.data);
+        assert((sink.data == "whoever plays nintendo switch whisper me \033[93mKappa\033[39m"), sink.data);
     }
     {
         sink.clear();

@@ -1102,15 +1102,15 @@ unittest
 
     {
         immutable hash = colourByHash("kameloso", false);
-        assert((hash == FG.lightgreen), Enum!FG.toString(hash));
+        assert((hash == FG.lightyellow), Enum!FG.toString(hash));
     }
     {
         immutable hash = colourByHash("kameloso^", false);
-        assert((hash == FG.lightcyan), Enum!FG.toString(hash));
+        assert((hash == FG.green), Enum!FG.toString(hash));
     }
     {
         immutable hash = colourByHash("zorael", false);
-        assert((hash == FG.cyan), Enum!FG.toString(hash));
+        assert((hash == FG.lightgrey), Enum!FG.toString(hash));
     }
     {
         immutable hash = colourByHash("NO", false);
