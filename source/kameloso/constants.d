@@ -113,14 +113,6 @@ enum Timeout
     whoisRetry = 300,
 
     /++
-     +  How long before a cached Webtitles title lookup expires and its address
-     +  has to be looked up again.
-     +
-     +  FIXME: move to webtitles
-     +/
-    titleCache = 600,
-
-    /++
      +  How long to wait before calling plugins' `periodical` for the first time.
      +
      +  Since it is meant for maintenance and cleanup tasks we can hold on a while
