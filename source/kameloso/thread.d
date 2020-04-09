@@ -146,6 +146,9 @@ struct ThreadMessage
 
     /// Concurrency message asking the main thread to print a connection summary.
     struct WantLiveSummary {}
+
+    /// Concurrency message askin the main thread to set the `abort` flag.
+    struct Abort {}
 }
 
 
