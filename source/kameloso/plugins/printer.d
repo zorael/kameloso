@@ -1413,8 +1413,8 @@ if (isOutputRange!(Sink, char[]))
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
 
-    alias Bright = DefaultColours.EventPrintingBright;
-    alias Dark = DefaultColours.EventPrintingDark;
+    alias Bright = EventPrintingBright;
+    alias Dark = EventPrintingDark;
     alias Timestamp = DefaultColours.TimestampColour;
 
     immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
