@@ -79,7 +79,7 @@ do
  +  `kameloso.common.settings`, so they know to use monochrome output or not.
  +  It is a problem that needs solving.
  +/
-__gshared CoreSettings settings;
+CoreSettings settings;
 
 
 // CoreSettings
@@ -268,7 +268,7 @@ struct Kameloso
      +  When this is set by signal handlers, the program should exit. Other
      +  parts of the program will be monitoring it.
      +/
-    __gshared bool* abort;
+    bool* abort;
 
     /++
      +  When this is set, the main loop should print a connection summary upon

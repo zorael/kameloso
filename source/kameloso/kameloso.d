@@ -51,7 +51,7 @@ version(ProfileGC)
  +  parts of the program will be monitoring it, to take the cue and abort when
  +  it is set.
  +/
-public __gshared bool abort;
+public bool abort;
 
 
 // signalHandler
