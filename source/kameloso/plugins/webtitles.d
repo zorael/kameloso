@@ -828,6 +828,12 @@ private:
     /// Cache of recently looked-up web titles.
     shared TitleLookupResults[string] cache;
 
+    /++
+     +  How long before a cached title lookup expires and its address has to be
+     +  looked up anew.
+     +/
+    enum expireSeconds = 600;
+
     mixin IRCPluginImpl;
 
     // onEvent
