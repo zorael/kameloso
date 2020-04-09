@@ -1067,32 +1067,26 @@ TerminalForeground colourByHash(const string word, const bool bright) pure @nogc
 in (word.length, "Tried to colour by hash but no word was given")
 do
 {
-    import kameloso.constants : DefaultColours;
     import std.algorithm.searching : countUntil;
     import std.traits : EnumMembers;
 
-    alias Bright = DefaultColours.EventPrintingBright;
-    alias Dark = DefaultColours.EventPrintingDark;
     alias foregroundMembers = EnumMembers!TerminalForeground;
-
     static immutable TerminalForeground[foregroundMembers.length] fg = [ foregroundMembers ];
 
-    enum chancodeBright = fg[].countUntil(cast(int)Bright.channel);
-    enum chancodeDark = fg[].countUntil(cast(int)Dark.channel);
+    enum whiteIndex = fg[].countUntil(cast(int)TerminalForeground.white);
+    enum blackIndex = fg[].countUntil(cast(int)TerminalForeground.black);
 
-    // Range from 2 to 15, excluding black and white and manually changing
-    // the code for bright/dark channel to black/white
-    size_t colourIndex = (hashOf(word) % 14) + 2;
+    // There are 17 colours, [0..16] inclusive, but we don't want the first (index 0, default_).
+    // Start with 1 to skip it, then add modulo 15 to get an index between [1..15] inclusive
+    // which excludes index 16 white.
+    // If dark and colour is black 1, set to white. otherwise let white be excluded
+    // (because the terminal is bright)
 
-    if (bright)
+    size_t colourIndex = 1 + hashOf(word) % 15;
+
+    if (!bright)
     {
-        // Index is bright channel code, set to black
-        if (colourIndex == chancodeBright) colourIndex = 1;  // black
-    }
-    else
-    {
-        // Index is dark channel code, set to white
-        if (colourIndex == chancodeDark) colourIndex = 16; // white
+        if (colourIndex == blackIndex) colourIndex = whiteIndex;
     }
 
     return fg[colourIndex];
