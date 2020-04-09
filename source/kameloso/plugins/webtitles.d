@@ -159,8 +159,17 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         {
             logger.log("Found cached lookup.");
             request.results = *cachedResult;
-            reportTitle(request, settings.colouredOutgoing);
-            if (plugin.webtitlesSettings.redditLookup) reportReddit(request);
+
+            if (request.results.youtubeTitle.length)
+            {
+                reportDispatch(&reportYouTubeTitle, request,
+                    plugin.webtitlesSettings, settings.colouredOutgoing);
+            }
+            else
+            {
+                reportDispatch(&reportTitle, request,
+                    plugin.webtitlesSettings, settings.colouredOutgoing);
+            }
             continue;
         }
 
@@ -219,24 +228,6 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
         immutable now = Clock.currTime.toUnixTime;
 
-        /// Calls the passed report function in the correct order with regards to Reddit-reporting.
-        void reportDispatch(alias reportImpl)()
-        {
-            // If simultaneous, check Reddit first and report later
-            if (webtitlesSettings.simultaneousReddit)
-            {
-                if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
-                reportImpl(request, colouredOutgoing);
-            }
-            else
-            {
-                reportImpl(request, colouredOutgoing);
-                if (webtitlesSettings.redditLookup) request.results.redditURL = lookupReddit(request.url);
-            }
-
-            if (webtitlesSettings.redditLookup) reportReddit(request);
-        }
-
         if (request.url.contains("://i.imgur.com/"))
         {
             // imgur direct links naturally have no titles, but the normal pages do.
@@ -270,7 +261,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                     request.results.youtubeTitle = decodeTitle(info["title"].str);
                     request.results.youtubeAuthor = info["author_name"].str;
 
-                    reportDispatch!reportYouTubeTitle();
+                    reportDispatch(&reportYouTubeTitle, request,
+                        webtitlesSettings, colouredOutgoing);
 
                     request.results.when = now;
                     cache[request.url] = cast(shared)request.results;
@@ -298,7 +290,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         void lookupAndReport()
         {
             request.results = lookupTitle(request.url);
-            reportDispatch!reportTitle();
+            reportDispatch(&reportTitle, request, webtitlesSettings, colouredOutgoing);
             request.results.when = now;
             cache[request.url] = cast(shared)request.results;
         }
@@ -333,6 +325,48 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
     {
         request.state.askToError("Webtitles worker exception: " ~ e.msg);
     }
+}
+
+
+// reportDispatch
+/++
+ +  Calls the passed report function in the correct order with regards to Reddit-reporting.
+ +
+ +  Params:
+ +      reportFun = Actual reporting function to call.
+ +      request = The `TitleLookupRequest` that embodies this lookup, including
+ +          its looked-up results.
+ +      webtitlesSettings = A copy of the plugin's `WebtitlesPlugin.webtitlesSettings`
+ +          so we know whether to and in what manner to do Reddit lookups.
+ +      colouredOutgoing = Whether or not to include mIRC colours in the IRC output.
+ +/
+void reportDispatch(void function(TitleLookupRequest, const bool) reportFun,
+    TitleLookupRequest request, const WebtitlesSettings webtitlesSettings,
+    const bool colouredOutgoing)
+{
+    // If simultaneous, check Reddit first and report later
+    if (webtitlesSettings.simultaneousReddit)
+    {
+        if (webtitlesSettings.redditLookup && !request.results.redditURL.length)
+        {
+            // This may be a cached entry, only look up if it isn't already known
+            request.results.redditURL = lookupReddit(request.url);
+        }
+
+        reportFun(request, colouredOutgoing);
+    }
+    else
+    {
+        reportFun(request, colouredOutgoing);
+
+        if (webtitlesSettings.redditLookup && !request.results.redditURL.length)
+        {
+            // Ditto
+            request.results.redditURL = lookupReddit(request.url);
+        }
+    }
+
+    if (webtitlesSettings.redditLookup) reportReddit(request);
 }
 
 
