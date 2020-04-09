@@ -78,13 +78,13 @@ version (Windows)
     import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
 
     /// Original codepage at program start.
-    __gshared uint originalCP;
+    private __gshared uint originalCP;
 
     /// Original output codepage at program start.
-    __gshared uint originalOutputCP;
+    private __gshared uint originalOutputCP;
 
     /// Original console mode at program start.
-    __gshared uint originalConsoleMode;
+    private __gshared uint originalConsoleMode;
 
     /++
      +  Sets the console codepage to display UTF-8 characters (åäö, 高所恐怖症, ...)
