@@ -2404,8 +2404,8 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     import lu.string : contains;
     import std.array : Appender;
 
-    alias DefaultBright = DefaultColours.EventPrintingBright;
-    alias DefaultDark = DefaultColours.EventPrintingDark;
+    alias Bright = EventPrintingBright;
+    alias Dark = EventPrintingDark;
 
     if (!event.emotes.length) return;
 
@@ -2413,7 +2413,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     sink.reserve(event.content.length + 60);  // mostly +10
 
     immutable TerminalForeground highlight = settings.brightTerminal ?
-        DefaultBright.highlight : DefaultDark.highlight;
+        Bright.highlight : Dark.highlight;
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -2430,7 +2430,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
         {
             // Emote but mixed text and emotes OR we're doing colorful emotes
             immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
-                DefaultBright.emote : DefaultDark.emote;
+                Bright.emote : Dark.emote;
             event.content.highlightEmotesImpl(sink, event.emotes, highlight, emoteFgBase, colourful);
         }
         break;
@@ -2447,7 +2447,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
         {
             // Normal content, normal text, normal emotes
             immutable TerminalForeground contentFgBase = settings.brightTerminal ?
-                DefaultBright.content : DefaultDark.content;
+                Bright.content : Dark.content;
             event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase, colourful);
         }
         break;
