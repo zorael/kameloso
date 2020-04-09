@@ -2151,6 +2151,42 @@ in (((event != IRCEvent.init) || !raw.length),
 }
 
 
+// printSummary
+/++
+ +  Prints a summary of the connection(s) made and events parsed this execution.
+ +
+ +  Params:
+ +      instance = Reference to the current `kameloso.common.Kameloso`.
+ +/
+void printSummary(const ref Kameloso instance)
+{
+    import std.stdio : writefln;
+    import core.time : Duration;
+
+    Duration totalTime;
+
+    logger.info("-- Connection summary --");
+
+    foreach (immutable i, const entry; instance.connectionHistory)
+    {
+        import std.datetime.systime : SysTime;
+        import core.time : msecs;
+
+        auto start = SysTime.fromUnixTime(entry.startTime);
+        start.fracSecs = 0.msecs;
+        auto stop = SysTime.fromUnixTime(entry.stopTime);
+        stop.fracSecs = 0.msecs;
+        immutable duration = (stop - start);
+        totalTime += duration;
+
+        writefln("%2d: %s, %d events parsed (%s to %s)",
+            i+1, duration, entry.numEvents, start, stop);
+    }
+
+    logger.info("Total time connected: ", Tint.log, totalTime);
+}
+
+
 public:
 
 
@@ -2403,40 +2439,4 @@ int initBot(string[] args)
     }
 
     return attempt.retval;
-}
-
-
-// printSummary
-/++
- +  Prints a summary of the connection(s) made and events parsed this execution.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +/
-void printSummary(const ref Kameloso instance)
-{
-    import std.stdio : writefln;
-    import core.time : Duration;
-
-    Duration totalTime;
-
-    logger.info("-- Connection summary --");
-
-    foreach (immutable i, const entry; instance.connectionHistory)
-    {
-        import std.datetime.systime : SysTime;
-        import core.time : msecs;
-
-        auto start = SysTime.fromUnixTime(entry.startTime);
-        start.fracSecs = 0.msecs;
-        auto stop = SysTime.fromUnixTime(entry.stopTime);
-        stop.fracSecs = 0.msecs;
-        immutable duration = (stop - start);
-        totalTime += duration;
-
-        writefln("%2d: %s, %d events parsed (%s to %s)",
-            i+1, duration, entry.numEvents, start, stop);
-    }
-
-    logger.info("Total time connected: ", Tint.log, totalTime);
 }
