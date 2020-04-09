@@ -996,6 +996,30 @@ unittest
 // colourByHash
 /++
  +  Hashes the passed string and picks a `TerminalForeground` colour by modulo.
+ +  Overload that takes an array of `TerminalForeground`s, to pick between.
+ +
+ +  Params:
+ +      word = String to hash and base colour on.
+ +      fgArray = Array of `TerminalForeground`s to pick a colour from.
+ +
+ +  Returns:
+ +      A `TerminalForeground` based on the passed string, picked from the
+ +          passed `fgArray` array.
+ +/
+TerminalForeground colourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
+in (word.length, "Tried to colour by hash but no word was given")
+in (fgArray.length, "Tried to colour by hash but with an empty colour array")
+{
+    size_t colourIndex = hashOf(word) % fgArray.length;
+    return fgArray[colourIndex];
+}
+
+
+// colourByHash
+/++
+ +  Hashes the passed string and picks a `TerminalForeground` colour by modulo.
+ +  Overload that picks any colour, taking care not to pick black or white based on
+ +  the value of the passed `bright` bool (which signifies a bright terminal background).
  +
  +  Example:
  +  ---
