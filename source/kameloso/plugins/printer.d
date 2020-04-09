@@ -110,6 +110,54 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 }
 
 
+version(Colours)
+{
+    alias TF = TerminalForeground;
+
+    /++
+     +  Default colours for printing events on a dark terminal background.
+     +/
+    enum EventPrintingDark : TerminalForeground
+    {
+        type      = TF.lightblue,
+        error     = TF.lightred,
+        sender    = TF.lightgreen,
+        target    = TF.cyan,
+        channel   = TF.yellow,
+        content   = TF.default_,
+        aux       = TF.white,
+        count     = TF.green,
+        altcount  = TF.lightgreen,
+        num       = TF.darkgrey,
+        badge     = TF.white,
+        emote     = TF.cyan,
+        highlight = TF.white,
+        query     = TF.lightgreen,
+    }
+
+    /++
+     +  Default colours for printing events on a bright terminal background.
+     +/
+    enum EventPrintingBright : TerminalForeground
+    {
+        type      = TF.blue,
+        error     = TF.red,
+        sender    = TF.green,
+        target    = TF.cyan,
+        channel   = TF.yellow,
+        content   = TF.default_,
+        aux       = TF.black,
+        count     = TF.lightgreen,
+        altcount  = TF.green,
+        num       = TF.lightgrey,
+        badge     = TF.black,
+        emote     = TF.lightcyan,
+        highlight = TF.black,
+        query     = TF.green,
+    }
+}
+
+
 // onPrintableEvent
 /++
  +  Prints an event to the local terminal.
