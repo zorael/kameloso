@@ -154,44 +154,6 @@ struct DefaultColours
         bright = TF.default_, // TF.black_,
     }
 
-    /// Default colours for printing events on a dark terminal background.
-    enum EventPrintingDark : TerminalForeground
-    {
-        type    = TF.lightblue,
-        error   = TF.lightred,
-        sender  = TF.lightgreen,
-        target  = TF.cyan,
-        channel = TF.yellow,
-        content = TF.default_,
-        aux     = TF.white,
-        count   = TF.green,
-        altcount = TF.lightgreen,
-        num     = TF.darkgrey,
-        badge   = TF.white,
-        emote   = TF.cyan,
-        highlight = TF.white,
-        query   = TF.lightgreen,
-    }
-
-    /// Default colours for printing events on a bright terminal background.
-    enum EventPrintingBright : TerminalForeground
-    {
-        type    = TF.blue,
-        error   = TF.red,
-        sender  = TF.green,
-        target  = TF.cyan,
-        channel = TF.yellow,
-        content = TF.default_,
-        aux     = TF.black,
-        count   = TF.lightgreen,
-        altcount = TF.green,
-        num     = TF.lightgrey,
-        badge   = TF.black,
-        emote   = TF.lightcyan,
-        highlight = TF.black,
-        query   = TF.green,
-    }
-
     /// Logger colours to use with a dark terminal background.
     static immutable TerminalForeground[193] logcoloursDark  =
     [
