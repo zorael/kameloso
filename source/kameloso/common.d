@@ -1234,13 +1234,14 @@ unittest
 
 // Tint
 /++
- +  Provides an easy way to access the `*tint` members of our `KamelosoLogger`
- +  instance `logger`.
+ +  Provides an easy way to access the `*tint` members of our
+ +  `kameloso.logger.KamelosoLogger` instance `logger`.
  +
  +  Currently you need visibility of three things to be able to tint text;
- +  *   `kameloso.common.logger`, as an instance of `kameloso.logger.KamelosoLogger`.
- +  *   `kameloso.logger.KamelosoLogger` itself, to cast `logger` to its subclass.
- +  *   `kameloso.common.settings`, to know whether we want monochrome output or not.
+ +
+ +  1. `kameloso.common.logger`, as an instance of `kameloso.logger.KamelosoLogger`.<br>
+ +  2. `kameloso.logger.KamelosoLogger` itself, to cast `logger` to its subclass.<br>
+ +  3. `kameloso.common.settings`, to know whether we want monochrome output or not.<br>
  +
  +  By placing this here where there is visibility of `logger` and `settings`,
  +  the caller need just import this.
