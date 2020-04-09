@@ -1086,7 +1086,7 @@ if (isOutputRange!(Sink, char[]))
             }
             else
             {
-                bool putAlias;
+                bool putDisplayName;
 
                 version(TwitchSupport)
                 {
@@ -1094,7 +1094,7 @@ if (isOutputRange!(Sink, char[]))
                         sender.displayName.length)
                     {
                         sink.put(sender.displayName);
-                        putAlias = true;
+                        putDisplayName = true;
 
                         if ((sender.displayName != sender.nickname) &&
                             !sender.displayName.asLowerCase.equal(sender.nickname))
@@ -1104,7 +1104,7 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                if (!putAlias && sender.nickname.length)
+                if (!putDisplayName && sender.nickname.length)
                 {
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(sender.nickname);
@@ -1147,7 +1147,7 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(" (");
 
-            bool putAlias;
+            bool putDisplayName;
 
             version(TwitchSupport)
             {
@@ -1155,7 +1155,7 @@ if (isOutputRange!(Sink, char[]))
                     target.displayName.length)
                 {
                     .put(sink, target.displayName, ')');
-                    putAlias = true;
+                    putDisplayName = true;
 
                     if ((target.displayName != target.nickname) &&
                         !target.displayName.asLowerCase.equal(target.nickname))
@@ -1165,7 +1165,7 @@ if (isOutputRange!(Sink, char[]))
                 }
             }
 
-            if (!putAlias)
+            if (!putDisplayName)
             {
                 .put(sink, target.nickname, ')');
             }
@@ -1389,8 +1389,9 @@ unittest
 /++
  +  Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
  +
- +  It formats the timestamp, the type of the event, the sender or sender alias,
- +  the channel or target, the content body, as well as auxiliary information.
+ +  It formats the timestamp, the type of the event, the sender or the sender's
+ +  display name, the channel or target, the content body, as well as auxiliary
+ +  information and numbers.
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
@@ -1503,7 +1504,7 @@ if (isOutputRange!(Sink, char[]))
             }
             else
             {
-                bool putAlias;
+                bool putDisplayName;
 
                 version(TwitchSupport)
                 {
@@ -1511,7 +1512,7 @@ if (isOutputRange!(Sink, char[]))
                         sender.displayName.length)
                     {
                         sink.put(sender.displayName);
-                        putAlias = true;
+                        putDisplayName = true;
 
                         import std.algorithm.comparison : equal;
                         import std.uni : asLowerCase;
@@ -1526,7 +1527,7 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                if (!putAlias && sender.nickname.length)
+                if (!putDisplayName && sender.nickname.length)
                 {
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(sender.nickname);
@@ -1569,7 +1570,7 @@ if (isOutputRange!(Sink, char[]))
             .put!(Yes.colours)(sink, FG.default_, " (");
             colourUserTruecolour(sink, event.target);
 
-            bool putAlias;
+            bool putDisplayName;
 
             version(TwitchSupport)
             {
@@ -1577,7 +1578,7 @@ if (isOutputRange!(Sink, char[]))
                     target.displayName.length)
                 {
                     .put!(Yes.colours)(sink, target.displayName, FG.default_, ')');
-                    putAlias = true;
+                    putDisplayName = true;
 
                     import std.algorithm.comparison : equal;
                     import std.uni : asLowerCase;
@@ -1592,7 +1593,7 @@ if (isOutputRange!(Sink, char[]))
                 }
             }
 
-            if (!putAlias)
+            if (!putDisplayName)
             {
                 .put!(Yes.colours)(sink, target.nickname, FG.default_, ')');
             }
