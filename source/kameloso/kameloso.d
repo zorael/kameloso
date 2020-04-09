@@ -2198,7 +2198,7 @@ public:
  +      args = Command-line arguments passed to the program.
  +
  +  Returns:
- +      `0` on success, `1` on failure.
+ +      `0` on success, non-`0` on failure.
  +/
 int initBot(string[] args)
 {

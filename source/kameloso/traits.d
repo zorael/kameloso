@@ -1,5 +1,5 @@
 /++
- +  Various traits that are too kameloso-specific to be in `lu`.
+ +  Various traits that are too kameloso-specific to be in lu.
  +
  +  They generally deal with lengths of struct member names, used to format
  +  output and align columns for `kameloso.printing.printObject`.
@@ -13,6 +13,7 @@ import std.meta : allSatisfy;
 import std.typecons : Flag, No, Yes;
 
 public:
+
 
 // longestMemberNameImpl
 /++
@@ -147,7 +148,7 @@ unittest
 
 // longestMemberTypeNameImpl
 /++
- +  Gets the name of the longest type of a member in one or more structs.
+ +  Gets the name of the longest type of a configurable member in one or more structs.
  +
  +  This is used for formatting terminal output of objects, so that columns line up.
  +

@@ -30,27 +30,29 @@ public:
 
 @safe:
 
-/// Official mIRC colour table.
+/++
+ +  Official mIRC colour table.
+ +/
 enum IRCColour
 {
-    unset    = -1,
-    white    = 0,
-    black    = 1,
-    blue     = 2,
-    green    = 3,
-    red      = 4,
-    brown    = 5,
-    purple   = 6,
-    orange   = 7,
-    yellow   = 8,
-    lightgreen = 9,
-    cyan      = 10,
-    lightcyan = 11,
-    lightblue = 12,
-    pink      = 13,
-    grey      = 14,
-    lightgrey = 15,
-    transparent = 99,
+    unset    = -1,  /// Unset
+    white    = 0,   /// White
+    black    = 1,   /// Black
+    blue     = 2,   /// Blue
+    green    = 3,   /// Green
+    red      = 4,   /// Red
+    brown    = 5,   /// Brown
+    purple   = 6,   /// Purple
+    orange   = 7,   /// Orange
+    yellow   = 8,   /// Yellow
+    lightgreen = 9, /// Light green
+    cyan      = 10, /// Cyan
+    lightcyan = 11, /// Light cyan
+    lightblue = 12, /// Light blue
+    pink      = 13, /// Pink
+    grey      = 14, /// Grey
+    lightgrey = 15, /// Light grey
+    transparent = 99, /// "Transparent"
 }
 
 

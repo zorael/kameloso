@@ -108,13 +108,13 @@ struct CoreSettings
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
-    /// Whether to connect to IPv6 addresses or not.
+    /// Whether to connect to IPv6 addresses or only use IPV4 ones.
     bool ipv6 = true;
 
-    /// Whether to print outgoing messages or not.
+    /// Whether or not to hide outgoing messages, not printing them to screen.
     bool hideOutgoing = false;
 
-    /// Whether to add colours to outgoing messages or not.
+    /// Whether or not to add colours to outgoing messages.
     bool colouredOutgoing = true;
 
     /// Flag denoting that we should save to file on exit.
@@ -132,7 +132,13 @@ struct CoreSettings
      +/
     bool eagerLookups = false;
 
-    /// Character(s) that prefix a bot chat command.
+    /++
+     +  Character(s) that prefix a bot chat command.
+     +
+     +  These decide what bot commands will look like; "!" for "!command",
+     +  "~" for "~command", "." for ".command", etc. It can be any string and
+     +  not just one character.
+     +/
     @Quoted string prefix = "!";
 
     @Unserialisable
@@ -141,7 +147,7 @@ struct CoreSettings
         string configFile;  /// Main configuration file.
         string resourceDirectory;  /// Path to resource directory.
         string configDirectory;  /// Path to configuration directory.
-        bool force;  /// Whether or not to force connecting.
+        bool force;  /// Whether or not to force connecting, skipping some sanity checks.
         bool flush;  /// Whether or not to flush stdout after writing to it.
     }
 }
@@ -178,7 +184,7 @@ struct IRCBot
         /// The nickname services accounts of *administrators*, in a bot-like context.
         string[] admins;
 
-        /// List of home channels, in a bot-like context.
+        /// List of home channels for the bot to operate in.
         @CannotContainComments
         string[] homeChannels;
 
@@ -186,7 +192,7 @@ struct IRCBot
         deprecated("Use `homeChannels` instead")
         alias homes = homeChannels;
 
-        /// Currently inhabited non-home channels.
+        /// Currently inhabited non-home guest channels.
         @CannotContainComments
         string[] guestChannels;
 
@@ -242,7 +248,10 @@ struct Kameloso
         @disable this(this);
     }
 
-    /// The socket we use to connect to the server.
+    /++
+     +  The `lu.net.Connection` housing and wrapping the socket we use to connect
+     +  to, write to and read from the server.
+     +/
     Connection conn;
 
     /++
@@ -252,7 +261,10 @@ struct Kameloso
      +/
     IRCPlugin[] plugins;
 
-    /// When a nickname was called `WHOIS` on, for hysteresis.
+    /++
+     +  When a nickname was last issued a `WHOIS` query for, for hysteresis
+     +  and rate-limiting.
+     +/
     long[string] previousWhoisTimestamps;
 
     /// Parser instance.
@@ -272,7 +284,7 @@ struct Kameloso
 
     /++
      +  When this is set, the main loop should print a connection summary upon
-     +  the next iteration.
+     +  the next iteration. It is transient.
      +/
     bool wantLiveSummary;
 
@@ -318,10 +330,10 @@ struct Kameloso
      +  lines are to be sent at once.
      +
      +  Params:
-     +      Buffer = Buffer type, generally `Buffer`.
-     +      buffer = `Buffer` instance.
+     +      Buffer = Buffer type, generally `lu.container.Buffer`.
+     +      buffer = Buffer instance.
      +      onlyIncrement = Whether or not to send anything or just do a dry run,
-     +          incrementing the graph by `throttle.increment`.
+     +          incrementing the graph by `Throttle.increment`.
      +      sendFaster = On Twitch, whether or not we should throttle less and
      +          send messages faster. Useful in some situations when rate-limiting
      +          is more lax.
@@ -583,10 +595,11 @@ struct Kameloso
 
     // startPlugins
     /++
-     +  *start* all plugins, loading any resources they may want.
+     +  Start all plugins, loading any resources they may want and running
+     +  anything in their module-level `start` function.
      +
      +  This has to happen after `initPlugins` or there will not be any plugins
-     +  in the `plugins` array to start.
+     +  in the `plugins` array.
      +/
     void startPlugins() @system
     {
@@ -733,10 +746,9 @@ void printVersionInfo(TerminalForeground colourCode) @system
 // printVersionInfo
 /++
  +  Prints out the bot banner with the version number and GitHub URL, optionally
- +  with passed colouring in string format.
- +
- +  Overload that does not rely on `kameloso.terminal.TerminalForeground` being available, yet
- +  takes the necessary parameters to allow the other overload to reuse this one.
+ +  with passed colouring in string format. Overload that does not rely on
+ +  `kameloso.terminal.TerminalForeground` being available, yet takes the necessary
+ +  parameters to allow the other overload to reuse this one.
  +
  +  Example:
  +  ---
@@ -935,9 +947,8 @@ unittest
 
 // timeSince
 /++
- +  Express how much time has passed in a `Duration`, in natural (English) language.
- +
- +  Write the result to a passed output range `sink`.
+ +  Express how much time has passed in a `core.time.Duration`, in natural
+ +  (English) language. Overload that writes the result to thet passed output range `sink`.
  +
  +  Example:
  +  ---
@@ -1088,9 +1099,8 @@ unittest
 
 // timeSince
 /++
- +  Express how much time has passed in a `Duration`, in natural (English) language.
- +
- +  Returns the result as a string.
+ +  Express how much time has passed in a `core.time.Duration`, in natural
+ +  (English) language. Overload that returns the result as a new string.
  +
  +  Example:
  +  ---
@@ -1165,7 +1175,7 @@ unittest
  +  non-word characters (`:?! `).
  +
  +  This is to make a helper for stripping away bot prefixes, where such may be
- +  "`kameloso:`".
+ +  "kameloso: ".
  +
  +  Example:
  +  ---

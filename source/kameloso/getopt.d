@@ -1,17 +1,10 @@
 /++
  +  Basic command-line argument-handling.
  +
- +  Employs the standard `std.getopt` to read arguments from the command line,
- +  and then uses `lu.meld` to construct instances of the structs needed for the
- +  bot to function, like `dialect.defs.IRCClient`, `kameloso.common.IRCBot` and
- +  `kameloso.common.CoreSettings`.
- +
- +  Special care has to be taken with bools, as they have no unset state; only
- +  `true` or `false`. To ensure melding works we manually parse the arguments
- +  string after `std.getopt.getopt`, with `adjustGetopt`. It's a hack but it works.
- +
- +  See_Also:
- +      `lu.meld`
+ +  Employs the standard `std.getopt` to read arguments from the command line
+ +  to construct and populate instances of the structs needed for the bot to
+ +  function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
+ +  `kameloso.common.IRCBot` and `kameloso.common.CoreSettings`.
  +/
 module kameloso.getopt;
 
@@ -28,9 +21,9 @@ import std.typecons : No, Yes;
 
 // printHelp
 /++
- +  Prints the `getopt` `helpWanted` help table to screen.
+ +  Prints the `getopt` "helpWanted" help table to screen.
  +
- +  Merely leverages `defaultGetoptPrinter` for the printing.
+ +  Merely leverages `std.getopt.defaultGetoptPrinter` for the printing.
  +
  +  Example:
  +  ---
@@ -210,7 +203,8 @@ public:
 
 // handleGetopt
 /++
- +  Read command-line options and merge them with those in the configuration file.
+ +  Read command-line options and apply them over values previously read from
+ +  the configuration file.
  +
  +  The priority of options then becomes getopt over config file over hardcoded defaults.
  +
@@ -230,7 +224,7 @@ public:
  +          the settings read from the configuration file.
  +
  +  Returns:
- +      `kameloso.common.Next.continue_` or `kameloso.common.Next.returnSuccess`
+ +      `lu.common.Next.continue_` or `lu.common.Next.returnSuccess`
  +      depending on whether the arguments chosen mean the program should
  +      proceed or not.
  +

@@ -102,7 +102,7 @@ alias printObject = printObjects;
 // formatObjects
 /++
  +  Formats a struct object, with all its printable members with all their
- +  printable values.
+ +  printable values. Overload that writes to a passed output range sink.
  +
  +  This is an implementation template and should not be called directly;
  +  instead use `printObject` and `printObjects`.
@@ -510,7 +510,8 @@ if (isOutputRange!(Sink, char[]))
 
 // formatObjects
 /++
- +  A `string`-returning variant of `formatObjects` that doesn't take an input range.
+ +  Formats a struct object, with all its printable members with all their
+ +  printable values. A `string`-returning overload that doesn't take an input range.
  +
  +  This is useful when you just want the object(s) formatted without having to
  +  pass it a sink.

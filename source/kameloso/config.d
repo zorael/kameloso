@@ -25,11 +25,12 @@ public:
  +  Example:
  +  ---
  +  Kameloso instance;
- +  instance.writeConfigurationFile(instance.settings.configFile);
+ +  instance.writeConfigurationFile(settings.configFile);
  +  ---
  +
  +  Params:
- +      instance = Reference to the current `Kameloso`, with all its settings.
+ +      instance = Reference to the current `kameloso.common.Kameloso`,
+ +          with all its plugins and settings.
  +      filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
@@ -66,7 +67,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 /++
  +  Saves the passed configuration text to disk, with the given filename.
  +
- +  Optionally add the `kameloso` version banner at the head of it.
+ +  Optionally (and by default) adds the "kameloso" version banner at the head of it.
  +
  +  Example:
  +  ---
@@ -114,9 +115,10 @@ void writeToDisk(const string filename, const string configurationText,
 /++
  +  Displays an error on how to complete a minimal configuration file.
  +
- +  It assumes that the client's `admins` and `homeChannels` are both empty.
+ +  It assumes that the bot's `kameloso.common.IRCBot.admins` and
+ +  `kameloso.common.IRCBot.homeChannels` are both empty.
  +
- +  Used in both `kameloso.getopt` and `kameloso.kameloso.kamelosoMain`,
+ +  Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
  +  so place it here.
  +/
 void complainAboutIncompleteConfiguration()
@@ -326,8 +328,10 @@ import lu.traits : isStruct;
  +  ---
  +  IRCClient client;
  +  IRCServer server;
+ +  string[][string] missingEntries;
+ +  string[][string] invalidEntries;
  +
- +  "kameloso.conf".readConfigInto(client, server);
+ +  "kameloso.conf".readConfigInto(missingEntries, invalidEntries, client, server);
  +  ---
  +
  +  Params:

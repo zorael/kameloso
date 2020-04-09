@@ -4,7 +4,7 @@
  +  To send a server message some information is needed; like
  +  message type, message target, perhaps channel, content and such.
  +  `dialect.defs.IRCEvent` has all of this, so it lends itself to repurposing
- +  it to aggregate and carry them, through concurrency messages. These care caught by the
+ +  it to aggregate and carry them, through concurrency messages. These are caught by the
  +  concurrency message-reading parts of the main loop, which reversely parses
  +  them into strings and sends them on to the server.
  +
@@ -19,7 +19,7 @@
  +  ---
  +
  +  Having to supply the `kameloso.plugins.common.IRCPluginState` on every call
- +  can be avoided for plugins, by mixing in `kamelso.plugins.common.MessagingProxy`
+ +  can be avoided for plugins, by mixing in `kameloso.plugins.common.MessagingProxy`
  +  and placing the messaging function calls inside a `with (plugin)` block.
  +
  +  Example:
