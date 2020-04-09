@@ -1432,10 +1432,56 @@ if (isOutputRange!(Sink, char[]))
      +/
     FG colourByHash(const string nickname)
     {
+        import std.traits : EnumMembers;
+
+        alias foregroundMembers = EnumMembers!TerminalForeground;
+
+        static immutable TerminalForeground[foregroundMembers.length+(-3)] fgBright =
+        [
+            //FG.default_,
+            FG.black,
+            FG.red,
+            FG.green,
+            //FG.yellow,  // Blends too much with channel
+            FG.blue,
+            FG.magenta,
+            FG.cyan,
+            FG.lightgrey,
+            FG.darkgrey,
+            FG.lightred,
+            FG.lightgreen,
+            FG.lightyellow,
+            FG.lightblue,
+            FG.lightmagenta,
+            FG.lightcyan,
+            //FG.white,
+        ];
+
+        static immutable TerminalForeground[foregroundMembers.length+(-3)] fgDark =
+        [
+            //FG.default_,
+            //FG.black,
+            FG.red,
+            FG.green,
+            //FG.yellow,
+            FG.blue,
+            FG.magenta,
+            FG.cyan,
+            FG.lightgrey,
+            FG.darkgrey,
+            FG.lightred,
+            FG.lightgreen,
+            FG.lightyellow,
+            FG.lightblue,
+            FG.lightmagenta,
+            FG.lightcyan,
+            FG.white,
+        ];
+
         if (plugin.printerSettings.randomNickColours)
         {
             import kameloso.terminal : colourByHash;
-            return colourByHash(nickname, bright);
+            return colourByHash(nickname, bright ? fgBright[] : fgDark[]);
         }
         else
         {
