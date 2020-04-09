@@ -401,28 +401,6 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandPrintModes
-/++
- +  Prints the current automodes associative array to the local terminal.
- +
- +  This is for debugging purposes.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "printmodes")
-@Description("[debug] Prints out automodes definitions to the local terminal.")
-void onCommandPrintModes(AutomodePlugin plugin)
-{
-    import std.json : JSONValue;
-    import std.stdio : writeln;
-
-    writeln(JSONValue(plugin.automodes).toPrettyString);
-}
-
-
 // onCommandOp
 /++
  +  Triggers a WHOIS of the user invoking it with bot commands.
