@@ -1014,6 +1014,34 @@ in (fgArray.length, "Tried to colour by hash but with an empty colour array")
     return fgArray[colourIndex];
 }
 
+///
+unittest
+{
+    import lu.conv : Enum;
+
+    alias FG = TerminalForeground;
+
+    TerminalForeground[3] fgArray =
+    [
+        FG.red,
+        FG.green,
+        FG.blue,
+    ];
+
+    {
+        immutable foreground = "kameloso".colourByHash(fgArray[]);
+        assert((foreground == FG.blue), Enum!FG.toString(foreground));
+    }
+    {
+        immutable foreground = "zorael".colourByHash(fgArray[]);
+        assert((foreground == FG.green), Enum!FG.toString(foreground));
+    }
+    {
+        immutable foreground = "hirrsteff".colourByHash(fgArray[]);
+        assert((foreground == FG.red), Enum!FG.toString(foreground));
+    }
+}
+
 
 // colourByHash
 /++
