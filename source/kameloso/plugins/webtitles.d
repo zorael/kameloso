@@ -153,7 +153,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
-        if (plugin.cache.length) prune(plugin.cache);
+        if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
         if (const cachedResult = url in plugin.cache)
         {
@@ -744,14 +744,13 @@ string lookupReddit(const string url, const bool modified = false)
  +      cache = Cache of previous `TitleLookupResults`, `shared` so that it can
  +          be reused in further lookup (other threads).
  +/
-void prune(shared TitleLookupResults[string] cache)
+void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 {
     import lu.objmanip : pruneAA;
     import std.datetime.systime : Clock;
 
     if (!cache.length) return;
 
-    enum expireSeconds = 600;
     immutable now = Clock.currTime.toUnixTime;
 
     synchronized
