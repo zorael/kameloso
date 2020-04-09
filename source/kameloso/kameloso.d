@@ -460,6 +460,15 @@ void messageFiber(ref Kameloso instance)
             instance.wantLiveSummary = true;
         }
 
+        /++
+         +  Sets the `instance.abort` flag to true, signaling the rest of the
+         +  program to abort.
+         +/
+        void flagAbort(ThreadMessage.Abort) scope
+        {
+            *instance.abort = true;
+        }
+
         import core.time : seconds;
         import std.datetime.systime : Clock;
 
@@ -493,6 +502,7 @@ void messageFiber(ref Kameloso instance)
                 &dispatchBusMessage,
                 &dispatchEmptyBusMessage,
                 &flagWantLiveSummary,
+                &flagAbort,
                 (Variant v) scope
                 {
                     // Caught an unhandled message
