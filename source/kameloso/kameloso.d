@@ -565,6 +565,7 @@ void exhaustMessages()
  +/
 Next mainLoop(ref Kameloso instance)
 {
+    import kameloso.constants : Timeout;
     import lu.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
@@ -576,7 +577,7 @@ Next mainLoop(ref Kameloso instance)
 
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
-        listenFiber(instance.conn, *instance.abort));
+        listenFiber(instance.conn, *instance.abort, Timeout.connectionLost));
 
     auto messenger = new Generator!Next(() =>
         messageFiber(instance));
