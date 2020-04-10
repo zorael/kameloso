@@ -1879,7 +1879,7 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 }
 
 
-import std.traits : isSomeFunction;
+private import std.traits : isSomeFunction;
 
 // WHOISFiberDelegate
 /++

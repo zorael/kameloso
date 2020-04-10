@@ -44,7 +44,6 @@ import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
 import dialect.defs;
 import lu.string : beginsWithOneOf;
-
 import std.concurrency : Tid, send;
 import std.typecons : Flag, No, Yes;
 

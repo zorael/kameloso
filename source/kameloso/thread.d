@@ -291,7 +291,7 @@ final class CarryingFiber(T) : Fiber
 }
 
 
-import core.time : Duration;
+private import core.time : Duration;
 
 // interruptibleSleep
 /++

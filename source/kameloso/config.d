@@ -314,8 +314,8 @@ final class ConfigurationFileReadFailureException : Exception
 }
 
 
-import std.meta : allSatisfy;
-import lu.traits : isStruct;
+private import std.meta : allSatisfy;
+private import lu.traits : isStruct;
 
 // readConfigInto
 /++
