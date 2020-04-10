@@ -393,10 +393,9 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
     /+
         Updates the user's timestamp to the current time.
 
-        This will, as such, be automatically called on `dialect.defs.IRCEvent.Type.EMOTE`,
-        `dialect.defs.IRCEvent.Type.QUERY`, `dialect.defs.IRCEvent.Type.CHAN`,
-        `dialect.defs.IRCEvent.Type.JOIN`, and `dialect.defs.IRCEvent.Type.PART`
-        events. Furthermore, it will only trigger if it took place in a home channel.
+        This will be automatically called on any and all the kinds of
+        `dialect.defs.IRCEvent.Type`s it is annotated with. Furthermore, it will
+        only trigger if it took place in a home channel.
      +/
     plugin.updateUser(event.sender.nickname, event.time);
 }
