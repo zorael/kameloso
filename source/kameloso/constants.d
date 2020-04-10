@@ -132,6 +132,12 @@ enum Timeout
      +  as fast as it can.
      +/
     readErrorGracePeriod = 1,
+
+    /++
+     +  How long to keep trying to read from the sever when not receiving anything
+     +  at all before the connection is considered lost.
+     +/
+    connectionLost = 600,
 }
 
 
