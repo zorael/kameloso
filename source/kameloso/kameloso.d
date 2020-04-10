@@ -1686,14 +1686,13 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
  +/
 void complainAboutMissingConfigurationEntries(const string[][string] missingEntries)
 {
-    import lu.string : stripSuffix;
-
     logger.log("Found MISSING configuration entries:");
+
+    immutable pattern = "...under [%s%s%s]: %-(" ~ Tint.info ~ "%s%|" ~ Tint.log ~ ", %)";
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
-        logger.logf(`...under [%s%s%s]: %s%-(%s%|, %)`,
-            Tint.info, section.stripSuffix("Settings"), Tint.log, Tint.info, sectionEntries);
+        logger.logf(pattern, Tint.info, section, Tint.log, sectionEntries);
     }
 
     logger.log("They are either new, or your configuration file was generated " ~
@@ -1714,10 +1713,11 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 {
     logger.log("Found INVALID configuration entries:");
 
+    immutable pattern = "...under [%s%s%s]: %-(" ~ Tint.info ~ "%s%|" ~ Tint.log ~ ", %)";
+
     foreach (immutable section, const sectionEntries; invalidEntries)
     {
-        logger.logf(`...under [%s%s%s]: %s%-(%s%|, %)`,
-            Tint.info, section, Tint.log, Tint.info, sectionEntries);
+        logger.logf(pattern, Tint.info, section, Tint.log, sectionEntries);
     }
 
     logger.log("They are either malformed, no longer in use, or belong to " ~
