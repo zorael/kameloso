@@ -36,25 +36,25 @@ version(WithPlugins):
 version(WithSeenPlugin):
 
 // We need the definition of an `IRCPlugin`.
-import kameloso.plugins.ircplugin;
+private import kameloso.plugins.ircplugin;
 
 // And crucial things from `kameloso.plugins.common`.
-import kameloso.plugins.common;
+private import kameloso.plugins.common;
 
 // Awareness mixins, for plumbing.
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+private import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 
 // Likewise `dialect.defs`, for the definitions of an IRC event.
-import dialect.defs;
+private import dialect.defs;
 
 // `kameloso.irccolours` for some IRC colouring and formatting.
-import kameloso.irccolours : ircBold, ircColourByHash;
+private import kameloso.irccolours : ircBold, ircColourByHash;
 
 // `kameloso.common` for some globals.
-import kameloso.common : Tint, logger, settings;
+private import kameloso.common : Tint, logger, settings;
 
 // `std.datetime.systime` for the `Clock`, to update times with.
-import std.datetime.systime : Clock;
+private import std.datetime.systime : Clock;
 
 
 /+
