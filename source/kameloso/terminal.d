@@ -1067,29 +1067,17 @@ TerminalForeground colourByHash(const string word, const bool bright) pure @nogc
 in (word.length, "Tried to colour by hash but no word was given")
 do
 {
-    import std.algorithm.searching : countUntil;
     import std.traits : EnumMembers;
 
     alias foregroundMembers = EnumMembers!TerminalForeground;
-    static immutable TerminalForeground[foregroundMembers.length] fg = [ foregroundMembers ];
 
-    enum whiteIndex = fg[].countUntil(cast(int)TerminalForeground.white);
-    enum blackIndex = fg[].countUntil(cast(int)TerminalForeground.black);
+    static immutable TerminalForeground[foregroundMembers.length+(-2)] fgBright =
+        TerminalForeground.black ~ [ foregroundMembers ][2..$-1];
 
-    // There are 17 colours, [0..16] inclusive, but we don't want the first (index 0, default_).
-    // Start with 1 to skip it, then add modulo 15 to get an index between [1..15] inclusive
-    // which excludes index 16 white.
-    // If dark and colour is black 1, set to white. otherwise let white be excluded
-    // (because the terminal is bright)
+    static immutable TerminalForeground[foregroundMembers.length+(-2)] fgDark =
+        TerminalForeground.white ~ [ foregroundMembers ][2..$-1];
 
-    size_t colourIndex = 1 + hashOf(word) % 15;
-
-    if (!bright)
-    {
-        if (colourIndex == blackIndex) colourIndex = whiteIndex;
-    }
-
-    return fg[colourIndex];
+    return bright ? word.colourByHash(fgBright[]) : word.colourByHash(fgDark[]);
 }
 
 ///
