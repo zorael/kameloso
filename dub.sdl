@@ -38,7 +38,7 @@ versions \
 
 configuration "application" {
     dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.1.1"
+    dependency "arsd-official:dom" version="~>7.2.0"
 
     versions \
         "Colours" \
@@ -47,7 +47,7 @@ configuration "application" {
 
 configuration "twitch" {
     dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.1.1"
+    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
 
     versions \
@@ -59,7 +59,7 @@ configuration "twitch" {
 
 configuration "dev" {
     dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.1.1"
+    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
 
     versions \
@@ -87,7 +87,7 @@ configuration "colours" {
 
 configuration "web" {
     dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.1.1"
+    dependency "arsd-official:dom" version="~>7.2.0"
 
     versions \
         "Web"
@@ -95,7 +95,7 @@ configuration "web" {
 
 configuration "full" {
     dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.1.1"
+    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
 
     versions \
@@ -106,7 +106,7 @@ configuration "full" {
 
 configuration "unittest" {
     dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.1.1"
+    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
 
     versions \
