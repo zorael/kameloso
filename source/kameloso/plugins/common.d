@@ -14,6 +14,13 @@ import dialect.defs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
+/+
+    Publicly import `kameloso.plugins.ircplugin.IRCPluginState` for compatibility
+    (since it used to be housed here)
+ +/
+public import kameloso.plugins.ircplugin : IRCPluginState;
+
+
 //version = TwitchWarnings;
 version = PrefixedCommandsFallBackToNickname;
 //version = ExplainReplay;
