@@ -2879,7 +2879,9 @@ do
     if (pos == -1) return false;
 
     // Allow for a prepended @, since @mention is commonplace
-    if ((pos > 0) && haystack[pos-1].isValidNicknameCharacter &&
+    if ((pos > 0) && (haystack[pos-1].isValidNicknameCharacter ||
+        (haystack[pos-1] == '.') ||  // URLs
+        (haystack[pos-1] == '/')) &&  // likewise
         (haystack[pos-1] != '@')) return false;
 
     immutable end = pos + needle.length;
@@ -2893,7 +2895,7 @@ do
         return true;
     }
 
-    return (!haystack[end].isValidNicknameCharacter);
+    return !haystack[end].isValidNicknameCharacter && (haystack[end] != '/');
 }
 
 ///
@@ -2906,6 +2908,10 @@ unittest
     assert(!string.init.containsNickname("kameloso"));
     //assert(!"kameloso".containsNickname(""));  // For now let this be false.
     assert("@kameloso".containsNickname("kameloso"));
+    assert(!"www.kameloso.com".containsNickname("kameloso"));
+    assert("kameloso.".containsNickname("kameloso"));
+    assert(!"kameloso/".containsNickname("kameloso"));
+    assert(!"/kameloso/".containsNickname("kameloso"));
 }
 
 
