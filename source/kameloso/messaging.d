@@ -41,7 +41,7 @@ module kameloso.messaging;
 private:
 
 import kameloso.common : settings;
-import kameloso.plugins.common : IRCPluginState;
+import kameloso.plugins.ircplugin : IRCPluginState;
 import dialect.defs;
 import lu.string : beginsWithOneOf;
 import std.concurrency : Tid, send;

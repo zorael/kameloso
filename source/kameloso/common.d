@@ -446,7 +446,8 @@ struct Kameloso
         out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : EnabledPlugins;
-        import kameloso.plugins.common : IRCPluginState, applyCustomSettings;
+        import kameloso.plugins.common : applyCustomSettings;
+        import kameloso.plugins.ircplugin : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
 
