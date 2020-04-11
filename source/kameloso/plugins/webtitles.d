@@ -837,15 +837,16 @@ private:
 
     // onEvent
     /++
-     +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does not trigger on `dialect.defs.IRCEvent`s on Twitch servers.
+     +  Override `kameloso.plugins.ircplugin.IRCPluginImpl.onEvent` and inject
+     +  a server check, so this plugin does not trigger on
+     +  `dialect.defs.IRCEvent`s on Twitch servers.
      +
      +  The function to call if the event *should* be processed is
-     +  `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
+     +  `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
+     +          `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/
     version(TwitchSupport)

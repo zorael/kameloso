@@ -1771,16 +1771,16 @@ private:
 
 
     /++
-     +  Override `kameloso.plugins.common.IRCPluginImpl.onEvent` and inject a server check, so this
+     +  Override `kameloso.plugins.ircplugin.IRCPluginImpl.onEvent` and inject a server check, so this
      +  plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
      +  events to only trigger on active channels (that have its `Channel.enabled`
      +  set to true).
      +
-     +  The function to call is `kameloso.plugins.common.IRCPluginImpl.onEventImpl`.
+     +  The function to call is `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.common.IRCPluginImpl.onEventImpl`
+     +          `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/
     public void onEvent(const IRCEvent event)

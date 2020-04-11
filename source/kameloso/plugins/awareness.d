@@ -447,7 +447,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +
      +  We ride the periodicity of `dialect.defs.IRCEvent.Type.PING` to get
      +  a natural cadence without having to resort to queued
-     +  `kameloso.common.ScheduledFiber`s.
+     +  `kameloso.thread.ScheduledFiber`s.
      +
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.

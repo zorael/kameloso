@@ -444,7 +444,7 @@ public:
 /++
  +  The SedReplace plugin stores a buffer of the last said line of every user,
  +  and if a new message comes in with a sed-replace-like pattern in it, tries
- +  to apply it on the original message as a regex replace.
+ +  to apply it on the original message as a regex-like replace.
  +/
 final class SedReplacePlugin : IRCPlugin
 {

@@ -169,8 +169,8 @@ void messageFiber(ref Kameloso instance)
 
         /++
         +  Attaches a reference to the main array of
-        +  `kameloso.plugins.common.IRCPlugin`s (housing all plugins) to the
-        +  payload member of the supplied `kameloso.common.CarryingFiber`, then
+        +  `kameloso.plugins.ircplugin.IRCPlugin`s (housing all plugins) to the
+        +  payload member of the supplied `kameloso.thread.CarryingFiber`, then
         +  invokes it.
         +/
         void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber) scope
@@ -1089,10 +1089,10 @@ private import kameloso.plugins.ircplugin : IRCPlugin;
 // handleAwaitingFibers
 /++
  +  Processes the awaiting `core.thread.Fiber`s of an
- +  `kameloso.plugins.common.IRCPlugin`.
+ +  `kameloso.plugins.ircplugin.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `kameloso.plugins.common.IRCPlugin` whose
+ +      plugin = The `kameloso.plugins.ircplugin.IRCPlugin` whose
  +          `dialect.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
  +          iterate and process.
  +      event = The triggering `dialect.defs.IRCEvent`.
@@ -1198,11 +1198,11 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
 // handleScheduledFibers
 /++
- +  Processes the queued `kameloso.common.ScheduledFiber`s of an
- +  `kameloso.plugins.common.IRCPlugin`.
+ +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
+ +  `kameloso.plugins.ircplugin.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `kameloso.plugins.common.IRCPlugin` whose queued
+ +      plugin = The `kameloso.plugins.ircplugin.IRCPlugin` whose queued
  +          `ScheduledFiber`s to iterate and process.
  +      nowInUnix = Current UNIX timestamp to compare the `ScheduledFiber`'s
  +          UNIX timestamp with.
@@ -1265,7 +1265,7 @@ do
  +  Note: Exceptions are let past; they are to be caught by the caller.
  +
  +  Params:
- +      plugin = The current `kameloso.plugins.common.IRCPlugin`.
+ +      plugin = The current `kameloso.plugins.ircplugin.IRCPlugin`.
  +      instance = Reference to the current bot instance.
  +/
 void handleReplays(IRCPlugin plugin, ref Kameloso instance)

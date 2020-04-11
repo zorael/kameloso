@@ -511,7 +511,7 @@ struct Kameloso
     /++
      +  Initialises all plugins' resource files.
      +
-     +  This merely calls `kameloso.plugins.common.IRCPlugin.initResources()` on
+     +  This merely calls `kameloso.plugins.ircplugin.IRCPlugin.initResources` on
      +  each plugin.
      +/
     void initPluginResources() @system

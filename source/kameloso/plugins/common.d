@@ -393,7 +393,7 @@ struct IRCPluginState
 
     /++
      +  The UNIX timestamp of when the next queued
-     +  `kameloso.common.ScheduledFiber` should be triggered.
+     +  `kameloso.thread.ScheduledFiber` should be triggered.
      +/
     long nextFiberTimestamp;
 
