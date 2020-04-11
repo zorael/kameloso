@@ -110,7 +110,7 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd v2.089.0 or later** (at time of writing, February 2020), builds will fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use **ldc**, or to build with the `--build-mode=singleFile` flag appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
+On Windows with **dmd v2.089.0 or later** (at time of writing, February 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use **ldc**, or to build with the `--build-mode=singleFile` flag appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
 
 ### Build configurations
 
@@ -178,7 +178,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your `users.json`.
+Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
 
 ```
      you joined #channel
@@ -195,11 +195,11 @@ kameloso | Note added.
      you | !seen OfflinePerson
 kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago.
      you | !opertor add bob
-kameloso | operatored BOB.
-     you | !whitelist alice
-kameloso | whitelisted Alice.
-     you | !blacklist steve
-kameloso | blacklisted steve.
+kameloso | Added BOB as an operator in #channel.
+     you | !whitelist add alice
+kameloso | Added Alice as a whitelisted user in #channel.
+     you | !blacklist del steve
+kameloso | Removed steve as a blacklisted user in #channel.
      you | kameloso: sudo PRIVMSG #channel :this is a raw IRC command
 kameloso | this is a raw IRC command
      you | https://youtu.be/ykj3Kpm3O0g
