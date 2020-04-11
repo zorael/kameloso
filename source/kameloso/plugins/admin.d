@@ -697,6 +697,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
     immutable specified = rawSpecified.stripped;
 
+    immutable asWhat =
+        (list == "operator") ? "an operator" :
+        (list == "whitelist") ? "a whitelisted user" :
+        /*(list == "blacklist") ?*/ "a blacklisted user";
+
     /// Report result, either to the local terminal or to the IRC channel/sender
     void report(const AlterationResult result, const string id)
     {
@@ -710,11 +715,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             final switch (result)
             {
             case success:
-                enum pattern = "Added %s as a %s user in %s.";
+                enum pattern = "Added %s as %s in %s.";
 
                 immutable message = settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, list, channel) :
-                    pattern.format(id, list, channel);
+                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
+                    pattern.format(id, asWhat, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -724,11 +729,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 assert(0, "Invalid delist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                enum pattern = "%s was already a %s user in %s.";
+                enum pattern = "%s was already %s in %s.";
 
                 immutable message = settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, list, channel) :
-                    pattern.format(id, list, channel);
+                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
+                    pattern.format(id, asWhat, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -742,8 +747,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             final switch (result)
             {
             case success:
-                logger.logf("Added %s%s%s as a %s user in %s.",
-                    Tint.info, specified, Tint.log, list, channel);
+                logger.logf("Added %s%s%s as %s in %s.",
+                    Tint.info, specified, Tint.log, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -751,8 +756,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
                 assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                logger.logf("%s%s%s is already a %s user in %s.",
-                    Tint.info, specified, Tint.log, list, channel);
+                logger.logf("%s%s%s is already %s in %s.",
+                    Tint.info, specified, Tint.log, asWhat, channel);
                 break;
             }
         }
@@ -876,6 +881,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         return;
     }
 
+    immutable asWhat =
+        (list == "operator") ? "an operator" :
+        (list == "whitelist") ? "a whitelisted user" :
+        /*(list == "blacklist") ?*/ "a blacklisted user";
+
     immutable result = plugin.alterAccountClassifier(No.add, list, account, channel);
 
     if (event.sender.nickname.length)
@@ -892,28 +902,28 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             enum pattern = "No such account %s to remove as %s in %s.";
 
             immutable message = settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, list, channel) :
-                pattern.format(account, list, channel);
+                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
+                pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case noSuchChannel:
-            enum pattern = "Account %s isn't a %s user in %s.";
+            enum pattern = "Account %s isn't %s in %s.";
 
             immutable message = settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, list, channel) :
-                pattern.format(account, list, channel);
+                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
+                pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
-            enum pattern = "Removed %s as %s user in %s.";
+            enum pattern = "Removed %s as %s in %s.";
 
             immutable message = settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, list, channel) :
-                pattern.format(account, list, channel);
+                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
+                pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
@@ -930,18 +940,18 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            logger.logf("No such account %s%s%s was found as %s user in %s.",
-                Tint.info, account, Tint.log, list, channel);
+            logger.logf("No such account %s%s%s was found as %s in %s.",
+                Tint.info, account, Tint.log, asWhat, channel);
             break;
 
         case noSuchChannel:
-            logger.logf("Account %s%s%s isn't a %s user in %s.",
-                Tint.info, account, Tint.log, list, channel);
+            logger.logf("Account %s%s%s isn't %s in %s.",
+                Tint.info, account, Tint.log, asWhat, channel);
             break;
 
         case success:
-            logger.logf("Removed %s%s%s as a %s user in %s",
-                Tint.info, account, Tint.log, list, channel);
+            logger.logf("Removed %s%s%s as %s in %s",
+                Tint.info, account, Tint.log, asWhat, channel);
             break;
         }
     }
