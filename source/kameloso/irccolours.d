@@ -24,6 +24,7 @@ import std.range.primitives : isOutputRange;
 version(Colours)
 {
     import kameloso.terminal : TerminalBackground, TerminalForeground;
+    import std.typecons : Flag, No, Yes;
 }
 
 public:
@@ -507,7 +508,8 @@ unittest
  +  Returns:
  +      The passed `line`, now with terminal colouring.
  +/
-string mapColours(const string line, const uint fgReset = TerminalForeground.default_,
+string mapColours(Flag!"strip" strip = No.strip)(const string line,
+    const uint fgReset = TerminalForeground.default_,
     const uint bgReset = TerminalBackground.default_)
 {
     import lu.conv : toAlphaInto;
@@ -664,29 +666,39 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
     Appender!string sink;
     sink.reserve(line.length + segments.length * 8);
 
-    foreach (segment; segments)
+    static if (strip)
     {
-        sink.put(segment.pre);
-        sink.put("\033[");
-
-        if (segment.isReset)
+        foreach (segment; segments)
         {
-            fgReset.toAlphaInto(sink);
-            sink.put(';');
-            bgReset.toAlphaInto(sink);
-            sink.put('m');
-            continue;
+            sink.put(segment.pre);
         }
-
-        (cast(uint)weechatForegroundMap[segment.fg]).toAlphaInto(sink);
-
-        if (segment.hasBackground)
+    }
+    else
+    {
+        foreach (segment; segments)
         {
-            sink.put(';');
-            (cast(uint)weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
-        }
+            sink.put(segment.pre);
+            sink.put("\033[");
 
-        sink.put("m");
+            if (segment.isReset)
+            {
+                fgReset.toAlphaInto(sink);
+                sink.put(';');
+                bgReset.toAlphaInto(sink);
+                sink.put('m');
+                continue;
+            }
+
+            (cast(uint)weechatForegroundMap[segment.fg]).toAlphaInto(sink);
+
+            if (segment.hasBackground)
+            {
+                sink.put(';');
+                (cast(uint)weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
+            }
+
+            sink.put("m");
+        }
     }
 
     sink.put(tail);
