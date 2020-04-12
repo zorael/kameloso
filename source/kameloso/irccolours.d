@@ -871,18 +871,23 @@ unittest
  +  Returns:
  +      The passed `line`, now with terminal formatting.
  +/
-version(Colours)
-string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
+private string mapEffectsImpl(Flag!"strip" strip, int mircToken, int terminalFormatCode)
+    (const string line)
 {
-    import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colourWith;
     import lu.conv : toAlpha;
     import std.array : Appender;
     import std.string : indexOf;
 
-    alias I = IRCControlCharacter;
+    static if (!strip)
+    {
+        version(Colours) {}
+        else
+        {
+            static assert(0, "`mapEffectsImpl!(Yes.strip)` is being called outside of version `Colours`");
+        }
+    }
 
-    enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(TerminalFormatCode) ~ "m";
-    // enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
+    alias I = IRCControlCharacter;
 
     string slice = line;  // mutable
 
@@ -891,41 +896,63 @@ string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
     if (pos == -1) return line;  // As is
 
     Appender!string sink;
-    sink.reserve(cast(size_t)(line.length * 1.5));
 
-    bool open;
+    static if (!strip)
+    {
+        import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colourWith;
+
+        enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(terminalFormatCode) ~ "m";
+        // enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
+
+        sink.reserve(cast(size_t)(line.length * 1.5));
+        bool open;
+    }
+    else
+    {
+        sink.reserve(line.length);
+    }
 
     while (pos != -1)
     {
         sink.put(slice[0..pos]);
-        if (slice.length == pos) break;
+
+        if (slice.length == pos)
+        {
+            // Slice away the end so it isn't added as the tail afterwards
+            slice = slice[pos..$];
+            break;
+        }
+
         slice = slice[pos+1..$];
 
-        if (!open)
+        static if (!strip)
         {
-            sink.put(terminalToken);
-            open = true;
-        }
-        else
-        {
-            static if ((TerminalFormatCode == 1) || (TerminalFormatCode == 2))
+            if (!open)
             {
-                // Both 1 and 2 seem to be reset by 22?
-                enum tokenstring = TerminalToken.format ~ "[22m";
-                sink.put(tokenstring);
-            }
-            else static if ((TerminalFormatCode >= 3) && (TerminalFormatCode <= 5))
-            {
-                enum tokenstring = TerminalToken.format ~ "[2" ~ TerminalFormatCode.toAlpha ~ "m";
-                sink.put(tokenstring);
+                sink.put(terminalToken);
+                open = true;
             }
             else
             {
-                //logger.warning("Unknown terminal effect code: ", TerminalFormatCode);
-                sink.colourWith(TerminalReset.all);
-            }
+                static if ((terminalFormatCode == 1) || (terminalFormatCode == 2))
+                {
+                    // Both 1 and 2 seem to be reset by 22?
+                    enum tokenstring = TerminalToken.format ~ "[22m";
+                    sink.put(tokenstring);
+                }
+                else static if ((terminalFormatCode >= 3) && (terminalFormatCode <= 5))
+                {
+                    enum tokenstring = TerminalToken.format ~ "[2" ~ terminalFormatCode.toAlpha ~ "m";
+                    sink.put(tokenstring);
+                }
+                else
+                {
+                    //logger.warning("Unknown terminal effect code: ", TerminalFormatCode);
+                    sink.colourWith(TerminalReset.all);
+                }
 
-            open = false;
+                open = false;
+            }
         }
 
         pos = slice.indexOf(mircToken);
@@ -935,7 +962,10 @@ string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
 
     sink.put(tail);
 
-    if (open) sink.colourWith(TerminalReset.all);
+    static if (!strip)
+    {
+        if (open) sink.colourWith(TerminalReset.all);
+    }
 
     return sink.data;
 }
