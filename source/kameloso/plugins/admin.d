@@ -8,7 +8,7 @@
  +  and removing homes on-the-fly, whitelisting or de-whitelisting account
  +  names, adding/removing from the operator list, joining or leaving channels, and such.
  +
- +  See the GitHub wiki for more information about available commands:
+ +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
  +/
 module kameloso.plugins.admin;
@@ -579,7 +579,7 @@ void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "blacklist")
 @Description("Add or remove an account to/from the blacklist of people who may " ~
-    "explicitly not trigger the bot", "$command [add|del] [account or nickname]")
+    "explicitly not trigger the bot.", "$command [add|del] [account or nickname]")
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
     return plugin.manageClassLists(event, "blacklist");
@@ -1096,8 +1096,8 @@ void onCommandReload(AdminPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "resetterm")
-@Description("Outputs the ASCII control character 15 to the terminal, " ~
-    "to recover from binary garbage mode")
+@Description("Outputs the ASCII control character 15 to the local terminal, " ~
+    "to recover from binary garbage mode.")
 void onCommandResetTerminal()
 {
     import kameloso.terminal : TerminalToken;
@@ -1178,7 +1178,7 @@ version(AdminAssertGeneration)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printasserts")
-@Description("[debug] Toggles a flag to generate assert statements for incoming events")
+@Description("[debug] Toggles a flag to generate assert statements for incoming events.")
 void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 {
     import std.conv : text;
@@ -1431,7 +1431,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @BotCommand(PrefixPolicy.nickname, "set")
-@Description("Changes a plugin's settings", "$command [plugin.setting=value]")
+@Description("Changes a plugin's settings.", "$command [plugin.setting=value]")
 void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage;

@@ -2,6 +2,8 @@
  +  Awareness mixins, for plugins to mix in to extend behaviour and enjoy a
  +  considerable degree of automation.
  +
+ +  These are used for plugins to mix in bookkeeping of users and channels.
+ +
  +  Example:
  +  ---
  +  import kameloso.plugins.ircplugin;

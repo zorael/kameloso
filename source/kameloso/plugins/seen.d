@@ -1,5 +1,5 @@
 /++
- +  The Seen plugin implements `seen` functionality; the ability for someone to
+ +  The Seen plugin implements "seen" functionality; the ability for someone to
  +  query when a given nickname was last seen online.
  +
  +  We will implement this by keeping an internal `long[string]` associative
@@ -9,7 +9,7 @@
  +  it, as well as saving occasionally once every few (configurable) hours.
  +
  +  We will rely on the `kameloso.plugins.chanqueries.ChanQueriesService` to query
- +  channels for full lists of users upon joining new channels, including the
+ +  channels for full lists of users upon joining new ones, including the
  +  ones we join upon connecting. Elsewise, a completely silent user will never
  +  be recorded as having been seen, as they would never be triggering any of
  +  the functions we define to listen to.
@@ -24,7 +24,7 @@
  +  `kameloso.plugins.package.EnabledPlugins.length` number of plugins' event
  +  handling execution time. Generally the latter is insignificant.
  +
- +  See the GitHub wiki for more information about available commands:
+ +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
  +/
 module kameloso.plugins.seen;

@@ -1,7 +1,7 @@
 /++
  +  The Connect service handles logging onto IRC servers after having connected,
  +  as well as managing authentication to services. It also manages responding
- +  to `dialect.defs.IRCEvent.Type.PING` requests.
+ +  to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
  +
  +  It has no commands; everything in it is reactionary, with no special
  +  awareness mixed in.
@@ -1129,11 +1129,12 @@ public:
 
 // ConnectService
 /++
- +  A collection of functions and state needed to connect and stay connected to
- +  an IRC server, as well as authenticate with services.
+ +  The Connect service is a collection of functions and state needed to connect
+ +  and stay connected to an IRC server, as well as authenticate with services.
  +
  +  This is mostly a matter of sending `USER` and `NICK` during registration,
- +  but also incorporates logic to authenticate with services.
+ +  but also incorporates logic to authenticate with services, and capability
+ +  negotiations.
  +/
 final class ConnectService : IRCPlugin
 {

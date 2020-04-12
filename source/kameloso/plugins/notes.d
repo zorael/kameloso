@@ -1,6 +1,6 @@
 /++
  +  The Notes plugin allows for storing notes to offline users, to be replayed
- +  when they next log in.
+ +  when they next join the channel.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#notes

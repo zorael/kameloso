@@ -1,7 +1,7 @@
 /++
  +  The SedReplace plugin imitates the UNIX `sed` tool, allowing for the
  +  replacement/substitution of text. It does not require the tool itself though,
- +  and will work on Windows builds too.
+ +  and will work on Windows too.
  +
  +  ---
  +  $ echo "foo bar baz" | sed "s/bar/qux/"

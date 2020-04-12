@@ -1,7 +1,9 @@
 /++
  +  The Chatbot plugin is a collection of small, harmless functions like `8ball`
- +  and repeating text, as well as providing an "online help", sending a list of
- +  all the available bot verbs to the querying nickname.
+ +  for magic eightball, `bash` for fetching specified or random bash.org quotes,
+ +  and `say`/`echo` for simple repeating of text.
+ +
+ +  It's mostly legacy.
  +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot

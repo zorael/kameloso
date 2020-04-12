@@ -1,12 +1,12 @@
 /++
  +  The Channel Queries service queries channels for information about them (in
- +  terms of topic and modes) as well as its list of participants. It does this
+ +  terms of topic and modes) as well as their lists of participants. It does this
  +  shortly after having joined a channel, as a service to all other plugins,
- +  so they don't each repeat it themselves.
+ +  so they don't each have to repeat it themselves.
  +
  +  It is qualified as a service, so while it is not technically mandatory, it
  +  is highly recommended if you plan on mixing in
- +  `kameloso.plugins.awareness.ChannelAwareness` in your plugins.
+ +  `kameloso.plugins.awareness.ChannelAwareness` into your plugins.
  +/
 module kameloso.plugins.chanqueries;
 
@@ -434,9 +434,7 @@ public:
 // ChanQueriesService
 /++
  +  The Channel Queries service queries channels for information about them (in
- +  terms of topic and modes) as well as its list of participants. It does this
- +  shortly after having joined a channel, as a service to all other plugins,
- +  so they don't each try to do it themselves.
+ +  terms of topic and modes) as well as its list of participants.
  +/
 final class ChanQueriesService : IRCPlugin
 {

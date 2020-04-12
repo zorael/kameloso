@@ -1,6 +1,6 @@
 /++
  +  The Webtitles plugin catches URLs pasted in a channel, follows them and
- +  reports beck the title of the web page that was linked to.
+ +  reports back the title of the web page that was linked to.
  +
  +  It has no bot commands; everything is done by automatically scanning channel
  +  and private query messages for things that look like links.
@@ -825,8 +825,8 @@ public:
 
 // WebtitlesPlugin
 /++
- +  The Webtitles plugin catches HTTP URL links in an IRC channel, connects to
- +  its server and and streams the web page itself, looking for the web page's
+ +  The Webtitles plugin catches HTTP URL links in messages, connects to
+ +  their servers and and streams the web page itself, looking for the web page's
  +  title. This is then reported to the originating channel or personal query.
  +/
 final class WebtitlesPlugin : IRCPlugin

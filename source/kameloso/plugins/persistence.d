@@ -1,7 +1,7 @@
 /++
- +  The Persistence service keeps track of all seen users, gathering as much
+ +  The Persistence service keeps track of all encountered users, gathering as much
  +  information about them as possible, then injects them into
- +  `dialect.defs.IRCEvent`s when such information is not present.
+ +  `dialect.defs.IRCEvent`s when information about them is incomplete.
  +
  +  This means that even if a service only refers to a user by nickname, things
  +  like his ident and address will be available to plugins as well, assuming

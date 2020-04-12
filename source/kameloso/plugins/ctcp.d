@@ -6,7 +6,7 @@
  +  responds to requests.
  +
  +  It is optional though some servers may not like it if you do not respond to
- +  some of the queries. You may be kicked.
+ +  some of the queries.
  +/
 module kameloso.plugins.ctcp;
 

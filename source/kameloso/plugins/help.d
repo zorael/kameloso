@@ -1,6 +1,8 @@
 /++
  +  The Help plugin serves the `help` command, and nothing else at this point.
  +
+ +  It is used to query the bot for available commands in a tidy list.
+ +
  +  See the GitHub wiki for more information about available commands:
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#help
  +/

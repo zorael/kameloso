@@ -1,14 +1,15 @@
 /++
  +  The Printer plugin takes incoming `dialect.defs.IRCEvent`s, formats them
- +  into being easily readable and prints them to the screen, optionally with colours.
+ +  into something easily readable and prints them to the screen, optionally with colours.
+ +  It also supports logging to disk.
  +
  +  It has no commands; all `dialect.defs.IRCEvent`s will be parsed and
  +  printed, excluding certain types that were deemed too spammy. Print them as
- +  well by disabling `PrinterSettings.filterMost`.
+ +  well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
  +
  +  It is not technically necessary, but it is the main form of feedback you
  +  get from the plugin, so you will only want to disable it if you want a
- +  really "headless" environment. There's also logging to consider.
+ +  really "headless" environment.
  +/
 module kameloso.plugins.printer;
 
@@ -2924,7 +2925,8 @@ public:
 // PrinterPlugin
 /++
  +  The Printer plugin takes all `dialect.defs.IRCEvent`s and prints them to
- +  the local terminal, formatted and optionally in colour.
+ +  the local terminal, formatted and optionally in colour. Alternatively to disk
+ +  as logs.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split
  +  off into its own plugin.

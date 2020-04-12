@@ -2,10 +2,10 @@
  +  The Quotes plugin allows for saving and replaying user quotes.
  +
  +  A user quote can be added by triggering the "`addquote`" bot command, by use
- +  of "`botname: addquote`" or "`!addquote`" (assuming a prefix of "`!`"). A
- +  random one can then be replayed by use of the "`quote [nickname]`" command.
+ +  of "`!addquote`" (assuming a prefix of "`!`"). A random one can then be
+ +  replayed by use of the "`!quote [nickname]`" command.
  +
- +  See the GitHub wiki for more information about available commands:
+ +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
  +/
 module kameloso.plugins.quotes;

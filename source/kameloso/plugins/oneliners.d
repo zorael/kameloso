@@ -4,6 +4,9 @@
  +
  +  More advanced commands that do more than just repeat the preset lines of text
  +  will have to be written separately.
+ +
+ +  See the GitHub wiki for more information about available commands:<br>
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
  +/
 module kameloso.plugins.oneliners;
 
@@ -277,8 +280,8 @@ public:
 
 // OnelinersPlugin
 /++
- +  The Oneliners plugin serves to listen to custom commands that can be added
- +  at runtime. Think `!info`.
+ +  The Oneliners plugin serves to listen to custom commands that can be added,
+ +  modified and removed at runtime. Think `!info`.
  +/
 final class OnelinersPlugin : IRCPlugin
 {
