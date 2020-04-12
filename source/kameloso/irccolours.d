@@ -556,8 +556,8 @@ string mapColours(const string line,
  +/
 private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
     const uint fgReset, const uint bgReset) pure nothrow
-in ((fgReset > 0), "Tried to " ~ strip ? "strip" : "map" ~ " colours with a foreground value of 0")
-in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "map" ~ " colours with a backgroud value of 0")
+in ((fgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " colours with a foreground value of 0")
+in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " colours with a backgroud value of 0")
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
@@ -899,6 +899,8 @@ unittest
  +/
 private string mapEffectsImpl(Flag!"strip" strip, int mircToken, int terminalFormatCode)
     (const string line)
+in ((mircToken > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " effects with an IRC token of 0")
+in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal format code of 0")
 {
     import lu.conv : toAlpha;
     import std.array : Appender;
