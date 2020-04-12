@@ -564,7 +564,7 @@ in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a bac
         version(Colours) {}
         else
         {
-            static assert(0, "`mapColours!(Yes.strip)` is being called outside of version `Colours`");
+            static assert(0, "`mapColoursImpl!(Yes.strip)` is being called outside of version `Colours`");
         }
     }
 
@@ -679,8 +679,6 @@ in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a bac
     Appender!string sink;
     sink.reserve(line.length + segments.length * 8);
 
-    bool open;
-
     static if (strip)
     {
         foreach (segment; segments)
@@ -734,6 +732,8 @@ in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a bac
                 14 : B.black,
                 15 : B.lightgrey,
             ];
+
+            bool open;
 
             foreach (segment; segments)
             {
