@@ -600,6 +600,7 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
         {
             int fg1;
             int fg2;
+            bool hasFg2;
 
             fg1 = c;
             if (slice.length < 2) break;
@@ -610,11 +611,12 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
             if ((c >= 0) && (c <= 9))
             {
                 fg2 = c;
+                hasFg2 = true;
                 if (slice.length < 2) break;
                 slice = slice[1..$];
             }
 
-            int fg = (fg2 > 0) ? (10*fg1 + fg2) : fg1;
+            int fg = hasFg2 ? (10*fg1 + fg2) : fg1;
 
             if (fg > 15)
             {
@@ -631,6 +633,7 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
 
                 int bg1;
                 int bg2;
+                bool hasBg2;
 
                 bg1 = slice[0] - '0';
                 if (slice.length < 2) break;
@@ -640,11 +643,12 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
                 if ((c >= 0) && (c <= 9))
                 {
                     bg2 = c;
+                    hasBg2 = true;
                     if (!slice.length) break;
                     slice = slice[1..$];
                 }
 
-                int bg = (bg2 > 0) ? (10*bg1 + bg2) : bg1;
+                int bg = hasBg2 ? (10*bg1 + bg2) : bg1;
 
                 if (bg > 15)
                 {
