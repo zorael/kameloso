@@ -470,23 +470,15 @@ unittest
  +  Returns:
  +      A string devoid of effects.
  +/
-string stripEffects(const string line)
+string stripEffects(const string line) pure nothrow
 {
-    import std.array : replace;
-
     alias I = IRCControlCharacter;
-
-    enum boldCode = "" ~ I.bold;
-    enum italicsCode = "" ~ I.italics;
-    enum underlinedCode = "" ~ I.underlined;
-
-    if (!line.length) return string.init;
 
     return line
         .stripColours
-        .replace(boldCode, string.init)
-        .replace(italicsCode, string.init)
-        .replace(underlinedCode, string.init);
+        .mapEffectsImpl!(Yes.strip, I.bold, 0)
+        .mapEffectsImpl!(Yes.strip, I.italics, 0)
+        .mapEffectsImpl!(Yes.strip, I.underlined, 0);
 }
 
 ///
