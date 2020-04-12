@@ -39,9 +39,11 @@ version = CtTints;
 /++
  +  Modified `std.experimental.logger.Logger` to print timestamped and coloured logging messages.
  +
- +  It is thread-local so instantiate more if you're threading.
+ +  It is thread-local so instantiate more if you're threading. Even so there
+ +  may be race conditions.
  +
- +  See the documentation for `std.experimental.logger.Logger`.
+ +  See_Also:
+ +      std.experimental.logger.Logger.
  +/
 final class KamelosoLogger : Logger
 {

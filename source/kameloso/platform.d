@@ -167,6 +167,8 @@ unittest
  +  On Posix it defaults to `$XDG_DATA_HOME` and falls back to
  +  `~/.local/share` if no `XDG_DATA_HOME` environment variable present.
  +
+ +  On OSX it defaults to `$HOME/Library/Application Support`.
+ +
  +  On Windows it defaults to `%APPDATA%`.
  +
  +  Returns:

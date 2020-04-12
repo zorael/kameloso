@@ -229,7 +229,7 @@ public:
  +      proceed or not.
  +
  +  Throws:
- +      `std.getopt.GetOptException` if an unkown flag is passed.
+ +      `std.getopt.GetOptException` if an unknown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {

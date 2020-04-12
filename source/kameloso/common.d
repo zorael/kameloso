@@ -46,7 +46,9 @@ Logger logger;
 /++
  +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
  +
- +  It needs to be separately instantiated per thread.
+ +  It needs to be separately instantiated per thread, and even so there may be
+ +  race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
+ +  to log to screen from other threads.
  +
  +  Example:
  +  ---
@@ -816,7 +818,7 @@ struct OutgoingLine
 
 // findURLs
 /++
- +  Finds URLs in a string, returning an array of them.
+ +  Finds URLs in a string, returning an array of them. Does not filter out duplicates.
  +
  +  Replacement for regex matching using much less memory when compiling
  +  (around ~300mb).
@@ -1173,7 +1175,7 @@ unittest
 // stripSeparatedPrefix
 /++
  +  Strips a prefix word from a string, optionally also stripping away some
- +  non-word characters (`:?! `).
+ +  non-word characters (currently ":;?! ").
  +
  +  This is to make a helper for stripping away bot prefixes, where such may be
  +  "kameloso: ".
@@ -1187,7 +1189,7 @@ unittest
  +
  +  Params:
  +      demandSeparatingChars = Makes it a necessity that `line` is followed
- +          by one of the prefix letters `:?! `. If it isn't, the `line` string
+ +          by one of the prefix letters ":;?! ". If it isn't, the `line` string
  +          will be returned as is.
  +      line = String line prefixed with `prefix`, potentially including separating characters.
  +      prefix = Prefix to strip.
@@ -1202,7 +1204,7 @@ do
 {
     import lu.string : beginsWithOneOf, nom, strippedLeft;
 
-    enum separatingChars = ": !?";
+    enum separatingChars = ": !?;";  // In reasonable order of likelihood
 
     string slice = line.strippedLeft;  // mutable
 

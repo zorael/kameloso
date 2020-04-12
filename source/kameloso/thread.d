@@ -40,7 +40,8 @@ public:
 /++
  +  A tuple of a `core.thread.Fiber` and a `long` UNIX timestamp.
  +
- +  If we pair the two together like this, we won't need to use an associative
+ +  If we pair the two together like this, we can associate a point in time
+ +  with a `core.thread.Fiber` without having to to use an associative
  +  array (with UNIX timestamp keys).
  +
  +  Example:

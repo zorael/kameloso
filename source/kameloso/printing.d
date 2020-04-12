@@ -7,6 +7,8 @@
  +
  +  `printObjects(client, bot, settings);`
  +  ---
+/* Output to screen:
+
 -- IRCClient
    string nickname               "kameloso"(8)
    string user                   "kameloso"(8)
@@ -22,6 +24,7 @@
 -- IRCServer
    string address                "irc.freenode.net"(16)
    ushort port                    6667
+*/
  +  ---
  +
  +  Distance between types, member names and member values are deduced automatically

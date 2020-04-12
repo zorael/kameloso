@@ -462,7 +462,7 @@ unittest
 // stripEffects
 /++
  +  Removes all form of mIRC formatting (colours, bold, italics, underlined)
- +  from an `dialect.defs.IRCEvent`.
+ +  from a string.
  +
  +  Params:
  +      line = String to strip effects from.
@@ -833,8 +833,9 @@ unittest
 
 // stripColours
 /++
- +  Removes IRC colouring from a passed string. Merely calls `mapColours` with
- +  a `Yes.strip` template parameter.
+ +  Removes IRC colouring from a passed string.
+ +
+ +  Merely calls `mapColours` with a `Yes.strip` template parameter.
  +
  +  Params:
  +      line = String to strip of IRC colour tags.
