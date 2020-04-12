@@ -139,6 +139,8 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
     import kameloso.common : Tint, logger, settings;
     import lu.string : beginsWith, contains, nom;
 
+    bool[string] duplicates;
+
     foreach (immutable i, url; urls)
     {
         // If the URL contains an octothorpe fragment identifier, like
@@ -146,7 +148,16 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         // then strip that.
         url = url.nom!(Yes.inherit, Yes.decode)('#');
 
-        logger.log("Caught URL: ", Tint.info, url);
+        while (url[$-1] == '/')
+        {
+            url = url[0..$-1];
+        }
+
+        if (url in duplicates) continue;
+
+        duplicates[url] = true;
+
+        logger.info("Caught URL: ", Tint.info, url);
 
         TitleLookupRequest request;
         request.state = plugin.state;
