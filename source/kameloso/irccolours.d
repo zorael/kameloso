@@ -838,12 +838,12 @@ unittest
  +  Returns:
  +      The passed `line`, now stripped of IRC colours.
  +/
-string stripColours(const string line)
+string stripColours(const string line) pure nothrow
 {
     enum fgReset = 39;
     enum bgReset = 49;
 
-    return mapColours!(Yes.strip)(line, fgReset, bgReset);
+    return mapColoursImpl!(Yes.strip)(line, fgReset, bgReset);
 }
 
 ///
