@@ -737,7 +737,7 @@ unittest
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
         immutable mapped = mapColours(line);
-        assert((mapped == "This time there's\033[35m no ending token, only magenta."), mapped);
+        assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[39;49m"), mapped);
     }
     {
         immutable line = I.colour ~ "1,0You" ~ I.colour ~ "0,4Tube" ~ I.colour ~ " asdf";
