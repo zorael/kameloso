@@ -20,11 +20,11 @@ private:
 
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
+import std.typecons : Flag, No, Yes;
 
 version(Colours)
 {
     import kameloso.terminal : TerminalBackground, TerminalForeground;
-    import std.typecons : Flag, No, Yes;
 }
 
 public:
@@ -521,6 +521,7 @@ unittest
  +  Maps mIRC effect colour tokens to terminal ones. Now with less regex.
  +
  +  Params:
+ +      strip = Whether or not to strip colours or to map them.
  +      line = String line with IRC colours to translate.
  +      fgReset = Foreground code to reset to after colour-default tokens.
  +      bgReset = Background code to reset to after colour-default tokens.
@@ -528,57 +529,24 @@ unittest
  +  Returns:
  +      The passed `line`, now with terminal colouring.
  +/
-version(Colours)
 string mapColours(Flag!"strip" strip = No.strip)(const string line,
-    const uint fgReset = TerminalForeground.default_,
-    const uint bgReset = TerminalBackground.default_)
+    const uint fgReset/* = TerminalForeground.default_*/,
+    const uint bgReset/* = TerminalBackground.default_*/)
+in ((fgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a foreground value of 0")
+in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a backgroud value of 0")
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
     import std.string : indexOf;
 
-    alias F = TerminalForeground;
-    alias B = TerminalBackground;
-
-    TerminalForeground[16] weechatForegroundMap =
-    [
-         0 : F.white,
-         1 : F.darkgrey,
-         2 : F.blue,
-         3 : F.green,
-         4 : F.lightred,
-         5 : F.red,
-         6 : F.magenta,
-         7 : F.yellow,
-         8 : F.lightyellow,
-         9 : F.lightgreen,
-        10 : F.cyan,
-        11 : F.lightcyan,
-        12 : F.lightblue,
-        13 : F.lightmagenta,
-        14 : F.darkgrey,
-        15 : F.lightgrey,
-    ];
-
-    TerminalBackground[16] weechatBackgroundMap =
-    [
-         0 : B.white,
-         1 : B.black,
-         2 : B.blue,
-         3 : B.green,
-         4 : B.red,
-         5 : B.red,
-         6 : B.magenta,
-         7 : B.yellow,
-         8 : B.yellow,
-         9 : B.green,
-        10 : B.cyan,
-        11 : B.cyan,
-        12 : B.blue,
-        13 : B.magenta,
-        14 : B.black,
-        15 : B.lightgrey,
-    ];
+    static if (!strip)
+    {
+        version(Colours) {}
+        else
+        {
+            static assert(0, "`mapColours!(Yes.strip)` is being called outside of version `Colours`");
+        }
+    }
 
     struct Segment
     {
@@ -702,31 +670,81 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
     }
     else
     {
-        foreach (segment; segments)
+        version(Colours)
         {
-            open = true;
-            sink.put(segment.pre);
-            sink.put("\033[");
+            alias F = TerminalForeground;
+            alias B = TerminalBackground;
 
-            if (segment.isReset)
+            static immutable TerminalForeground[16] weechatForegroundMap =
+            [
+                0 : F.white,
+                1 : F.darkgrey,
+                2 : F.blue,
+                3 : F.green,
+                4 : F.lightred,
+                5 : F.red,
+                6 : F.magenta,
+                7 : F.yellow,
+                8 : F.lightyellow,
+                9 : F.lightgreen,
+                10 : F.cyan,
+                11 : F.lightcyan,
+                12 : F.lightblue,
+                13 : F.lightmagenta,
+                14 : F.darkgrey,
+                15 : F.lightgrey,
+            ];
+
+            static immutable TerminalBackground[16] weechatBackgroundMap =
+            [
+                0 : B.white,
+                1 : B.black,
+                2 : B.blue,
+                3 : B.green,
+                4 : B.red,
+                5 : B.red,
+                6 : B.magenta,
+                7 : B.yellow,
+                8 : B.yellow,
+                9 : B.green,
+                10 : B.cyan,
+                11 : B.cyan,
+                12 : B.blue,
+                13 : B.magenta,
+                14 : B.black,
+                15 : B.lightgrey,
+            ];
+
+            foreach (segment; segments)
             {
-                fgReset.toAlphaInto(sink);
-                sink.put(';');
-                bgReset.toAlphaInto(sink);
-                sink.put('m');
-                open = false;
-                continue;
+                open = true;
+                sink.put(segment.pre);
+                sink.put("\033[");
+
+                if (segment.isReset)
+                {
+                    fgReset.toAlphaInto(sink);
+                    sink.put(';');
+                    bgReset.toAlphaInto(sink);
+                    sink.put('m');
+                    open = false;
+                    continue;
+                }
+
+                (cast(uint)weechatForegroundMap[segment.fg]).toAlphaInto(sink);
+
+                if (segment.hasBackground)
+                {
+                    sink.put(';');
+                    (cast(uint)weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
+                }
+
+                sink.put("m");
             }
-
-            (cast(uint)weechatForegroundMap[segment.fg]).toAlphaInto(sink);
-
-            if (segment.hasBackground)
-            {
-                sink.put(';');
-                (cast(uint)weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
-            }
-
-            sink.put("m");
+        }
+        else
+        {
+            //static assert(0);
         }
     }
 
@@ -734,13 +752,16 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
 
     static if (!strip)
     {
-        if (open)
+        version(Colours)
         {
-            sink.put("\033[39;49m");
-            /*fgReset.toAlphaInto(sink);
-            sink.put(';');
-            bgReset.toAlphaInto(sink);
-            sink.put('m');*/
+            if (open)
+            {
+                sink.put("\033[39;49m");
+                /*fgReset.toAlphaInto(sink);
+                sink.put(';');
+                bgReset.toAlphaInto(sink);
+                sink.put('m');*/
+            }
         }
     }
 
