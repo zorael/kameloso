@@ -747,9 +747,8 @@ unittest
 
 // stripColours
 /++
- +  Removes IRC colouring from a passed string.
- +
- +  FIXME: remove regex.
+ +  Removes IRC colouring from a passed string. Merely calls `mapColours` with
+ +  a `Yes.strip` template parameter.
  +
  +  Params:
  +      line = String to strip of IRC colour tags.
@@ -759,38 +758,7 @@ unittest
  +/
 string stripColours(const string line)
 {
-    import std.array : replace;
-    import std.regex : matchAll, regex;
-
-    if (!line.length) return string.init;
-
-    alias I = IRCControlCharacter;
-
-    enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
-    static engine = colourPattern.regex;
-
-    bool strippedSomething;
-
-    string slice = line;
-
-    foreach (const hit; line.matchAll(engine))
-    {
-        import std.array : Appender;
-        import std.conv : to;
-
-        if (!hit[1].length) continue;
-
-        slice = slice.replace(hit[0], string.init);
-        strippedSomething = true;
-    }
-
-    if (strippedSomething)
-    {
-        // Remove ending tokens
-        slice = slice.replace("" ~ I.colour, string.init);
-    }
-
-    return slice;
+    return mapColours!(Yes.strip)(line);
 }
 
 ///
