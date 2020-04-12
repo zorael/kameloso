@@ -438,6 +438,26 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
     return line;
 }
 
+///
+version(Colours)
+unittest
+{
+    import kameloso.terminal : TF = TerminalFormat, TerminalToken;
+    import std.conv : to;
+
+    alias I = IRCControlCharacter;
+
+    enum bBold = TerminalToken.format ~ "[" ~ (cast(ubyte)TF.bold).to!string ~ "m";
+    enum bReset = TerminalToken.format ~ "[22m";
+    //enum bResetAll = TerminalToken.format ~ "[0m";
+
+    immutable line1 = "ABC"~I.bold~"DEF"~I.bold~"GHI"~I.bold~"JKL"~I.bold~"MNO";
+    immutable line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO";//~bResetAll;
+    immutable mapped = mapEffects(line1);
+
+    assert((mapped == line2), mapped);
+}
+
 
 // stripEffects
 /++
