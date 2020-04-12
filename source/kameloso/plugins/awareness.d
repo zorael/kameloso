@@ -919,18 +919,38 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
         with (IRCEvent.Type)
         {
-            // Map known list types to their modechars
-            immutable ubyte[IRCEvent.Type.RPL_QUIETLIST+1] modecharsByType =
-            [
-                RPL_BANLIST : 'b',
-                RPL_EXCEPTLIST : plugin.state.server.exceptsChar,
-                RPL_INVITELIST : plugin.state.server.invexChar,
-                RPL_REOPLIST : 'R',
-                RPL_QUIETLIST : 'q',
-            ];
+            string modestring;
 
-            (*channel).setMode((cast(char)modecharsByType[event.type]).to!string,
-                event.content, plugin.state.server);
+            switch (event.type)
+            {
+            case RPL_BANLIST:
+                modestring = "b";
+                break;
+
+            case RPL_EXCEPTLIST:
+                modestring = (plugin.state.server.exceptsChar == 'e') ?
+                    "e" : plugin.state.server.invexChar.to!string;
+                break;
+
+            case RPL_INVITELIST:
+                modestring = (plugin.state.server.invexChar == 'I') ?
+                    "I" : plugin.state.server.invexChar.to!string;
+                break;
+
+            case RPL_REOPLIST:
+                modestring = "R";
+                break;
+
+            case RPL_QUIETLIST:
+                modestring = "q";
+                break;
+
+            default:
+                assert(0, "Unexpected IRC event type annotation on " ~
+                    "`onChannelAwarenessModeListMixin`");
+            }
+
+            (*channel).setMode(modestring, event.content, plugin.state.server);
         }
     }
 
