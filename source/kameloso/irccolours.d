@@ -667,6 +667,8 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
     Appender!string sink;
     sink.reserve(line.length + segments.length * 8);
 
+    bool open;
+
     static if (strip)
     {
         foreach (segment; segments)
@@ -678,6 +680,7 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
     {
         foreach (segment; segments)
         {
+            open = true;
             sink.put(segment.pre);
             sink.put("\033[");
 
@@ -687,6 +690,7 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
                 sink.put(';');
                 bgReset.toAlphaInto(sink);
                 sink.put('m');
+                open = false;
                 continue;
             }
 
@@ -703,6 +707,18 @@ string mapColours(Flag!"strip" strip = No.strip)(const string line,
     }
 
     sink.put(tail);
+
+    static if (!strip)
+    {
+        if (open)
+        {
+            sink.put("\033[39;49m");
+            /*fgReset.toAlphaInto(sink);
+            sink.put(';');
+            bgReset.toAlphaInto(sink);
+            sink.put('m');*/
+        }
+    }
 
     return sink.data;
 }
