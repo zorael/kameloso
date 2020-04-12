@@ -443,11 +443,11 @@ version(Colours)
 unittest
 {
     import kameloso.terminal : TF = TerminalFormat, TerminalToken;
-    import std.conv : to;
+    import lu.conv : toAlpha;
 
     alias I = IRCControlCharacter;
 
-    enum bBold = TerminalToken.format ~ "[" ~ (cast(ubyte)TF.bold).to!string ~ "m";
+    enum bBold = TerminalToken.format ~ "[" ~ TF.bold.toAlpha ~ "m";
     enum bReset = TerminalToken.format ~ "[22m";
     //enum bResetAll = TerminalToken.format ~ "[0m";
 
