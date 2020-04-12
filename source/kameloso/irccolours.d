@@ -903,8 +903,12 @@ string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
             open = false;
         }
 
-        pos = line.indexOf(mircToken);
+        pos = slice.indexOf(mircToken);
     }
+
+    immutable tail = slice;
+
+    sink.put(tail);
 
     if (open) sink.colourWith(TerminalReset.all);
 
