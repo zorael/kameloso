@@ -871,6 +871,7 @@ unittest
  +  Returns:
  +      The passed `line`, now with terminal formatting.
  +/
+version(Colours)
 string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
 {
     import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colourWith;
@@ -940,6 +941,7 @@ string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
 }
 
 ///
+version(Colours)
 unittest
 {
     import kameloso.terminal : TerminalFormat, TerminalToken;
