@@ -157,7 +157,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
         duplicates[url] = true;
 
-        logger.info("Caught URL: ", Tint.info, url);
+        logger.info("Caught URL: ", Tint.log, url);
 
         TitleLookupRequest request;
         request.state = plugin.state;
