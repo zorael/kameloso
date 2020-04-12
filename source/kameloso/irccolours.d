@@ -510,7 +510,36 @@ unittest
 
 // mapColours
 /++
- +  Maps mIRC effect colour tokens to terminal ones. Now with less regex.
+ +  Maps mIRC effect colour tokens to terminal ones.
+ +
+ +  Merely calls `mapColoursImpl` with `No.strip`.
+ +
+ +  Params:
+ +      line = String line with IRC colours to translate.
+ +      fgReset = Foreground code to reset to after colour-default tokens.
+ +      bgReset = Background code to reset to after colour-default tokens.
+ +
+ +  Returns:
+ +      The passed `line`, now with terminal colouring.
+ +/
+version(Colours)
+string mapColours(const string line,
+    const uint fgReset = TerminalForeground.default_,
+    const uint bgReset = TerminalBackground.default_) pure nothrow
+{
+    return mapColoursImpl!(No.strip)(line, fgReset, bgReset);
+}
+
+
+// mapColoursImpl
+/++
+ +  Maps mIRC effect colour tokens to terminal ones, or strip them entirely.
+ +  Now with less regex.
+ +
+ +  Pass `Yes.strip` as `strip` to map colours to nothing, removing colouring.
+ +
+ +  This function requires version `Colours` to map colours, but doesn't if
+ +  just to strip.
  +
  +  Params:
  +      strip = Whether or not to strip colours or to map them.
@@ -519,11 +548,10 @@ unittest
  +      bgReset = Background code to reset to after colour-default tokens.
  +
  +  Returns:
- +      The passed `line`, now with terminal colouring.
+ +      The passed `line`, now with terminal colouring, or completely without.
  +/
-string mapColours(Flag!"strip" strip = No.strip)(const string line,
-    const uint fgReset/* = TerminalForeground.default_*/,
-    const uint bgReset/* = TerminalBackground.default_*/)
+private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
+    const uint fgReset, const uint bgReset) pure nothrow
 in ((fgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a foreground value of 0")
 in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a backgroud value of 0")
 {
