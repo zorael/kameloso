@@ -914,3 +914,22 @@ string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
 
     return sink.data;
 }
+
+///
+unittest
+{
+    import kameloso.terminal : TerminalFormat, TerminalToken;
+    import lu.conv : toAlpha;
+
+    alias I = IRCControlCharacter;
+    alias TF = TerminalFormat;
+
+    enum bBold = TerminalToken.format ~ "[" ~ TF.bold.toAlpha ~ "m";
+    enum bReset = TerminalToken.format ~ "[22m";
+
+    {
+        enum line = "derp " ~ I.bold ~ "herp derp" ~ I.bold ~ "der dper";
+        immutable mapped = mapEffectsImpl!(I.bold, TF.bold)(line);
+        assert((mapped == "derp " ~ bBold ~ "herp derp" ~ bReset ~ "der dper"), mapped);
+    }
+}
