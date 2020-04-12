@@ -69,7 +69,7 @@ enum IRCColour
  +      bg = Optional background `IRCColour`.
  +/
 void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour fg,
-    const IRCColour bg = IRCColour.unset) pure
+    const IRCColour bg = IRCColour.unset)
 if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 do
