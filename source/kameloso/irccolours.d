@@ -400,7 +400,7 @@ char ircReset() @nogc pure nothrow
  +/
 version(Colours)
 string mapEffects(const string origLine, const uint fgBase = TerminalForeground.default_,
-    const uint bgBase = TerminalBackground.default_)
+    const uint bgBase = TerminalBackground.default_) pure nothrow
 {
     import kameloso.terminal : TF = TerminalFormat;
     import lu.string : contains;
