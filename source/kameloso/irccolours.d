@@ -620,6 +620,206 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
     return slice;
 }
 
+
+// mapColours
+/++
+ +  Maps mIRC effect colour tokens to terminal ones. Now with less regex.
+ +
+ +  Params:
+ +      line = String line with IRC colours to translate.
+ +      fgReset = Foreground code to reset to after colour-default tokens.
+ +      bgReset = Background code to reset to after colour-default tokens.
+ +
+ +  Returns:
+ +      The passed `line`, now with terminal colouring.
+ +/
+string mapColours(const string line, const uint fgReset = TerminalForeground.default_,
+    const uint bgReset = TerminalBackground.default_)
+{
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+    import std.string : indexOf;
+
+    alias F = TerminalForeground;
+    alias B = TerminalBackground;
+
+    TerminalForeground[16] weechatForegroundMap =
+    [
+         0 : F.white,
+         1 : F.darkgrey,
+         2 : F.blue,
+         3 : F.green,
+         4 : F.lightred,
+         5 : F.red,
+         6 : F.magenta,
+         7 : F.yellow,
+         8 : F.lightyellow,
+         9 : F.lightgreen,
+        10 : F.cyan,
+        11 : F.lightcyan,
+        12 : F.lightblue,
+        13 : F.lightmagenta,
+        14 : F.darkgrey,
+        15 : F.lightgrey,
+    ];
+
+    TerminalBackground[16] weechatBackgroundMap =
+    [
+         0 : B.white,
+         1 : B.black,
+         2 : B.blue,
+         3 : B.green,
+         4 : B.red,
+         5 : B.red,
+         6 : B.magenta,
+         7 : B.yellow,
+         8 : B.yellow,
+         9 : B.green,
+        10 : B.cyan,
+        11 : B.cyan,
+        12 : B.blue,
+        13 : B.magenta,
+        14 : B.black,
+        15 : B.lightgrey,
+    ];
+
+    struct Segment
+    {
+        string pre;
+        int fg;
+        int bg;
+        bool hasBackground;
+        bool isReset;
+    }
+
+    string slice = line;  // mutable
+
+    ptrdiff_t pos = slice.indexOf(IRCControlCharacter.colour);
+
+    if (pos == -1) return line;  // Return line as is, don't allocate a new one
+
+    Segment[] segments;
+    segments.reserve(8);  // Guesstimate
+
+    while (pos != -1)
+    {
+        immutable segmentIndex = segments.length;  // snapshot
+        segments ~= Segment.init;
+        Segment* segment = &segments[segmentIndex];
+
+        segment.pre = slice[0..pos];
+        if (slice.length == pos) break;
+        slice = slice[pos+1..$];
+
+        if (!slice.length)
+        {
+            segment.isReset = true;
+            break;
+        }
+
+        int c = slice[0] - '0';
+
+        if ((c >= 0) && (c <= 9))
+        {
+            int fg1;
+            int fg2;
+
+            fg1 = c;
+            if (slice.length < 2) break;
+            slice = slice[1..$];
+
+            c = slice[0] - '0';
+
+            if ((c >= 0) && (c <= 9))
+            {
+                fg2 = c;
+                if (slice.length < 2) break;
+                slice = slice[1..$];
+            }
+
+            int fg = (fg2 > 0) ? (10*fg1 + fg2) : fg1;
+
+            if (fg > 15)
+            {
+                fg %= 16;
+            }
+
+            segment.fg = fg;
+
+            if (slice[0] == ',')
+            {
+                if (!slice.length) break;
+                slice = slice[1..$];
+                segment.hasBackground = true;
+
+                int bg1;
+                int bg2;
+
+                bg1 = slice[0] - '0';
+                if (slice.length < 2) break;
+                slice = slice[1..$];
+                c = slice[0] - '0';
+
+                if ((c >= 0) && (c <= 9))
+                {
+                    bg2 = c;
+                    if (!slice.length) break;
+                    slice = slice[1..$];
+                }
+
+                int bg = (bg2 > 0) ? (10*bg1 + bg2) : bg1;
+
+                if (bg > 15)
+                {
+                    bg %= 16;
+                }
+
+                segment.bg = bg;
+            }
+        }
+        else
+        {
+            segment.isReset = true;
+        }
+
+        pos = slice.indexOf(IRCControlCharacter.colour);
+    }
+
+    immutable tail = slice;
+
+    Appender!string sink;
+    sink.reserve(line.length + segments.length * 8);
+
+    foreach (segment; segments)
+    {
+        sink.put(segment.pre);
+        sink.put("\033[");
+
+        if (segment.isReset)
+        {
+            fgReset.toAlphaInto(sink);
+            sink.put(';');
+            bgReset.toAlphaInto(sink);
+            sink.put('m');
+            continue;
+        }
+
+        (cast(uint)weechatForegroundMap[segment.fg]).toAlphaInto(sink);
+
+        if (segment.hasBackground)
+        {
+            sink.put(';');
+            (cast(uint)weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
+        }
+
+        sink.put("m");
+    }
+
+    sink.put(tail);
+
+    return sink.data;
+}
+
 ///
 version(Colours)
 unittest
