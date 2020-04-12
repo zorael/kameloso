@@ -420,19 +420,19 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
     if (line.contains(I.bold))
     {
         // Bold is terminal 1, mIRC 2
-        line = mapEffectsImpl!(I.bold, TF.bold)(line);
+        line = mapEffectsImpl!(No.strip, I.bold, TF.bold)(line);
     }
 
     if (line.contains(I.italics))
     {
         // Italics is terminal 3 (not really), mIRC 29
-        line = mapEffectsImpl!(I.italics, TF.italics)(line);
+        line = mapEffectsImpl!(No.strip, I.italics, TF.italics)(line);
     }
 
     if (line.contains(I.underlined))
     {
         // Underlined is terminal 4, mIRC 31
-        line = mapEffectsImpl!(I.underlined, TF.underlined)(line);
+        line = mapEffectsImpl!(No.strip, I.underlined, TF.underlined)(line);
     }
 
     return line;
@@ -985,7 +985,7 @@ unittest
 
     {
         enum line = "derp " ~ I.bold ~ "herp derp" ~ I.bold ~ "der dper";
-        immutable mapped = mapEffectsImpl!(I.bold, TF.bold)(line);
+        immutable mapped = mapEffectsImpl!(No.strip, I.bold, TF.bold)(line);
         assert((mapped == "derp " ~ bBold ~ "herp derp" ~ bReset ~ "der dper"), mapped);
     }
 }
