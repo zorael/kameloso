@@ -508,6 +508,7 @@ unittest
  +  Returns:
  +      The passed `line`, now with terminal colouring.
  +/
+version(Colours)
 string mapColours(Flag!"strip" strip = No.strip)(const string line,
     const uint fgReset = TerminalForeground.default_,
     const uint bgReset = TerminalBackground.default_)
