@@ -474,6 +474,8 @@ string stripEffects(const string line) pure nothrow
 {
     alias I = IRCControlCharacter;
 
+    if (!line.length) return line;
+
     return line
         .stripColours
         .mapEffectsImpl!(Yes.strip, I.bold, 0)
@@ -527,6 +529,8 @@ string mapColours(const string line,
     const uint fgReset = TerminalForeground.default_,
     const uint bgReset = TerminalBackground.default_) pure nothrow
 {
+    if (!line.length) return line;
+
     return mapColoursImpl!(No.strip)(line, fgReset, bgReset);
 }
 
@@ -842,6 +846,8 @@ string stripColours(const string line) pure nothrow
 {
     enum fgReset = 39;
     enum bgReset = 49;
+
+    if (!line.length) return line;
 
     return mapColoursImpl!(Yes.strip)(line, fgReset, bgReset);
 }
