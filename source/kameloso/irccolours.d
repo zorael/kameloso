@@ -781,7 +781,7 @@ unittest
     }
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
-        immutable mapped = mapColours(line);
+        immutable mapped = mapColours(line, 39, 49);
         assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[39;49m"), mapped);
     }
     {
@@ -820,7 +820,10 @@ unittest
  +/
 string stripColours(const string line)
 {
-    return mapColours!(Yes.strip)(line);
+    enum fgReset = 39;
+    enum bgReset = 49;
+
+    return mapColours!(Yes.strip)(line, fgReset, bgReset);
 }
 
 ///
