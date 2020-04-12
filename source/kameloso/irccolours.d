@@ -720,6 +720,16 @@ unittest
         immutable mapped = mapColours(line, 39, 49);
         assert((mapped == "\033[90;107mYou\033[97;41mTube\033[39;49m asdf"), mapped);
     }
+    {
+        immutable line = I.colour ~ "17,0You" ~ I.colour ~ "0,2" ~ I.colour;
+        immutable mapped = mapColours(line, 39, 49);
+        assert((mapped == "\033[90;107mYou\033[97;44m\033[39;49m"), mapped);
+    }
+    {
+        immutable line = I.colour ~ "";
+        immutable mapped = mapColours(line, 39, 49);
+        assert((mapped == "\033[39;49m"), mapped);
+    }
 }
 
 
