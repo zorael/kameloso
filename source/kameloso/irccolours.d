@@ -552,8 +552,8 @@ string mapColours(const string line,
  +/
 private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
     const uint fgReset, const uint bgReset) pure nothrow
-in ((fgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a foreground value of 0")
-in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "mmap" ~ " colours with a backgroud value of 0")
+in ((fgReset > 0), "Tried to " ~ strip ? "strip" : "map" ~ " colours with a foreground value of 0")
+in ((bgReset > 0), "Tried to " ~ strip ? "strip" : "map" ~ " colours with a backgroud value of 0")
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
