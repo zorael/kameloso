@@ -905,3 +905,89 @@ unittest
 
     assert((mapped == line2), mapped);
 }
+
+
+// mapEffectsImpl
+/++
+ +  Replaces mIRC tokens with terminal effect codes, in an alternating fashion
+ +  so as to support repeated effects toggling behaviour. Now with less regex.
+ +
+ +  It seems to be the case that a token for bold text will trigger bold text up
+ +  until the next bold token. If we only naïvely replace all mIRC tokens for
+ +  bold text then, we'll get lines that start off bold and continue as such
+ +  until the very end.
+ +
+ +  Instead we iterate all occcurences of the pased `mircToken`, toggling the
+ +  effect on and off.
+ +
+ +  Params:
+ +      mircToken = mIRC token for a particular text effect.
+ +      TerminalFormatCode = Terminal equivalent of the mircToken effect.
+ +      line = The mIRC-formatted string to translate.
+ +
+ +  Returns:
+ +      The passed `line`, now with terminal formatting.
+ +/
+string mapEffectsImpl(int mircToken, int TerminalFormatCode)(const string line)
+{
+    import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colourWith;
+    import lu.conv : toAlpha;
+    import std.array : Appender;
+    import std.string : indexOf;
+
+    alias I = IRCControlCharacter;
+
+    enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(TerminalFormatCode) ~ "m";
+    // enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
+
+    string slice = line;  // mutable
+
+    ptrdiff_t pos = slice.indexOf(mircToken);
+
+    if (pos == -1) return line;  // As is
+
+    Appender!string sink;
+    sink.reserve(cast(size_t)(line.length * 1.5));
+
+    bool open;
+
+    while (pos != -1)
+    {
+        sink.put(slice[0..pos]);
+        if (slice.length == pos) break;
+        slice = slice[pos+1..$];
+
+        if (!open)
+        {
+            sink.put(terminalToken);
+            open = true;
+        }
+        else
+        {
+            static if ((TerminalFormatCode == 1) || (TerminalFormatCode == 2))
+            {
+                // Both 1 and 2 seem to be reset by 22?
+                enum tokenstring = TerminalToken.format ~ "[22m";
+                sink.put(tokenstring);
+            }
+            else static if ((TerminalFormatCode >= 3) && (TerminalFormatCode <= 5))
+            {
+                enum tokenstring = TerminalToken.format ~ "[2" ~ TerminalFormatCode.toAlpha ~ "m";
+                sink.put(tokenstring);
+            }
+            else
+            {
+                //logger.warning("Unknown terminal effect code: ", TerminalFormatCode);
+                sink.colourWith(TerminalReset.all);
+            }
+
+            open = false;
+        }
+
+        pos = line.indexOf(mircToken);
+    }
+
+    if (open) sink.colourWith(TerminalReset.all);
+
+    return sink.data;
+}
