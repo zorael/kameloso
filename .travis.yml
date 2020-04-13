@@ -35,7 +35,12 @@ script:
   - time dub build --compiler=${DC} --nodeps --force -b release -c dev  || true
 
 before_deploy:
-  - time dub build --compiler=${DC} --nodeps --force -b ddox
+  #- time dub build --compiler=${DC} --nodeps --force -b ddox
+  - cd ..
+  - git clone https://github.com/adamdruppe/adrdox.git
+  - cd adrdox
+  - make
+  - ./doc2 -ip --directory ../kameloso/docs ../kameloso
   - cp -rv .circleci docs/
 
 deploy:
