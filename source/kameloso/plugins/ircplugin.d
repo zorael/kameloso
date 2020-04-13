@@ -597,118 +597,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
             }
 
-            import std.meta : AliasSeq, staticMap;
-            import std.traits : Parameters, Unqual, arity;
-
-            static if (hasUDA!(fun, PrivilegeLevel))
-            {
-                enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
-
-                static if (privilegeLevel != PrivilegeLevel.ignore)
-                {
-                    static if (!__traits(compiles, .hasMinimalAuthentication))
-                    {
-                        import std.format : format;
-                        static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
-                            "mixin (needed for `PrivilegeLevel` checks)")
-                            .format(module_));
-                    }
-                }
-
-                static if (verbose)
-                {
-                    writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
-                    if (settings.flush) stdout.flush();
-                }
-
-                static if (__traits(hasMember, this, "allow") &&
-                    isSomeFunction!(this.allow))
-                {
-                    import lu.traits : TakesParams;
-
-                    static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
-                    {
-                        import std.format : format;
-                        static assert(0, ("Custom `allow` function in `%s.%s` " ~
-                            "has an invalid signature: `%s`")
-                            .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...custom allow!");
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    immutable result = this.allow(mutEvent, privilegeLevel);
-                }
-                else
-                {
-                    static if (verbose)
-                    {
-                        writeln("...built-in allow.");
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    immutable result = allowImpl(mutEvent, privilegeLevel);
-                }
-
-                static if (verbose)
-                {
-                    writeln("...result is ", Enum!FilterResult.toString(result));
-                    if (settings.flush) stdout.flush();
-                }
-
-                with (FilterResult)
-                final switch (result)
-                {
-                case pass:
-                    // Drop down
-                    break;
-
-                case whois:
-                    import kameloso.plugins.common : doWhois;
-
-                    alias Params = staticMap!(Unqual, Parameters!fun);
-                    enum isIRCPluginParam(T) = is(T == IRCPlugin);
-
-                    static if (verbose)
-                    {
-                        writefln("...%s WHOIS", typeof(this).stringof);
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
-                    {
-                        this.doWhois(mutEvent, privilegeLevel, &fun);
-                        return Next.continue_;
-                    }
-                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                        is(Params : AliasSeq!(typeof(this))))
-                    {
-                        this.doWhois(this, mutEvent, privilegeLevel, &fun);
-                        return Next.continue_;
-                    }
-                    else static if (Filter!(isIRCPluginParam, Params).length)
-                    {
-                        import std.format : format;
-                        static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
-                            "parameter instead of a subclass `%s`")
-                            .format(module_, __traits(identifier, fun), typeof(this).stringof));
-                    }
-                    else
-                    {
-                        import std.format : format;
-                        static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
-                            .format(module_, __traits(identifier, fun), typeof(fun).stringof));
-                    }
-
-                case fail:
-                    return Next.continue_;
-                }
-            }
-
-
             /++
              +  The return value of `handle`, set from inside the foreach loop.
              +
@@ -828,6 +716,117 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 .format(module_, __traits(identifier, fun),
                                 Enum!(IRCEvent.Type).toString(U)));
                         }
+                    }
+                }
+
+                import std.meta : AliasSeq, staticMap;
+                import std.traits : Parameters, Unqual, arity;
+
+                static if (hasUDA!(fun, PrivilegeLevel))
+                {
+                    enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
+
+                    static if (privilegeLevel != PrivilegeLevel.ignore)
+                    {
+                        static if (!__traits(compiles, .hasMinimalAuthentication))
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
+                                "mixin (needed for `PrivilegeLevel` checks)")
+                                .format(module_));
+                        }
+                    }
+
+                    static if (verbose)
+                    {
+                        writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    static if (__traits(hasMember, this, "allow") &&
+                        isSomeFunction!(this.allow))
+                    {
+                        import lu.traits : TakesParams;
+
+                        static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
+                        {
+                            import std.format : format;
+                            static assert(0, ("Custom `allow` function in `%s.%s` " ~
+                                "has an invalid signature: `%s`")
+                                .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
+                        }
+
+                        static if (verbose)
+                        {
+                            writeln("...custom allow!");
+                            if (settings.flush) stdout.flush();
+                        }
+
+                        immutable result = this.allow(mutEvent, privilegeLevel);
+                    }
+                    else
+                    {
+                        static if (verbose)
+                        {
+                            writeln("...built-in allow.");
+                            if (settings.flush) stdout.flush();
+                        }
+
+                        immutable result = allowImpl(mutEvent, privilegeLevel);
+                    }
+
+                    static if (verbose)
+                    {
+                        writeln("...result is ", Enum!FilterResult.toString(result));
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    with (FilterResult)
+                    final switch (result)
+                    {
+                    case pass:
+                        // Drop down
+                        break;
+
+                    case whois:
+                        import kameloso.plugins.common : doWhois;
+
+                        alias Params = staticMap!(Unqual, Parameters!fun);
+                        enum isIRCPluginParam(T) = is(T == IRCPlugin);
+
+                        static if (verbose)
+                        {
+                            writefln("...%s WHOIS", typeof(this).stringof);
+                            if (settings.flush) stdout.flush();
+                        }
+
+                        static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
+                        {
+                            this.doWhois(mutEvent, privilegeLevel, &fun);
+                            return Next.continue_;
+                        }
+                        else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                            is(Params : AliasSeq!(typeof(this))))
+                        {
+                            this.doWhois(this, mutEvent, privilegeLevel, &fun);
+                            return Next.continue_;
+                        }
+                        else static if (Filter!(isIRCPluginParam, Params).length)
+                        {
+                            import std.format : format;
+                            static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
+                                "parameter instead of a subclass `%s`")
+                                .format(module_, __traits(identifier, fun), typeof(this).stringof));
+                        }
+                        else
+                        {
+                            import std.format : format;
+                            static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
+                        }
+
+                    case fail:
+                        return Next.continue_;
                     }
                 }
 
