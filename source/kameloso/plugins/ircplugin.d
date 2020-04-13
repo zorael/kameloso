@@ -1380,7 +1380,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 .format(fullyQualifiedName!fun));
                         }
                     }
-
                 }
             }
 
