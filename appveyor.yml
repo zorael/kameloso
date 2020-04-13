@@ -16,20 +16,20 @@ environment:
       arch: x86
       dubArgs:
       Ddflags: -lowmem
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.090.1
-      #DSubversion:
-      #arch: x64
-      #dubArgs: --build-mode=singleFile
-      #Ddflags: -lowmem
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.090.1
-      #DSubversion:
-      #arch: x86
-      #dubArgs: --build-mode=singleFile
-      #Ddflags: -lowmem
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x64
+      dubArgs:
+      Ddflags: -lowmem
+    - DC: dmd
+      DReleaseType: releases
+      DVersion: 2.090.1
+      DSubversion:
+      arch: x86
+      dubArgs:
+      Ddflags: -lowmem
     #- DC: dmd
       #DReleaseType: releases
       #DVersion: 2.089.1
@@ -163,10 +163,10 @@ test_script:
  #- dub add-local lu
  #- dub add-local dialect
  - echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
- - set DFLAGS = %Ddflags% -unittest
+ #- set DFLAGS = %Ddflags% -unittest
  - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
- - set DFLAGS = %Ddflags%
+ #- set DFLAGS = %Ddflags%
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c full
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev
