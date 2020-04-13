@@ -312,8 +312,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Pass on the supplied `dialect.defs.IRCEvent` to module-level functions
      +  annotated with the matching `dialect.defs.IRCEvent.Type`s.
      +
-     +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
-     +  `PrefixPolicy` where such is appropriate.
+     +  It also does checks for `kameloso.plugins.common.ChannelPolicy`,
+     +  `kameloso.plugins.common.PrivilegeLevel`, `kameloso.plugins.common.PrefixPolicy`,
+     +  `kameloso.plugins.common.BotCommand`, `kameloso.plugins.common.BotRegex`
+     +  etc; where such is applicable.
      +
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
@@ -363,8 +365,349 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import std.stdio : stdout, writeln, writefln;
 
                 enum name = "[%s] %s".format(__traits(identifier, thisModule),
-                        __traits(identifier, fun));
+                    __traits(identifier, fun));
+
+                writefln("-- ", name);
+                if (settings.flush) stdout.flush();
             }
+
+            static if (hasUDA!(fun, ChannelPolicy))
+            {
+                enum policy = getUDAs!(fun, ChannelPolicy)[0];
+            }
+            else
+            {
+                // Default policy if none given is `ChannelPolicy.home`
+                enum policy = ChannelPolicy.home;
+            }
+
+            static if (verbose)
+            {
+                writeln("...ChannelPolicy.", Enum!ChannelPolicy.toString(policy));
+                if (settings.flush) stdout.flush();
+            }
+
+            static if (policy == ChannelPolicy.home)
+            {
+                import std.algorithm.searching : canFind;
+
+                if (!event.channel.length)
+                {
+                    // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
+                }
+                else if (!privateState.bot.homeChannels.canFind(event.channel))
+                {
+                    static if (verbose)
+                    {
+                        writeln("...ignore non-home channel ", event.channel);
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    // channel policy does not match
+                    return Next.continue_;  // next function
+                }
+            }
+            else static if (policy == ChannelPolicy.any)
+            {
+                // drop down, no need to check
+            }
+            else
+            {
+                import std.format : format;
+                static assert(0, ("Logic error; `%s.%s` is annotated with " ~
+                    "an unexpected `ChannelPolicy`")
+                    .format(module_, __traits(identifier, fun)));
+            }
+
+            IRCEvent mutEvent = event;  // mutable
+            bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
+
+            // Evaluate each BotCommand UDAs with the current event
+            static if (hasUDA!(fun, BotCommand))
+            {
+                if (!event.content.length)
+                {
+                    // Event has a `BotCommand` set up but
+                    // `event.content` is empty; cannot possibly be of
+                    // interest.
+                    return Next.continue_;  // next function
+                }
+
+                foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
+                {
+                    import lu.string : contains;
+
+                    static if (!commandUDA.word.length)
+                    {
+                        import std.format : format;
+                        static assert(0, "`%s.%s` has an empty `BotCommand` word"
+                            .format(module_, __traits(identifier, fun)));
+                    }
+                    else static if (commandUDA.word.contains(" "))
+                    {
+                        import std.format : format;
+                        static assert(0, ("`%s.%s` has a `BotCommand` word " ~
+                            "that has spaces in it")
+                            .format(module_, __traits(identifier, fun)));
+                    }
+
+                    static if (verbose)
+                    {
+                        writefln(`...BotCommand "%s"`, commandUDA.word);
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    // Reset between iterations
+                    mutEvent = event;
+
+                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy, privateState.client))
+                    {
+                        static if (verbose)
+                        {
+                            writeln("...policy doesn't match; continue next BotCommand");
+                            if (settings.flush) stdout.flush();
+                        }
+
+                        continue;  // next BotCommand UDA
+                    }
+
+                    import lu.string : strippedLeft;
+                    import std.algorithm.comparison : equal;
+                    import std.typecons : No, Yes;
+                    import std.uni : asLowerCase, toLower;
+
+                    mutEvent.content = mutEvent.content.strippedLeft;
+                    immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
+
+                    enum lowercaseUDAString = commandUDA.word.toLower;
+
+                    if ((thisCommand.length == lowercaseUDAString.length) &&
+                        thisCommand.asLowerCase.equal(lowercaseUDAString))
+                    {
+                        static if (verbose)
+                        {
+                            writeln("...command matches!");
+                            if (settings.flush) stdout.flush();
+                        }
+
+                        mutEvent.aux = thisCommand;
+                        commandMatch = true;
+                        break;  // finish this BotCommand
+                    }
+                }
+            }
+
+            // Iff no match from BotCommands, evaluate BotRegexes
+            static if (hasUDA!(fun, BotRegex))
+            {
+                if (!commandMatch)
+                {
+                    if (!event.content.length)
+                    {
+                        // Event has a `BotRegex` set up but
+                        // `event.content` is empty; cannot possibly be
+                        // of interest.
+                        return Next.continue_;  // next function
+                    }
+
+                    foreach (immutable regexUDA; getUDAs!(fun, BotRegex))
+                    {
+                        import std.regex : Regex;
+
+                        static if (!regexUDA.expression.length)
+                        {
+                            import std.format : format;
+                            static assert(0, "`%s.%s` has an empty `BotRegex` expression"
+                                .format(module_, __traits(identifier, fun)));
+                        }
+
+                        static if (verbose)
+                        {
+                            writeln("BotRegex: `", regexUDA.expression, "`");
+                            if (settings.flush) stdout.flush();
+                        }
+
+                        // Reset between iterations
+                        mutEvent = event;
+
+                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy, privateState.client))
+                        {
+                            static if (verbose)
+                            {
+                                writeln("...policy doesn't match; continue next BotRegex");
+                                if (settings.flush) stdout.flush();
+                            }
+
+                            continue;  // next BotRegex UDA
+                        }
+
+                        try
+                        {
+                            import std.regex : matchFirst;
+
+                            const hits = mutEvent.content.matchFirst(regexUDA.engine);
+
+                            if (!hits.empty)
+                            {
+                                static if (verbose)
+                                {
+                                    writeln("...expression matches!");
+                                    if (settings.flush) stdout.flush();
+                                }
+
+                                mutEvent.aux = hits[0];
+                                commandMatch = true;
+                                break;  // finish this BotRegex
+                            }
+                            else
+                            {
+                                static if (verbose)
+                                {
+                                    writefln(`...matching "%s" against expression "%s" failed.`,
+                                        mutEvent.content, regexUDA.expression);
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            static if (verbose)
+                            {
+                                writeln("...BotRegex exception: ", e.msg);
+                                version(PrintStacktraces) writeln(e.toString);
+                                if (settings.flush) stdout.flush();
+                            }
+                            continue;  // next BotRegex
+                        }
+                    }
+                }
+            }
+
+            static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
+            {
+                if (!commandMatch)
+                {
+                    // Bot{Command,Regex} exists but neither matched; skip
+                    static if (verbose)
+                    {
+                        writeln("...neither BotCommand nor BotRegex matched; continue funloop");
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    return Next.continue_; // next fun
+                }
+            }
+
+            import std.meta : AliasSeq, staticMap;
+            import std.traits : Parameters, Unqual, arity;
+
+            static if (hasUDA!(fun, PrivilegeLevel))
+            {
+                enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
+
+                static if (privilegeLevel != PrivilegeLevel.ignore)
+                {
+                    static if (!__traits(compiles, .hasMinimalAuthentication))
+                    {
+                        import std.format : format;
+                        static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
+                            "mixin (needed for `PrivilegeLevel` checks)")
+                            .format(module_));
+                    }
+                }
+
+                static if (verbose)
+                {
+                    writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
+                    if (settings.flush) stdout.flush();
+                }
+
+                static if (__traits(hasMember, this, "allow") &&
+                    isSomeFunction!(this.allow))
+                {
+                    import lu.traits : TakesParams;
+
+                    static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
+                    {
+                        import std.format : format;
+                        static assert(0, ("Custom `allow` function in `%s.%s` " ~
+                            "has an invalid signature: `%s`")
+                            .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
+                    }
+
+                    static if (verbose)
+                    {
+                        writeln("...custom allow!");
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    immutable result = this.allow(mutEvent, privilegeLevel);
+                }
+                else
+                {
+                    static if (verbose)
+                    {
+                        writeln("...built-in allow.");
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    immutable result = allowImpl(mutEvent, privilegeLevel);
+                }
+
+                static if (verbose)
+                {
+                    writeln("...result is ", Enum!FilterResult.toString(result));
+                    if (settings.flush) stdout.flush();
+                }
+
+                with (FilterResult)
+                final switch (result)
+                {
+                case pass:
+                    // Drop down
+                    break;
+
+                case whois:
+                    import kameloso.plugins.common : doWhois;
+
+                    alias Params = staticMap!(Unqual, Parameters!fun);
+                    enum isIRCPluginParam(T) = is(T == IRCPlugin);
+
+                    static if (verbose)
+                    {
+                        writefln("...%s WHOIS", typeof(this).stringof);
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
+                    {
+                        this.doWhois(mutEvent, privilegeLevel, &fun);
+                        return Next.continue_;
+                    }
+                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                        is(Params : AliasSeq!(typeof(this))))
+                    {
+                        this.doWhois(this, mutEvent, privilegeLevel, &fun);
+                        return Next.continue_;
+                    }
+                    else static if (Filter!(isIRCPluginParam, Params).length)
+                    {
+                        import std.format : format;
+                        static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
+                            "parameter instead of a subclass `%s`")
+                            .format(module_, __traits(identifier, fun), typeof(this).stringof));
+                    }
+                    else
+                    {
+                        import std.format : format;
+                        static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                            .format(module_, __traits(identifier, fun), typeof(fun).stringof));
+                    }
+
+                case fail:
+                    return Next.continue_;
+                }
+            }
+
 
             /++
              +  The return value of `handle`, set from inside the foreach loop.
@@ -380,6 +723,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             udaloop:
             foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
             {
+                static if (verbose)
+                {
+                    import lu.conv : Enum;
+                    writeln("...", Enum!(IRCEvent.Type).toString(eventTypeUDA), '?');
+                }
+
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
                     // UDA is `dialect.defs.IRCEvent.Type.ANY`, let pass
@@ -412,242 +761,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         // The current event does not match this function's
                         // particular UDA; continue to the next one
+                        static if (verbose)
+                        {
+                            writeln("nope.");
+                        }
+
                         continue;  // next Type UDA
                     }
                 }
 
-                static if (verbose)
-                {
-                    writefln("-- %s @ %s", name, Enum!(IRCEvent.Type).toString(event.type));
-                    if (settings.flush) stdout.flush();
-                }
-
-                static if (hasUDA!(fun, ChannelPolicy))
-                {
-                    enum policy = getUDAs!(fun, ChannelPolicy)[0];
-                }
-                else
-                {
-                    // Default policy if none given is `ChannelPolicy.home`
-                    enum policy = ChannelPolicy.home;
-                }
-
-                static if (verbose)
-                {
-                    writeln("...ChannelPolicy.", Enum!ChannelPolicy.toString(policy));
-                    if (settings.flush) stdout.flush();
-                }
-
-                static if (policy == ChannelPolicy.home)
-                {
-                    import std.algorithm.searching : canFind;
-
-                    if (!event.channel.length)
-                    {
-                        // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
-                    }
-                    else if (!privateState.bot.homeChannels.canFind(event.channel))
-                    {
-                        static if (verbose)
-                        {
-                            writeln("...ignore non-home channel ", event.channel);
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        // channel policy does not match
-                        return Next.continue_;  // next function
-                    }
-                }
-                else static if (policy == ChannelPolicy.any)
-                {
-                    // drop down, no need to check
-                }
-                else
-                {
-                    import std.format : format;
-                    static assert(0, ("Logic error; `%s.%s` is annotated with " ~
-                        "an unexpected `ChannelPolicy`")
-                        .format(module_, __traits(identifier, fun)));
-                }
-
-                IRCEvent mutEvent = event;  // mutable
-                bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
-
-                // Evaluate each BotCommand UDAs with the current event
-                static if (hasUDA!(fun, BotCommand))
-                {
-                    if (!event.content.length)
-                    {
-                        // Event has a `BotCommand` set up but
-                        // `event.content` is empty; cannot possibly be of
-                        // interest.
-                        return Next.continue_;  // next function
-                    }
-
-                    foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
-                    {
-                        import lu.string : contains;
-
-                        static if (!commandUDA.word.length)
-                        {
-                            import std.format : format;
-                            static assert(0, "`%s.%s` has an empty `BotCommand` word"
-                                .format(module_, __traits(identifier, fun)));
-                        }
-                        else static if (commandUDA.word.contains(" "))
-                        {
-                            import std.format : format;
-                            static assert(0, ("`%s.%s` has a `BotCommand` word " ~
-                                "that has spaces in it")
-                                .format(module_, __traits(identifier, fun)));
-                        }
-
-                        static if (verbose)
-                        {
-                            writefln(`...BotCommand "%s"`, commandUDA.word);
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        // Reset between iterations
-                        mutEvent = event;
-
-                        if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy, privateState.client))
-                        {
-                            static if (verbose)
-                            {
-                                writeln("...policy doesn't match; continue next BotCommand");
-                                if (settings.flush) stdout.flush();
-                            }
-
-                            continue;  // next BotCommand UDA
-                        }
-
-                        import lu.string : strippedLeft;
-                        import std.algorithm.comparison : equal;
-                        import std.typecons : No, Yes;
-                        import std.uni : asLowerCase, toLower;
-
-                        mutEvent.content = mutEvent.content.strippedLeft;
-                        immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
-
-                        enum lowercaseUDAString = commandUDA.word.toLower;
-
-                        if ((thisCommand.length == lowercaseUDAString.length) &&
-                            thisCommand.asLowerCase.equal(lowercaseUDAString))
-                        {
-                            static if (verbose)
-                            {
-                                writeln("...command matches!");
-                                if (settings.flush) stdout.flush();
-                            }
-
-                            mutEvent.aux = thisCommand;
-                            commandMatch = true;
-                            break;  // finish this BotCommand
-                        }
-                    }
-                }
-
-                // Iff no match from BotCommands, evaluate BotRegexes
-                static if (hasUDA!(fun, BotRegex))
-                {
-                    if (!commandMatch)
-                    {
-                        if (!event.content.length)
-                        {
-                            // Event has a `BotRegex` set up but
-                            // `event.content` is empty; cannot possibly be
-                            // of interest.
-                            return Next.continue_;  // next function
-                        }
-
-                        foreach (immutable regexUDA; getUDAs!(fun, BotRegex))
-                        {
-                            import std.regex : Regex;
-
-                            static if (!regexUDA.expression.length)
-                            {
-                                import std.format : format;
-                                static assert(0, "`%s.%s` has an empty `BotRegex` expression"
-                                    .format(module_, __traits(identifier, fun)));
-                            }
-
-                            static if (verbose)
-                            {
-                                writeln("BotRegex: `", regexUDA.expression, "`");
-                                if (settings.flush) stdout.flush();
-                            }
-
-                            // Reset between iterations
-                            mutEvent = event;
-
-                            if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy, privateState.client))
-                            {
-                                static if (verbose)
-                                {
-                                    writeln("...policy doesn't match; continue next BotRegex");
-                                    if (settings.flush) stdout.flush();
-                                }
-
-                                continue;  // next BotRegex UDA
-                            }
-
-                            try
-                            {
-                                import std.regex : matchFirst;
-
-                                const hits = mutEvent.content.matchFirst(regexUDA.engine);
-
-                                if (!hits.empty)
-                                {
-                                    static if (verbose)
-                                    {
-                                        writeln("...expression matches!");
-                                        if (settings.flush) stdout.flush();
-                                    }
-
-                                    mutEvent.aux = hits[0];
-                                    commandMatch = true;
-                                    break;  // finish this BotRegex
-                                }
-                                else
-                                {
-                                    static if (verbose)
-                                    {
-                                        writefln(`...matching "%s" against expression "%s" failed.`,
-                                            mutEvent.content, regexUDA.expression);
-                                    }
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                static if (verbose)
-                                {
-                                    writeln("...BotRegex exception: ", e.msg);
-                                    version(PrintStacktraces) writeln(e.toString);
-                                    if (settings.flush) stdout.flush();
-                                }
-                                continue;  // next BotRegex
-                            }
-                        }
-                    }
-                }
-
-                static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
-                {
-                    if (!commandMatch)
-                    {
-                        // Bot{Command,Regex} exists but neither matched; skip
-                        static if (verbose)
-                        {
-                            writeln("...neither BotCommand nor BotRegex matched; continue funloop");
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        return Next.continue_; // next fun
-                    }
-                }
-                else static if (!isAnnotated!(fun, Chainable) &&
+                static if (
+                    !hasUDA!(fun, BotCommand) &&
+                    !hasUDA!(fun, BotRegex) &&
+                    !isAnnotated!(fun, Chainable) &&
                     !isAnnotated!(fun, Terminating) &&
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY) ||
@@ -702,117 +828,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 .format(module_, __traits(identifier, fun),
                                 Enum!(IRCEvent.Type).toString(U)));
                         }
-                    }
-                }
-
-                import std.meta : AliasSeq, staticMap;
-                import std.traits : Parameters, Unqual, arity;
-
-                static if (hasUDA!(fun, PrivilegeLevel))
-                {
-                    enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
-
-                    static if (privilegeLevel != PrivilegeLevel.ignore)
-                    {
-                        static if (!__traits(compiles, .hasMinimalAuthentication))
-                        {
-                            import std.format : format;
-                            static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
-                                "mixin (needed for `PrivilegeLevel` checks)")
-                                .format(module_));
-                        }
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    static if (__traits(hasMember, this, "allow") &&
-                        isSomeFunction!(this.allow))
-                    {
-                        import lu.traits : TakesParams;
-
-                        static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
-                        {
-                            import std.format : format;
-                            static assert(0, ("Custom `allow` function in `%s.%s` " ~
-                                "has an invalid signature: `%s`")
-                                .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
-                        }
-
-                        static if (verbose)
-                        {
-                            writeln("...custom allow!");
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        immutable result = this.allow(mutEvent, privilegeLevel);
-                    }
-                    else
-                    {
-                        static if (verbose)
-                        {
-                            writeln("...built-in allow.");
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        immutable result = allowImpl(mutEvent, privilegeLevel);
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...result is ", Enum!FilterResult.toString(result));
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    with (FilterResult)
-                    final switch (result)
-                    {
-                    case pass:
-                        // Drop down
-                        break;
-
-                    case whois:
-                        import kameloso.plugins.common : doWhois;
-
-                        alias Params = staticMap!(Unqual, Parameters!fun);
-                        enum isIRCPluginParam(T) = is(T == IRCPlugin);
-
-                        static if (verbose)
-                        {
-                            writefln("...%s WHOIS", typeof(this).stringof);
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
-                        {
-                            this.doWhois(mutEvent, privilegeLevel, &fun);
-                            return Next.continue_;
-                        }
-                        else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                            is(Params : AliasSeq!(typeof(this))))
-                        {
-                            this.doWhois(this, mutEvent, privilegeLevel, &fun);
-                            return Next.continue_;
-                        }
-                        else static if (Filter!(isIRCPluginParam, Params).length)
-                        {
-                            import std.format : format;
-                            static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
-                                "parameter instead of a subclass `%s`")
-                                .format(module_, __traits(identifier, fun), typeof(this).stringof));
-                        }
-                        else
-                        {
-                            import std.format : format;
-                            static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
-                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
-                        }
-
-                    case fail:
-                        return Next.continue_;
                     }
                 }
 
@@ -933,7 +948,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     IRCEvent saneEvent = event;
                     sanitizeEvent(saneEvent);
-                    handle!fun(cast(const)saneEvent);
+                    handle!fun(saneEvent);
                 }
                 catch (UnicodeException e)
                 {
@@ -942,7 +957,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     IRCEvent saneEvent = event;
                     sanitizeEvent(saneEvent);
-                    handle!fun(cast(const)saneEvent);
+                    handle!fun(saneEvent);
                 }
             }
         }
