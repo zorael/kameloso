@@ -7,14 +7,14 @@ environment:
       DVersion: 2.091.0
       DSubversion:
       arch: x64
-      dubArgs: --build-mode=singleFile
+      dubArgs:
       Ddflags: -lowmem
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.091.0
       DSubversion:
       arch: x86
-      dubArgs: --build-mode=singleFile
+      dubArgs:
       Ddflags: -lowmem
     #- DC: dmd
       #DReleaseType: releases
