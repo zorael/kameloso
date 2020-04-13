@@ -209,9 +209,7 @@ if (isOutputRange!(Sink, char[]))
                 !isAnnotated!(thing.tupleof[i], Hidden) &&
                 !isAnnotated!(thing.tupleof[i], Unserialisable);
 
-            enum shouldMaybeBePrinted = printAll && !isAnnotated!(thing.tupleof[i], Hidden);
-
-            static if (shouldNormallyBePrinted || shouldMaybeBePrinted)
+            static if (shouldNormallyBePrinted || printAll)
             {
                 import lu.traits : isTrulyString;
                 import std.traits : isArray;
