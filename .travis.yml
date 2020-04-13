@@ -41,7 +41,8 @@ before_deploy:
   - cd adrdox
   - make
   - ./doc2 -ip --directory ../kameloso/docs ../kameloso
-  - cp -rv ../kameloso/.circleci ../kameloso/docs/
+  - cd ../kameloso
+  - cp -rv .circleci docs/
 
 deploy:
   provider: pages
