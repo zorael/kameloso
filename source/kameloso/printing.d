@@ -66,7 +66,7 @@ public:
  +  Params:
  +      printAll = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs.
+ +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
  +/
@@ -131,7 +131,7 @@ alias printObject = printObjects;
  +  Params:
  +      printAll = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs.
+ +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
  +      sink = Output range to write to.
@@ -536,7 +536,7 @@ if (isOutputRange!(Sink, char[]))
  +  Params:
  +      printAll = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs.
+ +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
  +      bright = Whether or not to format for a bright terminal background.
