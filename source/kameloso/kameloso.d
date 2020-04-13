@@ -618,7 +618,7 @@ Next mainLoop(ref Kameloso instance)
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
 
-        foreach (ref plugin; instance.plugins)
+        foreach (plugin; instance.plugins)
         {
             plugin.periodically(nowInUnix);
         }
