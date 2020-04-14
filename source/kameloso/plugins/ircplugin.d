@@ -368,8 +368,133 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 enum name = "[%s] %s".format(__traits(identifier, thisModule),
                     __traits(identifier, fun));
+            }
 
-                writefln("-- ", name);
+            /++
+             +  Whether or not this event matched the type of one or more of
+             +  this function's annotations.
+             +/
+            bool typeMatches;
+
+            udaloop:
+            foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
+            {
+                static if (eventTypeUDA == IRCEvent.Type.UNSET)
+                {
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.UNSET)`, " ~
+                        "which is not a valid event type.")
+                        .format(module_, __traits(identifier, fun)));
+                }
+                else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
+                {
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
+                        "or `IRCEvent.Type.QUERY` instead")
+                        .format(module_, __traits(identifier, fun)));
+                }
+                else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
+                {
+                    import std.format : format;
+                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.WHISPER)`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
+                        .format(module_, __traits(identifier, fun)));
+                }
+                else static if (eventTypeUDA == IRCEvent.Type.ANY)
+                {
+                    // UDA is `dialect.defs.IRCEvent.Type.ANY`, let pass
+                    typeMatches = true;
+                    break udaloop;
+                }
+                else
+                {
+                    if (eventTypeUDA != event.type)
+                    {
+                        // The current event does not match this function's
+                        // particular UDA; continue to the next one
+                        /*static if (verbose)
+                        {
+                            writeln("nope.");
+                        }*/
+
+                        continue;  // next Type UDA
+                    }
+
+                    typeMatches = true;
+
+                    static if (
+                        !hasUDA!(fun, BotCommand) &&
+                        !hasUDA!(fun, BotRegex) &&
+                        !isAnnotated!(fun, Chainable) &&
+                        !isAnnotated!(fun, Terminating) &&
+                        ((eventTypeUDA == IRCEvent.Type.CHAN) ||
+                        (eventTypeUDA == IRCEvent.Type.QUERY) ||
+                        (eventTypeUDA == IRCEvent.Type.ANY) ||
+                        (eventTypeUDA == IRCEvent.Type.NUMERIC)))
+                    {
+                        import lu.conv : Enum;
+                        import std.format : format;
+
+                        pragma(msg, ("Note: `%s.%s` is a wildcard `IRCEvent.Type.%s` event " ~
+                            "but is not `Chainable` nor `Terminating`")
+                            .format(module_, __traits(identifier, fun),
+                            Enum!(IRCEvent.Type).toString(eventTypeUDA)));
+                    }
+
+                    static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
+                    {
+                        with (IRCEvent.Type)
+                        {
+                            import lu.conv : Enum;
+
+                            alias U = eventTypeUDA;
+
+                            // Use this to detect potential additions to the whitelist below
+                            /*import lu.string : beginsWith;
+
+                            static if (!Enum!(IRCEvent.Type).toString(U).beginsWith("ERR_") &&
+                                !Enum!(IRCEvent.Type).toString(U).beginsWith("RPL_"))
+                            {
+                                import std.format : format;
+                                pragma(msg, ("`%s.%s` is annotated with " ~
+                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+                                    .format(module_, __traits(identifier, fun),
+                                    Enum!(IRCEvent.Type).toString(U)));
+                            }*/
+
+                            static if (
+                                (U == CHAN) ||
+                                (U == QUERY) ||
+                                (U == EMOTE) ||
+                                (U == JOIN) ||
+                                (U == PART) ||
+                                //(U == QUIT) ||
+                                //(U == NICK) ||
+                                (U == AWAY) ||
+                                (U == BACK) //||
+                                )
+                            {
+                                import std.format : format;
+
+                                static assert(0, ("`%s.%s` is annotated with a user-facing " ~
+                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+                                    .format(module_, __traits(identifier, fun),
+                                    Enum!(IRCEvent.Type).toString(U)));
+                            }
+                        }
+                    }
+
+                    break udaloop;
+                }
+            }
+
+            // Invalid type, continue with the next function
+            if (!typeMatches) return Next.continue_;
+
+            static if (verbose)
+            {
+                writeln("-- ", name);
                 if (settings.flush) stdout.flush();
             }
 
@@ -421,20 +546,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     .format(module_, __traits(identifier, fun)));
             }
 
+            static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
+            {
+                if (!event.content.length)
+                {
+                    // Event has a `BotCommand` or a `BotRegex`set up but
+                    // `event.content` is empty; cannot possibly be of interest.
+                    return Next.continue_;  // next function
+                }
+            }
+
             IRCEvent mutEvent = event;  // mutable
             bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
 
             // Evaluate each BotCommand UDAs with the current event
             static if (hasUDA!(fun, BotCommand))
             {
-                if (!event.content.length)
-                {
-                    // Event has a `BotCommand` set up but
-                    // `event.content` is empty; cannot possibly be of
-                    // interest.
-                    return Next.continue_;  // next function
-                }
-
                 foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                 {
                     import lu.string : contains;
@@ -459,7 +586,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         if (settings.flush) stdout.flush();
                     }
 
-                    // Reset between iterations
+                    // Reset between iterations as we nom the contents
                     mutEvent = event;
 
                     if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy, privateState.client))
@@ -504,14 +631,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 if (!commandMatch)
                 {
-                    if (!event.content.length)
-                    {
-                        // Event has a `BotRegex` set up but
-                        // `event.content` is empty; cannot possibly be
-                        // of interest.
-                        return Next.continue_;  // next function
-                    }
-
                     foreach (immutable regexUDA; getUDAs!(fun, BotRegex))
                     {
                         import std.regex : Regex;
@@ -529,7 +648,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             if (settings.flush) stdout.flush();
                         }
 
-                        // Reset between iterations
+                        // Reset between iterations; BotCommands may have altered it
                         mutEvent = event;
 
                         if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy, privateState.client))
@@ -595,297 +714,168 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         if (settings.flush) stdout.flush();
                     }
 
-                    return Next.continue_; // next fun
+                    return Next.continue_; // next function
                 }
             }
 
-            /++
-             +  The return value of `handle`, set from inside the foreach loop.
-             +
-             +  If we return directly from inside it, we may get errors of
-             +  statements not reachable if it's not inside a branch.
-             +
-             +  Intead, set this value to what we want to return, then break
-             +  out of the loop.
-             +/
-            Next next = Next.continue_;
+            import std.meta : AliasSeq, staticMap;
+            import std.traits : Parameters, Unqual, arity;
 
-            udaloop:
-            foreach (immutable eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
+            static if (hasUDA!(fun, PrivilegeLevel))
             {
-                static if (verbose)
-                {
-                    import lu.conv : Enum;
-                    writeln("...", Enum!(IRCEvent.Type).toString(eventTypeUDA), '?');
-                }
+                enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
 
-                static if (eventTypeUDA == IRCEvent.Type.ANY)
+                static if (privilegeLevel != PrivilegeLevel.ignore)
                 {
-                    // UDA is `dialect.defs.IRCEvent.Type.ANY`, let pass
-                }
-                else static if (eventTypeUDA == IRCEvent.Type.UNSET)
-                {
-                    import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.UNSET)`, " ~
-                        "which is not a valid event type.")
-                        .format(module_, __traits(identifier, fun)));
-                }
-                else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
-                {
-                    import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
-                        "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
-                        "or `IRCEvent.Type.QUERY` instead")
-                        .format(module_, __traits(identifier, fun)));
-                }
-                else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
-                {
-                    import std.format : format;
-                    static assert(0, ("`%s.%s` is annotated `@(IRCEvent.Type.WHISPER)`, " ~
-                        "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
-                        .format(module_, __traits(identifier, fun)));
-                }
-                else
-                {
-                    if (eventTypeUDA != event.type)
+                    static if (!__traits(compiles, .hasMinimalAuthentication))
                     {
-                        // The current event does not match this function's
-                        // particular UDA; continue to the next one
-                        static if (verbose)
-                        {
-                            writeln("nope.");
-                        }
-
-                        continue;  // next Type UDA
+                        import std.format : format;
+                        static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
+                            "mixin (needed for `PrivilegeLevel` checks)")
+                            .format(module_));
                     }
                 }
-
-                static if (
-                    !hasUDA!(fun, BotCommand) &&
-                    !hasUDA!(fun, BotRegex) &&
-                    !isAnnotated!(fun, Chainable) &&
-                    !isAnnotated!(fun, Terminating) &&
-                    ((eventTypeUDA == IRCEvent.Type.CHAN) ||
-                    (eventTypeUDA == IRCEvent.Type.QUERY) ||
-                    (eventTypeUDA == IRCEvent.Type.ANY) ||
-                    (eventTypeUDA == IRCEvent.Type.NUMERIC)))
-                {
-                    import lu.conv : Enum;
-                    import std.format : format;
-
-                    pragma(msg, ("Note: `%s.%s` is a wildcard `IRCEvent.Type.%s` event " ~
-                        "but is not `Chainable` nor `Terminating`")
-                        .format(module_, __traits(identifier, fun),
-                        Enum!(IRCEvent.Type).toString(eventTypeUDA)));
-                }
-
-                static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
-                {
-                    with (IRCEvent.Type)
-                    {
-                        import lu.conv : Enum;
-
-                        alias U = eventTypeUDA;
-
-                        // Use this to detect potential additions to the whitelist below
-                        /*import lu.string : beginsWith;
-
-                        static if (!Enum!(IRCEvent.Type).toString(U).beginsWith("ERR_") &&
-                            !Enum!(IRCEvent.Type).toString(U).beginsWith("RPL_"))
-                        {
-                            import std.format : format;
-                            pragma(msg, ("`%s.%s` is annotated with " ~
-                                "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
-                                .format(module_, __traits(identifier, fun),
-                                Enum!(IRCEvent.Type).toString(U)));
-                        }*/
-
-                        static if (
-                            (U == CHAN) ||
-                            (U == QUERY) ||
-                            (U == EMOTE) ||
-                            (U == JOIN) ||
-                            (U == PART) ||
-                            //(U == QUIT) ||
-                            //(U == NICK) ||
-                            (U == AWAY) ||
-                            (U == BACK) //||
-                            )
-                        {
-                            import std.format : format;
-                            static assert(0, ("`%s.%s` is annotated with a user-facing " ~
-                                "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
-                                .format(module_, __traits(identifier, fun),
-                                Enum!(IRCEvent.Type).toString(U)));
-                        }
-                    }
-                }
-
-                import std.meta : AliasSeq, staticMap;
-                import std.traits : Parameters, Unqual, arity;
-
-                static if (hasUDA!(fun, PrivilegeLevel))
-                {
-                    enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
-
-                    static if (privilegeLevel != PrivilegeLevel.ignore)
-                    {
-                        static if (!__traits(compiles, .hasMinimalAuthentication))
-                        {
-                            import std.format : format;
-                            static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
-                                "mixin (needed for `PrivilegeLevel` checks)")
-                                .format(module_));
-                        }
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    static if (__traits(hasMember, this, "allow") &&
-                        isSomeFunction!(this.allow))
-                    {
-                        import lu.traits : TakesParams;
-
-                        static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
-                        {
-                            import std.format : format;
-                            static assert(0, ("Custom `allow` function in `%s.%s` " ~
-                                "has an invalid signature: `%s`")
-                                .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
-                        }
-
-                        static if (verbose)
-                        {
-                            writeln("...custom allow!");
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        immutable result = this.allow(mutEvent, privilegeLevel);
-                    }
-                    else
-                    {
-                        static if (verbose)
-                        {
-                            writeln("...built-in allow.");
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        immutable result = allowImpl(mutEvent, privilegeLevel);
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...result is ", Enum!FilterResult.toString(result));
-                        if (settings.flush) stdout.flush();
-                    }
-
-                    with (FilterResult)
-                    final switch (result)
-                    {
-                    case pass:
-                        // Drop down
-                        break;
-
-                    case whois:
-                        import kameloso.plugins.common : doWhois;
-
-                        alias Params = staticMap!(Unqual, Parameters!fun);
-                        enum isIRCPluginParam(T) = is(T == IRCPlugin);
-
-                        static if (verbose)
-                        {
-                            writefln("...%s WHOIS", typeof(this).stringof);
-                            if (settings.flush) stdout.flush();
-                        }
-
-                        static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
-                        {
-                            this.doWhois(mutEvent, privilegeLevel, &fun);
-                            return Next.continue_;
-                        }
-                        else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                            is(Params : AliasSeq!(typeof(this))))
-                        {
-                            this.doWhois(this, mutEvent, privilegeLevel, &fun);
-                            return Next.continue_;
-                        }
-                        else static if (Filter!(isIRCPluginParam, Params).length)
-                        {
-                            import std.format : format;
-                            static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
-                                "parameter instead of a subclass `%s`")
-                                .format(module_, __traits(identifier, fun), typeof(this).stringof));
-                        }
-                        else
-                        {
-                            import std.format : format;
-                            static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
-                                .format(module_, __traits(identifier, fun), typeof(fun).stringof));
-                        }
-
-                    case fail:
-                        return Next.continue_;
-                    }
-                }
-
-                alias Params = staticMap!(Unqual, Parameters!fun);
 
                 static if (verbose)
                 {
-                    writeln("...calling!");
+                    writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
                     if (settings.flush) stdout.flush();
                 }
 
-                static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                    is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+                static if (__traits(hasMember, this, "allow") && isSomeFunction!(this.allow))
                 {
-                    fun(this, mutEvent);
-                }
-                else static if (is(Params : AliasSeq!(typeof(this))) ||
-                    is(Params : AliasSeq!IRCPlugin))
-                {
-                    fun(this);
-                }
-                else static if (is(Params : AliasSeq!IRCEvent))
-                {
-                    fun(mutEvent);
-                }
-                else static if (arity!fun == 0)
-                {
-                    fun();
+                    import lu.traits : TakesParams;
+
+                    static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
+                    {
+                        import std.format : format;
+                        static assert(0, ("Custom `allow` function in `%s.%s` " ~
+                            "has an invalid signature: `%s`")
+                            .format(module_, typeof(this).stringof, typeof(this.allow).stringof));
+                    }
+
+                    static if (verbose)
+                    {
+                        writeln("...custom allow!");
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    immutable result = this.allow(mutEvent, privilegeLevel);
                 }
                 else
                 {
-                    import std.format : format;
-                    static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
-                        .format(module_, __traits(identifier, fun), typeof(fun).stringof));
+                    static if (verbose)
+                    {
+                        writeln("...built-in allow.");
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    immutable result = allowImpl(mutEvent, privilegeLevel);
                 }
 
-                // Don't hard return here, just set `next` and break.
-                static if (isAnnotated!(fun, Chainable) ||
-                    (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                static if (verbose)
                 {
-                    // onEvent found an event and triggered a function, but
-                    // it's Chainable and there may be more, so keep looking
-                    // Alternatively it's an awareness function, which may be
-                    // sharing one or more annotations with another.
-                    next = Next.continue_;
-                    break udaloop;  // drop down
+                    writeln("...result is ", Enum!FilterResult.toString(result));
+                    if (settings.flush) stdout.flush();
                 }
-                else /*static if (isAnnotated!(fun, Terminating))*/
+
+                with (FilterResult)
+                final switch (result)
                 {
-                    // The triggered function is not Chainable so return and
-                    // let the main loop continue with the next plugin.
-                    next = Next.return_;
-                    break udaloop;
+                case pass:
+                    // Drop down
+                    break;
+
+                case whois:
+                    import kameloso.plugins.common : doWhois;
+
+                    alias Params = staticMap!(Unqual, Parameters!fun);
+                    enum isIRCPluginParam(T) = is(T == IRCPlugin);
+
+                    static if (verbose)
+                    {
+                        writefln("...%s WHOIS", typeof(this).stringof);
+                        if (settings.flush) stdout.flush();
+                    }
+
+                    static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
+                    {
+                        this.doWhois(mutEvent, privilegeLevel, &fun);
+                        return Next.continue_;  // Next function
+                    }
+                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                        is(Params : AliasSeq!(typeof(this))))
+                    {
+                        this.doWhois(this, mutEvent, privilegeLevel, &fun);
+                        return Next.continue_;  // Next function
+                    }
+                    else static if (Filter!(isIRCPluginParam, Params).length)
+                    {
+                        import std.format : format;
+                        static assert(0, ("`%s.%s` takes a superclass `IRCPlugin` " ~
+                            "parameter instead of a subclass `%s`")
+                            .format(module_, __traits(identifier, fun), typeof(this).stringof));
+                    }
+                    else
+                    {
+                        import std.format : format;
+                        static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                            .format(module_, __traits(identifier, fun), typeof(fun).stringof));
+                    }
+
+                case fail:
+                    return Next.continue_;  // Next function
                 }
             }
 
-            return next;
+            alias Params = staticMap!(Unqual, Parameters!fun);
+
+            static if (verbose)
+            {
+                writeln("...calling!");
+                if (settings.flush) stdout.flush();
+            }
+
+            static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+            {
+                fun(this, mutEvent);
+            }
+            else static if (is(Params : AliasSeq!(typeof(this))) ||
+                is(Params : AliasSeq!IRCPlugin))
+            {
+                fun(this);
+            }
+            else static if (is(Params : AliasSeq!IRCEvent))
+            {
+                fun(mutEvent);
+            }
+            else static if (arity!fun == 0)
+            {
+                fun();
+            }
+            else
+            {
+                import std.format : format;
+                static assert(0, "`%s.%s` has an unsupported function signature: `%s`"
+                    .format(module_, __traits(identifier, fun), typeof(fun).stringof));
+            }
+
+            static if (isAnnotated!(fun, Chainable) ||
+                (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+            {
+                // onEvent found an event and triggered a function, but
+                // it's Chainable and there may be more, so keep looking.
+                // Alternatively it's an awareness function, which may be
+                // sharing one or more annotations with another.
+                return Next.continue_;
+            }
+            else /*static if (isAnnotated!(fun, Terminating))*/
+            {
+                // The triggered function is not Chainable so return and
+                // let the main loop continue with the next plugin.
+                return Next.return_;
+            }
         }
 
         alias setupFuns = Filter!(setupAwareness, funs);
