@@ -299,6 +299,14 @@ struct Kameloso
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
     /++
+     +  Buffer of outgoing background message strings.
+     +
+     +  The buffer size is "how many string pointers", now how many bytes. So
+     +  we can comfortably keep it arbitrarily high.
+     +/
+    Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) backgroundBuffer;
+
+    /++
      +  Buffer of outgoing priority message strings.
      +
      +  The buffer size is "how many string pointers", now how many bytes. So
