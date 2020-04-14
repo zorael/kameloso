@@ -387,7 +387,15 @@ void messageFiber(ref Kameloso instance)
                     }
                 }
 
-                if (event.target.class_ == IRCUser.Class.admin)
+                if (event.altcount == 999)
+                {
+                    // Send a line via the low-priority background buffer.
+                    immutable quiet = settings.hideOutgoing ||
+                        (event.target.class_ == IRCUser.Class.admin);
+                    instance.backgroundBuffer.put(OutgoingLine(finalLine, quiet));
+                    return;
+                }
+                else if (event.target.class_ == IRCUser.Class.admin)
                 {
                     quietline(ThreadMessage.Quietline(), finalLine);
                 }
@@ -932,7 +940,10 @@ Next mainLoop(ref Kameloso instance)
             next = Next.returnFailure;
         }
 
-        bool bufferHasMessages = (!instance.outbuffer.empty || !instance.priorityBuffer.empty);
+        bool bufferHasMessages = (
+            !instance.outbuffer.empty ||
+            !instance.backgroundBuffer.empty ||
+            !instance.priorityBuffer.empty);
 
         version(TwitchSupport)
         {
@@ -979,9 +990,13 @@ void sendLines(ref Kameloso instance, out bool readWasShortened)
         {
             untilNext = instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
         }
-        else
+        else if (!instance.outbuffer.empty)
         {
             untilNext = instance.throttleline(instance.outbuffer);
+        }
+        else
+        {
+            untilNext = instance.throttleline(instance.backgroundBuffer);
         }
     }
     else
@@ -990,9 +1005,13 @@ void sendLines(ref Kameloso instance, out bool readWasShortened)
         {
             untilNext = instance.throttleline(instance.priorityBuffer);
         }
-        else
+        else if (!instance.outbuffer.empty)
         {
             untilNext = instance.throttleline(instance.outbuffer);
+        }
+        else
+        {
+            untilNext = instance.throttleline(instance.backgroundBuffer);
         }
     }
 
@@ -1955,6 +1974,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 
             // Clear outgoing messages
             instance.outbuffer.clear();
+            instance.backgroundBuffer.clear();
             instance.priorityBuffer.clear();
 
             version(TwitchSupport)
