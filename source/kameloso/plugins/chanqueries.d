@@ -213,12 +213,13 @@ void startChannelQueries(ChanQueriesService service)
         {
             foreach (immutable nickname; channel.users.byKey)
             {
-                if (nickname !in service.state.users) continue;
+                if (nickname == service.state.client.nickname) continue;
 
-                if (!service.state.users[nickname].account.length &&
-                    ((now - service.state.users[nickname].updated) > Timeout.whoisRetry))
+                const user = nickname in service.state.users;
+
+                if (!user || !user.account.length || ((now - user.updated) > Timeout.whoisRetry))
                 {
-                    // No account and sufficient amount of time passed since last WHOIS
+                    // No user, or no account and sufficient amount of time passed since last WHOIS
                     uniqueUsers[nickname] = true;
                 }
             }
