@@ -2014,8 +2014,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +
      +  Params:
      +      nickname = Nickname to issue a `WHOIS` query for.
+     +      background = Whether or not to issue queries as low-priority background messages.
      +/
-    void enqueueAndWHOIS(const string nickname)
+    void enqueueAndWHOIS(const string nickname, const bool background = false)
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
@@ -2125,7 +2126,16 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32768);
 
         context.awaitEvents(fiber, whoisEventTypes);
-        whois!(Yes.priority)(context.state, nickname, true);  // Need force to not miss events
+
+        if (background)
+        {
+            whois(context.state, nickname, true, background);  // Need force to not miss events
+        }
+        else
+        {
+            whois!(Yes.priority)(context.state, nickname, true);  // Ditto
+        }
+
         mixin(carriedVariableName) = nickname;
     }
 }
