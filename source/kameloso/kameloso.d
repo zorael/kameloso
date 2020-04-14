@@ -1035,7 +1035,7 @@ void sendLines(ref Kameloso instance, out bool readWasShortened)
 }
 
 
-private import lu.net : ListenAttempt;
+import lu.net : ListenAttempt;
 
 // listenAttemptToNext
 /++
@@ -1103,7 +1103,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
-private import kameloso.plugins.ircplugin : IRCPlugin;
+import kameloso.plugins.ircplugin : IRCPlugin;
 
 // handleAwaitingFibers
 /++
@@ -1333,7 +1333,7 @@ void handleReplays(IRCPlugin plugin, ref Kameloso instance)
 }
 
 
-private import kameloso.plugins.common : TriggerRequest;
+import kameloso.plugins.common : TriggerRequest;
 
 // processTriggerRequestQueue
 /++
