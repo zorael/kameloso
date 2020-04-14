@@ -22,7 +22,6 @@ public import kameloso.plugins.ircplugin : IRCPluginState;
 
 
 //version = TwitchWarnings;
-version = PrefixedCommandsFallBackToNickname;
 //version = ExplainReplay;
 
 

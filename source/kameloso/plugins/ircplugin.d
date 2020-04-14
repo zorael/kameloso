@@ -38,6 +38,8 @@ private:
 import kameloso.plugins.common;
 import dialect.defs;
 
+version = PrefixedCommandsFallBackToNickname;
+
 public:
 
 
