@@ -85,7 +85,7 @@ $ ./kameloso --channels "#d,#freenode"
 
 ## Prerequisites
 
-There are three [**D**](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need more than 4 Gb of free memory to build all features (Linux debug, excluding tests). (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
+There are three [**D**](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 3.3 Gb of free memory for a minimal build, closer to 4.5 Gb for a development build with all features (Linux `dev` debug build). 4.8 Gb to run unit tests. (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
