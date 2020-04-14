@@ -485,6 +485,27 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
                     }
 
+                    static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
+                    {
+                        alias U = eventTypeUDA;
+
+                        static if (
+                            (U != IRCEvent.Type.CHAN) &&
+                            (U != IRCEvent.Type.QUERY) &&
+                            (U != IRCEvent.Type.SELFCHAN) &&
+                            (U != IRCEvent.Type.SELFQUERY))
+                        {
+                            import lu.conv : Enum;
+                            import std.format : format;
+
+                            static assert(0, ("`%s.%s` is annotated with a `BotCommand` " ~
+                                "or `BotRegex` but is at the same time annotated " ~
+                                "with a non-message `IRCEvent.Type.%s`")
+                                .format(module_, __traits(identifier, fun),
+                                Enum!(IRCEvent.Type).toString(U)));
+                        }
+                    }
+
                     break udaloop;
                 }
             }
