@@ -389,13 +389,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
                 // Freenode-like, only nicknames with possible modesigns
                 immutable nickname = slice.stripModesign(plugin.state.server);
 
-                version(TwitchSupport)
-                {
-                    if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
-                    {
-                        if (nickname == plugin.state.client.nickname) continue;
-                    }
-                }
+                if (nickname == plugin.state.client.nickname) continue;
 
                 newUser.nickname = nickname;
             }
