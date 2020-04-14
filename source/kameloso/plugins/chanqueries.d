@@ -137,7 +137,8 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage(squelchMessage));
                 }
 
-                raw(service.state, command ~ ' ' ~ channelName, service.hideOutgoingQueries);
+                raw(service.state, command ~ ' ' ~ channelName,
+                    service.hideOutgoingQueries, true);  // Background
                 Fiber.yield();  // Awaiting specified types
 
                 while (thisFiber.payload.channel != channelName) Fiber.yield();
@@ -191,7 +192,7 @@ void startChannelQueries(ChanQueriesService service)
 
                 import kameloso.messaging : mode;
                 mode(service.state, channelName, "+%c".format((cast(char)modechar)),
-                    string.init, service.hideOutgoingQueries);
+                    string.init, service.hideOutgoingQueries, true);  // Background
             }
 
             if (channelName !in service.channelStates) continue;
@@ -278,7 +279,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch " ~ nickname));
             }
 
-            whois(service.state, nickname, false, service.hideOutgoingQueries);
+            whois(service.state, nickname, false, service.hideOutgoingQueries, true);  // Background
             Fiber.yield();  // Await whois types registered above
 
             while (true)
