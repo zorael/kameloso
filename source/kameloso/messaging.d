@@ -68,9 +68,11 @@ public:
  +      channelName = Channel in which to send the message.
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void chan(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string channelName, const string content, bool quiet = settings.hideOutgoing)
+    const string channelName, const string content, bool quiet = settings.hideOutgoing,
+    const bool background = false)
 in (channelName.length, "Tried to send a channel message but no channel was given")
 do
 {
@@ -81,6 +83,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channelName;
     event.content = content;
+    if (background) event.altcount = 999;
 
     version(TwitchSupport)
     {
@@ -138,9 +141,11 @@ unittest
  +      nickname = Nickname of user to which to send the private message.
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void query(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string nickname, const string content, const bool quiet = settings.hideOutgoing)
+    const string nickname, const string content, const bool quiet = settings.hideOutgoing,
+    const bool background = false)
 in (nickname.length, "Tried to send a private query but no nickname was given")
 do
 {
@@ -151,6 +156,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.target.nickname = nickname;
     event.content = content;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -192,9 +198,11 @@ unittest
  +      nickname = Nickname of user to which to send the message, if applicable.
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void privmsg(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string channel, const string nickname, const string content, const bool quiet = settings.hideOutgoing)
+    const string channel, const string nickname, const string content,
+    const bool quiet = settings.hideOutgoing, const bool background = false)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 do
 {
@@ -202,11 +210,11 @@ do
 
     if (channel.length)
     {
-        return chan!priority(state, channel, content, quiet);
+        return chan!priority(state, channel, content, quiet, background);
     }
     else if (nickname.length)
     {
-        return query!priority(state, nickname, content, quiet);
+        return query!priority(state, nickname, content, quiet, background);
     }
     else
     {
@@ -259,9 +267,11 @@ unittest
  +          private message, or a channel.
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void emote(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string emoteTarget, const string content, const bool quiet = settings.hideOutgoing)
+    const string emoteTarget, const string content, const bool quiet = settings.hideOutgoing,
+    const bool background = false)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 do
 {
@@ -271,6 +281,7 @@ do
     event.type = IRCEvent.Type.EMOTE;
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = content;
+    if (background) event.altcount = 999;
 
     if (emoteTarget.beginsWithOneOf(state.server.chantypes))
     {
@@ -332,10 +343,11 @@ unittest
  +      modes = Mode characters to apply to the channel.
  +      content = Target of mode change, if applicable.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void mode(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
     const string channel, const const(char)[] modes, const string content = string.init,
-    const bool quiet = settings.hideOutgoing)
+    const bool quiet = settings.hideOutgoing, const bool background = false)
 in (channel.length, "Tried to set a mode but no channel was given")
 do
 {
@@ -347,6 +359,7 @@ do
     event.channel = channel;
     event.aux = modes.idup;
     event.content = content;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -384,9 +397,11 @@ unittest
  +      channel = Channel whose topic to change.
  +      content = Topic body text.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void topic(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string channel, const string content, const bool quiet = settings.hideOutgoing)
+    const string channel, const string content, const bool quiet = settings.hideOutgoing,
+    const bool background = false)
 in (channel.length, "Tried to set a topic but no channel was given")
 do
 {
@@ -397,6 +412,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.content = content;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -433,9 +449,11 @@ unittest
  +      channel = Channel to which to invite the user.
  +      nickname = Nickname of user to invite.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void invite(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string channel, const string nickname, const bool quiet = settings.hideOutgoing)
+    const string channel, const string nickname, const bool quiet = settings.hideOutgoing,
+    const bool background = false)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
 do
@@ -447,6 +465,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.target.nickname = nickname;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -483,10 +502,11 @@ unittest
  +      channel = Channel to join.
  +      key = Channel key to join the channel with, if it's locked.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void join(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
     const string channel, const string key = string.init,
-    const bool quiet = settings.hideOutgoing)
+    const bool quiet = settings.hideOutgoing, const bool background = false)
 in (channel.length, "Tried to join a channel but no channel was given")
 do
 {
@@ -497,6 +517,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.aux = key;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -533,10 +554,11 @@ unittest
  +      nickname = Nickname of user to kick.
  +      reason = Optionally the reason behind the kick.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void kick(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
     const string channel, const string nickname, const string reason = string.init,
-    const bool quiet = settings.hideOutgoing)
+    const bool quiet = settings.hideOutgoing, const bool background = false)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
 do
@@ -549,6 +571,7 @@ do
     event.channel = channel;
     event.target.nickname = nickname;
     event.content = reason;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -586,9 +609,11 @@ unittest
  +      channel = Channel to leave.
  +      reason = Optionally, reason behind leaving.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void part(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string channel, const string reason = string.init, const bool quiet = settings.hideOutgoing)
+    const string channel, const string reason = string.init,
+    const bool quiet = settings.hideOutgoing, const bool background = false)
 in (channel.length, "Tried to part a channel but no channel was given")
 do
 {
@@ -599,6 +624,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.content = reason;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -681,9 +707,11 @@ unittest
  +      nickname = String nickname to query for.
  +      force = Whether or not to force the WHOIS, skipping any hysteresis queues.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void whois(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string nickname, const bool force = false, const bool quiet = settings.hideOutgoing)
+    const string nickname, const bool force = false,
+    const bool quiet = settings.hideOutgoing, const bool background = false)
 in (nickname.length, "Tried to WHOIS but no nickname was given")
 do
 {
@@ -694,6 +722,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.target.nickname = nickname;
     if (force) event.num = 1;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
@@ -734,9 +763,11 @@ unittest
  +          which to send messages to the server.
  +      line = Raw IRC string to send to the server.
  +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      background = Whether or not to send it as a low-priority background message.
  +/
 void raw(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
-    const string line, const bool quiet = settings.hideOutgoing)
+    const string line, const bool quiet = settings.hideOutgoing,
+    const bool background = false)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -744,6 +775,7 @@ void raw(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
     event.type = IRCEvent.Type.UNSET;
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = line;
+    if (background) event.altcount = 999;
 
     state.mainThread.send(event);
 }
