@@ -79,8 +79,10 @@ void onWhoReply(NotesPlugin plugin, const IRCEvent event)
  +      plugin = The current `NotesPlugin`.
  +      givenUser = The `dialect.defs.IRCUser` for whom we want to replay notes.
  +      givenChannel = Name of the channel we want the notes related to.
+ +      background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
-void playbackNotes(NotesPlugin plugin, const IRCUser givenUser, const string givenChannel)
+void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
+    const string givenChannel, const bool background = false)
 {
     import kameloso.common : timeSince;
     import dialect.common : toLowerCase;
@@ -196,7 +198,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser, const string giv
 
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
-        enqueueAndWHOIS(givenUser.nickname);
+        enqueueAndWHOIS(givenUser.nickname, background);
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channel.length) break;
