@@ -16,20 +16,20 @@ environment:
       arch: x86
       dubArgs:
       Ddflags: -lowmem
-    - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.090.1
-      DSubversion:
-      arch: x64
-      dubArgs:
-      Ddflags: -lowmem
-    - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.090.1
-      DSubversion:
-      arch: x86
-      dubArgs:
-      Ddflags: -lowmem
+    #- DC: dmd
+      #DReleaseType: releases
+      #DVersion: 2.090.1
+      #DSubversion:
+      #arch: x64
+      #dubArgs:
+      #Ddflags: -lowmem
+    #- DC: dmd
+      #DReleaseType: releases
+      #DVersion: 2.090.1
+      #DSubversion:
+      #arch: x86
+      #dubArgs:
+      #Ddflags: -lowmem
     #- DC: dmd
       #DReleaseType: releases
       #DVersion: 2.089.1
