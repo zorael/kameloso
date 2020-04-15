@@ -329,6 +329,27 @@ do
 }
 
 
+// start
+/++
+ +  Verifies that the setting for maximum vote length is sane.
+ +/
+void start(VotesPlugin plugin)
+{
+    immutable dur = plugin.votesSettings.maxVoteDuration;
+
+    if (dur <= 0)
+    {
+        import kameloso.common : Tint, logger;
+
+        logger.warningf("The Votes plugin setting for maximum vote duration is " ~
+            "invalid (%s%d%s, expected a number greater than zero)",
+            Tint.log, dur, Tint.warning);
+
+        plugin.votesSettings.maxVoteDuration = VotesSettings.init.maxVoteDuration;
+    }
+}
+
+
 mixin MinimalAuthentication;
 
 public:
