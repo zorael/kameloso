@@ -90,6 +90,15 @@ do
         chan(plugin.state, event.channel, "Duration must be a positive number.");
         return;
     }
+    else if (dur > plugin.maxDuration)
+    {
+        import std.format : format;
+
+        enum maxDurMsg = "Votes are limited to a maximum duration of %d seconds."
+            .format(plugin.maxDuration);
+        chan(plugin.state, event.channel, maxDurMsg);
+        return;
+    }
 
     /// Available vote options and their vote counts.
     uint[string] voteChoices;
