@@ -374,6 +374,16 @@ void onNotRegistered(ConnectService service)
 }
 
 
+version(TwitchSupport)
+{
+    alias ChainableOnTwitch = Chainable;
+}
+else
+{
+    import std.meta : AliasSeq;
+    alias ChainableOnTwitch = AliasSeq!();
+}
+
 // onEndOfMotd
 /++
  +  Joins channels at the end of the message of the day (`MOTD`), and tries to
@@ -382,7 +392,7 @@ void onNotRegistered(ConnectService service)
  +  Some servers don't have a `MOTD`, so act on
  +  `dialect.defs.IRCEvent.Type.ERR_NOMOTD` as well.
  +/
-@Chainable
+@ChainableOnTwitch
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
