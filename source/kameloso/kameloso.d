@@ -1345,17 +1345,18 @@ import kameloso.plugins.common : TriggerRequest;
  +/
 void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][string] reqs)
 {
+    import kameloso.constants : Timeout;
+    import std.datetime.systime : Clock;
+
     // Walk through requests and call `WHOIS` on those that haven't been
     // `WHOIS`ed in the last `Timeout.whois` seconds
+
+    immutable now = Clock.currTime.toUnixTime;
 
     foreach (immutable nickname, const requestsForNickname; reqs)
     {
         assert(nickname.length, "Empty nickname in trigger queue");
 
-        import kameloso.constants : Timeout;
-        import std.datetime.systime : Clock;
-
-        immutable now = Clock.currTime.toUnixTime;
         immutable then = instance.previousWhoisTimestamps.get(nickname, 0);
 
         if ((now - then) > Timeout.whoisRetry)
