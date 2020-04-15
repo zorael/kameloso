@@ -964,13 +964,10 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     {
         import kameloso.thread : ThreadMessage, busMessage;
         import std.concurrency : send;
-        import std.typecons : Tuple, tuple;
+        import std.typecons : Tuple;
 
         alias EventAndURLs = Tuple!(IRCEvent, string[]);
-
-        EventAndURLs eventAndURLs;
-        eventAndURLs[0] = event;
-        eventAndURLs[1] = urls;
+        auto eventAndURLs = EventAndURLs(event, urls);
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(),
             "webtitles", busMessage(eventAndURLs));
