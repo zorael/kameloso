@@ -226,6 +226,8 @@ void startChannelQueries(ChanQueriesService service)
             }
         }
 
+        if (!uniqueUsers.length) return;  // Early exit
+
         uniqueUsers.rehash();
 
         /// Event types that signal the end of a WHOIS response.
