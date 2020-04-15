@@ -312,41 +312,6 @@ do
 }
 
 
-// onCommandAbortVote
-/++
- +  Aborts an ongoing vote.
- +
- +  Vote instances are uniquely identified by the UNIX timestamp of when it
- +  started. There may be an arbitrary number of Fibers queued to trigger as the
- +  duration comes to a close. By removing the entry for the channel in
- +  `VotesPlugin.channelVoteInstances` we invalidate all such Fibers, which rely
- +  on that ID entry being present and equal to the ID they themselves have
- +  stored in their closures.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "abortvote")
-@BotCommand(PrefixPolicy.prefixed, "abortpoll")
-@Description("Aborts an ongoing vote.")
-void onCommandAbortVote(VotesPlugin plugin, const IRCEvent event)
-do
-{
-    const currentVoteInstance = event.channel in plugin.channelVoteInstances;
-
-    if (currentVoteInstance)
-    {
-        plugin.channelVoteInstances.remove(event.channel);
-        chan(plugin.state, event.channel, "Vote aborted.");
-    }
-    else
-    {
-        chan(plugin.state, event.channel, "There is no ongoing vote.");
-    }
-}
-
-
 // start
 /++
  +  Verifies that the setting for maximum vote length is sane.
