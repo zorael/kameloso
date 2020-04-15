@@ -319,30 +319,6 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandPrintNotes
-/++
- +  Prints saved notes in JSON form to the local terminal.
- +
- +  This is for debugging purposes.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "printnotes")
-@Description("[debug] Prints saved notes to the local terminal.")
-void onCommandPrintNotes(NotesPlugin plugin)
-{
-    import std.stdio : stdout, writeln;
-
-    writeln("Currently queued notes:");
-    writeln(plugin.notes.toPrettyString);
-    if (settings.flush) stdout.flush();
-}
-
-
 // onCommandReloadNotes
 /++
  +  Reloads notes from disk, overwriting the in-memory storage.
