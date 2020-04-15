@@ -20,7 +20,7 @@ import kameloso.common : Tint, logger, settings;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 
 // AutomodeSettings
@@ -229,6 +229,119 @@ unittest
 }
 
 
+// onCommandAutomode
+/++
+ +  Lists current automodes for a user in the current channel, clears them,
+ +  or adds new ones depending on the verb passed.
+ +/
+@(IRCEvent.Type.CHAN)
+@(PrivilegeLevel.operator)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "automode")
+@Description("Adds, lists or removes automode definitions for the current channel.",
+    "$command [add|list|clear] [account/nickname] [mode]")
+void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
+{
+    import dialect.common : isValidNickname;
+    import lu.string : beginsWith, nom;
+    import std.algorithm.searching : count;
+
+    string line = event.content;  // mutable
+
+    immutable verb = line.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "add":
+        // !automode add nickname mode
+        //                       1
+        if (line.count(' ') != 1) goto default;
+
+        immutable nickname = line.nom(' ');
+
+        if (!nickname.isValidNickname(plugin.state.server))
+        {
+            chan(plugin.state, event.channel, "Invalid nickname.");
+            return;
+        }
+
+        string mode = line;
+
+        if (mode.beginsWith('-'))
+        {
+            chan(plugin.state, event.channel, "Can't add a negative automode.");
+            return;
+        }
+
+        while (mode.length && (mode[0] == '+'))
+        {
+            mode = mode[1..$];
+        }
+
+        if (!mode.length)
+        {
+            chan(plugin.state, event.channel, "You must supply a valid mode.");
+            return;
+        }
+
+        plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
+
+        enum pattern = "Automode modified! %s on %s: +%s";
+
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(nickname.ircColourByHash.ircBold,
+                event.channel.ircBold, mode.ircBold) :
+            pattern.format(nickname, event.channel, mode);
+
+        chan(plugin.state, event.channel, message);
+        break;
+
+    case "clear":
+    case "del":
+        immutable nickname = line;
+
+        if (!nickname.length) goto default;
+
+        if (!nickname.isValidNickname(plugin.state.server))
+        {
+            chan(plugin.state, event.channel, "Invalid nickname.");
+            return;
+        }
+
+        plugin.modifyAutomode(No.add, nickname, event.channel);
+
+        enum pattern = "Automode for %s cleared.";
+
+        immutable message = settings.colouredOutgoing ?
+            pattern.format(nickname.ircColourByHash.ircBold) :
+            pattern.format(nickname);
+
+        chan(plugin.state, event.channel, message);
+        break;
+
+    case "list":
+        const channelmodes = event.channel in plugin.automodes;
+
+        if (channelmodes)
+        {
+            import std.conv : to;
+            chan(plugin.state, event.channel, "Current automodes: " ~ (*channelmodes).to!string);
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "No automodes defined for channel %s."
+                .format(event.channel));
+        }
+        break;
+
+    default:
+        chan(plugin.state, event.channel, "Usage: %s%s [add|clear|list] [nickname/account] [mode]"
+            .format(settings.prefix, event.aux));
+        break;
+    }
+}
+
+
 // onCommandAddAutomode
 /++
  +  Adds an account-channel automode pair definition and saves it to disk.
@@ -343,6 +456,66 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
     enqueueAndWHOIS(specified);
+}
+
+
+// modifyAutomode
+/++
+ +  Modifies an automode entry by adding a new one or removing a (potentially)
+ +  existing one.
+ +
+ +  Params:
+ +      plugin = The current `AutomodePlugin`.
+ +      add = Whether to add or to remove the automode.
+ +      nickname = The nickname of the user to add the automode for.
+ +      channelName = The channel the automode should play out in.
+ +      mode = The mode string, when adding a new automode.
+ +/
+void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname,
+    const string channelName, const string mode = string.init)
+in ((!add || mode.length), "Tried to add an empty automode")
+{
+    void onSuccess(const string id)
+    {
+        if (add)
+        {
+            plugin.automodes[channelName][id] = mode;
+        }
+        else
+        {
+            auto channelmodes = channelName in plugin.automodes;
+            if (!channelmodes) return;
+
+            if (id in *channelmodes)
+            {
+                (*channelmodes).remove(id);
+            }
+        }
+
+        plugin.saveAutomodes();
+    }
+
+    void onFailure(const IRCUser failureUser)
+    {
+        logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+        return onSuccess(failureUser.nickname);
+    }
+
+    if (const userOnRecord = nickname in plugin.state.users)
+    {
+        if (userOnRecord.account.length)
+        {
+            return onSuccess(userOnRecord.account);
+        }
+    }
+
+    // WHOIS the supplied nickname and get its account, then add it.
+    // Assume the supplied nickname *is* the account if no match, error out if
+    // there is a match but the user isn't logged onto services.
+
+    mixin WHOISFiberDelegate!(onSuccess, onFailure);
+
+    enqueueAndWHOIS(nickname);
 }
 
 
