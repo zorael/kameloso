@@ -143,7 +143,7 @@ do
         voteChoices[lower] = 0;
     }
 
-    if (!voteChoices.length)
+    if (voteChoices.length < 2)
     {
         chan(plugin.state, event.channel, "Need at least two unique vote choices.");
         return;
