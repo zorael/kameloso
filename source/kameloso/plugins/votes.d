@@ -214,6 +214,14 @@ do
             chan(plugin.state, event.channel, "Voting complete, no one voted.");
         }
 
+        // Cleanup
+
+        if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+        {
+            plugin.unlistFiberAwaitingEvent(IRCEvent.Type.NICK);
+        }
+
+        plugin.unlistFiberAwaitingEvent(IRCEvent.Type.CHAN);
         plugin.channelVoteInstances.remove(event.channel);
 
         // End Fiber
