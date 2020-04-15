@@ -220,37 +220,46 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 /++
  +  Sends notes to a channel upon joining it.
  +
- +  Only reacting to others joining would mean someone never leaving would never
- +  get notes. This may be extended to trigger when they say something, too.
+ +  Do nothing if version `WithChanQueriesService`, as the ChanQueries service
+ +  will issue WHO queries on channels shortly after joining. WHO replies carry
+ +  more information than NAMES replies do, so we'd just be duplicating effort
+ +  for worse results.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
-    import dialect.common : stripModesign;
-    import std.algorithm.iteration : splitter;
-
-    if (event.channel !in plugin.notes) return;
-
-    mixin Replayer;
-
-    foreach (immutable signed; event.content.splitter)
+    version(WithChanQueriesService)
     {
-        immutable nickname = signed.stripModesign(plugin.state.server);
-        if (nickname == plugin.state.client.nickname) continue;
+        // Do nothing
+    }
+    else
+    {
+        import dialect.common : stripModesign;
+        import std.algorithm.iteration : splitter;
 
-        IRCEvent fakeEvent;
+        if (event.channel !in plugin.notes) return;
 
-        with (fakeEvent)
+        mixin Replayer;
+
+        foreach (immutable signed; event.content.splitter)
         {
-            type = IRCEvent.Type.JOIN;
-            sender.nickname = nickname;
-            channel = event.channel;
-        }
+            immutable nickname = signed.stripModesign(plugin.state.server);
+            if (nickname == plugin.state.client.nickname) continue;
 
-        // Use a replay to fill in known information about the user by use of Persistence
-        auto req = triggerRequest(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
-        queueToReplay(req);
+            IRCEvent fakeEvent;
+
+            with (fakeEvent)
+            {
+                type = IRCEvent.Type.JOIN;
+                sender.nickname = nickname;
+                channel = event.channel;
+            }
+
+            // Use a replay to fill in known information about the user by use of Persistence
+            auto req = triggerRequest(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
+            queueToReplay(req);
+        }
     }
 }
 
