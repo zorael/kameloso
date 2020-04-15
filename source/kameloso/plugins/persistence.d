@@ -188,6 +188,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         {
             // Not a channel or not a home. Additionally not an admin nor us
             stored.class_ = IRCUser.Class.anyone;
+            service.userClassCurrentChannelCache.remove(user.nickname);
         }
         else
         {
