@@ -34,6 +34,7 @@ versions \
     "WithQuotesPlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
+    "WithVotesPlugin" \
     "WithWebtitlesPlugin"
 
 configuration "application" {

@@ -74,6 +74,7 @@ version(WithPlugins)
     mixin(tryImportMixin("kameloso.plugins.help", "HelpPlugin"));
     mixin(tryImportMixin("kameloso.plugins.hello", "HelloPlugin"));
     mixin(tryImportMixin("kameloso.plugins.oneliners", "OnelinersPlugin"));
+    mixin(tryImportMixin("kameloso.plugins.votes", "VotesPlugin"));
 
 
     version(Posix)
@@ -165,6 +166,7 @@ version(WithPlugins)
         HelpPlugin,
         HelloPlugin,  // Generally not available
         OnelinersPlugin,
+        VotesPlugin,
         EnabledWebPlugins,  // Automatically expands
         EnabledPosixPlugins,  // Ditto
     );
