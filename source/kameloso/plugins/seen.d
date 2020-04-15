@@ -808,6 +808,7 @@ long[string] loadSeen(const string filename)
     catch (JSONException e)
     {
         logger.error("Could not load seen JSON from file: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
 
     // Rehash the AA, since we potentially added a *lot* of users.
@@ -910,6 +911,8 @@ void initResources(SeenPlugin plugin)
 
         logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.",
             cast(char)TerminalToken.bell);
+
+        version(PrintStacktraces) logger.trace(e.toString);
     }
 
     // Let other Exceptions pass.

@@ -74,6 +74,8 @@ void initResources(AutomodePlugin plugin)
     catch (JSONException e)
     {
         import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(plugin.automodeFile.baseName ~ " may be malformed.");
     }
 

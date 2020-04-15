@@ -388,6 +388,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid phrase ban index: " ~ slice);
+                //version(PrintStacktraces) logger.trace(e.toString);
                 return;
             }
 
@@ -433,6 +434,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s [optional starting position number]"
                         .format(verb));
+                    //version(PrintStacktraces) logger.trace(e.info);
                     return;
                 }
             }
@@ -537,6 +539,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
             privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid parameters.");
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Usage: add [message threshold] [time threshold] [stagger time] [text]");
+            //version(PrintStacktraces) logger.trace(e.info);
             return;
         }
 
@@ -601,6 +604,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid timer index: " ~ slice);
+                //version(PrintStacktraces) logger.trace(e.info);
                 return;
             }
 
@@ -645,6 +649,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: list [optional starting position number]");
+                    //version(PrintStacktraces) logger.trace(e.info);
                     return;
                 }
             }
@@ -906,6 +911,7 @@ do
     catch (ConvException e)
     {
         chan(plugin.state, event.channel, "Duration must be a positive number.");
+        //version(PrintStacktraces) logger.trace(e.info);
         return;
     }
 
@@ -1407,6 +1413,7 @@ void initResources(TwitchBotPlugin plugin)
     }
     catch (JSONException e)
     {
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(plugin.bannedPhrasesFile.baseName ~ " may be malformed.");
     }
 
@@ -1418,6 +1425,7 @@ void initResources(TwitchBotPlugin plugin)
     }
     catch (JSONException e)
     {
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(plugin.timersFile.baseName ~ " may be malformed.");
     }
 

@@ -208,13 +208,14 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         catch (ErrnoException e)
         {
             state.askToError("Pipeline plugin failed to reopen FIFO: " ~ logtint ~ e.msg);
+            version(PrintStacktraces) state.askToTrace(e.info.toString);
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
         }
         catch (Exception e)
         {
             state.askToError("Pipeline plugin saw unexpected exception");
-            state.askToTrace(e.toString);
+            version(PrintStacktraces) state.askToTrace(e.toString);
             break toploop;
         }
     }
@@ -339,16 +340,19 @@ void onMotd(PipelinePlugin plugin)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
                 e.msg, Tint.log, e.command, Tint.warning, e.retval);
+            version(PrintStacktraces) logger.trace(e.info);
         }
         catch (FileExistsException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
                 e.msg, Tint.log, e.filename, Tint.warning);
+            version(PrintStacktraces) logger.trace(e.info);
         }
         catch (FileTypeMismatchException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
                 e.msg, Tint.log, e.filename, Tint.warning);
+            version(PrintStacktraces) logger.trace(e.info);
         }
 
         // Let other Exceptions pass

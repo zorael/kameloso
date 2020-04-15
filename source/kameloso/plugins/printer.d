@@ -679,14 +679,17 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         catch (FileException e)
         {
             logger.warning("File exception caught when writing to log: ", e.msg);
+            version(PrintStacktraces) logger.trace(e.info);
         }
         catch (ErrnoException e)
         {
             logger.warning("Exception caught when writing to log: ", e.msg);
+            version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
             logger.warning("Unhandled exception caught when writing to log: ", e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
         }
     }
 
@@ -898,16 +901,19 @@ void commitLog(ref LogLineBuffer buffer)
     {
         logger.warning("File exception caught when committing log: ",
             e.msg, cast(char)TerminalToken.bell);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
     {
         logger.warning("Exception caught when committing log: ",
             e.msg, cast(char)TerminalToken.bell);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
         logger.warning("Unhandled exception caught when committing log: ",
             e.msg, cast(char)TerminalToken.bell);
+        version(PrintStacktraces) logger.trace(e.toString);
     }
 }
 

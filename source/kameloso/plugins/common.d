@@ -394,6 +394,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                 logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
                     Tint.log, Tint.warning, setting, value);
                 noErrors = false;
+
+                //version(PrintStacktraces) logger.trace(e.info);
             }
 
             continue top;
@@ -420,6 +422,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                     logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
                         Tint.log, pluginstring, Tint.warning, setting, value);
                     noErrors = false;
+
+                    //version(PrintStacktraces) logger.trace(e.info);
                 }
 
                 continue top;

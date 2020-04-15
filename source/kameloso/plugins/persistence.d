@@ -356,7 +356,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
         catch (JSONException e)
         {
             logger.warningf("JSON exception caught when populating %s: %s", list, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
@@ -391,7 +391,10 @@ void initResources(PersistenceService service)
     }
     catch (JSONException e)
     {
+        import kameloso.common : logger;
         import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
     }
 
@@ -443,7 +446,10 @@ void initResources(PersistenceService service)
             }
             catch (JSONException e)
             {
+                import kameloso.common : logger;
                 import std.path : baseName;
+
+                version(PrintStacktraces) logger.trace(e.toString);
                 throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
             }
         }

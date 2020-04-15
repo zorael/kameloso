@@ -189,6 +189,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     catch (JSONException e)
     {
         logger.errorf("Could not quote %s%s%s: %1$s%4$s", Tint.log, specified, Tint.error, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
 }
 
@@ -307,6 +308,7 @@ in (line.length, "Tried to add an empty quote")
     {
         logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
             Tint.log, specified, Tint.error, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
 }
 
@@ -386,6 +388,8 @@ void initResources(QuotesPlugin plugin)
     catch (JSONException e)
     {
         import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(plugin.quotesFile.baseName ~ " may be malformed.");
     }
 

@@ -257,6 +257,7 @@ void initResources(OnelinersPlugin plugin)
     }
     catch (JSONException e)
     {
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
     }
 

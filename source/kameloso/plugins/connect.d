@@ -781,6 +781,7 @@ void onSASLAuthenticate(ConnectService service)
         catch (Base64Exception e)
         {
             logger.error("Could not authenticate: malformed password");
+            version(PrintStacktraces) logger.trace(e.info);
             return service.onSASLFailure();
         }
 

@@ -1463,6 +1463,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "There was a conversion error. Please verify the values in your setting.");
+            version(PrintStacktraces) logger.trace(e.info);
         }
     }
 

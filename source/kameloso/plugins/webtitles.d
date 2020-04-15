@@ -282,11 +282,13 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 catch (JSONException e)
                 {
                     request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
+                    //version(PrintStacktraces) request.state.askToTrace(e.info);
                     // Drop down
                 }
                 catch (Exception e)
                 {
                     request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
+                    version(PrintStacktraces) request.state.askToTrace(e.toString);
                     // Drop down
                 }
             }
@@ -314,10 +316,12 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         {
             request.state.askToError("Webtitles worker Unicode exception: " ~
                 e.msg ~ " (link is probably to an image or similar)");
+            //version(PrintStacktraces) request.state.askToTrace(e.info);
         }
         catch (Exception e)
         {
             request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
+            //version(PrintStacktraces) request.state.askToTrace(e.info);
             request.state.askToLog("Rewriting URL and retrying ...");
 
             if (request.url[$-1] == '/')
@@ -335,6 +339,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
     catch (Exception e)
     {
         request.state.askToError("Webtitles worker exception: " ~ e.msg);
+        version(PrintStacktraces) request.state.askToTrace(e.toString);
     }
 }
 

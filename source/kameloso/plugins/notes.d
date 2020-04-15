@@ -182,6 +182,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     plugin.notes.reset();
                     plugin.notes.save(plugin.notesFile);
                 }
+
+                version(PrintStacktraces) logger.trace(e.info);
             }
         }
 
@@ -301,7 +303,9 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     }
     catch (JSONException e)
     {
-        logger.error("Failed to add note: ", Tint.log, e.msg);
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Failed to add note; " ~ e.msg);
+        //logger.error("Failed to add note: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
 }
 
@@ -405,6 +409,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
                 catch (Base64Exception e)
                 {
                     noteArray[i].line = "(An error occurred and the note could not be read)";
+                    version(PrintStacktraces) logger.trace(e.toString);
                 }
             }
         }
@@ -450,14 +455,17 @@ in (id.length, "Tried to clear notes for an empty id")
     catch (JSONException e)
     {
         logger.error("Failed to clear notes: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileException e)
     {
         logger.error("Failed to save notes: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
     {
         logger.error("Failed to open/close notes file: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
 }
 
@@ -579,6 +587,8 @@ void initResources(NotesPlugin plugin)
     catch (JSONException e)
     {
         import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
         throw new IRCPluginInitialisationException(plugin.notesFile.baseName ~ " may be malformed.");
     }
 
