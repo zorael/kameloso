@@ -460,8 +460,8 @@ void onEndOfMotdTwitch(ConnectService service)
 
     if (settings.prefix.beginsWith(".") || settings.prefix.beginsWith("/"))
     {
-        logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
-            `on Twitch servers, as "." and "/" are reserved for Twitch's own commands.`,
+        logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
+            `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
             Tint.log, settings.prefix, Tint.warning);
     }
 }
