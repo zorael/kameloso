@@ -30,13 +30,12 @@ import dialect.defs;
     int maxVoteDuration = 600;
 }
 
-// onCommandStartVote
+
+// onCommandVote
 /++
- +  Instigates a vote.
+ +  Instigates a vote or stops an ongoing one.
  +
- +  A duration and two or more voting options have to be passed.
- +
- +  Implemented as a `core.thread.Fiber`.
+ +  If starting one a duration and two or more voting options have to be passed.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -44,8 +43,9 @@ import dialect.defs;
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "vote")
 @BotCommand(PrefixPolicy.prefixed, "poll")
-@Description("Starts a vote.", "$command [seconds] [choice1] [choice2] ...")
-void onCommandStartVote(VotesPlugin plugin, const IRCEvent event)
+@Description("Starts or stops a vote. Pass \"abort\" to stop.",
+    "$command [seconds] [choice1] [choice2] ...")
+void onCommandVote(VotesPlugin plugin, const IRCEvent event)
 do
 {
     import lu.string : contains, nom;
@@ -56,10 +56,28 @@ do
     import std.uni : toLower;
     import core.thread : Fiber;
 
-    if (event.content == "abort")
+    if (event.content)
     {
-        // "!vote abort" command instead of "!abortvote"
-        return plugin.onCommandAbortVote(event);
+        switch (event.content)
+        {
+        case "abort":
+        case "stop":
+            const currentVoteInstance = event.channel in plugin.channelVoteInstances;
+
+            if (currentVoteInstance)
+            {
+                plugin.channelVoteInstances.remove(event.channel);
+                chan(plugin.state, event.channel, "Vote aborted.");
+            }
+            else
+            {
+                chan(plugin.state, event.channel, "There is no ongoing vote.");
+            }
+            return;
+
+        default:
+            break;
+        }
     }
 
     if (event.channel in plugin.channelVoteInstances)
