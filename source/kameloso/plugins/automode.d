@@ -52,7 +52,7 @@ void saveAutomodes(AutomodePlugin plugin)
     JSONStorage automodes;
     pruneChannels(plugin.automodes);
     automodes.storage = JSONValue(plugin.automodes);
-    automodes.save(plugin.automodeFile);
+    automodes.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.automodeFile);
 }
 
 
