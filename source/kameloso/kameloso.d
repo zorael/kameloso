@@ -2143,9 +2143,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
  +      raw = The raw string that `event` was parsed from, as read from the IRC server.
  +/
 void printEventDebugDetails(const IRCEvent event, const string raw)
-in (((event != IRCEvent.init) || !raw.length),
-    "Tried to print event debug details but was passed an empty event and no raw string")
 {
+    if (!raw.length) return;
+
     if (event == IRCEvent.init)
     {
         logger.warningf(`Offending line: "%s%s%s"`, Tint.log, raw, Tint.warning);
