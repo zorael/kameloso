@@ -249,30 +249,6 @@ in (line.length, "Tried to add an empty quote")
 }
 
 
-// onCommandPrintQuotes
-/++
- +  Prints the in-memory quotes JSON storage to the local terminal.
- +
- +  This is for debugging purposes.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "printquotes")
-@Description("[debug] Prints all quotes to the local terminal.")
-void onCommandPrintQuotes(QuotesPlugin plugin)
-{
-    import std.stdio : stdout, writeln;
-
-    writeln("Currently stored quotes:");
-    writeln(plugin.quotes.toPrettyString);
-    if (settings.flush) stdout.flush();
-}
-
-
 // onCommandReloadQuotes
 /++
  +  Reloads the JSON quotes from disk.
