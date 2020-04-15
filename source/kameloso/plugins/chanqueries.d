@@ -81,8 +81,6 @@ void startChannelQueries(ChanQueriesService service)
 
     if (!querylist.length && !settings.eagerLookups) return;  // Continue anyway if eagerLookups
 
-    service.querying = true;  // "Lock", unlocked on delegate end
-
     void dg()
     {
         import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
@@ -93,6 +91,8 @@ void startChannelQueries(ChanQueriesService service)
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+        service.querying = true;  // "Lock"
 
         scope(exit)
         {
