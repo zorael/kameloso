@@ -186,7 +186,7 @@ kameloso sets mode +o you
      you | I am a fish
      you | s/fish/snek/
 kameloso | you | I am a snek
-     you | !addquote kameloso I am a snek
+     you | !quote kameloso I am a snek
 kameloso | Quote saved. (1 on record)
      you | !quote kameloso
 kameloso | kameloso | I am a snek
@@ -194,12 +194,22 @@ kameloso | kameloso | I am a snek
 kameloso | Note added.
      you | !seen OfflinePerson
 kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago.
-     you | !opertor add bob
+     you | !operator add bob
 kameloso | Added BOB as an operator in #channel.
      you | !whitelist add alice
 kameloso | Added Alice as a whitelisted user in #channel.
      you | !blacklist del steve
 kameloso | Removed steve as a blacklisted user in #channel.
+     you | !automode add frank +o
+kameloso | Automode modified! frank on #channel: +o
+     you | !poll 60 snek snik
+kameloso | Voting commenced! Please place your vote for one of: snik, snek (60 seconds)
+     BOB | snek
+   Alice | snek
+   frank | snik
+kameloso | Voting complete, results:
+kameloso | snek : 2 (66.6%)
+kameloso | snik : 1 (33.3%)
      you | kameloso: sudo PRIVMSG #channel :this is a raw IRC command
 kameloso | this is a raw IRC command
      you | https://youtu.be/ykj3Kpm3O0g
