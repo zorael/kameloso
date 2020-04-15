@@ -331,6 +331,9 @@ final class VotesPlugin : IRCPlugin
     /// All Votes plugin settings.
     VotesSettings votesSettings;
 
+    /// Maximum vote duration.
+    enum maxDuration = 600;
+
     /++
      +  An unique identifier for an ongoing channel vote, as set by
      +  `onCommandVote` and monitored inside its `core.thread.Fiber`'s closures.
