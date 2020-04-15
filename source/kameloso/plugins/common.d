@@ -1424,7 +1424,7 @@ in ((dg !is null), "Tried to queue a replay with a null delegate pointer")
 in ((event != IRCEvent.init), "Tried to queue a replay with an init IRCEvent")
 {
     import kameloso.thread : CarryingFiber;
-    plugin.state.replays ~= Replay(new CarryingFiber!Replay(dg, 32768), event);
+    plugin.state.replays ~= Replay(new CarryingFiber!Replay(dg, 32_768), event);
 }
 
 
@@ -2127,7 +2127,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
 
         context.awaitEvents(fiber, whoisEventTypes);
 

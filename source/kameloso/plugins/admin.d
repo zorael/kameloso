@@ -474,7 +474,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }*/
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
     plugin.awaitEvents(fiber, joinTypes);
 }
 
@@ -1494,7 +1494,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32768);
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 
@@ -1729,7 +1729,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             // applyCustomSettings displays its own error messages
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32768);
+        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
         return plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 
     case "save":

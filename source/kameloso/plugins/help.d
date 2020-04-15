@@ -214,7 +214,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32768);
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 

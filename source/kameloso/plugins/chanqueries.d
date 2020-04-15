@@ -335,7 +335,7 @@ void startChannelQueries(ChanQueriesService service)
 
     import kameloso.thread : CarryingFiber;
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
     fiber.call();
 }
 
@@ -415,7 +415,7 @@ void onEndOfMotd(ChanQueriesService service)
         service.startChannelQueries();
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
     service.delayFiber(fiber, service.secondsBeforeInitialQueries);
 }
 

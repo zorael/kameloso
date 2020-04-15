@@ -279,7 +279,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         }
     }
 
-    return new Fiber(&dg, 32768);
+    return new Fiber(&dg, 32_768);
 }
 
 

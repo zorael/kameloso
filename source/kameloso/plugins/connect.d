@@ -353,7 +353,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber fiber = new Fiber(&dg, 32768);
+    Fiber fiber = new Fiber(&dg, 32_768);
     service.delayFiber(fiber, service.authenticationGracePeriod);
 }
 
@@ -1004,7 +1004,7 @@ void register(ConnectService service)
                     }
                 }
 
-                Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32768);
+                Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
                 service.awaitEvent(fiber, IRCEvent.Type.CAP);
                 return;
             }
@@ -1024,7 +1024,7 @@ void register(ConnectService service)
             }
         }
 
-        Fiber fiber = new Fiber(&dgTimered, 32768);
+        Fiber fiber = new Fiber(&dgTimered, 32_768);
         service.delayFiber(fiber, secsToWaitForCAP);
     }
 }
