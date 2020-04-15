@@ -25,6 +25,9 @@ import dialect.defs;
 {
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
+
+    /// Maximum allowed vote duration, in seconds.
+    int maxVoteDuration = 600;
 }
 
 // onCommandStartVote
