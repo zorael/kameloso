@@ -694,6 +694,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     import kameloso.common : settings;
     import dialect.common : isValidNickname;
     import lu.string : contains, stripped;
+    import std.range : only;
 
     immutable specified = rawSpecified.stripped;
 
@@ -768,6 +769,12 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     if (user && user.account.length)
     {
         // user.nickname == specified
+        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+        {
+            if (thisList == list) continue;
+            plugin.alterAccountClassifier(No.add, thisList, user.account, channel);
+        }
+
         immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channel);
         return report(result, nameOf(*user));
     }
@@ -801,6 +808,12 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
                 if (const userInList = id in plugin.state.users)
                 {
+                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+                    {
+                        if (thisList == list) continue;
+                        plugin.alterAccountClassifier(No.add, thisList, id, channel);
+                    }
+
                     immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channel);
                     return report(result, nameOf(*userInList));
                 }
@@ -812,6 +825,14 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
                 if (!usersWithThisDisplayName.empty)
                 {
+                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+                    {
+                        if (thisList == list) continue;
+
+                        plugin.alterAccountClassifier(No.add, thisList,
+                            usersWithThisDisplayName.front.account, channel);
+                    }
+
                     immutable result = plugin.alterAccountClassifier(Yes.add,
                         list, usersWithThisDisplayName.front.account, channel);
                     return report(result, id);
@@ -819,6 +840,12 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
                 // Assume a valid account was specified even if we can't see it, and drop down
             }
+        }
+
+        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+        {
+            if (thisList == list) continue;
+            plugin.alterAccountClassifier(No.add, thisList, id, channel);
         }
 
         immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channel);
