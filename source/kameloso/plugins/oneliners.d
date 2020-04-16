@@ -97,11 +97,13 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     import std.typecons : No, Yes;
     import std.uni : toLower;
 
-    if (!event.content.length)
+    void sendUsage(const string verb)
     {
-        chan(plugin.state, event.channel, "Usage: [add|del] [trigger] [text]");
-        return;
+        chan(plugin.state, event.channel, "Usage: %s%s %s [trigger] [text]"
+            .format(settings.prefix, event.aux, verb));
     }
+
+    if (!event.content.length) return sendUsage("[add|del]");
 
     string slice = event.content;
     immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
@@ -109,13 +111,11 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     switch (verb)
     {
     case "add":
-        if (!slice.contains!(Yes.decode)(' '))
-        {
-            chan(plugin.state, event.channel, "Usage: %s [trigger] [text]".format(verb));
-            return;
-        }
+        if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb);
 
         string trigger = slice.nom!(Yes.decode)(' ');
+
+        if (!trigger.length) return sendUsage(verb);
 
         if (plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
 
@@ -131,7 +131,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     case "del":
         if (!slice.length)
         {
-            chan(plugin.state, event.channel, "Usage: %s [trigger]".format(verb));
+            chan(plugin.state, event.channel, "Usage: %s%s del [trigger]"
+                .format(settings.prefix, event.aux));
             return;
         }
 
