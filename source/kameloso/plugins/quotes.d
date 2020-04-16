@@ -240,23 +240,13 @@ in (line.length, "Tried to add an empty quote")
 }
 
 
-// onCommandReloadQuotes
+// reload
 /++
  +  Reloads the JSON quotes from disk.
- +
- +  This is both for debugging purposes and to simply allow for live manual
- +  editing of quotes.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "reloadquotes")
-@Description("Reloads quotes from disk.")
-void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
+void reload(QuotesPlugin plugin)
 {
-    privmsg(plugin.state, event.channel, event.sender.nickname, "Reloading quotes.");
+    logger.info("Reloading quotes from disk.");
     plugin.quotes.load(plugin.quotesFile);
 }
 
