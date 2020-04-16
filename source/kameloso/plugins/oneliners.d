@@ -88,7 +88,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
-@Description("Adds or removes a oneliner command.", "$command [add|del] [text]")
+@Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
 void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
     import lu.string : contains, nom;
@@ -97,13 +97,14 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     import std.typecons : No, Yes;
     import std.uni : toLower;
 
-    void sendUsage(const string verb)
+    void sendUsage(const string verb = "[add|del|list]", const bool includeText = true)
     {
-        chan(plugin.state, event.channel, "Usage: %s%s %s [trigger] [text]"
-            .format(settings.prefix, event.aux, verb));
+        chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
+            .format(settings.prefix, event.aux, verb,
+            includeText ? " [text]" : string.init));
     }
 
-    if (!event.content.length) return sendUsage("[add|del]");
+    if (!event.content.length) return sendUsage();
 
     string slice = event.content;
     immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
@@ -111,7 +112,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     switch (verb)
     {
     case "add":
-        if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb);
+        if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb, true);
 
         string trigger = slice.nom!(Yes.decode)(' ');
 
@@ -129,12 +130,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
         break;
 
     case "del":
-        if (!slice.length)
-        {
-            chan(plugin.state, event.channel, "Usage: %s%s del [trigger]"
-                .format(settings.prefix, event.aux));
-            return;
-        }
+        if (!slice.length) return sendUsage(verb, false);
 
         immutable trigger = plugin.onelinersSettings.caseSensitiveTriggers ? slice.toLower : slice;
 
@@ -152,9 +148,11 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
             .format(settings.prefix, trigger));
         break;
 
+    case "list":
+        return plugin.listCommands(event.channel);
+
     default:
-        chan(plugin.state, event.channel, "Available actions: add, del");
-        break;
+        return sendUsage();
     }
 }
 
@@ -162,6 +160,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 // onCommandCommands
 /++
  +  Sends a list of the current oneliners to the channel.
+ +
+ +  Merely calls `listCommands`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
