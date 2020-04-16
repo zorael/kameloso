@@ -341,7 +341,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [phrase]".format(verb));
+                "Usage: %s%s %s [phrase]".format(settings.prefix, event.aux, verb));
             return;
         }
 
@@ -355,7 +355,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s [phrase index]".format(verb));
+                "Usage: %s%s %s [phrase index]".format(settings.prefix, event.aux, verb));
             return;
         }
 
@@ -432,8 +432,8 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
                 catch (ConvException e)
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s [optional starting position number]"
-                        .format(verb));
+                        "Usage: %s%s %s [optional starting position number]"
+                        .format(settings.prefix, event.aux, verb));
                     //version(PrintStacktraces) logger.trace(e.info);
                     return;
                 }
@@ -468,7 +468,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 
     default:
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Available actions: ban, unban, list, clear");
+            "Usage: %s%s [ban|unban|list|clear]".format(settings.prefix, event.aux));
         break;
     }
 }
