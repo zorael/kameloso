@@ -1111,6 +1111,19 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 }
 
 
+// reload
+/++
+ +  Reloads resources from disk.
+ +/
+void reload(TwitchBotPlugin plugin)
+{
+    logger.info("Reloading Twitch bot resources from disk.");
+
+    plugin.bannedPhrasesByChannel = typeof(plugin.bannedPhrasesByChannel).init;
+    plugin.onEndOfMotd();
+}
+
+
 // saveResourceToDisk
 /++
  +  Saves the passed resource to disk, but in JSON format.
