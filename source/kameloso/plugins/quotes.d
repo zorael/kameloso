@@ -93,22 +93,14 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.json : JSONException;
 
-    // stripModesign to allow for quotes from @nickname and +dudebro
     string slice = event.content.stripped;
-    immutable signed = slice.nom!(Yes.inherit)(' ');
-    string specified;
 
-    version(TwitchSupport)
-    {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            specified = event.channel[1..$];
-        }
-    }
+    immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
+        event.channel[1..$] :
+        slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
 
-    if (!specified.length) specified = signed.stripModesign(plugin.state.server);
-
-    if (!specified.isValidNickname(plugin.state.server))
+    if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
+        !specified.isValidNickname(plugin.state.server))
     {
         enum pattern = `"%s" is not a valid account or nickname.`;
 
@@ -141,7 +133,6 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             if (slice.length)
             {
                 // There is trailing text, assume it was a quote to be added
-                // and the user mistook quote for addquote.
                 return plugin.addQuoteAndReport(event, endAccount, slice);
             }
 
