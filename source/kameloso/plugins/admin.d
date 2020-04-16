@@ -436,7 +436,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
             return dg();
         }
 
-        scope(exit) plugin.unlistFiberAwaitingEvents(thisFiber, joinTypes);
+        scope(exit) plugin.unlistFiberAwaitingEvents(thisFiber, joinTypes[]);
 
         with (IRCEvent.Type)
         switch (followupEvent.type)
