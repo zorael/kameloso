@@ -511,6 +511,13 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
     string slice = event.content;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
 
+    void sendUsage(const string verb = "[add|del|list|clear]")
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]"
+            .format(settings.prefix, event.aux, verb));
+    }
+
     switch (verb)
     {
     case "add":
@@ -519,10 +526,10 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
         if (slice.count(' ') < 3)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: add [message threshold] [time threshold] [stagger seconds] [text]");
+            /*privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: add [message threshold] [time threshold] [stagger seconds] [text]");*/
             //                                 1                2                 3
-            return;
+            return sendUsage(verb);
         }
 
         TimerDefinition timerDef;
@@ -537,10 +544,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
         catch (ConvException e)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid parameters.");
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: add [message threshold] [time threshold] [stagger time] [text]");
-            //version(PrintStacktraces) logger.trace(e.info);
-            return;
+            return sendUsage(verb);
         }
 
         if ((timerDef.messageCountThreshold < 0) ||
@@ -554,7 +558,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
         else if ((timerDef.messageCountThreshold == 0) && (timerDef.timeThreshold == 0))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "A timer cannot have a message *and* a time threshold of zero.");
+                "A timer cannot have a message threshold *and* a time threshold of zero.");
             return;
         }
 
@@ -568,7 +572,8 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
     case "del":
         if (!slice.length)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname, "Usage: del [timer index]");
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s del [timer index]".format(settings.prefix, event.aux));
             return;
         }
 
@@ -648,8 +653,8 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 catch (ConvException e)
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: list [optional starting position number]");
-                    //version(PrintStacktraces) logger.trace(e.info);
+                        "Usage: %s%s list [optional starting position number]"
+                        .format(settings.prefix, event.aux));
                     return;
                 }
             }
@@ -684,9 +689,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
         break;
 
     default:
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Available actions: add, del, list, clear");
-        break;
+        return sendUsage();
     }
 }
 
