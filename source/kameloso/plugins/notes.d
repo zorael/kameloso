@@ -319,22 +319,13 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandReloadNotes
+// reload
 /++
- +  Reloads notes from disk, overwriting the in-memory storage.
- +
- +  This is both for debugging purposes and for live-editing notes on disk.
+ +  Reloads notes from disk.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "reloadnotes")
-@Description("Reloads notes from disk.")
-void onCommandReloadNotes(NotesPlugin plugin)
+void reload(NotesPlugin plugin)
 {
-    logger.log("Reloading notes.");
+    logger.log("Reloading notes from disk.");
     plugin.notes.load(plugin.notesFile);
 }
 
