@@ -1,4 +1,4 @@
-# kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX and documentation](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600)](https://github.com/zorael/kameloso/issues/46) [![GitHub commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.8.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.8.2...master)
+# kameloso [![Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/OSX](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/issues/46) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.8.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.8.2...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -42,7 +42,7 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
 ```
 
-```bash
+```sh
 $ dub run kameloso -- --channels "#d,#freenode"
 
 # alternatively
@@ -93,14 +93,14 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ## Downloading
 
-```bash
+```sh
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 ```
 
 ## Compiling
 
-```bash
+```sh
 $ dub build
 ```
 
@@ -118,7 +118,7 @@ There are several configurations in which the bot may be built.
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
-* `web`, compiles in extra plugins with web access (`webtitles` and `bashquotes`)
+* `web`, compiles in extra plugins with web access
 * `full`, includes both of the above plus Twitch chat support
 * `twitch`, everything so far, plus the Twitch streamer bot
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours` and `web`
@@ -127,7 +127,7 @@ There are several configurations in which the bot may be built.
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
-```bash
+```sh
 $ dub build -c twitch
 ```
 
@@ -137,7 +137,7 @@ $ dub build -c twitch
 
 The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
 
-```bash
+```sh
 $ ./kameloso --writeconfig
 ```
 
@@ -154,7 +154,7 @@ Open the file in a normal text editor.
 
 You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will apply these changes to the configuration file, without having to manually edit it.
 
-```bash
+```sh
 $ ./kameloso \
     --server irc.freenode.net \
     --nickname "kameloso" \
@@ -251,7 +251,7 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. (Configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.)
 
-```bash
+```sh
 $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --writeconfig
 ```
@@ -272,7 +272,7 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 ## Windows
 
-Plugins that access the web, including the webtitles and `bash.org` quotes plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
+Plugins that access the web will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 
 When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command, or its `quit` command outright to exit immediately.
 
