@@ -1344,19 +1344,29 @@ in (filename.length, "Tried to populate timers from an empty filename")
     JSONStorage timersJSON;
     timersJSON.load(filename);
 
+    bool errored;
+
     foreach (immutable channel, const channelTimersJSON; timersJSON.object)
     {
-        assert((channelTimersJSON.type == JSONType.array),
-            "Twitch timer json file malformed! Invalid channel timers list type for %s: `%s`"
-            .format(channel, channelTimersJSON.type));
+        if (channelTimersJSON.type != JSONType.array)
+        {
+            logger.errorf("Twitch timer file malformed! Invalid channel timers " ~
+                "list type for %s: `%s`", channel, channelTimersJSON.type);
+            errored = true;
+            continue;
+        }
 
         plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
 
         foreach (timerArrayEntry; channelTimersJSON.array)
         {
-            assert((timerArrayEntry.type == JSONType.object),
-                "Twitch timer json file malformed! Invalid timer type for %s: `%s`"
-                .format(channel, timerArrayEntry.type));
+            if (timerArrayEntry.type != JSONType.object)
+            {
+                logger.errorf("Twitch timer file malformed! Invalid timer type " ~
+                    "for %s: `%s`", channel, timerArrayEntry.type);
+                errored = true;
+                continue;
+            }
 
             TimerDefinition timer;
 
@@ -1367,6 +1377,11 @@ in (filename.length, "Tried to populate timers from an empty filename")
 
             plugin.timerDefsByChannel[channel] ~= timer;
         }
+    }
+
+    if (errored)
+    {
+        logger.warning("Errors encountered; all timers were not read.");
     }
 }
 
