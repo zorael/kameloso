@@ -171,18 +171,32 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @Description("Lists all available oneliners.")
 void onCommandCommands(OnelinersPlugin plugin, const IRCEvent event)
 {
+    return plugin.listCommands(event.channel);
+}
+
+
+// listCommands
+/++
+ +  Lists the current commands to the passed channel.
+ +
+ +  Params:
+ +      plugin = The current `OnelinersPlugin`.
+ +      channelName = Name of the channel to send the list to.
+ +/
+void listCommands(OnelinersPlugin plugin, const string channelName)
+{
     import std.format : format;
 
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;
+    auto channelOneliners = channelName in plugin.onelinersByChannel;
 
     if (channelOneliners && channelOneliners.length)
     {
-        chan(plugin.state, event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
+        chan(plugin.state, channelName, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
             .format(channelOneliners.byKey));
     }
     else
     {
-        chan(plugin.state, event.channel, "There are no commands available right now.");
+        chan(plugin.state, channelName, "There are no commands available right now.");
     }
 }
 
