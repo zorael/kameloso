@@ -299,12 +299,14 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : nom, strippedRight;
+    import std.format : format;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: home [add|del|list] [channel]");
+            "Usage: %s%s [add|del|list] [channel]"
+            .format(settings.prefix, event.aux));
     }
 
     if (!event.content.length)
@@ -324,9 +326,9 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
         return plugin.delHome(event, slice);
 
     case "list":
-        import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current home channels: %-(%s, %)".format(plugin.state.bot.homeChannels));
+            "Current home channels: %-(%s, %)"
+            .format(plugin.state.bot.homeChannels));
         return;
 
     default:
