@@ -877,6 +877,17 @@ void periodically(SeenPlugin plugin, const long now)
 }
 
 
+// reload
+/++
+ +  Reloads seen users from disk.
+ +/
+void reload(SeenPlugin plugin)
+{
+    logger.info("Reloading seen users from disk.");
+    plugin.seenUsers = loadSeen(plugin.seenFile);
+}
+
+
 // teardown
 /++
  +  When closing the program or when crashing with grace, saves the seen users
@@ -955,9 +966,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
     switch (verb)
     {
     case "reload":
-        plugin.seenUsers = loadSeen(plugin.seenFile);
-        logger.info("Seen users reloaded from disk.");
-        break;
+        return .reload(plugin);
 
     case "save":
         plugin.updateAllObservedUsers();
