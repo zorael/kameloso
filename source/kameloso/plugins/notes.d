@@ -360,32 +360,37 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
 
     if (const channelNotes = channel in plugin.notes)
     {
-        assert((channelNotes.type == JSONType.object),
-            "Invalid channel notes list type for %s: `%s`"
-            .format(channel, channelNotes.type));
-
-        if (const nickNotes = id in channelNotes.object)
+        if (channelNotes.type != JSONType.object)
         {
-            assert((nickNotes.type == JSONType.array),
-                "Invalid notes list type for %s on %s: `%s`"
-                .format(id, channel, nickNotes.type));
-
-            noteArray.length = nickNotes.array.length;
-
-            foreach (immutable i, note; nickNotes.array)
+            logger.errorf("Invalid channel notes list type for %s: `%s`",
+                channel, channelNotes.type);
+        }
+        else if (const nickNotes = id in channelNotes.object)
+        {
+            if (nickNotes.type != JSONType.array)
             {
-                import std.base64 : Base64Exception;
-                noteArray[i].sender = note["sender"].str;
-                noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+                logger.errorf("Invalid notes list type for %s on %s: `%s`",
+                    id, channel, nickNotes.type);
+            }
+            else
+            {
+                noteArray.length = nickNotes.array.length;
 
-                try
+                foreach (immutable i, note; nickNotes.array)
                 {
-                    noteArray[i].line = decode64(note["line"].str);
-                }
-                catch (Base64Exception e)
-                {
-                    noteArray[i].line = "(An error occurred and the note could not be read)";
-                    version(PrintStacktraces) logger.trace(e.toString);
+                    import std.base64 : Base64Exception;
+                    noteArray[i].sender = note["sender"].str;
+                    noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+
+                    try
+                    {
+                        noteArray[i].line = decode64(note["line"].str);
+                    }
+                    catch (Base64Exception e)
+                    {
+                        noteArray[i].line = "(An error occurred and the note could not be read)";
+                        version(PrintStacktraces) logger.trace(e.toString);
+                    }
                 }
             }
         }
