@@ -1145,10 +1145,13 @@ void reload(TwitchBotPlugin plugin)
 void saveResourceToDisk(Resource)(const Resource resource, const string filename)
 in (filename.length, "Tried to save resources to an empty filename")
 {
+    import lu.json : JSONStorage;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
 
-    File(filename, "w").writeln(JSONValue(resource).toPrettyString);
+    JSONStorage storage;
+
+    storage = JSONValue(resource);
+    storage.save!(JSONStorage.KeyOrderStrategy.adjusted)(filename);
 }
 
 
