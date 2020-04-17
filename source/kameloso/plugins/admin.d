@@ -280,6 +280,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     }
 }
 
+
 // onCommandHome
 /++
  +  Adds or removes channels to/from the list of currently active home channels, in the
@@ -1426,7 +1427,7 @@ unittest
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "join")
 @BotCommand(PrefixPolicy.nickname, "part")
-@Description("Joins/parts a channel.", "$command [channel]")
+@Description("Joins/parts a guest channel.", "$command [channel]")
 void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : equal;
@@ -1516,7 +1517,7 @@ version(WithConnectService)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @BotCommand(PrefixPolicy.nickname, "auth")
-@Description("(Re-)authenticates with services. Useful if the server has forcefully logged us out.")
+@Description("(Re-)authenticates with services. Useful if the server has forcefully logged the bot out.")
 void onCommandAuth(AdminPlugin plugin)
 {
     version(TwitchSupport)

@@ -33,6 +33,7 @@ else
     enum omniscientChannelPolicy = ChannelPolicy.home;
 }
 
+
 // ChannelState
 /++
  +  Different states which tracked channels can be in.

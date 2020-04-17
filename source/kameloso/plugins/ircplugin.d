@@ -135,6 +135,7 @@ interface IRCPlugin
     bool isEnabled() const @property pure nothrow @nogc;
 }
 
+
 // IRCPluginImpl
 /++
  +  Mixin that fully implements an `IRCPlugin`.
