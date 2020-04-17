@@ -1743,9 +1743,13 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     case "whitelist":
     case "operator":
     case "blacklist":
-        import std.algorithm.searching : count;
+        import lu.string : SplitResults, splitInto;
 
-        if (slice.count(' ') >= 1)
+        string subverb;
+        string channel;
+
+        immutable results = slice.splitInto(subverb, channel);
+        if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
             logger.warningf("Invalid bus message syntax; expected %s " ~
@@ -1754,14 +1758,12 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return;
         }
 
-        immutable subverb = slice.nom!(Yes.inherit)(' ');
-        immutable channel = slice.nom!(Yes.inherit)(' ');
-        immutable user = slice;
-
         switch (subverb)
         {
         case "add":
         case "del":
+            immutable user = slice;
+
             if (!user.length)
             {
                 logger.warning("Invalid bus message syntax; no user supplied, " ~

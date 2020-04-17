@@ -505,7 +505,7 @@ void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
-    import lu.string : contains, nom;
+    import lu.string : SplitResults, contains, nom, splitInto;
     import std.format : format;
 
     string slice = event.content;  // mutable
@@ -534,11 +534,18 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
         TimerDefinition timerDef;
 
+        string rawMessageCountThreshold;
+        string rawTimeThreshold;
+        string rawStagger;
+
+        immutable results = slice.splitInto(rawMessageCountThreshold, rawTimeThreshold, rawStagger);
+        if (results != SplitResults.overrun) return sendUsage(verb);
+
         try
         {
-            timerDef.messageCountThreshold = slice.nom(' ').to!int;
-            timerDef.timeThreshold = slice.nom(' ').to!int;
-            timerDef.stagger = slice.nom(' ').to!int;
+            timerDef.messageCountThreshold = rawMessageCountThreshold.to!int;
+            timerDef.timeThreshold = rawTimeThreshold.to!int;
+            timerDef.stagger = rawStagger.to!int;
             timerDef.line = slice;
         }
         catch (ConvException e)
