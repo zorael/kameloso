@@ -658,6 +658,11 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     import lu.json : JSONStorage;
     import std.format : format;
 
+    immutable asWhat =
+        (list == "operator") ? "operators" :
+        (list == "whitelist") ? "whitelisted users" :
+        /*(list == "blacklist") ?*/ "blacklisted users";
+
     JSONStorage json;
     json.reset();
     json.load(plugin.userFile);
@@ -665,13 +670,13 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     if (channel in json[list].object)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current %s users in %s: %-(%s, %)"
-            .format(list, channel, json[list][channel].array));
+            "Current %s in %s: %-(%s, %)"
+            .format(asWhat, channel, json[list][channel].array));
     }
     else
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are no %s users in %s.".format(list, channel));
+            "There are no %s in %s.".format(asWhat, channel));
     }
 }
 
