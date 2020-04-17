@@ -1829,24 +1829,22 @@ void start(AdminPlugin plugin)
 
 version(OmniscientAdmin)
 {
-    mixin UserAwareness!(ChannelPolicy.any);
-    mixin ChannelAwareness!(ChannelPolicy.any);
-
-    version(TwitchSupport)
-    {
-        mixin TwitchAwareness!(ChannelPolicy.any);
-    }
+    enum omniscientChannelPolicy = ChannelPolicy.any;
 }
 else
 {
-    mixin UserAwareness;
-    mixin ChannelAwareness;
-
-    version(TwitchSupport)
-    {
-        mixin TwitchAwareness;
-    }
+    enum omniscientChannelPolicy = ChannelPolicy.home;
 }
+
+
+mixin UserAwareness!omniscientChannelPolicy;
+mixin ChannelAwareness!omniscientChannelPolicy;
+
+version(TwitchSupport)
+{
+    mixin TwitchAwareness!omniscientChannelPolicy;
+}
+
 
 public:
 
