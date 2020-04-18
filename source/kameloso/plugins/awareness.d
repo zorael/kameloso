@@ -335,23 +335,42 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         case ACCOUNT:
         case AWAY:
         case BACK:
-            // These events don't carry a channel, so check our channel user
-            // lists to see if we should catch this one or not.
-
-            foreach (const channel; plugin.state.channels)
+            static if (channelPolicy == ChannelPolicy.home)
             {
-                if (event.sender.nickname in channel.users)
+                // These events don't carry a channel.
+                // Catch if there's already an entry. Trust that it's supposed
+                // to be there if it's there. (RPL_NAMREPLY probably populated it)
+
+                if (event.sender.nickname in plugin.state.users)
                 {
-                    // event is from a user that's in a relevant channel
-                    return plugin.catchUser(event.sender);
+                    plugin.catchUser(event.sender);
+                    break;
                 }
+
+                static if (__traits(compiles, .hasChannelAwareness))
+                {
+                    // Catch the user if it's visible in some channel we're in.
+
+                    foreach (const channel; plugin.state.channels)
+                    {
+                        if (event.sender.nickname in channel.users)
+                        {
+                            // event is from a user that's in a relevant channel
+                            return plugin.catchUser(event.sender);
+                        }
+                    }
+                }
+            }
+            else /*static if (channelPolicy == ChannelPolicy.any)*/
+            {
+                // Catch everyone on ChannelPolicy.any
+                plugin.catchUser(event.sender);
             }
             break;
 
         //case JOIN:
         default:
-            plugin.catchUser(event.sender);
-            break;
+            return plugin.catchUser(event.sender);
         }
     }
 
