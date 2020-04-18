@@ -18,9 +18,9 @@ os:
   - osx
 
 script:
-  #- git clone https://github.com/zorael/lu.git
+  - git clone https://github.com/zorael/lu.git
   #- git clone https://github.com/zorael/dialect.git
-  #- dub add-local lu
+  - dub add-local lu
   #- dub add-local dialect
   - time dub test  --compiler=${DC} # unittest already includes more than other configs
   - time dub test  --compiler=${DC} --nodeps --force -c vanilla
