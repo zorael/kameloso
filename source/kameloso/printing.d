@@ -179,7 +179,7 @@ if (isOutputRange!(Sink, char[]))
         (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
     enum ptrdiff_t namewidth = max(minimumNameWidth, compensatedWidth);
 
-    foreach (immutable n, const ref thing; things)
+    foreach (immutable n, ref thing; things)
     {
         import lu.string : stripSuffix;
         import std.format : formattedWrite;
