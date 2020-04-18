@@ -708,10 +708,12 @@ unittest
  +      force = Whether or not to force the WHOIS, skipping any hysteresis queues.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void whois(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
     const string nickname, const bool force = false,
-    const bool quiet = settings.hideOutgoing, const bool background = false)
+    const bool quiet = settings.hideOutgoing, const bool background = false,
+    const string caller = __FUNCTION__)
 in (nickname.length, "Tried to WHOIS but no nickname was given")
 do
 {
