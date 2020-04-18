@@ -1006,7 +1006,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.traits : EnumMembers;
 
         this.privateState = state;
+        this.privateState.awaitingFibers = state.awaitingFibers.dup;
         this.privateState.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
+        this.privateState.triggerRequestQueue = state.triggerRequestQueue.dup;
+        this.privateState.replays = state.replays.dup;
+        this.privateState.scheduledFibers = state.scheduledFibers.dup;
 
         foreach (immutable i, ref member; this.tupleof)
         {
