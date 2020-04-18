@@ -222,7 +222,7 @@ unittest
         ++i;
     }
 
-    TriggerRequest reqdg = new TriggerRequestImpl!(void delegate())(event, pl, &dg);
+    TriggerRequest reqdg = new TriggerRequestImpl!(void delegate())(event, pl, &dg, "test");
     queue ~= reqdg;
 
     with (reqdg.event)
