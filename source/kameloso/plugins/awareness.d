@@ -403,7 +403,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             IRCUser newUser;
 
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) ||
-                !slice.contains('!') || !slice.contains('@'))
+                !slice.contains('!')) // || !slice.contains('@'))  // No need to check for both
             {
                 // Freenode-like, only nicknames with possible modesigns
                 immutable nickname = slice.stripModesign(plugin.state.server);
@@ -862,7 +862,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             string slice = userstring;
             string nickname;
 
-            if (userstring.contains('!') && userstring.contains('@'))
+            if (userstring.contains('!'))// && userstring.contains('@'))  // No need to check both
             {
                 import lu.string : nom;
                 // SpotChat-like, names are in full nick!ident@address form
