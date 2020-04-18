@@ -1013,9 +1013,8 @@ Next mainLoop(ref Kameloso instance)
  +      readWasShortened = Flag bool of whether or not the read timeout was
  +          lowered to allow us to send a message earlier.
  +/
-void sendLines(ref Kameloso instance, out bool readWasShortened)
+void sendLines(ref Kameloso instance, ref bool readWasShortened)
 {
-    import kameloso.constants : Timeout;
     import core.time : msecs, seconds;
     import std.socket : SocketOption, SocketOptionLevel;
     import std.typecons : Flag, No, Yes;
