@@ -1355,11 +1355,12 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
  +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
-    const PrivilegeLevel privilegeLevel, Fn fn)
+    const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to doWhois with an init IRCEvent")
-in ((fn !is null), "Tried to doWhois with a null funtion pointer")
+in ((fn !is null), "Tried to doWhois with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
@@ -1387,11 +1388,13 @@ in ((fn !is null), "Tried to doWhois with a null funtion pointer")
 
     static if (is(SubPlugin == typeof(null)))
     {
-        plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(event, privilegeLevel, fn);
+        plugin.state.triggerRequestQueue[user.nickname] ~=
+            triggerRequest(event, privilegeLevel, fn, caller);
     }
     else
     {
-        plugin.state.triggerRequestQueue[user.nickname] ~= triggerRequest(subPlugin, event, privilegeLevel, fn);
+        plugin.state.triggerRequestQueue[user.nickname] ~=
+            triggerRequest(subPlugin, event, privilegeLevel, fn, caller);
     }
 }
 
@@ -1410,10 +1413,12 @@ in ((fn !is null), "Tried to doWhois with a null funtion pointer")
  +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
-void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event, const PrivilegeLevel privilegeLevel, Fn fn)
+void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event,
+    const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
 {
-    return doWhois(plugin, null, event, privilegeLevel, fn);
+    return doWhois(plugin, null, event, privilegeLevel, fn, caller);
 }
 
 
