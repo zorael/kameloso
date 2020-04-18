@@ -72,7 +72,8 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "ProfileGC" \
-        "AdminAssertGeneration"
+        "AdminAssertGeneration" //\
+        //"TraceWhois"
 }
 
 configuration "vanilla" {

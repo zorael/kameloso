@@ -53,6 +53,8 @@ version(unittest)
     import std.conv : to;
 }
 
+//version = TraceWhois;
+
 public:
 
 
@@ -725,6 +727,15 @@ do
     event.target.nickname = nickname;
     if (force) event.num = 1;
     if (background) event.altcount = 999;
+    event.aux = caller;
+
+    version(TraceWhois)
+    {
+        import std.stdio : writefln;
+        writefln("[TraceWhois] %s called WHOIS on \"%s\" " ~
+            "(priority:%s force:%s, quiet:%s, background:%s)",
+            caller, nickname, (priority ? true : false), force, quiet, background);
+    }
 
     state.mainThread.send(event);
 }

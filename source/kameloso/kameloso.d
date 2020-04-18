@@ -11,6 +11,7 @@ import kameloso.thread : ThreadMessage;
 import dialect;
 import lu.common : Next;
 
+//version = TraceWhois;
 
 version(ProfileGC)
 {
@@ -353,10 +354,36 @@ void messageFiber(ref Kameloso instance)
                 immutable then = instance.previousWhoisTimestamps.get(target.nickname, 0);
                 immutable hysteresis = (num > 0) ? 1 : Timeout.whoisRetry;
 
+                version(TraceWhois)
+                {
+                    import std.stdio : stdout, writef, writefln, writeln;
+
+                    immutable quiet = (event.target.class_ == IRCUser.Class.admin);
+                    immutable background = (event.altcount == 999);
+
+                    writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
+                        "from %s (quiet:%s, background:%s)", event.target.nickname,
+                        event.aux, quiet, background);
+                }
+
                 if ((now - then) > hysteresis)
                 {
+                    version(TraceWhois)
+                    {
+                        writeln(" ...and actually issuing.");
+                        if (settings.flush) stdout.flush();
+                    }
+
                     line = "WHOIS " ~ target.nickname;
                     instance.previousWhoisTimestamps[target.nickname] = now;
+                }
+                else
+                {
+                    version(TraceWhois)
+                    {
+                        writefln(" ...but already issued %d seconds ago.", (now - then));
+                        if (settings.flush) stdout.flush();
+                    }
                 }
                 break;
 
@@ -1360,12 +1387,37 @@ void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][st
     {
         assert(nickname.length, "Empty nickname in trigger queue");
 
+        version(TraceWhois)
+        {
+            import std.stdio : stdout, writef, writefln, writeln;
+            import std.algorithm.iteration : map;
+
+            auto callerNames = requestsForNickname.map!(req => req.caller);
+
+            writef("[TraceWhois] processTriggerRequestQueue saw request to " ~
+                "WHOIS \"%s\" from: %-(%s, %)", nickname, callerNames);
+        }
+
         immutable then = instance.previousWhoisTimestamps.get(nickname, 0);
 
         if ((now - then) > Timeout.whoisRetry)
         {
+            version(TraceWhois)
+            {
+                writeln(" ...and actually issuing.");
+                if (settings.flush) stdout.flush();
+            }
+
             instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
+        }
+        else
+        {
+            version(TraceWhois)
+            {
+                writefln(" ...but already issued %d seconds ago.", (now - then));
+                if (settings.flush) stdout.flush();
+            }
         }
     }
 }
