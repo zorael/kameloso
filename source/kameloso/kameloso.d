@@ -846,7 +846,10 @@ Next mainLoop(ref Kameloso instance)
                     checkUpdatesAndPropagate(instance, plugin);
 
                     // Fetch any queued `WHOIS` requests and handle
-                    instance.processTriggerRequestQueue(plugin.state.triggerRequestQueue);
+                    if (plugin.state.triggerRequestQueue.length)
+                    {
+                        instance.processTriggerRequestQueue(plugin.state.triggerRequestQueue);
+                    }
                 }
 
                 with (IRCEvent.Type)
