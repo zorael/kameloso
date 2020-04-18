@@ -810,9 +810,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 case whois:
                     import kameloso.plugins.common : doWhois;
+                    import std.traits : fullyQualifiedName;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);
                     enum isIRCPluginParam(T) = is(T == IRCPlugin);
+                    enum funName = fullyQualifiedName!fun;
 
                     static if (verbose)
                     {
@@ -822,13 +824,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.doWhois(mutEvent, privilegeLevel, &fun);
+                        this.doWhois(mutEvent, privilegeLevel, &fun, funName);
                         return Next.continue_;  // Next function
                     }
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
-                        this.doWhois(this, mutEvent, privilegeLevel, &fun);
+                        this.doWhois(this, mutEvent, privilegeLevel, &fun, funName);
                         return Next.continue_;  // Next function
                     }
                     else static if (Filter!(isIRCPluginParam, Params).length)
