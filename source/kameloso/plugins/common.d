@@ -66,6 +66,9 @@ public:
  +/
 abstract class TriggerRequest
 {
+    /// Name of the caller function or similar context.
+    string caller;
+
     /// Stored `dialect.defs.IRCEvent` to replay.
     IRCEvent event;
 
