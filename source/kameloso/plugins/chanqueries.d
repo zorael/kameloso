@@ -375,7 +375,7 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
  +  We do this so we know not to query it later. Mostly cosmetic.
  +/
 @(IRCEvent.Type.RPL_TOPIC)
-@(ChannelPolicy.any)
+@omniscientChannelPolicy
 void onTopic(ChanQueriesService service, const IRCEvent event)
 {
     service.channelStates[event.channel] |= ChannelState.topicKnown;
@@ -389,7 +389,7 @@ void onTopic(ChanQueriesService service, const IRCEvent event)
  +  done at least once, after login.
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
-@(ChannelPolicy.any)
+@omniscientChannelPolicy
 void onEndOfNames(ChanQueriesService service)
 {
     if (!service.querying && service.queriedAtLeastOnce)
