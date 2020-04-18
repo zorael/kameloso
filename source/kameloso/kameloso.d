@@ -666,6 +666,11 @@ Next mainLoop(ref Kameloso instance)
             {
                 plugin.handleScheduledFibers(nowInUnix);
                 plugin.state.updateNextFiberTimestamp();
+
+                // Set the next read to time out after 1 milliseconds, so as to
+                // quicker get to the bottom and receive messages/send lines.
+                instance.conn.receiveTimeout = 1;
+                readWasShortened = true;
             }
         }
 
@@ -983,6 +988,13 @@ Next mainLoop(ref Kameloso instance)
         if (bufferHasMessages)
         {
             sendLines(instance, readWasShortened);
+        }
+        else if (readWasShortened && instance.conn.receiveTimeout == 1)
+        {
+            static import lu.net;
+
+            instance.conn.receiveTimeout = lu.net.DefaultTimeout.receive;
+            readWasShortened = false;
         }
     }
 
