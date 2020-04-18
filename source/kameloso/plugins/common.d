@@ -128,7 +128,8 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
          +      fn = Function pointer to call with the attached payloads when
          +          the request is triggered.
          +/
-        this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
+        this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel,
+            F fn, const string caller)
         {
             super();
 
@@ -136,6 +137,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
             this.event = event;
             this.privilegeLevel = privilegeLevel;
             this.fn = fn;
+            this.caller = caller;
         }
     }
     else
@@ -149,13 +151,14 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
          +      fn = Function pointer to call with the attached payloads when
          +          the request is triggered.
          +/
-        this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
+        this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn, const string caller)
         {
             super();
 
             this.event = event;
             this.privilegeLevel = privilegeLevel;
             this.fn = fn;
+            this.caller = caller;
         }
     }
 
@@ -669,15 +672,17 @@ enum PrivilegeLevel
  +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
+ +      caller = String name of the calling function, or something else that gives context.
  +
  +  Returns:
  +      A `TriggerRequest` with template parameters inferred from the arguments
  +      passed to this function.
  +/
 TriggerRequest triggerRequest(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
-    const PrivilegeLevel privilegeLevel, Fn fn) @safe
+    const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__) @safe
 {
-    return new TriggerRequestImpl!(Fn, SubPlugin)(subPlugin, event, privilegeLevel, fn);
+    return new TriggerRequestImpl!(Fn, SubPlugin)(subPlugin, event,
+        privilegeLevel, fn, caller);
 }
 
 
@@ -690,14 +695,16 @@ TriggerRequest triggerRequest(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent
  +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
+ +      caller = String name of the calling function, or something else that gives context.
  +
  +  Returns:
  +      A `TriggerRequest` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel, Fn fn) @safe
+TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
+    Fn fn, const string caller = __FUNCTION__) @safe
 {
-    return new TriggerRequestImpl!Fn(event, privilegeLevel, fn);
+    return new TriggerRequestImpl!Fn(event, privilegeLevel, fn, caller);
 }
 
 
