@@ -39,7 +39,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
         {
             Thing thing;  // need a `this`
 
-            foreach (immutable i, immutable member; thing.tupleof)
+            foreach (immutable i, member; thing.tupleof)
             {
                 static if (
                     !__traits(isDeprecated, thing.tupleof[i]) &&
@@ -170,7 +170,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
         {
             Thing thing;  // need a `this`
 
-            foreach (immutable i, immutable member; thing.tupleof)
+            foreach (immutable i, member; thing.tupleof)
             {
                 static if (
                     !__traits(isDeprecated, thing.tupleof[i]) &&
