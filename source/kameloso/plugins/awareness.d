@@ -944,7 +944,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             case RPL_EXCEPTLIST:
                 modestring = (plugin.state.server.exceptsChar == 'e') ?
-                    "e" : plugin.state.server.invexChar.to!string;
+                    "e" : plugin.state.server.exceptsChar.to!string;
                 break;
 
             case RPL_INVITELIST:
