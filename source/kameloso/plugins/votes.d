@@ -41,8 +41,8 @@ import dialect.defs;
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "vote")
 @BotCommand(PrefixPolicy.prefixed, "poll")
+@BotCommand(PrefixPolicy.prefixed, "vote", true)
 @Description("Starts or stops a vote. Pass \"abort\" to stop.",
     "$command [seconds] [choice1] [choice2] ...")
 void onCommandVote(VotesPlugin plugin, const IRCEvent event)
