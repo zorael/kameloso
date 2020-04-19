@@ -22,7 +22,7 @@ public import kameloso.plugins.ircplugin : IRCPluginState;
 
 
 //version = TwitchWarnings;
-//version = ExplainReplay;
+//version = ExplainRepeat;
 
 
 /++
@@ -266,16 +266,16 @@ unittest
 }
 
 
-// Replay
+// Repeat
 /++
- +  An event to be replayed from the context of the main loop, optionally after
- +  having re-postprocessed it.
+ +  An event to be repeated from the context of the main loop after having
+ +  re-postprocessed it.
  +
  +  With this plugins get an ability to postprocess on demand, which is needed
  +  to apply user classes to stored events, such as those saved before issuing
  +  WHOIS queries.
  +/
-struct Replay
+struct Repeat
 {
 private:
     import kameloso.thread : CarryingFiber;
@@ -284,7 +284,7 @@ private:
     alias This = Unqual!(typeof(this));
 
 public:
-    /// `core.thread.Fiber` to call to invoke this replay.
+    /// `core.thread.Fiber` to call to invoke this repeat.
     Fiber fiber;
 
 
@@ -294,12 +294,12 @@ public:
      +  it can be cast thus.
      +
      +  Returns:
-     +      `fiber`, cast as a `kameloso.thread.CarryingFiber`!`Replay`.
+     +      `fiber`, cast as a `kameloso.thread.CarryingFiber`!`Repeat`.
      +/
     CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
         auto carrying = cast(CarryingFiber!This)fiber;
-        assert(carrying, "Tried to get a `CarryingFiber!Replay` out of a normal Fiber");
+        assert(carrying, "Tried to get a `CarryingFiber!Repeat` out of a normal Fiber");
         return carrying;
     }
 
@@ -307,7 +307,7 @@ public:
     // isCarrying
     /++
      +  Returns whether or not `fiber` is actually a
-     +  `kameloso.thread.CarryingFiber`!`Replay`.
+     +  `kameloso.thread.CarryingFiber`!`Repeat`.
      +
      +  Returns:
      +      `true` if it is of such a subclass, `false` if not.
@@ -317,10 +317,10 @@ public:
         return cast(CarryingFiber!This)fiber !is null;
     }
 
-    /// The `dialect.defs.IRCEvent` to replay.
+    /// The `dialect.defs.IRCEvent` to repeat.
     IRCEvent event;
 
-    /// UNIX timestamp of when this replay event was created.
+    /// UNIX timestamp of when this repeat event was created.
     long created;
 
     /// Constructor taking a `core.thread.Fiber` and an `dialect.defs.IRCEvent`.
@@ -1164,9 +1164,9 @@ private:
 }
 
 
-// Replayer
+// Repeater
 /++
- +  Implements queueing of replay events.
+ +  Implements queueing of repeat events.
  +
  +  This allows us to deal with triggers both in `dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT`
  +  and `dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND` while keeping the code
@@ -1176,23 +1176,23 @@ private:
  +      debug_ = Whether or not to print debug output to the terminal.
  +/
 version(WithPlugins)
-mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
+mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
 {
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
     import std.traits : isSomeFunction;
 
-    mixin MixinConstraints!(MixinScope.function_, "Replayer");
+    mixin MixinConstraints!(MixinScope.function_, "Repeater");
 
-    static if (__traits(compiles, hasReplayer))
+    static if (__traits(compiles, hasRepeater))
     {
         import std.format : format;
         static assert(0, "Double mixin of `%s` in `%s`"
-            .format("Replayer", __FUNCTION__));
+            .format("Repeater", __FUNCTION__));
     }
     else
     {
-        private enum hasReplayer = true;
+        private enum hasRepeater = true;
     }
 
     static if (__traits(compiles, plugin))
@@ -1208,7 +1208,7 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     else
     {
         import std.format : format;
-        static assert(0, ("`Replayer` should be mixed into the context of an event handler. " ~
+        static assert(0, ("`Repaeter` should be mixed into the context of an event handler. " ~
             "(Could not access variables named neither `plugin` nor `service` " ~
             "from within `%s`)").format(__FUNCTION__));
     }
@@ -1216,20 +1216,21 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     private enum requestVariableName = text("_kamelosoRequest", hashOf(__FUNCTION__) % 100);
     mixin("TriggerRequest " ~ requestVariableName ~ ';');
 
-    // explainReplain
+
+    // explainRepeat
     /++
-     +  Verbosely explains a replay, including what `PrivilegeLevel` and
+     +  Verbosely explains a repeat, including what `PrivilegeLevel` and
      +  `dialect.defs.IRCUser.Class` were involved.
      +
-     +  Gated behind version `ExplainReplay`.
+     +  Gated behind version `ExplainRepeat`.
      +/
-    version(ExplainReplay)
-    void explainReplay(const IRCUser user)
+    version(ExplainRepeat)
+    void explainRepeat(const IRCUser user)
     {
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
 
-        logger.logf("%s%s%s %s replaying %1$s%5$s%3$s-level event " ~
+        logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event " ~
             "based on WHOIS results (user is %1$s%6$s%3$s class)",
             Tint.info, context.name, Tint.log, contextName,
             Enum!PrivilegeLevel.toString(mixin(requestVariableName).privilegeLevel),
@@ -1237,16 +1238,16 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // replayerDelegate
+    // repeaterDelegate
     /++
      +  Delegate to call from inside a `kameloso.thread.CarryingFiber`.
      +/
-    void replayerDelegate()
+    void repeaterDelegate()
     {
         import kameloso.thread : CarryingFiber;
         import core.thread : Fiber;
 
-        auto thisFiber = cast(CarryingFiber!Replay)(Fiber.getThis);
+        auto thisFiber = cast(CarryingFiber!Repeat)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
         assert((thisFiber.payload != thisFiber.payload.init),
             "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
@@ -1296,20 +1297,20 @@ mixin template Replayer(bool debug_ = false, string module_ = __MODULE__)
             break;
 
         case ignore:
-            version(ExplainReplay) explainReplay(request.event.sender);
+            version(ExplainRepeat) explainRepeat(request.event.sender);
             request.trigger();
             break;
         }
     }
 
     /++
-     +  Queues the delegate `replayerDelegate` with the passed `TriggerRequest`
+     +  Queues the delegate `repeaterDelegate` with the passed `TriggerRequest`
      +  attached to it.
      +/
-    void queueToReplay(TriggerRequest request)
+    void repeat(TriggerRequest request)
     {
         mixin(requestVariableName) = request;
-        context.queueToReplay(&replayerDelegate, request.event);
+        context.repeat(&repeaterDelegate, request.event);
     }
 }
 
@@ -1426,24 +1427,24 @@ deprecated("Use `enqueue` instead")
 alias doWhois = enqueue;
 
 
-// queueToReplay
+// repeat
 /++
  +  Queues a `core.thread.Fiber` (actually a `kameloso.thread.CarryingFiber`
- +  with a `Replay` payload) to replay a passed `dialect.defs.IRCEvent` from the
- +  context of the main loop, after postprocessing the event once more.
+ +  with a `Repeat` payload) to repeat a passed `dialect.defs.IRCEvent` from the
+ +  context of the main loop after postprocessing the event once more.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      dg = Delegate/function pointer to wrap the `core.thread.Fiber` around.
- +      event = The `dialect.defs.IRCEvent` to replay.
+ +      event = The `dialect.defs.IRCEvent` to repeat.
  +/
-void queueToReplay(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
+void repeat(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
 if (isSomeFunction!Dg)
-in ((dg !is null), "Tried to queue a replay with a null delegate pointer")
-in ((event != IRCEvent.init), "Tried to queue a replay with an init IRCEvent")
+in ((dg !is null), "Tried to queue a repeat an event with a null delegate pointer")
+in ((event != IRCEvent.init), "Tried to queue a repeat with an init IRCEvent")
 {
     import kameloso.thread : CarryingFiber;
-    plugin.state.replays ~= Replay(new CarryingFiber!Replay(dg, 32_768), event);
+    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, 32_768), event);
 }
 
 

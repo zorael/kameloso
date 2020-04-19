@@ -70,7 +70,7 @@ configuration "dev" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainReplay" \
+        "ExplainRepeat" \
         "ProfileGC" \
         "AdminAssertGeneration" //\
         //"TraceWhois"
@@ -118,7 +118,7 @@ configuration "unittest" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainReplay" \
+        "ExplainRepeat" \
         "ProfileGC" \
         "AdminAssertGeneration"
 }

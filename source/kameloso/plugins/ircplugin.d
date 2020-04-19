@@ -1009,7 +1009,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         this.privateState.awaitingFibers = state.awaitingFibers.dup;
         this.privateState.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
         this.privateState.triggerRequestQueue = state.triggerRequestQueue.dup;
-        this.privateState.replays = state.replays.dup;
+        this.privateState.repeats = state.repeats.dup;
         this.privateState.scheduledFibers = state.scheduledFibers.dup;
 
         foreach (immutable i, ref member; this.tupleof)
@@ -1854,8 +1854,8 @@ struct IRCPluginState
      +/
     TriggerRequest[][string] triggerRequestQueue;
 
-    /// This plugin's array of `Replay`s to let the main loop play back.
-    Replay[] replays;
+    /// This plugin's array of `Repeat`s to let the main loop play back.
+    Repeat[] repeats;
 
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by

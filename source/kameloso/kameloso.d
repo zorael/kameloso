@@ -833,20 +833,20 @@ Next mainLoop(ref Kameloso instance)
 
                     checkUpdatesAndPropagate(instance, plugin);
 
-                    // Process replays
+                    // Process repeats
                     try
                     {
-                        plugin.handleReplays(instance);
+                        plugin.processRepeats(instance);
                     }
                     catch (UTFException e)
                     {
-                        logger.warningf("UTFException %s.handleReplays: %s%s",
+                        logger.warningf("UTFException %s.processRepeats: %s%s",
                             plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
-                        logger.warningf("Exception %s.handleReplays: %s%s",
+                        logger.warningf("Exception %s.processRepeats: %s%s",
                             plugin.name, Tint.log, e.msg);
 
                         printEventDebugDetails(event, attempt.line);
@@ -1317,10 +1317,10 @@ do
 }
 
 
-// handleReplays
+// processRepeats
 /++
- +  Handles the replay queue, replaying events from the current (main loop)
- +  context, outside of any plugin.
+ +  Handles the repeat queue, repeating events from the current (main loop)
+ +  context, outside of any plugin, after re-postprocessing them.
  +
  +  Note: Exceptions are let past; they are to be caught by the caller.
  +
@@ -1328,47 +1328,47 @@ do
  +      plugin = The current `kameloso.plugins.ircplugin.IRCPlugin`.
  +      instance = Reference to the current bot instance.
  +/
-void handleReplays(IRCPlugin plugin, ref Kameloso instance)
+void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 {
     import core.thread : Fiber;
 
-    if (!plugin.state.replays.length) return;
+    if (!plugin.state.repeats.length) return;
 
-    size_t[] spentReplays;
+    size_t[] spentRepeats;
 
-    foreach (immutable i, replay; plugin.state.replays)
+    foreach (immutable i, repeat; plugin.state.repeats)
     {
         version(WithPersistenceService)
         {
             // Postprocessing will reapply class, but not if there is already
             // a custom class (assuming channel cache hit)
-            replay.event.sender.class_ = IRCUser.Class.unset;
-            replay.event.target.class_ = IRCUser.Class.unset;
+            repeat.event.sender.class_ = IRCUser.Class.unset;
+            repeat.event.target.class_ = IRCUser.Class.unset;
         }
 
         foreach (postprocessor; instance.plugins)
         {
-            postprocessor.postprocess(replay.event);
+            postprocessor.postprocess(repeat.event);
         }
 
-        if (replay.isCarrying)
+        if (repeat.isCarrying)
         {
-            replay.carryingFiber.payload = replay;
+            repeat.carryingFiber.payload = repeat;
         }
 
-        replay.fiber.call();
+        repeat.fiber.call();
 
-        if (replay.fiber.state == Fiber.State.TERM)
+        if (repeat.fiber.state == Fiber.State.TERM)
         {
-            spentReplays ~= i;
+            spentRepeats ~= i;
         }
     }
 
-    // Clean exhausted replays
-    foreach_reverse (immutable i; spentReplays)
+    // Clean exhausted repeats
+    foreach_reverse (immutable i; spentRepeats)
     {
         import std.algorithm.mutation : SwapStrategy, remove;
-        plugin.state.replays = plugin.state.replays
+        plugin.state.repeats = plugin.state.repeats
             .remove!(SwapStrategy.unstable)(i);
     }
 }

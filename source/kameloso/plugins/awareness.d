@@ -140,7 +140,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         // Catch the user here, before replaying anything.
         plugin.catchUser(event.target);
 
-        mixin Replayer;
+        mixin Repeater;
 
         // See if there are any queued WHOIS requests to trigger
         auto requestsForNickname = event.target.nickname in plugin.state.triggerRequestQueue;
@@ -162,7 +162,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     continue;
                 }
 
-                queueToReplay(request);
+                repeat(request);
             }
 
             foreach_reverse (immutable i; garbageIndexes)
@@ -198,13 +198,13 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
         // Then clear everything
 
-        mixin Replayer;
+        mixin Repeater;
 
         foreach (requests; plugin.state.triggerRequestQueue)
         {
             foreach (request; requests)
             {
-                queueToReplay(request);
+                repeat(request);
             }
         }
 
