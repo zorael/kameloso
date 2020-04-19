@@ -1402,9 +1402,6 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in `enqueue` (no nickname)");
 
-    import std.stdio;
-    writeln(plugin.name, " doWhois ", user.nickname);
-
     static if (is(SubPlugin == typeof(null)))
     {
         plugin.state.replays[user.nickname] ~= replay(event, privilegeLevel, fn, caller);
