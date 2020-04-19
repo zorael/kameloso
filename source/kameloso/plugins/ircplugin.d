@@ -866,7 +866,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 fun(this, mutEvent);
             }
             else static if (is(Params : AliasSeq!(typeof(this))) ||
-                is(Params : AliasSeq!IRCPlugin))
+                (is(Params : AliasSeq!IRCPlugin) && isAwarenessFunction!fun))
             {
                 fun(this);
             }
