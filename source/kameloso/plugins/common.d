@@ -2176,11 +2176,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             if (background)
             {
                 // Need force (true) to not miss events
-                whois(context.state, mixin(carriedVariableName), true, background);
+                whois(context.state, nickname, true, background);
             }
             else
             {
-                whois!(Yes.priority)(context.state, mixin(carriedVariableName), true);  // Ditto
+                whois!(Yes.priority)(context.state, nickname, true);  // Ditto
             }
         }
 
