@@ -1374,7 +1374,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 foreach (immutable uda; AliasSeq!(getUDAs!(fun, BotCommand),
                     getUDAs!(fun, BotRegex)))
                 {
-                    static if (hasUDA!(fun, Description))
+                    static if (uda.hidden)
+                    {
+                        // Do nothing
+                    }
+                    else static if (hasUDA!(fun, Description))
                     {
                         static if (is(typeof(uda) : BotCommand))
                         {

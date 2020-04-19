@@ -739,12 +739,18 @@ struct BotCommand
     string word;
 
     /++
+     +  Whether this is a hidden command or if it should show up in help listings.
+     +/
+    bool hidden;
+
+    /++
      +  Create a new `BotCommand` with the passed policy and trigger word.
      +/
-    this(const PrefixPolicy policy, const string word) pure
+    this(const PrefixPolicy policy, const string word, const bool hidden = false) pure
     {
         this.policy = policy;
         this.word = word;
+        this.hidden = hidden;
     }
 
     /++
@@ -797,11 +803,17 @@ struct BotRegex
     string expression;
 
     /++
+     +  Whether this is a hidden command or if it should show up in help listings.
+     +/
+    bool hidden;
+
+    /++
      +  Creates a new `BotRegex` with the passed policy and regex expression.
      +/
-    this(const PrefixPolicy policy, const string expression)
+    this(const PrefixPolicy policy, const string expression, const bool hidden)
     {
         this.policy = policy;
+        this.hidden = hidden;
 
         if (!expression.length) return;
 
