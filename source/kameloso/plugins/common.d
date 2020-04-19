@@ -1341,30 +1341,30 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 }
 
 
-// doWhois
+// enqueue
 /++
- +  Construct and queue a `WHOIS` request in the local request queue.
+ +  Construct and enqueue a function trigger replay in the plugin's request queue.
  +
- +  The main loop will catch up on it and issue the necessary `WHOIS` queries, then
- +  replay the event.
+ +  The main loop will catch up on it and issue WHOIS queries as necessary, then
+ +  replay the event upon receiving the results.
  +
  +  Params:
  +      plugin = Current `IRCPlugin` as a base class.
- +      subPlugin = Subclass `IRCPlugin` to call the function pointer `fn` with
- +          as first argument, when the WHOIS results return.
- +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
- +      privilegeLevel = Privilege level to compare the user with.
+ +      subPlugin = Subclass `IRCPlugin` to replay the function pointer `fn` with
+ +          as first argument.
+ +      event = `dialect.defs.IRCEvent` to queue up to replay.
+ +      privilegeLevel = Privilege level to match the results from the WHOIS query with.
  +      fn = Function/delegate pointer to call when the results return.
  +      caller = String name of the calling function, or something else that gives context.
  +/
-void doWhois(Fn, SubPlugin)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
+void enqueue(SubPlugin, Fn)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
-in ((event != IRCEvent.init), "Tried to doWhois with an init IRCEvent")
-in ((fn !is null), "Tried to doWhois with a null function pointer")
+in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
+in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
-    static assert (isSomeFunction!Fn, "Tried to call `doWhois` with a non-function function");
+    static assert (isSomeFunction!Fn, "Tried to `enqueue` with a non-function function");
 
     version(TwitchSupport)
     {
@@ -1375,7 +1375,7 @@ in ((fn !is null), "Tried to doWhois with a null function pointer")
                 import kameloso.common : logger, printStacktrace;
                 import kameloso.printing : printObject;
 
-                logger.warning(plugin.name, " tried to WHOIS on Twitch");
+                logger.warning(caller, " tried to WHOIS on Twitch");
                 printObject(event);
                 version(PrintStacktraces) printStacktrace();
             }
@@ -1384,7 +1384,7 @@ in ((fn !is null), "Tried to doWhois with a null function pointer")
     }
 
     immutable user = event.sender.isServer ? event.target : event.sender;
-    assert(user.nickname.length, "Bad user derived in doWhois (no nickname.length)");
+    assert(user.nickname.length, "Bad user derived in `enqueue` (no nickname)");
 
     static if (is(SubPlugin == typeof(null)))
     {
@@ -1399,27 +1399,31 @@ in ((fn !is null), "Tried to doWhois with a null function pointer")
 }
 
 
-// doWhois
+// enqueue
 /++
- +  Construct and queue a `WHOIS` request in the local request queue.
- +
- +  The main loop will catch up on it and issue the necessary `WHOIS` queries, then
- +  replay the event.
- +
+ +  Construct and enqueue a function trigger replay in the plugin's request queue.
  +  Overload that does not take an `IRCPlugin` subclass parameter.
+ +
+ +  The main loop will catch up on it and issue WHOIS queries as necessary, then
+ +  replay the event upon receiving the results.
  +
  +  Params:
  +      plugin = Current `IRCPlugin` as a base class.
- +      event = `dialect.defs.IRCEvent` that instigated this `WHOIS` call.
- +      privilegeLevel = Privilege level to compare the user with.
+ +      event = `dialect.defs.IRCEvent` to queue up to replay.
+ +      privilegeLevel = Privilege level to match the results from the WHOIS query with.
  +      fn = Function/delegate pointer to call when the results return.
  +      caller = String name of the calling function, or something else that gives context.
  +/
-void doWhois(Fn)(IRCPlugin plugin, const IRCEvent event,
+void enqueue(Fn)(IRCPlugin plugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
 {
-    return doWhois(plugin, null, event, privilegeLevel, fn, caller);
+    return enqueue(plugin, null, event, privilegeLevel, fn, caller);
 }
+
+
+/// Compatibility alias to `enqueue`.
+deprecated("Use `enqueue` instead")
+alias doWhois = enqueue;
 
 
 // queueToReplay
