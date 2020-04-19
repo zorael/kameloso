@@ -137,9 +137,9 @@ public:
  +
  +  * `kameloso.plugins.common.IRCPluginState.triggerRequestQueue` is also an
  +     associative array into which we place `kameloso.plugins.common.TriggerRequest`s.
- +     The main loop will pick up on these and call `WHOIS` on the nickname in the key-
+ +     The main loop will pick up on these and call WHOIS on the nickname in the key-
  +     A `kameloso.plugins.common.TriggerRequest` is otherwise just an
- +     `dialect.defs.IRCEvent` to be played back when the `WHOIS` results
+ +     `dialect.defs.IRCEvent` to be played back when the WHOIS results
  +     return, as well as a function pointer to call with that event. This is
  +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
  +     queue management handled behind the scenes.
@@ -456,10 +456,10 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 
 // onWHOReply
 /++
- +  Catches each user listed in a `WHO` reply and updates their entries in the
+ +  Catches each user listed in a WHO reply and updates their entries in the
  +  seen users list, creating them if they don't exist.
  +
- +  A `WHO` request enumerates all members in a channel. It returns several
+ +  A WHO request enumerates all members in a channel. It returns several
  +  replies, one event per each user in the channel. The
  +  `kameloso.plugins.chanqueries.ChanQueriesService` services instigates this
  +  shortly after having joined one, as a service to other plugins.
@@ -475,9 +475,9 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 
 // onNamesReply
 /++
- +  Catch a `NAMES` reply and record each person as having been seen.
+ +  Catch a NAMES reply and record each person as having been seen.
  +
- +  When requesting `NAMES` on a channel, or when joining one, the server will send a big list of
+ +  When requesting NAMES on a channel, or when joining one, the server will send a big list of
  +  every participant in it, in a big string of nicknames separated by spaces.
  +  This is done automatically when you join a channel. Nicknames are prefixed
  +  with mode signs if they are operators, voiced or similar, so we'll need to

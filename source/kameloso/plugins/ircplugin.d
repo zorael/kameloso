@@ -1715,7 +1715,7 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
- +      information about the sender is needed via a `WHOIS` call.
+ +      information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     const PrivilegeLevel level) @safe
@@ -1845,7 +1845,7 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued `WHOIS` requests and pertaining `dialect.defs.IRCEvent`s to replay.
+     +  Queued WHOIS requests and pertaining `dialect.defs.IRCEvent`s to replay.
      +
      +  The main loop iterates this after processing all on-event functions so
      +  as to know what nicks the plugin wants a WHOIS for. After the WHOIS

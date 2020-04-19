@@ -181,8 +181,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
     // onMinimalAuthenticationUnknownCommandWHOIS
     /++
-     +  Clears all queued `WHOIS` requests if the server says it doesn't support
-     +  `WHOIS` at all.
+     +  Clears all queued WHOIS requests if the server says it doesn't support
+     +  WHOIS at all.
      +
      +  This is the case with Twitch servers.
      +/
@@ -318,7 +318,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +
      +  Servers with the (enabled) capability `extended-join` will include the
      +  account name of whoever joins in the event string. If it's there, catch
-     +  the user into the user array so we don't have to `WHOIS` them later.
+     +  the user into the user array so we don't have to WHOIS them later.
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -377,7 +377,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessNamesReplyMixin
     /++
-     +  Catch users in a reply for the request for a `NAMES` list of all the
+     +  Catch users in a reply for the request for a NAMES list of all the
      +  participants in a channel, if they are expressed in the full
      +  `user!ident@address` form.
      +
@@ -436,7 +436,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessEndOfListMixin
     /++
      +  Rehashes, or optimises, the `IRCPlugin`'s `IRCPluginState.users`
-     +  associative array upon the end of a `WHO` or a `NAMES` list.
+     +  associative array upon the end of a WHO or a NAMES list.
      +
      +  These replies can list hundreds of users depending on the size of the
      +  channel. Once an associative array has grown sufficiently, it becomes

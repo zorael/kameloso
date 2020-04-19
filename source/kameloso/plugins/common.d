@@ -60,7 +60,7 @@ public:
 
 // Replay
 /++
- +  A queued event to be replayed upon a `WHOIS` request response.
+ +  A queued event to be replayed upon a WHOIS request response.
  +
  +  It is abstract; all objects must be of a concrete `ReplayImpl` type.
  +/
@@ -92,7 +92,7 @@ abstract class Replay
 
 // ReplayImpl
 /++
- +  Implementation of a queued `WHOIS` request call.
+ +  Implementation of a queued WHOIS request call.
  +
  +  It functions like a Command pattern object in that it stores a payload and
  +  a function pointer, which we queue and issue a WHOIS query. When the response
@@ -666,8 +666,8 @@ enum PrivilegeLevel
  +  Params:
  +      subPlugin = Subclass `IRCPlugin` to call the function pointer `fn` with
  +          as first argument, when the WHOIS results return.
- +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
- +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
+ +      event = `dialect.defs.IRCEvent` that instigated the WHOIS lookup.
+ +      privilegeLevel = The privilege level policy to apply to the WHOIS results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +      caller = String name of the calling function, or something else that gives context.
  +
@@ -689,8 +689,8 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
  +  *without* a subclass plugin reference attached.
  +
  +  Params:
- +      event = `dialect.defs.IRCEvent` that instigated the `WHOIS` lookup.
- +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
+ +      event = `dialect.defs.IRCEvent` that instigated the WHOIS lookup.
+ +      privilegeLevel = The privilege level policy to apply to the WHOIS results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +      caller = String name of the calling function, or something else that gives context.
  +
@@ -1084,7 +1084,7 @@ private:
 
     // whois
     /++
-     +  Queries the server for `WHOIS` information about a user.
+     +  Queries the server for WHOIS information about a user.
      +/
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
         const bool force = false, const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -2029,7 +2029,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /++
      +  Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
      +  and enqueues it into the `kameloso.plugins.ircplugin.IRCPluginState.awaitingFibers`
-     +  associative array, then issues a `WHOIS` query (unless overridden via
+     +  associative array, then issues a WHOIS query (unless overridden via
      +  the `issueWhois` parameter).
      +
      +  Params:

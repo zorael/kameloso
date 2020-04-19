@@ -264,7 +264,7 @@ struct Kameloso
     IRCPlugin[] plugins;
 
     /++
-     +  When a nickname was last issued a `WHOIS` query for, for hysteresis
+     +  When a nickname was last issued a WHOIS query for, for hysteresis
      +  and rate-limiting.
      +/
     long[string] previousWhoisTimestamps;
