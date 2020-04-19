@@ -60,7 +60,7 @@ public:
 
 // Replay
 /++
- +  A queued event to be replayed upon a WHOIS request response.
+ +  A queued event to be replayed upon a WHOIS query response.
  +
  +  It is abstract; all objects must be of a concrete `ReplayImpl` type.
  +/
@@ -92,7 +92,8 @@ abstract class Replay
 
 // ReplayImpl
 /++
- +  Implementation of a queued WHOIS request call.
+ +  Implementation of the notion of a function call with a bundled payload
+ +  `dialect.defs.IRCEvent`, to replay a previous event.
  +
  +  It functions like a Command pattern object in that it stores a payload and
  +  a function pointer, which we queue and issue a WHOIS query. When the response
@@ -124,7 +125,7 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
          +      privilegeLevel = The privilege level required to replay the
          +          passed function.
          +      fn = Function pointer to call with the attached payloads when
-         +          the request is replayed.
+         +          the replay is triggered.
          +/
         this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel,
             F fn, const string caller)
@@ -146,7 +147,7 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
          +  Params:
          +      payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
          +      fn = Function pointer to call with the attached payloads when
-         +          the request is replayed.
+         +          the replay is triggered.
          +/
         this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn, const string caller)
         {
@@ -1205,13 +1206,13 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
     else
     {
         import std.format : format;
-        static assert(0, ("`Repaeter` should be mixed into the context of an event handler. " ~
+        static assert(0, ("`Repeater` should be mixed into the context of an event handler. " ~
             "(Could not access variables named neither `plugin` nor `service` " ~
             "from within `%s`)").format(__FUNCTION__));
     }
 
-    private enum requestVariableName = text("_kamelosoRequest", hashOf(__FUNCTION__) % 100);
-    mixin("Replay " ~ requestVariableName ~ ';');
+    private enum replayVariableName = text("_kamelosoReplay", hashOf(__FUNCTION__) % 100);
+    mixin("Replay " ~ replayVariableName ~ ';');
 
 
     // explainRepeat
@@ -1230,7 +1231,7 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
         logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event " ~
             "based on WHOIS results (user is %1$s%6$s%3$s class)",
             Tint.info, context.name, Tint.log, contextName,
-            Enum!PrivilegeLevel.toString(mixin(requestVariableName).privilegeLevel),
+            Enum!PrivilegeLevel.toString(mixin(replayVariableName).privilegeLevel),
             Enum!(IRCUser.Class).toString(user.class_));
     }
 
@@ -1249,53 +1250,53 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
         assert((thisFiber.payload != thisFiber.payload.init),
             "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
-        auto request = mixin(requestVariableName);
-        request.event = thisFiber.payload.event;
+        Replay replay = mixin(replayVariableName);
+        replay.event = thisFiber.payload.event;
 
         with (PrivilegeLevel)
-        final switch (request.privilegeLevel)
+        final switch (replay.privilegeLevel)
         {
         case admin:
-            if (request.event.sender.class_ >= IRCUser.Class.admin)
+            if (replay.event.sender.class_ >= IRCUser.Class.admin)
             {
                 goto case ignore;
             }
             break;
 
         case operator:
-            if (request.event.sender.class_ >= IRCUser.Class.operator)
+            if (replay.event.sender.class_ >= IRCUser.Class.operator)
             {
                 goto case ignore;
             }
             break;
 
         case whitelist:
-            if (request.event.sender.class_ >= IRCUser.Class.whitelist)
+            if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
             {
                 goto case ignore;
             }
             break;
 
         case registered:
-            if (request.event.sender.account.length)
+            if (replay.event.sender.account.length)
             {
                 goto case ignore;
             }
             break;
 
         case anyone:
-            if (request.event.sender.class_ >= IRCUser.Class.anyone)
+            if (replay.event.sender.class_ >= IRCUser.Class.anyone)
             {
                 goto case ignore;
             }
 
-            // request.event.sender.class_ is Class.blacklist here (or unset)
+            // replay.event.sender.class_ is Class.blacklist here (or unset)
             // Do nothing an drop down
             break;
 
         case ignore:
-            version(ExplainRepeat) explainRepeat(request.event.sender);
-            request.trigger();
+            version(ExplainRepeat) explainRepeat(replay.event.sender);
+            replay.trigger();
             break;
         }
     }
@@ -1304,10 +1305,10 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
      +  Queues the delegate `repeaterDelegate` with the passed `Replay`
      +  attached to it.
      +/
-    void repeat(Replay request)
+    void repeat(Replay replay)
     {
-        mixin(requestVariableName) = request;
-        context.repeat(&repeaterDelegate, request.event);
+        mixin(replayVariableName) = replay;
+        context.repeat(&repeaterDelegate, replay.event);
     }
 }
 
@@ -1341,7 +1342,7 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 
 // enqueue
 /++
- +  Construct and enqueue a function replay in the plugin's request queue.
+ +  Construct and enqueue a function replay in the plugin's queue of such.
  +
  +  The main loop will catch up on it and issue WHOIS queries as necessary, then
  +  replay the event upon receiving the results.
@@ -1397,7 +1398,7 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 
 // enqueue
 /++
- +  Construct and enqueue a function replay in the plugin's request queue.
+ +  Construct and enqueue a function replay in the plugin's queue of such.
  +  Overload that does not take an `IRCPlugin` subclass parameter.
  +
  +  The main loop will catch up on it and issue WHOIS queries as necessary, then
@@ -1808,7 +1809,7 @@ private import std.traits : isSomeFunction;
  +
  +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
  +  the Fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
- +  WHOIS request.
+ +  WHOIS query.
  +
  +  Example:
  +  ---

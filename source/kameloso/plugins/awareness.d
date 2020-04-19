@@ -118,16 +118,16 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
-     +  Replays any queued requests awaiting the result of a WHOIS. Before that,
-     +  records the user's services account by saving it to the user's
-     +  `dialect.defs.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
-     +  associative array.
+     +  Replays any queued `kameloso.plugins.common.Replay`s awaiting the result
+     +  of a WHOIS query. Before that, records the user's services account by
+     +  saving it to the user's `dialect.defs.IRCClient` in the `IRCPlugin`'s
+     +  `IRCPluginState.users` associative array.
      +
      +  `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
      +  cover the case where a user without an account triggering `PrivilegeLevel.anyone`-
      +  or `PrivilegeLevel.ignored`-level commands.
      +
-     +  This function was part of `UserAwareness` but triggering queued requests
+     +  This function was part of `UserAwareness` but triggering queued replays
      +  is too common to conflate with it.
      +/
     @(Awareness.early)
@@ -142,27 +142,27 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
         mixin Repeater;
 
-        // See if there are any queued WHOIS requests to trigger
+        // See if there are any queued replays to trigger
         auto replaysForNickname = event.target.nickname in plugin.state.replays;
 
         if (replaysForNickname)
         {
             size_t[] garbageIndexes;
 
-            foreach (immutable i, request; *replaysForNickname)
+            foreach (immutable i, replay; *replaysForNickname)
             {
                 import kameloso.constants : Timeout;
                 import std.algorithm.searching : canFind;
 
                 scope(exit) garbageIndexes ~= i;
 
-                if ((event.time - request.when) > Timeout.whoisRetry)
+                if ((event.time - replay.when) > Timeout.whoisRetry)
                 {
-                    // Entry is too old, request timed out. Flag it for removal.
+                    // Entry is too old, replay timed out. Flag it for removal.
                     continue;
                 }
 
-                repeat(request);
+                repeat(replay);
             }
 
             foreach_reverse (immutable i; garbageIndexes)
@@ -181,8 +181,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
     // onMinimalAuthenticationUnknownCommandWHOIS
     /++
-     +  Clears all queued WHOIS requests if the server says it doesn't support
-     +  WHOIS at all.
+     +  Clears all queued `kameloso.plugins.common.Replay`s if the server says
+     +  it doesn't support WHOIS at all.
      +
      +  This is the case with Twitch servers.
      +/
@@ -194,17 +194,17 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         if (event.aux != "WHOIS") return;
 
         // We're on a server that doesn't support WHOIS
-        // Trigger queued requests of a PrivilegeLevel.anyone nature, since
+        // Trigger queued replays of a PrivilegeLevel.anyone nature, since
         // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
         // Then clear everything
 
         mixin Repeater;
 
-        foreach (requests; plugin.state.replays)
+        foreach (replaysForNickname; plugin.state.replays)
         {
-            foreach (request; requests)
+            foreach (replay; replaysForNickname)
             {
-                repeat(request);
+                repeat(replay);
             }
         }
 

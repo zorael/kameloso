@@ -1845,7 +1845,7 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued WHOIS requests and pertaining `dialect.defs.IRCEvent`s to replay.
+     +  Queued `dialect.defs.IRCEvent`s to replay.
      +
      +  The main loop iterates this after processing all on-event functions so
      +  as to know what nicks the plugin wants a WHOIS for. After the WHOIS

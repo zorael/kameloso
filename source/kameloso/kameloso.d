@@ -877,7 +877,7 @@ Next mainLoop(ref Kameloso instance)
 
                     checkUpdatesAndPropagate(instance, plugin);
 
-                    // Fetch any queued WHOIS requests and process
+                    // Fetch any queued replays and process
                     if (plugin.state.replays.length)
                     {
                         instance.processReplays(plugin.state.replays);
@@ -1268,7 +1268,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +          UNIX timestamp with.
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInUnix)
-in ((nowInUnix > 0), "Tried to process queued `ScheduledFibers` with an unset timestamp")
+in ((nowInUnix > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
 do
 {
     size_t[] toRemove;
@@ -1378,23 +1378,25 @@ import kameloso.plugins.common : Replay;
 
 // processReplays
 /++
- +  Takes a queue of `Replay` objects and emits WHOIS requests for each one.
+ +  Takes a queue of `Replay` objects and issues WHOIS queries for each one,
+ +  unless it has already been done recently (within
+ +  kameloso.constants.Timeout.whoisRetry seconds).
  +
  +  Params:
  +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      reqs = Reference to an associative array of `Replay`s.
+ +      replays = Reference to an associative array of `Replay`s.
  +/
-void processReplays(ref Kameloso instance, const Replay[][string] reqs)
+void processReplays(ref Kameloso instance, const Replay[][string] replays)
 {
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
 
-    // Walk through requests and call WHOIS on those that haven't been
+    // Walk through replays and call WHOIS on those that haven't been
     // WHOISed in the last Timeout.whoisRetry seconds
 
     immutable now = Clock.currTime.toUnixTime;
 
-    foreach (immutable nickname, const requestsForNickname; reqs)
+    foreach (immutable nickname, const replaysForNickname; replays)
     {
         assert(nickname.length, "Empty nickname in replay queue");
 
@@ -1403,7 +1405,7 @@ void processReplays(ref Kameloso instance, const Replay[][string] reqs)
             import std.stdio : stdout, writef, writefln, writeln;
             import std.algorithm.iteration : map;
 
-            auto callerNames = requestsForNickname.map!(req => req.caller);
+            auto callerNames = replaysForNickname.map!(replay => replay.caller);
 
             writef("[TraceWhois] processReplays saw request to " ~
                 "WHOIS \"%s\" from: %-(%s, %)", nickname, callerNames);

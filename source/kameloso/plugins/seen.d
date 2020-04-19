@@ -95,8 +95,8 @@ public:
  +      Tid mainThread;
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;
- +      TriggerRequest[][string] triggerRequestQueue;
- +      Replay[] replays;
+ +      Replay[][string] replays;
+ +      Repeat[] repeats;
  +      Fiber[][] awaitingFibers;
  +      ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is an alias in `kameloso.thread`
  +      long nextPeriodical;
@@ -135,19 +135,19 @@ public:
  +     way we can access detailed information about any given channel, knowing
  +     only their name.
  +
- +  * `kameloso.plugins.common.IRCPluginState.triggerRequestQueue` is also an
- +     associative array into which we place `kameloso.plugins.common.TriggerRequest`s.
- +     The main loop will pick up on these and call WHOIS on the nickname in the key-
- +     A `kameloso.plugins.common.TriggerRequest` is otherwise just an
+ +  * `kameloso.plugins.common.IRCPluginState.replays` is also an
+ +     associative array into which we place `kameloso.plugins.common.Replay`s.
+ +     The main loop will pick up on these and call WHOIS on the nickname in the key.
+ +     A `kameloso.plugins.common.Replay` is otherwise just an
  +     `dialect.defs.IRCEvent` to be played back when the WHOIS results
  +     return, as well as a function pointer to call with that event. This is
- +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
+ +     all wrapped in a function `kameloso.plugins.common.issueWhois`, with the
  +     queue management handled behind the scenes.
  +
- +  * `kameloso.plugins.common.IRCPluginState.replays` is an array of
- +     `kameloso.plugins.common.Replay`s, which is instrumental in replaying
+ +  * `kameloso.plugins.common.IRCPluginState.repeats` is an array of
+ +     `kameloso.plugins.common.Repeat`s, which is instrumental in repeating
  +     events from the context of the main event loop. This allows us to update
- +     information in the event, such as details on its sender, before replaying
+ +     information in the event, such as details on its sender, before repeating
  +     it again. This can only be done outside of plugins.
  +
  +  * `kameloso.plugins.common.IRCPluginState.awaitingFibers` is an associative
