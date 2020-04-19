@@ -2033,11 +2033,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +
      +  Params:
      +      nickname = Nickname of the user the enqueueing event relates to.
+     +      issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
      +      background = Whether or not to issue queries as low-priority background messages.
-     +      issueWhois = Whether to issue WHOIS queries at all or just enqueue.
      +/
-    void enqueueAndWHOIS(const string nickname, const bool background = false,
-        const bool issueWhois = true)
+    void enqueueAndWHOIS(const string nickname, const bool issueWhois = true,
+        const bool background = false)
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
