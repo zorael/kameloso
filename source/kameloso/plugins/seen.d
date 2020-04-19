@@ -775,7 +775,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
  +/
-long[string] loadSeen(const string filename)
+long[string] loadSeen(const string filename, const bool verbosely = true)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
@@ -784,9 +784,12 @@ long[string] loadSeen(const string filename)
 
     scope(exit)
     {
-        import lu.string : plurality;
-        logger.logf("Currently %s%d%s %s seen.",
-            Tint.info, aa.length, Tint.log, aa.length.plurality("user", "users"));
+        if (verbosely)
+        {
+            import lu.string : plurality;
+            logger.logf("Currently %s%d%s %s seen.",
+                Tint.info, aa.length, Tint.log, aa.length.plurality("user", "users"));
+        }
     }
 
     if (!filename.exists || !filename.isFile)
@@ -884,7 +887,7 @@ void periodically(SeenPlugin plugin, const long now)
 void reload(SeenPlugin plugin)
 {
     logger.info("Reloading seen users from disk.");
-    plugin.seenUsers = loadSeen(plugin.seenFile);
+    plugin.seenUsers = loadSeen(plugin.seenFile, false);
 }
 
 
