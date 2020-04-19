@@ -1310,6 +1310,10 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
         mixin(replayVariableName) = replay;
         context.repeat(&repeaterDelegate, replay.event);
     }
+
+    /// Compatibility alias of `repeat`.
+    deprecated("Use `repeat` instead")
+    alias queueToReplay = repeat;
 }
 
 
@@ -1442,6 +1446,11 @@ in ((event != IRCEvent.init), "Tried to queue a repeat with an init IRCEvent")
     import kameloso.thread : CarryingFiber;
     plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, 32_768), event);
 }
+
+
+/// Compatibility alias of `repeat`.
+deprecated("Use `repeat` instead")
+alias queueToReplay = repeat;
 
 
 // rehashUsers
