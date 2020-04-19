@@ -670,9 +670,14 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
 
     if (channel in json[list].object)
     {
+        import std.algorithm.iteration : map;
+
+        auto userlist = json[list][channel].array
+            .map!(jsonEntry => jsonEntry.str);
+
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Current %s in %s: %-(%s, %)"
-            .format(asWhat, channel, json[list][channel].array));
+            .format(asWhat, channel, userlist));
     }
     else
     {
