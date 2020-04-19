@@ -1099,9 +1099,10 @@ private:
      +  Queries the server for WHOIS information about a user.
      +/
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
-        const bool force = false, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const bool force = false, const bool quiet = kameloso.common.settings.hideOutgoing,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.whois!priority(privateState, nickname, force, quiet);
+        return kameloso.messaging.whois!priority(privateState, nickname, force, quiet, caller);
     }
 
     // raw
