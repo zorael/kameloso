@@ -340,19 +340,19 @@ void onMotd(PipelinePlugin plugin)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
                 e.msg, Tint.log, e.command, Tint.warning, e.retval);
-            version(PrintStacktraces) logger.trace(e.info);
+            //version(PrintStacktraces) logger.trace(e.info);
         }
         catch (FileExistsException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
                 e.msg, Tint.log, e.filename, Tint.warning);
-            version(PrintStacktraces) logger.trace(e.info);
+            //version(PrintStacktraces) logger.trace(e.info);
         }
         catch (FileTypeMismatchException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
                 e.msg, Tint.log, e.filename, Tint.warning);
-            version(PrintStacktraces) logger.trace(e.info);
+            //version(PrintStacktraces) logger.trace(e.info);
         }
 
         // Let other Exceptions pass
