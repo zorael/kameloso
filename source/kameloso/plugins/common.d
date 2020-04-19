@@ -2027,9 +2027,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-     +  Constructs a `kameloso.thread.CarryingFiber!(dialect.defs.IRCEvent)`
-     +  and enqueues it into the `awaitingFibers` associative array, then issues
-     +  a `WHOIS` call (unless overridden via the `issueWhois` parameter).
+     +  Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
+     +  and enqueues it into the `kameloso.plugins.ircplugin.IRCPluginState.awaitingFibers`
+     +  associative array, then issues a `WHOIS` query (unless overridden via
+     +  the `issueWhois` parameter).
      +
      +  Params:
      +      nickname = Nickname of the user the enqueueing event relates to.
