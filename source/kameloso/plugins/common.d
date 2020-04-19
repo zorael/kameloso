@@ -58,13 +58,13 @@ static if (__VERSION__ == 2079L)
 public:
 
 
-// TriggerRequest
+// Replay
 /++
  +  A queued event to be replayed upon a `WHOIS` request response.
  +
- +  It is abstract; all objects must be of a concrete `TriggerRequestImpl` type.
+ +  It is abstract; all objects must be of a concrete `ReplayImpl` type.
  +/
-abstract class TriggerRequest
+abstract class Replay
 {
     /// Name of the caller function or similar context.
     string caller;
@@ -81,7 +81,7 @@ abstract class TriggerRequest
     /// Replay the stored event.
     void trigger();
 
-    /// Creates a new `TriggerRequest` with a timestamp of the current time.
+    /// Creates a new `Replay` with a timestamp of the current time.
     this() @safe
     {
         import std.datetime.systime : Clock;
@@ -90,12 +90,12 @@ abstract class TriggerRequest
 }
 
 
-// TriggerRequestImpl
+// ReplayImpl
 /++
  +  Implementation of a queued `WHOIS` request call.
  +
  +  It functions like a Command pattern object in that it stores a payload and
- +  a function pointer, which we queue and do a `WHOIS` call. When the response
+ +  a function pointer, which we queue and issue a WHOIS query. When the response
  +  returns we trigger the object and the original `dialect.defs.IRCEvent`
  +  is replayed.
  +
@@ -103,7 +103,7 @@ abstract class TriggerRequest
  +      F = Some function type.
  +      Payload = Optional payload type.
  +/
-private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerRequest
+private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 {
 @safe:
     /// Stored function pointer/delegate.
@@ -116,17 +116,15 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
 
 
         /++
-         +  Create a new `TriggerRequestImpl` with the passed variables.
+         +  Create a new `ReplayImpl` with the passed variables.
          +
          +  Params:
-         +      payload = Payload of templated type `Payload` to attach to this
-         +          `TriggerRequestImpl`.
-         +      event = `dialect.defs.IRCEvent` to attach to this
-         +          `TriggerRequestImpl`.
-         +      privilegeLevel = The privilege level required to trigger the
+         +      payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
+         +      event = `dialect.defs.IRCEvent` to attach to this `ReplayImpl`.
+         +      privilegeLevel = The privilege level required to replay the
          +          passed function.
          +      fn = Function pointer to call with the attached payloads when
-         +          the request is triggered.
+         +          the request is replayed.
          +/
         this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel,
             F fn, const string caller)
@@ -143,13 +141,12 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
     else
     {
         /++
-         +  Create a new `TriggerRequestImpl` with the passed variables.
+         +  Create a new `ReplayImpl` with the passed variables.
          +
          +  Params:
-         +      payload = Payload of templated type `Payload` to attach to this
-         +          `TriggerRequestImpl`.
+         +      payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
          +      fn = Function pointer to call with the attached payloads when
-         +          the request is triggered.
+         +          the request is replayed.
          +/
         this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn, const string caller)
         {
@@ -196,8 +193,8 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
         else
         {
             import std.format : format;
-            static assert(0, ("`TriggerRequestImpl` instantiated with an invalid " ~
-                "trigger function signature: `%s`")
+            static assert(0, ("`ReplayImpl` instantiated with an invalid " ~
+                "replay function signature: `%s`")
                 .format(F.stringof));
         }
     }
@@ -205,7 +202,7 @@ private final class TriggerRequestImpl(F, Payload = typeof(null)) : TriggerReque
 
 unittest
 {
-    TriggerRequest[] queue;
+    Replay[] queue;
 
     IRCEvent event;
     event.target.nickname = "kameloso";
@@ -222,7 +219,7 @@ unittest
         ++i;
     }
 
-    TriggerRequest reqdg = new TriggerRequestImpl!(void delegate())(event, pl, &dg, "test");
+    Replay reqdg = new ReplayImpl!(void delegate())(event, pl, &dg, "test");
     queue ~= reqdg;
 
     with (reqdg.event)
@@ -240,7 +237,7 @@ unittest
 
     static void fn() { }
 
-    auto reqfn = triggerRequest(event, pl, &fn);
+    auto reqfn = replay(event, pl, &fn);
     queue ~= reqfn;
 
     // delegate(ref IRCEvent)
@@ -250,7 +247,7 @@ unittest
         thisEvent.content = "blah";
     }
 
-    auto reqdg2 = triggerRequest(event, pl, &dg2);
+    auto reqdg2 = replay(event, pl, &dg2);
     queue ~= reqdg2;
 
     assert((reqdg2.event.content == "hirrpp"), event.content);
@@ -261,7 +258,7 @@ unittest
 
     static void fn2(IRCEvent thisEvent) { }
 
-    auto reqfn2 = triggerRequest(event, pl, &fn2);
+    auto reqfn2 = replay(event, pl, &fn2);
     queue ~= reqfn2;
 }
 
@@ -661,9 +658,9 @@ enum PrivilegeLevel
 }
 
 
-// triggerRequest
+// replay
 /++
- +  Convenience function that returns a `TriggerRequestImpl` of the right type,
+ +  Convenience function that returns a `ReplayImpl` of the right type,
  +  *with* a subclass plugin reference attached.
  +
  +  Params:
@@ -675,20 +672,20 @@ enum PrivilegeLevel
  +      caller = String name of the calling function, or something else that gives context.
  +
  +  Returns:
- +      A `TriggerRequest` with template parameters inferred from the arguments
+ +      A `Replay` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-TriggerRequest triggerRequest(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
+Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__) @safe
 {
-    return new TriggerRequestImpl!(Fn, SubPlugin)(subPlugin, event,
+    return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event,
         privilegeLevel, fn, caller);
 }
 
 
-// triggerRequest
+// replay
 /++
- +  Convenience function that returns a `TriggerRequestImpl` of the right type,
+ +  Convenience function that returns a `ReplayImpl` of the right type,
  +  *without* a subclass plugin reference attached.
  +
  +  Params:
@@ -698,13 +695,13 @@ TriggerRequest triggerRequest(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent
  +      caller = String name of the calling function, or something else that gives context.
  +
  +  Returns:
- +      A `TriggerRequest` with template parameters inferred from the arguments
+ +      A `Replay` with template parameters inferred from the arguments
  +      passed to this function.
  +/
-TriggerRequest triggerRequest(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
+Replay replay(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
     Fn fn, const string caller = __FUNCTION__) @safe
 {
-    return new TriggerRequestImpl!Fn(event, privilegeLevel, fn, caller);
+    return new ReplayImpl!Fn(event, privilegeLevel, fn, caller);
 }
 
 
@@ -1166,7 +1163,7 @@ private:
 
 // Repeater
 /++
- +  Implements queueing of repeat events.
+ +  Implements queueing of events to repeat.
  +
  +  This allows us to deal with triggers both in `dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT`
  +  and `dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND` while keeping the code
@@ -1214,7 +1211,7 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
     }
 
     private enum requestVariableName = text("_kamelosoRequest", hashOf(__FUNCTION__) % 100);
-    mixin("TriggerRequest " ~ requestVariableName ~ ';');
+    mixin("Replay " ~ requestVariableName ~ ';');
 
 
     // explainRepeat
@@ -1304,10 +1301,10 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
     }
 
     /++
-     +  Queues the delegate `repeaterDelegate` with the passed `TriggerRequest`
+     +  Queues the delegate `repeaterDelegate` with the passed `Replay`
      +  attached to it.
      +/
-    void repeat(TriggerRequest request)
+    void repeat(Replay request)
     {
         mixin(requestVariableName) = request;
         context.repeat(&repeaterDelegate, request.event);
@@ -1344,7 +1341,7 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 
 // enqueue
 /++
- +  Construct and enqueue a function trigger replay in the plugin's request queue.
+ +  Construct and enqueue a function replay in the plugin's request queue.
  +
  +  The main loop will catch up on it and issue WHOIS queries as necessary, then
  +  replay the event upon receiving the results.
@@ -1389,20 +1386,18 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 
     static if (is(SubPlugin == typeof(null)))
     {
-        plugin.state.triggerRequestQueue[user.nickname] ~=
-            triggerRequest(event, privilegeLevel, fn, caller);
+        plugin.state.replays[user.nickname] ~= replay(event, privilegeLevel, fn, caller);
     }
     else
     {
-        plugin.state.triggerRequestQueue[user.nickname] ~=
-            triggerRequest(subPlugin, event, privilegeLevel, fn, caller);
+        plugin.state.replays[user.nickname] ~= replay(subPlugin, event, privilegeLevel, fn, caller);
     }
 }
 
 
 // enqueue
 /++
- +  Construct and enqueue a function trigger replay in the plugin's request queue.
+ +  Construct and enqueue a function replay in the plugin's request queue.
  +  Overload that does not take an `IRCPlugin` subclass parameter.
  +
  +  The main loop will catch up on it and issue WHOIS queries as necessary, then

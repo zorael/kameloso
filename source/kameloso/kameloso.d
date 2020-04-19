@@ -877,10 +877,10 @@ Next mainLoop(ref Kameloso instance)
 
                     checkUpdatesAndPropagate(instance, plugin);
 
-                    // Fetch any queued `WHOIS` requests and handle
-                    if (plugin.state.triggerRequestQueue.length)
+                    // Fetch any queued WHOIS requests and process
+                    if (plugin.state.replays.length)
                     {
-                        instance.processTriggerRequestQueue(plugin.state.triggerRequestQueue);
+                        instance.processReplays(plugin.state.replays);
                     }
                 }
 
@@ -1374,29 +1374,29 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 }
 
 
-import kameloso.plugins.common : TriggerRequest;
+import kameloso.plugins.common : Replay;
 
-// processTriggerRequestQueue
+// processReplays
 /++
- +  Takes a queue of `TriggerRequest` objects and emits `WHOIS` requests for each one.
+ +  Takes a queue of `Replay` objects and emits WHOIS requests for each one.
  +
  +  Params:
  +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      reqs = Reference to an associative array of `TriggerRequest`s.
+ +      reqs = Reference to an associative array of `Replay`s.
  +/
-void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][string] reqs)
+void processReplays(ref Kameloso instance, const Replay[][string] reqs)
 {
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
 
-    // Walk through requests and call `WHOIS` on those that haven't been
-    // `WHOIS`ed in the last `Timeout.whois` seconds
+    // Walk through requests and call WHOIS on those that haven't been
+    // WHOISed in the last Timeout.whoisRetry seconds
 
     immutable now = Clock.currTime.toUnixTime;
 
     foreach (immutable nickname, const requestsForNickname; reqs)
     {
-        assert(nickname.length, "Empty nickname in trigger queue");
+        assert(nickname.length, "Empty nickname in replay queue");
 
         version(TraceWhois)
         {
@@ -1405,7 +1405,7 @@ void processTriggerRequestQueue(ref Kameloso instance, const TriggerRequest[][st
 
             auto callerNames = requestsForNickname.map!(req => req.caller);
 
-            writef("[TraceWhois] processTriggerRequestQueue saw request to " ~
+            writef("[TraceWhois] processReplays saw request to " ~
                 "WHOIS \"%s\" from: %-(%s, %)", nickname, callerNames);
         }
 

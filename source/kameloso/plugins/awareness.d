@@ -143,13 +143,13 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
         mixin Repeater;
 
         // See if there are any queued WHOIS requests to trigger
-        auto requestsForNickname = event.target.nickname in plugin.state.triggerRequestQueue;
+        auto replaysForNickname = event.target.nickname in plugin.state.replays;
 
-        if (requestsForNickname)
+        if (replaysForNickname)
         {
             size_t[] garbageIndexes;
 
-            foreach (immutable i, request; *requestsForNickname)
+            foreach (immutable i, request; *replaysForNickname)
             {
                 import kameloso.constants : Timeout;
                 import std.algorithm.searching : canFind;
@@ -168,13 +168,13 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             foreach_reverse (immutable i; garbageIndexes)
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
-                *requestsForNickname = (*requestsForNickname).remove!(SwapStrategy.unstable)(i);
+                *replaysForNickname = (*replaysForNickname).remove!(SwapStrategy.unstable)(i);
             }
         }
 
-        if (requestsForNickname && !requestsForNickname.length)
+        if (replaysForNickname && !replaysForNickname.length)
         {
-            plugin.state.triggerRequestQueue.remove(event.target.nickname);
+            plugin.state.replays.remove(event.target.nickname);
         }
     }
 
@@ -200,7 +200,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
         mixin Repeater;
 
-        foreach (requests; plugin.state.triggerRequestQueue)
+        foreach (requests; plugin.state.replays)
         {
             foreach (request; requests)
             {
@@ -208,7 +208,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             }
         }
 
-        plugin.state.triggerRequestQueue.clear();
+        plugin.state.replays.clear();
     }
 }
 

@@ -1008,7 +1008,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         this.privateState = state;
         this.privateState.awaitingFibers = state.awaitingFibers.dup;
         this.privateState.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
-        this.privateState.triggerRequestQueue = state.triggerRequestQueue.dup;
+        this.privateState.replays = state.replays.dup;
         this.privateState.repeats = state.repeats.dup;
         this.privateState.scheduledFibers = state.scheduledFibers.dup;
 
@@ -1845,14 +1845,13 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued `WHOIS` requests and pertaining `dialect.defs.IRCEvent`s to
-     +  replay.
+     +  Queued `WHOIS` requests and pertaining `dialect.defs.IRCEvent`s to replay.
      +
      +  The main loop iterates this after processing all on-event functions so
-     +  as to know what nicks the plugin wants a `WHOIS` for. After the `WHOIS`
-     +  response returns, the event bundled with the `TriggerRequest` will be replayed.
+     +  as to know what nicks the plugin wants a WHOIS for. After the WHOIS
+     +  response returns, the event bundled with the `Replay` will be replayed.
      +/
-    TriggerRequest[][string] triggerRequestQueue;
+    Replay[][string] replays;
 
     /// This plugin's array of `Repeat`s to let the main loop play back.
     Repeat[] repeats;
