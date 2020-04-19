@@ -97,7 +97,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
-    import std.range : enumerate, only;
+    import std.range : only;
 
     version(TwitchSupport)
     {
@@ -111,7 +111,9 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
         enum atSign = string.init;
     }
 
-    foreach (immutable i, immutable channel; only(givenChannel, string.init).enumerate)
+    uint i;
+
+    foreach (immutable channel; only(givenChannel, string.init))
     {
         void onSuccess(const IRCUser user)
         {
@@ -211,7 +213,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
         // Only WHOIS once
-        enqueueAndWHOIS(givenUser.nickname, (i == 0), background);
+        enqueueAndWHOIS(givenUser.nickname, (i++ == 0), background);
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channel.length) break;
