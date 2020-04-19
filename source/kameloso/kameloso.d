@@ -664,8 +664,8 @@ Next mainLoop(ref Kameloso instance)
 
             if (plugin.state.nextFiberTimestamp <= nowInUnix)
             {
-                plugin.handleScheduledFibers(nowInUnix);
-                plugin.state.updateNextFiberTimestamp();
+                plugin.processScheduledFibers(nowInUnix);
+                plugin.state.updateNextFiberTimestamp();  // Something is always removed
 
                 // Set the next read to time out after 1 milliseconds, so as to
                 // quicker get to the bottom and receive messages/send lines.
@@ -858,17 +858,17 @@ Next mainLoop(ref Kameloso instance)
                     // Process awaiting Fibers
                     try
                     {
-                        plugin.handleAwaitingFibers(event);
+                        plugin.processAwaitingFibers(event);
                     }
                     catch (UTFException e)
                     {
-                        logger.warningf("UTFException %s.handleAwaitingFibers: %s%s",
+                        logger.warningf("UTFException %s.processAwaitingFibers: %s%s",
                             plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
-                        logger.warningf("Exception %s.handleAwaitingFibers: %s%s",
+                        logger.warningf("Exception %s.processAwaitingFibers: %s%s",
                             plugin.name, Tint.log, e.msg);
 
                         printEventDebugDetails(event, attempt.line);
@@ -1146,7 +1146,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
 import kameloso.plugins.ircplugin : IRCPlugin;
 
-// handleAwaitingFibers
+// processAwaitingFibers
 /++
  +  Processes the awaiting `core.thread.Fiber`s of an
  +  `kameloso.plugins.ircplugin.IRCPlugin`.
@@ -1157,14 +1157,14 @@ import kameloso.plugins.ircplugin : IRCPlugin;
  +          iterate and process.
  +      event = The triggering `dialect.defs.IRCEvent`.
  +/
-void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
+void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
     import core.thread : Fiber;
 
     /++
      +  Handle awaiting Fibers of a specified type.
      +/
-    static void handleAwaitingFibersImpl(IRCPlugin plugin, const IRCEvent event,
+    static void processAwaitingFibersImpl(IRCPlugin plugin, const IRCEvent event,
         Fiber[] fibersForType, ref Fiber[] expiredFibers)
     {
         foreach (immutable i, fiber; fibersForType)
@@ -1225,13 +1225,13 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
     if (plugin.state.awaitingFibers[event.type].length)
     {
-        handleAwaitingFibersImpl(plugin, event,
+        processAwaitingFibersImpl(plugin, event,
             plugin.state.awaitingFibers[event.type], expiredFibers);
     }
 
     if (plugin.state.awaitingFibers[IRCEvent.Type.ANY].length)
     {
-        handleAwaitingFibersImpl(plugin, event,
+        processAwaitingFibersImpl(plugin, event,
             plugin.state.awaitingFibers[IRCEvent.Type.ANY], expiredFibers);
     }
 
@@ -1256,7 +1256,7 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 }
 
 
-// handleScheduledFibers
+// processScheduledFibers
 /++
  +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
  +  `kameloso.plugins.ircplugin.IRCPlugin`.
@@ -1267,8 +1267,8 @@ void handleAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +      nowInUnix = Current UNIX timestamp to compare the `ScheduledFiber`'s
  +          UNIX timestamp with.
  +/
-void handleScheduledFibers(IRCPlugin plugin, const long nowInUnix)
-in ((nowInUnix > 0), "Tried to handle queued `ScheduledFibers` with an unset timestamp")
+void processScheduledFibers(IRCPlugin plugin, const long nowInUnix)
+in ((nowInUnix > 0), "Tried to process queued `ScheduledFibers` with an unset timestamp")
 do
 {
     size_t[] toRemove;
