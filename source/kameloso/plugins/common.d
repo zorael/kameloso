@@ -168,22 +168,21 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
      +/
     override void trigger() @system
     {
-        import std.meta : AliasSeq, staticMap;
-        import std.traits : Parameters, Unqual, arity;
+        import lu.traits : TakesParams;
+        import std.meta : AliasSeq;
+        import std.traits : arity;
 
         assert((fn !is null), "null fn in `" ~ typeof(this).stringof ~ '`');
 
-        alias Params = staticMap!(Unqual, Parameters!fn);
-
-        static if (is(Params : AliasSeq!IRCEvent))
+        static if (TakesParams!(fn, AliasSeq!IRCEvent))
         {
             fn(event);
         }
-        else static if (is(Params : AliasSeq!(Payload, IRCEvent)))
+        else static if (TakesParams!(fn, AliasSeq!(Payload, IRCEvent)))
         {
             fn(payload, event);
         }
-        else static if (is(Params : AliasSeq!Payload))
+        else static if (TakesParams!(fn, AliasSeq!Payload))
         {
             fn(payload);
         }
@@ -1920,9 +1919,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import dialect.common : toLowerCase;
         import dialect.defs : IRCEvent, IRCUser;
         import lu.conv : Enum;
+        import lu.traits : TakesParams;
         import std.algorithm.searching : canFind;
         import std.meta : AliasSeq;
-        import std.traits : Parameters, Unqual, arity, staticMap;
+        import std.traits : arity;
         import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
@@ -1941,17 +1941,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
          +/
         void callOnSuccess()
         {
-            alias Params = staticMap!(Unqual, Parameters!onSuccess);
-
-            static if (is(Params : AliasSeq!IRCEvent))
+            static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
             {
                 return onSuccess(whoisEvent);
             }
-            else static if (is(Params : AliasSeq!IRCUser))
+            else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
             {
                 return onSuccess(whoisEvent.target);
             }
-            else static if (is(Params : AliasSeq!string))
+            else static if (TakesParams!(onSuccess, AliasSeq!string))
             {
                 return onSuccess(whoisEvent.target.account);
             }
@@ -1975,17 +1973,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         {
             static if (!is(typeof(onFailure) == typeof(null)))
             {
-                alias Params = staticMap!(Unqual, Parameters!onFailure);
-
-                static if (is(Params : AliasSeq!IRCEvent))
+                static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
                 {
                     return onFailure(whoisEvent);
                 }
-                else static if (is(Params : AliasSeq!IRCUser))
+                else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
                 {
                     return onFailure(whoisEvent.target);
                 }
-                else static if (is(Params : AliasSeq!string))
+                else static if (TakesParams!(onFailure, AliasSeq!string))
                 {
                     return onFailure(whoisEvent.target.account);
                 }
@@ -2064,12 +2060,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
+        import lu.traits : TakesParams;
         import std.meta : AliasSeq;
-        import std.traits : Parameters, Unqual, arity, staticMap;
+        import std.traits : arity;
         import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
-
-        alias Params = staticMap!(Unqual, Parameters!onSuccess);
 
         version(TwitchSupport)
         {
@@ -2088,16 +2083,16 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 {
                     if (const user = nickname in context.state.users)
                     {
-                        static if (is(Params : AliasSeq!IRCEvent))
+                        static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                         {
                             // No can do
                             return;
                         }
-                        else static if (is(Params : AliasSeq!IRCUser))
+                        else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                         {
                             return onSuccess(*user);
                         }
-                        else static if (is(Params : AliasSeq!string))
+                        else static if (TakesParams!(onSuccess, AliasSeq!string))
                         {
                             return onSuccess(user.account);
                         }
@@ -2112,17 +2107,17 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (is(Params : AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                 {
                     // No can do
                     return;
                 }
-                else static if (is(Params : AliasSeq!IRCUser))
+                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                 {
                     // No can do
                     return;
                 }
-                else static if (is(Params : AliasSeq!string))
+                else static if (TakesParams!(onSuccess, AliasSeq!string))
                 {
                     return onSuccess(nickname);
                 }
@@ -2143,15 +2138,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 if (user.account.length)
                 {
-                    static if (is(Params : AliasSeq!IRCEvent))
+                    static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                     {
                         // No can do, drop down and WHOIS
                     }
-                    else static if (is(Params : AliasSeq!IRCUser))
+                    else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                     {
                         return onSuccess(*user);
                     }
-                    else static if (is(Params : AliasSeq!string))
+                    else static if (TakesParams!(onSuccess, AliasSeq!string))
                     {
                         return onSuccess(user.account);
                     }
