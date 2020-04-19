@@ -743,9 +743,9 @@ struct BotCommand
     bool hidden;
 
     /++
-     +  Create a new `BotCommand` with the passed policy and trigger word.
+     +  Create a new `BotCommand` with the passed policy, trigger word, and hidden flag.
      +/
-    this(const PrefixPolicy policy, const string word, const bool hidden = false) pure
+    this(const PrefixPolicy policy, const string word, const Flag!"hidden" hidden = No.hidden) pure
     {
         this.policy = policy;
         this.word = word;
@@ -807,9 +807,10 @@ struct BotRegex
     bool hidden;
 
     /++
-     +  Creates a new `BotRegex` with the passed policy and regex expression.
+     +  Creates a new `BotRegex` with the passed policy, regex expression and hidden flag.
      +/
-    this(const PrefixPolicy policy, const string expression, const bool hidden)
+    this(const PrefixPolicy policy, const string expression,
+        const Flag!"hidden" hidden = No.hidden)
     {
         this.policy = policy;
         this.hidden = hidden;
@@ -1400,6 +1401,9 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in `enqueue` (no nickname)");
+
+    import std.stdio;
+    writeln(plugin.name, " doWhois ", user.nickname);
 
     static if (is(SubPlugin == typeof(null)))
     {

@@ -54,8 +54,8 @@ import std.typecons : Flag, No, Yes;
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "say")
-@BotCommand(PrefixPolicy.prefixed, "säg", true)
-@BotCommand(PrefixPolicy.prefixed, "echo", true)
+@BotCommand(PrefixPolicy.prefixed, "säg", Yes.hidden)
+@BotCommand(PrefixPolicy.prefixed, "echo", Yes.hidden)
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {

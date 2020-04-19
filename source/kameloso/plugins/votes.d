@@ -16,6 +16,7 @@ import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
+import std.typecons : Flag, No, Yes;
 
 
 /++
@@ -42,7 +43,7 @@ import dialect.defs;
 @(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "poll")
-@BotCommand(PrefixPolicy.prefixed, "vote", true)
+@BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
 @Description("Starts or stops a vote. Pass \"abort\" to stop.",
     "$command [seconds] [choice1] [choice2] ...")
 void onCommandVote(VotesPlugin plugin, const IRCEvent event)
