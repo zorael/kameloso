@@ -2029,19 +2029,21 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /++
      +  Constructs a `kameloso.thread.CarryingFiber!(dialect.defs.IRCEvent)`
      +  and enqueues it into the `awaitingFibers` associative array, then issues
-     +  a `WHOIS` call.
+     +  a `WHOIS` call (unless overridden via the `issueWhois` parameter).
      +
      +  Params:
-     +      nickname = Nickname to issue a `WHOIS` query for.
+     +      nickname = Nickname of the user the enqueueing event relates to.
      +      background = Whether or not to issue queries as low-priority background messages.
+     +      issueWhois = Whether to issue WHOIS queries at all or just enqueue.
      +/
-    void enqueueAndWHOIS(const string nickname, const bool background = false)
+    void enqueueAndWHOIS(const string nickname, const bool background = false,
+        const bool issueWhois = true)
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
         import std.meta : AliasSeq;
         import std.traits : Parameters, Unqual, arity, staticMap;
-        import std.typecons : No, Yes;
+        import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
 
         alias Params = staticMap!(Unqual, Parameters!onSuccess);
@@ -2146,13 +2148,17 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         context.awaitEvents(fiber, whoisEventTypes);
 
-        if (background)
+        if (issueWhois)
         {
-            whois(context.state, nickname, true, background);  // Need force to not miss events
-        }
-        else
-        {
-            whois!(Yes.priority)(context.state, nickname, true);  // Ditto
+            if (background)
+            {
+                // Need force (true) to not miss events
+                whois(context.state, mixin(carriedVariableName), true, background);
+            }
+            else
+            {
+                whois!(Yes.priority)(context.state, mixin(carriedVariableName), true);  // Ditto
+            }
         }
 
         mixin(carriedVariableName) = nickname;
