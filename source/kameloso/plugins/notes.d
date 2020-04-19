@@ -99,6 +99,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     import std.json : JSONException;
     import std.range : only;
 
+    if (givenUser.nickname == plugin.state.client.nickname) return;
+
     version(TwitchSupport)
     {
         // On Twitch, prepend the nickname a message is aimed towards with a @
