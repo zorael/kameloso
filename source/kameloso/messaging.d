@@ -732,9 +732,9 @@ do
     version(TraceWhois)
     {
         import std.stdio : writefln;
-        writefln("[TraceWhois] %s called WHOIS on \"%s\" " ~
-            "(priority:%s force:%s, quiet:%s, background:%s)",
-            caller, nickname, (priority ? true : false), force, quiet, background);
+        writefln("[TraceWhois] messaging.whois caught request to WHOIS \"%s\" " ~
+            "from %s (priority:%s force:%s, quiet:%s, background:%s)",
+            nickname, caller, (priority ? true : false), force, quiet, background);
     }
 
     state.mainThread.send(event);
