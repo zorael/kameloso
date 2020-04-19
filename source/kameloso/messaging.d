@@ -716,7 +716,7 @@ void whois(Flag!"priority" priority = No.priority)(ref IRCPluginState state,
     const string nickname, const bool force = false,
     const bool quiet = settings.hideOutgoing, const bool background = false,
     const string caller = __FUNCTION__)
-in (nickname.length, "Tried to WHOIS but no nickname was given")
+in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 do
 {
     static if (priority) import std.concurrency : send = prioritySend;
