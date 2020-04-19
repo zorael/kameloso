@@ -878,6 +878,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 fun();
             }
+            else static if (Filter!(isIRCPluginParam, Params).length)
+            {
+                import std.format : format;
+                static assert(0, ("`%s` takes a superclass `IRCPlugin` " ~
+                    "parameter instead of a subclass `%s`")
+                    .format(fqn, typeof(this).stringof));
+            }
             else
             {
                 import std.format : format;
