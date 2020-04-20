@@ -287,7 +287,7 @@ void messageFiber(ref Kameloso instance)
 
                 if (!line.length)
                 {
-                    line = "PRIVMSG %s :%cACTION %s%2c".format(emoteTarget,
+                    line = "PRIVMSG %s :%cACTION %s%2$c".format(emoteTarget,
                         cast(char)IRCControlCharacter.ctcp, content);
                 }
                 break;
