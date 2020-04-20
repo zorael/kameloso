@@ -255,9 +255,27 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
     immutable dancePos = event.content.indexOf("DANCE");
     if (dancePos == -1) return;
 
-    if ((dancePos > 0) && (event.content[dancePos-1] != ' ')) return;
-    else if ((event.content.length > (dancePos + 5)) &&
-        (event.content[dancePos+5] != '0')) return;
+    if ((dancePos > 0) && (event.content[dancePos-1] != ' '))
+    {
+        return;
+    }
+    else if (event.content.length > (dancePos+5))
+    {
+        immutable trailing = event.content[dancePos+5];
+
+        switch (trailing)
+        {
+        case ' ':
+        case '!':
+        case '.':
+        case '?':
+            // Drop down
+            break;
+
+        default:
+            return;
+        }
+    }
 
     // Should dance. Stagger it a bit with a second inbetween.
     enum secondsBetweenDances = 1;
