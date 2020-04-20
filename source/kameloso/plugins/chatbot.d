@@ -235,6 +235,53 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
 }
 
 
+// onDance
+/++
+ +  Does the bash.org dance emotes.
+ +
+ +  - http://bash.org/?4281
+ +/
+@(Terminating)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.anyone)
+@(ChannelPolicy.home)
+void onDance(ChatbotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.thread : ScheduledFiber;
+    import std.string : indexOf;
+    import core.thread : Fiber;
+
+    immutable dancePos = event.content.indexOf("DANCE");
+    if (dancePos == -1) return;
+
+    if ((dancePos > 0) && (event.content[dancePos-1] != ' ')) return;
+    else if ((event.content.length > (dancePos + 5)) &&
+        (event.content[dancePos+5] != '0')) return;
+
+    // Should dance. Stagger it a bit with a second inbetween.
+    enum secondsBetweenDances = 1;
+
+    void dg()
+    {
+        import kameloso.messaging : emote;
+
+        emote(plugin.state, event.channel, "dances :D-<");
+        plugin.delayFiber(secondsBetweenDances);
+        Fiber.yield();
+
+        emote(plugin.state, event.channel, "dances :D|-<");
+        plugin.delayFiber(secondsBetweenDances);
+        Fiber.yield();
+
+        emote(plugin.state, event.channel, "dances :D/-<");
+    }
+
+    Fiber fiber = new Fiber(&dg);
+    fiber.call();
+}
+
+
 mixin MinimalAuthentication;
 
 public:
