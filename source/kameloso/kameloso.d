@@ -962,7 +962,16 @@ Next mainLoop(ref Kameloso instance)
         }
 
         // Check concurrency messages to see if we should exit, else repeat
-        messenger.call();
+        try
+        {
+            messenger.call();
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Unhandled messenger exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                Tint.log, e.msg, Tint.warning, e.file, e.line);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
 
         if (messenger.state == Fiber.State.HOLD)
         {
@@ -971,7 +980,6 @@ Next mainLoop(ref Kameloso instance)
         else
         {
             logger.error("Internal error, thread messenger Fiber ended abruptly.");
-            version(PrintStacktraces) printStacktrace();
             next = Next.returnFailure;
         }
 
