@@ -1291,18 +1291,18 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The `kameloso.plugins.ircplugin.IRCPlugin` whose queued
  +          `ScheduledFiber`s to iterate and process.
- +      nowInUnix = Current UNIX timestamp to compare the `ScheduledFiber`'s
- +          UNIX timestamp with.
+ +      nowInHnsecs = Current timestamp to compare the `ScheduledFiber`'s
+ +          timestamp with.
  +/
-void processScheduledFibers(IRCPlugin plugin, const long nowInUnix)
-in ((nowInUnix > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
+void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
+in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
 do
 {
     size_t[] toRemove;
 
     foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
     {
-        if (scheduledFiber.timestamp > nowInUnix) continue;
+        if (scheduledFiber.timestamp > nowInHnsecs) continue;
 
         try
         {
