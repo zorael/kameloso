@@ -631,6 +631,7 @@ Next mainLoop(ref Kameloso instance)
     instance.wantLiveSummary = false;
 
     bool readWasShortened;
+    bool shouldSkipRead;
 
     while (next == Next.continue_)
     {
@@ -663,15 +664,25 @@ Next mainLoop(ref Kameloso instance)
         {
             if (!plugin.state.scheduledFibers.length) continue;
 
-            if (plugin.state.nextFiberTimestamp <= nowInUnix)
+            if (plugin.state.nextFiberTimestamp <= nowInHnsecs)
             {
-                plugin.processScheduledFibers(nowInUnix);
+                plugin.processScheduledFibers(nowInHnsecs);
                 plugin.state.updateNextFiberTimestamp();  // Something is always removed
+                shouldSkipRead = true;
+            }
+            else
+            {
+                immutable cachedReceiveTimeout = instance.conn.receiveTimeout;
+                immutable timeOfNextReadTimeout = cast(int)((nowInHnsecs/10_000) +
+                    cachedReceiveTimeout);
+                immutable int delta = cast(int)(timeOfNextReadTimeout -
+                    (plugin.state.nextFiberTimestamp/10_000));
 
-                // Set the next read to time out after 1 milliseconds, so as to
-                // quicker get to the bottom and receive messages/send lines.
-                instance.conn.receiveTimeout = 1;
-                readWasShortened = true;
+                if ((delta > 0) && (delta < instance.conn.receiveTimeout))
+                {
+                    instance.conn.receiveTimeout = (cachedReceiveTimeout - delta);
+                    readWasShortened = true;
+                }
             }
         }
 
@@ -689,6 +700,13 @@ Next mainLoop(ref Kameloso instance)
         foreach (const attempt; listener)
         {
             if (*instance.abort) return Next.returnFailure;
+
+            if (shouldSkipRead)
+            {
+                // Reset flag and break
+                shouldSkipRead = false;
+                break;
+            }
 
             immutable actionAfterListen = listenAttemptToNext(instance, attempt);
 
@@ -998,7 +1016,7 @@ Next mainLoop(ref Kameloso instance)
         {
             sendLines(instance, readWasShortened);
         }
-        else if (readWasShortened && instance.conn.receiveTimeout == 1)
+        else if (readWasShortened)
         {
             static import lu.net;
 
