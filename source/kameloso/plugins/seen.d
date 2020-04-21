@@ -19,10 +19,7 @@
  +  the function(s) annotated with its type.
  +
  +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
- +  process on incoming events, or scheduled with a worst-case precision of
- +  `lu.net.DefaultTimeout.receive` milliseconds, plus up to
- +  `kameloso.plugins.package.EnabledPlugins.length` number of plugins' event
- +  handling execution time. Generally the latter is insignificant.
+ +  process on incoming events, or scheduled with a high degree of precision.
  +
  +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
@@ -157,9 +154,10 @@ public:
  +
  +  * `kameloso.plugins.common.IRCPluginState.scheduledFibers` is also an array of
  +     `core.thread.Fiber`s, but not an associative one keyed on event types.
- +     Instead they are tuples of a `core.thread.Fiber` and a `long` UNIX
+ +     Instead they are tuples of a `core.thread.Fiber` and a `long`
  +     timestamp of when they should be run.
- +     Use `kameloso.plugins.common.delayFiber` to enqueue.
+ +     Use `kameloso.plugins.common.delayFiber` to enqueue, or
+ +     `kameloso.plugins.common.delayFiberMsecs` for greater granularity.
  +
  +  * `kameloso.plugins.common.IRCPluginState.nextPeriodical` is a UNIX timestamp
  +     of when the `periodical(IRCPlugin)` function should be run next. It is a
