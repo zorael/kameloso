@@ -624,15 +624,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import lu.string : strippedLeft;
                     import std.algorithm.comparison : equal;
                     import std.typecons : No, Yes;
-                    import std.uni : asLowerCase, toLower;
+                    import std.uni : asLowerCase;
 
                     mutEvent.content = mutEvent.content.strippedLeft;
                     immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
 
-                    enum lowercaseUDAString = commandUDA.word.toLower;
-
-                    if ((thisCommand.length == lowercaseUDAString.length) &&
-                        thisCommand.asLowerCase.equal(lowercaseUDAString))
+                    if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
                     {
                         static if (verbose)
                         {
