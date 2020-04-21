@@ -164,7 +164,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
-    enum mixinSentinel = true;
+    private static enum mixinSentinel = true;
 
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if(!is(__traits(parent, mixinSentinel) : IRCPlugin))
