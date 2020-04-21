@@ -651,8 +651,8 @@ Next mainLoop(ref Kameloso instance)
             return Next.retry;
         }
 
-        deprecated immutable nowInUnix = Clock.currTime.toUnixTime;
-        immutable now = Clock.currStdTime;
+        immutable nowInUnix = Clock.currTime.toUnixTime;
+        immutable nowInHnsecs = Clock.currStdTime;
 
         foreach (plugin; instance.plugins)
         {
