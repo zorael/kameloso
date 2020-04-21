@@ -232,9 +232,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (isAnnotated!(this.tupleof[i].tupleof[n], Enabler))
                         {
                             import std.traits : Unqual;
+                            alias ThisEnabler = Unqual!(typeof(this.tupleof[i].tupleof[n]));
 
-                            static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
-                                '`' ~ Unqual!(typeof(this)).stringof ~ "` has a non-bool `Enabler`");
+                            static assert(is(ThisEnabler : bool),
+                                '`' ~ Unqual!(typeof(this)).stringof ~
+                                "` has a non-bool `Enabler`: `" ~ ThisEnabler.stringof ~ '`');
 
                             retval = submember;
                             break top;
