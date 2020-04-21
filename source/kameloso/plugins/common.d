@@ -1493,13 +1493,51 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 }
 
 
+// delayFiberMsecs
+/++
+ +  Queues a `core.thread.Fiber` to be called at a point `msecs` milliseconds later, by
+ +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
+ +
+ +  Updates the `IRCPluginState.nextFiberTimestamp` timestamp so that the
+ +  main loop knows when to next process the array of `kameloso.thread.ScheduledFiber`s.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to enqueue to be executed at a later point in time.
+ +      msecs = Number of milliseconds to delay the `fiber`.
+ +/
+void delayFiberMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
+in ((fiber !is null), "Tried to delay a null Fiber")
+{
+    import kameloso.thread : ScheduledFiber;
+    import std.datetime.systime : Clock;
+
+    immutable time = Clock.currStdTime + (msecs * 10_000);  // hnsecs -> msecs
+    plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
+    plugin.state.updateNextFiberTimestamp();
+}
+
+
+// delayFiberMsecs
+/++
+ +  Queues a `core.thread.Fiber` to be called at a point `msecs` milliseconds later, by
+ +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
+ +  Overload that implicitly queues `core.thread.Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      msecs = Number of milliseconds to delay the implicit fiber in the current context.
+ +/
+void delayFiberMsecs(IRCPlugin plugin, const long msecs)
+{
+    return plugin.delayFiber(Fiber.getThis, msecs);
+}
+
+
 // delayFiber
 /++
  +  Queues a `core.thread.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
- +
- +  Updates the `IRCPluginState.nextFiberTimestamp` UNIX timestamp so that the
- +  main loop knows when to next process the array of `kameloso.thread.ScheduledFiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -1509,20 +1547,15 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
-    import kameloso.thread : ScheduledFiber;
-    import std.datetime.systime : Clock;
-
-    immutable time = Clock.currTime.toUnixTime + secs;
-    plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
-    plugin.state.updateNextFiberTimestamp();
+    // Pass the seconds as milliseconds
+    return plugin.delayFiberMsecs(fiber, secs * 1_000);
 }
 
 
 // delayFiber
 /++
- +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
+ +  Queues a `core.thread.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
- +
  +  Overload that implicitly queues `core.thread.Fiber.getThis`.
  +
  +  Params:
@@ -1531,7 +1564,8 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +/
 void delayFiber(IRCPlugin plugin, const long secs)
 {
-    return plugin.delayFiber(Fiber.getThis, secs);
+    // Pass the seconds as milliseconds
+    return plugin.delayFiberMsecs(Fiber.getThis, secs * 1_000);
 }
 
 
