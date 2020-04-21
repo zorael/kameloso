@@ -519,25 +519,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 if (settings.flush) stdout.flush();
             }
 
-            static if (hasUDA!(fun, ChannelPolicy))
-            {
-                enum policy = getUDAs!(fun, ChannelPolicy)[0];
-            }
-            else
-            {
-                // Default policy if none given is `ChannelPolicy.home`
-                enum policy = ChannelPolicy.home;
-            }
-
-            static if (verbose)
-            {
-                writeln("...ChannelPolicy.", Enum!ChannelPolicy.toString(policy));
-                if (settings.flush) stdout.flush();
-            }
-
-            static if (policy == ChannelPolicy.home)
+            static if (!hasUDA!(fun, ChannelPolicy) ||
+                getUDAs!(fun, ChannelPolicy)[0] == ChannelPolicy.home)
             {
                 import std.algorithm.searching : canFind;
+
+                // Default policy if none given is `ChannelPolicy.home`
+
+                static if (verbose)
+                {
+                    writeln("...ChannelPolicy.home");
+                    if (settings.flush) stdout.flush();
+                }
 
                 if (!event.channel.length)
                 {
@@ -552,19 +545,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
 
                     // channel policy does not match
-                    return Next.continue_;  // next function
+                    return Next.continue_;  // next fun
                 }
-            }
-            else static if (policy == ChannelPolicy.any)
-            {
-                // drop down, no need to check
             }
             else
             {
-                import std.format : format;
-                static assert(0, ("Logic error; `%s` is annotated with " ~
-                    "an unexpected `ChannelPolicy`")
-                    .format(fullyQualifiedName!fun));
+                static if (verbose)
+                {
+                    writeln("...ChannelPolicy.any");
+                    if (settings.flush) stdout.flush();
+                }
             }
 
             static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
