@@ -985,10 +985,10 @@ private:
     /++
      +  Sends a channel message.
      +/
-    void chan(Flag!"priority" priority = No.priority)(const string channel,
-        const string content, bool quiet = kameloso.common.settings.hideOutgoing)
+    void chan(Flag!"priority" priority = No.priority)(const string channel, const string content)
     {
-        return kameloso.messaging.chan!priority(privateState, channel, content, quiet);
+        return kameloso.messaging.chan!priority(privateState, channel, content,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -996,10 +996,10 @@ private:
     /++
      +  Sends a private query message to a user.
      +/
-    void query(Flag!"priority" priority = No.priority)(const string nickname,
-        const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+    void query(Flag!"priority" priority = No.priority)(const string nickname, const string content)
     {
-        return kameloso.messaging.query!priority(privateState, nickname, content, quiet);
+        return kameloso.messaging.query!priority(privateState, nickname, content,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1012,9 +1012,10 @@ private:
      +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!priority(privateState, channel, nickname, content, quiet);
+        return kameloso.messaging.privmsg!priority(privateState, channel,
+            nickname, content, privateState.settings.hideOutgoing);
     }
 
 
@@ -1023,9 +1024,10 @@ private:
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     void emote(Flag!"priority" priority = No.priority)(const string emoteTarget,
-        const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string content)
     {
-        return kameloso.messaging.emote!priority(privateState, emoteTarget, content, quiet);
+        return kameloso.messaging.emote!priority(privateState, emoteTarget,
+            content, privateState.settings.hideOutgoing);
     }
 
 
@@ -1036,10 +1038,10 @@ private:
      +  This includes modes that pertain to a user in the context of a channel, like bans.
      +/
     void mode(Flag!"priority" priority = No.priority)(const string channel,
-        const string modes, const string content = string.init,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string modes, const string content = string.init)
     {
-        return kameloso.messaging.mode!priority(privateState, channel, modes, content, quiet);
+        return kameloso.messaging.mode!priority(privateState, channel, modes,
+            content, privateState.settings.hideOutgoing);
     }
 
 
@@ -1047,10 +1049,10 @@ private:
     /++
      +  Sets the topic of a channel.
      +/
-    void topic(Flag!"priority" priority = No.priority)(const string channel,
-        const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+    void topic(Flag!"priority" priority = No.priority)(const string channel, const string content)
     {
-        return kameloso.messaging.topic!priority(privateState, channel, content, quiet);
+        return kameloso.messaging.topic!priority(privateState, channel, content,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1058,10 +1060,10 @@ private:
     /++
      +  Invites a user to a channel.
      +/
-    void invite(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const bool quiet = kameloso.common.settings.hideOutgoing)
+    void invite(Flag!"priority" priority = No.priority)(const string channel, const string nickname)
     {
-        return kameloso.messaging.invite!priority(privateState, channel, nickname, quiet);
+        return kameloso.messaging.invite!priority(privateState, channel,
+            nickname, privateState.settings.hideOutgoing);
     }
 
 
@@ -1070,9 +1072,10 @@ private:
      +  Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)(const string channel,
-        const string key = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string key = string.init)
     {
-        return kameloso.messaging.join!priority(privateState, channel, key, quiet);
+        return kameloso.messaging.join!priority(privateState, channel, key,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1081,10 +1084,10 @@ private:
      +  Kicks a user from a channel.
      +/
     void kick(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string reason = string.init,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string nickname, const string reason = string.init)
     {
-        return kameloso.messaging.kick!priority(privateState, channel, nickname, reason, quiet);
+        return kameloso.messaging.kick!priority(privateState, channel, nickname,
+            reason, privateState.settings.hideOutgoing);
     }
 
 
@@ -1093,9 +1096,10 @@ private:
      +  Leaves a channel.
      +/
     void part(Flag!"priority" priority = No.priority)(const string channel,
-        const string reason = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string reason = string.init)
     {
-        return kameloso.messaging.part!priority(privateState, channel, reason, quiet);
+        return kameloso.messaging.part!priority(privateState, channel, reason,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1103,10 +1107,10 @@ private:
     /++
      +  Disconnects from the server, optionally with a quit reason.
      +/
-    void quit(Flag!"priority" priority = No.priority)(const string reason = string.init,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+    void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
     {
-        return kameloso.messaging.quit!priority(privateState, reason, quiet);
+        return kameloso.messaging.quit!priority(privateState, reason,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1115,10 +1119,10 @@ private:
      +  Queries the server for WHOIS information about a user.
      +/
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
-        const bool force = false, const bool quiet = kameloso.common.settings.hideOutgoing,
-        const string caller = __FUNCTION__)
+        const bool force = false, const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.whois!priority(privateState, nickname, force, quiet, caller);
+        return kameloso.messaging.whois!priority(privateState, nickname, force,
+            privateState.settings.hideOutgoing, caller);
     }
 
     // raw
@@ -1128,10 +1132,10 @@ private:
      +  This is used to send messages of types for which there exist no helper
      +  functions.
      +/
-    void raw(Flag!"priority" priority = No.priority)(const string line,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+    void raw(Flag!"priority" priority = No.priority)(const string line)
     {
-        return kameloso.messaging.raw!priority(privateState, line, quiet);
+        return kameloso.messaging.raw!priority(privateState, line,
+            privateState.settings.hideOutgoing);
     }
 
 
