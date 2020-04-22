@@ -23,6 +23,9 @@ shared static this()
 
     // This is technically before settings have been read...
     logger = new KamelosoLogger;
+
+    // settings needs instantiating now.
+    settings = new CoreSettings;
 }
 
 
