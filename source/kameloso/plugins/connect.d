@@ -456,7 +456,8 @@ void onEndOfMotdTwitch(ConnectService service)
 
     if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    settings.colouredOutgoing = false;
+    service.state.settings.colouredOutgoing = false;
+    service.state.settingsUpdated = true;
 
     if (settings.prefix.beginsWith(".") || settings.prefix.beginsWith("/"))
     {
