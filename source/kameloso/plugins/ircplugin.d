@@ -1585,15 +1585,16 @@ version(unittest)
  +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +      policy = Policy to apply.
  +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      prefix = The prefix as set in the program-wide settings.
  +
  +  Returns:
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
  +/
 bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
-    const PrefixPolicy policy, const IRCClient client)
+    const PrefixPolicy policy, const IRCClient client, const string prefix)
 {
-    import kameloso.common : settings, stripSeparatedPrefix;
+    import kameloso.common : stripSeparatedPrefix;
     import lu.string : beginsWith, nom;
     import std.typecons : No, Yes;
 
@@ -1616,14 +1617,14 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
         return true;
 
     case prefixed:
-        if (settings.prefix.length && content.beginsWith(settings.prefix))
+        if (prefix.length && content.beginsWith(prefix))
         {
             static if (verbose)
             {
-                writefln("starts with prefix (%s)", settings.prefix);
+                writefln("starts with prefix (%s)", prefix);
             }
 
-            content.nom!(Yes.decode)(settings.prefix);
+            content.nom!(Yes.decode)(prefix);
         }
         else
         {
