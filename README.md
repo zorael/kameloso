@@ -9,7 +9,8 @@
 * logs
 * echoing titles of pasted URLs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
-* saving `notes` to offline users that get played back when they come online
+* saving notes to offline users that get played back when they come online
+* channel polls
 * works on **Twitch**, including basic [streamer assistant plugin](source/kameloso/plugins/twitchbot.d) (not compiled in by default)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
@@ -110,7 +111,7 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd v2.089.0 or later** (at time of writing, February 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use **ldc**, or to build with the `--build-mode=singleFile` flag appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
+On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use **ldc**, or to build with the `--build-mode=singleFile` flag appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
 
 ### Build configurations
 
@@ -119,13 +120,11 @@ There are several configurations in which the bot may be built.
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
 * `web`, compiles in extra plugins with web access
-* `full`, includes both of the above plus Twitch chat support
-* `twitch`, everything so far, plus the Twitch streamer bot
-* `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours` and `web`
-* `windows`, default on Windows, also equals `colours` and `web`
+* `application`, includes both of the above plus Twitch chat support
+* `twitch`, everything so far, plus the Twitch streamer bot plugin
 * `dev`, development build equalling everything available, including things like more error messages
 
-List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
+List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
 ```sh
 $ dub build -c twitch
@@ -218,7 +217,7 @@ kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaron
 
 ### Online help and commands
 
-Use the `help` command for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
+Use the `help` command for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one.
 
 The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
@@ -231,14 +230,14 @@ It can technically be any string and not just one character. It may include spac
 
 ## Twitch
 
-To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `full` or `twitch`. You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`. You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
 ```ini
 [IRCBot]
 nickname            twitchaccount
 pass                oauth:the50letteroauthstringgoeshere
-homes               #twitchaccount
-channels            #streamer1,#streamer2,#streamer3
+homeChannels        #twitchaccount
+guestChannels       #streamer1,#streamer2,#streamer3
 
 [IRCServer]
 address             irc.chat.twitch.tv
@@ -249,20 +248,18 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Streamer assistant bot
 
-The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. (Configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.)
+The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. As previously alluded to, configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.
 
 ```sh
 $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --writeconfig
 ```
 
-Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit` (alongside `!operator`, `!whitelist`, `!blacklist`, and other non-Twitch-specific commands.)
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit` (alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, and other non-Twitch-specific commands.)
 
 > Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
-
-Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
 
 ## Further help
 
