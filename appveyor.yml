@@ -64,18 +64,18 @@ environment:
       arch: x64
       dubArgs:
       Ddflags:
-    - DC: ldc
-      DVersion: 1.19.0
-      DSubversion:
-      arch: x64
-      dubArgs:
-      Ddflags:
-    - DC: ldc
-      DVersion: 1.18.0
-      DSubversion:
-      arch: x64
-      dubArgs:
-      Ddflags:
+    #- DC: ldc
+      #DVersion: 1.19.0
+      #DSubversion:
+      #arch: x64
+      #dubArgs:
+      #Ddflags:
+    #- DC: ldc
+      #DVersion: 1.18.0
+      #DSubversion:
+      #arch: x64
+      #dubArgs:
+      #Ddflags:
     - DC: ldc
       DVersion: 1.14.0
       DSubversion:
