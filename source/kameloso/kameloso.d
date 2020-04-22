@@ -820,6 +820,14 @@ Next mainLoop(ref Kameloso instance)
                         processReplays(instance, plugin.state.replays);
                         plugin.processAwaitingFibers(event);
                     }
+                    catch (NomException e)
+                    {
+                        logger.warningf(`Nom Exception %s: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
+                            plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
+
+                        printEventDebugDetails(event, attempt.line);
+                        version(PrintStacktraces) logger.trace(e.info);
+                    }
                     catch (UTFException e)
                     {
                         logger.warningf("UTFException %s: %s%s",
