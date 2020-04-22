@@ -46,15 +46,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             return;
         }
 
-        version(TwitchSupport)
-        {
-            if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
-                (user.nickname == "jtv"))
-            {
-                return;
-            }
-        }
-
         /++
          +  Tries to apply any permanent class for a user in a channel, and if
          +  none available, tries to set one that seems to apply based on what
