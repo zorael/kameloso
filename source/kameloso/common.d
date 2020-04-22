@@ -556,24 +556,6 @@ struct Kameloso
             try
             {
                 plugin.teardown();
-
-                if (plugin.state.botUpdated)
-                {
-                    plugin.state.botUpdated = false;
-                    propagateBot(plugin.state.bot);
-                }
-
-                if (plugin.state.clientUpdated)
-                {
-                    plugin.state.clientUpdated = false;
-                    propagateClient(parser.client);
-                }
-
-                if (plugin.state.serverUpdated)
-                {
-                    plugin.state.serverUpdated = false;
-                    propagateServer(parser.server);
-                }
             }
             catch (ErrnoException e)
             {
