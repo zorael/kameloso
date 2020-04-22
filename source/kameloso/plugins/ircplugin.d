@@ -518,7 +518,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (verbose)
             {
                 writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                if (settings.flush) stdout.flush();
+                if (privateState.settings.flush) stdout.flush();
             }
 
             static if (!hasUDA!(fun, ChannelPolicy) ||
@@ -531,7 +531,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.home");
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
 
                 if (!event.channel.length)
@@ -543,7 +543,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...ignore non-home channel ", event.channel);
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     // channel policy does not match
@@ -555,7 +555,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.any");
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
             }
 
@@ -596,7 +596,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writefln(`...BotCommand "%s"`, commandUDA.word);
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     // Reset between iterations as we nom the contents
@@ -607,7 +607,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("...policy doesn't match; continue next BotCommand");
-                            if (settings.flush) stdout.flush();
+                            if (privateState.settings.flush) stdout.flush();
                         }
 
                         continue;  // next BotCommand UDA
@@ -626,7 +626,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("...command matches!");
-                            if (settings.flush) stdout.flush();
+                            if (privateState.settings.flush) stdout.flush();
                         }
 
                         mutEvent.aux = thisCommand;
@@ -655,7 +655,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("BotRegex: `", regexUDA.expression, "`");
-                            if (settings.flush) stdout.flush();
+                            if (privateState.settings.flush) stdout.flush();
                         }
 
                         // Reset between iterations; BotCommands may have altered it
@@ -666,7 +666,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writeln("...policy doesn't match; continue next BotRegex");
-                                if (settings.flush) stdout.flush();
+                                if (privateState.settings.flush) stdout.flush();
                             }
 
                             continue;  // next BotRegex UDA
@@ -683,7 +683,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 static if (verbose)
                                 {
                                     writeln("...expression matches!");
-                                    if (settings.flush) stdout.flush();
+                                    if (privateState.settings.flush) stdout.flush();
                                 }
 
                                 mutEvent.aux = hits[0];
@@ -705,7 +705,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             {
                                 writeln("...BotRegex exception: ", e.msg);
                                 version(PrintStacktraces) writeln(e.toString);
-                                if (settings.flush) stdout.flush();
+                                if (privateState.settings.flush) stdout.flush();
                             }
                             continue;  // next BotRegex
                         }
@@ -721,7 +721,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...neither BotCommand nor BotRegex matched; continue funloop");
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     return Next.continue_; // next function
@@ -749,7 +749,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
 
                 static if (__traits(hasMember, this, "allow") && isSomeFunction!(this.allow))
@@ -767,7 +767,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...custom allow!");
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     immutable result = this.allow(mutEvent, privilegeLevel);
@@ -777,7 +777,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...built-in allow.");
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     immutable result = allowImpl(mutEvent, privilegeLevel);
@@ -786,7 +786,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...result is ", Enum!FilterResult.toString(result));
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
 
                 with (FilterResult)
@@ -806,7 +806,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writefln("...%s WHOIS", typeof(this).stringof);
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
@@ -844,7 +844,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (verbose)
             {
                 writeln("...calling!");
-                if (settings.flush) stdout.flush();
+                if (privateState.settings.flush) stdout.flush();
             }
 
             static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
