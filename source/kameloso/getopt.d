@@ -233,13 +233,13 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : printVersionInfo;
     import kameloso.config : applyDefaults, readConfigInto;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
 
-    scope(exit) if (settings.flush) stdout.flush();
+    scope(exit) if (instance.settings.flush) stdout.flush();
 
     bool shouldWriteConfig;
     bool shouldShowVersion;
