@@ -690,6 +690,28 @@ struct Kameloso
     }
 
 
+    // propagateSettings
+    /++
+     +  Takes a `kameloso.common.CoreSettings` and passes it out to all plugins.
+     +
+     +  This is called when a change to the bot has occurred and we want to
+     +  update all plugins to have a current copy of it.
+     +
+     +  Params:
+     +      sttings = `kameloso.common.CoreSettings` to propagate to all plugins.
+     +/
+    void propagateSettings(CoreSettings settings) nothrow @nogc
+    {
+        // Inherit the changes ourselves
+        .settings = settings;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.settings = settings;
+        }
+    }
+
+
     // ConnectionHistoryEntry
     /++
      +  A record of a successful connection.
