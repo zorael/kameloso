@@ -623,6 +623,13 @@ struct Kameloso
                 plugin.state.serverUpdated = false;
                 propagateServer(plugin.state.server);
             }
+
+            if (plugin.state.settingsUpdated)
+            {
+                // Something changed the settings; propagate
+                plugin.state.settingsUpdated = false;
+                propagateSettings(plugin.state.settings);
+            }
         }
     }
 
