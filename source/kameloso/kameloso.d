@@ -231,8 +231,13 @@ void messageFiber(ref Kameloso instance)
 
             version(TwitchSupport)
             {
-                bool fast;
+                immutable fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                    (event.num == 999);
             }
+
+            immutable background = (event.altcount == 999);
+            immutable quiet = instance.settings.hideOutgoing ||
+                (event.target.class_ == IRCUser.Class.admin);
 
             string line;
             string prelude;
@@ -244,12 +249,6 @@ void messageFiber(ref Kameloso instance)
             switch (event.type)
             {
             case CHAN:
-                version(TwitchSupport)
-                {
-                    fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
-                        (event.num == 999);
-                }
-
                 prelude = "PRIVMSG %s :".format(channel);
                 lines = content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
@@ -282,7 +281,6 @@ void messageFiber(ref Kameloso instance)
                     {
                         prelude = "PRIVMSG %s :/me ".format(emoteTarget);
                         line = content;
-                        fast = (event.num == 999);
                     }
                 }
 
@@ -359,9 +357,6 @@ void messageFiber(ref Kameloso instance)
                 {
                     import std.stdio : stdout, writef, writefln, writeln;
 
-                    immutable quiet = (event.target.class_ == IRCUser.Class.admin);
-                    immutable background = (event.altcount == 999);
-
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", event.target.nickname,
                         event.aux, quiet, background);
@@ -408,22 +403,17 @@ void messageFiber(ref Kameloso instance)
                     if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
-                        immutable quiet = instance.settings.hideOutgoing ||
-                            (event.target.class_ == IRCUser.Class.admin);
                         instance.fastbuffer.put(OutgoingLine(finalLine, quiet));
                         return;
                     }
                 }
 
-                if (event.altcount == 999)
+                if (background)
                 {
                     // Send a line via the low-priority background buffer.
-                    immutable quiet = instance.settings.hideOutgoing ||
-                        (event.target.class_ == IRCUser.Class.admin);
                     instance.backgroundBuffer.put(OutgoingLine(finalLine, quiet));
-                    return;
                 }
-                else if (event.target.class_ == IRCUser.Class.admin)
+                else if (quiet)
                 {
                     quietline(ThreadMessage.Quietline(), finalLine);
                 }
