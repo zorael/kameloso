@@ -471,6 +471,7 @@ struct Kameloso
         state.server = parser.server;
         state.bot = this.bot;
         state.mainThread = thisTid;
+        state.settings = .settings;
         immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length);
