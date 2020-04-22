@@ -254,9 +254,6 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
     {
     case "add":
         // !automode add nickname mode
-        //                       1
-        if (line.count(' ') != 1) goto default;
-
         string nickname;
         string mode;
 
