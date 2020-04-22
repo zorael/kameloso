@@ -493,30 +493,9 @@ struct LogLineBuffer
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.printerSettings.logs) return;  // Allow for disabled printer to still log
-
-    // Ignore some types that would only show up in the log with the bot's name.
-    with (IRCEvent.Type)
-    switch (event.type)
-    {
-    case SELFMODE:
-        // Add more types as they are found
-        return;
-
-    default:
-        break;
-    }
-
-    import std.algorithm.searching : canFind;
-
-    if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && !plugin.state.bot.homeChannels.canFind(event.channel))
-    {
-        // Not logging all channels and this is not a home.
-        return;
-    }
-
     import std.typecons : Flag, No, Yes;
+
+    if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
     void writeEventToFile(const string key, const string givenPath = string.init,
@@ -693,9 +672,19 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         }
     }
 
+    // Write raw (if we should) before exiting early due to not a home (if we should)
     if (plugin.printerSettings.logRaw)
     {
         writeEventToFile("<raw>", "raw.log", No.extendPath, Yes.raw);
+    }
+
+    import std.algorithm.searching : canFind;
+
+    if (!plugin.printerSettings.logAllChannels &&
+        event.channel.length && !plugin.state.bot.homeChannels.canFind(event.channel))
+    {
+        // Not logging all channels and this is not a home.
+        return;
     }
 
     with (IRCEvent.Type)
@@ -704,6 +693,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     switch (event.type)
     {
     case PING:
+    case SELFMODE:
         // Not of formatted loggable interest (raw will have been logged above)
         return;
 
