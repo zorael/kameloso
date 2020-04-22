@@ -665,6 +665,100 @@ void initResources(PersistenceService service)
 }
 
 
+// initHostmaskResources
+/++
+ +  Reads, completes and saves the user classification JSON file, creating one
+ +  if one doesn't exist. Removes any duplicate entries.
+ +
+ +  This ensures there will be "whitelist", "operator" and "blacklist" arrays in it.
+ +
+ +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
+ +      failure loading the `user.json` file.
+ +/
+void initHostmaskResources(PersistenceService service)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException, JSONValue;
+
+    JSONStorage json;
+    json.reset();
+
+    try
+    {
+        json.load(service.hostmasksFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.common : logger;
+        import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
+        throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
+    static auto deduplicate(JSONValue before)
+    {
+        import std.algorithm.iteration : filter, uniq;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
+
+        auto after = before
+            .array
+            .sort!((a,b) => a.str < b.str)
+            .uniq
+            .filter!((a) => a.str.length > 0)
+            .array;
+
+        return JSONValue(after);
+    }
+
+    /+
+    unittest
+    {
+        auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
+        assert((users.array.length == 5), users.array.length.text);
+
+        users = deduplicated(users);
+        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
+    }+/
+
+    import std.range : only;
+
+    foreach (liststring; only("operator", "whitelist", "blacklist"))
+    {
+        if (liststring !in json)
+        {
+            json[liststring] = null;
+            json[liststring].object = null;
+        }
+        else
+        {
+            try
+            {
+                foreach (immutable channel, ref channelAccountsJSON; json[liststring].object)
+                {
+                    channelAccountsJSON = deduplicate(json[liststring][channel]);
+                }
+            }
+            catch (JSONException e)
+            {
+                import kameloso.common : logger;
+                import std.path : baseName;
+
+                version(PrintStacktraces) logger.trace(e.toString);
+                throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
+            }
+        }
+    }
+
+    // Force operator and whitelist to appear before blacklist in the .json
+    static immutable order = [ "operator", "whitelist", "blacklist" ];
+    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.hostmasksFile, order);
+}
+
+
 public:
 
 
