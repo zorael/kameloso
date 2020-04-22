@@ -498,7 +498,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
-    void writeEventToFile(const string key, const string givenPath = string.init,
+    static void writeEventToFile(PrinterPlugin plugin, const IRCEvent event,
+        const string key, const string givenPath = string.init,
         Flag!"extendPath" extendPath = Yes.extendPath, Flag!"raw" raw = No.raw)
     {
         import std.exception : ErrnoException;
@@ -675,7 +676,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     // Write raw (if we should) before exiting early due to not a home (if we should)
     if (plugin.printerSettings.logRaw)
     {
-        writeEventToFile("<raw>", "raw.log", No.extendPath, Yes.raw);
+        writeEventToFile(plugin, event, "<raw>", "raw.log", No.extendPath, Yes.raw);
     }
 
     import std.algorithm.searching : canFind;
@@ -716,14 +717,14 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (sender.nickname in foreachChannel.users)
             {
                 // Channel message
-                writeEventToFile(channelName);
+                writeEventToFile(plugin, event, channelName);
             }
         }
 
         if (sender.nickname.length && sender.nickname in plugin.buffers)
         {
             // There is an open query buffer; write to it too
-            writeEventToFile(sender.nickname);
+            writeEventToFile(plugin, event, sender.nickname);
         }
         break;
 
@@ -747,17 +748,17 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (channel.length && (sender.nickname.length || type == MODE))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeEventToFile(channel);
+            writeEventToFile(plugin, event, channel);
         }
         else if (sender.nickname.length)
         {
             // Implicitly not a channel; query
-            writeEventToFile(sender.nickname);
+            writeEventToFile(plugin, event, sender.nickname);
         }
         else if (printerSettings.logServer && !sender.nickname.length && sender.address.length)
         {
             // Server
-            writeEventToFile(state.server.address, "server.log", No.extendPath);
+            writeEventToFile(plugin, event, state.server.address, "server.log", No.extendPath);
         }
         else
         {
