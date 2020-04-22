@@ -1812,7 +1812,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
  +/
 struct IRCPluginState
 {
-    import kameloso.common : IRCBot;
+    import kameloso.common : CoreSettings, IRCBot;
     import kameloso.thread : ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -1834,6 +1834,11 @@ struct IRCPluginState
      +  to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
+
+    /++
+     +  The current program-wide `kameloso.common.CoreSettings`.
+     +/
+    CoreSettings settings;
 
     /// Thread ID to the main thread.
     Tid mainThread;
@@ -1904,4 +1909,7 @@ struct IRCPluginState
 
     /// Whether or not `server` was altered. Must be reset manually.
     bool serverUpdated;
+
+    /// Whether or not `settings` was altered. Must be reset manually.
+    bool settingsUpdated;
 }
