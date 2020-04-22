@@ -243,7 +243,7 @@ unittest
 void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith, nom;
+    import lu.string : SplitResults, beginsWith, nom, splitInto;
     import std.algorithm.searching : count;
 
     string line = event.content;  // mutable
@@ -257,15 +257,17 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
         //                       1
         if (line.count(' ') != 1) goto default;
 
-        immutable nickname = line.nom(' ');
+        string nickname;
+        string mode;
+
+        immutable result = line.splitInto(nickname, mode);
+        if (result != SplitResults.match) goto default;
 
         if (!nickname.isValidNickname(plugin.state.server))
         {
             chan(plugin.state, event.channel, "Invalid nickname.");
             return;
         }
-
-        string mode = line;
 
         if (mode.beginsWith('-'))
         {
