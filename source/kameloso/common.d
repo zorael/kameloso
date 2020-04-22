@@ -636,7 +636,7 @@ struct Kameloso
 
     // propagateClient
     /++
-     +  Takes a `dialect.defs.IRCClient` and passes it out to all plugins.
+     +  Takes an `dialect.defs.IRCClient` and passes it out to all plugins.
      +
      +  This is called when a change to the client has occurred and we want to
      +  update all plugins to have a current copy of it.
@@ -657,7 +657,7 @@ struct Kameloso
 
     // propagateServer
     /++
-     +  Takes a `dialect.defs.IRCServer` and passes it out to all plugins.
+     +  Takes an `dialect.defs.IRCServer` and passes it out to all plugins.
      +
      +  This is called when a change to the server has occurred and we want to
      +  update all plugins to have a current copy of it.
@@ -678,7 +678,7 @@ struct Kameloso
 
     // propagateBot
     /++
-     +  Takes a `kameloso.common.IRCBot` and passes it out to all plugins.
+     +  Takes an `kameloso.common.IRCBot` and passes it out to all plugins.
      +
      +  This is called when a change to the bot has occurred and we want to
      +  update all plugins to have a current copy of it.
