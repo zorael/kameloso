@@ -10,7 +10,7 @@ mainSourceFile "source/kameloso/main.d"
 dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>0.3.0"
+dependency "lu" version="~>0.3.3"
 dependency "dialect" version="~>0.5.1"
 
 sourcePaths "source"
