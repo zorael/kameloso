@@ -1015,12 +1015,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (isAnnotated!(this.tupleof[i], Resource))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(settings.resourceDirectory, member).expandTilde;
+                    member = buildNormalizedPath(privateState.settings.resourceDirectory, member)
+                        .expandTilde;
                 }
                 else static if (isAnnotated!(this.tupleof[i], Configuration))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(settings.configDirectory, member).expandTilde;
+                    member = buildNormalizedPath(privateState.settings.configDirectory, member)
+                        .expandTilde;
                 }
             }
         }
