@@ -374,8 +374,14 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
 
         if (pluginstring == "core")
         {
-            import kameloso.common : initLogger, settings;
+            import kameloso.common : initLogger;
             import lu.objmanip : setMemberByName;
+
+            if (!plugins.length) return false;
+
+            // Get a copy of the settings from the first plugin and modify it,
+            // flag it as updated and pass it around.
+            auto settings = plugins[0].state.settings;
 
             try
             {
@@ -397,7 +403,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                     foreach (plugin; plugins)
                     {
                         plugin.state.settings = settings;
-                        //plugin.state.settingsUpdated = true;
+                        plugin.state.settingsUpdated = true;
                     }
                 }
             }
