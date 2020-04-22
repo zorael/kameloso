@@ -1710,15 +1710,17 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +      state = Reference to the `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
+ +      useHostmasks = Whether we're using hostmasks to identify users, or
+ +          services accounts. There's no point with WHOIS if we're basing
+ +          authentication on hostmasks.
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
-    const PrivilegeLevel level) @safe
+    const PrivilegeLevel level, const bool useHostmasks) @safe
 {
-    import kameloso.common : settings;
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
 
@@ -1736,7 +1738,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     immutable timediff = (event.time - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
-    if (settings.useHostmasks || event.sender.account.length)
+    if (useHostmasks || event.sender.account.length)
     {
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
         immutable isOperator = (class_ == IRCUser.Class.operator);
@@ -1761,7 +1763,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
         }
         else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
-            return (whoisExpired && !settings.useHostmasks) ?
+            return (whoisExpired && !useHostmasks) ?
                 FilterResult.whois : FilterResult.pass;
         }
         else if (level == PrivilegeLevel.ignore)
