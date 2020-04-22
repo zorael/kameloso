@@ -716,7 +716,7 @@ struct Kameloso
     void propagateSettings(CoreSettings settings) nothrow @nogc
     {
         // Inherit the changes ourselves
-        .settings = settings;
+        this.settings = settings;
 
         foreach (plugin; plugins)
         {
