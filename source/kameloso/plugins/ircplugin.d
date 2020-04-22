@@ -602,7 +602,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     // Reset between iterations as we nom the contents
                     mutEvent = event;
 
-                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy, privateState.client))
+                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy,
+                        privateState.client, privateState.settings.prefix))
                     {
                         static if (verbose)
                         {
@@ -661,7 +662,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Reset between iterations; BotCommands may have altered it
                         mutEvent = event;
 
-                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy, privateState.client))
+                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy,
+                            privateState.client, privateState.settings.prefix))
                         {
                             static if (verbose)
                             {
