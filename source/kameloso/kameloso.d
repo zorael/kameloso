@@ -799,6 +799,13 @@ Next mainLoop(ref Kameloso instance)
                         plugin.state.serverUpdated = false;
                         instance.propagateServer(plugin.state.server);
                     }
+
+                    if (plugin.state.settingsUpdated)
+                    {
+                        // Something changed the settings; propagate
+                        plugin.state.settingsUpdated = false;
+                        instance.propagateSettings(plugin.state.settings);
+                    }
                 }
 
                 // Successful parse; record as such
