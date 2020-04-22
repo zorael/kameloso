@@ -1718,6 +1718,7 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
 FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     const PrivilegeLevel level) @safe
 {
+    import kameloso.common : settings;
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
 
@@ -1735,7 +1736,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     immutable timediff = (event.time - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
-    if (event.sender.account.length)
+    if (settings.useHostmasks || event.sender.account.length)
     {
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
         immutable isOperator = (class_ == IRCUser.Class.operator);
@@ -1760,7 +1761,8 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
         }
         else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
-            return whoisExpired ? FilterResult.whois : FilterResult.pass;
+            return (whoisExpired && !settings.useHostmasks) ?
+                FilterResult.whois : FilterResult.pass;
         }
         else if (level == PrivilegeLevel.ignore)
         {
