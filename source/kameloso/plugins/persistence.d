@@ -486,8 +486,14 @@ private:
     /// File with user definitions.
     @Resource string userFile = "users.json";
 
+    /// File with hostmasks
+    @Resource string usermasksFile = "usermasks.json";
+
     /// Associative array of permanent user classifications, per account and channel name.
     IRCUser.Class[string][string] channelUsers;
+
+    /// FIXME
+    IRCUser.Class[IRCUser][string] channelUsermasks;
 
     /// Associative array of which channel the latest class lookup for an account related to.
     string[string] userClassCurrentChannelCache;
