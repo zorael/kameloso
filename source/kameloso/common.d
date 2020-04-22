@@ -267,6 +267,11 @@ struct Kameloso
     IRCPlugin[] plugins;
 
     /++
+     +  The root copy of the program-wide settings.
+     +/
+    CoreSettings settings;
+
+    /++
      +  When a nickname was last issued a WHOIS query for, for hysteresis
      +  and rate-limiting.
      +/
