@@ -1693,7 +1693,8 @@ if (isOutputRange!(Sink, char[]))
                 {
                     if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        highlightEmotes(event, plugin.printerSettings.colourfulEmotes);
+                        highlightEmotes(event, plugin.printerSettings.colourfulEmotes,
+                            plugin.state.settings.brightTerminal);
                     }
                 }
 
@@ -2391,10 +2392,12 @@ unittest
  +  Params:
  +      event = `dialect.defs.IRCEvent` whose content text to highlight.
  +      colourful = Whether or not emotes should be highlit in colours.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adapted to suit.
  +/
 version(Colours)
 version(TwitchSupport)
-void highlightEmotes(ref IRCEvent event, const bool colourful)
+void highlightEmotes(ref IRCEvent event, const bool colourful, const bool brightTerminal)
 {
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
@@ -2410,7 +2413,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     Appender!string sink;
     sink.reserve(event.content.length + 60);  // mostly +10
 
-    immutable TerminalForeground highlight = settings.brightTerminal ?
+    immutable TerminalForeground highlight = brightTerminal ?
         Bright.highlight : Dark.highlight;
 
     with (IRCEvent.Type)
@@ -2427,9 +2430,10 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
         else
         {
             // Emote but mixed text and emotes OR we're doing colorful emotes
-            immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
+            immutable TerminalForeground emoteFgBase = brightTerminal ?
                 Bright.emote : Dark.emote;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight, emoteFgBase, colourful);
+            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+                emoteFgBase, colourful, brightTerminal);
         }
         break;
 
@@ -2444,9 +2448,10 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
         else
         {
             // Normal content, normal text, normal emotes
-            immutable TerminalForeground contentFgBase = settings.brightTerminal ?
+            immutable TerminalForeground contentFgBase = brightTerminal ?
                 Bright.content : Dark.content;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase, colourful);
+            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+                contentFgBase, colourful, brightTerminal);
         }
         break;
 
@@ -2471,12 +2476,14 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
  +      pre = Terminal foreground tint to colour the emotes with.
  +      post = Terminal foreground tint to reset to after colouring an emote.
  +      colourful = Whether or not emotes should be highlit in colours.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adapted to suit.
  +/
 version(Colours)
 version(TwitchSupport)
 void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
     const string emotes, const TerminalForeground pre, const TerminalForeground post,
-    const bool colourful)
+    const bool colourful, const bool brightTerminal)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
@@ -2536,7 +2543,7 @@ if (isOutputRange!(Sink, char[]))
         immutable end = highlights[i].end;
 
         sink.put(dline[pos..start]);
-        sink.colourWith(colourful ? colourByHash(id, settings.brightTerminal) : pre);
+        sink.colourWith(colourful ? colourByHash(id, brightTerminal) : pre);
         sink.put(dline[start..end]);
         sink.colourWith(post);
 
