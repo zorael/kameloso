@@ -588,6 +588,69 @@ void reloadClassifiersFromDisk(PersistenceService service)
 }
 
 
+// reloadHostmaskClassifiersFromDisk
+/++
+ +  Reloads admin/whitelist/blacklist classifier definitions from disk.
+ +  Hostmask version.
+ +
+ +  Params:
+ +      service = The current `PersistenceService`.
+ +/
+void reloadHostmaskClassifiersFromDisk(PersistenceService service)
+{
+    import kameloso.common : logger;
+    import lu.json : JSONStorage;
+    import std.json : JSONException;
+
+    JSONStorage json;
+    json.reset();
+    json.load(service.hostmasksFile);
+
+    service.channelUsers.clear();
+
+    import lu.conv : Enum;
+    import std.range : only;
+
+    foreach (class_; only(IRCUser.Class.operator, IRCUser.Class.whitelist, IRCUser.Class.blacklist))
+    {
+        immutable list = Enum!(IRCUser.Class).toString(class_);
+        const listFromJSON = list in json;
+
+        if (!listFromJSON)
+        {
+            json[list] = null;
+            json[list].object = null;
+        }
+
+        try
+        {
+            foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
+            {
+                foreach (immutable hostmaskJSON; channelAccountJSON.array)
+                {
+                    if (channel !in service.channelUsers)
+                    {
+                        service.channelHostmasks[channel] = (IRCUser.Class[IRCUser]).init;
+                    }
+
+                    service.channelHostmasks[channel][IRCUser(hostmaskJSON.str)] = class_;
+                }
+            }
+        }
+        catch (JSONException e)
+        {
+            logger.warningf("JSON exception caught when populating %s: %s", list, e.msg);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
+    }
+}
+
+
 // initResources
 /++
  +  Reads, completes and saves the user classification JSON file, creating one
