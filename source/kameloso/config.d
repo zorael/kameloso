@@ -35,7 +35,6 @@ public:
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
-    import kameloso.common : settings;
     import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
     import std.array : Appender;

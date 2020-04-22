@@ -2399,7 +2399,6 @@ version(Colours)
 version(TwitchSupport)
 void highlightEmotes(ref IRCEvent event, const bool colourful, const bool brightTerminal)
 {
-    import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
     import kameloso.terminal : colourWith;
     import lu.string : contains;

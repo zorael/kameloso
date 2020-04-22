@@ -704,7 +704,6 @@ void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string li
 in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     list ~ " is not whitelist, operator nor blacklist")
 {
-    import kameloso.common : settings;
     import dialect.common : isValidNickname;
     import lu.string : contains, stripped;
     import std.range : only;

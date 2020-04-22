@@ -893,7 +893,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 @(ChannelPolicy.home)
 void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : findURLs, settings;
+    import kameloso.common : findURLs;
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
 

@@ -51,8 +51,6 @@ string hostmask(const IRCUser user)
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    import kameloso.common : settings;
-
     return service.state.settings.useHostmasks ?
         postprocessHostmasks(service, event) :
         postprocessAccounts(service, event);
