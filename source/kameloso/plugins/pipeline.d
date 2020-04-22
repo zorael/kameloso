@@ -19,7 +19,7 @@ private:
 
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
-import kameloso.common;
+import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;

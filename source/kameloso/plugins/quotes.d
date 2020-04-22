@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
-import kameloso.common : Tint, logger, settings;
+import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -104,7 +104,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         enum pattern = `"%s" is not a valid account or nickname.`;
 
-        immutable message = settings.colouredOutgoing ?
+        immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(specified.ircBold) :
             pattern.format(specified);
 
@@ -117,7 +117,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         enum pattern = "%s | %s";
 
-        immutable message = settings.colouredOutgoing ?
+        immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(nickname.ircColourByHash.ircBold, endQuote) :
             pattern.format(nickname, endQuote);
 
@@ -145,7 +145,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
             enum pattern = "No quote on record for %s";
 
-            immutable message = settings.colouredOutgoing ?
+            immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(replyUser.nickname.ircColourByHash.ircBold) :
                 pattern.format(replyUser.nickname);
 
@@ -224,7 +224,7 @@ in (line.length, "Tried to add an empty quote")
 
         enum pattern = "Quote for %s saved (%s on record)";
 
-        immutable message = settings.colouredOutgoing ?
+        immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(specified.ircColourByHash.ircBold,
                 plugin.quotes[specified].array.length.text.ircBold) :
             pattern.format(specified, plugin.quotes[specified].array.length);

@@ -400,7 +400,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
         version(Colours)
         {
-            if (!settings.monochrome)
+            if (!plugin.state.settings.monochrome)
             {
                 plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
                     plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
@@ -414,7 +414,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
                 plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
         }
 
-        if (settings.flush) stdout.flush();
+        if (plugin.state.settings.flush) stdout.flush();
         break;
     }
 }
@@ -940,7 +940,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
         version(Colours)
         {
-            if (!settings.monochrome)
+            if (!plugin.state.settings.monochrome)
             {
                 import kameloso.terminal : TerminalReset, colour;
                 enum tintresetColour = TerminalReset.all.colour.idup;
@@ -1420,7 +1420,7 @@ if (isOutputRange!(Sink, char[]))
 
     bool shouldBell;
 
-    immutable bright = settings.brightTerminal;
+    immutable bright = plugin.state.settings.brightTerminal;
 
     /++
      +  Outputs a terminal ANSI colour token based on the hash of the passed

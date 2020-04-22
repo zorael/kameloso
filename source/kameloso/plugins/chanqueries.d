@@ -61,7 +61,6 @@ enum ChannelState : ubyte
 @(IRCEvent.Type.PING)
 void startChannelQueries(ChanQueriesService service)
 {
-    import kameloso.common : settings;
     import core.thread : Fiber;
 
     if (service.querying) return;  // Try again next PING
@@ -80,7 +79,8 @@ void startChannelQueries(ChanQueriesService service)
         querylist ~= channelName;
     }
 
-    if (!querylist.length && !settings.eagerLookups) return;  // Continue anyway if eagerLookups
+    // Continue anyway if eagerLookups
+    if (!querylist.length && !service.state.settings.eagerLookups) return;
 
     void dg()
     {
@@ -204,7 +204,7 @@ void startChannelQueries(ChanQueriesService service)
         }
 
         // Stop here if we can't or are not interested in going further
-        if (!service.serverSupportsWHOIS || !settings.eagerLookups) return;
+        if (!service.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
 
         import kameloso.constants : Timeout;
 
