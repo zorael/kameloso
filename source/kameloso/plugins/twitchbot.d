@@ -79,7 +79,13 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string nickname = event.content.stripped.toLower;
-    if (!nickname.length) return;
+
+    if (!nickname.length)
+    {
+        chan(plugin.state, event.channel, "Usage: %s%s [nickname]"
+            .format(settings.prefix, event.aux));
+        return;
+    }
 
     if (nickname[0] == '@') nickname = nickname[1..$];
 
