@@ -110,6 +110,9 @@ struct CoreSettings
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
+    /// Flag denoting that usermask should be used instead of accounts to authenticate.
+    bool useHostmasks = false;
+
     /// Whether to connect to IPv6 addresses or only use IPV4 ones.
     bool ipv6 = true;
 
