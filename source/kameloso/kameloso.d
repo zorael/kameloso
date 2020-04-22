@@ -5,7 +5,8 @@ module kameloso.kameloso;
 
 private:
 
-import kameloso.common;
+import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
+    initLogger, logger, printVersionInfo;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import dialect;
@@ -1823,19 +1824,19 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +  Params:
  +      binaryPath = Full path to the current binary.
  +/
-void complainAboutMissingConfiguration(const string binaryPath)
+void complainAboutMissingConfiguration(const string configFile, const string binaryPath)
 {
     import std.file : exists;
     import std.path : baseName;
 
     logger.warning("Warning: No administrators nor home channels configured!");
 
-    if (settings.configFile.exists)
+    if (configFile.exists)
     {
         import kameloso.config : complainAboutIncompleteConfiguration;
 
         logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            Tint.info, settings.configFile, Tint.log);
+            Tint.info, configFile, Tint.log);
         complainAboutIncompleteConfiguration();
     }
     else
@@ -1885,7 +1886,7 @@ void preInstanceSetup()
  +
  +  This is called during early execution.
  +/
-void setupSettings()
+void setupSettings(ref CoreSettings settings)
 {
     import kameloso.platform : configurationBaseDirectory, currentPlatform, resourceBaseDirectory;
     import std.path : buildNormalizedPath;
@@ -2328,7 +2329,7 @@ int initBot(string[] args)
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
-    setupSettings();
+    setupSettings(instance.settings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
@@ -2402,7 +2403,7 @@ int initBot(string[] args)
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
-        complainAboutMissingConfiguration(args[0]);
+        complainAboutMissingConfiguration(instance.settings.configFile, args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)

@@ -60,9 +60,7 @@ Logger logger;
  +      bright = Whether the terminal has a bright background or not.
  +      flush = Whether or not to flush stdout after finishing writing to it.
  +/
-void initLogger(const bool monochrome = settings.monochrome,
-    const bool bright = settings.brightTerminal,
-    const bool flush = settings.flush)
+void initLogger(const bool monochrome, const bool bright, const bool flush)
 out (; (logger !is null), "Failed to initialise logger")
 do
 {
@@ -460,7 +458,8 @@ struct Kameloso
      +  Throws:
      +      `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
      +/
-    void initPlugins(const string[] customSettings, out string[][string] missingEntries,
+    void initPlugins(const string[] customSettings,
+        out string[][string] missingEntries,
         out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : EnabledPlugins;
