@@ -492,7 +492,8 @@ void onNick(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(PersistenceService service)
 {
-    service.reloadClassifiersFromDisk();
+    service.reloadAccountClassifiersFromDisk();
+    service.reloadHostmaskClassifiersFromDisk();
 }
 
 
@@ -504,7 +505,8 @@ void onEndOfMotd(PersistenceService service)
 void reload(PersistenceService service)
 {
     service.state.users.rehash();
-    service.reloadClassifiersFromDisk();
+    service.reloadAccountClassifiersFromDisk();
+    service.reloadHostmaskClassifiersFromDisk();
 }
 
 
@@ -526,14 +528,14 @@ void periodically(PersistenceService service, const long now)
 }
 
 
-// reloadClassifiersFromDisk
+// reloadAccountClassifiersFromDisk
 /++
  +  Reloads admin/whitelist/blacklist classifier definitions from disk.
  +
  +  Params:
  +      service = The current `PersistenceService`.
  +/
-void reloadClassifiersFromDisk(PersistenceService service)
+void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.common : logger;
     import lu.json : JSONStorage;
@@ -656,12 +658,23 @@ void reloadHostmaskClassifiersFromDisk(PersistenceService service)
  +  Reads, completes and saves the user classification JSON file, creating one
  +  if one doesn't exist. Removes any duplicate entries.
  +
- +  This ensures there will be a `"whitelist"` and `"blacklist"` array in it.
+ +  This ensures there will be "whitelist", "operator" and "blacklist" arrays in it.
  +
  +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
  +      failure loading the `user.json` file.
  +/
 void initResources(PersistenceService service)
+{
+    initAccountResources(service);
+    initHostmaskResources(service);
+}
+
+
+// initAccountResources
+/++
+ +  FIXME
+ +/
+void initAccountResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException, JSONValue;
