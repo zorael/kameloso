@@ -212,6 +212,208 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 }
 
 
+// postprocessHostmasks
+/++
+ +  Postprocesses an `dialect.defs.IRCEvent` from a hostmask perspective, e.g.
+ +  where no services are available and users are identified by their hostmasks.
+ +/
+void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
+{
+    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
+    {
+        import std.algorithm.searching : canFind;
+
+        if (!user.nickname.length) return;  // Ignore server events
+
+        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+            (user.nickname == service.state.client.nickname))
+        {
+            // On non-Twitch, ignore events originating from us
+            return;
+        }
+
+        static bool canFindByValueMask(const string[] array, const IRCUser user,
+            const IRCServer.CaseMapping caseMapping)
+        {
+            import dialect.common : matchesByMask;
+            import std.stdio;
+
+            writeln("canFindByValueMask: ", user.hostmask);
+
+            foreach (immutable thisMask; array)
+            {
+                import lu.string : contains;
+
+                writeln("...vs ", thisMask, "?");
+
+                if (!thisMask.contains('!'))
+                {
+                    writeln("not a hostmask!");
+                    continue;
+                }
+
+                if (matchesByMask(user, IRCUser(thisMask), caseMapping))
+                {
+                    writeln("yes!");
+                    return true;
+                }
+                else
+                {
+                    writeln("no...");
+                }
+            }
+
+            writeln("false.");
+            return false;
+        }
+
+        static IRCUser.Class classByMaskMatch(const IRCUser.Class[IRCUser] aa,
+            const IRCUser user, const IRCServer.CaseMapping caseMapping)
+        {
+            import dialect.common : matchesByMask;
+            import std.stdio;
+
+            writeln("classByMaskMatch: ", user.hostmask);
+
+            foreach (immutable thisUser, immutable class_; aa)
+            {
+                writeln("...vs ", thisUser.hostmask, "?");
+                if (matchesByMask(user, thisUser, caseMapping))
+                {
+                    writeln("yes! ", class_);
+                    return class_;
+                }
+                else
+                {
+                    writeln("no...");
+                }
+            }
+
+            writeln("anyone.");
+            return IRCUser.Class.anyone;
+        }
+
+        /++
+         +  Tries to apply any permanent class for a user in a channel, and if
+         +  none available, tries to set one that seems to apply based on what
+         +  the user looks like.
+         +/
+        static void applyClassifiers(PersistenceService service,
+            const IRCEvent event, ref IRCUser user)
+        {
+            import std.stdio;
+            writeln("applyClassifiers");
+
+            if (user.class_ == IRCUser.Class.admin)
+            {
+                writeln(user.nickname, " was already admin");
+                // Do nothing, admin is permanent and program-wide
+                return;
+            }
+            else if (canFindByValueMask(service.state.bot.admins, user,
+                service.state.server.caseMapping))
+            {
+                writeln("foudn an admin!", user.nickname);
+                // admin discovered
+                user.class_ = IRCUser.Class.admin;
+                return;
+            }
+            else if (event.channel.length)
+            {
+                if (const maskclasses = event.channel in service.channelHostmasks)
+                {
+                    // Permanent class may be defined; apply if so, default to anyone
+                    user.class_ = classByMaskMatch(*maskclasses, user,
+                        service.state.server.caseMapping);
+                }
+                else
+                {
+                    writeln("anyone 1");
+                    // No masks defined for this channel, user cannot possibly have a def
+                    user.class_ = IRCUser.Class.anyone;
+                }
+            }
+            else
+            {
+                writeln("anyone 2");
+                // All else failed, consider it a random
+                user.class_ = IRCUser.Class.anyone;
+            }
+
+            // Record this channel as being the one the current class_ applies to.
+            // That way we only have to look up a class_ when the channel has changed.
+            service.userClassCurrentChannelCache[user.nickname] = event.channel;
+        }
+
+        auto stored = user.nickname in service.state.users;
+        immutable foundNoStored = stored is null;
+
+        if (foundNoStored)
+        {
+            service.state.users[user.nickname] = user;
+            stored = user.nickname in service.state.users;
+        }
+
+        import lu.meld : MeldingStrategy, meldInto;
+
+        // Store initial class and restore after meld.
+        immutable preMeldClass = stored.class_;
+
+        // Meld into the stored user, and store the union in the event
+        // Skip if the current stored is just a direct copy of user
+        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
+
+        if (stored.class_ == IRCUser.Class.unset)
+        {
+            // The class was not changed, restore the previously saved one
+            stored.class_ = preMeldClass;
+        }
+
+        version(TwitchSupport)
+        {
+            // Clear badges if it has the empty placeholder asterisk
+            if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+                (stored.badges == "*"))
+            {
+                stored.badges = string.init;
+            }
+        }
+
+        if (stored.class_ == IRCUser.Class.admin)
+        {
+            // Do nothing, admin is permanent and program-wide
+        }
+        else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+            (stored.nickname == service.state.client.nickname))
+        {
+            stored.class_ = IRCUser.Class.admin;
+        }
+        else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
+        {
+            // Not a channel or not a home. Additionally not an admin nor us
+            stored.class_ = IRCUser.Class.anyone;
+            service.userClassCurrentChannelCache.remove(user.nickname);
+        }
+        else
+        {
+            const cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+
+            if (!cachedChannel || (*cachedChannel != event.channel))
+            {
+                // User has no cached channel. Alternatively, user's cached channel
+                // is different from this one; class likely differs.
+                applyClassifiers(service, event, *stored);
+            }
+        }
+
+        // Inject the modified user into the event
+        user = *stored;
+    }
+
+    postprocessImpl(service, event, event.sender);
+    postprocessImpl(service, event, event.target);
+}
+
 // onQuit
 /++
  +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
