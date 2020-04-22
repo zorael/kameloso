@@ -816,72 +816,25 @@ Next mainLoop(ref Kameloso instance)
                     try
                     {
                         plugin.onEvent(event);
-                    }
-                    catch (UTFException e)
-                    {
-                        logger.warningf("UTFException %s.onEvent: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        version(PrintStacktraces) logger.trace(e.info);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warningf("Exception %s.onEvent: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.toString);
-                    }
-
-                    checkUpdatesAndPropagate(instance, plugin);
-
-                    // Process repeats
-                    try
-                    {
                         plugin.processRepeats(instance);
-                    }
-                    catch (UTFException e)
-                    {
-                        logger.warningf("UTFException %s.processRepeats: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        version(PrintStacktraces) logger.trace(e.info);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warningf("Exception %s.processRepeats: %s%s",
-                            plugin.name, Tint.log, e.msg);
-
-                        printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.toString);
-                    }
-
-                    checkUpdatesAndPropagate(instance, plugin);
-
-                    // Process awaiting Fibers
-                    try
-                    {
+                        processReplays(instance, plugin.state.replays);
                         plugin.processAwaitingFibers(event);
                     }
                     catch (UTFException e)
                     {
-                        logger.warningf("UTFException %s.processAwaitingFibers: %s%s",
+                        logger.warningf("UTFException %s: %s%s",
                             plugin.name, Tint.log, e.msg);
                         version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
-                        logger.warningf("Exception %s.processAwaitingFibers: %s%s",
+                        logger.warningf("Exception %s: %s%s",
                             plugin.name, Tint.log, e.msg);
-
                         printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
 
                     checkUpdatesAndPropagate(instance, plugin);
-
-                    // Fetch any queued replays and process
-                    if (plugin.state.replays.length)
-                    {
-                        instance.processReplays(plugin.state.replays);
-                    }
                 }
 
                 with (IRCEvent.Type)
