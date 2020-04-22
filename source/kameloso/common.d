@@ -81,7 +81,7 @@ do
  +  `kameloso.common.settings`, so they know to use monochrome output or not.
  +  It is a problem that needs solving.
  +/
-CoreSettings settings;
+CoreSettings* settings;
 
 
 // CoreSettings

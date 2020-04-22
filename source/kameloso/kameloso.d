@@ -2319,8 +2319,11 @@ int initBot(string[] args)
     // Set up the terminal environment.
     preInstanceSetup();
 
+    static import kameloso.common;
+
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
+    kameloso.common.settings = &instance.settings;
     instance.abort = &abort;
     Attempt attempt;
 
