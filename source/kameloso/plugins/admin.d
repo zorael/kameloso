@@ -23,7 +23,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : Tint, logger, settings;
+import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -93,7 +93,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
-        if (settings.flush) stdout.flush();
+        if (plugin.state.settings.flush) stdout.flush();
     }
 
     if (plugin.adminSettings.printBytes)
@@ -105,7 +105,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
 
-        if (settings.flush) stdout.flush();
+        if (plugin.state.settings.flush) stdout.flush();
     }
 
     version(AdminAssertGeneration)
@@ -135,7 +135,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
                 plugin.previousClient = plugin.state.client;
             }
 
-            if (settings.flush) stdout.flush();
+            if (plugin.state.settings.flush) stdout.flush();
         }
     }
 }
@@ -169,7 +169,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
         }
         else
         {
-            immutable message = settings.colouredOutgoing ?
+            immutable message = plugin.state.settings.colouredOutgoing ?
                 "No such user: " ~ username.ircColour(IRCColour.red).ircBold :
                 "No such user: " ~ username;
 
@@ -228,7 +228,7 @@ void onCommandShowUsers(AdminPlugin plugin)
     }
 
     writeln(plugin.state.users.length, " users.");
-    if (settings.flush) stdout.flush();
+    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -307,7 +307,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [add|del|list] [channel]"
-            .format(settings.prefix, event.aux));
+            .format(plugin.state.settings.prefix, event.aux));
     }
 
     if (!event.content.length)
@@ -505,7 +505,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 
         enum pattern = "Channel %s was not listed as a home.";
 
-        immutable message = settings.colouredOutgoing ?
+        immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(channel.ircBold) :
             pattern.format(channel);
 
@@ -610,7 +610,7 @@ do
     {
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list]".format(settings.prefix, list));
+            "Usage: %s%s [add|del|list]".format(plugin.state.settings.prefix, list));
     }
 
     if (!event.content.length)
@@ -731,7 +731,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             case success:
                 enum pattern = "Added %s as %s in %s.";
 
-                immutable message = settings.colouredOutgoing ?
+                immutable message = plugin.state.settings.colouredOutgoing ?
                     pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
                     pattern.format(id, asWhat, channel);
 
@@ -745,7 +745,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             case alreadyInList:
                 enum pattern = "%s was already %s in %s.";
 
-                immutable message = settings.colouredOutgoing ?
+                immutable message = plugin.state.settings.colouredOutgoing ?
                     pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
                     pattern.format(id, asWhat, channel);
 
@@ -797,7 +797,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         {
             // IRC report
 
-            immutable message = settings.colouredOutgoing ?
+            immutable message = plugin.state.settings.colouredOutgoing ?
                 "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold :
                 "Invalid nickname/account: " ~ specified;
 
@@ -941,7 +941,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         case noSuchAccount:
             enum pattern = "No such account %s to remove as %s in %s.";
 
-            immutable message = settings.colouredOutgoing ?
+            immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
                 pattern.format(account, asWhat, channel);
 
@@ -951,7 +951,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         case noSuchChannel:
             enum pattern = "Account %s isn't %s in %s.";
 
-            immutable message = settings.colouredOutgoing ?
+            immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
                 pattern.format(account, asWhat, channel);
 
@@ -961,7 +961,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         case success:
             enum pattern = "Removed %s as %s in %s.";
 
-            immutable message = settings.colouredOutgoing ?
+            immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
                 pattern.format(account, asWhat, channel);
 
@@ -1168,7 +1168,7 @@ void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
-    immutable message = settings.colouredOutgoing ?
+    immutable message = plugin.state.settings.colouredOutgoing ?
         "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold :
         "Printing all: " ~ plugin.adminSettings.printRaw.text;
 
@@ -1196,7 +1196,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
-    immutable message = settings.colouredOutgoing ?
+    immutable message = plugin.state.settings.colouredOutgoing ?
         "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold :
         "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
 
@@ -1226,7 +1226,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 
     plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
 
-    immutable message = settings.colouredOutgoing ?
+    immutable message = plugin.state.settings.colouredOutgoing ?
         "Printing asserts: " ~ plugin.adminSettings.printAsserts.text.ircBold :
         "Printing asserts: " ~ plugin.adminSettings.printAsserts.text;
 
@@ -1241,7 +1241,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
             plugin.state.client, plugin.state.server);
     }
 
-    if (settings.flush) stdout.flush();
+    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -1621,7 +1621,7 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
         logger.info("Sending bus message.");
         writeln("Header: ", event.content);
         writeln("Content: (empty)");
-        if (settings.flush) stdout.flush();
+        if (plugin.state.settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
     }
@@ -1633,7 +1633,7 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
         logger.info("Sending bus message.");
         writeln("Header: ", header);
         writeln("Content: ", slice);
-        if (settings.flush) stdout.flush();
+        if (plugin.state.settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(),
             header, busMessage(slice));
