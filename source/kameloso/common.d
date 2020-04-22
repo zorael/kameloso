@@ -790,10 +790,10 @@ void printVersionInfo(TerminalForeground colourCode) @system
  +      pre = String to preface the line with, usually a colour code string.
  +      post = String to end the line with, usually a resetting code string.
  +/
-void printVersionInfo(const string pre = string.init, const string post = string.init) @system
+void printVersionInfo(const string pre = string.init, const string post = string.init) @safe
 {
     import kameloso.constants : KamelosoInfo;
-    import std.stdio : stdout, writefln;
+    import std.stdio : writefln;
 
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         pre,
@@ -801,8 +801,6 @@ void printVersionInfo(const string pre = string.init, const string post = string
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
         post);
-
-    if (settings.flush) stdout.flush();
 }
 
 
