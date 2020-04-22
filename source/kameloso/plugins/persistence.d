@@ -54,6 +54,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         static void applyClassifiers(PersistenceService service,
             const IRCEvent event, ref IRCUser user)
         {
+            bool set;
+
             if (user.class_ == IRCUser.Class.admin)
             {
                 // Do nothing, admin is permanent and program-wide
@@ -63,6 +65,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 // No account means it's just a random
                 user.class_ = IRCUser.Class.anyone;
+                set = true;
             }
             else if (service.state.bot.admins.canFind(user.account))
             {
@@ -70,13 +73,20 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 user.class_ = IRCUser.Class.admin;
                 return;
             }
-            else if (event.channel.length && (event.channel in service.channelUsers) &&
-                (user.account in service.channelUsers[event.channel]))
+            else if (event.channel.length)
             {
-                // Permanent class is defined, so apply it
-                user.class_ = service.channelUsers[event.channel][user.account];
+                if (const classAccounts = event.channel in service.channelUsers)
+                {
+                    if (const definedClass = user.account in *classAccounts)
+                    {
+                        // Permanent class is defined, so apply it
+                        user.class_ = *definedClass;
+                        set = true;
+                    }
+                }
             }
-            else
+
+            if (!set)
             {
                 // All else failed, consider it a random
                 user.class_ = IRCUser.Class.anyone;
