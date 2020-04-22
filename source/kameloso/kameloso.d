@@ -1822,6 +1822,7 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +  the calling site.
  +
  +  Params:
+ +      configFile = Full path to the configuration file.
  +      binaryPath = Full path to the current binary.
  +/
 void complainAboutMissingConfiguration(const string configFile, const string binaryPath)
@@ -1885,6 +1886,9 @@ void preInstanceSetup()
  +  Sets up `kameloso.common.settings`, expanding paths and more.
  +
  +  This is called during early execution.
+ +
+ +  Params:
+ +      settings = A reference to the `kameloso.common.CoreSettings` we want to set up.
  +/
 void setupSettings(ref CoreSettings settings)
 {

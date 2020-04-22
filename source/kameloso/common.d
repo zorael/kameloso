@@ -710,7 +710,7 @@ struct Kameloso
      +  update all plugins to have a current copy of it.
      +
      +  Params:
-     +      sttings = `kameloso.common.CoreSettings` to propagate to all plugins.
+     +      settings = `kameloso.common.CoreSettings` to propagate to all plugins.
      +/
     void propagateSettings(CoreSettings settings) nothrow @nogc
     {
