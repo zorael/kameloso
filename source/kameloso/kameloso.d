@@ -631,6 +631,7 @@ Next mainLoop(ref Kameloso instance)
     instance.wantLiveSummary = false;
 
     bool readWasShortened;
+    bool shouldSkipRead;
 
     while (next == Next.continue_)
     {
@@ -652,6 +653,7 @@ Next mainLoop(ref Kameloso instance)
         }
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
+        immutable nowInHnsecs = Clock.currStdTime;
 
         foreach (plugin; instance.plugins)
         {
@@ -662,15 +664,25 @@ Next mainLoop(ref Kameloso instance)
         {
             if (!plugin.state.scheduledFibers.length) continue;
 
-            if (plugin.state.nextFiberTimestamp <= nowInUnix)
+            if (plugin.state.nextFiberTimestamp <= nowInHnsecs)
             {
-                plugin.processScheduledFibers(nowInUnix);
+                plugin.processScheduledFibers(nowInHnsecs);
                 plugin.state.updateNextFiberTimestamp();  // Something is always removed
+                shouldSkipRead = true;
+            }
+            else
+            {
+                immutable cachedReceiveTimeout = instance.conn.receiveTimeout;
+                immutable timeOfNextReadTimeout = cast(int)((nowInHnsecs/10_000) +
+                    cachedReceiveTimeout);
+                immutable int delta = cast(int)(timeOfNextReadTimeout -
+                    (plugin.state.nextFiberTimestamp/10_000));
 
-                // Set the next read to time out after 1 milliseconds, so as to
-                // quicker get to the bottom and receive messages/send lines.
-                instance.conn.receiveTimeout = 1;
-                readWasShortened = true;
+                if ((delta > 0) && (delta < instance.conn.receiveTimeout))
+                {
+                    instance.conn.receiveTimeout = (cachedReceiveTimeout - delta);
+                    readWasShortened = true;
+                }
             }
         }
 
@@ -688,6 +700,13 @@ Next mainLoop(ref Kameloso instance)
         foreach (const attempt; listener)
         {
             if (*instance.abort) return Next.returnFailure;
+
+            if (shouldSkipRead)
+            {
+                // Reset flag and break
+                shouldSkipRead = false;
+                break;
+            }
 
             immutable actionAfterListen = listenAttemptToNext(instance, attempt);
 
@@ -958,7 +977,7 @@ Next mainLoop(ref Kameloso instance)
         {
             sendLines(instance, readWasShortened);
         }
-        else if (readWasShortened && instance.conn.receiveTimeout == 1)
+        else if (readWasShortened)
         {
             static import lu.net;
 
@@ -1233,18 +1252,18 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The `kameloso.plugins.ircplugin.IRCPlugin` whose queued
  +          `ScheduledFiber`s to iterate and process.
- +      nowInUnix = Current UNIX timestamp to compare the `ScheduledFiber`'s
- +          UNIX timestamp with.
+ +      nowInHnsecs = Current timestamp to compare the `ScheduledFiber`'s
+ +          timestamp with.
  +/
-void processScheduledFibers(IRCPlugin plugin, const long nowInUnix)
-in ((nowInUnix > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
+void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
+in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
 do
 {
     size_t[] toRemove;
 
     foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
     {
-        if (scheduledFiber.timestamp > nowInUnix) continue;
+        if (scheduledFiber.timestamp > nowInHnsecs) continue;
 
         try
         {
