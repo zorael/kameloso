@@ -1399,6 +1399,8 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
 
+    if (!replays.length) return;
+
     // Walk through replays and call WHOIS on those that haven't been
     // WHOISed in the last Timeout.whoisRetry seconds
 
