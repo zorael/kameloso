@@ -387,9 +387,18 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                         Tint.log, Tint.warning, setting);
                     noErrors = false;
                 }
-                else if ((setting == "monochrome") || (setting == "brightTerminal"))
+                else
                 {
-                    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+                    if ((setting == "monochrome") || (setting == "brightTerminal"))
+                    {
+                        initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+                    }
+
+                    foreach (plugin; plugins)
+                    {
+                        plugin.state.settings = settings;
+                        //plugin.state.settingsUpdated = true;
+                    }
                 }
             }
             catch (ConvException e)
