@@ -1144,7 +1144,7 @@ void onCommandResetTerminal()
     import std.stdio : stdout, write;
 
     write(cast(char)TerminalToken.reset);
-    if (settings.flush) stdout.flush();
+    stdout.flush();
 }
 
 
