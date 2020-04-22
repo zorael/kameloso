@@ -30,8 +30,25 @@ import dialect.defs;
  +  fleshes out the `dialect.defs.IRCEvent.sender` and/or
  +  `dialect.defs.IRCEvent.target` fields, so that things like account names
  +  that are only sent sometimes carry over.
+ +
+ +  Merely leverages `postprocessAccounts` and `postprocessHostmasks`.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
+{
+    import kameloso.common : settings;
+
+    return settings.useHostmasks ?
+        postprocessHostmasks(service, event) :
+        postprocessAccounts(service, event);
+}
+
+
+// postprocessAccounts
+/++
+ +  Postprocesses an `dialect.defs.IRCEvent` from an account perspective, e.g.
+ +  where a user may be logged onto services.
+ +/
+void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 {
     static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
