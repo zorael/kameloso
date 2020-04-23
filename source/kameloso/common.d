@@ -1297,6 +1297,11 @@ unittest
  +/
 struct Tint
 {
+    /++
+     +  Whether or not output should be coloured at all.
+     +/
+    private static bool monochrome;
+
     version(Colours)
     {
         // opDispatch
@@ -1309,7 +1314,7 @@ struct Tint
          +  `std.experimental.logger.core.LogLevel`.
          +/
         pragma(inline)
-        static string opDispatch(string tint)(const bool monochrome = settings.monochrome)
+        static string opDispatch(string tint)()
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
             import kameloso.logger : KamelosoLogger;
