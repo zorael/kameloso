@@ -429,6 +429,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
     postprocessImpl(service, event, event.target);
 }
 
+
 // onQuit
 /++
  +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
@@ -490,8 +491,7 @@ void onNick(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(PersistenceService service)
 {
-    service.reloadAccountClassifiersFromDisk();
-    service.reloadHostmaskClassifiersFromDisk();
+    service.reloadClassifiersFromDiskImpl(service.state.settings.preferHostmasks);
 }
 
 
@@ -503,8 +503,7 @@ void onEndOfMotd(PersistenceService service)
 void reload(PersistenceService service)
 {
     service.state.users.rehash();
-    service.reloadAccountClassifiersFromDisk();
-    service.reloadHostmaskClassifiersFromDisk();
+    service.reloadClassifiersFromDiskImpl(service.state.settings.preferHostmasks);
 }
 
 
@@ -526,14 +525,15 @@ void periodically(PersistenceService service, const long now)
 }
 
 
-// reloadAccountClassifiersFromDisk
+// reloadClassifiersFromDiskImpl
 /++
  +  Reloads admin/whitelist/blacklist classifier definitions from disk.
  +
  +  Params:
  +      service = The current `PersistenceService`.
+ +      preferHostmasks = Whether we should load hostmasks or accounts.
  +/
-void reloadAccountClassifiersFromDisk(PersistenceService service)
+void reloadClassifiersFromDiskImpl(PersistenceService service, const bool preferHostmasks)
 {
     import kameloso.common : logger;
     import lu.json : JSONStorage;
@@ -563,77 +563,26 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         {
             foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
             {
-                foreach (immutable accountJSON; channelAccountJSON.array)
+                foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    if (channel !in service.channelUsers)
+                    if (preferHostmasks)
                     {
-                        service.channelUsers[channel] = (IRCUser.Class[string]).init;
+                        if (channel !in service.channelUsers)
+                        {
+                            service.channelHostmasks[channel] = (IRCUser.Class[IRCUser]).init;
+                        }
+
+                        service.channelHostmasks[channel][IRCUser(userJSON.str)] = class_;
                     }
-
-                    service.channelUsers[channel][accountJSON.str] = class_;
-                }
-            }
-        }
-        catch (JSONException e)
-        {
-            logger.warningf("JSON exception caught when populating %s: %s", list, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
-        }
-        catch (Exception e)
-        {
-            logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
-        }
-    }
-}
-
-
-// reloadHostmaskClassifiersFromDisk
-/++
- +  Reloads admin/whitelist/blacklist classifier definitions from disk.
- +  Hostmask version.
- +
- +  Params:
- +      service = The current `PersistenceService`.
- +/
-void reloadHostmaskClassifiersFromDisk(PersistenceService service)
-{
-    import kameloso.common : logger;
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage json;
-    json.reset();
-    json.load(service.hostmasksFile);
-
-    service.channelUsers.clear();
-
-    import lu.conv : Enum;
-    import std.range : only;
-
-    foreach (class_; only(IRCUser.Class.operator, IRCUser.Class.whitelist, IRCUser.Class.blacklist))
-    {
-        immutable list = Enum!(IRCUser.Class).toString(class_);
-        const listFromJSON = list in json;
-
-        if (!listFromJSON)
-        {
-            json[list] = null;
-            json[list].object = null;
-        }
-
-        try
-        {
-            foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
-            {
-                foreach (immutable hostmaskJSON; channelAccountJSON.array)
-                {
-                    if (channel !in service.channelUsers)
+                    else
                     {
-                        service.channelHostmasks[channel] = (IRCUser.Class[IRCUser]).init;
-                    }
+                        if (channel !in service.channelUsers)
+                        {
+                            service.channelUsers[channel] = (IRCUser.Class[string]).init;
+                        }
 
-                    service.channelHostmasks[channel][IRCUser(hostmaskJSON.str)] = class_;
+                        service.channelUsers[channel][userJSON.str] = class_;
+                    }
                 }
             }
         }
@@ -662,17 +611,6 @@ void reloadHostmaskClassifiersFromDisk(PersistenceService service)
  +      failure loading the `user.json` file.
  +/
 void initResources(PersistenceService service)
-{
-    initAccountResources(service);
-    initHostmaskResources(service);
-}
-
-
-// initAccountResources
-/++
- +  FIXME
- +/
-void initAccountResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException, JSONValue;
@@ -756,100 +694,6 @@ void initAccountResources(PersistenceService service)
 }
 
 
-// initHostmaskResources
-/++
- +  Reads, completes and saves the user classification JSON file, creating one
- +  if one doesn't exist. Removes any duplicate entries.
- +
- +  This ensures there will be "whitelist", "operator" and "blacklist" arrays in it.
- +
- +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
- +      failure loading the `user.json` file.
- +/
-void initHostmaskResources(PersistenceService service)
-{
-    import lu.json : JSONStorage;
-    import std.json : JSONException, JSONValue;
-
-    JSONStorage json;
-    json.reset();
-
-    try
-    {
-        json.load(service.hostmasksFile);
-    }
-    catch (JSONException e)
-    {
-        import kameloso.common : logger;
-        import std.path : baseName;
-
-        version(PrintStacktraces) logger.trace(e.toString);
-        throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
-    }
-
-    // Let other Exceptions pass.
-
-    static auto deduplicate(JSONValue before)
-    {
-        import std.algorithm.iteration : filter, uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
-
-        auto after = before
-            .array
-            .sort!((a,b) => a.str < b.str)
-            .uniq
-            .filter!((a) => a.str.length > 0)
-            .array;
-
-        return JSONValue(after);
-    }
-
-    /+
-    unittest
-    {
-        auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
-        assert((users.array.length == 5), users.array.length.text);
-
-        users = deduplicated(users);
-        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
-    }+/
-
-    import std.range : only;
-
-    foreach (liststring; only("operator", "whitelist", "blacklist"))
-    {
-        if (liststring !in json)
-        {
-            json[liststring] = null;
-            json[liststring].object = null;
-        }
-        else
-        {
-            try
-            {
-                foreach (immutable channel, ref channelAccountsJSON; json[liststring].object)
-                {
-                    channelAccountsJSON = deduplicate(json[liststring][channel]);
-                }
-            }
-            catch (JSONException e)
-            {
-                import kameloso.common : logger;
-                import std.path : baseName;
-
-                version(PrintStacktraces) logger.trace(e.toString);
-                throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
-            }
-        }
-    }
-
-    // Force operator and whitelist to appear before blacklist in the .json
-    static immutable order = [ "operator", "whitelist", "blacklist" ];
-    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.hostmasksFile, order);
-}
-
-
 public:
 
 
@@ -874,13 +718,15 @@ private:
     /// File with user definitions.
     @Resource string userFile = "users.json";
 
-    /// File with hostmasks
-    @Resource string hostmasksFile = "hostmasks.json";
-
     /// Associative array of permanent user classifications, per account and channel name.
     IRCUser.Class[string][string] channelUsers;
 
-    /// FIXME
+    /++
+     +  Associative array of permanent user classifications, per
+     +  `dialect.defs.IRCUser` and channel name.
+     +
+     +  Matching is done with `dialect.common.matchesByMask`.
+     +/
     IRCUser.Class[IRCUser][string] channelHostmasks;
 
     /// Associative array of which channel the latest class lookup for an account related to.
