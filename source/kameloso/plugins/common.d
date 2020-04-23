@@ -2094,15 +2094,32 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         // Clean up awaiting fiber entries on exit, just to be neat.
         scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
 
-        if ((whoisEvent.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
-            (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
-            context.state.settings.preferHostmasks)
+        with (IRCEvent.Type)
+        switch (whoisEvent.type)
         {
-            callOnSuccess();
-        }
-        else
-        {
-            callOnFailure();
+        case RPL_WHOISACCOUNT:
+        case RPL_WHOISREGNICK:
+            return callOnSuccess();
+
+        case RPL_WHOISUSER:
+            if (context.state.settings.preferHostmasks)
+            {
+                return callOnSuccess();
+            }
+            else
+            {
+                // We're not interested in RPL_WHOISUSER if we're not in hostmasks mode
+                Fiber.yield();
+                return whoisFiberDelegate();  // Recurse
+            }
+
+        case RPL_ENDOFWHOIS:
+        case ERR_NOSUCHNICK:
+        //case ERR_UNKNOWNCOMMAND:  // Already handled above
+            return callOnFailure();
+
+        default:
+            assert(0, "Unexpected WHOIS event type encountered in `whoisFiberDelegate`");
         }
     }
 
