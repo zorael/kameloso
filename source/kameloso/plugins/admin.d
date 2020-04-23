@@ -878,12 +878,6 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         }
     }
 
-    if (plugin.state.settings.preferHostmasks)
-    {
-        // Don't look up, just add what was specified to support partial globs
-        return onSuccess(specified);
-    }
-
     // User not on record or on record but no account; WHOIS and try based on results
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
