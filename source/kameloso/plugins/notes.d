@@ -243,15 +243,18 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     else
     {
         import dialect.common : stripModesign;
+        import lu.string : contains, nom;
         import std.algorithm.iteration : splitter;
 
         if (event.channel !in plugin.notes) return;
 
-        mixin Replayer;
+        mixin Repeater;
 
-        foreach (immutable signed; event.content.splitter)
+        foreach (immutable signed; event.content.splitter(' '))
         {
-            immutable nickname = signed.stripModesign(plugin.state.server);
+            string slice = signed.stripModesign(plugin.state.server);
+            immutable nickname = slice.contains('!') ? slice.nom('!') : slice;
+
             if (nickname == plugin.state.client.nickname) continue;
 
             IRCEvent fakeEvent;
@@ -264,8 +267,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
             }
 
             // Use a replay to fill in known information about the user by use of Persistence
-            auto req = triggerRequest(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
-            queueToReplay(req);
+            auto req = replay(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
+            repeat(req);
         }
     }
 }
