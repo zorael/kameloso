@@ -718,16 +718,17 @@ private:
     /// File with user definitions.
     @Resource string userFile = "users.json";
 
+    /// File with user hostmasks.
+    @Resource string hostmasksFile = "hostmasks.json";
+
     /// Associative array of permanent user classifications, per account and channel name.
     IRCUser.Class[string][string] channelUsers;
 
     /++
-     +  Associative array of permanent user classifications, per
-     +  `dialect.defs.IRCUser` and channel name.
-     +
-     +  Matching is done with `dialect.common.matchesByMask`.
+     +  User "accounts" by hostmask. Future optimisation may involve making this
+     +  an `IRCUser[string]` associative array instead.
      +/
-    IRCUser.Class[IRCUser][string] channelHostmasks;
+    string[string] accountByUser;
 
     /// Associative array of which channel the latest class lookup for an account related to.
     string[string] userClassCurrentChannelCache;
