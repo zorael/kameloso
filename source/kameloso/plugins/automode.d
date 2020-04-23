@@ -425,11 +425,6 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
     {
         plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
     }
-    else
-    {
-        import kameloso.messaging : whois;
-        whois(plugin.state, event.sender.nickname);
-    }
 }
 
 
