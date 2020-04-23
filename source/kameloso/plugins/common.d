@@ -2126,6 +2126,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
+        import lu.string : contains, nom;
         import lu.traits : TakesParams;
         import std.meta : AliasSeq;
         import std.traits : arity;
@@ -2232,21 +2233,27 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         context.awaitEvents(fiber, whoisEventTypes[]);
 
+        string slice = nickname;
+
+        immutable nicknamePart = slice.contains('!') ?
+            slice.nom('!') :
+            slice;
+
         if (issueWhois)
         {
             if (background)
             {
                 // Args are state, nick, force, quiet, background, caller
                 // Need force (true) to not miss events
-                whois(context.state, nickname, true, true, true);
+                whois(context.state, nicknamePart, true, true, true);
             }
             else
             {
-                whois!(Yes.priority)(context.state, nickname, true, true);  // Ditto
+                whois!(Yes.priority)(context.state, nicknamePart, true, true);  // Ditto
             }
         }
 
-        mixin(carriedVariableName) = nickname;
+        mixin(carriedVariableName) = nicknamePart;
     }
 }
 
