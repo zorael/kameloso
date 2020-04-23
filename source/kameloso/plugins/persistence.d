@@ -276,12 +276,8 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
         static void applyClassifiers(PersistenceService service,
             const IRCEvent event, ref IRCUser user)
         {
-            import std.stdio;
-            writeln("applyClassifiers:", user.nickname);
-
             if (user.class_ == IRCUser.Class.admin)
             {
-                writeln(user.nickname, " was already admin");
                 // Do nothing, admin is permanent and program-wide
                 return;
             }
@@ -290,8 +286,6 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             {
                 user.account = getAccount(user, service.accountByUser);
             }
-
-            scope(exit) writeln("end class:", user.class_);
 
             bool set;
 
@@ -322,7 +316,6 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 
             if (!set)
             {
-                writeln("anyone");
                 // All else failed, consider it a random
                 user.class_ = IRCUser.Class.anyone;
             }
