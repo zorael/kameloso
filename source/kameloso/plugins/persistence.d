@@ -462,7 +462,8 @@ void onNick(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(PersistenceService service)
 {
-    service.reloadClassifiersFromDiskImpl(service.state.settings.preferHostmasks);
+    service.reloadAccountClassifiersFromDisk();
+    service.reloadHostmasksFromDisk();
 }
 
 
@@ -474,7 +475,8 @@ void onEndOfMotd(PersistenceService service)
 void reload(PersistenceService service)
 {
     service.state.users.rehash();
-    service.reloadClassifiersFromDiskImpl(service.state.settings.preferHostmasks);
+    service.reloadAccountClassifiersFromDisk();
+    service.reloadHostmasksFromDisk();
 }
 
 
