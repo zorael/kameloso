@@ -59,7 +59,7 @@ environment:
       dubArgs:
       Ddflags:
     - DC: ldc
-      DVersion: 1.20.0
+      DVersion: 1.21.0
       DSubversion:
       arch: x64
       dubArgs:
