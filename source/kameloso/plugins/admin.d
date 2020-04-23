@@ -1595,6 +1595,150 @@ void onCommandSummary(AdminPlugin plugin)
 }
 
 
+// onCommandMask
+/++
+ +  Adds, removes or lists hostmasks used to identify users on servers that
+ +  don't employ services.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "mask")
+@BotCommand(PrefixPolicy.prefixed, "hostmask", Yes.hidden)
+@Description("Modifies a hostmask definition, for use on servers without services accounts.",
+    "$command [add|del|list] [hostmask if adding]")
+void onCommandMask(AdminPlugin plugin, const IRCEvent event)
+{
+    import lu.string : SplitResults, contains, nom, splitInto;
+    import std.format : format;
+
+    void sendUsage()
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [add|del|list] [account] [mask if adding]"
+            .format(plugin.state.settings.prefix, event.aux));
+    }
+
+    string slice = event.content;  // mutable
+
+    immutable verb = slice.nom!(Yes.inherit)(' ');
+
+    switch (verb)
+    {
+    case "add":
+        string account;
+        string mask;
+
+        immutable results = slice.splitInto(account, mask);
+        if (results != SplitResults.match) return sendUsage();
+
+        return plugin.modifyHostmaskDefinition(Yes.add, account, mask, event);
+
+    case "del":
+        if (!slice.length || slice.contains(' ')) return sendUsage();
+        return plugin.modifyHostmaskDefinition(No.add, string.init, slice, event);
+
+    case "list":
+        return plugin.listHostmaskDefinitions(event);
+
+    default:
+        return sendUsage();
+    }
+}
+
+
+// modifyHostmaskDefinition
+/++
+ +  Adds or removes hostmasks used to identify users on servers that don't employ services.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      add = Whether to add or to remove the hostmask.
+ +      account = Account the hostmask will equate to.
+ +      mask = String "nickname!ident@address.tld" hostmask.
+ +      event = Instigating `dialect.defs.IRCEvent`.
+ +/
+void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
+    const string account, const string mask, const IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage;
+    import lu.json : JSONStorage, populateFromJSON;
+    import lu.string : contains;
+    import std.concurrency : send;
+    import std.json : JSONValue;
+
+    JSONStorage json;
+    json.reset();
+    json.load(plugin.hostmasksFile);
+
+    string[string] aa;
+    aa.populateFromJSON(json);
+
+    if (add)
+    {
+        if (!mask.contains('!') || !mask.contains('@'))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Invalid hostmask.");
+            return;
+        }
+
+        aa[mask] = account;
+        json.reset();
+        json = JSONValue(aa);
+    }
+    else
+    {
+        // Allow for removing an invalid mask
+
+        aa.remove(mask);
+        json.reset();
+        json = JSONValue(aa);
+    }
+
+    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
+
+    // Force persistence to reload the file with the new changes
+    plugin.state.mainThread.send(ThreadMessage.Reload());
+}
+
+
+// listHostmaskDefinitions
+/++
+ +  Lists existing hostmask definitions.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      event = The instigating `dialect.defs.IRCEvent`.
+ +/
+void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+
+    JSONStorage json;
+    json.reset();
+    json.load(plugin.hostmasksFile);
+
+    string[string] aa;
+    aa.populateFromJSON(json);
+
+    if (aa.length)
+    {
+        import std.conv : to;
+
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Current hostmasks: " ~ aa.to!string);
+    }
+    else
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "There are presently no hostmasks defined.");
+    }
+}
+
+
 // onCommandBus
 /++
  +  Sends an internal bus message to other plugins, much like how such can be
