@@ -19,7 +19,7 @@ private:
 
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
-import kameloso.common;
+import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
@@ -68,8 +68,12 @@ import std.stdio : File;
  +          `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
  +          concurrency messages, made `shared` to allow being sent between threads.
  +      filename = String filename of the FIFO to read from.
+ +      monochrome = Whether or not output should be in monochrome text.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adjusted to suit.
  +/
-void pipereader(shared IRCPluginState newState, const string filename)
+void pipereader(shared IRCPluginState newState, const string filename,
+    const bool monochrome, const bool brightTerminal)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import std.file : FileException, exists, remove;
@@ -86,7 +90,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
     version(Colours)
     {
-        if (!settings.monochrome)
+        if (!monochrome)
         {
             import kameloso.constants : DefaultColours;
             import kameloso.terminal : colour;
@@ -95,7 +99,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             // We don't have a logger instance so we have to access the
             // DefaultColours.logcolours{Bright,Dark} tables manually
 
-            if (settings.brightTerminal)
+            if (brightTerminal)
             {
                 enum infotintColourBright = DefaultColours.logcoloursBright[LogLevel.info].colour.idup;
                 enum logtintColourBright = DefaultColours.logcoloursBright[LogLevel.all].colour.idup;
@@ -333,7 +337,8 @@ void onMotd(PipelinePlugin plugin)
         try
         {
             createFIFO(fifoFilename);
-            fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename);
+            fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename,
+                plugin.state.settings.monochrome, plugin.state.settings.brightTerminal);
             workerRunning = true;
         }
         catch (ReturnValueException e)

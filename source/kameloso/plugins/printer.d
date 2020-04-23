@@ -400,7 +400,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
         version(Colours)
         {
-            if (!settings.monochrome)
+            if (!plugin.state.settings.monochrome)
             {
                 plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
                     plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
@@ -414,7 +414,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
                 plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
         }
 
-        if (settings.flush) stdout.flush();
+        if (plugin.state.settings.flush) stdout.flush();
         break;
     }
 }
@@ -940,7 +940,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
         version(Colours)
         {
-            if (!settings.monochrome)
+            if (!plugin.state.settings.monochrome)
             {
                 import kameloso.terminal : TerminalReset, colour;
                 enum tintresetColour = TerminalReset.all.colour.idup;
@@ -1420,7 +1420,7 @@ if (isOutputRange!(Sink, char[]))
 
     bool shouldBell;
 
-    immutable bright = settings.brightTerminal;
+    immutable bright = plugin.state.settings.brightTerminal;
 
     /++
      +  Outputs a terminal ANSI colour token based on the hash of the passed
@@ -1693,7 +1693,8 @@ if (isOutputRange!(Sink, char[]))
                 {
                     if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        highlightEmotes(event, plugin.printerSettings.colourfulEmotes);
+                        highlightEmotes(event, plugin.printerSettings.colourfulEmotes,
+                            plugin.state.settings.brightTerminal);
                     }
                 }
 
@@ -2391,12 +2392,13 @@ unittest
  +  Params:
  +      event = `dialect.defs.IRCEvent` whose content text to highlight.
  +      colourful = Whether or not emotes should be highlit in colours.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adapted to suit.
  +/
 version(Colours)
 version(TwitchSupport)
-void highlightEmotes(ref IRCEvent event, const bool colourful)
+void highlightEmotes(ref IRCEvent event, const bool colourful, const bool brightTerminal)
 {
-    import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
     import kameloso.terminal : colourWith;
     import lu.string : contains;
@@ -2410,7 +2412,7 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
     Appender!string sink;
     sink.reserve(event.content.length + 60);  // mostly +10
 
-    immutable TerminalForeground highlight = settings.brightTerminal ?
+    immutable TerminalForeground highlight = brightTerminal ?
         Bright.highlight : Dark.highlight;
 
     with (IRCEvent.Type)
@@ -2427,9 +2429,10 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
         else
         {
             // Emote but mixed text and emotes OR we're doing colorful emotes
-            immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
+            immutable TerminalForeground emoteFgBase = brightTerminal ?
                 Bright.emote : Dark.emote;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight, emoteFgBase, colourful);
+            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+                emoteFgBase, colourful, brightTerminal);
         }
         break;
 
@@ -2444,9 +2447,10 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
         else
         {
             // Normal content, normal text, normal emotes
-            immutable TerminalForeground contentFgBase = settings.brightTerminal ?
+            immutable TerminalForeground contentFgBase = brightTerminal ?
                 Bright.content : Dark.content;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase, colourful);
+            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+                contentFgBase, colourful, brightTerminal);
         }
         break;
 
@@ -2471,12 +2475,14 @@ void highlightEmotes(ref IRCEvent event, const bool colourful)
  +      pre = Terminal foreground tint to colour the emotes with.
  +      post = Terminal foreground tint to reset to after colouring an emote.
  +      colourful = Whether or not emotes should be highlit in colours.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adapted to suit.
  +/
 version(Colours)
 version(TwitchSupport)
 void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
     const string emotes, const TerminalForeground pre, const TerminalForeground post,
-    const bool colourful)
+    const bool colourful, const bool brightTerminal)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
@@ -2536,7 +2542,7 @@ if (isOutputRange!(Sink, char[]))
         immutable end = highlights[i].end;
 
         sink.put(dline[pos..start]);
-        sink.colourWith(colourful ? colourByHash(id, settings.brightTerminal) : pre);
+        sink.colourWith(colourful ? colourByHash(id, brightTerminal) : pre);
         sink.put(dline[start..end]);
         sink.colourWith(post);
 
@@ -2559,21 +2565,21 @@ unittest
     {
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "Moody the god \033[97mpownyFine\033[39m \033[97mpownyL\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m " ~
             "\033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
     }
@@ -2581,7 +2587,7 @@ unittest
         sink.clear();
         immutable emotes = "822112:0-6,8-14,16-22";
         immutable line = "FortOne FortOne FortOne";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m " ~
             "\033[97mFortOne\033[39m"), sink.data);
     }
@@ -2589,7 +2595,7 @@ unittest
         sink.clear();
         immutable emotes = "141844:17-24,26-33,35-42/141073:9-15";
         immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m " ~
             "\033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
     }
@@ -2604,21 +2610,21 @@ unittest
             "FREE SUBSCRIPTION every month \033[97mcourageHYPE\033[39m \033[97mcourageHYPE\033[39m " ~
             "twitch.amazon.com/prime | Click subscribe now to check if a " ~
             "free prime sub is available to use!";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == highlitLine), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "25:32-36";
         immutable line = "@kiwiskool but you’re a sub too Kappa";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, false, false);
         assert((sink.data == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
             "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink.data);
     }
@@ -2626,7 +2632,7 @@ unittest
         sink.clear();
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true, false);
         assert((sink.data == "高所恐怖症 \033[34mLUL\033[39m なにぬねの " ~
             "\033[34mLUL\033[39m \033[91m:)\033[39m"), sink.data);
     }
@@ -2634,21 +2640,21 @@ unittest
         sink.clear();
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true, false);
         assert((sink.data == "Moody the god \033[37mpownyFine\033[39m \033[96mpownyL\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true, false);
         assert((sink.data == "whoever plays nintendo switch whisper me \033[93mKappa\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
-        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true);
+        line.highlightEmotesImpl(sink, emotes, TerminalForeground.white, TerminalForeground.default_, true, false);
         assert((sink.data == "NOOOOOO \033[95mcamillsCry\033[39m " ~
             "\033[95mcamillsCry\033[39m \033[95mcamillsCry\033[39m"), sink.data);
     }

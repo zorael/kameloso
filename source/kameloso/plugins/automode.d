@@ -16,7 +16,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common : Tint, logger, settings;
+import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -97,6 +97,7 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
+@(IRCEvent.Type.RPL_WHOISUSER)
 @(IRCEvent.Type.JOIN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
@@ -115,6 +116,14 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         account = sender.account;
         nickname = sender.nickname;
         break;
+
+    case RPL_WHOISUSER:
+        if (plugin.state.settings.preferHostmasks)
+        {
+            // Persistence will have set the account field.
+            goto case RPL_WHOISACCOUNT;
+        }
+        return;
 
     case RPL_WHOISACCOUNT:
     case RPL_WHOISREGNICK:
@@ -287,7 +296,7 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
 
         enum pattern = "Automode modified! %s on %s: +%s";
 
-        immutable message = settings.colouredOutgoing ?
+        immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(nickname.ircColourByHash.ircBold,
                 event.channel.ircBold, mode.ircBold) :
             pattern.format(nickname, event.channel, mode);
@@ -311,7 +320,7 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
 
         enum pattern = "Automode for %s cleared.";
 
-        immutable message = settings.colouredOutgoing ?
+        immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(nickname.ircColourByHash.ircBold) :
             pattern.format(nickname);
 
@@ -335,7 +344,7 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     default:
         chan(plugin.state, event.channel, "Usage: %s%s [add|clear|list] [nickname/account] [mode]"
-            .format(settings.prefix, event.aux));
+            .format(plugin.state.settings.prefix, event.aux));
         break;
     }
 }

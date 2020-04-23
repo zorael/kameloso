@@ -15,7 +15,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
-import kameloso.common;
+import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -68,7 +68,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onWhoReply(NotesPlugin plugin, const IRCEvent event)
 {
-    if (settings.eagerLookups) return;
+    if (plugin.state.settings.eagerLookups) return;
 
     if (event.channel !in plugin.notes) return;
 
@@ -137,7 +137,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 
                     enum pattern = "%s%s! %s left note %s ago: %s";
 
-                    immutable message = settings.colouredOutgoing ?
+                    immutable message = plugin.state.settings.colouredOutgoing ?
                         pattern.format(atSign, senderName.ircBold,
                             note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
                         pattern.format(atSign, senderName, note.sender, timestamp, note.line);
@@ -150,7 +150,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 
                     enum pattern = "%s%s! You have %s notes.";
 
-                    immutable message = settings.colouredOutgoing ?
+                    immutable message = plugin.state.settings.colouredOutgoing ?
                         pattern.format(atSign, senderName.ircBold, noteArray.length.text.ircBold) :
                         pattern.format(atSign, senderName, noteArray.length);
 
@@ -163,7 +163,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 
                         enum entryPattern = "%s %s ago: %s";
 
-                        immutable report = settings.colouredOutgoing ?
+                        immutable report = plugin.state.settings.colouredOutgoing ?
                             entryPattern.format(note.sender.ircColourByHash.ircBold,
                                 timestamp, note.line) :
                             entryPattern.format(note.sender, timestamp, note.line);

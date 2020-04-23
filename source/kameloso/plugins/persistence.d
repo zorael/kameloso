@@ -30,8 +30,23 @@ import dialect.defs;
  +  fleshes out the `dialect.defs.IRCEvent.sender` and/or
  +  `dialect.defs.IRCEvent.target` fields, so that things like account names
  +  that are only sent sometimes carry over.
+ +
+ +  Merely leverages `postprocessAccounts` and `postprocessHostmasks`.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
+{
+    return service.state.settings.preferHostmasks ?
+        postprocessHostmasks(service, event) :
+        postprocessAccounts(service, event);
+}
+
+
+// postprocessAccounts
+/++
+ +  Postprocesses an `dialect.defs.IRCEvent` from an account perspective, e.g.
+ +  where a user may be logged onto services.
+ +/
+void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 {
     static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
@@ -212,6 +227,182 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 }
 
 
+// postprocessHostmasks
+/++
+ +  Postprocesses an `dialect.defs.IRCEvent` from a hostmask perspective, e.g.
+ +  where no services are available and users are identified by their hostmasks.
+ +/
+void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
+{
+    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
+    {
+        import std.algorithm.searching : canFind;
+
+        if (!user.nickname.length) return;  // Ignore server events
+
+        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+            (user.nickname == service.state.client.nickname))
+        {
+            // On non-Twitch, ignore events originating from us
+            return;
+        }
+
+        static string getAccount(const IRCUser user, const string[string] aa)
+        {
+            import dialect.common : matchesByMask;
+
+            foreach (immutable hostmask, immutable account; aa)
+            {
+                import std.format : FormatException;
+
+                try
+                {
+                    if (matchesByMask(user, IRCUser(hostmask))) return account;
+                }
+                catch (FormatException e)
+                {
+                    // Malformed entry. Do nothing, try next mask
+                }
+            }
+
+            return string.init;
+        }
+
+        /++
+         +  Tries to apply any permanent class for a user in a channel, and if
+         +  none available, tries to set one that seems to apply based on what
+         +  the user looks like.
+         +/
+        static void applyClassifiers(PersistenceService service,
+            const IRCEvent event, ref IRCUser user)
+        {
+            if (user.class_ == IRCUser.Class.admin)
+            {
+                // Do nothing, admin is permanent and program-wide
+                return;
+            }
+
+            if (!user.account)
+            {
+                user.account = getAccount(user, service.accountByUser);
+            }
+
+            bool set;
+
+            if (!user.account.length || (user.account == "*"))  // FIXME
+            {
+                // No account means it's just a random
+                user.class_ = IRCUser.Class.anyone;
+                set = true;
+            }
+            else if (service.state.bot.admins.canFind(user.account))
+            {
+                // admin discovered
+                user.class_ = IRCUser.Class.admin;
+                return;
+            }
+            else if (event.channel.length)
+            {
+                if (const classAccounts = event.channel in service.channelUsers)
+                {
+                    if (const definedClass = user.account in *classAccounts)
+                    {
+                        // Permanent class is defined, so apply it
+                        user.class_ = *definedClass;
+                        set = true;
+                    }
+                }
+            }
+
+            if (!set)
+            {
+                // All else failed, consider it a random
+                user.class_ = IRCUser.Class.anyone;
+            }
+
+            // Record this channel as being the one the current class_ applies to.
+            // That way we only have to look up a class_ when the channel has changed.
+            service.userClassCurrentChannelCache[user.nickname] = event.channel;
+        }
+
+        auto stored = user.nickname in service.state.users;
+        immutable foundNoStored = stored is null;
+
+        if (foundNoStored)
+        {
+            service.state.users[user.nickname] = user;
+            stored = user.nickname in service.state.users;
+        }
+
+        import lu.meld : MeldingStrategy, meldInto;
+
+        // Store initial class and restore after meld.
+        immutable preMeldClass = stored.class_;
+
+        // Meld into the stored user, and store the union in the event
+        // Skip if the current stored is just a direct copy of user
+        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
+
+        if (stored.class_ == IRCUser.Class.unset)
+        {
+            // The class was not changed, restore the previously saved one
+            stored.class_ = preMeldClass;
+        }
+
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
+        {
+            if (stored.account == "*")
+            {
+                stored.account = string.init;
+            }
+        }
+
+        version(TwitchSupport)
+        {
+            // Clear badges if it has the empty placeholder asterisk
+            if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+                (stored.badges == "*"))
+            {
+                stored.badges = string.init;
+            }
+        }
+
+        if (stored.class_ == IRCUser.Class.admin)
+        {
+            // Do nothing, admin is permanent and program-wide
+        }
+        else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+            (stored.nickname == service.state.client.nickname))
+        {
+            stored.class_ = IRCUser.Class.admin;
+        }
+        else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
+        {
+            // Not a channel or not a home. Additionally not an admin nor us
+            stored.class_ = IRCUser.Class.anyone;
+            service.userClassCurrentChannelCache.remove(user.nickname);
+        }
+        else
+        {
+            const cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+
+            if (!cachedChannel || (*cachedChannel != event.channel))
+            {
+                // User has no cached channel. Alternatively, user's cached channel
+                // is different from this one; class likely differs.
+                applyClassifiers(service, event, *stored);
+            }
+        }
+
+        // Inject the modified user into the event
+        user = *stored;
+    }
+
+    postprocessImpl(service, event, event.sender);
+    postprocessImpl(service, event, event.target);
+}
+
+
 // onQuit
 /++
  +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
@@ -273,7 +464,8 @@ void onNick(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(PersistenceService service)
 {
-    service.reloadClassifiersFromDisk();
+    service.reloadAccountClassifiersFromDisk();
+    service.reloadHostmasksFromDisk();
 }
 
 
@@ -285,7 +477,8 @@ void onEndOfMotd(PersistenceService service)
 void reload(PersistenceService service)
 {
     service.state.users.rehash();
-    service.reloadClassifiersFromDisk();
+    service.reloadAccountClassifiersFromDisk();
+    service.reloadHostmasksFromDisk();
 }
 
 
@@ -307,14 +500,14 @@ void periodically(PersistenceService service, const long now)
 }
 
 
-// reloadClassifiersFromDisk
+// reloadAccountClassifiersFromDisk
 /++
  +  Reloads admin/whitelist/blacklist classifier definitions from disk.
  +
  +  Params:
  +      service = The current `PersistenceService`.
  +/
-void reloadClassifiersFromDisk(PersistenceService service)
+void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.common : logger;
     import lu.json : JSONStorage;
@@ -344,14 +537,14 @@ void reloadClassifiersFromDisk(PersistenceService service)
         {
             foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
             {
-                foreach (immutable accountJSON; channelAccountJSON.array)
+                foreach (immutable userJSON; channelAccountJSON.array)
                 {
                     if (channel !in service.channelUsers)
                     {
                         service.channelUsers[channel] = (IRCUser.Class[string]).init;
                     }
 
-                    service.channelUsers[channel][accountJSON.str] = class_;
+                    service.channelUsers[channel][userJSON.str] = class_;
                 }
             }
         }
@@ -369,17 +562,55 @@ void reloadClassifiersFromDisk(PersistenceService service)
 }
 
 
+// reloadHostmasksFromDisk
+/++
+ +  Reloads hostmasks definitions from disk.
+ +
+ +  Params:
+ +      service = The current `PersistenceService`.
+ +/
+void reloadHostmasksFromDisk(PersistenceService service)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+
+    with (service)
+    {
+        JSONStorage hostmasksJSON;
+        hostmasksJSON.load(hostmasksFile);
+        //accountByUser.clear();
+        accountByUser.populateFromJSON(hostmasksJSON);
+        accountByUser.rehash();
+    }
+}
+
+
 // initResources
+/++
+ +  Initialises the service's hostmasks and accounts resources.
+ +
+ +  Merely calls `initAccountResources` and `initHostmaskResources`.
+ +/
+void initResources(PersistenceService service)
+{
+    service.initAccountResources();
+    service.initHostmaskResources();
+}
+
+
+// initAccountResources
 /++
  +  Reads, completes and saves the user classification JSON file, creating one
  +  if one doesn't exist. Removes any duplicate entries.
  +
- +  This ensures there will be a `"whitelist"` and `"blacklist"` array in it.
+ +  This ensures there will be "whitelist", "operator" and "blacklist" arrays in it.
+ +
+ +  Params:
+ +      service = The current `PersistenceService`.
  +
  +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
  +      failure loading the `user.json` file.
  +/
-void initResources(PersistenceService service)
+void initAccountResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException, JSONValue;
@@ -463,6 +694,42 @@ void initResources(PersistenceService service)
 }
 
 
+// initHostmaskResources
+/++
+ +  Reads, completes and saves the hostmasks JSON file, creating one if it
+ +  doesn't exist.
+ +
+ +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
+ +      failure loading the `user.json` file.
+ +/
+void initHostmaskResources(PersistenceService service)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException, JSONValue;
+
+    JSONStorage json;
+    json.reset();
+
+    try
+    {
+        json.load(service.hostmasksFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.common : logger;
+        import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
+        throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
+    // Adjust saved JSON layout to be more easily edited
+    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(service.hostmasksFile);
+}
+
+
 public:
 
 
@@ -487,8 +754,17 @@ private:
     /// File with user definitions.
     @Resource string userFile = "users.json";
 
+    /// File with user hostmasks.
+    @Resource string hostmasksFile = "hostmasks.json";
+
     /// Associative array of permanent user classifications, per account and channel name.
     IRCUser.Class[string][string] channelUsers;
+
+    /++
+     +  User "accounts" by hostmask. Future optimisation may involve making this
+     +  an `IRCUser[string]` associative array instead.
+     +/
+    string[string] accountByUser;
 
     /// Associative array of which channel the latest class lookup for an account related to.
     string[string] userClassCurrentChannelCache;

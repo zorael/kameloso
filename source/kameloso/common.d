@@ -23,6 +23,9 @@ shared static this()
 
     // This is technically before settings have been read...
     logger = new KamelosoLogger;
+
+    // settings needs instantiating now.
+    settings = new CoreSettings;
 }
 
 
@@ -60,9 +63,7 @@ Logger logger;
  +      bright = Whether the terminal has a bright background or not.
  +      flush = Whether or not to flush stdout after finishing writing to it.
  +/
-void initLogger(const bool monochrome = settings.monochrome,
-    const bool bright = settings.brightTerminal,
-    const bool flush = settings.flush)
+void initLogger(const bool monochrome, const bool bright, const bool flush)
 out (; (logger !is null), "Failed to initialise logger")
 do
 {
@@ -81,7 +82,7 @@ do
  +  `kameloso.common.settings`, so they know to use monochrome output or not.
  +  It is a problem that needs solving.
  +/
-CoreSettings settings;
+CoreSettings* settings;
 
 
 // CoreSettings
@@ -109,6 +110,9 @@ struct CoreSettings
 
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
+
+    /// Flag denoting that usermask should be used instead of accounts to authenticate.
+    bool preferHostmasks = false;
 
     /// Whether to connect to IPv6 addresses or only use IPV4 ones.
     bool ipv6 = true;
@@ -262,6 +266,11 @@ struct Kameloso
      +  handlers of each.
      +/
     IRCPlugin[] plugins;
+
+    /++
+     +  The root copy of the program-wide settings.
+     +/
+    CoreSettings settings;
 
     /++
      +  When a nickname was last issued a WHOIS query for, for hysteresis
@@ -452,7 +461,8 @@ struct Kameloso
      +  Throws:
      +      `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
      +/
-    void initPlugins(const string[] customSettings, out string[][string] missingEntries,
+    void initPlugins(const string[] customSettings,
+        out string[][string] missingEntries,
         out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : EnabledPlugins;
@@ -468,6 +478,7 @@ struct Kameloso
         state.server = parser.server;
         state.bot = this.bot;
         state.mainThread = thisTid;
+        state.settings = settings;
         immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length);
@@ -508,7 +519,7 @@ struct Kameloso
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings, settings);
 
         if (!allCustomSuccess)
         {
@@ -553,24 +564,6 @@ struct Kameloso
             try
             {
                 plugin.teardown();
-
-                if (plugin.state.botUpdated)
-                {
-                    plugin.state.botUpdated = false;
-                    propagateBot(plugin.state.bot);
-                }
-
-                if (plugin.state.clientUpdated)
-                {
-                    plugin.state.clientUpdated = false;
-                    propagateClient(parser.client);
-                }
-
-                if (plugin.state.serverUpdated)
-                {
-                    plugin.state.serverUpdated = false;
-                    propagateServer(parser.server);
-                }
             }
             catch (ErrnoException e)
             {
@@ -638,13 +631,20 @@ struct Kameloso
                 plugin.state.serverUpdated = false;
                 propagateServer(plugin.state.server);
             }
+
+            if (plugin.state.settingsUpdated)
+            {
+                // Something changed the settings; propagate
+                plugin.state.settingsUpdated = false;
+                propagateSettings(plugin.state.settings);
+            }
         }
     }
 
 
     // propagateClient
     /++
-     +  Takes a `dialect.defs.IRCClient` and passes it out to all plugins.
+     +  Takes an `dialect.defs.IRCClient` and passes it out to all plugins.
      +
      +  This is called when a change to the client has occurred and we want to
      +  update all plugins to have a current copy of it.
@@ -665,7 +665,7 @@ struct Kameloso
 
     // propagateServer
     /++
-     +  Takes a `dialect.defs.IRCServer` and passes it out to all plugins.
+     +  Takes an `dialect.defs.IRCServer` and passes it out to all plugins.
      +
      +  This is called when a change to the server has occurred and we want to
      +  update all plugins to have a current copy of it.
@@ -686,7 +686,7 @@ struct Kameloso
 
     // propagateBot
     /++
-     +  Takes a `kameloso.common.IRCBot` and passes it out to all plugins.
+     +  Takes an `kameloso.common.IRCBot` and passes it out to all plugins.
      +
      +  This is called when a change to the bot has occurred and we want to
      +  update all plugins to have a current copy of it.
@@ -701,6 +701,28 @@ struct Kameloso
         foreach (plugin; plugins)
         {
             plugin.state.bot = bot;
+        }
+    }
+
+
+    // propagateSettings
+    /++
+     +  Takes a `kameloso.common.CoreSettings` and passes it out to all plugins.
+     +
+     +  This is called when a change to the bot has occurred and we want to
+     +  update all plugins to have a current copy of it.
+     +
+     +  Params:
+     +      settings = `kameloso.common.CoreSettings` to propagate to all plugins.
+     +/
+    void propagateSettings(CoreSettings settings) nothrow @nogc
+    {
+        // Inherit the changes ourselves
+        this.settings = settings;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.settings = settings;
         }
     }
 
@@ -770,10 +792,10 @@ void printVersionInfo(TerminalForeground colourCode) @system
  +      pre = String to preface the line with, usually a colour code string.
  +      post = String to end the line with, usually a resetting code string.
  +/
-void printVersionInfo(const string pre = string.init, const string post = string.init) @system
+void printVersionInfo(const string pre = string.init, const string post = string.init) @safe
 {
     import kameloso.constants : KamelosoInfo;
-    import std.stdio : stdout, writefln;
+    import std.stdio : writefln;
 
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         pre,
@@ -781,8 +803,6 @@ void printVersionInfo(const string pre = string.init, const string post = string
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
         post);
-
-    if (settings.flush) stdout.flush();
 }
 
 

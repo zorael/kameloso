@@ -22,7 +22,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger, settings;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import core.thread : Fiber;
@@ -83,7 +83,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     if (!nickname.length)
     {
         chan(plugin.state, event.channel, "Usage: %s%s [nickname]"
-            .format(settings.prefix, event.aux));
+            .format(plugin.state.settings.prefix, event.aux));
         return;
     }
 
@@ -347,7 +347,8 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s %s [phrase]".format(settings.prefix, event.aux, verb));
+                "Usage: %s%s %s [phrase]"
+                .format(plugin.state.settings.prefix, event.aux, verb));
             return;
         }
 
@@ -361,7 +362,8 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s %s [phrase index]".format(settings.prefix, event.aux, verb));
+                "Usage: %s%s %s [phrase index]"
+                .format(plugin.state.settings.prefix, event.aux, verb));
             return;
         }
 
@@ -439,7 +441,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s%s %s [optional starting position number]"
-                        .format(settings.prefix, event.aux, verb));
+                        .format(plugin.state.settings.prefix, event.aux, verb));
                     //version(PrintStacktraces) logger.trace(e.info);
                     return;
                 }
@@ -474,7 +476,8 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 
     default:
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [ban|unban|list|clear]".format(settings.prefix, event.aux));
+            "Usage: %s%s [ban|unban|list|clear]"
+            .format(plugin.state.settings.prefix, event.aux));
         break;
     }
 }
@@ -521,7 +524,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]"
-            .format(settings.prefix, event.aux, verb));
+            .format(plugin.state.settings.prefix, event.aux, verb));
     }
 
     switch (verb)
@@ -586,7 +589,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
         if (!slice.length)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s del [timer index]".format(settings.prefix, event.aux));
+                "Usage: %s%s del [timer index]".format(plugin.state.settings.prefix, event.aux));
             return;
         }
 
@@ -667,7 +670,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s%s list [optional starting position number]"
-                        .format(settings.prefix, event.aux));
+                        .format(plugin.state.settings.prefix, event.aux));
                     return;
                 }
             }
@@ -890,7 +893,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 @(ChannelPolicy.home)
 void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : findURLs, settings;
+    import kameloso.common : findURLs;
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
 
@@ -1596,11 +1599,13 @@ private:
         {
             import lu.string : beginsWith;
 
-            if (event.content.beginsWith(settings.prefix) &&
-                (event.content.length > settings.prefix.length))
+            immutable prefix = this.state.settings.prefix;
+
+            if (event.content.beginsWith(prefix) &&
+                (event.content.length > prefix.length))
             {
                 // Specialcase prefixed "enable"
-                if (event.content[settings.prefix.length..$] == "enable")
+                if (event.content[prefix.length..$] == "enable")
                 {
                     // Always pass through
                     return onEventImpl(event);

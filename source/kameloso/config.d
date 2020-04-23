@@ -35,7 +35,6 @@ public:
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
-    import kameloso.common : settings;
     import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
@@ -52,9 +51,14 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 
         sink.serialise(parser.client, bot, parser.server, settings);
 
-        foreach (plugin; instance.plugins)
+        foreach (immutable i, plugin; instance.plugins)
         {
             plugin.serialiseConfigInto(sink);
+
+            if (i+1 < instance.plugins.length)
+            {
+                sink.put('\n');
+            }
         }
 
         immutable justified = sink.data.justifiedEntryValueText;

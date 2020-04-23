@@ -18,7 +18,6 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
-import kameloso.common : settings;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import dialect.defs;
@@ -142,7 +141,7 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event, settings.colouredOutgoing);
+    spawn(&worker, cast(shared)plugin.state, event, plugin.state.settings.colouredOutgoing);
 }
 
 

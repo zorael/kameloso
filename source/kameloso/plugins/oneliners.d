@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger, settings;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 
@@ -49,10 +49,10 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
     import lu.string : beginsWith, contains, nom;
 
-    if (!event.content.beginsWith(settings.prefix)) return;
+    if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
     string slice = event.content;
-    slice.nom(settings.prefix);
+    slice.nom(plugin.state.settings.prefix);
 
     // An empty command is invalid, as is one containing spaces
     if (!slice.length || slice.contains(' ')) return;
@@ -100,7 +100,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     void sendUsage(const string verb = "[add|del|list]", const bool includeText = true)
     {
         chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
-            .format(settings.prefix, event.aux, verb,
+            .format(plugin.state.settings.prefix, event.aux, verb,
             includeText ? " [text]" : string.init));
     }
 
@@ -124,7 +124,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
         chan(plugin.state, event.channel, "Oneliner %s%s added%s."
-            .format(settings.prefix, trigger,
+            .format(plugin.state.settings.prefix, trigger,
                 plugin.onelinersSettings.caseSensitiveTriggers ?
                 " (made lowercase)" : string.init));
         break;
@@ -137,7 +137,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
         if (trigger !in plugin.onelinersByChannel[event.channel])
         {
             chan(plugin.state, event.channel, "No such trigger: %s%s"
-                .format(settings.prefix, slice));
+                .format(plugin.state.settings.prefix, slice));
             return;
         }
 
@@ -145,7 +145,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
         chan(plugin.state, event.channel, "Oneliner %s%s removed."
-            .format(settings.prefix, trigger));
+            .format(plugin.state.settings.prefix, trigger));
         break;
 
     case "list":
@@ -191,7 +191,8 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 
     if (channelOneliners && channelOneliners.length)
     {
-        chan(plugin.state, channelName, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
+        chan(plugin.state, channelName, ("Available commands: %-(" ~
+            plugin.state.settings.prefix ~ "%s, %)")
             .format(channelOneliners.byKey));
     }
     else

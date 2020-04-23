@@ -288,7 +288,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(privateState, event, privilegeLevel);
+            filterSender(privateState, event, privilegeLevel, privateState.settings.preferHostmasks);
     }
 
 
@@ -363,7 +363,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
-                import kameloso.common : settings;
                 import lu.conv : Enum;
                 import std.format : format;
                 import std.stdio : stdout, writeln, writefln;
@@ -518,7 +517,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (verbose)
             {
                 writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                if (settings.flush) stdout.flush();
+                if (privateState.settings.flush) stdout.flush();
             }
 
             static if (!hasUDA!(fun, ChannelPolicy) ||
@@ -531,7 +530,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.home");
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
 
                 if (!event.channel.length)
@@ -543,7 +542,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...ignore non-home channel ", event.channel);
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     // channel policy does not match
@@ -555,7 +554,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.any");
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
             }
 
@@ -596,18 +595,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writefln(`...BotCommand "%s"`, commandUDA.word);
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     // Reset between iterations as we nom the contents
                     mutEvent = event;
 
-                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy, privateState.client))
+                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy,
+                        privateState.client, privateState.settings.prefix))
                     {
                         static if (verbose)
                         {
                             writeln("...policy doesn't match; continue next BotCommand");
-                            if (settings.flush) stdout.flush();
+                            if (privateState.settings.flush) stdout.flush();
                         }
 
                         continue;  // next BotCommand UDA
@@ -626,7 +626,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("...command matches!");
-                            if (settings.flush) stdout.flush();
+                            if (privateState.settings.flush) stdout.flush();
                         }
 
                         mutEvent.aux = thisCommand;
@@ -655,18 +655,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("BotRegex: `", regexUDA.expression, "`");
-                            if (settings.flush) stdout.flush();
+                            if (privateState.settings.flush) stdout.flush();
                         }
 
                         // Reset between iterations; BotCommands may have altered it
                         mutEvent = event;
 
-                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy, privateState.client))
+                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy,
+                            privateState.client, privateState.settings.prefix))
                         {
                             static if (verbose)
                             {
                                 writeln("...policy doesn't match; continue next BotRegex");
-                                if (settings.flush) stdout.flush();
+                                if (privateState.settings.flush) stdout.flush();
                             }
 
                             continue;  // next BotRegex UDA
@@ -683,7 +684,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 static if (verbose)
                                 {
                                     writeln("...expression matches!");
-                                    if (settings.flush) stdout.flush();
+                                    if (privateState.settings.flush) stdout.flush();
                                 }
 
                                 mutEvent.aux = hits[0];
@@ -705,7 +706,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             {
                                 writeln("...BotRegex exception: ", e.msg);
                                 version(PrintStacktraces) writeln(e.toString);
-                                if (settings.flush) stdout.flush();
+                                if (privateState.settings.flush) stdout.flush();
                             }
                             continue;  // next BotRegex
                         }
@@ -721,7 +722,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...neither BotCommand nor BotRegex matched; continue funloop");
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     return Next.continue_; // next function
@@ -749,7 +750,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
 
                 static if (__traits(hasMember, this, "allow") && isSomeFunction!(this.allow))
@@ -767,7 +768,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...custom allow!");
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     immutable result = this.allow(mutEvent, privilegeLevel);
@@ -777,7 +778,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...built-in allow.");
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     immutable result = allowImpl(mutEvent, privilegeLevel);
@@ -786,7 +787,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...result is ", Enum!FilterResult.toString(result));
-                    if (settings.flush) stdout.flush();
+                    if (privateState.settings.flush) stdout.flush();
                 }
 
                 with (FilterResult)
@@ -806,7 +807,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writefln("...%s WHOIS", typeof(this).stringof);
-                        if (settings.flush) stdout.flush();
+                        if (privateState.settings.flush) stdout.flush();
                     }
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
@@ -844,7 +845,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (verbose)
             {
                 writeln("...calling!");
-                if (settings.flush) stdout.flush();
+                if (privateState.settings.flush) stdout.flush();
             }
 
             static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
@@ -995,7 +996,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     public this(IRCPluginState state) @system
     {
-        import kameloso.common : settings;
         import lu.traits : isAnnotated, isSerialisable;
         import std.traits : EnumMembers;
 
@@ -1013,12 +1013,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (isAnnotated!(this.tupleof[i], Resource))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(settings.resourceDirectory, member).expandTilde;
+                    member = buildNormalizedPath(privateState.settings.resourceDirectory, member)
+                        .expandTilde;
                 }
                 else static if (isAnnotated!(this.tupleof[i], Configuration))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(settings.configDirectory, member).expandTilde;
+                    member = buildNormalizedPath(privateState.settings.configDirectory, member)
+                        .expandTilde;
                 }
             }
         }
@@ -1585,15 +1587,16 @@ version(unittest)
  +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +      policy = Policy to apply.
  +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      prefix = The prefix as set in the program-wide settings.
  +
  +  Returns:
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
  +/
 bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
-    const PrefixPolicy policy, const IRCClient client)
+    const PrefixPolicy policy, const IRCClient client, const string prefix)
 {
-    import kameloso.common : settings, stripSeparatedPrefix;
+    import kameloso.common : stripSeparatedPrefix;
     import lu.string : beginsWith, nom;
     import std.typecons : No, Yes;
 
@@ -1616,14 +1619,14 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
         return true;
 
     case prefixed:
-        if (settings.prefix.length && content.beginsWith(settings.prefix))
+        if (prefix.length && content.beginsWith(prefix))
         {
             static if (verbose)
             {
-                writefln("starts with prefix (%s)", settings.prefix);
+                writefln("starts with prefix (%s)", prefix);
             }
 
-            content.nom!(Yes.decode)(settings.prefix);
+            content.nom!(Yes.decode)(prefix);
         }
         else
         {
@@ -1710,13 +1713,16 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +      state = Reference to the `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
+ +      preferHostmasks = Whether we're using hostmasks to identify users, or
+ +          services accounts. There's no point with WHOIS if we're basing
+ +          authentication on hostmasks.
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
-    const PrivilegeLevel level) @safe
+    const PrivilegeLevel level, const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
@@ -1735,7 +1741,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     immutable timediff = (event.time - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
-    if (event.sender.account.length)
+    if (preferHostmasks || event.sender.account.length)
     {
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
         immutable isOperator = (class_ == IRCUser.Class.operator);
@@ -1760,7 +1766,8 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
         }
         else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
-            return whoisExpired ? FilterResult.whois : FilterResult.pass;
+            return (whoisExpired && !preferHostmasks) ?
+                FilterResult.whois : FilterResult.pass;
         }
         else if (level == PrivilegeLevel.ignore)
         {
@@ -1810,7 +1817,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
  +/
 struct IRCPluginState
 {
-    import kameloso.common : IRCBot;
+    import kameloso.common : CoreSettings, IRCBot;
     import kameloso.thread : ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -1832,6 +1839,11 @@ struct IRCPluginState
      +  to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
+
+    /++
+     +  The current program-wide `kameloso.common.CoreSettings`.
+     +/
+    CoreSettings settings;
 
     /// Thread ID to the main thread.
     Tid mainThread;
@@ -1902,4 +1914,7 @@ struct IRCPluginState
 
     /// Whether or not `server` was altered. Must be reset manually.
     bool serverUpdated;
+
+    /// Whether or not `settings` was altered. Must be reset manually.
+    bool settingsUpdated;
 }

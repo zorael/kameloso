@@ -411,7 +411,6 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
                 if ((result == event.content) || !result.length) return;
 
-                import kameloso.common : settings;
                 import kameloso.messaging : chan;
                 import std.format : format;
 

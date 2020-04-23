@@ -5,7 +5,8 @@ module kameloso.kameloso;
 
 private:
 
-import kameloso.common;
+import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
+    initLogger, logger, printVersionInfo;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import dialect;
@@ -106,7 +107,7 @@ void messageFiber(ref Kameloso instance)
         /// Send a message to the server bypassing throttling.
         void immediateline(ThreadMessage.Immediateline, string line) scope
         {
-            if (!settings.hideOutgoing)
+            if (!instance.settings.hideOutgoing)
             {
                 version(Colours)
                 {
@@ -126,7 +127,7 @@ void messageFiber(ref Kameloso instance)
         /// Echo a line to the terminal and send it to the server.
         void sendline(ThreadMessage.Sendline, string line) scope
         {
-            instance.outbuffer.put(OutgoingLine(line, settings.hideOutgoing));
+            instance.outbuffer.put(OutgoingLine(line, instance.settings.hideOutgoing));
         }
 
         /// Send a line to the server without echoing it.
@@ -162,7 +163,7 @@ void messageFiber(ref Kameloso instance)
         void save(ThreadMessage.Save) scope
         {
             import kameloso.config : writeConfigurationFile;
-            instance.writeConfigurationFile(settings.configFile);
+            instance.writeConfigurationFile(instance.settings.configFile);
         }
 
         import kameloso.plugins.ircplugin : IRCPlugin;
@@ -230,8 +231,13 @@ void messageFiber(ref Kameloso instance)
 
             version(TwitchSupport)
             {
-                bool fast;
+                immutable fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                    (event.num == 999);
             }
+
+            immutable background = (event.altcount == 999);
+            immutable quiet = instance.settings.hideOutgoing ||
+                (event.target.class_ == IRCUser.Class.admin);
 
             string line;
             string prelude;
@@ -243,12 +249,6 @@ void messageFiber(ref Kameloso instance)
             switch (event.type)
             {
             case CHAN:
-                version(TwitchSupport)
-                {
-                    fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
-                        (event.num == 999);
-                }
-
                 prelude = "PRIVMSG %s :".format(channel);
                 lines = content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
@@ -281,7 +281,6 @@ void messageFiber(ref Kameloso instance)
                     {
                         prelude = "PRIVMSG %s :/me ".format(emoteTarget);
                         line = content;
-                        fast = (event.num == 999);
                     }
                 }
 
@@ -358,9 +357,6 @@ void messageFiber(ref Kameloso instance)
                 {
                     import std.stdio : stdout, writef, writefln, writeln;
 
-                    immutable quiet = (event.target.class_ == IRCUser.Class.admin);
-                    immutable background = (event.altcount == 999);
-
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", event.target.nickname,
                         event.aux, quiet, background);
@@ -371,7 +367,7 @@ void messageFiber(ref Kameloso instance)
                     version(TraceWhois)
                     {
                         writeln(" ...and actually issuing.");
-                        if (settings.flush) stdout.flush();
+                        if (instance.settings.flush) stdout.flush();
                     }
 
                     line = "WHOIS " ~ target.nickname;
@@ -382,7 +378,7 @@ void messageFiber(ref Kameloso instance)
                     version(TraceWhois)
                     {
                         writefln(" ...but already issued %d seconds ago.", (now - then));
-                        if (settings.flush) stdout.flush();
+                        if (instance.settings.flush) stdout.flush();
                     }
                 }
                 break;
@@ -407,22 +403,17 @@ void messageFiber(ref Kameloso instance)
                     if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
-                        immutable quiet = settings.hideOutgoing ||
-                            (event.target.class_ == IRCUser.Class.admin);
                         instance.fastbuffer.put(OutgoingLine(finalLine, quiet));
                         return;
                     }
                 }
 
-                if (event.altcount == 999)
+                if (background)
                 {
                     // Send a line via the low-priority background buffer.
-                    immutable quiet = settings.hideOutgoing ||
-                        (event.target.class_ == IRCUser.Class.admin);
                     instance.backgroundBuffer.put(OutgoingLine(finalLine, quiet));
-                    return;
                 }
-                else if (event.target.class_ == IRCUser.Class.admin)
+                else if (quiet)
                 {
                     quietline(ThreadMessage.Quietline(), finalLine);
                 }
@@ -461,7 +452,7 @@ void messageFiber(ref Kameloso instance)
                 import std.stdio : writeln, stdout;
 
                 writeln(message);
-                if (settings.flush) stdout.flush();
+                if (instance.settings.flush) stdout.flush();
                 break;
 
             case trace:
@@ -798,6 +789,13 @@ Next mainLoop(ref Kameloso instance)
                         // Something changed the server; propagate
                         plugin.state.serverUpdated = false;
                         instance.propagateServer(plugin.state.server);
+                    }
+
+                    if (plugin.state.settingsUpdated)
+                    {
+                        // Something changed the settings; propagate
+                        plugin.state.settingsUpdated = false;
+                        instance.propagateSettings(plugin.state.settings);
                     }
                 }
 
@@ -1408,10 +1406,11 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
             version(TraceWhois)
             {
                 writeln(" ...and actually issuing.");
-                if (settings.flush) stdout.flush();
+                if (instance.settings.flush) stdout.flush();
             }
 
-            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, settings.hideOutgoing));
+            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
+                instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
         }
         else
@@ -1419,7 +1418,7 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
             version(TraceWhois)
             {
                 writefln(" ...but already issued %d seconds ago.", (now - then));
-                if (settings.flush) stdout.flush();
+                if (instance.settings.flush) stdout.flush();
             }
         }
     }
@@ -1547,7 +1546,7 @@ Next tryConnect(ref Kameloso instance)
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn, settings.endlesslyConnect,
+        connectFiber(instance.conn, instance.settings.endlesslyConnect,
             ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.retry;
 
@@ -1671,11 +1670,12 @@ Next tryResolve(ref Kameloso instance, const bool firstConnect)
     import std.concurrency : Generator;
 
     enum defaultResolveAttempts = 15;
-    immutable resolveAttempts = settings.endlesslyConnect ? int.max : defaultResolveAttempts;
+    immutable resolveAttempts = instance.settings.endlesslyConnect ?
+        int.max : defaultResolveAttempts;
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, settings.ipv6, resolveAttempts, *instance.abort));
+        instance.parser.server.port, instance.settings.ipv6, resolveAttempts, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -1812,21 +1812,22 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +  the calling site.
  +
  +  Params:
+ +      configFile = Full path to the configuration file.
  +      binaryPath = Full path to the current binary.
  +/
-void complainAboutMissingConfiguration(const string binaryPath)
+void complainAboutMissingConfiguration(const string configFile, const string binaryPath)
 {
     import std.file : exists;
     import std.path : baseName;
 
     logger.warning("Warning: No administrators nor home channels configured!");
 
-    if (settings.configFile.exists)
+    if (configFile.exists)
     {
         import kameloso.config : complainAboutIncompleteConfiguration;
 
         logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            Tint.info, settings.configFile, Tint.log);
+            Tint.info, configFile, Tint.log);
         complainAboutIncompleteConfiguration();
     }
     else
@@ -1875,8 +1876,11 @@ void preInstanceSetup()
  +  Sets up `kameloso.common.settings`, expanding paths and more.
  +
  +  This is called during early execution.
+ +
+ +  Params:
+ +      settings = A reference to the `kameloso.common.CoreSettings` we want to set up.
  +/
-void setupSettings()
+void setupSettings(ref CoreSettings settings)
 {
     import kameloso.platform : configurationBaseDirectory, currentPlatform, resourceBaseDirectory;
     import std.path : buildNormalizedPath;
@@ -1920,7 +1924,7 @@ void setupSettings()
  +/
 Next verifySettings(ref Kameloso instance)
 {
-    if (!settings.force)
+    if (!instance.settings.force)
     {
         IRCServer conservativeServer;
         conservativeServer.maxNickLength = 25;  // Twitch max, should be enough
@@ -1932,7 +1936,7 @@ Next verifySettings(ref Kameloso instance)
             return Next.returnFailure;
         }
 
-        if (!settings.prefix.length)
+        if (!instance.settings.prefix.length)
         {
             logger.error("No prefix configured!");
             return Next.returnFailure;
@@ -1954,7 +1958,7 @@ Next verifySettings(ref Kameloso instance)
         enum addressIsResolvable = true;
     }
 
-    if (!settings.force && !addressIsResolvable)
+    if (!instance.settings.force && !addressIsResolvable)
     {
         logger.errorf("Invalid address! [%s%s%s]", Tint.log,
             instance.parser.server.address, Tint.error);
@@ -1980,16 +1984,16 @@ void resolveResourceDirectory(ref Kameloso instance)
     import std.path : buildNormalizedPath, dirName;
 
     // Resolve and create the resource directory
-    settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
+    instance.settings.resourceDirectory = buildNormalizedPath(instance.settings.resourceDirectory,
         "server", instance.parser.server.address);
-    settings.configDirectory = settings.configFile.dirName;
+    instance.settings.configDirectory = instance.settings.configFile.dirName;
 
-    if (!settings.resourceDirectory.exists)
+    if (!instance.settings.resourceDirectory.exists)
     {
         import std.file : mkdirRecurse;
 
-        mkdirRecurse(settings.resourceDirectory);
-        logger.logf("Created resource directory %s%s", Tint.info, settings.resourceDirectory);
+        mkdirRecurse(instance.settings.resourceDirectory);
+        logger.logf("Created resource directory %s%s", Tint.info, instance.settings.resourceDirectory);
     }
 }
 
@@ -2189,7 +2193,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         firstConnect = false;
     }
     while (!*instance.abort && ((next == Next.continue_) || (next == Next.retry) ||
-        ((next == Next.returnFailure) && settings.reconnectOnFailure)));
+        ((next == Next.returnFailure) && instance.settings.reconnectOnFailure)));
 }
 
 
@@ -2310,17 +2314,20 @@ int initBot(string[] args)
     // Set up the terminal environment.
     preInstanceSetup();
 
+    static import kameloso.common;
+
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
+    kameloso.common.settings = &instance.settings;
     instance.abort = &abort;
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
-    setupSettings();
+    setupSettings(instance.settings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
-    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+    initLogger(instance.settings.monochrome, instance.settings.brightTerminal, instance.settings.flush);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();
@@ -2360,13 +2367,13 @@ int initBot(string[] args)
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
     // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
     // Skip if --force was passed.
-    if (!settings.force) applyDefaults(instance.parser.client, instance.parser.server);
+    if (!instance.settings.force) applyDefaults(instance.parser.client, instance.parser.server);
 
     string pre, post;
 
     version(Colours)
     {
-        if (!settings.monochrome)
+        if (!instance.settings.monochrome)
         {
             import kameloso.logger : KamelosoLogger;
             import kameloso.terminal : TerminalForeground, colour;
@@ -2374,7 +2381,7 @@ int initBot(string[] args)
             enum headertintColourBright = TerminalForeground.black.colour.idup;
             enum headertintColourDark = TerminalForeground.white.colour.idup;
             enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
+            pre = instance.settings.brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
         }
     }
@@ -2390,7 +2397,7 @@ int initBot(string[] args)
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
-        complainAboutMissingConfiguration(args[0]);
+        complainAboutMissingConfiguration(instance.settings.configFile, args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
@@ -2440,7 +2447,7 @@ int initBot(string[] args)
         if (missingEntries.length || invalidEntries.length)
         {
             logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-                Tint.info, Tint.log, settings.configFile);
+                Tint.info, Tint.log, instance.settings.configFile);
             logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
             logger.trace("---");
         }
@@ -2449,13 +2456,13 @@ int initBot(string[] args)
     {
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
-        if (!settings.force) return 1;
+        if (!instance.settings.force) return 1;
     }
     catch (IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
-        if (!settings.force) return 1;
+        if (!instance.settings.force) return 1;
     }
 
     // Save the original nickname *once*, outside the connection loop.
@@ -2471,7 +2478,7 @@ int initBot(string[] args)
     {
         // Connected and aborting
 
-        if (!settings.hideOutgoing)
+        if (!instance.settings.hideOutgoing)
         {
             version(Colours)
             {
@@ -2488,21 +2495,21 @@ int initBot(string[] args)
         instance.conn.sendline("QUIT :" ~ instance.bot.quitReason);
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
-        !settings.reconnectOnFailure)
+        !instance.settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", Tint.info, Tint.log);
     }
 
     // Save if we're exiting and configuration says we should.
-    if (settings.saveOnExit)
+    if (instance.settings.saveOnExit)
     {
         import kameloso.config : writeConfigurationFile;
-        instance.writeConfigurationFile(settings.configFile);
+        instance.writeConfigurationFile(instance.settings.configFile);
     }
 
     // The connection history may be empty if exitSummary was set mid-execution.
-    if (settings.exitSummary && instance.connectionHistory.length)
+    if (instance.settings.exitSummary && instance.connectionHistory.length)
     {
         instance.printSummary();
     }

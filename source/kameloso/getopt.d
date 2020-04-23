@@ -41,10 +41,13 @@ import std.typecons : No, Yes;
  +
  +  Params:
  +      results = Results from a `std.getopt.getopt` call, usually with `.helpWanted` true.
+ +      monochrome = Whether or not terminal colours should be used.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adjusted to suit.
  +/
-void printHelp(GetoptResult results) @system
+void printHelp(GetoptResult results, const bool monochrome, const bool brightTerminal) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : printVersionInfo;
     import std.stdio : writeln;
 
     string pre, post;
@@ -53,12 +56,12 @@ void printHelp(GetoptResult results) @system
     {
         import kameloso.terminal : TerminalForeground, colour;
 
-        if (!settings.monochrome)
+        if (!monochrome)
         {
             enum headertintColourBright = TerminalForeground.black.colour.idup;
             enum headertintColourDark = TerminalForeground.white.colour.idup;
             enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
+            pre = brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
         }
     }
@@ -70,11 +73,11 @@ void printHelp(GetoptResult results) @system
 
     version(Colours)
     {
-        if (!settings.monochrome)
+        if (!monochrome)
         {
             import kameloso.terminal : TerminalForeground, colour;
 
-            immutable headlineTint = settings.brightTerminal ?
+            immutable headlineTint = brightTerminal ?
                 TerminalForeground.green : TerminalForeground.lightgreen;
             headline = headline.colour(headlineTint);
         }
@@ -105,7 +108,7 @@ void printHelp(GetoptResult results) @system
 void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, const string[] customSettings) @system
 {
-    import kameloso.common : Tint, logger, printVersionInfo, settings;
+    import kameloso.common : Tint, logger, printVersionInfo;
     import kameloso.config : writeConfigurationFile;
     import kameloso.constants : KamelosoDefaultStrings;
     import kameloso.printing : printObjects;
@@ -119,7 +122,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     {
         import kameloso.terminal : TerminalForeground;
 
-        if (!settings.monochrome)
+        if (!instance.settings.monochrome)
         {
             import kameloso.terminal : colour;
 
@@ -140,11 +143,11 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     // string, and havig it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;
 
-    printObjects(client, instance.bot, server, settings);
+    printObjects(client, instance.bot, server, instance.settings);
 
-    instance.writeConfigurationFile(settings.configFile);
+    instance.writeConfigurationFile(instance.settings.configFile);
 
-    logger.logf("Configuration written to %s%s\n", Tint.info, settings.configFile);
+    logger.logf("Configuration written to %s%s\n", Tint.info, instance.settings.configFile);
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length)
     {
@@ -163,10 +166,14 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +      customSettings = const string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
+ +      monochrome = Whether or not terminal colours should be used.
+ +      brightTerminal = Whether or not the terminal has a bright background
+ +          and colours should be adjusted to suit.
  +/
-void printSettings(ref Kameloso instance, const string[] customSettings) @system
+void printSettings(ref Kameloso instance, const string[] customSettings,
+    const bool monochrome, const bool brightTerminal) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -176,12 +183,12 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     {
         import kameloso.terminal : TerminalForeground, colour;
 
-        if (!settings.monochrome)
+        if (!monochrome)
         {
             enum headertintColourBright = TerminalForeground.black.colour.idup;
             enum headertintColourDark = TerminalForeground.white.colour.idup;
             enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = settings.brightTerminal ? headertintColourBright : headertintColourDark;
+            pre = brightTerminal ? headertintColourBright : headertintColourDark;
             post = defaulttintColour;
         }
     }
@@ -189,7 +196,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     printVersionInfo(pre, post);
     writeln();
 
-    printObjects!(No.printAll)(instance.parser.client, instance.bot, instance.parser.server, settings);
+    printObjects!(No.printAll)(instance.parser.client, instance.bot,
+        instance.parser.server, instance.settings);
 
     string[][string] ignore;
     instance.initPlugins(customSettings, ignore, ignore);
@@ -233,13 +241,13 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : printVersionInfo;
     import kameloso.config : applyDefaults, readConfigInto;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
 
-    scope(exit) if (settings.flush) stdout.flush();
+    scope(exit) if (instance.settings.flush) stdout.flush();
 
     bool shouldWriteConfig;
     bool shouldShowVersion;
@@ -348,7 +356,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         else if (configFileResults.helpWanted)
         {
             // --help|-h was passed; show the help table and quit
-            printHelp(results);
+            printHelp(results, instance.settings.monochrome, instance.settings.brightTerminal);
             return Next.returnSuccess;
         }
 
@@ -424,7 +432,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            printSettings(instance, customSettings);
+            printSettings(instance, customSettings, instance.settings.monochrome,
+                instance.settings.brightTerminal);
             return Next.returnSuccess;
         }
 

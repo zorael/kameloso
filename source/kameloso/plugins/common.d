@@ -331,6 +331,8 @@ public:
 }
 
 
+private import kameloso.common : CoreSettings;
+
 // applyCustomSettings
 /++
  +  Changes a setting of a plugin, given both the names of the plugin and the
@@ -342,11 +344,13 @@ public:
  +      plugins = Array of all `IRCPlugin`s.
  +      customSettings = Array of custom settings to apply to plugins' own
  +          setting, in the string forms of "`plugin.setting=value`".
+ +      copyOfSettings = A copy of the program-wide `kameloso.common.CoreSettings`.
  +
  +  Returns:
  +      `true` if no setting name mismatches occurred, `false` if it did.
  +/
-bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
+bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
+    CoreSettings copyOfSettings)
 {
     import kameloso.common : Tint, logger;
     import lu.string : contains, nom;
@@ -370,16 +374,18 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
         string slice = line;  // mutable
         immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
-        immutable value = slice.length ? slice : "true";  // default setting if none given
+        immutable value = slice;
 
         if (pluginstring == "core")
         {
-            import kameloso.common : initLogger, settings;
-            import lu.objmanip : setMemberByName;
+            import kameloso.common : initLogger;
+            import lu.objmanip : SetMemberException, setMemberByName;
 
             try
             {
-                immutable success = settings.setMemberByName(setting, value);
+                immutable success = slice.length ?
+                    copyOfSettings.setMemberByName(setting, value) :
+                    copyOfSettings.setMemberByName(setting, true);
 
                 if (!success)
                 {
@@ -387,18 +393,34 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                         Tint.log, Tint.warning, setting);
                     noErrors = false;
                 }
-                else if ((setting == "monochrome") || (setting == "brightTerminal"))
+                else
                 {
-                    initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+                    if ((setting == "monochrome") || (setting == "brightTerminal"))
+                    {
+                        initLogger(copyOfSettings.monochrome,
+                            copyOfSettings.brightTerminal, copyOfSettings.flush);
+                    }
+
+                    foreach (plugin; plugins)
+                    {
+                        plugin.state.settings = copyOfSettings;
+                        plugin.state.settingsUpdated = true;
+                    }
                 }
+            }
+            catch (SetMemberException e)
+            {
+                logger.warningf("Failed to set %score%s.%1$s%3$s%2$s: " ~
+                    "it requires a value and none was supplied",
+                    Tint.log, Tint.warning, setting);
+                version(PrintStacktraces) logger.trace(e.info);
+                noErrors = false;
             }
             catch (ConvException e)
             {
                 logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
                     Tint.log, Tint.warning, setting, value);
                 noErrors = false;
-
-                //version(PrintStacktraces) logger.trace(e.info);
             }
 
             continue top;
@@ -456,7 +478,7 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    applyCustomSettings([ plugin ], newSettings);
+    applyCustomSettings([ plugin ], newSettings, state.settings);
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 
@@ -970,10 +992,10 @@ private:
     /++
      +  Sends a channel message.
      +/
-    void chan(Flag!"priority" priority = No.priority)(const string channel,
-        const string content, bool quiet = kameloso.common.settings.hideOutgoing)
+    void chan(Flag!"priority" priority = No.priority)(const string channel, const string content)
     {
-        return kameloso.messaging.chan!priority(privateState, channel, content, quiet);
+        return kameloso.messaging.chan!priority(privateState, channel, content,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -981,10 +1003,10 @@ private:
     /++
      +  Sends a private query message to a user.
      +/
-    void query(Flag!"priority" priority = No.priority)(const string nickname,
-        const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+    void query(Flag!"priority" priority = No.priority)(const string nickname, const string content)
     {
-        return kameloso.messaging.query!priority(privateState, nickname, content, quiet);
+        return kameloso.messaging.query!priority(privateState, nickname, content,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -997,9 +1019,10 @@ private:
      +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!priority(privateState, channel, nickname, content, quiet);
+        return kameloso.messaging.privmsg!priority(privateState, channel,
+            nickname, content, privateState.settings.hideOutgoing);
     }
 
 
@@ -1008,9 +1031,10 @@ private:
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     void emote(Flag!"priority" priority = No.priority)(const string emoteTarget,
-        const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string content)
     {
-        return kameloso.messaging.emote!priority(privateState, emoteTarget, content, quiet);
+        return kameloso.messaging.emote!priority(privateState, emoteTarget,
+            content, privateState.settings.hideOutgoing);
     }
 
 
@@ -1021,10 +1045,10 @@ private:
      +  This includes modes that pertain to a user in the context of a channel, like bans.
      +/
     void mode(Flag!"priority" priority = No.priority)(const string channel,
-        const string modes, const string content = string.init,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string modes, const string content = string.init)
     {
-        return kameloso.messaging.mode!priority(privateState, channel, modes, content, quiet);
+        return kameloso.messaging.mode!priority(privateState, channel, modes,
+            content, privateState.settings.hideOutgoing);
     }
 
 
@@ -1032,10 +1056,10 @@ private:
     /++
      +  Sets the topic of a channel.
      +/
-    void topic(Flag!"priority" priority = No.priority)(const string channel,
-        const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
+    void topic(Flag!"priority" priority = No.priority)(const string channel, const string content)
     {
-        return kameloso.messaging.topic!priority(privateState, channel, content, quiet);
+        return kameloso.messaging.topic!priority(privateState, channel, content,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1043,10 +1067,10 @@ private:
     /++
      +  Invites a user to a channel.
      +/
-    void invite(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const bool quiet = kameloso.common.settings.hideOutgoing)
+    void invite(Flag!"priority" priority = No.priority)(const string channel, const string nickname)
     {
-        return kameloso.messaging.invite!priority(privateState, channel, nickname, quiet);
+        return kameloso.messaging.invite!priority(privateState, channel,
+            nickname, privateState.settings.hideOutgoing);
     }
 
 
@@ -1055,9 +1079,10 @@ private:
      +  Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)(const string channel,
-        const string key = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string key = string.init)
     {
-        return kameloso.messaging.join!priority(privateState, channel, key, quiet);
+        return kameloso.messaging.join!priority(privateState, channel, key,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1066,10 +1091,10 @@ private:
      +  Kicks a user from a channel.
      +/
     void kick(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string reason = string.init,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string nickname, const string reason = string.init)
     {
-        return kameloso.messaging.kick!priority(privateState, channel, nickname, reason, quiet);
+        return kameloso.messaging.kick!priority(privateState, channel, nickname,
+            reason, privateState.settings.hideOutgoing);
     }
 
 
@@ -1078,9 +1103,10 @@ private:
      +  Leaves a channel.
      +/
     void part(Flag!"priority" priority = No.priority)(const string channel,
-        const string reason = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
+        const string reason = string.init)
     {
-        return kameloso.messaging.part!priority(privateState, channel, reason, quiet);
+        return kameloso.messaging.part!priority(privateState, channel, reason,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1088,10 +1114,10 @@ private:
     /++
      +  Disconnects from the server, optionally with a quit reason.
      +/
-    void quit(Flag!"priority" priority = No.priority)(const string reason = string.init,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+    void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
     {
-        return kameloso.messaging.quit!priority(privateState, reason, quiet);
+        return kameloso.messaging.quit!priority(privateState, reason,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1100,10 +1126,10 @@ private:
      +  Queries the server for WHOIS information about a user.
      +/
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
-        const bool force = false, const bool quiet = kameloso.common.settings.hideOutgoing,
-        const string caller = __FUNCTION__)
+        const bool force = false, const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.whois!priority(privateState, nickname, force, quiet, caller);
+        return kameloso.messaging.whois!priority(privateState, nickname, force,
+            privateState.settings.hideOutgoing, caller);
     }
 
     // raw
@@ -1113,10 +1139,10 @@ private:
      +  This is used to send messages of types for which there exist no helper
      +  functions.
      +/
-    void raw(Flag!"priority" priority = No.priority)(const string line,
-        const bool quiet = kameloso.common.settings.hideOutgoing)
+    void raw(Flag!"priority" priority = No.priority)(const string line)
     {
-        return kameloso.messaging.raw!priority(privateState, line, quiet);
+        return kameloso.messaging.raw!priority(privateState, line,
+            privateState.settings.hideOutgoing);
     }
 
 
@@ -1935,8 +1961,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /++
      +  Event types that we may encounter as responses to WHOIS queries.
      +/
-    static immutable whoisEventTypes =
+    static immutable IRCEvent.Type[6] whoisEventTypes =
     [
+        IRCEvent.Type.RPL_WHOISUSER,
         IRCEvent.Type.RPL_WHOISACCOUNT,
         IRCEvent.Type.RPL_WHOISREGNICK,
         IRCEvent.Type.RPL_ENDOFWHOIS,
@@ -1968,7 +1995,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable whoisEvent = thisFiber.payload;
 
-        assert(whoisEventTypes.canFind(whoisEvent.type),
+        assert(whoisEventTypes[].canFind(whoisEvent.type),
             "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
             "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
 
@@ -1987,7 +2014,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else static if (TakesParams!(onSuccess, AliasSeq!string))
             {
-                return onSuccess(whoisEvent.target.account);
+                return onSuccess(context.state.settings.preferHostmasks ?
+                    whoisEvent.target.hostmask :
+                    whoisEvent.target.account);
             }
             else static if (arity!onSuccess == 0)
             {
@@ -2019,6 +2048,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
                 else static if (TakesParams!(onFailure, AliasSeq!string))
                 {
+                    // Never called when using hostmasks
                     return onFailure(whoisEvent.target.account);
                 }
                 else static if (arity!onFailure == 0)
@@ -2064,15 +2094,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         // Clean up awaiting fiber entries on exit, just to be neat.
-        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes);
+        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
 
         if ((whoisEvent.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
-            (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK))
+            (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
+            context.state.settings.preferHostmasks)
         {
             callOnSuccess();
         }
-        else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
-            (whoisEvent.type == IRCEvent.Type.ERR_NOSUCHNICK)) */
+        else
         {
             callOnFailure();
         }
@@ -2090,12 +2120,17 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +      nickname = Nickname of the user the enqueueing event relates to.
      +      issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
      +      background = Whether or not to issue queries as low-priority background messages.
+     +
+     +  Throws:
+     +      `object.Exception` if a success of failure function was to trigger
+     +      in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname, const bool issueWhois = true,
         const bool background = false)
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
+        import lu.string : contains, nom;
         import lu.traits : TakesParams;
         import std.meta : AliasSeq;
         import std.traits : arity;
@@ -2121,8 +2156,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     {
                         static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                         {
-                            // No can do
-                            return;
+                            // Can't WHOIS on Twitch
+                            throw new Exception("Tried to enqueue a `" ~
+                                typeof(onSuccess).stringof ~ " onSuccess` function " ~
+                                "when on Twitch (can't WHOIS)");
                         }
                         else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                         {
@@ -2143,15 +2180,13 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent) ||
+                    TakesParams!(onSuccess, AliasSeq!IRCUser))
                 {
-                    // No can do
-                    return;
-                }
-                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
-                {
-                    // No can do
-                    return;
+                    // Can't WHOIS on Twitch
+                    throw new Exception("Tried to enqueue a `" ~
+                        typeof(onSuccess).stringof ~ " onSuccess` function " ~
+                        "when on Twitch without `UserAwareness` (can't WHOIS)");
                 }
                 else static if (TakesParams!(onSuccess, AliasSeq!string))
                 {
@@ -2200,7 +2235,13 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
 
-        context.awaitEvents(fiber, whoisEventTypes);
+        context.awaitEvents(fiber, whoisEventTypes[]);
+
+        string slice = nickname;
+
+        immutable nicknamePart = slice.contains('!') ?
+            slice.nom('!') :
+            slice;
 
         if (issueWhois)
         {
@@ -2208,15 +2249,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 // Args are state, nick, force, quiet, background, caller
                 // Need force (true) to not miss events
-                whois(context.state, nickname, true, true, true);
+                whois(context.state, nicknamePart, true, true, true);
             }
             else
             {
-                whois!(Yes.priority)(context.state, nickname, true, true);  // Ditto
+                whois!(Yes.priority)(context.state, nicknamePart, true, true);  // Ditto
             }
         }
 
-        mixin(carriedVariableName) = nickname;
+        mixin(carriedVariableName) = nicknamePart;
     }
 }
 
@@ -2355,5 +2396,174 @@ string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
     else
     {
         return nickname;
+    }
+}
+
+
+// hostmask
+/++
+ +  Formats an `dialect.defs.IRCUser` into a hostmask representing its values.
+ +
+ +  Params:
+ +      user = `dialect.defs.IRCUser` to summarise into a hostmask.
+ +
+ +  Returns:
+ +      A hostmask "*!*@*" string.
+ +/
+pragma(inline)
+string hostmask(const IRCUser user) pure @safe
+{
+    import std.format : format;
+
+    immutable nickname = user.nickname.length ? user.nickname : "*";
+    immutable ident = user.ident.length ? user.ident : "*";
+    immutable address = user.address.length ? user.address : "*";
+
+    return "%s!%s@%s".format(nickname, ident, address);
+}
+
+
+// isValidHostmask
+/++
+ +  Makes a cursory verification of a hostmask, ensuring that it doesn't contain
+ +  invalid characters. May very well have false positives.
+ +
+ +  Params:
+ +      hostmask = Hostmask string to examine.
+ +      server = The current `dialect.defs.IRCServer` with its
+ +          `dialect.defs.IRCServer.CaseMapping`.
+ +
+ +  Returns:
+ +      true if the hostmask seems to be valid, false if it obviously is not.
+ +/
+bool isValidHostmask(const string hostmask, const IRCServer server) pure @safe nothrow @nogc
+{
+    import dialect.common : isValidNickname;
+    import std.string : indexOf, representation;
+
+    string slice = hostmask;  // mutable
+
+    pragma(inline)
+    static bool isValidIdentOrAddressCharacter(Flag!"address" address)(const char c)
+    {
+        switch (c)
+        {
+        case 'A':
+        ..
+        case 'Z':
+        case 'a':
+        ..
+        case 'z':
+        case '0':
+        ..
+        case '9':
+        case '-':
+        case '_':
+        case '*':
+
+        static if (address)
+        {
+            case ':':
+            case '.':
+        }
+
+            break;
+
+        default:
+            return false;
+        }
+
+        return true;
+    }
+
+    pragma(inline)
+    static bool isValidIdent(const string ident)
+    {
+        import std.string : representation;
+
+        if (!ident.length) return false;
+
+        foreach (immutable c; ident.representation)
+        {
+            if (!isValidIdentOrAddressCharacter!(No.address)(c)) return false;
+        }
+
+        return true;
+    }
+
+    pragma(inline)
+    static bool isValidAddress(const string address)
+    {
+        import std.string : representation;
+
+        if (!address.length) return false;
+
+        foreach (immutable c; address.representation)
+        {
+            if (!isValidIdentOrAddressCharacter!(Yes.address)(c)) return false;
+        }
+
+        return true;
+    }
+
+    immutable bangPos = slice.indexOf('!');
+    if (bangPos == -1) return false;
+    immutable nickname = slice[0..bangPos];
+    if ((nickname != "*") && !nickname.isValidNickname(server)) return false;
+    slice = slice[bangPos+1..$];
+    if (!slice.length) return false;
+
+    if (slice[0] == '~') slice = slice[1..$];
+    immutable atPos = slice.indexOf('@');
+    if (atPos == -1) return false;
+    immutable ident = slice[0..atPos];
+    if ((ident != "*") && !isValidIdent(ident)) return false;
+    slice = slice[atPos+1..$];
+
+    immutable address = slice;
+    if (!address.length) return false;
+    return (address == "*") || isValidAddress(address);
+}
+
+///
+unittest
+{
+    IRCServer server;
+
+    {
+        immutable hostmask = "*!*@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "nick123`!*@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!~ident0-9_@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!ident0-9_@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!~~ident0-9_@*";
+        assert(!hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!*@address.tld.net";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!*@~address.tld.net";
+        assert(!hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!*@2001::ff:09:ff";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "kameloso!~kameloso@2001*";
+        assert(hostmask.isValidHostmask(server));
     }
 }

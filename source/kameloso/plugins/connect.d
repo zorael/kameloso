@@ -18,7 +18,7 @@ private:
 
 import kameloso.plugins.ircplugin;
 import kameloso.plugins.common;
-import kameloso.common : Tint, logger, settings;
+import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
@@ -272,7 +272,11 @@ void tryAuth(ConnectService service)
             }
 
             query(service.state, serviceNick, "%s %s".format(verb, password), true);
-            if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
+
+            if (!service.state.settings.hideOutgoing)
+            {
+                logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
+            }
             break;
 
         case snircd:
@@ -289,13 +293,21 @@ void tryAuth(ConnectService service)
             }
 
             query(service.state, serviceNick, "%s %s %s".format(verb, account, password), true);
-            if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
+
+            if (!service.state.settings.hideOutgoing)
+            {
+                logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
+            }
             break;
 
         case rusnet:
             // Doesn't want a PRIVMSG
             raw(service.state, "NICKSERV IDENTIFY " ~ password, true);
-            if (!settings.hideOutgoing) logger.trace("--> NICKSERV IDENTIFY hunter2");
+
+            if (!service.state.settings.hideOutgoing)
+            {
+                logger.trace("--> NICKSERV IDENTIFY hunter2");
+            }
             break;
 
         version(TwitchSupport)
@@ -456,13 +468,16 @@ void onEndOfMotdTwitch(ConnectService service)
 
     if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    settings.colouredOutgoing = false;
+    service.state.settings.colouredOutgoing = false;
+    service.state.settingsUpdated = true;
 
-    if (settings.prefix.beginsWith(".") || settings.prefix.beginsWith("/"))
+    immutable prefix = service.state.settings.prefix;
+
+    if (prefix.beginsWith(".") || prefix.beginsWith("/"))
     {
         logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
             `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
-            Tint.log, settings.prefix, Tint.warning);
+            Tint.log, prefix, Tint.warning);
     }
 }
 
@@ -786,7 +801,7 @@ void onSASLAuthenticate(ConnectService service)
             immutable encoded = encode64(authToken);
 
             raw(service.state, "AUTHENTICATE " ~ encoded, true);
-            if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+            if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
         }
         catch (Base64Exception e)
         {
@@ -978,7 +993,7 @@ void register(ConnectService service)
         if (bot.pass.length)
         {
             raw(service.state, "PASS " ~ bot.pass, true);
-            if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
+            if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
 
         import core.thread : Fiber;

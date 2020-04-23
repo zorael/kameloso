@@ -115,10 +115,10 @@ struct TitleLookupRequest
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : findURLs, settings;
+    import kameloso.common : findURLs;
     import lu.string : beginsWith;
 
-    if (event.content.beginsWith(settings.prefix)) return;
+    if (event.content.beginsWith(plugin.state.settings.prefix)) return;
 
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
@@ -136,7 +136,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +/
 void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 {
-    import kameloso.common : Tint, logger, settings;
+    import kameloso.common : Tint, logger;
     import lu.string : beginsWith, contains, nom;
 
     bool[string] duplicates;
@@ -174,12 +174,12 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
             if (request.results.youtubeTitle.length)
             {
                 reportDispatch(&reportYouTubeTitle, request,
-                    plugin.webtitlesSettings, settings.colouredOutgoing);
+                    plugin.webtitlesSettings, plugin.state.settings.colouredOutgoing);
             }
             else
             {
                 reportDispatch(&reportTitle, request,
-                    plugin.webtitlesSettings, settings.colouredOutgoing);
+                    plugin.webtitlesSettings, plugin.state.settings.colouredOutgoing);
             }
             continue;
         }
@@ -188,7 +188,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         enum delayMsecs = 250;
 
         spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs,
-            plugin.webtitlesSettings, settings.colouredOutgoing);
+            plugin.webtitlesSettings, plugin.state.settings.colouredOutgoing);
     }
 }
 
