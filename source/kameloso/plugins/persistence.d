@@ -247,13 +247,23 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             return;
         }
 
-        static string getAccount(const IRCUser user, const string[string] aa)
+        static string getAccount(const IRCUser user, ref string[string] aa)
         {
             import dialect.common : matchesByMask;
+            import lu.string : contains;
+
+            string[] invalidHostmasks;
 
             foreach (immutable hostmask, immutable account; aa)
             {
                 import std.format : FormatException;
+
+                if (!hostmask.contains('!'))
+                {
+                    // Cannot possibly be a valid hostmask
+                    invalidHostmasks ~= hostmask;
+                    continue;
+                }
 
                 try
                 {
@@ -261,7 +271,16 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
                 }
                 catch (FormatException e)
                 {
-                    // Malformed entry. Do nothing, try next mask
+                    // Malformed entry in some way not caught above.
+                    invalidHostmasks ~= hostmask;
+                }
+            }
+
+            if (invalidHostmasks.length)
+            {
+                foreach (hostmaskKey; invalidHostmasks)
+                {
+                    aa.remove(hostmaskKey);
                 }
             }
 
