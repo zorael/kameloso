@@ -1644,6 +1644,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
         return plugin.modifyHostmaskDefinition(Yes.add, account, mask, event);
 
     case "del":
+    case "remove":
         if (!slice.length || slice.contains(' ')) return sendUsage();
         return plugin.modifyHostmaskDefinition(No.add, string.init, slice, event);
 
