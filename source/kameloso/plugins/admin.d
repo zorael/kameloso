@@ -1608,7 +1608,7 @@ void onCommandSummary(AdminPlugin plugin)
 @BotCommand(PrefixPolicy.prefixed, "mask")
 @BotCommand(PrefixPolicy.prefixed, "hostmask", Yes.hidden)
 @Description("Modifies a hostmask definition, for use on servers without services accounts.",
-    "$command [add|del|list] [hostmask if adding]")
+    "$command [add|del|list] [account] [hostmask if adding]")
 void onCommandMask(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : SplitResults, contains, nom, splitInto;
@@ -1624,7 +1624,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [account] [mask if adding]"
+            "Usage: %s%s [add|del|list] [account] [hostmask if adding]"
             .format(plugin.state.settings.prefix, event.aux));
     }
 
