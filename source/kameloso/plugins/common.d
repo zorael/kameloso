@@ -2151,8 +2151,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     {
                         static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                         {
-                            // No can do
-                            return;
+                            // Can't WHOIS on Twitch
+                            throw new Exception("Tried to enqueue a `" ~
+                                typeof(onSuccess).stringof ~ " onSuccess` function " ~
+                                "when on Twitch (can't WHOIS)");
                         }
                         else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                         {
@@ -2173,15 +2175,13 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent) ||
+                    TakesParams!(onSuccess, AliasSeq!IRCUser))
                 {
-                    // No can do
-                    return;
-                }
-                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
-                {
-                    // No can do
-                    return;
+                    // Can't WHOIS on Twitch
+                    throw new Exception("Tried to enqueue a `" ~
+                        typeof(onSuccess).stringof ~ " onSuccess` function " ~
+                        "when on Twitch without `UserAwareness` (can't WHOIS)");
                 }
                 else static if (TakesParams!(onSuccess, AliasSeq!string))
                 {
