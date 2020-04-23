@@ -1961,8 +1961,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /++
      +  Event types that we may encounter as responses to WHOIS queries.
      +/
-    static immutable whoisEventTypes =
+    static immutable IRCEvent.Type[6] whoisEventTypes =
     [
+        IRCEvent.Type.RPL_WHOISUSER,
         IRCEvent.Type.RPL_WHOISACCOUNT,
         IRCEvent.Type.RPL_WHOISREGNICK,
         IRCEvent.Type.RPL_ENDOFWHOIS,
@@ -1994,7 +1995,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable whoisEvent = thisFiber.payload;
 
-        assert(whoisEventTypes.canFind(whoisEvent.type),
+        assert(whoisEventTypes[].canFind(whoisEvent.type),
             "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
             "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
 
@@ -2090,7 +2091,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         // Clean up awaiting fiber entries on exit, just to be neat.
-        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes);
+        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
 
         if ((whoisEvent.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
             (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK))
@@ -2226,7 +2227,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
 
-        context.awaitEvents(fiber, whoisEventTypes);
+        context.awaitEvents(fiber, whoisEventTypes[]);
 
         if (issueWhois)
         {
