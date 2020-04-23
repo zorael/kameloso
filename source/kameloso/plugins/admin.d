@@ -790,24 +790,35 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channel);
         return report(result, nameOf(*user));
     }
-    else if (!specified.isValidNickname(plugin.state.server))
+    else
     {
-        if (event.sender.nickname.length)
-        {
-            // IRC report
+        immutable invalid = plugin.state.settings.preferHostmasks ?
+            !specified.isValidHostmask(plugin.state.server) :
+            !specified.isValidNickname(plugin.state.server);
 
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold :
-                "Invalid nickname/account: " ~ specified;
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-        else
+        if (invalid)
         {
-            // Terminal report
-            logger.warning("Invalid nickname/account: ", Tint.log, specified);
+            immutable invalidWhat = plugin.state.settings.preferHostmasks ?
+                "hostmask" :
+                "nickname/account";
+
+            if (event.sender.nickname.length)
+            {
+                // IRC report
+
+                immutable message = plugin.state.settings.colouredOutgoing ?
+                    "Invalid " ~ invalidWhat ~ ": " ~ specified.ircColour(IRCColour.red).ircBold :
+                    "Invalid " ~ invalidWhat ~ ": " ~ specified;
+
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+            else
+            {
+                // Terminal report
+                logger.warning("Invalid " ~ invalidWhat ~ ": ", Tint.log, specified);
+            }
+            return;
         }
-        return;
     }
 
     void onSuccess(const string id)
