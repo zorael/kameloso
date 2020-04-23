@@ -665,6 +665,42 @@ void initResources(PersistenceService service)
 }
 
 
+// initHostmaskResources
+/++
+ +  Reads, completes and saves the hostmasks JSON file, creating one if it
+ +  doesn't exist.
+ +
+ +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
+ +      failure loading the `user.json` file.
+ +/
+void initHostmaskResources(PersistenceService service)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException, JSONValue;
+
+    JSONStorage json;
+    json.reset();
+
+    try
+    {
+        json.load(service.hostmasksFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.common : logger;
+        import std.path : baseName;
+
+        version(PrintStacktraces) logger.trace(e.toString);
+        throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
+    // Adjust saved JSON layout to be more easily edited
+    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(service.hostmasksFile);
+}
+
+
 public:
 
 
