@@ -19,7 +19,7 @@ All of the above are plugins and can be runtime disabled or compiled out. It is 
 
 ## Current limitations
 
-Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available. This is not an unsolvable problem though; the authentication logic is centralised and can likely be extended to match host masks (`*!*@*`) instead.
+[Services](https://en.wikipedia.org/wiki/IRC_services) accounts (`NickServ`/`Q`/`AuthServ`/...) are used to uniquely identify users. You will probably want to register yourself with such, where available. There is experimental support for servers that can only provide conventional hostmasks (`nickname!ident@address.tld`), but it needs testing. Caveat emptor.
 
 Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue [to the **dialect** project](https://github.com/zorael/dialect/issues).
 
