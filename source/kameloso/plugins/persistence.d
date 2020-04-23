@@ -261,11 +261,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
                 }
                 catch (FormatException e)
                 {
-                    import kameloso.common : logger;
-
-                    logger.errorf("hostmasks file may be malformed; could not " ~
-                        "create an IRCUser from: ", hostmask);
-                    return string.init;
+                    // Malformed entry. Do nothing, try next mask
                 }
             }
 
