@@ -1683,6 +1683,8 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     string[string] aa;
     aa.populateFromJSON(json);
 
+    bool didSomething;
+
     if (add)
     {
         if (!mask.contains('!') || !mask.contains('@'))
@@ -1693,6 +1695,7 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
         }
 
         aa[mask] = account;
+        didSomething = true;
         json.reset();
         json = JSONValue(aa);
     }
@@ -1700,12 +1703,23 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     {
         // Allow for removing an invalid mask
 
-        aa.remove(mask);
+        if (mask in aa)
+        {
+            aa.remove(mask);
+            didSomething = true;
+        }
+
         json.reset();
         json = JSONValue(aa);
     }
 
     json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
+
+    immutable message = didSomething ?
+        "Hostmask list updated." :
+        "No such hostmask on file.";
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
