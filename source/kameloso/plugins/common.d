@@ -2410,3 +2410,105 @@ string hostmask(const IRCUser user) pure @safe
 
     return "%s!%s@%s".format(nickname, ident, address);
 }
+
+
+// isValidHostmask
+/++
+ +  Makes a cursory verification of a hostmask, ensuring that it doesn't contain
+ +  invalid characters. May very well have false positives.
+ +
+ +  Params:
+ +      hostmask = Hostmask string to examine.
+ +      server = The current `dialect.defs.IRCServer` with its
+ +          `dialect.defs.IRCServer.CaseMapping`.
+ +
+ +  Returns:
+ +      true if the hostmask seems to be valid, false if it obviously is not.
+ +/
+bool isValidHostmask(const string hostmask, const IRCServer server) pure @safe nothrow @nogc
+{
+    import dialect.common : isValidNickname;
+    import std.string : indexOf, representation;
+
+    string slice = hostmask;  // mutable
+
+    pragma(inline)
+    static bool isValidIdentOrAddressCharacter(Flag!"address" address)(const char c)
+    {
+        switch (c)
+        {
+        case 'A':
+        ..
+        case 'Z':
+        case 'a':
+        ..
+        case 'z':
+        case '0':
+        ..
+        case '9':
+        case '-':
+        case '_':
+
+        static if (address)
+        {
+            case ':':
+            case '.':
+        }
+
+            break;
+
+        default:
+            return false;
+        }
+
+        return true;
+    }
+
+    pragma(inline)
+    static bool isValidIdent(const string ident)
+    {
+        import std.string : representation;
+
+        if (!ident.length) return false;
+
+        foreach (immutable c; ident.representation)
+        {
+            if (!isValidIdentOrAddressCharacter!(No.address)(c)) return false;
+        }
+
+        return true;
+    }
+
+    pragma(inline)
+    static bool isValidAddress(const string address)
+    {
+        import std.string : representation;
+
+        if (!address.length) return false;
+
+        foreach (immutable c; address.representation)
+        {
+            if (!isValidIdentOrAddressCharacter!(Yes.address)(c)) return false;
+        }
+
+        return true;
+    }
+
+    immutable bangPos = slice.indexOf('!');
+    if (bangPos == -1) return false;
+    immutable nickname = slice[0..bangPos];
+    if ((nickname != "*") && !nickname.isValidNickname(server)) return false;
+    slice = slice[bangPos+1..$];
+    if (!slice.length) return false;
+
+    if (slice[0] == '~') slice = slice[1..$];
+    immutable atPos = slice.indexOf('@');
+    if (atPos == -1) return false;
+    immutable ident = slice[0..atPos];
+    if ((ident != "*") && !isValidIdent(ident)) return false;
+    slice = slice[atPos+1..$];
+
+    immutable address = slice;
+    if (!address.length) return false;
+    return (address == "*") || isValidAddress(address);
+}
