@@ -496,15 +496,14 @@ void periodically(PersistenceService service, const long now)
 }
 
 
-// reloadClassifiersFromDiskImpl
+// reloadAccountClassifiersFromDisk
 /++
  +  Reloads admin/whitelist/blacklist classifier definitions from disk.
  +
  +  Params:
  +      service = The current `PersistenceService`.
- +      preferHostmasks = Whether we should load hostmasks or accounts.
  +/
-void reloadClassifiersFromDiskImpl(PersistenceService service, const bool preferHostmasks)
+void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.common : logger;
     import lu.json : JSONStorage;
@@ -536,24 +535,12 @@ void reloadClassifiersFromDiskImpl(PersistenceService service, const bool prefer
             {
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    if (preferHostmasks)
+                    if (channel !in service.channelUsers)
                     {
-                        if (channel !in service.channelUsers)
-                        {
-                            service.channelHostmasks[channel] = (IRCUser.Class[IRCUser]).init;
-                        }
-
-                        service.channelHostmasks[channel][IRCUser(userJSON.str)] = class_;
+                        service.channelUsers[channel] = (IRCUser.Class[string]).init;
                     }
-                    else
-                    {
-                        if (channel !in service.channelUsers)
-                        {
-                            service.channelUsers[channel] = (IRCUser.Class[string]).init;
-                        }
 
-                        service.channelUsers[channel][userJSON.str] = class_;
-                    }
+                    service.channelUsers[channel][userJSON.str] = class_;
                 }
             }
         }
