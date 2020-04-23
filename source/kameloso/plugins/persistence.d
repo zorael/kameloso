@@ -582,15 +582,31 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
 // initResources
 /++
+ +  Initialises the service's hostmasks and accounts resources.
+ +
+ +  Merely calls `initAccountResources` and `initHostmaskResources`.
+ +/
+void initResources(PersistenceService service)
+{
+    service.initAccountResources();
+    service.initHostmaskResources();
+}
+
+
+// initAccountResources
+/++
  +  Reads, completes and saves the user classification JSON file, creating one
  +  if one doesn't exist. Removes any duplicate entries.
  +
  +  This ensures there will be "whitelist", "operator" and "blacklist" arrays in it.
  +
+ +  Params:
+ +      service = The current `PersistenceService`.
+ +
  +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
  +      failure loading the `user.json` file.
  +/
-void initResources(PersistenceService service)
+void initAccountResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException, JSONValue;
