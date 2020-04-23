@@ -71,6 +71,7 @@ do
     import std.experimental.logger : LogLevel;
 
     logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
+    Tint.monochrome = monochrome;
 }
 
 
