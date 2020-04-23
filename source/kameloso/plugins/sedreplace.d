@@ -110,27 +110,11 @@ string sedReplace(const string line, const string expr, const bool relaxSyntax) 
 
     switch (delimeter)
     {
-    case '/':
-        return line.sedReplaceImpl!'/'(expr, relaxSyntax);
-
-    case '|':
-        return line.sedReplaceImpl!'|'(expr, relaxSyntax);
-
-    case '#':
-        return line.sedReplaceImpl!'#'(expr, relaxSyntax);
-
-    case '@':
-        return line.sedReplaceImpl!'@'(expr, relaxSyntax);
-
-    case ' ':
-        return line.sedReplaceImpl!' '(expr, relaxSyntax);
-
-    case '_':
-        return line.sedReplaceImpl!'_'(expr, relaxSyntax);
-
-    case ';':
-        return line.sedReplaceImpl!';'(expr, relaxSyntax);
-
+    foreach (immutable c; DelimiterCharacters)
+    {
+        case c:
+            return line.sedReplaceImpl!c(expr, relaxSyntax);
+    }
     default:
         return line;
     }
