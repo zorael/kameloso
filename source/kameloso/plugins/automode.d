@@ -133,10 +133,6 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 
     case JOIN:
         if (sender.account.length) goto case ACCOUNT;
-
-        // Not an extended join
-        import kameloso.messaging : whois;
-        whois(plugin.state, event.sender.nickname);
         return;
 
     default:
