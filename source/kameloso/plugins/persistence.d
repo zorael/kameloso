@@ -35,7 +35,7 @@ import dialect.defs;
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    return service.state.settings.useHostmasks ?
+    return service.state.settings.preferHostmasks ?
         postprocessHostmasks(service, event) :
         postprocessAccounts(service, event);
 }

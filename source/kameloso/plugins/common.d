@@ -2014,7 +2014,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else static if (TakesParams!(onSuccess, AliasSeq!string))
             {
-                return onSuccess(context.state.settings.useHostmasks ?
+                return onSuccess(context.state.settings.preferHostmasks ?
                     whoisEvent.target.hostmask :
                     whoisEvent.target.account);
             }
@@ -2098,7 +2098,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         if ((whoisEvent.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
             (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
-            context.state.settings.useHostmasks)
+            context.state.settings.preferHostmasks)
         {
             callOnSuccess();
         }
