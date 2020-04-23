@@ -47,7 +47,7 @@ import std.typecons : No, Yes;
  +/
 void printHelp(GetoptResult results, const bool monochrome, const bool brightTerminal) @system
 {
-    import kameloso.common : printVersionInfo, settings;
+    import kameloso.common : printVersionInfo;
     import std.stdio : writeln;
 
     string pre, post;
