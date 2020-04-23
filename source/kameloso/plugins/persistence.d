@@ -558,6 +558,28 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 }
 
 
+// reloadHostmasksFromDisk
+/++
+ +  Reloads hostmasks definitions from disk.
+ +
+ +  Params:
+ +      service = The current `PersistenceService`.
+ +/
+void reloadHostmasksFromDisk(PersistenceService service)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+
+    with (service)
+    {
+        JSONStorage hostmasksJSON;
+        hostmasksJSON.load(hostmasksFile);
+        //accountByUser.clear();
+        accountByUser.populateFromJSON(hostmasksJSON);
+        accountByUser.rehash();
+    }
+}
+
+
 // initResources
 /++
  +  Reads, completes and saves the user classification JSON file, creating one
