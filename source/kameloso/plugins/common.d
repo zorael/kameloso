@@ -2014,7 +2014,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else static if (TakesParams!(onSuccess, AliasSeq!string))
             {
-                return onSuccess(whoisEvent.target.account);
+                return onSuccess(context.state.settings.useHostmasks ?
+                    whoisEvent.target.hostmask :
+                    whoisEvent.target.account);
             }
             else static if (arity!onSuccess == 0)
             {
@@ -2046,6 +2048,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
                 else static if (TakesParams!(onFailure, AliasSeq!string))
                 {
+                    // Never called when using hostmasks
                     return onFailure(whoisEvent.target.account);
                 }
                 else static if (arity!onFailure == 0)
@@ -2094,12 +2097,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
 
         if ((whoisEvent.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
-            (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK))
+            (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
+            context.state.settings.useHostmasks)
         {
             callOnSuccess();
         }
-        else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
-            (whoisEvent.type == IRCEvent.Type.ERR_NOSUCHNICK)) */
+        else
         {
             callOnFailure();
         }
