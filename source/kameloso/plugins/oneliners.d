@@ -66,12 +66,15 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
         if (const response = key in *channelOneliners)
         {
             import std.array : replace;
+            import std.conv : text;
+            import std.random : uniform;
 
             immutable line = (*response)
                 .replace("$nickname", plugin.nameOf(event.sender.nickname))
                 .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
                 .replace("$bot", plugin.state.client.nickname)
-                .replace("$channel", event.channel);
+                .replace("$channel", event.channel[1..$])
+                .replace("$random", uniform!"[]"(0, 100).text);
 
             chan(plugin.state, event.channel, line);
         }
