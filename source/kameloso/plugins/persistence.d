@@ -751,11 +751,13 @@ public:
 final class PersistenceService : IRCPlugin
 {
 private:
+    import kameloso.constants : KamelosoFilenames;
+
     /// File with user definitions.
-    @Resource string userFile = "users.json";
+    @Resource string userFile = KamelosoFilenames.users;
 
     /// File with user hostmasks.
-    @Resource string hostmasksFile = "hostmasks.json";
+    @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     /// Associative array of permanent user classifications, per account and channel name.
     IRCUser.Class[string][string] channelUsers;

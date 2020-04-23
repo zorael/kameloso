@@ -2017,6 +2017,8 @@ public:
 final class AdminPlugin : IRCPlugin
 {
 private:
+    import kameloso.constants : KamelosoFilenames;
+
     /// All Admin options gathered.
     AdminSettings adminSettings;
 
@@ -2028,10 +2030,10 @@ private:
     }
 
     /// File with user definitions. Must be the same as in persistence.d.
-    @Resource string userFile = "users.json";
+    @Resource string userFile = KamelosoFilenames.users;
 
     /// File with hostmasks definitions. Must be the same as in persistence.d
-    @Resource string hostmasksFile = "hostmasks.json";
+    @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     mixin IRCPluginImpl;
 }

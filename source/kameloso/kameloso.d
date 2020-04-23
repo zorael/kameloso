@@ -1882,12 +1882,13 @@ void preInstanceSetup()
  +/
 void setupSettings(ref CoreSettings settings)
 {
+    import kameloso.constants : KamelosoFilenames;
     import kameloso.platform : configurationBaseDirectory, currentPlatform, resourceBaseDirectory;
     import std.path : buildNormalizedPath;
 
     // Default values
     settings.configFile = buildNormalizedPath(configurationBaseDirectory,
-        "kameloso", "kameloso.conf");
+        "kameloso", KamelosoFilenames.configuration);
     settings.resourceDirectory = buildNormalizedPath(resourceBaseDirectory, "kameloso");
 
     // Some environments require us to flush standard out after writing to it,
