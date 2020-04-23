@@ -519,7 +519,7 @@ struct Kameloso
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings, settings);
 
         if (!allCustomSuccess)
         {

@@ -331,6 +331,8 @@ public:
 }
 
 
+private import kameloso.common : CoreSettings;
+
 // applyCustomSettings
 /++
  +  Changes a setting of a plugin, given both the names of the plugin and the
@@ -342,11 +344,13 @@ public:
  +      plugins = Array of all `IRCPlugin`s.
  +      customSettings = Array of custom settings to apply to plugins' own
  +          setting, in the string forms of "`plugin.setting=value`".
+ +      settings = A copy of the program-wide `kameloso.common.CoreSettings`.
  +
  +  Returns:
  +      `true` if no setting name mismatches occurred, `false` if it did.
  +/
-bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
+bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
+    CoreSettings copyOfSettings)
 {
     import kameloso.common : Tint, logger;
     import lu.string : contains, nom;
@@ -370,22 +374,18 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
         string slice = line;  // mutable
         immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
-        immutable value = slice.length ? slice : "true";  // default setting if none given
+        immutable value = slice;
 
         if (pluginstring == "core")
         {
             import kameloso.common : initLogger;
-            import lu.objmanip : setMemberByName;
-
-            if (!plugins.length) return false;
-
-            // Get a copy of the settings from the first plugin and modify it,
-            // flag it as updated and pass it around.
-            auto settings = plugins[0].state.settings;
+            import lu.objmanip : SetMemberException, setMemberByName;
 
             try
             {
-                immutable success = settings.setMemberByName(setting, value);
+                immutable success = slice.length ?
+                    copyOfSettings.setMemberByName(setting, value) :
+                    copyOfSettings.setMemberByName(setting, true);
 
                 if (!success)
                 {
@@ -397,23 +397,30 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings)
                 {
                     if ((setting == "monochrome") || (setting == "brightTerminal"))
                     {
-                        initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+                        initLogger(copyOfSettings.monochrome,
+                            copyOfSettings.brightTerminal, copyOfSettings.flush);
                     }
 
                     foreach (plugin; plugins)
                     {
-                        plugin.state.settings = settings;
+                        plugin.state.settings = copyOfSettings;
                         plugin.state.settingsUpdated = true;
                     }
                 }
+            }
+            catch (SetMemberException e)
+            {
+                logger.warningf("Failed to set %score%s.%1$s%3$s%2$s: " ~
+                    "it requires a value and none was supplied",
+                    Tint.log, Tint.warning, setting);
+                version(PrintStacktraces) logger.trace(e.info);
+                noErrors = false;
             }
             catch (ConvException e)
             {
                 logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
                     Tint.log, Tint.warning, setting, value);
                 noErrors = false;
-
-                //version(PrintStacktraces) logger.trace(e.info);
             }
 
             continue top;

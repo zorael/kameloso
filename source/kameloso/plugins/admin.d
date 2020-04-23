@@ -1486,7 +1486,8 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
         try
         {
-            immutable success = thisFiber.payload.applyCustomSettings([ event.content ]);
+            immutable success = thisFiber.payload
+                .applyCustomSettings([ event.content ], plugin.state.settings);
 
             if (success)
             {
@@ -1736,7 +1737,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
-            immutable success = thisFiber.payload.applyCustomSettings([ slice ]);
+            immutable success = thisFiber.payload
+                .applyCustomSettings([ slice ], plugin.state.settings);
             if (success) logger.log("Setting changed.");
             // applyCustomSettings displays its own error messages
         }
