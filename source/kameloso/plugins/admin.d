@@ -1879,5 +1879,8 @@ private:
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";
 
+    /// File with hostmasks definitions. Must be the same as in persistence.d
+    @Resource string hostmasksFile = "hostmasks.json";
+
     mixin IRCPluginImpl;
 }
