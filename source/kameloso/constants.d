@@ -56,6 +56,29 @@ enum KamelosoDefaultIntegers
 }
 
 /++
+ +  Kameloso filenames.
+ +/
+enum KamelosoFilenames
+{
+    /++
+     +  The main configuration file.
+     +/
+    configuration = "kameloso.conf",
+
+    /++
+     +  The file containing user account classifiers, specifying which accounts
+     +  are whitelisted, operators and/or blacklisted.
+     +/
+    users = "users.json",
+
+    /++
+     +  The file containing user "account" hostmasks, mapping what we still
+     +  consider accounts to hostmasks, on servers that don't employ services.
+     +/
+    hostmasks = "hostmasks.json",
+}
+
+/++
  +  Connection defaults, integers version.
  +/
 enum ConnectionDefaultIntegers
