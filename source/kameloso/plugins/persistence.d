@@ -247,65 +247,16 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             return;
         }
 
-        static bool isAnAdmin(const string[] array, const IRCUser user,
-            const IRCServer.CaseMapping caseMapping)
+        static string getAccount(const IRCUser user, const string[string] aa)
         {
             import dialect.common : matchesByMask;
-            import std.stdio;
 
-            writeln("isAnAdmin: ", user.hostmask);
-
-            foreach (immutable thisMask; array)
+            foreach (immutable hostmask, immutable account; aa)
             {
-                import lu.string : contains;
-
-                writeln("...vs ", thisMask, "?");
-
-                if (!thisMask.contains('!'))
-                {
-                    writeln("not a hostmask!");
-                    continue;
-                }
-
-                if (matchesByMask(user, IRCUser(thisMask), caseMapping))
-                {
-                    writeln("yes!");
-                    return true;
-                }
-                else
-                {
-                    writeln("no...");
-                }
+                if (matchesByMask(user, IRCUser(hostmask))) return account;
             }
 
-            writeln("false.");
-            return false;
-        }
-
-        static IRCUser.Class getClassFromList(const IRCUser.Class[IRCUser] aa,
-            const IRCUser user, const IRCServer.CaseMapping caseMapping)
-        {
-            import dialect.common : matchesByMask;
-            import std.stdio;
-
-            writeln("getClassFromList: ", user.hostmask);
-
-            foreach (immutable thisUser, immutable class_; aa)
-            {
-                writeln("...vs ", thisUser.hostmask, "?");
-                if (matchesByMask(user, thisUser, caseMapping))
-                {
-                    writeln("yes! ", class_);
-                    return class_;
-                }
-                else
-                {
-                    writeln("no...");
-                }
-            }
-
-            writeln("anyone.");
-            return IRCUser.Class.anyone;
+            return string.init;
         }
 
         /++
@@ -317,7 +268,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             const IRCEvent event, ref IRCUser user)
         {
             import std.stdio;
-            writeln("applyClassifiers");
+            writeln("applyClassifiers:", user.nickname);
 
             if (user.class_ == IRCUser.Class.admin)
             {
@@ -325,32 +276,44 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
                 // Do nothing, admin is permanent and program-wide
                 return;
             }
-            else if (isAnAdmin(service.state.bot.admins, user,
-                service.state.server.caseMapping))
+
+            if (!user.account)
             {
-                writeln("foudn an admin!", user.nickname);
+                user.account = getAccount(user, service.accountByUser);
+            }
+
+            scope(exit) writeln("end class:", user.class_);
+
+            bool set;
+
+            if (!user.account.length || (user.account == "*"))  // FIXME
+            {
+                // No account means it's just a random
+                user.class_ = IRCUser.Class.anyone;
+                set = true;
+            }
+            else if (service.state.bot.admins.canFind(user.account))
+            {
                 // admin discovered
                 user.class_ = IRCUser.Class.admin;
                 return;
             }
             else if (event.channel.length)
             {
-                if (const maskclasses = event.channel in service.channelHostmasks)
+                if (const classAccounts = event.channel in service.channelUsers)
                 {
-                    // Permanent class may be defined; apply if so, default to anyone
-                    user.class_ = getClassFromList(*maskclasses, user,
-                        service.state.server.caseMapping);
-                }
-                else
-                {
-                    writeln("anyone 1");
-                    // No masks defined for this channel, user cannot possibly have a def
-                    user.class_ = IRCUser.Class.anyone;
+                    if (const definedClass = user.account in *classAccounts)
+                    {
+                        // Permanent class is defined, so apply it
+                        user.class_ = *definedClass;
+                        set = true;
+                    }
                 }
             }
-            else
+
+            if (!set)
             {
-                writeln("anyone 2");
+                writeln("anyone");
                 // All else failed, consider it a random
                 user.class_ = IRCUser.Class.anyone;
             }
@@ -382,6 +345,14 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
         {
             // The class was not changed, restore the previously saved one
             stored.class_ = preMeldClass;
+        }
+
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
+        {
+            if (stored.account == "*")
+            {
+                stored.account = string.init;
+            }
         }
 
         version(TwitchSupport)
