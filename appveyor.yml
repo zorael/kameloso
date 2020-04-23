@@ -90,15 +90,15 @@ branches:
     - /travis-.*/
     - gh-pages
 
-artifacts:
-  - path: kameloso.exe
-    name: Normal build
-  - path: kameloso-vanilla.exe
-    name: Colourless vanilla build
-  - path: kameloso-twitch.exe
-    name: With Twitch bot
-  - path: kameloso-dev.exe
-    name: All-inclusive dev build (preferred when testing)
+#artifacts:
+  #- path: kameloso.exe
+    #name: Normal build
+  #- path: kameloso-vanilla.exe
+    #name: Colourless vanilla build
+  #- path: kameloso-twitch.exe
+    #name: With Twitch bot
+  #- path: kameloso-dev.exe
+    #name: All-inclusive dev build (preferred when testing)
 
 install:
   - ps: function SetUpDCompiler
