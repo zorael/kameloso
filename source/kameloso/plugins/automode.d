@@ -97,6 +97,7 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
+@(IRCEvent.Type.RPL_WHOISUSER)
 @(IRCEvent.Type.JOIN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
@@ -115,6 +116,14 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         account = sender.account;
         nickname = sender.nickname;
         break;
+
+    case RPL_WHOISUSER:
+        if (plugin.state.settings.preferHostmasks)
+        {
+            // Persistence will have set the account field.
+            goto case RPL_WHOISACCOUNT;
+        }
+        return;
 
     case RPL_WHOISACCOUNT:
     case RPL_WHOISREGNICK:
