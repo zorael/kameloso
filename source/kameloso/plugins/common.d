@@ -344,7 +344,7 @@ private import kameloso.common : CoreSettings;
  +      plugins = Array of all `IRCPlugin`s.
  +      customSettings = Array of custom settings to apply to plugins' own
  +          setting, in the string forms of "`plugin.setting=value`".
- +      settings = A copy of the program-wide `kameloso.common.CoreSettings`.
+ +      copyOfSettings = A copy of the program-wide `kameloso.common.CoreSettings`.
  +
  +  Returns:
  +      `true` if no setting name mismatches occurred, `false` if it did.
@@ -2120,6 +2120,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +      nickname = Nickname of the user the enqueueing event relates to.
      +      issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
      +      background = Whether or not to issue queries as low-priority background messages.
+     +
+     +  Throws:
+     +      `object.Exception` if a success of failure function was to trigger
+     +      in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname, const bool issueWhois = true,
         const bool background = false)
