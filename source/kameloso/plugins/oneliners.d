@@ -95,7 +95,6 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
     import lu.string : contains, nom;
-    import std.algorithm.searching : count;
     import std.format : format;
     import std.typecons : No, Yes;
     import std.uni : toLower;
@@ -305,6 +304,7 @@ public:
  +/
 final class OnelinersPlugin : IRCPlugin
 {
+private:
     /// All Oneliners plugin settings.
     OnelinersSettings onelinersSettings;
 

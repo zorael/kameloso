@@ -214,8 +214,6 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     const ulong delayMsecs, const WebtitlesSettings webtitlesSettings, const bool colouredOutgoing)
 {
-    import core.memory : GC;
-
     version(Posix)
     {
         import kameloso.thread : setThreadName;

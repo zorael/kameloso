@@ -165,7 +165,6 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
     import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
-    import core.memory : GC;
     import std.algorithm.iteration : splitter;
     import std.array : replace;
     import std.format : format;

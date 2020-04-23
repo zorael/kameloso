@@ -347,7 +347,7 @@ void reload(NotesPlugin plugin)
  +  Params:
  +      plugin = Current `NotesPlugin`.
  +      channel = Channel for which the notes were stored.
- +      nickname = Nickname of user whose notes to fetch.
+ +      id = Nickname or account of user whose notes to fetch.
  +
  +  Returns:
  +      A Voldemort `Note[]` array, where `Note` is a struct containing a note
@@ -417,7 +417,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
  +
  +  Params:
  +      plugins = Current `NotesPlugin`.
- +      nickname = Nickname whose notes to clear.
+ +      id = Nickname or account whose notes to clear.
  +      channel = Channel for which the notes were stored.
  +/
 void clearNotes(NotesPlugin plugin, const string id, const string channel)

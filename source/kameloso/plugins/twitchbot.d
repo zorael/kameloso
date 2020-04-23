@@ -272,6 +272,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                     .replace("$channel", channelName[1..$])
                     .replace("$bot", plugin.state.client.nickname)
                     .replace("$random", uniform!"[]"(0, 100).text);
+
                 chan(plugin.state, channelName, line);
             }
 

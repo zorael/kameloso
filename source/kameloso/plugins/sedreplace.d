@@ -12,7 +12,7 @@
  +  of `s/this/that/` patterns.
  +
  +  It supports a delimiter of `/`, `|`, `#`, `@`, ` `, `_` and `;`, but more
- +  can be trivially added.
+ +  can be trivially added. See the `DelimiterCharacters` alias.
  +
  +  You can also end it with a `g` to set the global flag, to have more than one
  +  match substituted.

@@ -345,6 +345,7 @@ public:
  +/
 final class VotesPlugin : IRCPlugin
 {
+private:
     /// All Votes plugin settings.
     VotesSettings votesSettings;
 
