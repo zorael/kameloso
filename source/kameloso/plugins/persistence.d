@@ -253,7 +253,20 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 
             foreach (immutable hostmask, immutable account; aa)
             {
-                if (matchesByMask(user, IRCUser(hostmask))) return account;
+                import std.format : FormatException;
+
+                try
+                {
+                    if (matchesByMask(user, IRCUser(hostmask))) return account;
+                }
+                catch (FormatException e)
+                {
+                    import kameloso.common : logger;
+
+                    logger.errorf("hostmasks file may be malformed; could not " ~
+                        "create an IRCUser from: ", hostmask);
+                    return string.init;
+                }
             }
 
             return string.init;
