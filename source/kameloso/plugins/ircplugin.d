@@ -288,7 +288,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(privateState, event, privilegeLevel, privateState.settings.preferHostmasks);
+            filterSender(privateState, event, privilegeLevel);
     }
 
 
@@ -1713,16 +1713,13 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +      state = Reference to the `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
- +      preferHostmasks = Whether we're using hostmasks to identify users, or
- +          services accounts. There's no point with WHOIS if we're basing
- +          authentication on hostmasks.
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
-    const PrivilegeLevel level, const bool preferHostmasks) @safe
+    const PrivilegeLevel level) @safe
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
@@ -1741,7 +1738,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     immutable timediff = (event.time - event.sender.updated);
     immutable whoisExpired = (timediff > Timeout.whoisRetry);
 
-    if (preferHostmasks || event.sender.account.length)
+    if (event.sender.account.length)
     {
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
         immutable isOperator = (class_ == IRCUser.Class.operator);
@@ -1766,8 +1763,7 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
         }
         else if (isAnyone && (level <= PrivilegeLevel.anyone))
         {
-            return (whoisExpired && !preferHostmasks) ?
-                FilterResult.whois : FilterResult.pass;
+            return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
         else if (level == PrivilegeLevel.ignore)
         {
