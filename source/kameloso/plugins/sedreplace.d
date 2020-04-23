@@ -38,7 +38,16 @@ import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
+import std.meta : AliasSeq;
 import std.typecons : Flag, No, Yes;
+
+
+/++
+ +  Characters to support as delimiters in the replace expression.
+ +
+ +  More can be added but if any are removed unittests will need to be updated.
+ +/
+alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 
 
 // SedReplaceSettings
