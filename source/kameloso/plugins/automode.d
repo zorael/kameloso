@@ -99,7 +99,7 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
 @(IRCEvent.Type.JOIN)
-@(PrivilegeLevel.ignore)
+@(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
