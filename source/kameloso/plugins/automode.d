@@ -468,7 +468,6 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
     foreach (immutable account; accountmodes.byKey)
     {
         import std.algorithm.iteration : filter;
-        import std.array : array;
 
         auto usersWithThatAccount = plugin.state.users
             .byValue
@@ -476,10 +475,8 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
 
         if (usersWithThatAccount.empty) continue;
 
-        foreach (immutable user; usersWithThatAccount)
-        {
-            plugin.applyAutomodes(event.channel, user.nickname, user.account);
-        }
+        const IRCUser user = usersWithThatAccount.front;  // There should be only one
+        plugin.applyAutomodes(event.channel, user.nickname, user.account);
     }
 }
 
