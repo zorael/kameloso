@@ -1614,6 +1614,13 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.format : format;
 
+    if (!plugin.state.settings.preferHostmasks)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "This bot is not currently configured to use hostmasks for authentication.");
+        return;
+    }
+
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
