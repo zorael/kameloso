@@ -414,7 +414,6 @@ in ((!add || mode.length), "Tried to add an empty automode")
  +  force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "op")
