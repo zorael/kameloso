@@ -335,7 +335,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
  +/
 void reload(NotesPlugin plugin)
 {
-    logger.info("Reloading notes from disk.");
+    //logger.info("Reloading notes from disk.");
     plugin.notes.load(plugin.notesFile);
 }
 

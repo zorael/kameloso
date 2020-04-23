@@ -885,7 +885,7 @@ void periodically(SeenPlugin plugin, const long now)
  +/
 void reload(SeenPlugin plugin)
 {
-    logger.info("Reloading seen users from disk.");
+    //logger.info("Reloading seen users from disk.");
     plugin.seenUsers = loadSeen(plugin.seenFile, false);
 }
 

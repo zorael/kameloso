@@ -246,7 +246,7 @@ in (line.length, "Tried to add an empty quote")
  +/
 void reload(QuotesPlugin plugin)
 {
-    logger.info("Reloading quotes from disk.");
+    //logger.info("Reloading quotes from disk.");
     plugin.quotes.load(plugin.quotesFile);
 }
 
