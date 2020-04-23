@@ -2014,9 +2014,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
             else static if (TakesParams!(onSuccess, AliasSeq!string))
             {
-                return onSuccess(context.state.settings.preferHostmasks ?
-                    whoisEvent.target.hostmask :
-                    whoisEvent.target.account);
+                return onSuccess(whoisEvent.target.account);
             }
             else static if (arity!onSuccess == 0)
             {
