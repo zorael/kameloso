@@ -2448,6 +2448,7 @@ bool isValidHostmask(const string hostmask, const IRCServer server) pure @safe n
         case '9':
         case '-':
         case '_':
+        case '*':
 
         static if (address)
         {
@@ -2548,6 +2549,10 @@ unittest
     }
     {
         immutable hostmask = "*!*@2001::ff:09:ff";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "kameloso!~kameloso@2001*";
         assert(hostmask.isValidHostmask(server));
     }
 }
