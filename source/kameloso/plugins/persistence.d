@@ -247,13 +247,13 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             return;
         }
 
-        static bool canFindByValueMask(const string[] array, const IRCUser user,
+        static bool isAnAdmin(const string[] array, const IRCUser user,
             const IRCServer.CaseMapping caseMapping)
         {
             import dialect.common : matchesByMask;
             import std.stdio;
 
-            writeln("canFindByValueMask: ", user.hostmask);
+            writeln("isAnAdmin: ", user.hostmask);
 
             foreach (immutable thisMask; array)
             {
@@ -282,13 +282,13 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             return false;
         }
 
-        static IRCUser.Class classByMaskMatch(const IRCUser.Class[IRCUser] aa,
+        static IRCUser.Class getClassFromList(const IRCUser.Class[IRCUser] aa,
             const IRCUser user, const IRCServer.CaseMapping caseMapping)
         {
             import dialect.common : matchesByMask;
             import std.stdio;
 
-            writeln("classByMaskMatch: ", user.hostmask);
+            writeln("getClassFromList: ", user.hostmask);
 
             foreach (immutable thisUser, immutable class_; aa)
             {
@@ -325,7 +325,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
                 // Do nothing, admin is permanent and program-wide
                 return;
             }
-            else if (canFindByValueMask(service.state.bot.admins, user,
+            else if (isAnAdmin(service.state.bot.admins, user,
                 service.state.server.caseMapping))
             {
                 writeln("foudn an admin!", user.nickname);
@@ -338,7 +338,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
                 if (const maskclasses = event.channel in service.channelHostmasks)
                 {
                     // Permanent class may be defined; apply if so, default to anyone
-                    user.class_ = classByMaskMatch(*maskclasses, user,
+                    user.class_ = getClassFromList(*maskclasses, user,
                         service.state.server.caseMapping);
                 }
                 else
