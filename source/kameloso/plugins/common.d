@@ -2512,3 +2512,42 @@ bool isValidHostmask(const string hostmask, const IRCServer server) pure @safe n
     if (!address.length) return false;
     return (address == "*") || isValidAddress(address);
 }
+
+///
+unittest
+{
+    IRCServer server;
+
+    {
+        immutable hostmask = "*!*@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "nick123`!*@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!~ident0-9_@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!ident0-9_@*";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!~~ident0-9_@*";
+        assert(!hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!*@address.tld.net";
+        assert(hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!*@~address.tld.net";
+        assert(!hostmask.isValidHostmask(server));
+    }
+    {
+        immutable hostmask = "*!*@2001::ff:09:ff";
+        assert(hostmask.isValidHostmask(server));
+    }
+}
