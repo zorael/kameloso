@@ -2384,3 +2384,26 @@ string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
         return nickname;
     }
 }
+
+
+// hostmask
+/++
+ +  Formats an `dialect.defs.IRCUser` into a hostmask representing its values.
+ +
+ +  Params:
+ +      user = `dialect.defs.IRCUser` to summarise into a hostmask.
+ +
+ +  Returns:
+ +      A hostmask "*!*@*" string.
+ +/
+pragma(inline)
+string hostmask(const IRCUser user) pure @safe
+{
+    import std.format : format;
+
+    immutable nickname = user.nickname.length ? user.nickname : "*";
+    immutable ident = user.ident.length ? user.ident : "*";
+    immutable address = user.address.length ? user.address : "*";
+
+    return "%s!%s@%s".format(nickname, ident, address);
+}

@@ -24,22 +24,6 @@ import kameloso.plugins.common;
 import dialect.defs;
 
 
-// hostmask
-/++
- +  FIXME
- +/
-string hostmask(const IRCUser user)
-{
-    import std.format : format;
-
-    immutable nickname = user.nickname.length ? user.nickname : "*";
-    immutable ident = user.ident.length ? user.ident : "*";
-    immutable address = user.address.length ? user.address : "*";
-
-    return "%s!%s@%s".format(nickname, ident, address);
-}
-
-
 // postprocess
 /++
  +  Hijacks a reference to a `dialect.defs.IRCEvent` after parsing and
