@@ -622,7 +622,6 @@ Next mainLoop(ref Kameloso instance)
     instance.wantLiveSummary = false;
 
     bool readWasShortened;
-    bool shouldSkipRead;
 
     while (next == Next.continue_)
     {
@@ -659,7 +658,8 @@ Next mainLoop(ref Kameloso instance)
             {
                 plugin.processScheduledFibers(nowInHnsecs);
                 plugin.state.updateNextFiberTimestamp();  // Something is always removed
-                shouldSkipRead = true;
+                instance.conn.receiveTimeout = 1;
+                readWasShortened = true;
             }
             else
             {
@@ -691,13 +691,6 @@ Next mainLoop(ref Kameloso instance)
         foreach (const attempt; listener)
         {
             if (*instance.abort) return Next.returnFailure;
-
-            if (shouldSkipRead)
-            {
-                // Reset flag and break
-                shouldSkipRead = false;
-                break;
-            }
 
             immutable actionAfterListen = listenAttemptToNext(instance, attempt);
 
