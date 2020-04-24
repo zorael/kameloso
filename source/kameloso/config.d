@@ -53,9 +53,9 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 
         foreach (immutable i, plugin; instance.plugins)
         {
-            plugin.serialiseConfigInto(sink);
+            immutable addedSomething = plugin.serialiseConfigInto(sink);
 
-            if (i+1 < instance.plugins.length)
+            if (addedSomething && (i+1 < instance.plugins.length))
             {
                 sink.put('\n');
             }
