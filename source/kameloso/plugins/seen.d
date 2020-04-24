@@ -89,6 +89,7 @@ public:
  +      IRCClient client;
  +      IRCServer server;
  +      IRCBot bot;
+ +      CoreSettings settings;
  +      Tid mainThread;
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;
@@ -101,6 +102,7 @@ public:
  +      bool botUpdated;
  +      bool clientUpdated;
  +      bool serverUpdated;
+ +      bool settingsUpdated;
  +  }
  +  ---
  +
@@ -114,6 +116,12 @@ public:
  +  * `kameloso.plugins.common.IRCPluginState.bot` houses information about
  +     things that relate to an IRC bot, like which channels to join, which
  +     home channels to operate in, the list of administrator accounts, etc.
+ +
+ +  * `kameloso.plugins.common.IRCPluginState.settings` is a copy of the
+ +     "global" `kameloso.common.CoreSettings`, which contains information
+ +     about how the bot should output text, whether or not to use IPv6 connections,
+ +     whether or not to always save to disk upon program exit, and some other
+ +     program-wide settings.
  +
  +  * `kameloso.plugins.common.IRCPluginState.mainThread` is the *thread ID* of
  +     the thread running the main loop. We indirectly use it to send strings to
@@ -180,6 +188,10 @@ public:
  +
  +  * `kameloso.plugins.common.IRCPluginState.serverUpdated` is likewise set when
  +     `kameloso.plugins.common.IRCPluginState.server` was updated during parsing
+ +     and/or postprocessing. Ditto.
+ +
+ +  * `kameloso.plugins.common.IRCPluginState.settingsUpdated` is likewise set when
+ +     `kameloso.plugins.common.IRCPluginState.settings` was updated during parsing
  +     and/or postprocessing. Ditto.
  +/
 final class SeenPlugin : IRCPlugin
