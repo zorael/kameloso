@@ -288,7 +288,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(privateState, event, privilegeLevel);
+            filterSender(privateState, event, privilegeLevel,
+                privateState.settings.preferHostmasks);
     }
 
 
@@ -1713,13 +1714,16 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +      state = Reference to the `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
+ +      preferHostmasks = Whether to rely on hostmasks for user identification,
+ +          or to use services account logins, which need to be issued WHOIS
+ +          queries to divine.
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
-    const PrivilegeLevel level) @safe
+    const PrivilegeLevel level, const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
@@ -1736,7 +1740,10 @@ FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
     if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
 
     immutable timediff = (event.time - event.sender.updated);
-    immutable whoisExpired = (timediff > Timeout.whoisRetry);
+
+    // In hostmasks mode there's zero point to WHOIS a sender, as the instigating
+    // event will have the hostmask embedded in it, always.
+    immutable whoisExpired = !preferHostmasks && (timediff > Timeout.whoisRetry);
 
     if (event.sender.account.length)
     {
