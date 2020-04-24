@@ -50,6 +50,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
         }
 
         sink.serialise(parser.client, bot, parser.server, settings);
+        sink.put('\n');
 
         foreach (immutable i, plugin; instance.plugins)
         {
