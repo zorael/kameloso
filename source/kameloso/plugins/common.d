@@ -433,7 +433,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
 
                 try
                 {
-                    immutable success = plugin.setSettingByName(setting, value);
+                    immutable success = plugin.setSettingByName(setting,
+                        value.length ? value : "true");
 
                     if (!success)
                     {
