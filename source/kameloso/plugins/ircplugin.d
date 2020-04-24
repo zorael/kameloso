@@ -83,7 +83,7 @@ interface IRCPlugin
 
     import std.array : Appender;
     /// Executed when gathering things to put in the configuration file.
-    void serialiseConfigInto(ref Appender!string) const;
+    bool serialiseConfigInto(ref Appender!string) const;
 
     /++
      +  Executed during start if we want to change a setting by its string name.
@@ -1244,10 +1244,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      sink = Reference `std.array.Appender` to fill with plugin-specific
      +          settings text.
+     +
+     +  Returns:
+     +      true if something was serialised into the passed `sink`; false if not.
      +/
-    public void serialiseConfigInto(ref Appender!string sink) const
+    public bool serialiseConfigInto(ref Appender!string sink) const
     {
         import lu.traits : isAnnotated;
+
+        bool didSomething;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
@@ -1258,6 +1263,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import lu.serialisation : serialise;
 
                 sink.serialise(symbol);
+                didSomething = true;
                 break;
             }
             else static if (isAnnotated!(this.tupleof[i], Settings))
@@ -1270,6 +1276,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     __traits(identifier, this.tupleof[i])));
             }
         }
+
+        return didSomething;
     }
 
 
