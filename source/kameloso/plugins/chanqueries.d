@@ -307,15 +307,9 @@ void startChannelQueries(ChanQueriesService service)
                 case ERR_UNKNOWNCOMMAND:
                     if (!thisFiber.payload.aux.length || (thisFiber.payload.aux == "WHOIS"))
                     {
-                        import kameloso.common : Tint;
-
                         // Cannot WHOIS on this server
                         // A different flavour of ERR_UNKNOWNCOMMAND doesn't include the command
                         // We can't say for sure but assume it's erroring on "WHOIS"
-                        logger.warning("Warning: This server does not seem to support user accounts.");
-                        logger.warning("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
-                            Tint.log, Tint.warning);
-                        logger.warning("As it is, functionality will be greatly limited.");
                         service.serverSupportsWHOIS = false;
                         return;
                     }

@@ -971,6 +971,25 @@ void onReconnect(ConnectService service)
 }
 
 
+// onUnknownCommand
+/++
+ +  Warns the user if the server does not seem to support WHOIS queries, suggesting
+ +  that they enable hostmasks mode instead.
+ +/
+@(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+void onUnknownCommand(ConnectService service, const IRCEvent event)
+{
+    if (service.serverSupportsWHOIS && (event.aux == "WHOIS"))
+    {
+        logger.error("Error: This server does not seem to support user accounts.");
+        logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
+            Tint.log, Tint.warning);
+        logger.error("As it is, functionality will be greatly limited.");
+        service.serverSupportsWHOIS = false;
+    }
+}
+
+
 // register
 /++
  +  Registers with/logs onto an IRC server.
@@ -1205,6 +1224,9 @@ private:
 
     /// Whether or not the bot has sent configured commands after connect.
     bool sentAfterConnect;
+
+    /// Whether or not the server seems to be supporting WHOIS queries.
+    bool serverSupportsWHOIS = true;
 
     mixin IRCPluginImpl;
 }
