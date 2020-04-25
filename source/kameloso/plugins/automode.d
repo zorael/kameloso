@@ -484,6 +484,8 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
+    if (event.sender.nickname == plugin.state.client.nickname) return;
+
     if (!plugin.state.channels[event.channel].ops
         .canFind(plugin.state.client.nickname)) return;
 
