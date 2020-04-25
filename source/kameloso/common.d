@@ -1006,6 +1006,7 @@ if (isOutputRange!(Sink, char[]))
 in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
 do
 {
+    import lu.string : plurality;
     import std.format : formattedWrite;
     import std.traits : isIntegral, isSomeString;
 
@@ -1013,13 +1014,6 @@ do
 
     int days, hours, minutes, seconds;
     duration.split!("days", "hours", "minutes", "seconds")(days, hours, minutes, seconds);
-
-    // Copied from lu.string to avoid importing it
-    pragma(inline)
-    static string plurality(const int num, const string singular, const string plural) pure nothrow @nogc
-    {
-        return ((num == 1) || (num == -1)) ? singular : plural;
-    }
 
     if (days)
     {
