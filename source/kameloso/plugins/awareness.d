@@ -659,6 +659,28 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
         channel.users.remove(event.sender.nickname);
 
+        // Remove entries in the mods AA (ops, halfops, voice, ...)
+        foreach (ref modUsers; channel.mods)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+
+            // There should only be at most one index, but this is easy enough.
+            size_t[] garbage;
+
+            foreach (immutable i, modNickname; modUsers)
+            {
+                if (modNickname == event.sender.nickname)
+                {
+                    garbage ~= i;
+                }
+            }
+
+            foreach_reverse (immutable i; garbage)
+            {
+                modUsers = modUsers.remove!(SwapStrategy.unstable)(i);
+            }
+        }
+
         foreach (const foreachChannel; plugin.state.channels)
         {
             if (event.sender.nickname in foreachChannel.users) return;
