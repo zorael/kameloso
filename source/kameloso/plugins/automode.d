@@ -93,57 +93,58 @@ void initResources(AutomodePlugin plugin)
  +
  +  Different `dialect.defs.IRCEvent.Type`s have to be handled differently,
  +  as the triggering user may be either the sender or the target.
+ +
+ +  Additionally none of these events carry a channel, so we'll have to make
+ +  manual checks to see if the user is in a home channel we're in. Otherwise
+ +  there's nothing for the bot to do.
  +/
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
-@(IRCEvent.Type.JOIN)
-@(PrivilegeLevel.anyone)
-@(ChannelPolicy.home)
+@(PrivilegeLevel.ignore)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
     if (event.sender.nickname == plugin.state.client.nickname) return;
 
-    string account, nickname;
+    string account;
+    string nickname;
 
     with (IRCEvent.Type)
-    with (event)
     switch (event.type)
     {
     case ACCOUNT:
-        account = sender.account;
-        nickname = sender.nickname;
+        account = event.sender.account;
+        nickname = event.sender.nickname;
         break;
 
     case RPL_WHOISUSER:
-        if (plugin.state.settings.preferHostmasks)
+        if (plugin.state.settings.preferHostmasks && event.target.account.length)
         {
-            // Persistence will have set the account field.
+            // Persistence will have set the account field, if there is any to set.
             goto case RPL_WHOISACCOUNT;
         }
         return;
 
     case RPL_WHOISACCOUNT:
     case RPL_WHOISREGNICK:
-        account = target.account;
-        nickname = target.nickname;
+        account = event.target.account;
+        nickname = event.target.nickname;
         break;
-
-    case JOIN:
-        if (sender.account.length) goto case ACCOUNT;
-        return;
 
     default:
         assert(0, "Invalid `IRCEvent.Type` annotation on `" ~ __FUNCTION__ ~ '`');
     }
 
-    foreach (immutable channelName, const accountmodes; plugin.automodes)
+    foreach (immutable homeChannel; plugin.state.bot.homeChannels)
     {
-        if (account in accountmodes)
+        if (const channel = homeChannel in plugin.state.channels)
         {
-            plugin.applyAutomodes(channelName, nickname, account);
+            if (nickname in channel.users)
+            {
+                plugin.applyAutomodes(homeChannel, nickname, account);
+            }
         }
     }
 }
