@@ -150,6 +150,26 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
+// onJoin
+/++
+ +  Applies automodes upon someone joining a home channel.
+ +
+ +  `applyAutomodes` will cautiously probe whether there are any definitions to
+ +  apply, so there's little sense in doing it here as well. Just pass the
+ +  arguments and let it look things up.
+ +/
+@(IRCEvent.Type.JOIN)
+@(PrivilegeLevel.anyone)
+@(ChannelPolicy.home)
+void onJoin(AutomodePlugin plugin, const IRCEvent event)
+{
+    if (event.sender.account.length)
+    {
+        plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
+    }
+}
+
+
 // applyAutomodes
 /++
  +  Applies automodes for a specific user in a specific channel.
