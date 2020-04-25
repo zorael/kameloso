@@ -264,7 +264,8 @@ void messageFiber(ref Kameloso instance)
                             return;
                         }
 
-                        prelude = "PRIVMSG #%s :/w %s ".format(instance.parser.client.nickname, target.nickname);
+                        prelude = "PRIVMSG #%s :/w %s "
+                            .format(instance.parser.client.nickname, target.nickname);
                     }
                 }
 
@@ -335,7 +336,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.admin));
+                return quitServer(ThreadMessage.Quit(), content,
+                    (target.class_ == IRCUser.Class.admin));
 
             case NICK:
                 line = "NICK " ~ target.nickname;
@@ -1987,7 +1989,8 @@ void resolveResourceDirectory(ref Kameloso instance)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(instance.settings.resourceDirectory);
-        logger.logf("Created resource directory %s%s", Tint.info, instance.settings.resourceDirectory);
+        logger.logf("Created resource directory %s%s", Tint.info,
+            instance.settings.resourceDirectory);
     }
 }
 
@@ -2131,7 +2134,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file.baseName, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
+                e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
@@ -2142,7 +2146,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             logger.warningf("An error occured while initialising the %s%s%s " ~
                 "plugin's resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
+                e.file, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
@@ -2163,7 +2168,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to start up: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file.baseName, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
+                e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
             retval = 1;
             break outerloop;
@@ -2173,7 +2179,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("An error occured while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
-                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg, e.file.baseName, e.line, TerminalToken.bell);
+                Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
+                e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
             retval = 1;
             break outerloop;
@@ -2492,7 +2499,8 @@ int initBot(string[] args)
         !instance.settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
-        logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", Tint.info, Tint.log);
+        logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)",
+            Tint.info, Tint.log);
     }
 
     // Save if we're exiting and configuration says we should.

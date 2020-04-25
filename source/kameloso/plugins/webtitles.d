@@ -526,7 +526,9 @@ void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
         immutable line = colouredOutput ?
             "[%s] %s (uploaded by %s)"
                 .format("youtube.com".ircBold, results.youtubeTitle,
-                colouredOutput ? results.youtubeAuthor.ircColourByHash : results.youtubeAuthor.ircBold) :
+                colouredOutput ?
+                    results.youtubeAuthor.ircColourByHash :
+                    results.youtubeAuthor.ircBold) :
             "[youtube.com] %s (uploaded by %s)"
                 .format(results.youtubeTitle, results.youtubeAuthor);
 

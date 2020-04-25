@@ -113,17 +113,20 @@ final class KamelosoLogger : Logger
     {
         import std.range : only;
 
-        foreach (immutable logLevel; only(LogLevel.all, LogLevel.info, LogLevel.warning, LogLevel.fatal))
+        foreach (immutable logLevel; only(LogLevel.all, LogLevel.info,
+            LogLevel.warning, LogLevel.fatal))
         {
             import std.format : format;
 
             immutable tintBright = tint(logLevel, true);
             immutable tintBrightTable = logcoloursBright[logLevel];
-            assert((tintBright == tintBrightTable), "%s != %s".format(tintBright, tintBrightTable));
+            assert((tintBright == tintBrightTable), "%s != %s"
+                .format(tintBright, tintBrightTable));
 
             immutable tintDark = tint(logLevel, false);
             immutable tintDarkTable = logcoloursDark[logLevel];
-            assert((tintDark == tintDarkTable), "%s != %s".format(tintDark, tintDarkTable));
+            assert((tintDark == tintDarkTable), "%s != %s"
+                .format(tintDark, tintDarkTable));
         }
     }
 
@@ -224,7 +227,9 @@ final class KamelosoLogger : Logger
 
         version(Colours)
         {
-            sink.colourWith(brightTerminal ? logcoloursBright[logLevel] : logcoloursDark[logLevel]);
+            sink.colourWith(brightTerminal ?
+                logcoloursBright[logLevel] :
+                logcoloursDark[logLevel]);
         }
     }
 

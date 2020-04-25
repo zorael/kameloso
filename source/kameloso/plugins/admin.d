@@ -369,7 +369,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     if (plugin.state.bot.homeChannels.canFind(channel))
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname, "We are already in that home channel.");
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "We are already in that home channel.");
         return;
     }
 
@@ -389,7 +390,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         // We're converting a normal channel into a home. Let other plugins know
         // (as there is no SELFJOIN trigger).
         logger.info("We're already in this channel as a guest. Converting it to a home.");
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(), "home add", busMessage(channel));
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+            "home add", busMessage(channel));
 
         // Make sure there are no duplicates between homes and channels.
         plugin.state.bot.guestChannels = plugin.state.bot.guestChannels

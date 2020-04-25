@@ -805,7 +805,8 @@ long[string] loadSeen(const string filename, const bool verbosely = true)
 
     if (!filename.exists || !filename.isFile)
     {
-        logger.warningf("%s%s%s does not exist or is not a file", Tint.log, filename, Tint.warning);
+        logger.warningf("%s%s%s does not exist or is not a file",
+            Tint.log, filename, Tint.warning);
         return aa;
     }
 

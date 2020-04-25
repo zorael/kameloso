@@ -993,7 +993,8 @@ private:
     /++
      +  Sends a channel message.
      +/
-    void chan(Flag!"priority" priority = No.priority)(const string channel, const string content)
+    void chan(Flag!"priority" priority = No.priority)
+        (const string channel, const string content)
     {
         return kameloso.messaging.chan!priority(privateState, channel, content,
             privateState.settings.hideOutgoing);
@@ -1004,7 +1005,8 @@ private:
     /++
      +  Sends a private query message to a user.
      +/
-    void query(Flag!"priority" priority = No.priority)(const string nickname, const string content)
+    void query(Flag!"priority" priority = No.priority)
+        (const string nickname, const string content)
     {
         return kameloso.messaging.query!priority(privateState, nickname, content,
             privateState.settings.hideOutgoing);
@@ -1031,8 +1033,8 @@ private:
     /++
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
-    void emote(Flag!"priority" priority = No.priority)(const string emoteTarget,
-        const string content)
+    void emote(Flag!"priority" priority = No.priority)
+        (const string emoteTarget, const string content)
     {
         return kameloso.messaging.emote!priority(privateState, emoteTarget,
             content, privateState.settings.hideOutgoing);
@@ -1057,7 +1059,8 @@ private:
     /++
      +  Sets the topic of a channel.
      +/
-    void topic(Flag!"priority" priority = No.priority)(const string channel, const string content)
+    void topic(Flag!"priority" priority = No.priority)
+        (const string channel, const string content)
     {
         return kameloso.messaging.topic!priority(privateState, channel, content,
             privateState.settings.hideOutgoing);
@@ -1068,7 +1071,8 @@ private:
     /++
      +  Invites a user to a channel.
      +/
-    void invite(Flag!"priority" priority = No.priority)(const string channel, const string nickname)
+    void invite(Flag!"priority" priority = No.priority)
+        (const string channel, const string nickname)
     {
         return kameloso.messaging.invite!priority(privateState, channel,
             nickname, privateState.settings.hideOutgoing);
@@ -1079,8 +1083,8 @@ private:
     /++
      +  Joins a channel.
      +/
-    void join(Flag!"priority" priority = No.priority)(const string channel,
-        const string key = string.init)
+    void join(Flag!"priority" priority = No.priority)
+        (const string channel, const string key = string.init)
     {
         return kameloso.messaging.join!priority(privateState, channel, key,
             privateState.settings.hideOutgoing);
@@ -1431,11 +1435,13 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 
     static if (is(SubPlugin == typeof(null)))
     {
-        plugin.state.replays[user.nickname] ~= replay(event, privilegeLevel, fn, caller);
+        plugin.state.replays[user.nickname] ~=
+            replay(event, privilegeLevel, fn, caller);
     }
     else
     {
-        plugin.state.replays[user.nickname] ~= replay(subPlugin, event, privilegeLevel, fn, caller);
+        plugin.state.replays[user.nickname] ~=
+            replay(subPlugin, event, privilegeLevel, fn, caller);
     }
 }
 
@@ -2026,7 +2032,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 import std.format : format;
                 static assert(0, ("Unsupported signature of success function/delegate " ~
                     "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
-                    .format(__FUNCTION__, typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
+                    .format(__FUNCTION__, typeof(onSuccess).stringof,
+                        __traits(identifier, onSuccess)));
             }
         }
 
@@ -2059,7 +2066,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     import std.format : format;
                     static assert(0, ("Unsupported signature of failure function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
-                        .format(__FUNCTION__, typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                        .format(__FUNCTION__, typeof(onFailure).stringof,
+                            __traits(identifier, onFailure)));
                 }
             }
         }

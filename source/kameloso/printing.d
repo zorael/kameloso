@@ -164,9 +164,14 @@ if (isOutputRange!(Sink, char[]))
 
     static if (printAll)
     {
-        import kameloso.traits : longestUnserialisableMemberName, longestUnserialisableMemberTypeName;
-        enum typewidth = max(minimumTypeWidth, (longestUnserialisableMemberTypeName!Things.length + 1));
-        enum initialWidth = !widthArg ? longestUnserialisableMemberName!Things.length : widthArg;
+        import kameloso.traits : longestUnserialisableMemberName,
+            longestUnserialisableMemberTypeName;
+
+        enum typewidth = max(minimumTypeWidth,
+            (longestUnserialisableMemberTypeName!Things.length + 1));
+        enum initialWidth = !widthArg ?
+            longestUnserialisableMemberName!Things.length :
+            widthArg;
     }
     else
     {
@@ -190,7 +195,8 @@ if (isOutputRange!(Sink, char[]))
         static if (coloured)
         {
             immutable titleCode = bright ? F.black : F.white;
-            sink.formattedWrite("%s-- %s\n", titleCode.colour, Thing.stringof.stripSuffix("Settings"));
+            sink.formattedWrite("%s-- %s\n", titleCode.colour,
+                Thing.stringof.stripSuffix("Settings"));
         }
         else
         {
@@ -249,7 +255,9 @@ if (isOutputRange!(Sink, char[]))
                     import std.range.primitives : ElementEncodingType;
 
                     alias ElemType = Unqual!(ElementEncodingType!T);
-                    enum elemIsCharacter = is(ElemType == char) || is(ElemType == dchar) || is(ElemType == wchar);
+
+                    enum elemIsCharacter = is(ElemType == char) ||
+                        is(ElemType == dchar) || is(ElemType == wchar);
 
                     immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
 
@@ -301,7 +309,9 @@ if (isOutputRange!(Sink, char[]))
                 {
                     enum classOrStruct = is(T == struct) ? "struct" : "class";
 
-                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ? " (init)" : string.init;
+                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
+                        " (init)" :
+                        string.init;
 
                     static if (coloured)
                     {

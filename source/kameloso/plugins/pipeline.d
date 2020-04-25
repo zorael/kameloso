@@ -101,15 +101,25 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
             if (brightTerminal)
             {
-                enum infotintColourBright = DefaultColours.logcoloursBright[LogLevel.info].colour.idup;
-                enum logtintColourBright = DefaultColours.logcoloursBright[LogLevel.all].colour.idup;
+                enum infotintColourBright = DefaultColours.logcoloursBright[LogLevel.info]
+                    .colour
+                    .idup;
+                enum logtintColourBright = DefaultColours.logcoloursBright[LogLevel.all]
+                    .colour
+                    .idup;
+
                 infotint = infotintColourBright;
                 logtint = logtintColourBright;
             }
             else
             {
-                enum infotintColourDark = DefaultColours.logcoloursDark[LogLevel.info].colour.idup;
-                enum logtintColourDark = DefaultColours.logcoloursDark[LogLevel.all].colour.idup;
+                enum infotintColourDark = DefaultColours.logcoloursDark[LogLevel.info]
+                    .colour
+                    .idup;
+                enum logtintColourDark = DefaultColours.logcoloursDark[LogLevel.all]
+                    .colour
+                    .idup;
+
                 infotint = infotintColourDark;
                 logtint = logtintColourDark;
             }

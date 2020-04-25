@@ -322,7 +322,8 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     }
     catch (JSONException e)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname, "Failed to add note; " ~ e.msg);
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Failed to add note; " ~ e.msg);
         //logger.error("Failed to add note: ", Tint.log, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }

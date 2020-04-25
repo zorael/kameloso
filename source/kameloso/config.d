@@ -130,7 +130,8 @@ void complainAboutIncompleteConfiguration()
 {
     import kameloso.common : Tint, logger;
 
-    logger.logf("...one or more %sadmins%s who get administrative control over the bot.", Tint.info, Tint.log);
+    logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
+        Tint.info, Tint.log);
     logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
 }
 
@@ -301,7 +302,8 @@ final class ConfigurationFileReadFailureException : Exception
      +  Create a new `ConfigurationFileReadFailureException`, without attaching
      +  a filename.
      +/
-    this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure nothrow @nogc
+    this(const string message, const string file = __FILE__,
+        const size_t line = __LINE__) pure nothrow @nogc
     {
         super(message, file, line);
     }

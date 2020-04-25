@@ -206,9 +206,11 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
             }
 
             enum pattern = "Use %s [%s] [%s] for information about a command.";
-            enum colouredLine = pattern.format("help".ircBold, "plugin".ircBold, "command".ircBold);
+            enum colouredLine = pattern.format("help".ircBold,
+                "plugin".ircBold, "command".ircBold);
 
-            immutable message = plugin.state.settings.colouredOutgoing ? colouredLine :
+            immutable message = plugin.state.settings.colouredOutgoing ?
+                colouredLine :
                 "Use help [plugin] [command] for information about a command.";
 
             privmsg(plugin.state, channel, sender.nickname, message);

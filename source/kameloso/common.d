@@ -1217,7 +1217,7 @@ unittest
  +  ---
  +
  +  Params:
- +      demandSeparatingChars = Makes it a necessity that `line` is followed
+ +      demandSep = Makes it a necessity that `line` is followed
  +          by one of the prefix letters ":;?! ". If it isn't, the `line` string
  +          will be returned as is.
  +      line = String line prefixed with `prefix`, potentially including separating characters.
@@ -1226,7 +1226,7 @@ unittest
  +  Returns:
  +      The passed line with the `prefix` sliced away.
  +/
-string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
+string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 do
@@ -1240,7 +1240,7 @@ do
     // the onus is on the caller that slice begins with prefix, else this will throw
     slice.nom!(Yes.decode)(prefix);
 
-    static if (demandSeparatingChars)
+    static if (demandSep)
     {
         // Return the whole line, a non-match, if there are no separating characters
         // (at least one of the chars in separatingChars

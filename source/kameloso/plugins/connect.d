@@ -158,8 +158,11 @@ void joinChannels(ConnectService service)
 
         // Join in two steps so home channels don't get shoved away by guest channels
         // FIXME: line should split if it reaches 512 characters
-        if (bot.homeChannels.length) joinChannel(service.state, homelist.join(","), string.init, true);
-        if (bot.guestChannels.length) joinChannel(service.state, guestlist.join(","), string.init, true);
+        if (bot.homeChannels.length) joinChannel(service.state,
+            homelist.join(","), string.init, true);
+
+        if (bot.guestChannels.length) joinChannel(service.state,
+            guestlist.join(","), string.init, true);
     }
 }
 
@@ -265,7 +268,8 @@ void tryAuth(ConnectService service)
             if (client.nickname != client.origNickname)
             {
                 logger.warningf("Cannot auth when you have changed your nickname. " ~
-                    "(%s%s%s != %1$s%4$s%3$s)", Tint.log, client.nickname, Tint.warning, client.origNickname);
+                    "(%s%s%s != %1$s%4$s%3$s)", Tint.log, client.nickname,
+                    Tint.warning, client.origNickname);
 
                 service.authentication = Progress.finished;
                 return;
@@ -288,7 +292,8 @@ void tryAuth(ConnectService service)
 
             if (!bot.account.length)
             {
-                logger.logf("No account specified! Trying %s%s%s ...", Tint.info, client.origNickname, Tint.log);
+                logger.logf("No account specified! Trying %s%s%s ...",
+                    Tint.info, client.origNickname, Tint.log);
                 account = client.origNickname;
             }
 
@@ -634,7 +639,8 @@ void onInvite(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        logger.logf("Invited, but the %sjoinOnInvite%s setting is false so not joining.", Tint.info, Tint.log);
+        logger.logf("Invited, but the %sjoinOnInvite%s setting is false so not joining.",
+            Tint.info, Tint.log);
         return;
     }
 
@@ -796,7 +802,9 @@ void onSASLAuthenticate(ConnectService service)
         try
         {
             immutable account_ = account.length ? account : origNickname;
-            immutable password_ = password.beginsWith("base64:") ? decode64(password[7..$]) : password;
+            immutable password_ = password.beginsWith("base64:") ?
+                decode64(password[7..$]) :
+                password;
             immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
             immutable encoded = encode64(authToken);
 
