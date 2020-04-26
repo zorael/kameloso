@@ -1576,7 +1576,7 @@ void onCommandStatus(AdminPlugin plugin)
     import std.stdio : stdout, writeln;
 
     logger.log("Current state:");
-    printObjects!(Yes.printAll)(plugin.state.client, plugin.state.server);
+    printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
     writeln();
 
     logger.log("Channels:");

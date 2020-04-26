@@ -620,16 +620,16 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
-                    errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event);
+                    errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)(false, event);
 
                     if (event.sender.nickname.length || event.sender.address.length)
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event.sender);
+                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)(false, event.sender);
                     }
 
                     if (event.target.nickname.length || event.target.address.length)
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event.target);
+                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)(false, event.target);
                     }
                 }
                 else
@@ -638,20 +638,20 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                     File(errBuffer.file, "a")
                         .lockingTextWriter
-                        .formatObjects!(Yes.printAll, No.coloured)(false, event);
+                        .formatObjects!(Yes.all, No.coloured)(false, event);
 
                     if (event.sender.nickname.length || event.sender.address.length)
                     {
                         File(errBuffer.file, "a")
                             .lockingTextWriter
-                            .formatObjects!(Yes.printAll, No.coloured)(false, event.sender);
+                            .formatObjects!(Yes.all, No.coloured)(false, event.sender);
                     }
 
                     if (event.target.nickname.length || event.target.address.length)
                     {
                         File(errBuffer.file, "a")
                             .lockingTextWriter
-                            .formatObjects!(Yes.printAll, No.coloured)(false, event.target);
+                            .formatObjects!(Yes.all, No.coloured)(false, event.target);
                     }
                 }
             }

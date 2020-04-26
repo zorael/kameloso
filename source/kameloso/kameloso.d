@@ -2219,7 +2219,7 @@ void printEventDebugDetails(const IRCEvent event, const string raw)
         import std.typecons : Flag, No, Yes;
 
         // Offending line included in event, in raw
-        printObject!(Yes.printAll)(event);
+        printObject!(Yes.all)(event);
 
         if (event.sender != IRCUser.init)
         {

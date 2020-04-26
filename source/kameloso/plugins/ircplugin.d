@@ -1220,7 +1220,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 import std.typecons : No, Yes;
 
-                printObject!(No.printAll)(symbol);
+                printObject!(No.all)(symbol);
                 break;
             }
         }

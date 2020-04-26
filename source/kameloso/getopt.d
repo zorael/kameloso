@@ -196,7 +196,7 @@ void printSettings(ref Kameloso instance, const string[] customSettings,
     printVersionInfo(pre, post);
     writeln();
 
-    printObjects!(No.printAll)(instance.parser.client, instance.bot,
+    printObjects!(No.all)(instance.parser.client, instance.bot,
         instance.parser.server, instance.settings);
 
     string[][string] ignore;
