@@ -270,14 +270,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
     "$command [optional quit reason]")
 void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
-    if (event.content.length)
-    {
-        quit(plugin.state, event.content);
-    }
-    else
-    {
-        quit(plugin.state);
-    }
+    quit(plugin.state, event.content);
 }
 
 
