@@ -513,7 +513,7 @@ version(unittest)
     {
         MyPluginSettings myPluginSettings;
 
-        string name() @property const
+        override string name() @property const
         {
             return "myplugin";
         }
@@ -996,8 +996,8 @@ private:
     void chan(Flag!"priority" priority = No.priority)
         (const string channel, const string content)
     {
-        return kameloso.messaging.chan!priority(privateState, channel, content,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.chan!priority(state, channel, content,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1008,8 +1008,8 @@ private:
     void query(Flag!"priority" priority = No.priority)
         (const string nickname, const string content)
     {
-        return kameloso.messaging.query!priority(privateState, nickname, content,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.query!priority(state, nickname, content,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1024,8 +1024,8 @@ private:
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!priority(privateState, channel,
-            nickname, content, privateState.settings.hideOutgoing);
+        return kameloso.messaging.privmsg!priority(state, channel,
+            nickname, content, state.settings.hideOutgoing);
     }
 
 
@@ -1036,8 +1036,8 @@ private:
     void emote(Flag!"priority" priority = No.priority)
         (const string emoteTarget, const string content)
     {
-        return kameloso.messaging.emote!priority(privateState, emoteTarget,
-            content, privateState.settings.hideOutgoing);
+        return kameloso.messaging.emote!priority(state, emoteTarget,
+            content, state.settings.hideOutgoing);
     }
 
 
@@ -1050,8 +1050,8 @@ private:
     void mode(Flag!"priority" priority = No.priority)(const string channel,
         const string modes, const string content = string.init)
     {
-        return kameloso.messaging.mode!priority(privateState, channel, modes,
-            content, privateState.settings.hideOutgoing);
+        return kameloso.messaging.mode!priority(state, channel, modes,
+            content, state.settings.hideOutgoing);
     }
 
 
@@ -1062,8 +1062,8 @@ private:
     void topic(Flag!"priority" priority = No.priority)
         (const string channel, const string content)
     {
-        return kameloso.messaging.topic!priority(privateState, channel, content,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.topic!priority(state, channel, content,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1074,8 +1074,8 @@ private:
     void invite(Flag!"priority" priority = No.priority)
         (const string channel, const string nickname)
     {
-        return kameloso.messaging.invite!priority(privateState, channel,
-            nickname, privateState.settings.hideOutgoing);
+        return kameloso.messaging.invite!priority(state, channel,
+            nickname, state.settings.hideOutgoing);
     }
 
 
@@ -1086,8 +1086,8 @@ private:
     void join(Flag!"priority" priority = No.priority)
         (const string channel, const string key = string.init)
     {
-        return kameloso.messaging.join!priority(privateState, channel, key,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.join!priority(state, channel, key,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1098,8 +1098,8 @@ private:
     void kick(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string reason = string.init)
     {
-        return kameloso.messaging.kick!priority(privateState, channel, nickname,
-            reason, privateState.settings.hideOutgoing);
+        return kameloso.messaging.kick!priority(state, channel, nickname,
+            reason, state.settings.hideOutgoing);
     }
 
 
@@ -1110,8 +1110,8 @@ private:
     void part(Flag!"priority" priority = No.priority)(const string channel,
         const string reason = string.init)
     {
-        return kameloso.messaging.part!priority(privateState, channel, reason,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.part!priority(state, channel, reason,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1121,8 +1121,8 @@ private:
      +/
     void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
     {
-        return kameloso.messaging.quit!priority(privateState, reason,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.quit!priority(state, reason,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1133,8 +1133,8 @@ private:
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
         const bool force = false, const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.whois!priority(privateState, nickname, force,
-            privateState.settings.hideOutgoing, caller);
+        return kameloso.messaging.whois!priority(state, nickname, force,
+            state.settings.hideOutgoing, caller);
     }
 
     // raw
@@ -1146,8 +1146,8 @@ private:
      +/
     void raw(Flag!"priority" priority = No.priority)(const string line)
     {
-        return kameloso.messaging.raw!priority(privateState, line,
-            privateState.settings.hideOutgoing);
+        return kameloso.messaging.raw!priority(state, line,
+            state.settings.hideOutgoing);
     }
 
 
@@ -1158,7 +1158,7 @@ private:
      +/
     void immediate(const string line)
     {
-        return kameloso.messaging.immediate(privateState, line);
+        return kameloso.messaging.immediate(state, line);
     }
 
 
@@ -1166,35 +1166,35 @@ private:
     /++
      +  Asks the main thread to print text to the local terminal.
      +/
-    alias askToWriteln = partial!(kameloso.messaging.askToWriteln, privateState);
+    alias askToWriteln = partial!(kameloso.messaging.askToWriteln, state);
 
 
     // askToTrace
     /++
      +  Asks the main thread to `logger.trace` text to the local terminal.
      +/
-    alias askToTrace = partial!(kameloso.messaging.askToTrace, privateState);
+    alias askToTrace = partial!(kameloso.messaging.askToTrace, state);
 
 
     // askToLog
     /++
      +  Asks the main thread to `logger.log` text to the local terminal.
      +/
-    alias askToLog = partial!(kameloso.messaging.askToLog, privateState);
+    alias askToLog = partial!(kameloso.messaging.askToLog, state);
 
 
     // askToInfo
     /++
      +  Asks the main thread to `logger.info` text to the local terminal.
      +/
-    alias askToInfo = partial!(kameloso.messaging.askToInfo, privateState);
+    alias askToInfo = partial!(kameloso.messaging.askToInfo, state);
 
 
     // askToWarn
     /++
      +  Asks the main thread to `logger.warning` text to the local terminal.
      +/
-    alias askToWarn = partial!(kameloso.messaging.askToWarn, privateState);
+    alias askToWarn = partial!(kameloso.messaging.askToWarn, state);
     alias askToWarning = askToWarn;
 
 
@@ -1202,7 +1202,7 @@ private:
     /++
      +  Asks the main thread to `logger.error` text to the local terminal.
      +/
-    alias askToError = partial!(kameloso.messaging.askToError, privateState);
+    alias askToError = partial!(kameloso.messaging.askToError, state);
 }
 
 
