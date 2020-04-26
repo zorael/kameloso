@@ -285,12 +285,17 @@ void startChannelQueries(ChanQueriesService service)
             whois(service.state, nickname, false, service.hideOutgoingQueries, true);  // Background
             Fiber.yield();  // Await whois types registered above
 
+            enum maxConsecutiveUnknownCommands = 3;
+            uint consecutiveUnknownCommands;
+
             while (true)
             {
                 with (IRCEvent.Type)
                 switch (thisFiber.payload.type)
                 {
                 case RPL_ENDOFWHOIS:
+                    consecutiveUnknownCommands = 0;
+
                     if (thisFiber.payload.target.nickname == nickname)
                     {
                         // Saw the expected response
@@ -305,20 +310,33 @@ void startChannelQueries(ChanQueriesService service)
                     }
 
                 case ERR_UNKNOWNCOMMAND:
-                    if (!thisFiber.payload.aux.length || (thisFiber.payload.aux == "WHOIS"))
+                    if (!thisFiber.payload.aux.length)
+                    {
+                        // A different flavour of ERR_UNKNOWNCOMMAND doesn't include the command
+                        // We can't say for sure it's erroring on "WHOIS" specifically
+                        // If consecutive three errors, assume it's not supported
+
+                        if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
+                        {
+                            // Cannot WHOIS on this server (assume)
+                            service.serverSupportsWHOIS = false;
+                            return;
+                        }
+                    }
+                    else if (thisFiber.payload.aux == "WHOIS")
                     {
                         // Cannot WHOIS on this server
-                        // A different flavour of ERR_UNKNOWNCOMMAND doesn't include the command
-                        // We can't say for sure but assume it's erroring on "WHOIS"
                         service.serverSupportsWHOIS = false;
                         return;
                     }
                     else
                     {
                         // Something else issued an unknown command; yield and try again
+                        consecutiveUnknownCommands = 0;
                         Fiber.yield();
                         continue;
                     }
+                    break;
 
                 default:
                     import lu.conv : Enum;
