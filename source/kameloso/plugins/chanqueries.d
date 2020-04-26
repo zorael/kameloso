@@ -318,7 +318,13 @@ void startChannelQueries(ChanQueriesService service)
 
                         if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                         {
+                            import kameloso.common : Tint;
+
                             // Cannot WHOIS on this server (assume)
+                            logger.error("Error: This server does not seem " ~
+                                "to support user accounts?");
+                            logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
+                                Tint.log, Tint.warning);
                             service.serverSupportsWHOIS = false;
                             return;
                         }
@@ -326,6 +332,7 @@ void startChannelQueries(ChanQueriesService service)
                     else if (thisFiber.payload.aux == "WHOIS")
                     {
                         // Cannot WHOIS on this server
+                        // Connect will display an error, so don't do it here again
                         service.serverSupportsWHOIS = false;
                         return;
                     }
