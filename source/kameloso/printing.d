@@ -64,13 +64,13 @@ public:
  +  ---
  +
  +  Params:
- +      printAll = Whether or not to also display members marked as
+ +      all = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
  +/
-void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)
+void printObjects(Flag!"all" all = No.all, uint widthArg = 0, Things...)
     (auto ref Things things) @trusted
 {
     import kameloso.common : settings;
@@ -84,7 +84,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
     {
         if (!settings.monochrome)
         {
-            formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter,
+            formatObjects!(all, Yes.coloured, widthArg)(stdout.lockingTextWriter,
                 settings.brightTerminal, things);
             printed = true;
         }
@@ -93,7 +93,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
     if (!printed)
     {
         // Brightness setting is irrelevant; pass false
-        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, false, things);
+        formatObjects!(all, No.coloured, widthArg)(stdout.lockingTextWriter, false, things);
     }
 
     if (settings.flush) stdout.flush();
@@ -129,7 +129,7 @@ alias printObject = printObjects;
  +  ---
  +
  +  Params:
- +      printAll = Whether or not to also display members marked as
+ +      all = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
@@ -138,7 +138,7 @@ alias printObject = printObjects;
  +      bright = Whether or not to format for a bright terminal background.
  +      things = Variadic list of structs to enumerate and format.
  +/
-void formatObjects(Flag!"printAll" printAll = No.printAll,
+void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, const bool bright, auto ref Things things)
 if (isOutputRange!(Sink, char[]))
@@ -162,7 +162,7 @@ if (isOutputRange!(Sink, char[]))
     enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
     enum minimumNameWidth = 24;  // Current minimum, TwitchBotSettings' "regularsAreWhitelisted"
 
-    static if (printAll)
+    static if (all)
     {
         import kameloso.traits : longestUnserialisableMemberName,
             longestUnserialisableMemberTypeName;
@@ -215,7 +215,7 @@ if (isOutputRange!(Sink, char[]))
                 !isAnnotated!(thing.tupleof[i], Hidden) &&
                 !isAnnotated!(thing.tupleof[i], Unserialisable);
 
-            static if (shouldNormallyBePrinted || printAll)
+            static if (shouldNormallyBePrinted || all)
             {
                 import lu.traits : isTrulyString;
                 import std.traits : isArray;
@@ -409,7 +409,7 @@ if (isOutputRange!(Sink, char[]))
     Appender!(char[]) sink;
 
     sink.reserve(512);  // ~323
-    sink.formatObjects!(No.printAll, No.coloured)(false, s);
+    sink.formatObjects!(No.all, No.coloured)(false, s);
 
     enum structNameSerialised =
 `-- StructName
@@ -433,7 +433,7 @@ if (isOutputRange!(Sink, char[]))
     alias StructNameSettings = StructName;
     StructNameSettings so = s;
     sink.clear();
-    sink.formatObjects!(No.printAll, No.coloured)(false, so);
+    sink.formatObjects!(No.all, No.coloured)(false, so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
@@ -459,7 +459,7 @@ if (isOutputRange!(Sink, char[]))
     st2.fdsa = -1;
 
     sink.clear();
-    sink.formatObjects!(No.printAll, No.coloured)(false, st1, st2);
+    sink.formatObjects!(No.all, No.coloured)(false, st1, st2);
     enum st1st2Formatted =
 `-- Struct1
    string members                    "harbl"(5)
@@ -487,7 +487,7 @@ if (isOutputRange!(Sink, char[]))
 
         sink.clear();
         sink.reserve(256);  // ~239
-        sink.formatObjects!(No.printAll, Yes.coloured)(false, s2);
+        sink.formatObjects!(No.all, Yes.coloured)(false, s2);
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -513,7 +513,7 @@ if (isOutputRange!(Sink, char[]))
         StructName2Settings s2o;
 
         sink.clear();
-        sink.formatObjects!(No.printAll, Yes.coloured)(false, s2o);
+        sink.formatObjects!(No.all, Yes.coloured)(false, s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
 }
@@ -544,7 +544,7 @@ if (isOutputRange!(Sink, char[]))
  +  ---
  +
  +  Params:
- +      printAll = Whether or not to also display members marked as
+ +      all = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
@@ -555,7 +555,7 @@ if (isOutputRange!(Sink, char[]))
  +  Returns:
  +      String with the object formatted, as per the passed arguments.
  +/
-string formatObjects(Flag!"printAll" printAll = No.printAll,
+string formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
     (const bool bright, Things things)
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
@@ -565,7 +565,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
     Appender!string sink;
     sink.reserve(1024);
 
-    sink.formatObjects!(printAll, coloured, widthArg)(bright, things);
+    sink.formatObjects!(all, coloured, widthArg)(bright, things);
     return sink.data;
 }
 
@@ -584,7 +584,7 @@ unittest
     s.members = "foo";
     s.asdf = 42;
 
-    immutable formatted = formatObjects!(No.printAll, No.coloured)(false, s);
+    immutable formatted = formatObjects!(No.all, No.coloured)(false, s);
     assert((formatted ==
 `-- Struct
    string members                    "foo"(3)
