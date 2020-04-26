@@ -1415,9 +1415,9 @@ unittest
 }
 
 
-// onCommandJoinPart
+// onCommandJoin
 /++
- +  Joins or parts a supplied channel.
+ +  Joins a supplied channel.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -1425,34 +1425,55 @@ unittest
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "join")
-@BotCommand(PrefixPolicy.nickname, "part")
-@Description("Joins/parts a guest channel.", "$command [channel]")
-void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
+@Description("Joins a guest channel.", "$command [channel]")
+void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.algorithm.comparison : equal;
-    import std.algorithm.iteration : joiner, splitter;
-    import std.conv : to;
-    import std.uni : asLowerCase;
+    import lu.string : splitInto;
 
     if (!event.content.length)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname, "No channels supplied ...");
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "No channels to join supplied ...");
         return;
     }
 
-    immutable channels = event.content
-        .splitter(' ')
-        .joiner(",")
-        .to!string;
+    string slice = event.content;  // mutable
+    string channel;
+    string key;
 
-    if (event.aux.asLowerCase.equal("join"))
+    cast(void)slice.splitInto(channel, key);
+    join(plugin.state, channel, key);
+}
+
+
+// onCommandPart
+/++
+ +  Parts a supplied channel.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "part")
+@Description("Parts a guest channel.", "$command [channel]")
+void onCommandPart(AdminPlugin plugin, const IRCEvent event)
+{
+    import lu.string : splitInto;
+
+    if (!event.content.length)
     {
-        join(plugin.state, channels);
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "No channels to part supplied ...");
+        return;
     }
-    else
-    {
-        part(plugin.state, channels);
-    }
+
+    string slice = event.content;  // mutable
+    string channel;
+    string reason;
+
+    cast(void)slice.splitInto(channel, reason);
+    join(plugin.state, channel, reason);
 }
 
 
