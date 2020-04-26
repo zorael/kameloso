@@ -502,7 +502,7 @@ void onAuthEnd(ConnectService service)
 
     // This can be before registration ends in case of SASL
     // return if still registering
-    if (service.registration == Progress.started) return;
+    if (service.registration != Progress.finished) return;
 
     if (!service.joinedChannels)
     {
