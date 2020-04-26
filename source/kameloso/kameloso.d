@@ -853,8 +853,10 @@ Next mainLoop(ref Kameloso instance)
                         printEventDebugDetails(event, attempt.line);
                         version(PrintStacktraces) logger.trace(e.toString);
                     }
-
-                    checkUpdatesAndPropagate(instance, plugin);
+                    finally
+                    {
+                        checkUpdatesAndPropagate(instance, plugin);
+                    }
                 }
 
                 with (IRCEvent.Type)
