@@ -352,7 +352,7 @@ struct Kameloso
      +  Params:
      +      Buffer = Buffer type, generally `lu.container.Buffer`.
      +      buffer = Buffer instance.
-     +      onlyIncrement = Whether or not to send anything or just do a dry run,
+     +      dryRun = Whether or not to send anything or just do a dry run,
      +          incrementing the graph by `Throttle.increment`.
      +      sendFaster = On Twitch, whether or not we should throttle less and
      +          send messages faster. Useful in some situations when rate-limiting
@@ -363,7 +363,7 @@ struct Kameloso
      +      can reschedule the next server read timeout to happen earlier.
      +/
     double throttleline(Buffer)(ref Buffer buffer,
-        const Flag!"onlyIncrement" onlyIncrement = No.onlyIncrement,
+        const Flag!"dryRun" dryRun = No.dryRun,
         const Flag!"sendFaster" sendFaster = No.sendFaster)
     {
         with (throttle)
@@ -396,7 +396,7 @@ struct Kameloso
                 }
             }
 
-            while (!buffer.empty || onlyIncrement)
+            while (!buffer.empty || dryRun)
             {
                 double x = (now - t0).total!"msecs"/1000.0;
                 double y = k * x + m;
@@ -419,7 +419,7 @@ struct Kameloso
                 m = y + increment;
                 t0 = now;
 
-                if (onlyIncrement) break;
+                if (dryRun) break;
 
                 if (!buffer.front.quiet)
                 {

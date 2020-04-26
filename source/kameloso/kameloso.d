@@ -871,7 +871,6 @@ Next mainLoop(ref Kameloso instance)
                     // we're the broadcaster in, but no such luck with whether
                     // we're a moderator. For now, just assume we're moderator
                     // in all our home channels.
-                    // FIXME: Revisit with a better solution that's broken out of throttleline.
 
                     import std.typecons : Flag, No, Yes;
 
@@ -883,16 +882,16 @@ Next mainLoop(ref Kameloso instance)
                         // (There's no easy way to tell from here.)
                         if (event.channel.length && instance.bot.homeChannels.canFind(event.channel))
                         {
-                            instance.throttleline(instance.fastbuffer, Yes.onlyIncrement, Yes.sendFaster);
+                            instance.throttleline(instance.fastbuffer, Yes.dryRun, Yes.sendFaster);
                         }
                         else
                         {
-                            instance.throttleline(instance.outbuffer, Yes.onlyIncrement);
+                            instance.throttleline(instance.outbuffer, Yes.dryRun);
                         }
                     }
                     else
                     {
-                        instance.throttleline(instance.outbuffer, Yes.onlyIncrement);
+                        instance.throttleline(instance.outbuffer, Yes.dryRun);
                     }
                     break;
 
@@ -1012,7 +1011,7 @@ void sendLines(ref Kameloso instance, ref bool readWasShortened)
         }
         else if (!instance.fastbuffer.empty)
         {
-            untilNext = instance.throttleline(instance.fastbuffer, No.onlyIncrement, Yes.sendFaster);
+            untilNext = instance.throttleline(instance.fastbuffer, No.dryRun, Yes.sendFaster);
         }
         else if (!instance.outbuffer.empty)
         {
