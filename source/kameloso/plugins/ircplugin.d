@@ -51,7 +51,7 @@ public:
  +
  +  This is currently shared with all `service`-class "plugins".
  +/
-interface IRCPlugin
+abstract class IRCPlugin
 {
     @safe:
 
