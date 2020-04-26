@@ -131,7 +131,7 @@ do
     /// What the choices were originally named before lowercasing.
     string[string] origChoiceNames;
 
-    foreach (immutable rawChoice; slice.splitter(" "))
+    foreach (immutable rawChoice; slice.splitter(' '))
     {
         import lu.string : strippedRight;
 

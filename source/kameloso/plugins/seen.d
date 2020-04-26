@@ -505,7 +505,7 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
         `SeenPlugin.seenUsers` associative array.
      +/
 
-    foreach (immutable entry; event.content.splitter(" "))
+    foreach (immutable entry; event.content.splitter(' '))
     {
         import dialect.common : stripModesign;
         import lu.string : nom;

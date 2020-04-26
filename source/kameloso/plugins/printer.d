@@ -2009,7 +2009,7 @@ if (isOutputRange!(Sink, char[]))
         sink.reserve(8);  // reserve extra for minor badges
     }
 
-    foreach (immutable badgeAndNum; badgestring.splitter(","))
+    foreach (immutable badgeAndNum; badgestring.splitter(','))
     {
         import lu.string : nom;
 
@@ -2506,13 +2506,13 @@ if (isOutputRange!(Sink, char[]))
     size_t numHighlights;
     size_t pos;
 
-    foreach (emote; emotes.splitter("/"))
+    foreach (emote; emotes.splitter('/'))
     {
         import lu.string : nom;
 
         immutable emoteID = emote.nom(':');
 
-        foreach (immutable location; emote.splitter(","))
+        foreach (immutable location; emote.splitter(','))
         {
             import std.string : indexOf;
 

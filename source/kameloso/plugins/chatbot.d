@@ -212,7 +212,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
             .replace(`<p class="qt">`, string.init)
             .replace(`</p>`, string.init)
             .replace(`<br />`, string.init)
-            .splitter("\n");
+            .splitter('\n');
 
         immutable message = colouredOutgoing ?
             "%s #%s".format("[bash.org]".ircBold, num) :

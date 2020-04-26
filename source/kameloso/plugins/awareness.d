@@ -395,7 +395,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         import lu.string : contains, nom;
         import std.algorithm.iteration : splitter;
 
-        auto names = event.content.splitter(" ");
+        auto names = event.content.splitter(' ');
 
         foreach (immutable userstring; names)
         {
@@ -877,7 +877,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         auto channel = event.channel in plugin.state.channels;
         if (!channel) return;
 
-        auto names = event.content.splitter(" ");
+        auto names = event.content.splitter(' ');
 
         foreach (immutable userstring; names)
         {

@@ -161,7 +161,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
     import kameloso.printing : printObject;
     import std.algorithm.iteration : splitter;
 
-    foreach (immutable username; event.content.splitter(" "))
+    foreach (immutable username; event.content.splitter(' '))
     {
         if (const user = username in plugin.state.users)
         {
@@ -1448,7 +1448,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
     }
 
     immutable channels = event.content
-        .splitter(" ")
+        .splitter(' ')
         .joiner(",")
         .to!string;
 

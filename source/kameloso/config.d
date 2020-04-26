@@ -360,6 +360,6 @@ if (allSatisfy!(isStruct, T))
 
     return configFile
         .configurationText
-        .splitter("\n")
+        .splitter('\n')
         .deserialise(missingEntries, invalidEntries, things);
 }
