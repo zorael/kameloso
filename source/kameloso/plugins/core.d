@@ -81,17 +81,15 @@ public:
  +
  +  This is currently shared with all `service`-class "plugins".
  +/
-interface IRCPlugin
+abstract class IRCPlugin
 {
     @safe:
 
     /++
-     +  Returns a reference to the current `IRCPluginState` of the plugin.
-     +
-     +  Returns:
-     +      Reference to an `IRCPluginState`.
+     +  An `IRCPluginState` instance containing variables and arrays that represent
+     +  the current state of the plugin. Should generally be passed by reference.
      +/
-    ref inout(IRCPluginState) state() inout pure nothrow @nogc @property;
+    IRCPluginState state;
 
     /// Executed to let plugins modify an event mid-parse.
     void postprocess(ref IRCEvent) @system;
@@ -222,11 +220,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     @safe:
 
-    /++
-     +  This plugin's `IRCPluginState` structure. Has to be public for some things to work.
-     +/
-    public IRCPluginState privateState;
-
 
     // isEnabled
     /++
@@ -241,7 +234,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      `false` if not.
      +/
     pragma(inline)
-    public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const @property pure nothrow @nogc
     {
         import lu.traits : getSymbolsByUDA, isAnnotated;
 
@@ -302,7 +295,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         version(TwitchSupport)
         {
-            if (privateState.server.daemon == IRCServer.Daemon.twitch)
+            if (state.server.daemon == IRCServer.Daemon.twitch)
             {
                 if ((privilegeLevel == PrivilegeLevel.anyone) ||
                     (privilegeLevel == PrivilegeLevel.registered))
@@ -317,8 +310,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(privateState, event, privilegeLevel,
-                privateState.settings.preferHostmasks);
+            filterSender(state, event, privilegeLevel,
+                state.settings.preferHostmasks);
     }
 
 
@@ -336,7 +329,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  See_Also:
      +      onEventImpl
      +/
-    public void onEvent(const IRCEvent event) @system
+    override public void onEvent(const IRCEvent event) @system
     {
         return onEventImpl(event);
     }
@@ -547,7 +540,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (verbose)
             {
                 writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                if (privateState.settings.flush) stdout.flush();
+                if (state.settings.flush) stdout.flush();
             }
 
             static if (!hasUDA!(fun, ChannelPolicy) ||
@@ -560,19 +553,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.home");
-                    if (privateState.settings.flush) stdout.flush();
+                    if (state.settings.flush) stdout.flush();
                 }
 
                 if (!event.channel.length)
                 {
                     // it is a non-channel event, like a `dialect.defs.IRCEvent.Type.QUERY`
                 }
-                else if (!privateState.bot.homeChannels.canFind(event.channel))
+                else if (!state.bot.homeChannels.canFind(event.channel))
                 {
                     static if (verbose)
                     {
                         writeln("...ignore non-home channel ", event.channel);
-                        if (privateState.settings.flush) stdout.flush();
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     // channel policy does not match
@@ -584,7 +577,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.any");
-                    if (privateState.settings.flush) stdout.flush();
+                    if (state.settings.flush) stdout.flush();
                 }
             }
 
@@ -625,19 +618,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writefln(`...BotCommand "%s"`, commandUDA.word);
-                        if (privateState.settings.flush) stdout.flush();
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     // Reset between iterations as we nom the contents
                     mutEvent = event;
 
                     if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy,
-                        privateState.client, privateState.settings.prefix))
+                        state.client, state.settings.prefix))
                     {
                         static if (verbose)
                         {
                             writeln("...policy doesn't match; continue next BotCommand");
-                            if (privateState.settings.flush) stdout.flush();
+                            if (state.settings.flush) stdout.flush();
                         }
 
                         continue;  // next BotCommand UDA
@@ -656,7 +649,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("...command matches!");
-                            if (privateState.settings.flush) stdout.flush();
+                            if (state.settings.flush) stdout.flush();
                         }
 
                         mutEvent.aux = thisCommand;
@@ -685,19 +678,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("BotRegex: `", regexUDA.expression, "`");
-                            if (privateState.settings.flush) stdout.flush();
+                            if (state.settings.flush) stdout.flush();
                         }
 
                         // Reset between iterations; BotCommands may have altered it
                         mutEvent = event;
 
                         if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy,
-                            privateState.client, privateState.settings.prefix))
+                            state.client, state.settings.prefix))
                         {
                             static if (verbose)
                             {
                                 writeln("...policy doesn't match; continue next BotRegex");
-                                if (privateState.settings.flush) stdout.flush();
+                                if (state.settings.flush) stdout.flush();
                             }
 
                             continue;  // next BotRegex UDA
@@ -714,7 +707,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 static if (verbose)
                                 {
                                     writeln("...expression matches!");
-                                    if (privateState.settings.flush) stdout.flush();
+                                    if (state.settings.flush) stdout.flush();
                                 }
 
                                 mutEvent.aux = hits[0];
@@ -736,7 +729,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             {
                                 writeln("...BotRegex exception: ", e.msg);
                                 version(PrintStacktraces) writeln(e.toString);
-                                if (privateState.settings.flush) stdout.flush();
+                                if (state.settings.flush) stdout.flush();
                             }
                             continue;  // next BotRegex
                         }
@@ -752,7 +745,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...neither BotCommand nor BotRegex matched; continue funloop");
-                        if (privateState.settings.flush) stdout.flush();
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     return Next.continue_; // next function
@@ -780,7 +773,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
-                    if (privateState.settings.flush) stdout.flush();
+                    if (state.settings.flush) stdout.flush();
                 }
 
                 static if (__traits(hasMember, this, "allow") && isSomeFunction!(this.allow))
@@ -798,7 +791,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...custom allow!");
-                        if (privateState.settings.flush) stdout.flush();
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     immutable result = this.allow(mutEvent, privilegeLevel);
@@ -808,7 +801,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...built-in allow.");
-                        if (privateState.settings.flush) stdout.flush();
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     immutable result = allowImpl(mutEvent, privilegeLevel);
@@ -817,7 +810,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...result is ", Enum!FilterResult.toString(result));
-                    if (privateState.settings.flush) stdout.flush();
+                    if (state.settings.flush) stdout.flush();
                 }
 
                 with (FilterResult)
@@ -837,7 +830,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writefln("...%s WHOIS", typeof(this).stringof);
-                        if (privateState.settings.flush) stdout.flush();
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
@@ -875,7 +868,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (verbose)
             {
                 writeln("...calling!");
-                if (privateState.settings.flush) stdout.flush();
+                if (state.settings.flush) stdout.flush();
             }
 
             static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
@@ -1029,12 +1022,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import lu.traits : isAnnotated, isSerialisable;
         import std.traits : EnumMembers;
 
-        this.privateState = state;
-        this.privateState.awaitingFibers = state.awaitingFibers.dup;
-        this.privateState.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
-        this.privateState.replays = state.replays.dup;
-        this.privateState.repeats = state.repeats.dup;
-        this.privateState.scheduledFibers = state.scheduledFibers.dup;
+        this.state = state;
+        this.state.awaitingFibers = state.awaitingFibers.dup;
+        this.state.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
+        this.state.replays = state.replays.dup;
+        this.state.repeats = state.repeats.dup;
+        this.state.scheduledFibers = state.scheduledFibers.dup;
 
         foreach (immutable i, ref member; this.tupleof)
         {
@@ -1043,13 +1036,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (isAnnotated!(this.tupleof[i], Resource))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(privateState.settings.resourceDirectory, member)
+                    member = buildNormalizedPath(state.settings.resourceDirectory, member)
                         .expandTilde;
                 }
                 else static if (isAnnotated!(this.tupleof[i], Configuration))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(privateState.settings.configDirectory, member)
+                    member = buildNormalizedPath(state.settings.configDirectory, member)
                         .expandTilde;
                 }
             }
@@ -1081,7 +1074,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      event = The `dialect.defs.IRCEvent` in flight.
      +/
-    public void postprocess(ref IRCEvent event) @system
+    override public void postprocess(ref IRCEvent event) @system
     {
         static if (__traits(compiles, .postprocess))
         {
@@ -1107,7 +1100,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Writes plugin resources to disk, creating them if they don't exist.
      +/
-    public void initResources() @system
+    override public void initResources() @system
     {
         static if (__traits(compiles, .initResources))
         {
@@ -1146,7 +1139,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      invalidEntries = Out reference of an associative array of string arrays
      +          of unexpected configuration entries that did not belong.
      +/
-    public void deserialiseConfigFrom(const string configFile,
+    override public void deserialiseConfigFrom(const string configFile,
         out string[][string] missingEntries, out string[][string] invalidEntries)
     {
         import kameloso.config : readConfigInto;
@@ -1210,7 +1203,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      `true` if a member was found and set, `false` otherwise.
      +/
-    public bool setSettingByName(const string setting, const string value)
+    override public bool setSettingByName(const string setting, const string value)
     {
         import lu.objmanip : setMemberByName;
         import lu.traits : isAnnotated;
@@ -1236,7 +1229,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Prints the plugin's `Settings`-annotated settings struct.
      +/
-    public void printSettings() const
+    override public void printSettings() const
     {
         import kameloso.printing : printObject;
         import lu.traits : isAnnotated;
@@ -1277,7 +1270,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      true if something was serialised into the passed `sink`; false if not.
      +/
-    public bool serialiseConfigInto(ref Appender!string sink) const
+    override public bool serialiseConfigInto(ref Appender!string sink) const
     {
         import lu.traits : isAnnotated;
 
@@ -1315,7 +1308,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Runs early after-connect routines, immediately after connection has been
      +  established.
      +/
-    public void start() @system
+    override public void start() @system
     {
         static if (__traits(compiles, .start))
         {
@@ -1341,7 +1334,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  De-initialises the plugin.
      +/
-    public void teardown() @system
+    override public void teardown() @system
     {
         static if (__traits(compiles, .teardown))
         {
@@ -1371,7 +1364,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      The module name of the mixing-in class.
      +/
     pragma(inline)
-    public string name() @property const pure nothrow @nogc
+    override public string name() @property const pure nothrow @nogc
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
         return __traits(identifier, thisModule);
@@ -1388,7 +1381,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      Associative array of all `Descriptions`, keyed by
      +      `BotCommand.word`s and `BotRegex.expression`s.
      +/
-    public Description[string] commands() pure nothrow @property const
+    override public Description[string] commands() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
@@ -1466,21 +1459,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // state
-    /++
-     +  Accessor and mutator, returns a reference to the current private
-     +  `IRCPluginState`.
-     +
-     +  This is needed to have `state` be part of the `IRCPlugin` *interface*,
-     +  so `kameloso.d` can access the property, albeit indirectly.
-     +/
-    pragma(inline)
-    public ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
-    {
-        return this.privateState;
-    }
-
-
     // periodically
     /++
      +  Calls `.periodically` on a plugin if the internal private timestamp says
@@ -1490,11 +1468,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      now = The current time expressed in UNIX time.
      +/
-    public void periodically(const long now) @system
+    override public void periodically(const long now) @system
     {
         static if (__traits(compiles, .periodically))
         {
-            if (now >= privateState.nextPeriodical)
+            if (now >= state.nextPeriodical)
             {
                 import lu.traits : TakesParams;
 
@@ -1523,7 +1501,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  What this means is implementation-defined.
      +/
-    public void reload() @system
+    override public void reload() @system
     {
         static if (__traits(compiles, .reload))
         {
@@ -1556,7 +1534,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +          message was meant for them.
      +      content = Wildcard content, to be cast to concrete types if the header matches.
      +/
-    public void onBusMessage(const string header, shared Sendable content) @system
+    override public void onBusMessage(const string header, shared Sendable content) @system
     {
         static if (__traits(compiles, .onBusMessage))
         {

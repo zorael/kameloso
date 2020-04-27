@@ -865,7 +865,7 @@ private:
      +          after verifying we should process the event.
      +/
     version(TwitchSupport)
-    public void onEvent(const IRCEvent event)
+    override public void onEvent(const IRCEvent event)
     {
         if (state.server.daemon == IRCServer.Daemon.twitch) return;
         return onEventImpl(event);
