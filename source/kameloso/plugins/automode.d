@@ -14,7 +14,6 @@ version(WithAutomodePlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
@@ -383,6 +382,8 @@ void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname
     const string channelName, const string mode = string.init)
 in ((!add || mode.length), "Tried to add an empty automode")
 {
+    import kameloso.plugins.common : WHOISFiberDelegate;
+
     void onSuccess(const string id)
     {
         if (add)

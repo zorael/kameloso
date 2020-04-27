@@ -191,6 +191,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
     void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : Repeater;
+
         if (event.aux != "WHOIS") return;
 
         // We're on a server that doesn't support WHOIS
@@ -307,6 +309,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : catchUser;
         plugin.catchUser(event.target);
     }
 
@@ -329,6 +332,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : catchUser;
+
         with (IRCEvent.Type)
         switch (event.type)
         {
@@ -390,6 +395,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : catchUser;
         import kameloso.irccolours : stripColours;
         import dialect.common : IRCControlCharacter, stripModesign;
         import lu.string : contains, nom;
@@ -450,6 +456,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : rehashUsers;
+
         // Pass a channel name so only that channel is rehashed
         plugin.rehashUsers(event.channel);
     }
@@ -489,6 +497,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         }
         else if (now >= mixin(pingRehashVariableName))
         {
+            import kameloso.plugins.common : rehashUsers;
+
             // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
             plugin.rehashUsers();
             mixin(pingRehashVariableName) = now + (hoursBetweenRehashes * 3600);
@@ -1102,6 +1112,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : catchUser;
+
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
         if (!event.sender.nickname) return;
@@ -1142,6 +1154,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : catchUser;
+
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
         if (!event.target.nickname) return;

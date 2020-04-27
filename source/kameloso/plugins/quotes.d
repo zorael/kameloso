@@ -16,7 +16,6 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
@@ -128,6 +127,8 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         void onSuccess(const IRCUser replyUser)
         {
+            import kameloso.plugins.common : idOf;
+
             immutable endAccount = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 
             if (slice.length)
@@ -172,6 +173,8 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         {
             return report(specified, quote);
         }
+
+        import kameloso.plugins.common : WHOISFiberDelegate;
 
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 

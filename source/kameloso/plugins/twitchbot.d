@@ -20,7 +20,6 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -210,6 +209,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 {
     void dg()
     {
+        import kameloso.plugins.common : nameOf;
         import std.datetime.systime : Clock;
 
         const channel = channelName in plugin.activeChannels;
@@ -754,6 +754,8 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Reports how long the streamer has been streaming.")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
+    import kameloso.plugins.common : nameOf;
+
     immutable broadcastStart = plugin.activeChannels[event.channel].broadcastStart;
     immutable streamer = plugin.nameOf(event.channel[1..$]);
 
@@ -800,6 +802,8 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channel.broadcastStart != 0L)
     {
+        import kameloso.plugins.common : nameOf;
+
         immutable streamer = plugin.nameOf(event.channel[1..$]);
         chan(plugin.state, event.channel, streamer ~ " is already live.");
         return;
@@ -858,9 +862,10 @@ void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
 void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
 in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 {
-    import core.time : msecs;
+    import kameloso.plugins.common : nameOf;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
+    import core.time : msecs;
 
     auto channel = event.channel in plugin.activeChannels;
 

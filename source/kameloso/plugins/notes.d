@@ -13,7 +13,6 @@ version(WithNotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
@@ -119,6 +118,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     {
         void onSuccess(const IRCUser user)
         {
+            import kameloso.plugins.common : idOf, nameOf;
+
             immutable id = idOf(user).toLowerCase(plugin.state.server.caseMapping);
 
             try
@@ -212,6 +213,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
             continue;
         }
 
+        import kameloso.plugins.common : WHOISFiberDelegate;
+
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
         // Only WHOIS once
@@ -291,6 +294,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
+    import kameloso.plugins.common : nameOf;
     import dialect.common : toLowerCase;
     import lu.string : contains, nom;
     import std.algorithm.comparison : equal;

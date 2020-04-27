@@ -20,7 +20,6 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import dialect.defs;
 
 

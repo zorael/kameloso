@@ -18,7 +18,6 @@ version(WithPipelinePlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;

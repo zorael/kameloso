@@ -16,7 +16,6 @@ version(WithOnelinersPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -65,6 +64,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 
         if (const response = key in *channelOneliners)
         {
+            import kameloso.plugins.common : nameOf;
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;

@@ -649,6 +649,8 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
      +/
     void repeat(Replay replay)
     {
+        import kameloso.plugins.common : repeat;
+
         mixin(replayVariableName) = replay;
         context.repeat(&repeaterDelegate, replay.event);
     }
@@ -1398,6 +1400,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             return whoisFiberDelegate();  // Recurse
         }
 
+        import kameloso.plugins.common : unlistFiberAwaitingEvents;
+
         // Clean up awaiting fiber entries on exit, just to be neat.
         scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
 
@@ -1555,8 +1559,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
+        import kameloso.plugins.common : awaitEvents;
 
+        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
         context.awaitEvents(fiber, whoisEventTypes[]);
 
         string slice = nickname;

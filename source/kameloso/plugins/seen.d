@@ -32,11 +32,8 @@ version(WithPlugins):
 // ...and also if compiling in specifically this plugin.
 version(WithSeenPlugin):
 
-// We need the definition of an `IRCPlugin`.
+// We need the definition of an `IRCPlugin` and other crucial things.
 private import kameloso.plugins.core;
-
-// And crucial things from `kameloso.plugins.common`.
-private import kameloso.plugins.common;
 
 // Awareness mixins, for plumbing.
 private import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
@@ -256,6 +253,8 @@ private:  // Module-level private.
      +/
     mixin IRCPluginImpl;
 
+
+    import kameloso.plugins.common : MessagingProxy;
 
     // MessagingProxy
     /++

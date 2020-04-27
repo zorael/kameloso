@@ -17,7 +17,6 @@ version(WithConnectService):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
@@ -353,7 +352,8 @@ void tryAuth(ConnectService service)
  +/
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
-    import core.thread : Fiber;
+    import kameloso.plugins.common : delayFiber;
+    import core.thread.fiber : Fiber;
 
     void dg()
     {
@@ -1056,6 +1056,8 @@ void register(ConnectService service)
                     }
                 }
 
+                import kameloso.plugins.common : awaitEvent;
+
                 Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
                 service.awaitEvent(fiber, IRCEvent.Type.CAP);
                 return;
@@ -1075,6 +1077,8 @@ void register(ConnectService service)
                 service.negotiateNick();
             }
         }
+
+        import kameloso.plugins.common : delayFiber;
 
         Fiber fiber = new Fiber(&dgTimered, 32_768);
         service.delayFiber(fiber, secsToWaitForCAP);

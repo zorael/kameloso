@@ -16,7 +16,6 @@ version(WithChatbotPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
@@ -280,6 +279,7 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
 
     void dg()
     {
+        import kameloso.plugins.common : delayFiber;
         import kameloso.messaging : emote;
 
         emote(plugin.state, event.channel, "dances :D-<");

@@ -12,7 +12,6 @@ version(WithVotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
@@ -245,6 +244,8 @@ do
             chan(plugin.state, event.channel, "Voting complete, no one voted.");
         }
 
+        import kameloso.plugins.common : unlistFiberAwaitingEvent;
+
         // Cleanup
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
@@ -257,6 +258,8 @@ do
 
         // End Fiber
     }
+
+    import kameloso.plugins.common : awaitEvent, delayFiber;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
 
