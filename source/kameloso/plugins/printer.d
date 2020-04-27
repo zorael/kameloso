@@ -2772,7 +2772,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
  +  event.clearTargetNicknameIfUs(plugin.state.client.nickname);
  +  ---
  +/
-void clearTargetNicknameIfUs(ref IRCEvent event, const ref IRCPluginState state)
+void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
 {
     if (event.target.nickname == state.client.nickname)
     {
