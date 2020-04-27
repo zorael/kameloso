@@ -18,7 +18,7 @@
  +  with `UDA`s of IRC event *types*. When an event is incoming it will trigger
  +  the function(s) annotated with its type.
  +
- +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
+ +  Callback `core.thread.fiber.Fiber`s *are* supported. They can be registered to
  +  process on incoming events, or scheduled with a high degree of precision.
  +
  +  See the GitHub wiki for more information about available commands:<br>
@@ -153,13 +153,13 @@ public:
  +     it again. This can only be done outside of plugins.
  +
  +  * `kameloso.plugins.core.IRCPluginState.awaitingFibers` is an associative
- +     array of `core.thread.Fiber`s keyed by `kameloso.ircdefs.IRCEvent.Type`s.
+ +     array of `core.thread.fiber.Fiber`s keyed by `kameloso.ircdefs.IRCEvent.Type`s.
  +     Fibers in the array of a particular event type will be executed the next
  +     time such an event is incoming. Think of it as Fiber callbacks.
  +
  +  * `kameloso.plugins.core.IRCPluginState.scheduledFibers` is also an array of
- +     `core.thread.Fiber`s, but not an associative one keyed on event types.
- +     Instead they are tuples of a `core.thread.Fiber` and a `long`
+ +     `core.thread.fiber.Fiber`s, but not an associative one keyed on event types.
+ +     Instead they are tuples of a `core.thread.fiber.Fiber` and a `long`
  +     timestamp of when they should be run.
  +     Use `kameloso.plugins.common.delayFiber` to enqueue, or
  +     `kameloso.plugins.common.delayFiberMsecs` for greater granularity.

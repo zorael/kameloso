@@ -1,6 +1,6 @@
 /++
  +  Structures and functions related to concurrency message passing, threads and
- +  `core.thread.Fiber`s.
+ +  `core.thread.fiber.Fiber`s.
  +
  +  Example:
  +  ---
@@ -31,23 +31,23 @@ module kameloso.thread;
 private:
 
 import std.typecons : Tuple;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 public:
 
 
 // ScheduledFiber
 /++
- +  A tuple of a `core.thread.Fiber` and a `long` UNIX timestamp.
+ +  A tuple of a `core.thread.fiber.Fiber` and a `long` UNIX timestamp.
  +
  +  If we pair the two together like this, we can associate a point in time
- +  with a `core.thread.Fiber` without having to to use an associative
+ +  with a `core.thread.fiber.Fiber` without having to to use an associative
  +  array (with UNIX timestamp keys).
  +
  +  Example:
  +  ---
  +  import std.datetime.systime : Clock;
- +  import core.thread : Fiber;
+ +  import core.thread.fiber : Fiber;
  +
  +  void dg() { /* ... */ }
  +
@@ -232,9 +232,9 @@ unittest
 
 // CarryingFiber
 /++
- +  A `core.thread.Fiber` carrying a payload of type `T`.
+ +  A `core.thread.fiber.Fiber` carrying a payload of type `T`.
  +
- +  Used interchangeably with `core.thread.Fiber`, but allows for casting to true
+ +  Used interchangeably with `core.thread.fiber.Fiber`, but allows for casting to true
  +  `CarryingFiber!T`-ness to access the `payload` member.
  +
  +  Example:
@@ -255,14 +255,14 @@ unittest
 final class CarryingFiber(T) : Fiber
 {
     /++
-     +  Embedded payload value in this `core.thread.Fiber`; what distinguishes
+     +  Embedded payload value in this `core.thread.fiber.Fiber`; what distinguishes
      +  it from normal ones.
      +/
     T payload;
 
     /++
      +  Constructor function merely taking a function/delegate pointer, to call
-     +  when invoking this `core.thread.Fiber` (via `.call()`).
+     +  when invoking this `core.thread.fiber.Fiber` (via `.call()`).
      +/
     this(Fn, Args...)(Fn fn, Args args)
     {
@@ -273,7 +273,7 @@ final class CarryingFiber(T) : Fiber
     /++
      +  Constructor function taking a `T` `payload` to assign to its own
      +  internal `this.payload`, as well as a function/delegate pointer to call
-     +  when invoking this `core.thread.Fiber` (via `.call()`).
+     +  when invoking this `core.thread.fiber.Fiber` (via `.call()`).
      +/
     this(Fn, Args...)(T payload, Fn fn, Args args)
     {

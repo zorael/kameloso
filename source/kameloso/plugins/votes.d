@@ -54,7 +54,7 @@ do
     import std.conv : ConvException, to;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     if (event.content)
     {
@@ -354,7 +354,7 @@ private:
 
     /++
      +  An unique identifier for an ongoing channel vote, as set by
-     +  `onCommandVote` and monitored inside its `core.thread.Fiber`'s closures.
+     +  `onCommandVote` and monitored inside its `core.thread.fiber.Fiber`'s closures.
      +/
     uint[string] channelVoteInstances;
 

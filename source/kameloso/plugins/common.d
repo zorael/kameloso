@@ -12,7 +12,7 @@ private:
 import kameloso.plugins.core;
 import kameloso.common : CoreSettings;
 import dialect.defs;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 import std.typecons : Flag, No, Yes;
 
 /+
@@ -585,7 +585,7 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
     void repeaterDelegate()
     {
         import kameloso.thread : CarryingFiber;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         auto thisFiber = cast(CarryingFiber!Repeat)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -775,13 +775,13 @@ alias doWhois = enqueue;
 
 // repeat
 /++
- +  Queues a `core.thread.Fiber` (actually a `kameloso.thread.CarryingFiber`
+ +  Queues a `core.thread.fiber.Fiber` (actually a `kameloso.thread.CarryingFiber`
  +  with a `Repeat` payload) to repeat a passed `dialect.defs.IRCEvent` from the
  +  context of the main loop after postprocessing the event once more.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      dg = Delegate/function pointer to wrap the `core.thread.Fiber` around.
+ +      dg = Delegate/function pointer to wrap the `core.thread.fiber.Fiber` around.
  +      event = The `dialect.defs.IRCEvent` to repeat.
  +/
 void repeat(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
@@ -828,7 +828,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 
 // delayFiberMsecs
 /++
- +  Queues a `core.thread.Fiber` to be called at a point `msecs` milliseconds later, by
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
  +
  +  Updates the `IRCPluginState.nextFiberTimestamp` timestamp so that the
@@ -836,7 +836,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to enqueue to be executed at a later point in time.
+ +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
  +      msecs = Number of milliseconds to delay the `fiber`.
  +/
 void delayFiberMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
@@ -853,9 +853,9 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 
 // delayFiberMsecs
 /++
- +  Queues a `core.thread.Fiber` to be called at a point `msecs` milliseconds later, by
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
- +  Overload that implicitly queues `core.thread.Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -869,12 +869,12 @@ void delayFiberMsecs(IRCPlugin plugin, const long msecs)
 
 // delayFiber
 /++
- +  Queues a `core.thread.Fiber` to be called at a point `secs` seconds later, by
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to enqueue to be executed at a later point in time.
+ +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
  +      secs = Number of seconds to delay the `fiber`.
  +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
@@ -887,9 +887,9 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 
 // delayFiber
 /++
- +  Queues a `core.thread.Fiber` to be called at a point `secs` seconds later, by
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
- +  Overload that implicitly queues `core.thread.Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -904,14 +904,14 @@ void delayFiber(IRCPlugin plugin, const long secs)
 
 // removeDelayedFiber
 /++
- +  Removes a `core.thread.Fiber` from being called at any point later.
+ +  Removes a `core.thread.fiber.Fiber` from being called at any point later.
  +
  +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
- +  when to process the array of `core.thread.Fiber`s.
+ +  when to process the array of `core.thread.fiber.Fiber`s.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to dequeue from being executed at a later point in time.
+ +      fiber = `core.thread.fiber.Fiber` to dequeue from being executed at a later point in time.
  +/
 void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
 in ((fiber !is null), "Tried to remove a delayed null Fiber")
@@ -943,9 +943,9 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 
 // removeDelayedFiber
 /++
- +  Removes a `core.thread.Fiber` from being called at any point later.
+ +  Removes a `core.thread.fiber.Fiber` from being called at any point later.
  +
- +  Overload that implicitly removes `core.thread.Fiber.getThis`.
+ +  Overload that implicitly removes `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -958,7 +958,7 @@ void removeDelayedFiber(IRCPlugin plugin)
 
 // awaitEvent
 /++
- +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
  +
@@ -967,7 +967,7 @@ void removeDelayedFiber(IRCPlugin plugin)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
+ +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed when the next
  +          `dialect.defs.IRCEvent` of type `type` comes along.
  +      type = The kind of `dialect.defs.IRCEvent` that should trigger the
  +          passed awaiting fiber.
@@ -982,14 +982,14 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
 
 // awaitEvent
 /++
- +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
  +
- +  Overload that implicitly queues `core.thread.Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -1005,7 +1005,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
 
 // awaitEvents
 /++
- +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
  +
@@ -1014,7 +1014,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
+ +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed when the next
  +          `dialect.defs.IRCEvent` of type `type` comes along.
  +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          the passed awaiting fiber, in an array with elements of type
@@ -1034,14 +1034,14 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
 
 // awaitEvents
 /++
- +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
  +
- +  Overload that implicitly queues `core.thread.Fiber.getThis`.
+ +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -1062,7 +1062,7 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 
 // unlistFiberAwaitingEvent
 /++
- +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
  +
@@ -1071,7 +1071,7 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to dequeue from being executed when the next
+ +      fiber = `core.thread.fiber.Fiber` to dequeue from being executed when the next
  +          `dialect.defs.IRCEvent` of type `type` comes along.
  +      type = The kind of `dialect.defs.IRCEvent` that would trigger the
  +          passed awaiting fiber.
@@ -1116,10 +1116,10 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
 
 // unlistFiberAwaitingEvent
 /++
- +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type. Overload that implicitly dequeues
- +  `core.thread.Fiber.getThis`.
+ +  `core.thread.fiber.Fiber.getThis`.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -1137,7 +1137,7 @@ void unlistFiberAwaitingEvent(IRCPlugin plugin, const IRCEvent.Type type)
 
 // unlistFiberAwaitingEvents
 /++
- +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
  +
@@ -1146,7 +1146,7 @@ void unlistFiberAwaitingEvent(IRCPlugin plugin, const IRCEvent.Type type)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to dequeue from being executed when the next
+ +      fiber = `core.thread.fiber.Fiber` to dequeue from being executed when the next
  +          `dialect.defs.IRCEvent` of type `type` comes along.
  +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          the passed awaiting fiber, in an array with elements of type
@@ -1163,10 +1163,10 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Typ
 
 // unlistFiberAwaitingEvents
 /++
- +  Dequeues a `core.thread.Fiber` from being called whenever the next parsed and
+ +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types. Overload that implicitly dequeues
- +  `core.thread.Fiber.getThis`.
+ +  `core.thread.fiber.Fiber.getThis`.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -1293,7 +1293,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import std.algorithm.searching : canFind;
         import std.meta : AliasSeq;
         import std.traits : arity;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1461,7 +1461,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import std.meta : AliasSeq;
         import std.traits : arity;
         import std.typecons : Flag, No, Yes;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         version(TwitchSupport)
         {

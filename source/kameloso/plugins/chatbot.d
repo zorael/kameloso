@@ -247,7 +247,7 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     immutable dancePos = event.content.indexOf("DANCE");
     if (dancePos == -1) return;

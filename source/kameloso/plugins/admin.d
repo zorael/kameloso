@@ -337,7 +337,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
  +  `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.core.IRCPluginState`.
  +
- +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
+ +  Follows up with a `core.thread.fiber.Fiber` to verify that the channel was actually joined.
  +
  +  Params:
  +      plugin = The current `AdminPlugin`.
@@ -398,7 +398,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     // There are plenty ways for it to fail.
 
     import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     static immutable IRCEvent.Type[13] joinTypes =
     [
@@ -1495,7 +1495,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
         import std.conv : ConvException;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
@@ -1916,7 +1916,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         void dg()
         {
-            import core.thread : Fiber;
+            import core.thread.fiber : Fiber;
             import std.conv : ConvException;
 
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);

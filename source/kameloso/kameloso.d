@@ -573,7 +573,7 @@ void exhaustMessages()
 
 // mainLoop
 /++
- +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
+ +  This loops creates a `std.concurrency.Generator` `core.thread.fiber.Fiber` to loop
  +  over the over `std.socket.Socket`, reading lines and yielding
  +  `lu.net.ListenAttempt`s as it goes.
  +
@@ -627,7 +627,7 @@ Next mainLoop(ref Kameloso instance)
 
     while (next == Next.continue_)
     {
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         if (*instance.abort) return Next.returnFailure;
 
@@ -1130,18 +1130,18 @@ import kameloso.plugins.core : IRCPlugin;
 
 // processAwaitingFibers
 /++
- +  Processes the awaiting `core.thread.Fiber`s of an
+ +  Processes the awaiting `core.thread.fiber.Fiber`s of an
  +  `kameloso.plugins.core.IRCPlugin`.
  +
  +  Params:
  +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
- +          `dialect.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
+ +          `dialect.defs.IRCEvent.Type`-awaiting `core.thread.fiber.Fiber`s to
  +          iterate and process.
  +      event = The triggering `dialect.defs.IRCEvent`.
  +/
 void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     /++
      +  Handle awaiting Fibers of a specified type.
@@ -1261,7 +1261,7 @@ do
 
         try
         {
-            import core.thread : Fiber;
+            import core.thread.fiber : Fiber;
 
             if (scheduledFiber.fiber.state == Fiber.State.HOLD)
             {
@@ -1312,7 +1312,7 @@ do
  +/
 void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 {
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     if (!plugin.state.repeats.length) return;
 

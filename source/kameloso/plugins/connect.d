@@ -344,7 +344,7 @@ void tryAuth(ConnectService service)
 
 // delayJoinsAfterFailedAuth
 /++
- +  Creates and schedules a `core.thread.Fiber` (in a `kameloso.thread.ScheduledFiber`)
+ +  Creates and schedules a `core.thread.fiber.Fiber` (in a `kameloso.thread.ScheduledFiber`)
  +  that joins channels after having failed to authenticate for n seconds.
  +
  +  Params:
@@ -1023,7 +1023,7 @@ void register(ConnectService service)
             if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
 
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         version(TwitchSupport)
         {

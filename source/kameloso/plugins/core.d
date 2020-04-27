@@ -1860,7 +1860,7 @@ struct IRCPluginState
     import kameloso.common : CoreSettings, IRCBot;
     import kameloso.thread : ScheduledFiber;
     import std.concurrency : Tid;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     /++
      +  The current `dialect.defs.IRCClient`, containing information pertaining
@@ -1907,12 +1907,12 @@ struct IRCPluginState
     Repeat[] repeats;
 
     /++
-     +  The list of awaiting `core.thread.Fiber`s, keyed by
+     +  The list of awaiting `core.thread.fiber.Fiber`s, keyed by
      +  `dialect.defs.IRCEvent.Type`.
      +/
     Fiber[][] awaitingFibers;
 
-    /// The list of scheduled `core.thread.Fiber`, UNIX time tuples.
+    /// The list of scheduled `core.thread.fiber.Fiber`, UNIX time tuples.
     ScheduledFiber[] scheduledFibers;
 
     /// The next (UNIX time) timestamp at which to call `periodically`.
@@ -1927,7 +1927,7 @@ struct IRCPluginState
 
     // updateNextFiberTimestamp
     /++
-     +  Updates the saved UNIX timestamp of when the next `core.thread.Fiber`
+     +  Updates the saved UNIX timestamp of when the next `core.thread.fiber.Fiber`
      +  should be triggered.
      +/
     void updateNextFiberTimestamp() pure nothrow @nogc
@@ -2240,7 +2240,7 @@ public:
     /// UNIX timestamp of when this repeat event was created.
     long created;
 
-    /// Constructor taking a `core.thread.Fiber` and an `dialect.defs.IRCEvent`.
+    /// Constructor taking a `core.thread.fiber.Fiber` and an `dialect.defs.IRCEvent`.
     this(Fiber fiber, const IRCEvent event) @safe
     {
         import std.datetime.systime : Clock;

@@ -24,7 +24,7 @@ import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAware
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 import std.typecons : Flag, No, Yes;
 
 
@@ -167,7 +167,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
  +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
  +  always a state struct available.
  +
- +  Creates the timer `core.thread.Fiber`s that there are definitions for in
+ +  Creates the timer `core.thread.fiber.Fiber`s that there are definitions for in
  +  `TwitchBotPlugin.timerDefsByChannel`.
  +
  +  Params:
@@ -197,7 +197,7 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 // createTimerFiber
 /++
  +  Given a `TimerDefinition` and a string channel name, creates a
- +  `core.thread.Fiber` that implements the timer.
+ +  `core.thread.fiber.Fiber` that implements the timer.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
@@ -1226,7 +1226,7 @@ void initResources(TwitchBotPlugin plugin)
 
 // periodically
 /++
- +  Periodically calls timer `core.thread.Fiber`s with a periodicity of
+ +  Periodically calls timer `core.thread.fiber.Fiber`s with a periodicity of
  +  `TwitchBotPlugin.timerPeriodicity`.
  +/
 void periodically(TwitchBotPlugin plugin, const long now)
@@ -1546,7 +1546,7 @@ private:
          +/
         ulong messageCount;
 
-        /// Timer `core.thread.Fiber`s.
+        /// Timer `core.thread.fiber.Fiber`s.
         Fiber[] timers;
     }
 
