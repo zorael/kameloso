@@ -491,23 +491,6 @@ version(unittest)
 }
 
 
-// IRCPluginInitialisationException
-/++
- +  Exception thrown when an IRC plugin failed to initialise itself or its resources.
- +
- +  A normal `object.Exception`, which only differs in the sense that we can deduce
- +  what went wrong by its type.
- +/
-final class IRCPluginInitialisationException : Exception
-{
-    /// Wraps normal Exception constructors.
-    this(const string message, const string file = __FILE__, const int line = __LINE__)
-    {
-        super(message, file, line);
-    }
-}
-
-
 // IRCPluginSettingsException
 /++
  +  Exception thrown when an IRC plugin failed to have its settings set.
