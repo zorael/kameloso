@@ -27,7 +27,7 @@ import std.typecons : Flag, No, Yes;
     @Enabler bool enabled = true;
 
     /// Maximum allowed vote duration, in seconds.
-    int maxVoteDuration = 600;
+    int maxVoteDuration = 1800;
 }
 
 
