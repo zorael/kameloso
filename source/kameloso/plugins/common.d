@@ -784,7 +784,7 @@ alias doWhois = enqueue;
  +/
 void repeat(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
 if (isSomeFunction!Dg)
-in ((dg !is null), "Tried to queue a repeat an event with a null delegate pointer")
+in ((dg !is null), "Tried to queue a repeat with a null delegate pointer")
 in ((event != IRCEvent.init), "Tried to queue a repeat with an init IRCEvent")
 {
     import kameloso.thread : CarryingFiber;

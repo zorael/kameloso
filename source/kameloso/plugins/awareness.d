@@ -7,7 +7,6 @@
  +  Example:
  +  ---
  +  import kameloso.plugins.core;
- +  import kameloso.plugins.common;
  +  import kameloso.plugins.awareness;
  +
  +  @Settings struct FooSettings { /* ... */ }
@@ -40,7 +39,7 @@ version(WithPlugins):
 
 private:
 
-import kameloso.plugins.common : ChannelPolicy;
+import kameloso.plugins.core : ChannelPolicy;
 
 public:
 
@@ -118,7 +117,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
-     +  Replays any queued `kameloso.plugins.common.Replay`s awaiting the result
+     +  Replays any queued `kameloso.plugins.core.Replay`s awaiting the result
      +  of a WHOIS query. Before that, records the user's services account by
      +  saving it to the user's `dialect.defs.IRCClient` in the `IRCPlugin`'s
      +  `IRCPluginState.users` associative array.
@@ -137,6 +136,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.plugins.common : Repeater, catchUser;
         // Catch the user here, before replaying anything.
         plugin.catchUser(event.target);
 
@@ -181,7 +181,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
     // onMinimalAuthenticationUnknownCommandWHOIS
     /++
-     +  Clears all queued `kameloso.plugins.common.Replay`s if the server says
+     +  Clears all queued `kameloso.plugins.core.Replay`s if the server says
      +  it doesn't support WHOIS at all.
      +
      +  This is the case with Twitch servers.

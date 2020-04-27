@@ -1005,7 +1005,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +
  +  Belling is useful with small audiences, so you don't miss messages.
  +
- +  Note: This is annotated `kameloso.plugins.common.Terminating` and must be
+ +  Note: This is annotated `kameloso.plugins.core.Terminating` and must be
  +  placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
  +  This lets us know the banned phrase wasn't part of a command (as it would
  +  otherwise not reach this point).

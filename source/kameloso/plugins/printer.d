@@ -477,7 +477,7 @@ struct LogLineBuffer
 /++
  +  Logs an event to disk.
  +
- +  It is set to `kameloso.plugins.common.ChannelPolicy.any`, and configuration
+ +  It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
  +  dictates whether or not non-home events should be logged. Likewise whether
  +  or not raw events should be logged.
  +

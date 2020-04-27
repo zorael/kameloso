@@ -41,8 +41,8 @@ import dialect.defs;
  +
  +  Plugins don't know about other plugins; the only thing they know of the
  +  outside world is the thread ID of the main thread `mainThread` (stored in
- +  `kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
- +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated functions.
+ +  `kameloso.plugins.core.IRCPluginState`). As such, we can't easily query
+ +  each plugin for their `kameloso.plugins.core.BotCommand`-annotated functions.
  +
  +  To work around this we construct a
  +  `kameloso.thread.CarryingFiber!(kameloso.plugins.core.IRCPlugin[])` and send it
@@ -231,7 +231,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
  +      otherPlugin = The plugin that hosts the command we're to send the help text for.
  +      event = The triggering `dialect.defs.IRCEvent`.
  +      command = String of the command we're to send help text for (sans prefix).
- +      description = The `kameloso.plugins.common.Description` that anotates
+ +      description = The `kameloso.plugins.core.Description` that anotates
  +          the command's function.
  +/
 void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,

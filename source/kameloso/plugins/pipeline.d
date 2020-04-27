@@ -64,7 +64,7 @@ import std.stdio : File;
  +  It is to be run in a separate thread.
  +
  +  Params:
- +      newState = The `kameloso.plugins.common.IRCPluginState` of the original
+ +      newState = The `kameloso.plugins.core.IRCPluginState` of the original
  +          `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
  +          concurrency messages, made `shared` to allow being sent between threads.
  +      filename = String filename of the FIFO to read from.

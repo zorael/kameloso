@@ -152,7 +152,7 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
  +  Supposed to be run in its own, short-lived thread.
  +
  +  Params:
- +      sState = A `shared` `kameloso.plugins.common.IRCPluginState` containing
+ +      sState = A `shared` `kameloso.plugins.core.IRCPluginState` containing
  +          necessary information to pass messages to send messages to the main
  +          thread, to send text to the server or display text on the screen.
  +      event = The `dialect.defs.IRCEvent` in flight.

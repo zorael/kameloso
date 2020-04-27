@@ -103,7 +103,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 // onSelfjoin
 /++
  +  Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
- +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon joining it.
+ +  the current `ConnectService`'s `kameloso.plugins.core.IRCPluginState` upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -127,7 +127,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 /++
  +  Joins all channels listed as home channels *and* guest channels in the arrays in
  +  `kameoso.common.IRCBot` of the current `ConnectService`'s
- +  `kameloso.plugins.common.IRCPluginState`.
+ +  `kameloso.plugins.core.IRCPluginState`.
  +
  +  Params:
  +      service = The current `ConnectService`.

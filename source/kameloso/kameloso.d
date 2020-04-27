@@ -1356,7 +1356,7 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 }
 
 
-import kameloso.plugins.common : Replay;
+import kameloso.plugins.core : Replay;
 
 // processReplays
 /++

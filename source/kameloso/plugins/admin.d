@@ -206,7 +206,7 @@ void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 // onCommandShowUsers
 /++
  +  Prints out the current `users` array of the `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState` to the local terminal.
+ +  `kameloso.plugins.core.IRCPluginState` to the local terminal.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -278,7 +278,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Adds or removes channels to/from the list of currently active home channels, in the
  +  `kameloso.common.IRCBot.homeChannels` array of the current `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState`.
+ +  `kameloso.plugins.core.IRCPluginState`.
  +
  +  Merely passes on execution to `addHome` and `delHome`.
  +/
@@ -335,7 +335,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Adds a channel to the list of currently active home channels, in the
  +  `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState`.
+ +  `kameloso.plugins.core.IRCPluginState`.
  +
  +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
  +
@@ -481,7 +481,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 /++
  +  Removes a channel from the list of currently active home channels, from the
  +  `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState`.
+ +  `kameloso.plugins.core.IRCPluginState`.
  +/
 void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -526,9 +526,9 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
  +  `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState`.
+ +  `kameloso.plugins.core.IRCPluginState`.
  +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.operator` level.
+ +  This is on a `kameloso.plugins.core.PrivilegeLevel.operator` level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -566,9 +566,9 @@ void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 // onCommandBlacklist
 /++
  +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
- +  except on actions annotated `kameloso.plugins.common.PrivilegeLevel.ignore`.
+ +  except on actions annotated `kameloso.plugins.core.PrivilegeLevel.ignore`.
  +
- +  This is on a `kameloso.plugins.common.PrivilegeLevel.operator` level.
+ +  This is on a `kameloso.plugins.core.PrivilegeLevel.operator` level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)

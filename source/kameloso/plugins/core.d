@@ -347,9 +347,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Pass on the supplied `dialect.defs.IRCEvent` to module-level functions
      +  annotated with the matching `dialect.defs.IRCEvent.Type`s.
      +
-     +  It also does checks for `kameloso.plugins.common.ChannelPolicy`,
-     +  `kameloso.plugins.common.PrivilegeLevel`, `kameloso.plugins.common.PrefixPolicy`,
-     +  `kameloso.plugins.common.BotCommand`, `kameloso.plugins.common.BotRegex`
+     +  It also does checks for `kameloso.plugins.core.ChannelPolicy`,
+     +  `kameloso.plugins.core.PrivilegeLevel`, `kameloso.plugins.core.PrefixPolicy`,
+     +  `kameloso.plugins.core.BotCommand`, `kameloso.plugins.core.BotRegex`
      +  etc; where such is applicable.
      +
      +  Params:

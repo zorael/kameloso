@@ -431,7 +431,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 /++
  +  Triggers a WHOIS of the user invoking it with bot commands.
  +
- +  The `kameloso.plugins.common.PrivilegeLevel.anyone` annotation is to
+ +  The `kameloso.plugins.core.PrivilegeLevel.anyone` annotation is to
  +  force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)

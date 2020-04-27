@@ -426,7 +426,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 /++
  +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
  +  associative array of the current `PersistenceService`'s
- +  `kameloso.plugins.common.IRCPluginState` upon them disconnecting.
+ +  `kameloso.plugins.core.IRCPluginState` upon them disconnecting.
  +
  +  Additionally from the nickname-chanel cache.
  +/
@@ -441,7 +441,7 @@ void onQuit(PersistenceService service, const IRCEvent event)
 // onNick
 /++
  +  Updates the entry of someone in the `users` associative array of the current
- +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` when they
+ +  `PersistenceService`'s `kameloso.plugins.core.IRCPluginState` when they
  +  change nickname, to point to the new `dialect.defs.IRCUser`.
  +
  +  Removes the old entry.
@@ -626,7 +626,7 @@ void initResources(PersistenceService service)
  +  Params:
  +      service = The current `PersistenceService`.
  +
- +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
+ +  Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
  +      failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
@@ -718,7 +718,7 @@ void initAccountResources(PersistenceService service)
  +  Reads, completes and saves the hostmasks JSON file, creating one if it
  +  doesn't exist.
  +
- +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
+ +  Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
  +      failure loading the `user.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
@@ -763,7 +763,7 @@ public:
  +  this service we aim to complete such `dialect.defs.IRCUser` entries as
  +  the union of everything we know from previous events.
  +
- +  It only needs part of `kameloso.plugins.common.UserAwareness` for minimal
+ +  It only needs part of `kameloso.plugins.awareness.UserAwareness` for minimal
  +  bookkeeping, not the full package, so we only copy/paste the relevant bits
  +  to stay slim.
  +/
