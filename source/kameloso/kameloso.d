@@ -2120,7 +2120,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             assert(0, "`tryConnect` returned `Next.crash`");
         }
 
-        import kameloso.plugins.common : IRCPluginInitialisationException;
+        import kameloso.plugins.core : IRCPluginInitialisationException;
         import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
