@@ -310,8 +310,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(state, event, privilegeLevel,
-                state.settings.preferHostmasks);
+            filterSender(event, privilegeLevel, state.settings.preferHostmasks);
     }
 
 
@@ -1726,7 +1725,6 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +  This requires the Persistence service to be active to work.
  +
  +  Params:
- +      state = Reference to the `IRCPluginState` of the invoking plugin.
  +      event = `dialect.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +      preferHostmasks = Whether to rely on hostmasks for user identification,
@@ -1737,8 +1735,8 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a WHOIS call.
  +/
-FilterResult filterSender(const ref IRCPluginState state, const IRCEvent event,
-    const PrivilegeLevel level, const bool preferHostmasks) @safe
+FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
+    const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
