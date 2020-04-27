@@ -281,13 +281,40 @@ do
         auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
-        chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
-            .format(thisFiber.payload, voteChoices.byKey));
+        if ((thisFiber.payload % 60) == 0)
+        {
+            import lu.string : plurality;
+
+            // An even minute
+            immutable minutes = cast(int)(thisFiber.payload / 60);
+
+            chan(plugin.state, event.channel, "%d %s! (%-(%s, %))"
+                .format(minutes, minutes.plurality("minute", "minutes"), voteChoices.byKey));
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
+                .format(thisFiber.payload, voteChoices.byKey));
+        }
+
     }
 
-    // Warn once at 60 seconds if the vote was for at least 240 second
-    // Warn once at 30 seconds if the vote was for at least 60 seconds
-    // Warn once at 10 seconds if the vote was for at least 20 seconds
+    // Warn once at 600 seconds if the vote was for at least 1200 seconds
+    // also 600/300, 240/60, 60/30 and 20/10.
+
+    if (dur >= 1200)
+    {
+        auto reminder600 = new CarryingFiber!int(&dgReminder, 32_768);
+        reminder600.payload = 600;
+        plugin.delayFiber(reminder600, dur-600);
+    }
+
+    if (dur >= 600)
+    {
+        auto reminder300 = new CarryingFiber!int(&dgReminder, 32_768);
+        reminder300.payload = 300;
+        plugin.delayFiber(reminder300, dur-300);
+    }
 
     if (dur >= 240)
     {
