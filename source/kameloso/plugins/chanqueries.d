@@ -18,7 +18,7 @@ version(WithChanQueriesService):
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
@@ -496,9 +496,9 @@ private:
     mixin IRCPluginImpl;
 
     /++
-     +  Override `kameloso.plugins.ircplugin.IRCPluginImpl.onEvent` and inject
+     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
      +  a server check, so this service does nothing on Twitch servers.
-     +  The function to call is `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`.
+     +  The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to pass onto

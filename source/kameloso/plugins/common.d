@@ -9,16 +9,16 @@ module kameloso.plugins.common;
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import dialect.defs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
 /+
-    Publicly import `kameloso.plugins.ircplugin.IRCPluginState` for compatibility
+    Publicly import `kameloso.plugins.core.IRCPluginState` for compatibility
     (since it used to be housed here)
  +/
-public import kameloso.plugins.ircplugin : IRCPluginState;
+public import kameloso.plugins.core : IRCPluginState;
 
 
 //version = TwitchWarnings;
@@ -2136,7 +2136,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     // enqueueAndWHOIS
     /++
      +  Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
-     +  and enqueues it into the `kameloso.plugins.ircplugin.IRCPluginState.awaitingFibers`
+     +  and enqueues it into the `kameloso.plugins.core.IRCPluginState.awaitingFibers`
      +  associative array, then issues a WHOIS query (unless overridden via
      +  the `issueWhois` parameter).
      +

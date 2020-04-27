@@ -166,12 +166,12 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(instance.settings.configFile);
         }
 
-        import kameloso.plugins.ircplugin : IRCPlugin;
+        import kameloso.plugins.core : IRCPlugin;
         import kameloso.thread : CarryingFiber;
 
         /++
         +  Attaches a reference to the main array of
-        +  `kameloso.plugins.ircplugin.IRCPlugin`s (housing all plugins) to the
+        +  `kameloso.plugins.core.IRCPlugin`s (housing all plugins) to the
         +  payload member of the supplied `kameloso.thread.CarryingFiber`, then
         +  invokes it.
         +/
@@ -1126,15 +1126,15 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
-import kameloso.plugins.ircplugin : IRCPlugin;
+import kameloso.plugins.core : IRCPlugin;
 
 // processAwaitingFibers
 /++
  +  Processes the awaiting `core.thread.Fiber`s of an
- +  `kameloso.plugins.ircplugin.IRCPlugin`.
+ +  `kameloso.plugins.core.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `kameloso.plugins.ircplugin.IRCPlugin` whose
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
  +          `dialect.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
  +          iterate and process.
  +      event = The triggering `dialect.defs.IRCEvent`.
@@ -1241,10 +1241,10 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 // processScheduledFibers
 /++
  +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
- +  `kameloso.plugins.ircplugin.IRCPlugin`.
+ +  `kameloso.plugins.core.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `kameloso.plugins.ircplugin.IRCPlugin` whose queued
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
  +          `ScheduledFiber`s to iterate and process.
  +      nowInHnsecs = Current timestamp to compare the `ScheduledFiber`'s
  +          timestamp with.
@@ -1307,7 +1307,7 @@ do
  +  Note: Exceptions are let past; they are to be caught by the caller.
  +
  +  Params:
- +      plugin = The current `kameloso.plugins.ircplugin.IRCPlugin`.
+ +      plugin = The current `kameloso.plugins.core.IRCPlugin`.
  +      instance = Reference to the current bot instance.
  +/
 void processRepeats(IRCPlugin plugin, ref Kameloso instance)

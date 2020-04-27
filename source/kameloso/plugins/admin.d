@@ -20,7 +20,7 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : Tint, logger;

@@ -13,7 +13,7 @@ version(WithHelpPlugin):
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.common : logger;
@@ -45,9 +45,9 @@ import dialect.defs;
  +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated functions.
  +
  +  To work around this we construct a
- +  `kameloso.thread.CarryingFiber!(kameloso.plugins.ircplugin.IRCPlugin[])` and send it
+ +  `kameloso.thread.CarryingFiber!(kameloso.plugins.core.IRCPlugin[])` and send it
  +  to the main thread. It will attach the client-global `plugins` array of
- +  `kameloso.plugins.ircplugin.IRCPlugin`s to it, and invoke the Fiber.
+ +  `kameloso.plugins.core.IRCPlugin`s to it, and invoke the Fiber.
  +  The delegate inside will then process the list as if it had taken the array
  +  as an argument.
  +

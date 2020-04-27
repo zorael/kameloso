@@ -11,7 +11,7 @@ version(WithVotesPlugin):
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.messaging;

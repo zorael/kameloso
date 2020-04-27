@@ -219,7 +219,7 @@ struct Kameloso
 {
     import kameloso.common : OutgoingLine;
     import kameloso.constants : BufferSize;
-    import kameloso.plugins.ircplugin : IRCPlugin;
+    import kameloso.plugins.core : IRCPlugin;
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import lu.net : Connection;
@@ -468,7 +468,7 @@ struct Kameloso
     {
         import kameloso.plugins : EnabledPlugins;
         import kameloso.plugins.common : applyCustomSettings;
-        import kameloso.plugins.ircplugin : IRCPluginState;
+        import kameloso.plugins.core : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
 
@@ -534,7 +534,7 @@ struct Kameloso
     /++
      +  Initialises all plugins' resource files.
      +
-     +  This merely calls `kameloso.plugins.ircplugin.IRCPlugin.initResources` on
+     +  This merely calls `kameloso.plugins.core.IRCPlugin.initResources` on
      +  each plugin.
      +/
     void initPluginResources() @system

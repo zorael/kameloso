@@ -13,7 +13,7 @@ version(WithAutomodePlugin):
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : Tint, logger;
@@ -556,13 +556,13 @@ private:
     mixin IRCPluginImpl;
 
     /++
-     +  Override `kameloso.plugins.ircplugin.IRCPluginImpl.onEvent` and inject
+     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
      +  a server check, so this plugin does nothing on Twitch servers.
-     +  The function to call is `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`.
+     +  The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`
+     +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
      +          after verifying we're not on a Twitch server.
      +/
     version(TwitchSupport)

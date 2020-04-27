@@ -15,7 +15,7 @@ version(WithWebtitlesPlugin):
 
 private:
 
-import kameloso.plugins.ircplugin;
+import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.irccolours : ircBold;
@@ -853,16 +853,16 @@ private:
 
     // onEvent
     /++
-     +  Override `kameloso.plugins.ircplugin.IRCPluginImpl.onEvent` and inject
+     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
      +  a server check, so this plugin does not trigger on
      +  `dialect.defs.IRCEvent`s on Twitch servers.
      +
      +  The function to call if the event *should* be processed is
-     +  `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`.
+     +  `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
      +
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.ircplugin.IRCPluginImpl.onEventImpl`
+     +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/
     version(TwitchSupport)

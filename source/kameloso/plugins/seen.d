@@ -33,7 +33,7 @@ version(WithPlugins):
 version(WithSeenPlugin):
 
 // We need the definition of an `IRCPlugin`.
-private import kameloso.plugins.ircplugin;
+private import kameloso.plugins.core;
 
 // And crucial things from `kameloso.plugins.common`.
 private import kameloso.plugins.common;
@@ -56,7 +56,7 @@ private import std.datetime.systime : Clock;
 
 /+
     Most of the module can (and ideally should) be kept private. Our surface
-    area here will be restricted to only one `kameloso.plugins.ircplugin.IRCPlugin`
+    area here will be restricted to only one `kameloso.plugins.core.IRCPlugin`
     class, and the usual pattern used is to have the private bits first and that
     public class last. We'll turn that around here to make it easier to visually parse.
  +/
@@ -81,7 +81,7 @@ public:
  +  variables that together make up the plugin's state. This is where
  +  information is kept about the bot, the server, and some metathings allowing
  +  us to send messages to the server. We don't define it here; we mix it in
- +  later with the `kameloso.plugins.ircplugin.IRCPluginImpl` mixin.
+ +  later with the `kameloso.plugins.core.IRCPluginImpl` mixin.
  +
  +  ---
  +  struct IRCPluginState
@@ -241,7 +241,7 @@ private:  // Module-level private.
     // IRCPluginImpl
     /++
      +  This mixes in functions that fully implement an
-     +  `kameloso.plugins.ircplugin.IRCPlugin`. They don't do much by themselves
+     +  `kameloso.plugins.core.IRCPlugin`. They don't do much by themselves
      +  other than call the module's functions.
      +
      +  As an exception, it mixes in the bits needed to automatically call

@@ -1,13 +1,13 @@
 /++
- +  Contains the definition of an `IRCPlugin`, as well as a mixin `IRCPluginImpl`
- +  to fully implement one.
+ +  Contains the definition of an `IRCPlugin` and its ancilliaries, as well as
+ +  mixins to fully implement it.
  +
  +  Event handlers can then be module-level functions, annotated with
  +  `dialect.defs.IRCEvent.Type`s.
  +
  +  Example:
  +  ---
- +  import kameloso.plugins.ircplugin;
+ +  import kameloso.plugins.core;
  +  import kameloso.plugins.common;
  +  import kameloso.plugins.awareness;
  +
@@ -31,7 +31,7 @@
  +  }
  +  ---
  +/
-module kameloso.plugins.ircplugin;
+module kameloso.plugins.core;
 
 private:
 
