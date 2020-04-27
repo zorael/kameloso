@@ -828,9 +828,9 @@ Next mainLoop(ref Kameloso instance)
                     try
                     {
                         plugin.onEvent(event);
-                        plugin.processRepeats(instance);
+                        processRepeats(plugin, instance);
                         processReplays(instance, plugin.state.replays);
-                        plugin.processAwaitingFibers(event);
+                        processAwaitingFibers(plugin, event);
                     }
                     catch (NomException e)
                     {
