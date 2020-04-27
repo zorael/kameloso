@@ -291,7 +291,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      `true` if the event should be allowed to trigger, `false` if not.
      +/
-    private FilterResult allowImpl(const IRCEvent event, const PrivilegeLevel privilegeLevel)
+    private FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
         version(TwitchSupport)
         {
@@ -347,7 +347,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    private void onEventImpl(const IRCEvent event) @system
+    private void onEventImpl(const ref IRCEvent event) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -379,7 +379,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         /++
          +  Process a function.
          +/
-        Next handle(alias fun)(const IRCEvent event)
+        Next handle(alias fun)(const ref IRCEvent event)
         {
             enum verbose = isAnnotated!(fun, Verbose) || debug_;
 
@@ -941,7 +941,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
 
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
-        void tryCatchHandle(funlist...)(const IRCEvent event)
+        void tryCatchHandle(funlist...)(const ref IRCEvent event)
         {
             import core.exception : UnicodeException;
             import std.utf : UTFException;
