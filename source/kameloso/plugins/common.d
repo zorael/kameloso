@@ -12,7 +12,7 @@ private:
 import kameloso.plugins.core;
 import kameloso.common : CoreSettings;
 import dialect.defs;
-import core.thread.fiber : Fiber;
+import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
 /+
@@ -585,7 +585,7 @@ mixin template Repeater(bool debug_ = false, string module_ = __MODULE__)
     void repeaterDelegate()
     {
         import kameloso.thread : CarryingFiber;
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!Repeat)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1293,7 +1293,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import std.algorithm.searching : canFind;
         import std.meta : AliasSeq;
         import std.traits : arity;
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1461,7 +1461,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import std.meta : AliasSeq;
         import std.traits : arity;
         import std.typecons : Flag, No, Yes;
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
 
         version(TwitchSupport)
         {

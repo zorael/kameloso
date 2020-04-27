@@ -31,7 +31,7 @@ module kameloso.thread;
 private:
 
 import std.typecons : Tuple;
-import core.thread.fiber : Fiber;
+import core.thread : Fiber;
 
 public:
 
@@ -47,7 +47,7 @@ public:
  +  Example:
  +  ---
  +  import std.datetime.systime : Clock;
- +  import core.thread.fiber : Fiber;
+ +  import core.thread : Fiber;
  +
  +  void dg() { /* ... */ }
  +

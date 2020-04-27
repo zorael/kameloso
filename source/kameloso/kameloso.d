@@ -627,7 +627,7 @@ Next mainLoop(ref Kameloso instance)
 
     while (next == Next.continue_)
     {
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
 
         if (*instance.abort) return Next.returnFailure;
 
@@ -1141,7 +1141,7 @@ import kameloso.plugins.core : IRCPlugin;
  +/
 void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     /++
      +  Handle awaiting Fibers of a specified type.
@@ -1261,7 +1261,7 @@ do
 
         try
         {
-            import core.thread.fiber : Fiber;
+            import core.thread : Fiber;
 
             if (scheduledFiber.fiber.state == Fiber.State.HOLD)
             {
@@ -1312,7 +1312,7 @@ do
  +/
 void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 {
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     if (!plugin.state.repeats.length) return;
 

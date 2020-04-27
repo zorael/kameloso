@@ -54,7 +54,7 @@ do
     import std.conv : ConvException, to;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     if (event.content)
     {

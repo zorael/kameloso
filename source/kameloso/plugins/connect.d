@@ -353,7 +353,7 @@ void tryAuth(ConnectService service)
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
     import kameloso.plugins.common : delayFiber;
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     void dg()
     {
@@ -1023,7 +1023,7 @@ void register(ConnectService service)
             if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
 
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
 
         version(TwitchSupport)
         {

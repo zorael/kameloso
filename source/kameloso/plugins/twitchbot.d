@@ -24,7 +24,7 @@ import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAware
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import core.thread.fiber : Fiber;
+import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
 

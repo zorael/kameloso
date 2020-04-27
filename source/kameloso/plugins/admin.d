@@ -398,7 +398,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     // There are plenty ways for it to fail.
 
     import kameloso.thread : CarryingFiber;
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     static immutable IRCEvent.Type[13] joinTypes =
     [
@@ -1495,7 +1495,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
         import std.conv : ConvException;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
@@ -1916,7 +1916,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         void dg()
         {
-            import core.thread.fiber : Fiber;
+            import core.thread : Fiber;
             import std.conv : ConvException;
 
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);

@@ -61,7 +61,7 @@ enum ChannelState : ubyte
 @(IRCEvent.Type.PING)
 void startChannelQueries(ChanQueriesService service)
 {
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     if (service.querying) return;  // Try again next PING
 
@@ -85,7 +85,7 @@ void startChannelQueries(ChanQueriesService service)
     void dg()
     {
         import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
         import std.concurrency : send;
         import std.datetime.systime : Clock;
         import std.string : representation;
@@ -431,7 +431,7 @@ void onEndOfNames(ChanQueriesService service)
 void onEndOfMotd(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     void dg()
     {

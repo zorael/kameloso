@@ -188,7 +188,7 @@ abstract class IRCPlugin
 version(WithPlugins)
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
-    private import core.thread.fiber : Fiber;
+    private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
     private static enum mixinSentinel = true;
@@ -1838,7 +1838,7 @@ struct IRCPluginState
     import kameloso.common : CoreSettings, IRCBot;
     import kameloso.thread : ScheduledFiber;
     import std.concurrency : Tid;
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     /++
      +  The current `dialect.defs.IRCClient`, containing information pertaining
@@ -2174,7 +2174,7 @@ struct Repeat
 private:
     import kameloso.thread : CarryingFiber;
     import std.traits : Unqual;
-    import core.thread.fiber : Fiber;
+    import core.thread : Fiber;
 
     alias This = Unqual!(typeof(this));
 

@@ -68,7 +68,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
     void dg()
     {
         import lu.string : beginsWith, contains, nom;
-        import core.thread.fiber : Fiber;
+        import core.thread : Fiber;
         import std.algorithm.sorting : sort;
         import std.format : format;
         import std.typecons : No, Yes;
