@@ -20,40 +20,8 @@ import std.typecons : Flag, No, Yes;
  +/
 public import kameloso.plugins.core : IRCPluginState;
 
-
 //version = TwitchWarnings;
 //version = ExplainRepeat;
-
-
-/++
- +  2.079.0 has a bug that breaks plugin processing completely. It's fixed in
- +  patch .1 (2.079.1), but there's no API for knowing the patch number.
- +
- +  Infer it by testing for the broken behaviour and warn (during compilation).
- +/
-static if (__VERSION__ == 2079L)
-{
-    import lu.traits : getSymbolsByUDA;
-
-    struct UDA_2079 {}
-    struct Foo_2079
-    {
-        @UDA_2079
-        {
-            int i;
-            void fun() {}
-            int n;
-        }
-    }
-
-    static if (getSymbolsByUDA!(Foo_2079, UDA_2079).length != 3)
-    {
-        pragma(msg, "WARNING: You are using a `2.079.0` compiler with a broken " ~
-            "crucial trait in its standard library. The program will not " ~
-            "function normally. Please upgrade to `2.079.1` or later.");
-    }
-}
-
 
 public:
 
