@@ -1782,7 +1782,7 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
     }
 
     logger.log("They are either new, or your configuration file was generated " ~
-        "with not as many plugins compiled in as is now.");
+        "with not as many plugins compiled in as it has now.");
     logger.trace();
 }
 
