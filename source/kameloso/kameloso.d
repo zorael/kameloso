@@ -597,11 +597,11 @@ void exhaustMessages()
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +
  +  Returns:
- +      `kameloso.common.Next.returnFailure` if circumstances mean the bot
+ +      `lu.common.Next.returnFailure` if circumstances mean the bot
  +      should exit with a non-zero exit code,
- +      `kameloso.common.Next.returnSuccess` if it should exit by returning `0`,
- +      `kameloso.common.Next.retry` if the bot should reconnect to the server.
- +      `kameloso.common.Next.continue_` is never returned.
+ +      `lu.common.Next.returnSuccess` if it should exit by returning `0`,
+ +      `lu.common.Next.retry` if the bot should reconnect to the server.
+ +      `lu.common.Next.continue_` is never returned.
  +/
 Next mainLoop(ref Kameloso instance)
 {
@@ -1075,7 +1075,7 @@ import lu.net : ListenAttempt;
 // listenAttemptToNext
 /++
  +  Translates the `lu.net.ListenAttempt.state` received from a
- +  `std.concurrency.Generator` into a `kameloso.common.Next`, while also providing
+ +  `std.concurrency.Generator` into a `lu.common.Next`, while also providing
  +  warnings and error messages.
  +
  +  Params:
@@ -1083,7 +1083,7 @@ import lu.net : ListenAttempt;
  +      attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
  +
  +  Returns:
- +      A `kameloso.common.Next` describing what action `mainLoop` should take next.
+ +      A `lu.common.Next` describing what action `mainLoop` should take next.
  +/
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
@@ -1485,7 +1485,7 @@ void resetSignals() nothrow @nogc
  +          defined with `--set plugin.setting=value` on the command line.
  +
  +  Returns:
- +      `kameloso.common.Next`.* depending on what action the calling site should take.
+ +      `lu.common.Next`.* depending on what action the calling site should take.
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
@@ -1542,8 +1542,8 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
  +      instance = Reference to the current `kameloso.common.Kameloso`.
  +
  +  Returns:
- +      `kameloso.common.Next.continue_` if connection succeeded,
- +      `kameloso.common.Next.returnFailure` if connection failed and the
+ +      `lu.common.Next.continue_` if connection succeeded,
+ +      `lu.common.Next.returnFailure` if connection failed and the
  +      program should exit.
  +/
 Next tryConnect(ref Kameloso instance)
@@ -1668,8 +1668,8 @@ Next tryConnect(ref Kameloso instance)
  +      firstConnect = Whether or not this is the first time we're attempting a connection.
  +
  +  Returns:
- +      `kameloso.common.Next.continue_` if resolution succeeded,
- +      `kameloso.common.Next.returnFailure` if it failed and the program should exit.
+ +      `lu.common.Next.continue_` if resolution succeeded,
+ +      `lu.common.Next.returnFailure` if it failed and the program should exit.
  +/
 Next tryResolve(ref Kameloso instance, const bool firstConnect)
 {
