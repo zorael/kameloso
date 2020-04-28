@@ -280,6 +280,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
 
 
+    @safe:
+
+
     // onUserAwarenessQuitMixin
     /++
      +  Proxies to `kameloso.plugins.awareness.onUserAwarenessQuit`.
@@ -362,7 +365,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
     @channelPolicy
-    void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
         return kameloso.plugins.awareness.onUserAwarenessEndOfList(plugin, event);
     }
@@ -375,7 +378,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.PING)
-    void onUserAwarenessPingMixin(IRCPlugin plugin)
+    void onUserAwarenessPingMixin(IRCPlugin plugin) @system
     {
         return kameloso.plugins.awareness.onUserAwarenessPing(plugin,
             mixin(pingRehashVariableName));
@@ -664,6 +667,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             "(needed for `ChannelAwareness`)")
             .format(module_));
     }
+
+
+    @safe:
+
 
     // onChannelAwarenessSelfjoinMixin
     /++
