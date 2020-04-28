@@ -208,7 +208,7 @@ void messageFiber(ref Kameloso instance)
                 {
                     logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
                         "configuration: %1$s%4$s", Tint.log, plugin.name, Tint.error, e.msg);
-                    version(PrintStacktraces) logger.trace(e.info);
+                    version(PrintStacktraces) logger.trace(e.toString);
                 }
             }
         }
