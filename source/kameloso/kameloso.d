@@ -2523,8 +2523,7 @@ int initBot(string[] args)
         instance.writeConfigurationFile(instance.settings.configFile);
     }
 
-    // The connection history may be empty if exitSummary was set mid-execution.
-    if (instance.settings.exitSummary && instance.connectionHistory.length)
+    if (instance.settings.exitSummary)
     {
         instance.printSummary();
     }
