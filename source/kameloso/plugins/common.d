@@ -956,7 +956,7 @@ void removeDelayedFiber(IRCPlugin plugin)
 }
 
 
-// awaitEvent
+// awaitEvents
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -972,7 +972,7 @@ void removeDelayedFiber(IRCPlugin plugin)
  +      type = The kind of `dialect.defs.IRCEvent` that should trigger the
  +          passed awaiting fiber.
  +/
-void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
@@ -980,7 +980,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
 }
 
 
-// awaitEvent
+// awaitEvents
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -996,7 +996,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +      type = The kind of `dialect.defs.IRCEvent` that should trigger this
  +          implicit awaiting fiber (in the current context).
  +/
-void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
+void awaitEvents(IRCPlugin plugin, const IRCEvent.Type type)
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
@@ -1060,7 +1060,14 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 }
 
 
-// unlistFiberAwaitingEvent
+// awaitEvent
+/++
+ +  Compatibility alias of `awaitEvents`.
+ +/
+alias awaitEvent = awaitEvents;
+
+
+// unlistFiberAwaitingEvents
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -1076,7 +1083,7 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
  +      type = The kind of `dialect.defs.IRCEvent` that would trigger the
  +          passed awaiting fiber.
  +/
-void unlistFiberAwaitingEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to unlist a null Fiber from awaiting events")
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEvent.Type.UNSET`")
 {
@@ -1114,7 +1121,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
 }
 
 
-// unlistFiberAwaitingEvent
+// unlistFiberAwaitingEvents
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -1129,7 +1136,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
  +      type = The kind of `dialect.defs.IRCEvent` that would trigger this
  +          implicit awaiting fiber (in the current context).
  +/
-void unlistFiberAwaitingEvent(IRCPlugin plugin, const IRCEvent.Type type)
+void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type type)
 {
     return plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
 }
@@ -1184,6 +1191,13 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
         plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
     }
 }
+
+
+// unlistFiberAwaitingEvent
+/++
+ +  Compatibility alias of `unlistFiberAwaitingEvents`.
+ +/
+alias unlistFiberAwaitingEvent = unlistFiberAwaitingEvents;
 
 
 private import std.traits : isSomeFunction;
