@@ -199,6 +199,15 @@ do
         }
     }
 
+    // Take into account people leaving or changing nicknames on non-Twitch servers
+    // On Twitch NICKs and QUITs don't exist, and PARTs are unreliable.
+    static immutable IRCEvent.Type[3] nonTwitchVoteEventTypes =
+    [
+        IRCEvent.Type.NICK,
+        IRCEvent.Type.PART,
+        IRCEvent.Type.QUIT,
+    ];
+
     void dg()
     {
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
@@ -245,6 +254,12 @@ do
                 }
                 break;
 
+            case PART:
+            case QUIT:
+                immutable nickname = thisFiber.payload.sender.nickname;
+                votedUsers.remove(nickname);
+                break;
+
             default:
                 throw new Exception("Unexpected IRCEvent type seen in vote delegate");
             }
@@ -257,13 +272,13 @@ do
         // Invoked by timer, not by event
         reportResults();
 
-        import kameloso.plugins.common : unlistFiberAwaitingEvent;
+        import kameloso.plugins.common : unlistFiberAwaitingEvent, unlistFiberAwaitingEvents;
 
         // Cleanup
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            plugin.unlistFiberAwaitingEvent(IRCEvent.Type.NICK);
+            plugin.unlistFiberAwaitingEvents(nonTwitchVoteEventTypes[]);
         }
 
         plugin.unlistFiberAwaitingEvent(IRCEvent.Type.CHAN);
@@ -272,14 +287,13 @@ do
         // End Fiber
     }
 
-    import kameloso.plugins.common : awaitEvent, delayFiber;
+    import kameloso.plugins.common : awaitEvent, awaitEvents, delayFiber;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
     {
-        // Can't change nicknames on Twitch
-        plugin.awaitEvent(fiber, IRCEvent.Type.NICK);
+        plugin.awaitEvents(fiber, nonTwitchVoteEventTypes[]);
     }
 
     plugin.awaitEvent(fiber, IRCEvent.Type.CHAN);
