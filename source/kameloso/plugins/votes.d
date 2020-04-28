@@ -351,7 +351,7 @@ do
     {
         auto reminder60 = new CarryingFiber!int(&dgReminder, 32_768);
         reminder60.payload = 60;
-        plugin.delayFiber(reminder60, dur-60);
+        plugin.delayFiber(reminder60, dur-180);
     }
 
     if (dur >= 60)
