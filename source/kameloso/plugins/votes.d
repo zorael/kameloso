@@ -229,14 +229,22 @@ do
 
             foreach (const result; sorted)
             {
-                import lu.string : plurality;
+                if (result.value == 0)
+                {
+                    chan(plugin.state, event.channel,
+                        origChoiceNames[result.key] ~ " : 0 votes");
+                }
+                else
+                {
+                    import lu.string : plurality;
 
-                immutable noun = result.value.plurality("vote", "votes");
-                immutable double voteRatio = cast(double)result.value / total;
-                immutable double votePercentage = 100 * voteRatio;
+                    immutable noun = result.value.plurality("vote", "votes");
+                    immutable double voteRatio = cast(double)result.value / total;
+                    immutable double votePercentage = 100 * voteRatio;
 
-                chan(plugin.state, event.channel, "%s : %d %s (%.1f%%)"
-                    .format(origChoiceNames[result.key], result.value, noun, votePercentage));
+                    chan(plugin.state, event.channel, "%s : %d %s (%.1f%%)"
+                        .format(origChoiceNames[result.key], result.value, noun, votePercentage));
+                }
             }
         }
         else
