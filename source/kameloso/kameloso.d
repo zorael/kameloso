@@ -2547,9 +2547,13 @@ int initBot(string[] args)
 
         immutable stats = GC.stats();
 
-        logger.infof("Garbage allocated in current thread: %s%,d%s bytes",
-            Tint.log, stats.allocatedInCurrentThread, Tint.info);
-        logger.infof("Used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes",
+        static if (__VERSION__ >= 2087L)
+        {
+            logger.infof("Garbage allocated in current thread: %s%,d%s bytes",
+                Tint.log, stats.allocatedInCurrentThread, Tint.info);
+        }
+
+        logger.infof("Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes",
             Tint.log, stats.usedSize, Tint.info, stats.freeSize);
     }
 
