@@ -56,7 +56,7 @@ do
     import std.uni : toLower;
     import core.thread : Fiber;
 
-    if (event.content)
+    if (event.content.length)
     {
         switch (event.content)
         {
