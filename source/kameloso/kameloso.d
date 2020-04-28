@@ -83,8 +83,12 @@ void signalHandler(int sig) nothrow @nogc @system
     import core.stdc.stdio : printf;
 
     printf("...caught signal %d!\n", sig);
-    signalRaised = sig;
     abort = true;
+
+    version(Posix)
+    {
+        signalRaised = sig;
+    }
 
     // Restore signal handlers to the default
     resetSignals();
