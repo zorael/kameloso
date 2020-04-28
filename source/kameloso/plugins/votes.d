@@ -43,7 +43,7 @@ import std.typecons : Flag, No, Yes;
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "poll")
 @BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
-@Description("Starts or stops a vote. Pass \"abort\" to stop.",
+@Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
     "$command [seconds] [choice1] [choice2] ...")
 void onCommandVote(VotesPlugin plugin, const IRCEvent event)
 do
@@ -68,6 +68,21 @@ do
             {
                 plugin.channelVoteInstances.remove(event.channel);
                 chan(plugin.state, event.channel, "Vote aborted.");
+            }
+            else
+            {
+                chan(plugin.state, event.channel, "There is no ongoing vote.");
+            }
+            return;
+
+        case "end":
+            auto currentVoteInstance = event.channel in plugin.channelVoteInstances;
+
+            if (currentVoteInstance)
+            {
+                // Signal that the vote should end early by giving the vote instance
+                // a value of -1. Catch it later in the vote Fiber delegate.
+                *currentVoteInstance = -1;
             }
             else
             {
@@ -208,10 +223,39 @@ do
         IRCEvent.Type.QUIT,
     ];
 
+    void cleanup()
+    {
+        import kameloso.plugins.common : unlistFiberAwaitingEvent, unlistFiberAwaitingEvents;
+
+        if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+        {
+            plugin.unlistFiberAwaitingEvents(nonTwitchVoteEventTypes[]);
+        }
+
+        plugin.unlistFiberAwaitingEvent(IRCEvent.Type.CHAN);
+        plugin.channelVoteInstances.remove(event.channel);
+    }
+
     void dg()
     {
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
-        if (!currentVoteInstance || (*currentVoteInstance != id)) return;  // Aborted
+
+        if (!currentVoteInstance)
+        {
+            return;  // Aborted
+        }
+        else if (*currentVoteInstance == -1)
+        {
+            // Magic number, end early
+            reportResults();
+            cleanup();
+            plugin.channelVoteInstances.remove(event.channel);
+            return;
+        }
+        else if (*currentVoteInstance != id)
+        {
+            return;  // Different vote started
+        }
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -271,19 +315,7 @@ do
 
         // Invoked by timer, not by event
         reportResults();
-
-        import kameloso.plugins.common : unlistFiberAwaitingEvent, unlistFiberAwaitingEvents;
-
-        // Cleanup
-
-        if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
-        {
-            plugin.unlistFiberAwaitingEvents(nonTwitchVoteEventTypes[]);
-        }
-
-        plugin.unlistFiberAwaitingEvent(IRCEvent.Type.CHAN);
-        plugin.channelVoteInstances.remove(event.channel);
-
+        cleanup();
         // End Fiber
     }
 
@@ -414,7 +446,7 @@ private:
      +  An unique identifier for an ongoing channel vote, as set by
      +  `onCommandVote` and monitored inside its `core.thread.fiber.Fiber`'s closures.
      +/
-    uint[string] channelVoteInstances;
+    int[string] channelVoteInstances;
 
     mixin IRCPluginImpl;
 }
