@@ -2537,6 +2537,18 @@ int initBot(string[] args)
         instance.printSummary();
     }
 
+    version(ProfileGC)
+    {
+        import core.memory : GC;
+
+        immutable stats = GC.stats();
+
+        logger.infof("Garbage allocated in current thread: %s%,d%s bytes",
+            Tint.log, stats.allocatedInCurrentThread, Tint.info);
+        logger.infof("Used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes",
+            Tint.log, stats.usedSize, Tint.info, stats.freeSize);
+    }
+
     if (*instance.abort)
     {
         // Ctrl+C
