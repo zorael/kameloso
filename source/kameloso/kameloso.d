@@ -56,6 +56,17 @@ version(ProfileGC)
 public bool abort;
 
 
+version(Posix)
+{
+    // signalRaised
+    /++
+     +  The value of the signal, when the process was sent one that meant it
+     +  should abort, This determines the shell exit code to return.
+     +/
+    private int signalRaised;
+}
+
+
 // signalHandler
 /++
  +  Called when a signal is raised, usually `SIGINT`.
@@ -72,6 +83,7 @@ void signalHandler(int sig) nothrow @nogc @system
     import core.stdc.stdio : printf;
 
     printf("...caught signal %d!\n", sig);
+    signalRaised = sig;
     abort = true;
 
     // Restore signal handlers to the default
@@ -2521,7 +2533,18 @@ int initBot(string[] args)
     {
         // Ctrl+C
         logger.error("Aborting...");
-        return 1;
+
+        version(Posix)
+        {
+            // Even if no signal raised attempt.retval may already be 1,
+            // but double-set it to be sure
+            attempt.retval = (signalRaised > 0) ? (128 + signalRaised) : 1;
+        }
+        else
+        {
+            // Ditto
+            attempt.retval = 1;
+        }
     }
     else if (!attempt.silentExit)
     {
