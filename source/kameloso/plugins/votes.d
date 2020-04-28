@@ -158,6 +158,47 @@ do
     /// Unique vote instance identifier
     immutable id = uniform(1, 10_000);
 
+    void reportResults()
+    {
+        import std.algorithm.iteration : sum;
+
+        immutable total = cast(double)voteChoices.byValue.sum;
+
+        if (total > 0)
+        {
+            chan(plugin.state, event.channel, "Voting complete, results:");
+
+            auto sorted = voteChoices
+                .byKeyValue
+                .array
+                .sort!((a,b) => a.value < b.value);
+
+            foreach (const result; sorted)
+            {
+                if (result.value == 0)
+                {
+                    chan(plugin.state, event.channel,
+                        origChoiceNames[result.key] ~ " : 0 votes");
+                }
+                else
+                {
+                    import lu.string : plurality;
+
+                    immutable noun = result.value.plurality("vote", "votes");
+                    immutable double voteRatio = cast(double)result.value / total;
+                    immutable double votePercentage = 100 * voteRatio;
+
+                    chan(plugin.state, event.channel, "%s : %d %s (%.1f%%)"
+                        .format(origChoiceNames[result.key], result.value, noun, votePercentage));
+                }
+            }
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "Voting complete, no one voted.");
+        }
+    }
+
     void dg()
     {
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
@@ -214,43 +255,7 @@ do
         }
 
         // Invoked by timer, not by event
-        import std.algorithm.iteration : sum;
-
-        immutable total = cast(double)voteChoices.byValue.sum;
-
-        if (total > 0)
-        {
-            chan(plugin.state, event.channel, "Voting complete, results:");
-
-            auto sorted = voteChoices
-                .byKeyValue
-                .array
-                .sort!((a,b) => a.value < b.value);
-
-            foreach (const result; sorted)
-            {
-                if (result.value == 0)
-                {
-                    chan(plugin.state, event.channel,
-                        origChoiceNames[result.key] ~ " : 0 votes");
-                }
-                else
-                {
-                    import lu.string : plurality;
-
-                    immutable noun = result.value.plurality("vote", "votes");
-                    immutable double voteRatio = cast(double)result.value / total;
-                    immutable double votePercentage = 100 * voteRatio;
-
-                    chan(plugin.state, event.channel, "%s : %d %s (%.1f%%)"
-                        .format(origChoiceNames[result.key], result.value, noun, votePercentage));
-                }
-            }
-        }
-        else
-        {
-            chan(plugin.state, event.channel, "Voting complete, no one voted.");
-        }
+        reportResults();
 
         import kameloso.plugins.common : unlistFiberAwaitingEvent;
 
