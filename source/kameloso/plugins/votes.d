@@ -150,6 +150,8 @@ do
     }
 
     import kameloso.thread : CarryingFiber;
+    import std.algorithm.sorting : sort;
+    import std.array : array;
     import std.format : format;
     import std.random : uniform;
 
@@ -213,8 +215,6 @@ do
 
         // Invoked by timer, not by event
         import std.algorithm.iteration : sum;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
 
         immutable total = cast(double)voteChoices.byValue.sum;
 
@@ -273,6 +273,11 @@ do
     plugin.delayFiber(fiber, dur);
     plugin.channelVoteInstances[event.channel] = id;
 
+    immutable sortedChoices = voteChoices
+        .keys
+        .sort
+        .array;
+
     void dgReminder()
     {
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
@@ -289,14 +294,13 @@ do
             immutable minutes = cast(int)(thisFiber.payload / 60);
 
             chan(plugin.state, event.channel, "%d %s! (%-(%s, %))"
-                .format(minutes, minutes.plurality("minute", "minutes"), voteChoices.byKey));
+                .format(minutes, minutes.plurality("minute", "minutes"), sortedChoices));
         }
         else
         {
             chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
-                .format(thisFiber.payload, voteChoices.byKey));
+                .format(thisFiber.payload, sortedChoices));
         }
-
     }
 
     // Warn once at 600 seconds if the vote was for at least 1200 seconds
@@ -339,7 +343,7 @@ do
 
     chan(plugin.state, event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
-        .format(voteChoices.byKey, dur));
+        .format(sortedChoices, dur));
 }
 
 
