@@ -2024,15 +2024,14 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
-    with (attempt)
     outerloop:
     do
     {
         // *instance.abort is guaranteed to be false here.
 
-        silentExit = true;
+        attempt.silentExit = true;
 
-        if (!firstConnect)
+        if (!attempt.firstConnect)
         {
             import kameloso.constants : Timeout;
             import kameloso.thread : interruptibleSleep;
@@ -2061,7 +2060,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 
             // Re-init plugins here so it isn't done on the first connect attempt
             string[][string] ignore;
-            instance.initPlugins(customSettings, ignore, ignore);
+            instance.initPlugins(attempt.customSettings, ignore, ignore);
 
             // Reset throttling, in case there were queued messages.
             instance.throttle = typeof(instance.throttle).init;
@@ -2082,7 +2081,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         instance.conn.connected = false;
         instance.conn.reset();
 
-        immutable actionAfterResolve = tryResolve(instance, firstConnect);
+        immutable actionAfterResolve = tryResolve(instance, attempt.firstConnect);
         if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
 
         with (Next)
@@ -2096,12 +2095,12 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
-            retval = 1;
+            attempt.retval = 1;
             break outerloop;
 
         case returnSuccess:
             // Ditto
-            retval = 0;
+            attempt.retval = 0;
             break outerloop;
 
         case crash:
@@ -2125,7 +2124,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
-            retval = 1;
+            attempt.retval = 1;
             break outerloop;
 
         case crash:
@@ -2150,7 +2149,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
-            retval = 1;
+            attempt.retval = 1;
             break outerloop;
         }
         catch (Exception e)
@@ -2162,7 +2161,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
-            retval = 1;
+            attempt.retval = 1;
             break outerloop;
         }
 
@@ -2184,7 +2183,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.info);
-            retval = 1;
+            attempt.retval = 1;
             break outerloop;
         }
         catch (Exception e)
@@ -2195,19 +2194,19 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file.baseName, e.line, TerminalToken.bell);
             version(PrintStacktraces) logger.trace(e.toString);
-            retval = 1;
+            attempt.retval = 1;
             break outerloop;
         }
 
         // Do verbose exits if mainLoop causes a return
-        silentExit = false;
+        attempt.silentExit = false;
 
         // Start the main loop
-        next = instance.mainLoop();
-        firstConnect = false;
+        attempt.next = instance.mainLoop();
+        attempt.firstConnect = false;
     }
-    while (!*instance.abort && ((next == Next.continue_) || (next == Next.retry) ||
-        ((next == Next.returnFailure) && instance.settings.reconnectOnFailure)));
+    while (!*instance.abort && ((attempt.next == Next.continue_) || (attempt.next == Next.retry) ||
+        ((attempt.next == Next.returnFailure) && instance.settings.reconnectOnFailure)));
 }
 
 
