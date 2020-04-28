@@ -2519,8 +2519,18 @@ int initBot(string[] args)
     // Save if we're exiting and configuration says we should.
     if (instance.settings.saveOnExit)
     {
-        import kameloso.config : writeConfigurationFile;
-        instance.writeConfigurationFile(instance.settings.configFile);
+        try
+        {
+            import kameloso.config : writeConfigurationFile;
+            instance.writeConfigurationFile(instance.settings.configFile);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Caught Exception when saving settings: " ~
+                "%s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                Tint.log, e.msg, Tint.warning, e.file, e.line);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
     }
 
     if (instance.settings.exitSummary)
