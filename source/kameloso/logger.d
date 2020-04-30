@@ -52,6 +52,7 @@ final class KamelosoLogger : Logger
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
     import std.stdio : stdout;
+    import std.typecons : Flag, No, Yes;
 
     version(Colours)
     {
@@ -67,6 +68,19 @@ final class KamelosoLogger : Logger
     bool flush;  /// Whether or not we should flush stdout after finishing writing to it.
 
     /// Create a new `KamelosoLogger` with the passed settings.
+    this(LogLevel lv = LogLevel.all,
+        const Flag!"monochrome" monochrom = No.monochrome,
+        const Flag!"brightTerminal" brightTerminal = No.brightTerminal,
+        const Flag!"flush" flush = No.flush)
+    {
+        this.monochrome = monochrome;
+        this.brightTerminal = brightTerminal;
+        this.flush = flush;
+        super(lv);
+    }
+
+    /// Create a new `KamelosoLogger` with the passed settings.
+    deprecated("Use the constructor that takes `Flag` parameters instead")
     this(LogLevel lv = LogLevel.all, bool monochrome = false,
         bool brightTerminal = false, bool flush = false)
     {
@@ -102,7 +116,7 @@ final class KamelosoLogger : Logger
      +/
     pragma(inline)
     version(Colours)
-    static auto tint(const LogLevel level, const bool bright)
+    static auto tint(const LogLevel level, const Flag!"brightTerminal" bright)
     {
         return bright ? logcoloursBright[level] : logcoloursDark[level];
     }
@@ -118,12 +132,12 @@ final class KamelosoLogger : Logger
         {
             import std.format : format;
 
-            immutable tintBright = tint(logLevel, true);
+            immutable tintBright = tint(logLevel, Yes.brightTerminal);
             immutable tintBrightTable = logcoloursBright[logLevel];
             assert((tintBright == tintBrightTable), "%s != %s"
                 .format(tintBright, tintBrightTable));
 
-            immutable tintDark = tint(logLevel, false);
+            immutable tintDark = tint(logLevel, No.brightTerminal);
             immutable tintDarkTable = logcoloursDark[logLevel];
             assert((tintDark == tintDarkTable), "%s != %s"
                 .format(tintDark, tintDarkTable));
@@ -152,12 +166,12 @@ final class KamelosoLogger : Logger
         {
             if (brightTerminal)
             {
-                enum ctTintBright = tint(level, true).colour.idup;
+                enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
                 return ctTintBright;
             }
             else
             {
-                enum ctTintDark = tint(level, false).colour.idup;
+                enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
                 return ctTintDark;
             }
         }
@@ -313,8 +327,9 @@ final class KamelosoLogger : Logger
 unittest
 {
     import std.experimental.logger : LogLevel;
+    import std.typecons : Flag, No, Yes;
 
-    Logger log_ = new KamelosoLogger(LogLevel.all, true, false);
+    Logger log_ = new KamelosoLogger(LogLevel.all, Yes.monochrome, No.brightTerminal);
 
     log_.log("log: log");
     log_.info("log: info");
@@ -325,7 +340,7 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(LogLevel.all, false, true);
+        log_ = new KamelosoLogger(LogLevel.all, No.monochrome, Yes.brightTerminal);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -334,7 +349,7 @@ unittest
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
 
-        log_ = new KamelosoLogger(LogLevel.all, false, false);
+        log_ = new KamelosoLogger(LogLevel.all, No.monochrome, No.brightTerminal);
 
         log_.log("log: log");
         log_.info("log: info");
