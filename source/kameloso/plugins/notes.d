@@ -71,7 +71,7 @@ void onWhoReply(NotesPlugin plugin, const IRCEvent event)
 
     if (event.channel !in plugin.notes) return;
 
-    return plugin.playbackNotes(event.target, event.channel, true);
+    return plugin.playbackNotes(event.target, event.channel, Yes.background);
 }
 
 
@@ -89,7 +89,7 @@ void onWhoReply(NotesPlugin plugin, const IRCEvent event)
  +      background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
 void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
-    const string givenChannel, const bool background = false)
+    const string givenChannel, const Flag!"background" background = No.background)
 {
     import kameloso.common : timeSince;
     import dialect.common : toLowerCase;
@@ -231,7 +231,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
         // Only WHOIS once
-        enqueueAndWHOIS(givenUser.nickname, (i++ == 0), background);
+        enqueueAndWHOIS(givenUser.nickname,
+            ((i++ == 0) ? Yes.issueWhois : No.issueWhois), background);
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channel.length) break;

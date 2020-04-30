@@ -1453,8 +1453,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
      +      `object.Exception` if a success of failure function was to trigger
      +      in an impossible scenario, such as on WHOIS results on Twitch.
      +/
-    void enqueueAndWHOIS(const string nickname, const bool issueWhois = true,
-        const bool background = false)
+    void enqueueAndWHOIS(const string nickname,
+        const Flag!"issueWhois" issueWhois = Yes.issueWhois,
+        const Flag!"background" background = No.background)
     {
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
