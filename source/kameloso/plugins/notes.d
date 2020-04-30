@@ -94,6 +94,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     import kameloso.common : timeSince;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
+    import std.exception : ErrnoException;
+    import std.file : FileException;
     import std.format : format;
     import std.json : JSONException;
     import std.range : only;
@@ -178,7 +180,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
             }
             catch (JSONException e)
             {
-                logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
+                logger.errorf("Failed to fetch, replay and clear notes for " ~
+                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s",
                     Tint.log, id, Tint.error, channel.length ? channel : "<no channel>", e.msg);
 
                 if (e.msg == "JSONValue is not an object")
@@ -188,6 +191,16 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     plugin.notes.save(plugin.notesFile);
                 }
 
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (FileException e)
+            {
+                logger.error("Failed to save notes: ", Tint.log, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (ErrnoException e)
+            {
+                logger.error("Failed to open/close notes file: ", Tint.log, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
         }
