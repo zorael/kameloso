@@ -70,11 +70,13 @@ public:
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channelName, const string content,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channelName.length, "Tried to send a channel message but no channel was given")
 do
 {
@@ -86,6 +88,7 @@ do
     event.channel = channelName;
     event.content = content;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     version(TwitchSupport)
     {
@@ -148,11 +151,13 @@ unittest
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void query(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string nickname, const string content,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (nickname.length, "Tried to send a private query but no nickname was given")
 do
 {
@@ -164,6 +169,7 @@ do
     event.target.nickname = nickname;
     event.content = content;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -206,11 +212,13 @@ unittest
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void privmsg(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const string content,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 do
 {
@@ -218,11 +226,11 @@ do
 
     if (channel.length)
     {
-        return chan!priority(state, channel, content, quiet, background);
+        return chan!priority(state, channel, content, quiet, background, caller);
     }
     else if (nickname.length)
     {
-        return query!priority(state, nickname, content, quiet, background);
+        return query!priority(state, nickname, content, quiet, background, caller);
     }
     else
     {
@@ -276,11 +284,13 @@ unittest
  +      content = Message body content to send.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string emoteTarget, const string content,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 do
 {
@@ -291,6 +301,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = content;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     if (emoteTarget.beginsWithOneOf(state.server.chantypes))
     {
@@ -358,6 +369,7 @@ void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const const(char)[] modes, const string content = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background)
+    //const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
 do
 {
@@ -370,6 +382,7 @@ do
     event.aux = modes.idup;
     event.content = content;
     if (background) event.altcount = 999;
+    //event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -408,11 +421,13 @@ unittest
  +      content = Topic body text.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void topic(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string content,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a topic but no channel was given")
 do
 {
@@ -424,6 +439,7 @@ do
     event.channel = channel;
     event.content = content;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -461,11 +477,13 @@ unittest
  +      nickname = Nickname of user to invite.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void invite(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
 do
@@ -478,6 +496,7 @@ do
     event.channel = channel;
     event.target.nickname = nickname;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -520,6 +539,7 @@ void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string key = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background)
+    //const string caller = __FUNCTION__)
 in (channel.length, "Tried to join a channel but no channel was given")
 do
 {
@@ -531,6 +551,7 @@ do
     event.channel = channel;
     event.aux = key;
     if (background) event.altcount = 999;
+    //event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -568,11 +589,13 @@ unittest
  +      reason = Optionally the reason behind the kick.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
 do
@@ -586,6 +609,7 @@ do
     event.target.nickname = nickname;
     event.content = reason;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -624,11 +648,13 @@ unittest
  +      reason = Optionally, reason behind leaving.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void part(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channel.length, "Tried to part a channel but no channel was given")
 do
 {
@@ -640,6 +666,7 @@ do
     event.channel = channel;
     event.content = reason;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     state.mainThread.send(event);
 }
@@ -792,10 +819,12 @@ unittest
  +      line = Raw IRC string to send to the server.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const string line,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -804,6 +833,7 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const str
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = line;
     if (background) event.altcount = 999;
+    event.aux = caller;
 
     state.mainThread.send(event);
 }
