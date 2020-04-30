@@ -257,6 +257,7 @@ void messageFiber(ref Kameloso instance)
             immutable background = (event.altcount == 999);
             immutable quiet = (instance.settings.hideOutgoing ||
                 (event.target.class_ == IRCUser.Class.admin)) ? Yes.quiet : No.quiet;
+            immutable caller = event.raw;
 
             string line;
             string prelude;
@@ -380,7 +381,7 @@ void messageFiber(ref Kameloso instance)
 
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", event.target.nickname,
-                        event.aux, quiet, background);
+                        caller, quiet, background);
                 }
 
                 if ((now - then) > hysteresis)

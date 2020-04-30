@@ -88,7 +88,7 @@ do
     event.channel = channelName;
     event.content = content;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     version(TwitchSupport)
     {
@@ -169,7 +169,7 @@ do
     event.target.nickname = nickname;
     event.content = content;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -301,7 +301,7 @@ do
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = content;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     if (emoteTarget.beginsWithOneOf(state.server.chantypes))
     {
@@ -364,12 +364,13 @@ unittest
  +      content = Target of mode change, if applicable.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const const(char)[] modes, const string content = string.init,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
-    //const string caller = __FUNCTION__)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
 do
 {
@@ -382,7 +383,7 @@ do
     event.aux = modes.idup;
     event.content = content;
     if (background) event.altcount = 999;
-    //event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -439,7 +440,7 @@ do
     event.channel = channel;
     event.content = content;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -496,7 +497,7 @@ do
     event.channel = channel;
     event.target.nickname = nickname;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -534,12 +535,13 @@ unittest
  +      key = Channel key to join the channel with, if it's locked.
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      background = Whether or not to send it as a low-priority background message.
+ +      caller = String name of the calling function, or something else that gives context.
  +/
 void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string key = string.init,
     const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background)
-    //const string caller = __FUNCTION__)
+    const Flag!"background" background = No.background,
+    const string caller = __FUNCTION__)
 in (channel.length, "Tried to join a channel but no channel was given")
 do
 {
@@ -551,7 +553,7 @@ do
     event.channel = channel;
     event.aux = key;
     if (background) event.altcount = 999;
-    //event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -609,7 +611,7 @@ do
     event.target.nickname = nickname;
     event.content = reason;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -666,7 +668,7 @@ do
     event.channel = channel;
     event.content = reason;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
@@ -769,7 +771,7 @@ do
     event.target.nickname = nickname;
     if (force) event.num = 1;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     version(TraceWhois)
     {
@@ -833,7 +835,7 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const str
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = line;
     if (background) event.altcount = 999;
-    event.aux = caller;
+    event.raw = caller;
 
     state.mainThread.send(event);
 }
