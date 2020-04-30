@@ -494,6 +494,48 @@ private:
     alias askToError = partial!(kameloso.messaging.askToError, state);
 }
 
+///
+unittest
+{
+    class MyPlugin : IRCPlugin
+    {
+        mixin MessagingProxy;
+        mixin IRCPluginImpl;
+    }
+
+    IRCPluginState state;
+    MyPlugin plugin = new MyPlugin(state);
+
+    with (plugin)
+    {
+        // The below calls will fail in-contracts, so don't call them.
+        // Just generate the code so we know they compile.
+        if (plugin !is null) return;
+
+        chan(string.init, string.init);
+        query(string.init, string.init);
+        privmsg(string.init, string.init, string.init);
+        emote(string.init, string.init);
+        mode(string.init, string.init, string.init);
+        topic(string.init, string.init);
+        invite(string.init, string.init);
+        join(string.init, string.init);
+        kick(string.init, string.init, string.init);
+        part(string.init, string.init);
+        quit(string.init);
+        whois(string.init, Yes.force, No.background);
+        raw(string.init);
+        immediate(string.init);
+        askToWriteln(string.init);
+        askToTrace(string.init);
+        askToLog(string.init);
+        askToInfo(string.init);
+        askToWarn(string.init);
+        askToWarning(string.init);
+        askToError(string.init);
+    }
+}
+
 
 // Repeater
 /++
