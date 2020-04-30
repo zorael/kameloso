@@ -293,9 +293,11 @@ private:
      +  Sends a channel message.
      +/
     void chan(Flag!"priority" priority = No.priority)
-        (const string channel, const string content)
+        (const string channel, const string content,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.chan!priority(state, channel, content);
+        return kameloso.messaging.chan!priority(state, channel, content,
+            No.quiet, No.background, caller);
     }
 
 
@@ -304,9 +306,11 @@ private:
      +  Sends a private query message to a user.
      +/
     void query(Flag!"priority" priority = No.priority)
-        (const string nickname, const string content)
+        (const string nickname, const string content,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.query!priority(state, nickname, content);
+        return kameloso.messaging.query!priority(state, nickname, content,
+            No.quiet, No.background, caller);
     }
 
 
@@ -319,9 +323,11 @@ private:
      +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string content)
+        const string nickname, const string content,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.privmsg!priority(state, channel, nickname, content);
+        return kameloso.messaging.privmsg!priority(state, channel, nickname, content,
+            No.quiet, No.background, caller);
     }
 
 
@@ -330,9 +336,11 @@ private:
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     void emote(Flag!"priority" priority = No.priority)
-        (const string emoteTarget, const string content)
+        (const string emoteTarget, const string content,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.emote!priority(state, emoteTarget, content);
+        return kameloso.messaging.emote!priority(state, emoteTarget, content,
+            No.quiet, No.background, caller);
     }
 
 
@@ -354,9 +362,11 @@ private:
      +  Sets the topic of a channel.
      +/
     void topic(Flag!"priority" priority = No.priority)
-        (const string channel, const string content)
+        (const string channel, const string content,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.topic!priority(state, channel, content);
+        return kameloso.messaging.topic!priority(state, channel, content,
+            No.quiet, No.background, caller);
     }
 
 
@@ -365,10 +375,11 @@ private:
      +  Invites a user to a channel.
      +/
     void invite(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname)
+        (const string channel, const string nickname,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.invite!priority(state, channel,
-            nickname, (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
+        return kameloso.messaging.invite!priority(state, channel, nickname,
+            No.quiet, No.background, caller);
     }
 
 
@@ -388,9 +399,11 @@ private:
      +  Kicks a user from a channel.
      +/
     void kick(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string reason = string.init)
+        const string nickname, const string reason = string.init,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.kick!priority(state, channel, nickname, reason);
+        return kameloso.messaging.kick!priority(state, channel, nickname, reason,
+            No.quiet, No.background, caller);
     }
 
 
@@ -399,9 +412,11 @@ private:
      +  Leaves a channel.
      +/
     void part(Flag!"priority" priority = No.priority)(const string channel,
-        const string reason = string.init)
+        const string reason = string.init,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.part!priority(state, channel, reason);
+        return kameloso.messaging.part!priority(state, channel, reason,
+            No.quiet, No.background, caller);
     }
 
 
@@ -434,9 +449,11 @@ private:
      +  This is used to send messages of types for which there exist no helper
      +  functions.
      +/
-    void raw(Flag!"priority" priority = No.priority)(const string line)
+    void raw(Flag!"priority" priority = No.priority)(const string line,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.raw!priority(state, line);
+        return kameloso.messaging.raw!priority(state, line,
+            No.quiet, No.background, caller);
     }
 
 
