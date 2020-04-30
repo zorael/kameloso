@@ -556,8 +556,10 @@ string mapColours(const string line,
  +/
 private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
     const uint fgReset, const uint bgReset) pure nothrow
-in ((fgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " colours with a foreground value of 0")
-in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " colours with a backgroud value of 0")
+in ((fgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
+    " colours with a foreground reset value of 0")
+in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
+    " colours with a backgroud reset value of 0")
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
@@ -568,7 +570,8 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " colours with a ba
         version(Colours) {}
         else
         {
-            static assert(0, "`mapColoursImpl!(Yes.strip)` is being called outside of version `Colours`");
+            static assert(0, "`mapColoursImpl!(No.strip)` is being called " ~
+                "outside of version `Colours`");
         }
     }
 
@@ -912,7 +915,8 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
         version(Colours) {}
         else
         {
-            static assert(0, "`mapEffectsImpl!(Yes.strip)` is being called outside of version `Colours`");
+            static assert(0, "`mapEffectsImpl!(No.strip)` is being called " ~
+                "outside of version `Colours`");
         }
     }
 

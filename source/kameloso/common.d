@@ -1297,7 +1297,8 @@ unittest
     immutable isnotabot = "kamelosois a bot".stripSeparatedPrefix("kameloso");
     assert((isnotabot == "kamelosois a bot"), isnotabot);
 
-    immutable isabot = "kamelosois a bot".stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
+    immutable isabot = "kamelosois a bot"
+        .stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
     assert((isabot == "is a bot"), isabot);
 }
 
