@@ -115,11 +115,12 @@ do
 unittest
 {
     import lu.conv : Enum;
+    import std.conv : to;
 
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    chan(state, "#channel", "content");
+    chan(state, "#channel", "content", Yes.quiet, Yes.background);
 
     immutable event = receiveOnly!IRCEvent;
     with (event)
@@ -127,6 +128,9 @@ unittest
         assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
+        assert((event.target.class_ == IRCUser.Class.admin),
+            Enum!(IRCUser.Class).toString(event.target.class_));
+        assert((event.altcount == 999), event.altcount.to!string);
     }
 }
 
