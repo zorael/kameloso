@@ -72,7 +72,7 @@ public:
  +      background = Whether or not to send it as a low-priority background message.
  +/
 void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channelName, const string content, bool quiet = false,
+    const string channelName, const string content, const Flag!"quiet" quiet = No.quiet,
     const bool background = false)
 in (channelName.length, "Tried to send a channel message but no channel was given")
 do
@@ -145,7 +145,7 @@ unittest
  +      background = Whether or not to send it as a low-priority background message.
  +/
 void query(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string nickname, const string content, const bool quiet = false,
+    const string nickname, const string content, const Flag!"quiet" quiet = No.quiet,
     const bool background = false)
 in (nickname.length, "Tried to send a private query but no nickname was given")
 do
@@ -203,7 +203,7 @@ unittest
  +/
 void privmsg(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const string content,
-    const bool quiet = false, const bool background = false)
+    const Flag!"quiet" quiet = No.quiet, const bool background = false)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 do
 {
@@ -271,7 +271,7 @@ unittest
  +      background = Whether or not to send it as a low-priority background message.
  +/
 void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string emoteTarget, const string content, const bool quiet = false,
+    const string emoteTarget, const string content, const Flag!"quiet" quiet = No.quiet,
     const bool background = false)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 do
@@ -348,7 +348,7 @@ unittest
  +/
 void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const const(char)[] modes, const string content = string.init,
-    const bool quiet = false, const bool background = false)
+    const Flag!"quiet" quiet = No.quiet, const bool background = false)
 in (channel.length, "Tried to set a mode but no channel was given")
 do
 {
@@ -401,7 +401,7 @@ unittest
  +      background = Whether or not to send it as a low-priority background message.
  +/
 void topic(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string content, const bool quiet = false,
+    const string channel, const string content, const Flag!"quiet" quiet = No.quiet,
     const bool background = false)
 in (channel.length, "Tried to set a topic but no channel was given")
 do
@@ -453,7 +453,7 @@ unittest
  +      background = Whether or not to send it as a low-priority background message.
  +/
 void invite(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string nickname, const bool quiet = false,
+    const string channel, const string nickname, const Flag!"quiet" quiet = No.quiet,
     const bool background = false)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
@@ -507,7 +507,7 @@ unittest
  +/
 void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string key = string.init,
-    const bool quiet = false, const bool background = false)
+    const Flag!"quiet" quiet = No.quiet, const bool background = false)
 in (channel.length, "Tried to join a channel but no channel was given")
 do
 {
@@ -559,7 +559,7 @@ unittest
  +/
 void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string nickname, const string reason = string.init,
-    const bool quiet = false, const bool background = false)
+    const Flag!"quiet" quiet = No.quiet, const bool background = false)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
 do
@@ -614,7 +614,7 @@ unittest
  +/
 void part(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string channel, const string reason = string.init,
-    const bool quiet = false, const bool background = false)
+    const Flag!"quiet" quiet = No.quiet, const bool background = false)
 in (channel.length, "Tried to part a channel but no channel was given")
 do
 {
@@ -664,7 +664,7 @@ unittest
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
-    const string reason = string.init, const bool quiet = false)
+    const string reason = string.init, const Flag!"quiet" quiet = No.quiet)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -688,7 +688,7 @@ unittest
 
     try
     {
-        receiveOnly!(Tuple!(ThreadMessage.Quit, string, bool))();
+        receiveOnly!(Tuple!(ThreadMessage.Quit, string, Flag!"quiet"))();
     }
     catch (MessageMismatch e)
     {
@@ -714,7 +714,7 @@ unittest
  +/
 void whois(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string nickname, const bool force = false,
-    const bool quiet = false, const bool background = false,
+    const Flag!"quiet" quiet = No.quiet, const bool background = false,
     const string caller = __FUNCTION__)
 in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 do
@@ -779,7 +779,7 @@ unittest
  +      background = Whether or not to send it as a low-priority background message.
  +/
 void raw(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string line, const bool quiet = false, const bool background = false)
+    const string line, const Flag!"quiet" quiet = No.quiet, const bool background = false)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 

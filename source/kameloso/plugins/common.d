@@ -295,7 +295,7 @@ private:
         (const string channel, const string content)
     {
         return kameloso.messaging.chan!priority(state, channel, content,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -307,7 +307,7 @@ private:
         (const string nickname, const string content)
     {
         return kameloso.messaging.query!priority(state, nickname, content,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -323,7 +323,7 @@ private:
         const string nickname, const string content)
     {
         return kameloso.messaging.privmsg!priority(state, channel,
-            nickname, content, state.settings.hideOutgoing);
+            nickname, content, (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -335,7 +335,7 @@ private:
         (const string emoteTarget, const string content)
     {
         return kameloso.messaging.emote!priority(state, emoteTarget,
-            content, state.settings.hideOutgoing);
+            content, (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -349,7 +349,7 @@ private:
         const string modes, const string content = string.init)
     {
         return kameloso.messaging.mode!priority(state, channel, modes,
-            content, state.settings.hideOutgoing);
+            content, (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -361,7 +361,7 @@ private:
         (const string channel, const string content)
     {
         return kameloso.messaging.topic!priority(state, channel, content,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -373,7 +373,7 @@ private:
         (const string channel, const string nickname)
     {
         return kameloso.messaging.invite!priority(state, channel,
-            nickname, state.settings.hideOutgoing);
+            nickname, (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -385,7 +385,7 @@ private:
         (const string channel, const string key = string.init)
     {
         return kameloso.messaging.join!priority(state, channel, key,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -397,7 +397,7 @@ private:
         const string nickname, const string reason = string.init)
     {
         return kameloso.messaging.kick!priority(state, channel, nickname,
-            reason, state.settings.hideOutgoing);
+            reason, (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -409,7 +409,7 @@ private:
         const string reason = string.init)
     {
         return kameloso.messaging.part!priority(state, channel, reason,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -420,7 +420,7 @@ private:
     void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
     {
         return kameloso.messaging.quit!priority(state, reason,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -432,7 +432,7 @@ private:
         const bool force = false, const string caller = __FUNCTION__)
     {
         return kameloso.messaging.whois!priority(state, nickname, force,
-            state.settings.hideOutgoing, caller);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet), caller);
     }
 
     // raw
@@ -445,7 +445,7 @@ private:
     void raw(Flag!"priority" priority = No.priority)(const string line)
     {
         return kameloso.messaging.raw!priority(state, line,
-            state.settings.hideOutgoing);
+            (state.settings.hideOutgoing ? Yes.quiet : No.quiet));
     }
 
 
@@ -1590,11 +1590,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 // Args are state, nick, force, quiet, background, caller
                 // Need force (true) to not miss events
-                whois(context.state, nicknamePart, true, true, true);
+                whois(context.state, nicknamePart, true, Yes.quiet, true);
             }
             else
             {
-                whois!(Yes.priority)(context.state, nicknamePart, true, true);  // Ditto
+                whois!(Yes.priority)(context.state, nicknamePart, true, Yes.quiet);  // Ditto
             }
         }
 

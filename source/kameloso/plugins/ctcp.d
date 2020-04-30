@@ -18,6 +18,7 @@ private:
 import kameloso.plugins.core;
 import kameloso.messaging;
 import dialect.defs;
+import std.typecons : Flag, No, Yes;
 
 
 // onCTCPs
@@ -206,7 +207,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 
         with (IRCControlCharacter)
         {
-            raw(service.state, ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), true);
+            raw(service.state, ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), Yes.quiet);
         }
     }
 }
