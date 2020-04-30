@@ -1678,7 +1678,7 @@ Next tryConnect(ref Kameloso instance)
  +      `lu.common.Next.continue_` if resolution succeeded,
  +      `lu.common.Next.returnFailure` if it failed and the program should exit.
  +/
-Next tryResolve(ref Kameloso instance, const bool firstConnect)
+Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 {
     import kameloso.constants : Timeout;
     import lu.net : ResolveAttempt, resolveFiber;
@@ -2088,7 +2088,8 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         instance.conn.connected = false;
         instance.conn.reset();
 
-        immutable actionAfterResolve = tryResolve(instance, attempt.firstConnect);
+        immutable actionAfterResolve = tryResolve(instance,
+            (attempt.firstConnect ? Yes.firstConnect : No.firstConnect));
         if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
 
         with (Next)

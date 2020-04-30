@@ -41,6 +41,7 @@ private:
 
 import kameloso.plugins.core;
 import dialect.defs;
+import std.typecons : Flag, No, Yes;
 
 package:
 
@@ -98,7 +99,8 @@ enum Awareness
  +      debug_ = Whether or not to include debugging output.
  +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
+mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
@@ -256,7 +258,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent
  +      module_ = String name of the mixing-in module; generally leave as-is.
  +/
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    bool debug_ = false, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
@@ -642,7 +644,7 @@ void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
  +/
 version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    bool debug_ = false, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
@@ -1280,7 +1282,7 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
 version(WithPlugins)
 version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    bool debug_ = false, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
@@ -1445,7 +1447,7 @@ else
  +  No-op mixin of version `!TwitchSupport` `TwitchAwareness`.
  +/
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    bool debug_ = false, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import lu.traits : MixinConstraints, MixinScope;
 

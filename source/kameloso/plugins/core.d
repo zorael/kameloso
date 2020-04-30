@@ -186,7 +186,8 @@ abstract class IRCPlugin
  +  ---
  +/
 version(WithPlugins)
-mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
+mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import core.thread : Fiber;
 
@@ -359,6 +360,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import lu.traits : getSymbolsByUDA, isAnnotated;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
+        import std.typecons : Flag, No, Yes;
 
         if (!isEnabled) return;
 
@@ -384,7 +386,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
          +/
         Next handle(alias fun)(const ref IRCEvent event)
         {
-            enum verbose = isAnnotated!(fun, Verbose) || debug_;
+            enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
+                Yes.verbose :
+                No.verbose;
 
             static if (verbose)
             {
@@ -1611,7 +1615,7 @@ version(unittest)
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
+bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEvent,
     const PrefixPolicy policy, const IRCClient client, const string prefix)
 {
     import kameloso.common : stripSeparatedPrefix;
