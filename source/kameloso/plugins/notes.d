@@ -429,39 +429,22 @@ void clearNotes(NotesPlugin plugin, const string id, const string channel)
 in (id.length, "Tried to clear notes for an empty id")
 //in (channel.length, "Tried to clear notes with an empty channel string")
 {
-    import std.file : FileException;
     import std.format : format;
-    import std.exception : ErrnoException;
-    import std.json : JSONException, JSONType;
+    import std.json : JSONType;
 
-    try
+    if (id in plugin.notes[channel])
     {
-        if (id in plugin.notes[channel])
+        if (plugin.notes[channel].type != JSONType.object)
         {
-            assert((plugin.notes[channel].type == JSONType.object),
-                "Invalid channel notes list type for %s: `%s`"
-                .format(channel, plugin.notes[channel].type));
-
-            logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-                Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");
-            plugin.notes[channel].object.remove(id);
-            plugin.pruneNotes();
+            logger.errorf("Invalid channel notes list type for %s: `%s`",
+                channel, plugin.notes[channel].type);
+            return;
         }
-    }
-    catch (JSONException e)
-    {
-        logger.error("Failed to clear notes: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
-    }
-    catch (FileException e)
-    {
-        logger.error("Failed to save notes: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
-    }
-    catch (ErrnoException e)
-    {
-        logger.error("Failed to open/close notes file: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+
+        logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
+            Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");
+        plugin.notes[channel].object.remove(id);
+        plugin.pruneNotes();
     }
 }
 
