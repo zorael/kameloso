@@ -85,7 +85,7 @@ void printObjects(Flag!"all" all = No.all, uint widthArg = 0, Things...)
         if (!settings.monochrome)
         {
             formatObjects!(all, Yes.coloured, widthArg)(stdout.lockingTextWriter,
-                settings.brightTerminal, things);
+                (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal), things);
             printed = true;
         }
     }
@@ -93,7 +93,8 @@ void printObjects(Flag!"all" all = No.all, uint widthArg = 0, Things...)
     if (!printed)
     {
         // Brightness setting is irrelevant; pass false
-        formatObjects!(all, No.coloured, widthArg)(stdout.lockingTextWriter, false, things);
+        formatObjects!(all, No.coloured, widthArg)(stdout.lockingTextWriter,
+            No.brightTerminal, things);
     }
 
     if (settings.flush) stdout.flush();
@@ -140,7 +141,7 @@ alias printObject = printObjects;
  +/
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
-    (auto ref Sink sink, const bool bright, auto ref Things things)
+    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Things things)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.comparison : max;
@@ -409,7 +410,7 @@ if (isOutputRange!(Sink, char[]))
     Appender!(char[]) sink;
 
     sink.reserve(512);  // ~323
-    sink.formatObjects!(No.all, No.coloured)(false, s);
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
 
     enum structNameSerialised =
 `-- StructName
@@ -433,7 +434,7 @@ if (isOutputRange!(Sink, char[]))
     alias StructNameSettings = StructName;
     StructNameSettings so = s;
     sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(false, so);
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
@@ -459,7 +460,7 @@ if (isOutputRange!(Sink, char[]))
     st2.fdsa = -1;
 
     sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(false, st1, st2);
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
     enum st1st2Formatted =
 `-- Struct1
    string members                    "harbl"(5)
@@ -487,7 +488,7 @@ if (isOutputRange!(Sink, char[]))
 
         sink.clear();
         sink.reserve(256);  // ~239
-        sink.formatObjects!(No.all, Yes.coloured)(false, s2);
+        sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -513,7 +514,7 @@ if (isOutputRange!(Sink, char[]))
         StructName2Settings s2o;
 
         sink.clear();
-        sink.formatObjects!(No.all, Yes.coloured)(false, s2o);
+        sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
 }
@@ -557,7 +558,7 @@ if (isOutputRange!(Sink, char[]))
  +/
 string formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
-    (const bool bright, Things things)
+    (const Flag!"brightTerminal" bright, Things things)
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
     import std.array : Appender;
@@ -584,7 +585,7 @@ unittest
     s.members = "foo";
     s.asdf = 42;
 
-    immutable formatted = formatObjects!(No.all, No.coloured)(false, s);
+    immutable formatted = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
     assert((formatted ==
 `-- Struct
    string members                    "foo"(3)
