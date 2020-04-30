@@ -1588,13 +1588,13 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         {
             if (background)
             {
-                // Args are state, nick, force, quiet, background, caller
-                // Need force (true) to not miss events
-                whois(context.state, nicknamePart, true, Yes.quiet, Yes.background);
+                // Need Yes.force to not miss events
+                whois(context.state, nicknamePart, Yes.force, Yes.quiet, Yes.background);
             }
             else
             {
-                whois!(Yes.priority)(context.state, nicknamePart, true, Yes.quiet);  // Ditto
+                // Ditto
+                whois!(Yes.priority)(context.state, nicknamePart, Yes.force, Yes.quiet);
             }
         }
 

@@ -722,8 +722,8 @@ unittest
  +      background = Whether or not to send it as a low-priority background message.
  +      caller = String name of the calling function, or something else that gives context.
  +/
-void whois(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string nickname, const bool force = false,
+void whois(Flag!"priority" priority = No.priority)(IRCPluginState state, const string nickname,
+    const Flag!"force" force = No.force,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -759,7 +759,7 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    whois(state, "kameloso", true);
+    whois(state, "kameloso", Yes.force);
 
     immutable event = receiveOnly!IRCEvent;
     with (event)

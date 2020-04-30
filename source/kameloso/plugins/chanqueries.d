@@ -282,7 +282,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch " ~ nickname));
             }
 
-            whois(service.state, nickname, false,
+            whois(service.state, nickname, No.force,
                 (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
             Fiber.yield();  // Await whois types registered above
 
