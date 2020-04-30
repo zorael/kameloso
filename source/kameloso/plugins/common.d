@@ -255,7 +255,6 @@ mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ =
 private:
     static import kameloso.messaging;
     static import kameloso.common;
-    import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
     /// Symbol needed for the mixin constraints to work.
@@ -467,48 +466,28 @@ private:
         return kameloso.messaging.immediate(state, line);
     }
 
+    import std.range : only;
+    import std.format : format;
 
-    // askToWriteln
-    /++
-     +  Asks the main thread to print text to the local terminal.
+    /+
+     +  Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
+     +  `askToInfo`, `askToWarning`, and `askToError`,
      +/
-    alias askToWriteln = partial!(kameloso.messaging.askToWriteln, state);
-
-
-    // askToTrace
-    /++
-     +  Asks the main thread to `logger.trace` text to the local terminal.
-     +/
-    alias askToTrace = partial!(kameloso.messaging.askToTrace, state);
-
-
-    // askToLog
-    /++
-     +  Asks the main thread to `logger.log` text to the local terminal.
-     +/
-    alias askToLog = partial!(kameloso.messaging.askToLog, state);
-
-
-    // askToInfo
-    /++
-     +  Asks the main thread to `logger.info` text to the local terminal.
-     +/
-    alias askToInfo = partial!(kameloso.messaging.askToInfo, state);
-
-
-    // askToWarn
-    /++
-     +  Asks the main thread to `logger.warning` text to the local terminal.
-     +/
-    alias askToWarn = partial!(kameloso.messaging.askToWarn, state);
-    alias askToWarning = askToWarn;
-
-
-    // askToError
-    /++
-     +  Asks the main thread to `logger.error` text to the local terminal.
-     +/
-    alias askToError = partial!(kameloso.messaging.askToError, state);
+    static foreach (immutable verb; only("Writeln", "Trace", "Log",
+        "Info", "Warn", "Warning", "Error"))
+    {
+        /++
+         +  Generated `askToVerb` function. Asks the main thread to output text
+         +  to the local terminal.
+         +
+         +  No need for any annotation; `kameloso.messaging.askToOutputImpl` is
+         +  `@system` and nothing else.
+         +/
+        mixin("void askTo%s(const string line)
+        {
+            return kameloso.messaging.askTo%1$s(state, line);
+        }".format(verb));
+    }
 }
 
 ///
