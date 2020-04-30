@@ -139,7 +139,7 @@ void startChannelQueries(ChanQueriesService service)
                 }
 
                 raw(service.state, command ~ ' ' ~ channelName,
-                    (service.hideOutgoingQueries ? Yes.quiet : No.quiet), true);  // Background
+                    (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
                 Fiber.yield();  // Awaiting specified types
 
                 while (thisFiber.payload.channel != channelName) Fiber.yield();
@@ -192,9 +192,8 @@ void startChannelQueries(ChanQueriesService service)
                 }
 
                 import kameloso.messaging : mode;
-                mode(service.state, channelName, "+%c".format((cast(char)modechar)),
-                    string.init, (service.hideOutgoingQueries ?
-                    Yes.quiet : No.quiet), true);  // Background
+                mode(service.state, channelName, "+%c".format((cast(char)modechar)), string.init,
+                    (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
             }
 
             if (channelName !in service.channelStates) continue;
@@ -283,8 +282,8 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch " ~ nickname));
             }
 
-            whois(service.state, nickname, false, (service.hideOutgoingQueries ?
-                Yes.quiet : No.quiet), true);  // Background
+            whois(service.state, nickname, false,
+                (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
             Fiber.yield();  // Await whois types registered above
 
             enum maxConsecutiveUnknownCommands = 3;

@@ -1590,7 +1590,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 // Args are state, nick, force, quiet, background, caller
                 // Need force (true) to not miss events
-                whois(context.state, nicknamePart, true, Yes.quiet, true);
+                whois(context.state, nicknamePart, true, Yes.quiet, Yes.background);
             }
             else
             {
