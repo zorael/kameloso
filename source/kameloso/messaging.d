@@ -909,7 +909,7 @@ unittest
 alias immediateline = immediate;
 
 
-// askToLogImpl
+// askToOutputImpl
 /++
  +  Sends a concurrency message asking to print the supplied text to the local
  +  terminal, instead of doing it directly.
@@ -920,7 +920,7 @@ alias immediateline = immediate;
  +          the concurrency message to the main thread.
  +      line = The text body to ask the main thread to display.
  +/
-void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
+void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
@@ -928,19 +928,19 @@ void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
 }
 
 /// Sends a concurrency message to the main thread asking to print text to the local terminal.
-alias askToWriteln = askToLogImpl!"writeln";
+alias askToWriteln = askToOutputImpl!"writeln";
 /// Sends a concurrency message to the main thread to `logger.trace` text to the local terminal.
-alias askToTrace = askToLogImpl!"trace";
+alias askToTrace = askToOutputImpl!"trace";
 /// Sends a concurrency message to the main thread to `logger.log` text to the local terminal.
-alias askToLog = askToLogImpl!"log";
+alias askToLog = askToOutputImpl!"log";
 /// Sends a concurrency message to the main thread to `logger.info` text to the local terminal.
-alias askToInfo = askToLogImpl!"info";
+alias askToInfo = askToOutputImpl!"info";
 /// Sends a concurrency message to the main thread to `logger.warning` text to the local terminal.
-alias askToWarn = askToLogImpl!"warning";
+alias askToWarn = askToOutputImpl!"warning";
 /// Simple alias to `askToWarn`, because both spellings are right.
 alias askToWarning = askToWarn;
 /// Sends a concurrency message to the main thread to `logger.error` text to the local terminal.
-alias askToError = askToLogImpl!"error";
+alias askToError = askToOutputImpl!"error";
 
 unittest
 {
