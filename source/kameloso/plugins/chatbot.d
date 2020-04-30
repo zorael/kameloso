@@ -140,7 +140,8 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event, plugin.state.settings.colouredOutgoing);
+    spawn(&worker, cast(shared)plugin.state, event,
+        (plugin.state.settings.colouredOutgoing ? Yes.colouredOutgoing : No.colouredOutgoing));
 }
 
 
@@ -159,7 +160,8 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
  +          with mIRC colouring.
  +/
 version(Web)
-void worker(shared IRCPluginState sState, const IRCEvent event, const bool colouredOutgoing)
+void worker(shared IRCPluginState sState, const IRCEvent event,
+    const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;

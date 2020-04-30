@@ -24,6 +24,7 @@ import kameloso.thread : ThreadMessage;
 import dialect.defs;
 import std.concurrency;
 import std.stdio : File;
+import std.typecons : Flag, No, Yes;
 
 
 /+
@@ -72,7 +73,8 @@ import std.stdio : File;
  +          and colours should be adjusted to suit.
  +/
 void pipereader(shared IRCPluginState newState, const string filename,
-    const bool monochrome, const bool brightTerminal)
+    const Flag!"monochrome" monochrome,
+    const Flag!"brightTerminal" brightTerminal)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import std.file : FileException, exists, remove;
@@ -347,7 +349,8 @@ void onMotd(PipelinePlugin plugin)
         {
             createFIFO(fifoFilename);
             fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename,
-                plugin.state.settings.monochrome, plugin.state.settings.brightTerminal);
+                (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
+                (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
             workerRunning = true;
         }
         catch (ReturnValueException e)

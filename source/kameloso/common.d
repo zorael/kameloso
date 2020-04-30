@@ -871,7 +871,7 @@ struct OutgoingLine
     bool quiet;
 
     /// Constructor.
-    this(const string line, const bool quiet = false)
+    this(const string line, const Flag!"quiet" quiet = No.quiet)
     {
         this.line = line;
         this.quiet = quiet;

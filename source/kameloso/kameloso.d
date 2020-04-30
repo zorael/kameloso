@@ -11,6 +11,7 @@ import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import dialect;
 import lu.common : Next;
+import std.typecons : Flag, No, Yes;
 
 //version = TraceWhois;
 
@@ -143,35 +144,37 @@ void messageFiber(ref Kameloso instance)
         /// Echo a line to the terminal and send it to the server.
         void sendline(ThreadMessage.Sendline, string line) scope
         {
-            instance.outbuffer.put(OutgoingLine(line, instance.settings.hideOutgoing));
+            instance.outbuffer.put(OutgoingLine(line,
+                (instance.settings.hideOutgoing ? Yes.quiet : No.quiet)));
         }
 
         /// Send a line to the server without echoing it.
         void quietline(ThreadMessage.Quietline, string line) scope
         {
-            instance.outbuffer.put(OutgoingLine(line, true));
+            instance.outbuffer.put(OutgoingLine(line, Yes.quiet));
         }
 
         /// Respond to `PING` with `PONG` to the supplied text as target.
         void pong(ThreadMessage.Pong, string target) scope
         {
-            instance.outbuffer.put(OutgoingLine("PONG :" ~ target, true));
+            instance.outbuffer.put(OutgoingLine("PONG :" ~ target, Yes.quiet));
         }
 
         /// Quit the server with the supplied reason, or the default.
-        void quitServer(ThreadMessage.Quit, string givenReason, bool hideOutgoing) scope
+        void quitServer(ThreadMessage.Quit, string givenReason,
+            Flag!"quiet" quiet) scope
         {
             // This will automatically close the connection.
             // Set quit to yes to propagate the decision up the stack.
             immutable reason = givenReason.length ? givenReason : instance.bot.quitReason;
-            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, hideOutgoing));
+            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, quiet));
             next = Next.returnSuccess;
         }
 
         /// Disconnects from and reconnects to the server.
         void reconnect(ThreadMessage.Reconnect) scope
         {
-            instance.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", false));
+            instance.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", No.quiet));
             next = Next.retry;
         }
 
@@ -252,8 +255,8 @@ void messageFiber(ref Kameloso instance)
             }
 
             immutable background = (event.altcount == 999);
-            immutable quiet = instance.settings.hideOutgoing ||
-                (event.target.class_ == IRCUser.Class.admin);
+            immutable quiet = (instance.settings.hideOutgoing ||
+                (event.target.class_ == IRCUser.Class.admin)) ? Yes.quiet : No.quiet;
 
             string line;
             string prelude;
@@ -353,7 +356,7 @@ void messageFiber(ref Kameloso instance)
 
             case QUIT:
                 return quitServer(ThreadMessage.Quit(), content,
-                    (target.class_ == IRCUser.Class.admin));
+                    ((target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
 
             case NICK:
                 line = "NICK " ~ target.nickname;
@@ -1395,6 +1398,7 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
     // WHOISed in the last Timeout.whoisRetry seconds
 
     immutable now = Clock.currTime.toUnixTime;
+    immutable hideOutgoing = instance.settings.hideOutgoing ? Yes.quiet : No.quiet;
 
     foreach (immutable nickname, const replaysForNickname; replays)
     {
@@ -1421,8 +1425,7 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
                 if (instance.settings.flush) stdout.flush();
             }
 
-            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
-                instance.settings.hideOutgoing));
+            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
         }
         else
@@ -2344,7 +2347,9 @@ int initBot(string[] args)
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
-    initLogger(instance.settings.monochrome, instance.settings.brightTerminal, instance.settings.flush);
+    initLogger((instance.settings.monochrome ? Yes.monochrome : No.monochrome),
+        (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+        (instance.settings.flush ? Yes.flush : No.flush));
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();

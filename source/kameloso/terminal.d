@@ -526,7 +526,7 @@ unittest
     import std.conv : to;
     import std.stdio : write, writeln;
 
-    enum bright = true;
+    enum bright = Yes.bright;
     // ▄█▀
 
     writeln("BRIGHT: ", bright);
@@ -642,7 +642,8 @@ unittest
  +/
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b, const bool bright = false)
+    (auto ref Sink sink, uint r, uint g, uint b,
+    const Flag!"bright" bright = No.bright)
 if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : toAlphaInto;
@@ -703,7 +704,8 @@ if (isOutputRange!(Sink, char[]))
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, const uint r, const uint g, const uint b, const bool bright = false)
+    (const string word, const uint r, const uint g, const uint b,
+    const Flag!"bright" bright = No.bright)
 {
     import std.array : Appender;
 
@@ -1061,7 +1063,8 @@ unittest
  +      A `TerminalForeground` based on the passed string.
  +/
 version(Colours)
-TerminalForeground colourByHash(const string word, const bool bright) pure @nogc nothrow
+TerminalForeground colourByHash(const string word,
+    const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to colour by hash but no word was given")
 do
 {
@@ -1087,19 +1090,19 @@ unittest
     alias FG = TerminalForeground;
 
     {
-        immutable hash = colourByHash("kameloso", false);
+        immutable hash = colourByHash("kameloso", No.brightTerminal);
         assert((hash == FG.lightyellow), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("kameloso^", false);
+        immutable hash = colourByHash("kameloso^", No.brightTerminal);
         assert((hash == FG.green), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("zorael", false);
+        immutable hash = colourByHash("zorael", No.brightTerminal);
         assert((hash == FG.lightgrey), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("NO", false);
+        immutable hash = colourByHash("NO", No.brightTerminal);
         assert((hash == FG.lightred), Enum!FG.toString(hash));
     }
 }

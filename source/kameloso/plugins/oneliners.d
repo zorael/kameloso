@@ -96,10 +96,11 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 {
     import lu.string : contains, nom;
     import std.format : format;
-    import std.typecons : No, Yes;
+    import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
-    void sendUsage(const string verb = "[add|del|list]", const bool includeText = true)
+    void sendUsage(const string verb = "[add|del|list]",
+        const Flag!"includeText" includeText = Yes.includeText)
     {
         chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
             .format(plugin.state.settings.prefix, event.aux, verb,
@@ -114,7 +115,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
     switch (verb)
     {
     case "add":
-        if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb, true);
+        if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb, Yes.includeText);
 
         string trigger = slice.nom!(Yes.decode)(' ');
 
@@ -132,7 +133,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
         break;
 
     case "del":
-        if (!slice.length) return sendUsage(verb, false);
+        if (!slice.length) return sendUsage(verb, No.includeText);
 
         immutable trigger = plugin.onelinersSettings.caseSensitiveTriggers ? slice.toLower : slice;
 

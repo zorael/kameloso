@@ -402,7 +402,8 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (!plugin.state.settings.monochrome)
             {
                 plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
-                    plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
+                    (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
+                    (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
                 printed = true;
             }
         }
@@ -410,7 +411,8 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (!printed)
         {
             plugin.formatMessageMonochrome(stdout.lockingTextWriter, mutEvent,
-                plugin.printerSettings.bellOnMention, plugin.printerSettings.bellOnError);
+                (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
+                (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
         }
 
         if (plugin.state.settings.flush) stdout.flush();
@@ -563,7 +565,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                     Appender!string sink;
                     sink.reserve(512);
                     // false bell on mention and errors
-                    plugin.formatMessageMonochrome(sink, event, false, false);
+                    plugin.formatMessageMonochrome(sink, event,
+                        No.bellOnMention, No.bellOnError);
                     buffer.lines ~= sink.data;
                 }
                 else
@@ -577,7 +580,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                     import std.stdio : File;
                     auto file = File(buffer.file, "a");
-                    plugin.formatMessageMonochrome(file.lockingTextWriter, event, false, false);
+                    plugin.formatMessageMonochrome(file.lockingTextWriter, event,
+                        No.bellOnMention, No.bellOnError);
                 }
             }
             else
@@ -619,16 +623,19 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
-                    errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)(false, event);
+                    errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
+                        (No.brightTerminal, event);
 
                     if (event.sender.nickname.length || event.sender.address.length)
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)(false, event.sender);
+                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
+                            (No.brightTerminal, event.sender);
                     }
 
                     if (event.target.nickname.length || event.target.address.length)
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)(false, event.target);
+                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
+                            (No.brightTerminal, event.target);
                     }
                 }
                 else
@@ -637,20 +644,20 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                     File(errBuffer.file, "a")
                         .lockingTextWriter
-                        .formatObjects!(Yes.all, No.coloured)(false, event);
+                        .formatObjects!(Yes.all, No.coloured)(No.brightTerminal, event);
 
                     if (event.sender.nickname.length || event.sender.address.length)
                     {
                         File(errBuffer.file, "a")
                             .lockingTextWriter
-                            .formatObjects!(Yes.all, No.coloured)(false, event.sender);
+                            .formatObjects!(Yes.all, No.coloured)(No.brightTerminal, event.sender);
                     }
 
                     if (event.target.nickname.length || event.target.address.length)
                     {
                         File(errBuffer.file, "a")
                             .lockingTextWriter
-                            .formatObjects!(Yes.all, No.coloured)(false, event.target);
+                            .formatObjects!(Yes.all, No.coloured)(No.brightTerminal, event.target);
                     }
                 }
             }
@@ -1050,8 +1057,9 @@ unittest
  +          nickname is mentioned in chat.
  +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
  +/
-void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
-    IRCEvent event, const bool bellOnMention, const bool bellOnError)
+void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
+    const Flag!"bellOnMention" bellOnMention,
+    const Flag!"bellOnError" bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : Enum;
@@ -1324,7 +1332,7 @@ unittest
     event.type = IRCEvent.Type.JOIN;
     event.channel = "#channel";
 
-    plugin.formatMessageMonochrome(sink, event, false, false);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable joinLine = sink.data[11..$];
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
@@ -1333,7 +1341,7 @@ unittest
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
 
-    plugin.formatMessageMonochrome(sink, event, false, false);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable chanLine = sink.data[11..$];
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
@@ -1345,7 +1353,7 @@ unittest
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
-        plugin.formatMessageMonochrome(sink, event, false, false);
+        plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
         immutable twitchLine = sink.data[11..$];
         version(TwitchSupport) assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
         else assert((twitchLine == `[chan] [#channel] nickname [BMS]: "Harbl snarbl"`), twitchLine);
@@ -1359,7 +1367,7 @@ unittest
     event.sender.account = "n1ckn4m3";
     event.aux = "n1ckn4m3";
 
-    plugin.formatMessageMonochrome(sink, event, false, false);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable accountLine = sink.data[11..$];
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
@@ -1372,7 +1380,7 @@ unittest
     event.aux = string.init;
     event.type = IRCEvent.Type.ERROR;
 
-    plugin.formatMessageMonochrome(sink, event, false, false);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable errorLine = sink.data[11..$];
     version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
@@ -1399,8 +1407,9 @@ unittest
  +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
  +/
 version(Colours)
-void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
-    IRCEvent event, const bool bellOnMention, const bool bellOnError)
+void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
+    const Flag!"bellOnMention" bellOnMention,
+    const Flag!"bellOnError" bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
@@ -1419,7 +1428,7 @@ if (isOutputRange!(Sink, char[]))
 
     bool shouldBell;
 
-    immutable bright = plugin.state.settings.brightTerminal;
+    immutable bright = plugin.state.settings.brightTerminal ? Yes.bright : No.bright;
 
     /++
      +  Outputs a terminal ANSI colour token based on the hash of the passed
@@ -1692,8 +1701,9 @@ if (isOutputRange!(Sink, char[]))
                 {
                     if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        highlightEmotes(event, plugin.printerSettings.colourfulEmotes,
-                            plugin.state.settings.brightTerminal);
+                        highlightEmotes(event,
+                            (plugin.printerSettings.colourfulEmotes ? Yes.colourful : No.colourful),
+                            (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
                     }
                 }
 
@@ -2396,7 +2406,9 @@ unittest
  +/
 version(Colours)
 version(TwitchSupport)
-void highlightEmotes(ref IRCEvent event, const bool colourful, const bool brightTerminal)
+void highlightEmotes(ref IRCEvent event,
+    const Flag!"colourful" colourful,
+    const Flag!"brightTerminal" brightTerminal)
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal : colourWith;
@@ -2481,7 +2493,8 @@ version(Colours)
 version(TwitchSupport)
 void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
     const string emotes, const TerminalForeground pre, const TerminalForeground post,
-    const bool colourful, const bool brightTerminal)
+    const Flag!"colourful" colourful,
+    const Flag!"brightTerminal" brightTerminal)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
@@ -2565,7 +2578,7 @@ unittest
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "Moody the god \033[97mpownyFine\033[39m \033[97mpownyL\033[39m"), sink.data);
     }
     {
@@ -2573,7 +2586,7 @@ unittest
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink.data);
     }
     {
@@ -2581,7 +2594,7 @@ unittest
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m " ~
             "\033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
     }
@@ -2590,7 +2603,7 @@ unittest
         immutable emotes = "822112:0-6,8-14,16-22";
         immutable line = "FortOne FortOne FortOne";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m " ~
             "\033[97mFortOne\033[39m"), sink.data);
     }
@@ -2599,7 +2612,7 @@ unittest
         immutable emotes = "141844:17-24,26-33,35-42/141073:9-15";
         immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m " ~
             "\033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
     }
@@ -2615,7 +2628,7 @@ unittest
             "twitch.amazon.com/prime | Click subscribe now to check if a " ~
             "free prime sub is available to use!";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == highlitLine), sink.data);
     }
     {
@@ -2623,7 +2636,7 @@ unittest
         immutable emotes = "25:32-36";
         immutable line = "@kiwiskool but you’re a sub too Kappa";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
     }
     {
@@ -2631,7 +2644,7 @@ unittest
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, false, false);
+            TerminalForeground.default_, No.colourful, No.brightTerminal);
         assert((sink.data == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
             "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink.data);
     }
@@ -2640,7 +2653,7 @@ unittest
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, true, false);
+            TerminalForeground.default_, Yes.colourful, No.brightTerminal);
         assert((sink.data == "高所恐怖症 \033[34mLUL\033[39m なにぬねの " ~
             "\033[34mLUL\033[39m \033[91m:)\033[39m"), sink.data);
     }
@@ -2649,7 +2662,7 @@ unittest
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, true, false);
+            TerminalForeground.default_, Yes.colourful, No.brightTerminal);
         assert((sink.data == "Moody the god \033[37mpownyFine\033[39m \033[96mpownyL\033[39m"), sink.data);
     }
     {
@@ -2657,7 +2670,7 @@ unittest
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, true, false);
+            TerminalForeground.default_, Yes.colourful, No.brightTerminal);
         assert((sink.data == "whoever plays nintendo switch whisper me \033[93mKappa\033[39m"), sink.data);
     }
     {
@@ -2665,7 +2678,7 @@ unittest
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         line.highlightEmotesImpl(sink, emotes, TerminalForeground.white,
-            TerminalForeground.default_, true, false);
+            TerminalForeground.default_, Yes.colourful, No.brightTerminal);
         assert((sink.data == "NOOOOOO \033[95mcamillsCry\033[39m " ~
             "\033[95mcamillsCry\033[39m \033[95mcamillsCry\033[39m"), sink.data);
     }

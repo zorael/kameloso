@@ -14,7 +14,7 @@ import kameloso.common : CoreSettings, IRCBot, Kameloso;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 @safe:
 
@@ -45,7 +45,9 @@ import std.typecons : No, Yes;
  +      brightTerminal = Whether or not the terminal has a bright background
  +          and colours should be adjusted to suit.
  +/
-void printHelp(GetoptResult results, const bool monochrome, const bool brightTerminal) @system
+void printHelp(GetoptResult results,
+    const Flag!"monochrome" monochrome,
+    const Flag!"brightTerminal" brightTerminal) @system
 {
     import kameloso.common : printVersionInfo;
     import std.stdio : writeln;
@@ -171,7 +173,8 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
  +          and colours should be adjusted to suit.
  +/
 void printSettings(ref Kameloso instance, const string[] customSettings,
-    const bool monochrome, const bool brightTerminal) @system
+    const Flag!"monochrome" monochrome,
+    const Flag!"brightTerminal" brightTerminal) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
@@ -356,13 +359,17 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         else if (configFileResults.helpWanted)
         {
             // --help|-h was passed; show the help table and quit
-            printHelp(results, instance.settings.monochrome, instance.settings.brightTerminal);
+            printHelp(results,
+                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
+                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
             return Next.returnSuccess;
         }
 
         // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
-        initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
+        initLogger((settings.monochrome ? Yes.monochrome : No.monochrome),
+            (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+            (settings.flush ? Yes.flush : No.flush));
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
@@ -432,8 +439,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            printSettings(instance, customSettings, instance.settings.monochrome,
-                instance.settings.brightTerminal);
+            printSettings(instance, customSettings,
+                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
+                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
             return Next.returnSuccess;
         }
 

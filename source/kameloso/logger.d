@@ -101,7 +101,7 @@ final class KamelosoLogger : Logger
      +
      +  Example:
      +  ---
-     +  TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, false);  // false means dark terminal
+     +  TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
      +  immutable errtintString = errtint.colour;
      +  ---
      +

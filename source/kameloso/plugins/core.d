@@ -293,6 +293,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     private FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
+        import std.typecons : Flag, No, Yes;
+
         version(TwitchSupport)
         {
             if (state.server.daemon == IRCServer.Daemon.twitch)
@@ -310,7 +312,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(event, privilegeLevel, state.settings.preferHostmasks);
+            filterSender(event, privilegeLevel,
+            (state.settings.preferHostmasks ? Yes.preferHostmasks : No.preferHostmasks));
     }
 
 
@@ -1736,7 +1739,7 @@ bool prefixPolicyMatches(bool verbose = false)(ref IRCEvent mutEvent,
  +      information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
-    const bool preferHostmasks) @safe
+    const Flag!"preferHostmasks" preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;

@@ -172,13 +172,17 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
             if (request.results.youtubeTitle.length)
             {
-                reportDispatch(&reportYouTubeTitle, request,
-                    plugin.webtitlesSettings, plugin.state.settings.colouredOutgoing);
+                reportDispatch(&reportYouTubeTitle, request, plugin.webtitlesSettings,
+                    (plugin.state.settings.colouredOutgoing ?
+                        Yes.colouredOutgoing :
+                        No.colouredOutgoing));
             }
             else
             {
-                reportDispatch(&reportTitle, request,
-                    plugin.webtitlesSettings, plugin.state.settings.colouredOutgoing);
+                reportDispatch(&reportTitle, request, plugin.webtitlesSettings,
+                    (plugin.state.settings.colouredOutgoing ?
+                        Yes.colouredOutgoing :
+                        No.colouredOutgoing));
             }
             continue;
         }
@@ -186,8 +190,10 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         /// In the case of chained URL lookups, how much to delay each lookup by.
         enum delayMsecs = 250;
 
-        spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs,
-            plugin.webtitlesSettings, plugin.state.settings.colouredOutgoing);
+        spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs, plugin.webtitlesSettings,
+            (plugin.state.settings.colouredOutgoing ?
+                Yes.colouredOutgoing :
+                No.colouredOutgoing));
     }
 }
 
@@ -211,7 +217,8 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
  +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const WebtitlesSettings webtitlesSettings, const bool colouredOutgoing)
+    const ulong delayMsecs, const WebtitlesSettings webtitlesSettings,
+    const Flag!"colouredOutgoing" colouredOutgoing)
 {
     version(Posix)
     {
@@ -353,9 +360,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
  +          so we know whether to and in what manner to do Reddit lookups.
  +      colouredOutgoing = Whether or not to include mIRC colours in the IRC output.
  +/
-void reportDispatch(void function(TitleLookupRequest, const bool) reportFun,
+void reportDispatch(void function(TitleLookupRequest, const Flag!"colouredOutgoing") reportFun,
     TitleLookupRequest request, const WebtitlesSettings webtitlesSettings,
-    const bool colouredOutgoing)
+    const Flag!"colouredOutgoing" colouredOutgoing)
 {
     // If simultaneous, check Reddit first and report later
     if (webtitlesSettings.simultaneousReddit)
@@ -481,9 +488,10 @@ TitleLookupResults lookupTitle(const string url)
  +
  +  Params:
  +      request = A `TitleLookupRequest` containing the results of the lookup.
- +      colouredOutput = Whether or not to send coloured output to the server.
+ +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
-void reportTitle(TitleLookupRequest request, const bool colouredOutput)
+void reportTitle(TitleLookupRequest request,
+    const Flag!"colouredOutgoing" colouredOutgoing)
 {
     with (request)
     {
@@ -493,7 +501,7 @@ void reportTitle(TitleLookupRequest request, const bool colouredOutput)
         {
             import std.format : format;
 
-            line = colouredOutput ?
+            line = colouredOutgoing ?
                 "[%s] %s".format(results.domain.ircBold, results.title) :
                 "[%s] %s".format(results.domain, results.title);
         }
@@ -513,19 +521,20 @@ void reportTitle(TitleLookupRequest request, const bool colouredOutput)
  +
  +  Params:
  +      request = A `TitleLookupRequest` containing the results of the lookup.
- +      colouredOutput = Whether or not to send coloured output to the server.
+ +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
-void reportYouTubeTitle(TitleLookupRequest request, const bool colouredOutput)
+void reportYouTubeTitle(TitleLookupRequest request,
+    const Flag!"colouredOutgoing" colouredOutgoing)
 {
     with (request)
     {
         import kameloso.irccolours : ircColourByHash;
         import std.format : format;
 
-        immutable line = colouredOutput ?
+        immutable line = colouredOutgoing ?
             "[%s] %s (uploaded by %s)"
                 .format("youtube.com".ircBold, results.youtubeTitle,
-                colouredOutput ?
+                colouredOutgoing ?
                     results.youtubeAuthor.ircColourByHash :
                     results.youtubeAuthor.ircBold) :
             "[youtube.com] %s (uploaded by %s)"
@@ -704,7 +713,7 @@ unittest
  +  Returns:
  +      URL to the Reddit post that links to `url`.
  +/
-string lookupReddit(const string url, const bool modified = false)
+string lookupReddit(const string url, const Flag!"modified" modified = No.modified)
 {
     import kameloso.constants : BufferSize;
     import lu.string : contains;
@@ -739,8 +748,8 @@ string lookupReddit(const string url, const bool modified = false)
             if (modified) return string.init;
 
             return url.endsWith("/") ?
-                lookupReddit(url[0..$-1], true) :
-                lookupReddit(url ~ '/', true);
+                lookupReddit(url[0..$-1], Yes.modified) :
+                lookupReddit(url ~ '/', Yes.modified);
         }
         else
         {

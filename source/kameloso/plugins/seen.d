@@ -50,6 +50,9 @@ private import kameloso.common : Tint, logger;
 // `std.datetime.systime` for the `Clock`, to update times with.
 private import std.datetime.systime : Clock;
 
+// `std.typecons` for `Flag` and its friends.
+private import std.typecons : Flag, No, Yes;
+
 
 /+
     Most of the module can (and ideally should) be kept private. Our surface
@@ -785,7 +788,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
  +/
-long[string] loadSeen(const string filename, const bool verbosely = true)
+long[string] loadSeen(const string filename, const Flag!"verbosely" verbosely = Yes.verbosely)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
@@ -898,7 +901,7 @@ void periodically(SeenPlugin plugin, const long now)
 void reload(SeenPlugin plugin)
 {
     //logger.info("Reloading seen users from disk.");
-    plugin.seenUsers = loadSeen(plugin.seenFile, false);
+    plugin.seenUsers = loadSeen(plugin.seenFile, No.verbosely);
 }
 
 
