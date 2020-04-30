@@ -420,9 +420,11 @@ private:
      +  Queries the server for WHOIS information about a user.
      +/
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
-        const Flag!"force" force = No.force, const string caller = __FUNCTION__)
+        const Flag!"force" force = No.force, const Flag!"background" background = No.background,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.whois!priority(state, nickname, force, No.quiet, caller);
+        return kameloso.messaging.whois!priority(state, nickname, force,
+            No.quiet, background, caller);
     }
 
     // raw
