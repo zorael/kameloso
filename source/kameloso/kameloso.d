@@ -1529,7 +1529,7 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     }
     catch (DeserialisationException e)
     {
-        logger.errorf("Error parsing configuration file: %s%s", Tint.log, e.msg);
+        logger.error("Error parsing configuration file: ", Tint.log, e.msg);
     }
     catch (Exception e)
     {

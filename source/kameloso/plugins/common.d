@@ -261,7 +261,7 @@ private:
     enum mixinSentinel = true;
 
     // Use a custom constraint to force the scope to be an IRCPlugin
-    static if(!is(__traits(parent, mixinSentinel) : IRCPlugin))
+    static if (!is(__traits(parent, mixinSentinel) : IRCPlugin))
     {
         import lu.traits : CategoryName;
         import std.format : format;
