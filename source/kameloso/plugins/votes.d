@@ -332,10 +332,10 @@ do
     plugin.delayFiber(fiber, dur);
     plugin.channelVoteInstances[event.channel] = id;
 
-    immutable sortedChoices = voteChoices
+    const sortedChoices = voteChoices
         .keys
         .sort
-        .array;
+        .release;
 
     void dgReminder()
     {
