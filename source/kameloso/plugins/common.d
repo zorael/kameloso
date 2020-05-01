@@ -577,12 +577,9 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
     else
     {
-        import std.format : format;
-
-        enum pattern = "`Repeater` should be mixed into the context of an " ~
-            "event handler. (Could not access variables named neither `plugin` " ~
-            "nor `service` from within `%s`)";
-        static assert(0, pattern.format(__FUNCTION__));
+        static assert(0, "`Repeater` should be mixed into the context " ~
+            "of an event handler. (Could not access variables named neither " ~
+            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
     }
 
     private enum replayVariableName = text("_kamelosoReplay", hashOf(__FUNCTION__) % 100);
