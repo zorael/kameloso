@@ -194,9 +194,8 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 
     if (channelOneliners && channelOneliners.length)
     {
-        chan(plugin.state, channelName, ("Available commands: %-(" ~
-            plugin.state.settings.prefix ~ "%s, %)")
-            .format(channelOneliners.byKey));
+        immutable pattern = "Available commands: %-(" ~ plugin.state.settings.prefix ~ "%s, %)";
+        chan(plugin.state, channelName, pattern.format(channelOneliners.byKey));
     }
     else
     {

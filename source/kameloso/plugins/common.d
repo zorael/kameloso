@@ -269,9 +269,10 @@ private:
         alias messagingParent = __traits(parent, mixinSentinel);
         alias messagingParentInfo = CategoryName!messagingParent;
 
-        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass")
-            .format(messagingParentInfo.type, messagingParentInfo.fqn, "MessagingProxy"));
+        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass";
+        static assert(0, pattern.format(messagingParentInfo.type,
+            messagingParentInfo.fqn, "MessagingProxy"));
     }
 
     static if (__traits(compiles, this.hasMessagingProxy))
@@ -577,9 +578,11 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     else
     {
         import std.format : format;
-        static assert(0, ("`Repeater` should be mixed into the context of an event handler. " ~
-            "(Could not access variables named neither `plugin` nor `service` " ~
-            "from within `%s`)").format(__FUNCTION__));
+
+        enum pattern = "`Repeater` should be mixed into the context of an " ~
+            "event handler. (Could not access variables named neither `plugin` " ~
+            "nor `service` from within `%s`)";
+        static assert(0, pattern.format(__FUNCTION__));
     }
 
     private enum replayVariableName = text("_kamelosoReplay", hashOf(__FUNCTION__) % 100);
@@ -1374,10 +1377,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             else
             {
                 import std.format : format;
-                static assert(0, ("Unsupported signature of success function/delegate " ~
-                    "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
-                    .format(__FUNCTION__, typeof(onSuccess).stringof,
-                        __traits(identifier, onSuccess)));
+
+                enum pattern = "Unsupported signature of success function/delegate " ~
+                    "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
+                static assert(0, pattern.format(__FUNCTION__,
+                    typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
             }
         }
 
@@ -1408,10 +1412,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 else
                 {
                     import std.format : format;
-                    static assert(0, ("Unsupported signature of failure function/delegate " ~
-                        "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`")
-                        .format(__FUNCTION__, typeof(onFailure).stringof,
-                            __traits(identifier, onFailure)));
+
+                    enum pattern = "Unsupported signature of failure function/delegate " ~
+                        "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
+                    static assert(0, pattern.format(__FUNCTION__,
+                        typeof(onFailure).stringof, __traits(identifier, onFailure)));
                 }
             }
         }

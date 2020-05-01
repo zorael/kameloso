@@ -203,9 +203,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         alias pluginImplParent = __traits(parent, mixinSentinel);
         alias pluginImplParentInfo = CategoryName!pluginImplParent;
 
-        static assert(0, ("%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass")
-            .format(pluginImplParentInfo.type, pluginImplParentInfo.fqn, "IRCPluginImpl"));
+        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
+            "mixed into an `IRCPlugin` subclass";
+        static assert(0, pattern.format(pluginImplParentInfo.type,
+            pluginImplParentInfo.fqn, "IRCPluginImpl"));
     }
 
     static if (__traits(compiles, this.hasIRCPluginImpl))
@@ -412,24 +413,27 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 static if (eventTypeUDA == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s` is annotated `@(IRCEvent.Type.UNSET)`, " ~
-                        "which is not a valid event type.")
-                        .format(fullyQualifiedName!fun));
+
+                    enum pattern = "`%s` is annotated `@(IRCEvent.Type.UNSET)`, " ~
+                        "which is not a valid event type.";
+                    static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
+
+                    enum pattern = "`%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
-                        "or `IRCEvent.Type.QUERY` instead")
-                        .format(fullyQualifiedName!fun));
+                        "or `IRCEvent.Type.QUERY` instead";
+                    static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
                 {
                     import std.format : format;
-                    static assert(0, ("`%s` is annotated `@(IRCEvent.Type.WHISPER)`, " ~
-                        "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead")
-                        .format(fullyQualifiedName!fun));
+
+                    enum pattern = "`%s` is annotated `@(IRCEvent.Type.WHISPER)`, " ~
+                        "which is not a valid event type. Use `IRCEvent.Type.QUERY` instead";
+                    static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
@@ -466,9 +470,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         import lu.conv : Enum;
                         import std.format : format;
 
-                        pragma(msg, ("Note: `%s` is a wildcard `IRCEvent.Type.%s` event " ~
-                            "but is not `Chainable` nor `Terminating`")
-                            .format(fullyQualifiedName!fun,
+                        enum wildcardPattern = "Note: `%s` is a wildcard " ~
+                            "`IRCEvent.Type.%s` event but is not `Chainable` " ~
+                            "nor `Terminating`";
+                        pragma(msg, wildcardPattern.format(fullyQualifiedName!fun,
                             Enum!(IRCEvent.Type).toString(eventTypeUDA)));
                     }
 
@@ -487,8 +492,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                                 !Enum!(IRCEvent.Type).toString(U).beginsWith("RPL_"))
                             {
                                 import std.format : format;
-                                pragma(msg, ("`%s` is annotated with " ~
-                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
+
+                                enum missingPrivilegePattern = "`%s` is annotated with " ~
+                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`";
+                                pragma(msg, missingPrivilegeLevelPattern
                                     .format(fullyQualifiedName!fun,
                                     Enum!(IRCEvent.Type).toString(U)));
                             }*/
@@ -507,9 +514,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             {
                                 import std.format : format;
 
-                                static assert(0, ("`%s` is annotated with a user-facing " ~
-                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`")
-                                    .format(fullyQualifiedName!fun,
+                                enum pattern = "`%s` is annotated with a user-facing " ~
+                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`";
+                                static assert(0, pattern.format(fullyQualifiedName!fun,
                                     Enum!(IRCEvent.Type).toString(U)));
                             }
                         }
@@ -528,10 +535,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             import lu.conv : Enum;
                             import std.format : format;
 
-                            static assert(0, ("`%s` is annotated with a `BotCommand` " ~
+                            enum pattern = "`%s` is annotated with a `BotCommand` " ~
                                 "or `BotRegex` but is at the same time annotated " ~
-                                "with a non-message `IRCEvent.Type.%s`")
-                                .format(fullyQualifiedName!fun,
+                                "with a non-message `IRCEvent.Type.%s`";
+                            static assert(0, pattern.format(fullyQualifiedName!fun,
                                 Enum!(IRCEvent.Type).toString(U)));
                         }
                     }
@@ -610,15 +617,17 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     static if (!commandUDA.word.length)
                     {
                         import std.format : format;
-                        static assert(0, "`%s` has an empty `BotCommand` word"
-                            .format(fullyQualifiedName!fun));
+
+                        enum pattern = "`%s` has an empty `BotCommand` word";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
                     else static if (commandUDA.word.contains(" "))
                     {
                         import std.format : format;
-                        static assert(0, ("`%s` has a `BotCommand` word " ~
-                            "that has spaces in it")
-                            .format(fullyQualifiedName!fun));
+
+                        enum pattern = "`%s` has a `BotCommand` word " ~
+                            "that has spaces in it";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
 
                     static if (verbose)
@@ -770,9 +779,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     static if (!__traits(compiles, .hasMinimalAuthentication))
                     {
                         import std.format : format;
-                        static assert(0, ("`%s` is missing a `MinimalAuthentication` " ~
-                            "mixin (needed for `PrivilegeLevel` checks)")
-                            .format(module_));
+
+                        enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
+                            "mixin (needed for `PrivilegeLevel` checks)";
+                        static assert(0, pattern.format(module_));
                     }
                 }
 
@@ -789,9 +799,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
                     {
                         import std.format : format;
-                        static assert(0, ("Custom `allow` function in `%s` " ~
-                            "has an invalid signature: `%s`")
-                            .format(fullyQualifiedName!(typeof(this)), typeof(this.allow).stringof));
+
+                        enum pattern = "Custom `allow` function in `%s` " ~
+                            "has an invalid signature: `%s`";
+                        static assert(0, pattern.format(fullyQualifiedName!(typeof(this)),
+                            typeof(this.allow).stringof));
                     }
 
                     static if (verbose)
@@ -853,9 +865,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     else static if (Filter!(isIRCPluginParam, Params).length)
                     {
                         import std.format : format;
-                        static assert(0, ("`%s` takes a superclass `IRCPlugin` " ~
-                            "parameter instead of a subclass `%s`")
-                            .format(fullyQualifiedName!fun, typeof(this).stringof));
+
+                        enum pattern = "`%s` takes a superclass `IRCPlugin` " ~
+                            "parameter instead of a subclass `%s`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun,
+                            typeof(this).stringof));
                     }
                     else
                     {
@@ -898,9 +912,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             else static if (Filter!(isIRCPluginParam, Params).length)
             {
                 import std.format : format;
-                static assert(0, ("`%s` takes a superclass `IRCPlugin` " ~
-                    "parameter instead of a subclass `%s`")
-                    .format(fullyQualifiedName!fun, typeof(this).stringof));
+
+                enum pattern = "`%s` takes a superclass `IRCPlugin` " ~
+                    "parameter instead of a subclass `%s`";
+                static assert(0, pattern.format(fullyQualifiedName!fun,
+                    typeof(this).stringof));
             }
             else
             {
@@ -2095,9 +2111,10 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
         else
         {
             import std.format : format;
-            static assert(0, ("`ReplayImpl` instantiated with an invalid " ~
-                "replay function signature: `%s`")
-                .format(F.stringof));
+
+            enum pattern = "`ReplayImpl` instantiated with an invalid " ~
+                "replay function signature: `%s`";
+            static assert(0, pattern.format(F.stringof));
         }
     }
 }
