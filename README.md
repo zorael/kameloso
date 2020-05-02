@@ -44,13 +44,13 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
 ```
 
 ```sh
-$ dub run kameloso -- --channels "#d,#freenode"
+$ dub run kameloso -- --server irc.freenode.net --guestChannels "#d,#freenode"
 
 # alternatively
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 $ dub build
-$ ./kameloso --channels "#d,#freenode"
+$ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 ```
 
 ---
