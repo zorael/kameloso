@@ -117,18 +117,18 @@ On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, A
 
 There are several configurations in which the bot may be built.
 
-* `vanilla`, builds without any specific extras
-* `colours`, compiles in terminal colours
-* `web`, compiles in extra plugins with web access
-* `application`, includes both of the above plus Twitch chat support
-* `twitch`, everything so far, plus the Twitch streamer bot plugin
-* `dev`, development build equalling everything available, including things like more error messages
+* `application`, default configuration; includes terminal colours and plugins that access the web
+* `vanilla`, barebones build with most plugins but without any specific extras
+* `twitch`, essentially `application` plus Twitch support and the Twitch streamer plugin
+* `dev`, all-inclusive development build equalling everything available, including things like more descriptive error messages
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
 ```sh
 $ dub build -c twitch
 ```
+
+If you want to customise your own build to only compile the plugins you want to use, simply delete the relevant lines from the `versions` list in `dub.sdl`.
 
 # How to use
 
