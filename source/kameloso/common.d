@@ -1031,10 +1031,18 @@ unittest
  +  Params:
  +      abbreviate = Whether or not to abbreviate the output, using `h` instead
  +          of `hours`, `m` instead of `minutes`, etc.
+ +      truncateSeconds = Whether or no to always include seconds in the output.
+ +          If not they are only included if the total time is less than a minute.
+ +      numUnits = Number of units to include in the output text, where such is
+ +          "weeks", "days", "hours", "minutes" and "seconds". Passing a `numUnits`
+ +          of 5 will express the time difference using all units. Passing one of
+ +          4 will only express it in days, hours, minutes and seconds. Passing
+ +          1 will express it in only seconds.
  +      sink = Output buffer sink to write to.
  +      duration = A period of time.
  +/
-void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
+void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
+    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 5, Sink)
     (auto ref Sink sink, const Duration duration) pure
 if (isOutputRange!(Sink, char[]))
 in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
@@ -1042,66 +1050,160 @@ do
 {
     import lu.string : plurality;
     import std.format : formattedWrite;
+    import std.meta : AliasSeq;
     import std.traits : isIntegral, isSomeString;
 
     static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
 
-    int days, hours, minutes, seconds;
-    duration.split!("days", "hours", "minutes", "seconds")(days, hours, minutes, seconds);
+    alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
 
-    if (days)
+    static if ((numUnits < 1) || (numUnits > 5))
     {
-        static if (abbreviate)
-        {
-            sink.formattedWrite("%dd", days);
-        }
-        else
-        {
-            sink.formattedWrite("%d %s", days, plurality(days, "day", "days"));
-        }
+        import std.format : format;
+
+        enum pattern = "Invalid number of units passed to `timeSince`: " ~
+            "expected `1` to `5`, got `%d`";
+        static assert(0, pattern.format(numUnits));
     }
 
-    if (hours)
+    immutable diff = duration.split!(units[units.length-numUnits..$]);
+    bool putSomething;
+
+    static if (numUnits == 5)
     {
-        static if (abbreviate)
+        if (diff.weeks)
         {
-            if (days) sink.put(' ');
-            sink.formattedWrite("%dh", hours);
-        }
-        else
-        {
-            if (days)
+            static if (abbreviate)
             {
-                if (minutes) sink.put(", ");
-                else sink.put("and ");
+                sink.formattedWrite("%dw", diff.weeks);
             }
-            sink.formattedWrite("%d %s", hours, plurality(hours, "hour", "hours"));
+            else
+            {
+                sink.formattedWrite("%d %s", diff.weeks,
+                    diff.weeks.plurality("week", "weeks"));
+            }
+
+            putSomething = true;
         }
     }
 
-    if (minutes)
+    static if (numUnits >= 4)
     {
-        static if (abbreviate)
+        if (diff.days)
         {
-            if (hours || days) sink.put(' ');
-            sink.formattedWrite("%dm", minutes);
-        }
-        else
-        {
-            if (hours || days) sink.put(" and ");
-            sink.formattedWrite("%d %s", minutes, plurality(minutes, "minute", "minutes"));
+            static if (abbreviate)
+            {
+                static if (numUnits >= 5)
+                {
+                    if (putSomething) sink.put(' ');
+                }
+
+                sink.formattedWrite("%dd", diff.days);
+            }
+            else
+            {
+                static if (numUnits >= 5)
+                {
+                    if (putSomething)
+                    {
+                        if (!truncateSeconds || diff.minutes || diff.hours) sink.put(", ");
+                        else sink.put("and ");
+                    }
+                }
+
+                sink.formattedWrite("%d %s", diff.days,
+                    diff.days.plurality("day", "days"));
+            }
+
+            putSomething = true;
         }
     }
 
-    if (!minutes && !hours && !days)
+    static if (numUnits >= 3)
+    {
+        if (diff.hours)
+        {
+            static if (abbreviate)
+            {
+                static if (numUnits >= 4)
+                {
+                    if (putSomething) sink.put(' ');
+                    sink.formattedWrite("%dh", diff.hours);
+                }
+            }
+            else
+            {
+                static if (numUnits >= 4)
+                {
+                    if (putSomething)
+                    {
+                        if (!truncateSeconds || diff.minutes) sink.put(", ");
+                        else sink.put("and ");
+                    }
+                }
+
+                sink.formattedWrite("%d %s", diff.hours,
+                    diff.hours.plurality("hour", "hours"));
+            }
+
+            putSomething = true;
+        }
+    }
+
+    static if (numUnits >= 2)
+    {
+        if (diff.minutes)
+        {
+            static if (abbreviate)
+            {
+                static if (numUnits >= 3)
+                {
+                    if (putSomething) sink.put(' ');
+                }
+
+                sink.formattedWrite("%dm", diff.minutes);
+            }
+            else
+            {
+                static if (numUnits >= 3)
+                {
+                    if (putSomething)
+                    {
+                        if (!truncateSeconds) sink.put(", ");
+                        else sink.put(" and ");
+                    }
+                    /*if (putSomething && !truncateSeconds) sink.put(", ");
+                    else if (putSomething) sink.put(" and ");*/
+                }
+
+                sink.formattedWrite("%d %s", diff.minutes,
+                    diff.minutes.plurality("minute", "minutes"));
+            }
+
+            putSomething = true;
+        }
+    }
+
+    if (!truncateSeconds || !putSomething)
     {
         static if (abbreviate)
         {
-            sink.formattedWrite("%ds", seconds);
+            if (putSomething)
+            {
+                sink.put(' ');
+            }
+
+            sink.formattedWrite("%ds", diff.seconds);
         }
         else
         {
-            sink.formattedWrite("%d %s", seconds, plurality(seconds, "second", "seconds"));
+            if (putSomething)
+            {
+                sink.put(" and ");
+            }
+
+            sink.formattedWrite("%d %s", diff.seconds,
+                diff.seconds.plurality("second", "seconds"));
         }
     }
 }
@@ -1175,18 +1277,27 @@ unittest
  +  Params:
  +      abbreviate = Whether or not to abbreviate the output, using `h` instead
  +          of `hours`, `m` instead of `minutes`, etc.
+ +      truncateSeconds = Whether or no to always include seconds in the output.
+ +          If not they are only included if the total time is less than a minute.
+ +      numUnits = Number of units to include in the output text, where such is
+ +          "weeks", "days", "hours", "minutes" and "seconds". Passing a `numUnits`
+ +          of 5 will express the time difference using all units. Passing one of
+ +          4 will only express it in days, hours, minutes and seconds. Passing
+ +          1 will express it in only seconds.
  +      duration = A period of time.
  +
  +  Returns:
  +      A string with the passed duration expressed in natural English language.
  +/
-string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration) pure
+string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
+    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 5)
+    (const Duration duration) pure
 {
     import std.array : Appender;
 
     Appender!string sink;
     sink.reserve(50);
-    sink.timeSince!abbreviate(duration);
+    sink.timeSince!(abbreviate, truncateSeconds, numUnits)(duration);
     return sink.data;
 }
 
