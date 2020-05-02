@@ -93,10 +93,6 @@ branches:
 artifacts:
   - path: kameloso.exe
     name: Full build
-  #- path: kameloso-vanilla.exe
-    #name: Colourless vanilla build
-  #- path: kameloso-twitch.exe
-    #name: With Twitch bot
   - path: kameloso-dev.exe
     name: Development build
 
@@ -168,16 +164,11 @@ test_script:
  - dub test  --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -c vanilla
  #- set DFLAGS = %Ddflags%
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c vanilla
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c full
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c vanilla
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c full
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c vanilla
- #- mv kameloso.exe kameloso-vanilla.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c full
- - #mv kameloso.exe kameloso-full.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
  #- mv kameloso.exe kameloso-twitch.exe

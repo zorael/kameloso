@@ -25,13 +25,10 @@ script:
   - time dub test  --compiler=${DC} # unittest already includes more than other configs
   - time dub test  --compiler=${DC} --nodeps --force -c vanilla
   - time dub build --compiler=${DC} --nodeps --force -b debug   -c vanilla
-  #- time dub build --compiler=${DC} --nodeps --force -b debug   -c full
   - time dub build --compiler=${DC} --nodeps --force -b debug   -c dev
   - time dub build --compiler=${DC} --nodeps --force -b plain   -c vanilla || true
-  #- time dub build --compiler=${DC} --nodeps --force -b plain   -c full  || true
   - time dub build --compiler=${DC} --nodeps --force -b plain   -c dev  || true
   - time dub build --compiler=${DC} --nodeps --force -b release -c vanilla || true
-  #- time dub build --compiler=${DC} --nodeps --force -b release -c full || true
   - time dub build --compiler=${DC} --nodeps --force -b release -c dev  || true
 
 before_deploy:

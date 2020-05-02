@@ -41,9 +41,9 @@ build() {
 
     ## debug
     time dub build $A $C $S -b debug -c vanilla
-    mv kameloso artifacts/kameloso-vanilla
+    #mv kameloso artifacts/kameloso-vanilla
 
-    time dub build $A $C $S -b debug -c full
+    time dub build $A $C $S -b debug -c twitch
     mv kameloso artifacts/kameloso
 
     time dub build $A $C $S -b debug -c dev
@@ -52,24 +52,24 @@ build() {
 
     ## plain
     time dub build $A $C $S -b plain -c vanilla || true
-    mv kameloso artifacts/kameloso-plain-vanilla || \
-        touch artifacts/kameloso-plain-vanilla.failed
+    #mv kameloso artifacts/kameloso-plain-vanilla || \
+    #    touch artifacts/kameloso-plain-vanilla.failed
 
-    time dub build $A $C $S -b plain -c full || true
-    mv kameloso artifacts/kameloso-plain || \
-        touch artifacts/kameloso-plain.failed
+    time dub build $A $C $S -b plain -c twitch || true
+    #mv kameloso artifacts/kameloso-plain || \
+    #    touch artifacts/kameloso-plain.failed
 
     time dub build $A $C $S -b plain -c dev || true
-    mv kameloso artifacts/kameloso-plain-dev || \
-        touch artifacts/kameloso-plain-dev.failed
+    #mv kameloso artifacts/kameloso-plain-dev || \
+    #    touch artifacts/kameloso-plain-dev.failed
 
 
     ## release
     time dub build $A $C $S -b release -c vanilla || true
-    mv kameloso artifacts/kameloso-release-vanilla || \
-        touch artifacts/kameloso-release-vanilla.failed
+    #mv kameloso artifacts/kameloso-release-vanilla || \
+    #    touch artifacts/kameloso-release-vanilla.failed
 
-    time dub build $A $C $S -b release -c full || true
+    time dub build $A $C $S -b release -c twitch || true
     mv kameloso artifacts/kameloso-release || \
         touch artifacts/kameloso-release.failed
 
