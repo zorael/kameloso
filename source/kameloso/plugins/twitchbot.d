@@ -1003,6 +1003,68 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onRoomState
+/++
+ +  Records the room ID of a home channel, and queries the Twitch servers for
+ +  the display name of its broadcaster.
+ +/
+version(Web)
+@(IRCEvent.Type.ROOMSTATE)
+@(ChannelPolicy.home)
+void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import requests.request : Request;
+    import std.json : JSONType, parseJSON;
+
+    auto channel = event.channel in plugin.activeChannels;
+
+    if (!channel)
+    {
+        // Race...
+        plugin.handleSelfjoin(event.channel);
+        channel = event.channel in plugin.activeChannels;
+    }
+
+    channel.roomID = event.aux;
+
+    if (!plugin.twitchBotSettings.apiKey.length) return;  // Already warned
+
+    immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
+    Request req;
+    req.keepAlive = false;
+    req.addHeaders(plugin.headers);
+    auto res = req.get(url);
+
+    if (res.code >= 400) return;
+
+    auto json = parseJSON(cast(string)res.responseBody.data);
+
+    if ((json.type != JSONType.object) || ("data" !in json))
+    {
+        import std.stdio : writeln;
+
+        logger.error("Invalid Twitch response; is the API key correctly entered?");
+        writeln(json.toPrettyString);
+        return;
+    }
+
+    /*{
+        "broadcaster_type": "",
+        "description": "",
+        "display_name": "Zorael",
+        "id": "22216721",
+        "login": "zorael",
+        "offline_image_url": "[...]",
+        "profile_image_url": "[...]",
+        "type": "",
+        "view_count": 207
+    }*/
+
+    channel.broadcasterDisplayName = json["data"].array[0]["display_name"].str;
+}
+
+
 // onAnyMessage
 /++
  +  Performs various actions on incoming messages.
