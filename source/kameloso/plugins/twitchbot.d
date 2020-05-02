@@ -1320,6 +1320,22 @@ void start(TwitchBotPlugin plugin)
 {
     import std.datetime.systime : Clock;
     plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
+
+    version(Web)
+    {
+        if (!plugin.twitchBotSettings.apiKey.length)
+        {
+            logger.error("No Twitch API key supplied in the configuration file. " ~
+                "Some commands may not work.");
+            return;
+        }
+
+        plugin.headers =
+        [
+            "Client-ID" : plugin.twitchBotSettings.apiKey,
+            "Authorization" : "Bearer " ~ plugin.state.bot.pass,
+        ];
+    }
 }
 
 
