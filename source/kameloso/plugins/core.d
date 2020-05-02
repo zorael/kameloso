@@ -1388,7 +1388,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     pragma(inline)
     override public string name() @property const pure nothrow @nogc
     {
-        return module_;
+        mixin("static import thisModule = " ~ module_ ~ ";");
+        return __traits(identifier, thisModule);
     }
 
 
