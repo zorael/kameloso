@@ -51,6 +51,9 @@ import std.typecons : Flag, No, Yes;
 
     /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
     bool permitOneLinkOnly = true;
+
+    /// API key to use when querying Twitch servers for information.
+    string apiKey;
 }
 
 
