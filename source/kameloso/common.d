@@ -1011,7 +1011,7 @@ unittest
 }
 
 
-// timeSince
+// timeSinceInto
 /++
  +  Express how much time has passed in a `core.time.Duration`, in natural
  +  (English) language. Overload that writes the result to thet passed output range `sink`.
@@ -1025,7 +1025,7 @@ unittest
  +  const now = Clock.currTime;
  +
  +  const duration = (now - then);
- +  immutable inEnglish = sink.timeSince(duration);
+ +  immutable inEnglish = duration.timeSinceInto(sink);
  +  ---
  +
  +  Params:
@@ -1038,12 +1038,12 @@ unittest
  +          of 5 will express the time difference using all units. Passing one of
  +          4 will only express it in days, hours, minutes and seconds. Passing
  +          1 will express it in only seconds.
- +      sink = Output buffer sink to write to.
  +      duration = A period of time.
+ +      sink = Output buffer sink to write to.
  +/
-void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
+void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
     Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 5, Sink)
-    (auto ref Sink sink, const Duration duration) pure
+    (const Duration duration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
 in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
 do
@@ -1297,7 +1297,7 @@ string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
 
     Appender!string sink;
     sink.reserve(50);
-    sink.timeSince!(abbreviate, truncateSeconds, numUnits)(duration);
+    duration.timeSinceInto!(abbreviate, truncateSeconds, numUnits)(sink);
     return sink.data;
 }
 
