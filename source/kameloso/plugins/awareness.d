@@ -420,11 +420,17 @@ void onUserAwarenessQuit(IRCPlugin plugin, const IRCEvent event)
  +/
 void onUserAwarenessNick(IRCPlugin plugin, const IRCEvent event)
 {
-    if (auto oldUser = event.sender.nickname in plugin.state.users)
+    if (plugin.state.settings.preferHostmasks)
+    {
+        // Persistence will have set up a complete user with account and everything.
+        // There's no point in copying anything over.
+    }
+    else if (auto oldUser = event.sender.nickname in plugin.state.users)
     {
         plugin.state.users[event.target.nickname] = *oldUser;
-        plugin.state.users.remove(event.sender.nickname);
     }
+
+    plugin.state.users.remove(event.sender.nickname);
 }
 
 
