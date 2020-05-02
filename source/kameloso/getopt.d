@@ -311,8 +311,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "H|homeChannels","Home channels to operate in, comma-separated " ~
                             "(escape or enquote any octothorpe #s)",
                             &inputHomeChannels,
+            "homes",        &inputHomeChannels,
             "C|guestChannels","Non-home channels to idle in, comma-separated (ditto)",
                             &inputGuestChannels,
+            "channels",     &inputGuestChannels,
             "a|append",     "Append input home channels, guest channels and " ~
                             "admins instead of overriding",
                             &shouldAppendToArrays,
