@@ -1551,6 +1551,15 @@ private:
 
         /// Timer `core.thread.fiber.Fiber`s.
         Fiber[] timers;
+
+        /// Display name of the broadcaster.
+        string broadcasterDisplayName;
+
+        version(Web)
+        {
+            /// Broadcaster user/account/room ID (not name).
+            string roomID;
+        }
     }
 
     /// All Twitch Bot plugin settings.
@@ -1579,6 +1588,12 @@ private:
      +  number means better precision.
      +/
     enum timerPeriodicity = 10;
+
+    version(Web)
+    {
+        /// HTTP headers to pass when querying Twitch servers for information.
+        string[string] headers;
+    }
 
     mixin IRCPluginImpl;
 
