@@ -451,19 +451,18 @@ void onNick(PersistenceService service, const IRCEvent event)
 {
     with (service.state)
     {
-        if (const stored = event.sender.nickname in users)
+        if (service.state.settings.preferHostmasks)
+        {
+            // The target is its own complete user, with account and everything.
+            // There's no point in copying anything over.
+        }
+        else if (const stored = event.sender.nickname in users)
         {
             users[event.target.nickname] = *stored;
             users[event.target.nickname].nickname = event.target.nickname;
-            users.remove(event.sender.nickname);
         }
-        /*else
-        {
-            // Logically this should never happen, as postprocess creates a user
-            // if none already exists.
-            users[event.target.nickname] = event.sender;
-            users[event.target.nickname].nickname = event.target.nickname;
-        }*/
+
+        users.remove(event.sender.nickname);
 
         if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
         {
