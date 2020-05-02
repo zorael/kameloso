@@ -7,11 +7,11 @@
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` on join for op)
 * logs
-* echoing titles of pasted URLs
-* `sed`-replacement of the last message sent (`s/this/that/` substitution)
+* fetching and echoing titles of pasted URLs
+* **sed**-replacement of the last message sent (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
 * channel polls
-* works on **Twitch**, including basic [streamer assistant plugin](source/kameloso/plugins/twitchbot.d) (not compiled in by default)
+* works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot.d)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
 
