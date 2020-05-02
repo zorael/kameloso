@@ -1003,6 +1003,132 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onFollowAge
+/++
+ +  Implements "Follow Age", or the ability to query the server how long you
+ +  (or a specified user) have been a follower of the current channel.
+ +/
+version(Web)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "followage")
+@Description("Queries the server for how long you have been a follower of the " ~
+    "current channel. Optionally takes a nickname parameter, to query for someone else.",
+    "$command [optional nickname]")
+void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import lu.string : nom;
+    import requests.request : Request;
+    import std.json : JSONType, parseJSON;
+    import std.uni : toLower;
+
+    if (!plugin.twitchBotSettings.apiKey.length) return;  // Already warned
+
+    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~
+        plugin.activeChannels[event.channel].roomID;
+
+    Request req;
+    req.keepAlive = false;
+    req.addHeaders(plugin.headers);
+    auto res = req.get(url);
+
+    if (res.code >= 400) return;
+
+    auto json = parseJSON(cast(string)res.responseBody.data);
+
+    if ((json.type != JSONType.object) || ("data" !in json))
+    {
+        import std.stdio : writeln;
+
+        logger.error("Invalid Twitch response; is the API key correctly entered?");
+        writeln(json.toPrettyString);
+        return;
+    }
+
+    string slice = event.content;  // mutable
+    immutable nameSpecified = (event.content.length > 0);
+    immutable givenFromName = nameSpecified ?
+        slice.nom!(Yes.inherit)(' ') :
+        event.sender.displayName;
+
+    foreach (const followingUserJSON; json["data"].array)
+    {
+        import std.uni : asLowerCase;
+        import std.algorithm.comparison : equal;
+
+        immutable thisFromName = followingUserJSON["from_name"].str;
+
+        if ((nameSpecified && thisFromName.asLowerCase.equal(givenFromName.asLowerCase)) ||
+            (!nameSpecified && (thisFromName == event.sender.displayName)))
+        {
+            import kameloso.common : timeSince;
+            import lu.string : plurality;
+            import std.datetime.systime : Clock, SysTime;
+            import std.format : format;
+
+            static immutable string[12] months =
+            [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+
+            /*{
+                "followed_at": "2019-09-13T13:07:43Z",
+                "from_id": "20739840",
+                "from_name": "mike_bison",
+                "to_id": "22216721",
+                "to_name": "Zorael"
+            }*/
+
+            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
+            immutable diff = Clock.currTime - when;
+            immutable timeline = diff.timeSince;
+            immutable datestamp = "%s %d"
+                .format(months[cast(int)when.month-1], when.year);
+
+            if (nameSpecified)
+            {
+                enum pattern = "%s has been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern
+                    .format(thisFromName, timeline, datestamp));
+            }
+            else
+            {
+                enum pattern = "You have been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
+            }
+
+            return;
+        }
+    }
+
+    // If we're here there were no matches.
+
+    if (nameSpecified)
+    {
+        enum pattern = "%s is currently not a follower.";
+        chan(plugin.state, event.channel, pattern.format(givenFromName));
+    }
+    else
+    {
+        enum pattern = "You are currently not a follower.";
+        chan(plugin.state, event.channel, pattern);
+    }
+}
+
+
 // onRoomState
 /++
  +  Records the room ID of a home channel, and queries the Twitch servers for
