@@ -2923,7 +2923,7 @@ do
         return true;
     }
 
-    return !haystack[end].isValidNicknameCharacter && (haystack[end] != '/');
+    return !haystack[end].isValidNicknameCharacter;
 }
 
 ///
@@ -2938,7 +2938,7 @@ unittest
     assert("@kameloso".containsNickname("kameloso"));
     assert(!"www.kameloso.com".containsNickname("kameloso"));
     assert("kameloso.".containsNickname("kameloso"));
-    assert(!"kameloso/".containsNickname("kameloso"));
+    assert("kameloso/".containsNickname("kameloso"));
     assert(!"/kameloso/".containsNickname("kameloso"));
 }
 
