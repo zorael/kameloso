@@ -45,6 +45,11 @@ configuration "application" {
         "Web"
 }
 
+configuration "vanilla" {
+    targetType "executable"
+    // Mustn't be empty
+}
+
 configuration "twitch" {
     dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
@@ -74,35 +79,6 @@ configuration "dev" {
         "ProfileGC" \
         "AdminAssertGeneration" //\
         //"TraceWhois"
-}
-
-configuration "vanilla" {
-    targetType "executable"
-    // Mustn't be empty
-}
-
-configuration "colours" {
-    versions \
-        "Colours"
-}
-
-configuration "web" {
-    dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.2.0"
-
-    versions \
-        "Web"
-}
-
-configuration "full" {
-    dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.2.0"
-    subConfiguration "dialect" "twitch"
-
-    versions \
-        "Colours" \
-        "Web" \
-        "TwitchSupport"
 }
 
 configuration "unittest" {
