@@ -2556,7 +2556,7 @@ int initBot(string[] args)
 
         static if (__VERSION__ >= 2087L)
         {
-            logger.infof("Garbage allocated in current thread: %s%,d%s bytes",
+            logger.infof("Allocated in current thread: %s%,d%s bytes",
                 Tint.log, stats.allocatedInCurrentThread, Tint.info);
         }
 
