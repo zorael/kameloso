@@ -1168,7 +1168,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         import lu.meld : MeldingStrategy, meldInto;
         import lu.traits : isAnnotated;
 
-        foreach (immutable i, const ref symbol; this.tupleof)
+        foreach (immutable i, ref symbol; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct) &&
                 (isAnnotated!(this.tupleof[i], Settings) ||
