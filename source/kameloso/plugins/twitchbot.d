@@ -1070,21 +1070,23 @@ void queryTwitch(const string url, shared string[string] headers,
 }
 
 
-// onFollowAge2
+// onFollowAge
 /++
  +  Implements "Follow Age", or the ability to query the server how long you
  +  (or a specified user) have been a follower of the current channel.
+ +
+ +  Lookups are done asychronously in subthreads.
  +/
 version(Web)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "followage2")
+@BotCommand(PrefixPolicy.prefixed, "followage")
 @Description("Queries the server for how long you have been a follower of the " ~
     "current channel. Optionally takes a nickname parameter, to query for someone else.",
     "$command [optional nickname]")
-void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
+void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common : delayFiberMsecs;
     import lu.string : nom, stripped;
@@ -1368,178 +1370,6 @@ JSONValue getFollows(TwitchBotPlugin plugin, const string idString, const Flag!"
     }
 
     return followsJSON["data"];
-}
-
-
-// onFollowAge
-/++
- +  Implements "Follow Age", or the ability to query the server how long you
- +  (or a specified user) have been a follower of the current channel.
- +/
-version(Web)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "followage")
-@Description("Queries the server for how long you have been a follower of the " ~
-    "current channel. Optionally takes a nickname parameter, to query for someone else.",
-    "$command [optional nickname]")
-void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import lu.string : nom, stripped;
-    import requests.request : Request;
-    import std.conv : to;
-    import std.json : JSONType, parseJSON;
-    import std.uni : toLower;
-
-    if (!plugin.twitchBotSettings.apiKey.length) return;
-
-    string slice = event.content.stripped;  // mutable
-    immutable nameSpecified = (slice.length > 0);
-    string fromDisplayName;
-
-    uint id;
-
-    if (nameSpecified)
-    {
-        immutable givenName = slice.nom!(Yes.inherit)(' ');
-
-        if (const user = givenName in plugin.state.users)
-        {
-            id = user.id;
-            fromDisplayName = user.displayName;
-        }
-        else
-        {
-            foreach (const user; plugin.state.users)
-            {
-                if (user.displayName == givenName)
-                {
-                    id = user.id;
-                    fromDisplayName = user.displayName;
-                }
-            }
-
-            if (!id)
-            {
-                // None on record, look up
-                const userJSON = getUserByLogin(plugin, givenName);
-
-                if (userJSON == JSONValue.init)
-                {
-                    chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
-                    return;
-                }
-
-                id = userJSON["id"].str.to!uint;
-                fromDisplayName = userJSON["display_name"].str;
-            }
-        }
-    }
-    else
-    {
-        id = event.sender.id;
-        fromDisplayName = event.sender.displayName;
-    }
-
-    immutable url = "https://api.twitch.tv/helix/users/follows?from_id=" ~ id.to!string;
-
-    Request req;
-    req.keepAlive = false;
-    req.addHeaders(plugin.headers);
-    auto res = req.get(url);
-
-    if (res.code >= 400) return;
-
-    auto json = parseJSON(cast(string)res.responseBody.data);
-
-    if ((json.type != JSONType.object) || ("data" !in json) ||
-        (json["data"].type != JSONType.array))
-    {
-        import std.stdio : writeln;
-
-        logger.error("Invalid Twitch response; is the API key correctly entered?");
-        writeln(json.toPrettyString);
-        return;
-    }
-
-    immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
-
-    foreach (const followingUserJSON; json["data"].array)
-    {
-        import std.algorithm.comparison : equal;
-        import std.uni : asLowerCase;
-        /*import std.stdio;
-
-        writeln(followingUserJSON.toPrettyString);
-        writeln(followingUserJSON["to_id"].str, " == ", roomIDString, " ?");*/
-
-        if (followingUserJSON["to_id"].str == roomIDString)
-        {
-            import kameloso.common : timeSince;
-            import lu.string : plurality;
-            import std.datetime.systime : Clock, SysTime;
-            import std.format : format;
-
-            static immutable string[12] months =
-            [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ];
-
-            /*{
-                "followed_at": "2019-09-13T13:07:43Z",
-                "from_id": "20739840",
-                "from_name": "mike_bison",
-                "to_id": "22216721",
-                "to_name": "Zorael"
-            }*/
-
-            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
-            immutable diff = Clock.currTime - when;
-            immutable timeline = diff.timeSince;
-            immutable datestamp = "%s %d"
-                .format(months[cast(int)when.month-1], when.year);
-
-            if (nameSpecified)
-            {
-                enum pattern = "%s has been a follower for %s, since %s.";
-                chan(plugin.state, event.channel, pattern
-                    .format(fromDisplayName, timeline, datestamp));
-            }
-            else
-            {
-                enum pattern = "You have been a follower for %s, since %s.";
-                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
-            }
-
-            return;
-        }
-    }
-
-    // If we're here there were no matches.
-
-    if (nameSpecified)
-    {
-        enum pattern = "%s is currently not a follower.";
-        chan(plugin.state, event.channel, pattern.format(fromDisplayName));
-    }
-    else
-    {
-        enum pattern = "You are currently not a follower.";
-        chan(plugin.state, event.channel, pattern);
-    }
 }
 
 
