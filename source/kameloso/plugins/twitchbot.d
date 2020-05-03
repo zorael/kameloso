@@ -1092,21 +1092,25 @@ void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
     import std.conv : to;
     import std.json : JSONType, JSONValue, parseJSON;
     import core.thread : Fiber;
-    import std.stdio;
 
-    if (!plugin.twitchBotSettings.apiKey.length) return;
+    if (!plugin.useAPIFeatures) return;
 
     void dg()
     {
         string slice = event.content.stripped;  // mutable
         immutable nameSpecified = (slice.length > 0);
-        string fromDisplayName;
-        writeln("followage2 dg here");
 
         uint id;
         string idString;
+        string fromDisplayName;
 
-        if (nameSpecified)
+        if (!nameSpecified)
+        {
+            // Assume the user is asking about itself
+            idString = event.sender.id.to!string;
+            fromDisplayName = event.sender.displayName;
+        }
+        else
         {
             immutable givenName = slice.nom!(Yes.inherit)(' ');
 
@@ -1115,7 +1119,6 @@ void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
                 // Stored user
                 id = user.id;
                 fromDisplayName = user.displayName;
-                writeln("stored user by login name, ", fromDisplayName);
             }
             else
             {
@@ -1126,15 +1129,12 @@ void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
                         // Found user by displayName
                         id = user.id;
                         fromDisplayName = user.displayName;
-                        writeln("stored user by display name, ", fromDisplayName);
                     }
                 }
 
                 if (!id)
                 {
                     // None on record, look up
-                    writeln("none on record, look up");
-
                     immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
                     spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
 
@@ -1146,7 +1146,6 @@ void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
 
                     while (!response)
                     {
-                        writeln("while !response");
                         synchronized
                         {
                             response = url in plugin.bucket;
@@ -1154,166 +1153,124 @@ void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
 
                         if (!response)
                         {
-                            writeln("miss!");
-                            // Miss
-
+                            // Miss; fired too early, there is no response available yet
                             if (!queryTimeLengthened)
                             {
-                                plugin.approximateQueryTime *= 1.1;
+                                plugin.approximateQueryTime =
+                                    cast(long)(plugin.approximateQueryTime *
+                                    plugin.approximateQueryGrowthMultiplier);
                                 queryTimeLengthened = true;
                             }
 
-                            plugin.delayFiberMsecs(plugin.approximateQueryTime/5);
+                            plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
                             Fiber.yield();
                             continue;
                         }
 
-                        writeln("hit!");
                         plugin.bucket.remove(url);
                     }
 
                     if (response.length)
                     {
-                        writeln("hit was real");
                         // Hit
                         const user = parseUserFromResponse(cast()*response);
-                        //id = user["id"].str.to!uint;
+
+                        if (user == JSONValue.init)
+                        {
+                            chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                            return;
+                        }
+
                         idString = user["id"].str;
                         fromDisplayName = user["display_name"].str;
                     }
                     else
                     {
-                        writeln("hit was dud...");
                         chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
                         return;
                     }
                 }
             }
         }
-        else
-        {
-            idString = event.sender.id.to!string;
-            fromDisplayName = event.sender.displayName;
-        }
 
-        writeln("idString:", idString);
-        writeln("fromDisplayName:", fromDisplayName);
+        void reportFollowAge(const JSONValue followingUserJSON)
+        {
+            import kameloso.common : timeSince;
+            import lu.string : plurality;
+            import std.datetime.systime : Clock, SysTime;
+            import std.format : format;
+
+            static immutable string[12] months =
+            [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+
+            /*{
+                "followed_at": "2019-09-13T13:07:43Z",
+                "from_id": "20739840",
+                "from_name": "mike_bison",
+                "to_id": "22216721",
+                "to_name": "Zorael"
+            }*/
+
+            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
+            immutable diff = Clock.currTime - when;
+            immutable timeline = diff.timeSince;
+            immutable datestamp = "%s %d"
+                .format(months[cast(int)when.month-1], when.year);
+
+            if (nameSpecified)
+            {
+                enum pattern = "%s has been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern
+                    .format(fromDisplayName, timeline, datestamp));
+            }
+            else
+            {
+                enum pattern = "You have been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
+            }
+
+        }
 
         // Identity ascertained; look up
 
-        immutable url = "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString;
-
-        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
-
-        plugin.delayFiberMsecs(plugin.approximateQueryTime);
-        writeln("yielding");
-        Fiber.yield();
-
-        writeln("returned from yield!");
-
-        shared string* response;
-        bool queryTimeLengthened;
-
-        while (!response)
-        {
-            writeln("while !repsonse again");
-
-            synchronized
-            {
-                response = url in plugin.bucket;
-            }
-
-            if (!response)
-            {
-                writeln("miss");
-                // Miss
-
-                if (!queryTimeLengthened)
-                {
-                    plugin.approximateQueryTime *= 1.1;
-                    queryTimeLengthened = true;
-                }
-
-                plugin.delayFiberMsecs(plugin.approximateQueryTime/5);
-                Fiber.yield();
-                continue;
-            }
-
-            writeln("hit!");
-            plugin.bucket.remove(url);
-        }
-
-        const followsJSON = parseJSON(*response);
-
-        if ((followsJSON.type != JSONType.object) || ("data" !in followsJSON) ||
-            (followsJSON["data"].type != JSONType.array))
-        {
-            import std.stdio : writeln;
-
-            logger.error("Invalid Twitch response; is the API key correctly entered?");
-            writeln(followsJSON.toPrettyString);
-            return;
-        }
-
         immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
 
-        foreach (const followingUserJSON; followsJSON["data"].array)
+        foreach (const followingUserJSON; getFollows(plugin, idString, Yes.from).array)
         {
-            /*import std.stdio;
-
-            writeln(followingUserJSON.toPrettyString);
-            writeln(followingUserJSON["to_id"].str, " == ", roomIDString, " ?");*/
+            /*writefln("%s --> %s", followingUserJSON["from_name"],
+                followingUserJSON["to_name"]);*/
 
             if (followingUserJSON["to_id"].str == roomIDString)
             {
-                import kameloso.common : timeSince;
-                import lu.string : plurality;
-                import std.datetime.systime : Clock, SysTime;
-                import std.format : format;
+                /*writeln("FROM");
+                writeln(followingUserJSON.toPrettyString);*/
+                return reportFollowAge(followingUserJSON);
+            }
+        }
 
-                static immutable string[12] months =
-                [
-                    "January",
-                    "February",
-                    "March",
-                    "April",
-                    "May",
-                    "June",
-                    "July",
-                    "August",
-                    "September",
-                    "October",
-                    "November",
-                    "December",
-                ];
+        foreach (const followingUserJSON; getFollows(plugin, roomIDString, No.from).array)
+        {
+            /*writefln("%s --> %s", followingUserJSON["from_name"],
+                followingUserJSON["to_name"]);*/
 
-                /*{
-                    "followed_at": "2019-09-13T13:07:43Z",
-                    "from_id": "20739840",
-                    "from_name": "mike_bison",
-                    "to_id": "22216721",
-                    "to_name": "Zorael"
-                }*/
-
-                immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
-                immutable diff = Clock.currTime - when;
-                immutable timeline = diff.timeSince;
-                immutable datestamp = "%s %d"
-                    .format(months[cast(int)when.month-1], when.year);
-
-                if (nameSpecified)
-                {
-                    enum pattern = "%s has been a follower for %s, since %s.";
-                    chan(plugin.state, event.channel, pattern
-                        .format(fromDisplayName, timeline, datestamp));
-                }
-                else
-                {
-                    enum pattern = "You have been a follower for %s, since %s.";
-                    chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
-                }
-
-                return;
+            if (followingUserJSON["from_id"].str == idString)
+            {
+                /*writeln("TO");
+                writeln(followingUserJSON.toPrettyString);*/
+                return reportFollowAge(followingUserJSON);
             }
         }
 
