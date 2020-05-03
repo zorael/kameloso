@@ -2021,11 +2021,11 @@ private:
         /// Timer `core.thread.fiber.Fiber`s.
         Fiber[] timers;
 
-        /// Display name of the broadcaster.
-        string broadcasterDisplayName;
-
         version(Web)
         {
+            /// Display name of the broadcaster.
+            string broadcasterDisplayName;
+
             /// Broadcaster user/account/room ID (not name).
             string roomID;
         }
