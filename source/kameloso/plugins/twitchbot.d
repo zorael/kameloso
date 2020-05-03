@@ -213,7 +213,6 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 {
     void dg()
     {
-        import kameloso.plugins.common : nameOf;
         import std.datetime.systime : Clock;
 
         const channel = channelName in plugin.activeChannels;
@@ -230,7 +229,15 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         /// Whether or not stagger has passed, so we don't evaluate it every single time.
         bool staggerDone;
 
-        immutable streamer = plugin.nameOf(channelName[1..$]);
+        version(Web)
+        {
+            immutable streamer = channel.broadcasterDisplayName;
+        }
+        else
+        {
+            import kameloso.plugins.common : nameOf;
+            immutable streamer = plugin.nameOf(channelName[1..$]);
+        }
 
         while (true)
         {
@@ -758,10 +765,18 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Reports how long the streamer has been streaming.")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : nameOf;
+    const channel = event.channel in plugin.activeChannels;
+    immutable broadcastStart = channel.broadcastStart;
 
-    immutable broadcastStart = plugin.activeChannels[event.channel].broadcastStart;
-    immutable streamer = plugin.nameOf(event.channel[1..$]);
+    version(Web)
+    {
+        immutable streamer = channel.broadcasterDisplayName;
+    }
+    else
+    {
+        import kameloso.plugins.common : nameOf;
+        immutable streamer = plugin.nameOf(channelName[1..$]);
+    }
 
     if (broadcastStart > 0L)
     {
@@ -806,9 +821,16 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channel.broadcastStart != 0L)
     {
-        import kameloso.plugins.common : nameOf;
+        version(Web)
+        {
+            immutable streamer = channel.broadcasterDisplayName;
+        }
+        else
+        {
+            import kameloso.plugins.common : nameOf;
+            immutable streamer = plugin.nameOf(channelName[1..$]);
+        }
 
-        immutable streamer = plugin.nameOf(event.channel[1..$]);
         chan(plugin.state, event.channel, streamer ~ " is already live.");
         return;
     }
@@ -866,7 +888,6 @@ void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
 void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
 in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 {
-    import kameloso.plugins.common : nameOf;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
@@ -878,7 +899,15 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     const delta = now - SysTime.fromUnixTime(channel.broadcastStart);
     channel.broadcastStart = 0L;
 
-    immutable streamer = plugin.nameOf(event.channel[1..$]);
+    version(Web)
+    {
+        immutable streamer = channel.broadcasterDisplayName;
+    }
+    else
+    {
+        import kameloso.plugins.common : nameOf;
+        immutable streamer = plugin.nameOf(channelName[1..$]);
+    }
 
     chan(plugin.state, event.channel, "Broadcast ended. %s streamed for %s."
         .format(streamer, delta));
