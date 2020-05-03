@@ -1107,7 +1107,7 @@ do
                     if (putSomething)
                     {
                         if (!truncateSeconds || diff.minutes || diff.hours) sink.put(", ");
-                        else sink.put("and ");
+                        else sink.put(" and ");
                     }
                 }
 
@@ -1138,7 +1138,7 @@ do
                     if (putSomething)
                     {
                         if (!truncateSeconds || diff.minutes) sink.put(", ");
-                        else sink.put("and ");
+                        else sink.put(" and ");
                     }
                 }
 
@@ -1368,6 +1368,14 @@ unittest
         immutable abbrev = dur.timeSince!(Yes.abbreviate, No.truncateSeconds);
         assert((since == "1 day, 1 minute and 1 second"), since);
         assert((abbrev == "1d 1m 1s"), abbrev);
+    }
+
+    {
+        immutable dur = 3.weeks + 6.days + 10.hours;
+        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds);
+        assert((since == "3 weeks, 6 days and 10 hours"), since);
+        assert((abbrev == "3w 6d 10h"), abbrev);
     }
 }
 
