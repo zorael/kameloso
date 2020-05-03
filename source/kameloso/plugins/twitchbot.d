@@ -1243,23 +1243,27 @@ in (plugin.twitchBotSettings.apiKey.length, "Tried to `getUserImpl` with a " ~
     req.addHeaders(plugin.headers);
     auto res = req.get(url);
 
-    /*{
-        "data": [
-            {
-                "broadcaster_type": "",
-                "description": "",
-                "display_name": "Zorael",
-                "id": "22216721",
-                "login": "zorael",
-                "offline_image_url": "[...]",
-                "profile_image_url": "[...]",
-                "type": "",
-                "view_count": 207
-            }
-        ]
-    }*/
+    return parseUserFromResponse(cast(string)res.responseBody.data);
+}
 
-    auto json = parseJSON(cast(string)res.responseBody.data);
+
+// parseUserFromResponse
+/++
+ +  Given a string response from the Twitch servers when queried for information
+ +  of a user, verifies and parses the JSON, returning only that which relates
+ +  to the user.
+ +
+ +  Params:
+ +      jsonString = String response as read from the server. In JSON form.
+ +
+ +  Returns:
+ +      A `std.json.JSONValue` with information regarding the user in question.
+ +/
+JSONValue parseUserFromResponse(const string jsonString)
+{
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    auto json = parseJSON(jsonString);
 
     if ((json.type != JSONType.object) || ("data" !in json) ||
         (json["data"].type != JSONType.array) || (json["data"].array.length != 1))
