@@ -1336,6 +1336,84 @@ void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// getFollows
+/++
+ +  Gets the list of followers of a channel.
+ +
+ +  Warning: Must be called from within a Fiber.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      idString = The room ID number as a string.
+ +      from = Whether to query for followers from a channel or to a channel.
+ +
+ +  Params:
+ +      A `std.json.JSONValue` with the list of follows.
+ +/
+version(Web)
+JSONValue getFollows(TwitchBotPlugin plugin, const string idString, const Flag!"from" from)
+{
+    import kameloso.plugins.common : delayFiberMsecs;
+    import std.concurrency : spawn;
+    import std.json : JSONType, JSONValue, parseJSON;
+    import core.thread : Fiber;
+
+    assert(Fiber.getThis, "Tried to call `getFollows` from outside a Fiber");
+
+    immutable url = from ?
+        "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString :
+        "https://api.twitch.tv/helix/users/follows?to_id=" ~ idString;
+
+    spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+
+    plugin.delayFiberMsecs(plugin.approximateQueryTime);
+    Fiber.yield();
+
+    shared string* response;
+    bool queryTimeLengthened;
+
+    while (!response)
+    {
+        synchronized
+        {
+            response = url in plugin.bucket;
+        }
+
+        if (!response)
+        {
+            // Miss; fired too early, there is no response available yet
+            if (!queryTimeLengthened)
+            {
+                plugin.approximateQueryTime =
+                    cast(long)(plugin.approximateQueryTime *
+                    plugin.approximateQueryGrowthMultiplier);
+                queryTimeLengthened = true;
+            }
+
+            plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
+            Fiber.yield();
+            continue;
+        }
+
+        plugin.bucket.remove(url);
+    }
+
+    auto followsJSON = parseJSON(*response);
+
+    if ((followsJSON.type != JSONType.object) || ("data" !in followsJSON) ||
+        (followsJSON["data"].type != JSONType.array))
+    {
+        /*import std.stdio : writeln;
+
+        logger.error("Invalid Twitch response; is the API key correctly entered?");
+        writeln(followsJSON.toPrettyString);*/
+        return JSONValue.init;
+    }
+
+    return followsJSON["data"];
+}
+
+
 // onFollowAge
 /++
  +  Implements "Follow Age", or the ability to query the server how long you
