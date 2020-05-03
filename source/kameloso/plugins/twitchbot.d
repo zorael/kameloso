@@ -2031,7 +2031,8 @@ void start(TwitchBotPlugin plugin)
         if (!plugin.twitchBotSettings.apiKey.length)
         {
             logger.error("No Twitch API key supplied in the configuration file. " ~
-                "Some commands may not work.");
+                "Some commands will not work.");
+            plugin.useAPIFeatures = false;
             return;
         }
 
