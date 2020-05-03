@@ -1639,6 +1639,9 @@ void start(TwitchBotPlugin plugin)
             "Client-ID" : plugin.twitchBotSettings.apiKey,
             "Authorization" : "Bearer " ~ plugin.state.bot.pass,
         ];
+
+        plugin.bucket[string.init] = string.init;
+        plugin.bucket.remove(string.init);
     }
 }
 
