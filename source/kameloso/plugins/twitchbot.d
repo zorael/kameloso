@@ -1226,7 +1226,7 @@ import std.json : JSONValue;
 JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
     const Identifier identifier)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
-    "`name` or `id`, got `" ~ field ~ '`')
+    "`login` or `id`, got `" ~ field ~ '`')
 in (plugin.twitchBotSettings.apiKey.length, "Tried to `getUserImpl` with a " ~
     "zero-length API key")
 {
