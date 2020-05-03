@@ -1280,6 +1280,13 @@ JSONValue parseUserFromResponse(const string jsonString)
  +  Queries the Twitch servers for information about a user, by login.
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
  +  by account string name.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      login = The Twitch login/account name to look up.
+ +
+ +  Returns:
+ +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
@@ -1292,6 +1299,13 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +  Queries the Twitch servers for information about a user, by id.
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
  +  by id string.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      id = The Twitch account ID to look up. Number in string form.
+ +
+ +  Returns:
+ +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
@@ -1304,6 +1318,13 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +  Queries the Twitch servers for information about a user, by id.
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
  +  by id integer.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      id = The Twitch account ID to look up. Number in integer form.
+ +
+ +  Returns:
+ +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
