@@ -1435,6 +1435,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
+version(Web)
 JSONValue parseUserFromResponse(const string jsonString)
 {
     import std.json : JSONType, JSONValue, parseJSON;
