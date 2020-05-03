@@ -1458,6 +1458,7 @@ import std.json : JSONValue;
  +  Queries the Twitch servers for information about a user, by name.
  +  Implementation function.
  +/
+version(Web)
 JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
     const Identifier identifier)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
@@ -1524,6 +1525,7 @@ JSONValue parseUserFromResponse(const string jsonString)
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
+version(Web)
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
     return plugin.getUserImpl("login", login);
@@ -1543,6 +1545,7 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
+version(Web)
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
     return plugin.getUserImpl("id", id);
@@ -1562,6 +1565,7 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
+version(Web)
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
     return plugin.getUserImpl("id", id);
