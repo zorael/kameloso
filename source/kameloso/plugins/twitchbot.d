@@ -1568,18 +1568,26 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 
     channel.roomID = event.aux;
 
+    if (!plugin.useAPIFeatures) return;
+
     immutable pre = Clock.currTime;
     const broadcasterJSON = getUserByID(plugin, event.aux);
     immutable post = Clock.currTime;
 
-    if ((broadcasterJSON.type != JSONType.object) || ("display_name" !in broadcasterJSON))
+    if (broadcasterJSON.type != JSONType.object)// || ("display_name" !in broadcasterJSON))
     {
         // Something is deeply wrong.
+        logger.error("Failed to fetch broadcaster information; is the API key entered correctly?");
+        logger.error("Disabling API features.");
+        plugin.useAPIFeatures = false;
         return;
     }
 
     immutable delta = (post - pre);
-    plugin.approximateQueryTime = cast(long)(delta.total!"msecs" * 1.1);
+    immutable newApproximateTime = cast(long)(delta.total!"msecs" * 1.1);
+    plugin.approximateQueryTime = (plugin.approximateQueryTime == 0) ?
+        newApproximateTime :
+        (plugin.approximateQueryTime+newApproximateTime) / 2;
     channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
 }
 
