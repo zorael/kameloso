@@ -892,7 +892,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +/
 void delayFiberMsecs(IRCPlugin plugin, const long msecs)
 {
-    return plugin.delayFiber(Fiber.getThis, msecs);
+    return plugin.delayFiberMsecs(Fiber.getThis, msecs);
 }
 
 
