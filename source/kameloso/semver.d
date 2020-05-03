@@ -15,5 +15,6 @@ enum KamelosoSemVer
     patchVersion = 2,  /// SemVer patch version of the program.
 }
 
+
 /// Pre-release SemVer subversion of this build.
 enum KamelosoSemVerPrerelease = string.init;
