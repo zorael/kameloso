@@ -1908,6 +1908,12 @@ private:
     {
         /// HTTP headers to pass when querying Twitch servers for information.
         string[string] headers;
+
+        /// How long a Twitch HTTP query usually takes.
+        long approximateQueryTime;
+
+        /// Results of async HTTP queries.
+        shared string[string] bucket;
     }
 
     mixin IRCPluginImpl;
