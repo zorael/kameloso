@@ -1047,12 +1047,12 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +      headers = HTTP headers to use when issuing the requests.
  +      bucket = The shared bucket to put the results in, keyed by URL.
  +/
+version(Web)
 void queryTwitch(const string url, shared string[string] headers,
     shared string[string] bucket)
 {
-    import requests.request : Request;
-    import std.traits : Unqual;
     import lu.traits : UnqualArray;
+    import requests.request : Request;
 
     Request req;
     req.keepAlive = false;
