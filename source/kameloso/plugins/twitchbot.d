@@ -774,7 +774,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
     else
     {
         import kameloso.plugins.common : nameOf;
-        immutable streamer = plugin.nameOf(channelName[1..$]);
+        immutable streamer = plugin.nameOf(event.channel[1..$]);
     }
 
     if (broadcastStart > 0L)
@@ -827,7 +827,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         else
         {
             import kameloso.plugins.common : nameOf;
-            immutable streamer = plugin.nameOf(channelName[1..$]);
+            immutable streamer = plugin.nameOf(event.channel[1..$]);
         }
 
         chan(plugin.state, event.channel, streamer ~ " is already live.");
@@ -905,7 +905,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     else
     {
         import kameloso.plugins.common : nameOf;
-        immutable streamer = plugin.nameOf(channelName[1..$]);
+        immutable streamer = plugin.nameOf(event.channel[1..$]);
     }
 
     chan(plugin.state, event.channel, "Broadcast ended. %s streamed for %s."
