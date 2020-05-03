@@ -1019,15 +1019,63 @@ version(Web)
     "$command [optional nickname]")
 void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import lu.string : nom;
+    import lu.string : nom, stripped;
     import requests.request : Request;
+    import std.conv : to;
     import std.json : JSONType, parseJSON;
     import std.uni : toLower;
 
-    if (!plugin.twitchBotSettings.apiKey.length) return;  // Already warned
+    if (!plugin.twitchBotSettings.apiKey.length) return;
 
-    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~
-        plugin.activeChannels[event.channel].roomID;
+    string slice = event.content.stripped;  // mutable
+    immutable nameSpecified = (slice.length > 0);
+    string fromDisplayName;
+
+    uint id;
+
+    if (nameSpecified)
+    {
+        immutable givenName = slice.nom!(Yes.inherit)(' ');
+
+        if (const user = givenName in plugin.state.users)
+        {
+            id = user.id;
+            fromDisplayName = user.displayName;
+        }
+        else
+        {
+            foreach (const user; plugin.state.users)
+            {
+                if (user.displayName == givenName)
+                {
+                    id = user.id;
+                    fromDisplayName = user.displayName;
+                }
+            }
+
+            if (!id)
+            {
+                // None on record, look up
+                const userJSON = getUserByLogin(plugin, givenName);
+
+                if (userJSON == JSONValue.init)
+                {
+                    chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                    return;
+                }
+
+                id = userJSON["id"].str.to!uint;
+                fromDisplayName = userJSON["display_name"].str;
+            }
+        }
+    }
+    else
+    {
+        id = event.sender.id;
+        fromDisplayName = event.sender.displayName;
+    }
+
+    immutable url = "https://api.twitch.tv/helix/users/follows?from_id=" ~ id.to!string;
 
     Request req;
     req.keepAlive = false;
@@ -1038,7 +1086,8 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
     auto json = parseJSON(cast(string)res.responseBody.data);
 
-    if ((json.type != JSONType.object) || ("data" !in json))
+    if ((json.type != JSONType.object) || ("data" !in json) ||
+        (json["data"].type != JSONType.array))
     {
         import std.stdio : writeln;
 
@@ -1047,21 +1096,18 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    string slice = event.content;  // mutable
-    immutable nameSpecified = (event.content.length > 0);
-    immutable givenFromName = nameSpecified ?
-        slice.nom!(Yes.inherit)(' ') :
-        event.sender.displayName;
+    immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
 
     foreach (const followingUserJSON; json["data"].array)
     {
-        import std.uni : asLowerCase;
         import std.algorithm.comparison : equal;
+        import std.uni : asLowerCase;
+        /*import std.stdio;
 
-        immutable thisFromName = followingUserJSON["from_name"].str;
+        writeln(followingUserJSON.toPrettyString);
+        writeln(followingUserJSON["to_id"].str, " == ", roomIDString, " ?");*/
 
-        if ((nameSpecified && thisFromName.asLowerCase.equal(givenFromName.asLowerCase)) ||
-            (!nameSpecified && (thisFromName == event.sender.displayName)))
+        if (followingUserJSON["to_id"].str == roomIDString)
         {
             import kameloso.common : timeSince;
             import lu.string : plurality;
@@ -1102,7 +1148,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
             {
                 enum pattern = "%s has been a follower for %s, since %s.";
                 chan(plugin.state, event.channel, pattern
-                    .format(thisFromName, timeline, datestamp));
+                    .format(fromDisplayName, timeline, datestamp));
             }
             else
             {
@@ -1119,7 +1165,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
     if (nameSpecified)
     {
         enum pattern = "%s is currently not a follower.";
-        chan(plugin.state, event.channel, pattern.format(givenFromName));
+        chan(plugin.state, event.channel, pattern.format(fromDisplayName));
     }
     else
     {
@@ -1153,41 +1199,106 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 
     channel.roomID = event.aux;
 
-    if (!plugin.twitchBotSettings.apiKey.length) return;  // Already warned
+    const broadcasterJSON = getUserByID(plugin, event.aux);
 
-    immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+    if ((broadcasterJSON.type != JSONType.object) || ("display_name" !in broadcasterJSON))
+    {
+        // Something is deeply wrong.
+        return;
+    }
+
+    channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+}
+
+
+import std.json : JSONValue;
+
+// getUser
+/++
+ +  Queries the Twitch servers for information about a user, by name.
+ +  Implementation function.
+ +/
+JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
+    const Identifier identifier)
+in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
+    "`name` or `id`, got `" ~ field ~ '`')
+in (plugin.twitchBotSettings.apiKey.length, "Tried to `getUserImpl` with a " ~
+    "zero-length API key")
+{
+    import requests.request : Request;
+    import std.conv : to;
+    import std.format : format;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    immutable url = "https://api.twitch.tv/helix/users?%s=%s"
+        .format(field, identifier.to!string);  // String just passes through
 
     Request req;
     req.keepAlive = false;
     req.addHeaders(plugin.headers);
     auto res = req.get(url);
 
-    if (res.code >= 400) return;
+    /*{
+        "data": [
+            {
+                "broadcaster_type": "",
+                "description": "",
+                "display_name": "Zorael",
+                "id": "22216721",
+                "login": "zorael",
+                "offline_image_url": "[...]",
+                "profile_image_url": "[...]",
+                "type": "",
+                "view_count": 207
+            }
+        ]
+    }*/
 
     auto json = parseJSON(cast(string)res.responseBody.data);
 
-    if ((json.type != JSONType.object) || ("data" !in json))
+    if ((json.type != JSONType.object) || ("data" !in json) ||
+        (json["data"].type != JSONType.array) || (json["data"].array.length != 1))
     {
-        import std.stdio : writeln;
-
-        logger.error("Invalid Twitch response; is the API key correctly entered?");
-        writeln(json.toPrettyString);
-        return;
+        return JSONValue.init;
     }
 
-    /*{
-        "broadcaster_type": "",
-        "description": "",
-        "display_name": "Zorael",
-        "id": "22216721",
-        "login": "zorael",
-        "offline_image_url": "[...]",
-        "profile_image_url": "[...]",
-        "type": "",
-        "view_count": 207
-    }*/
+    return json["data"].array[0];
+}
 
-    channel.broadcasterDisplayName = json["data"].array[0]["display_name"].str;
+
+// getUserByName
+/++
+ +  Queries the Twitch servers for information about a user, by login.
+ +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
+ +  by account string name.
+ +/
+JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
+{
+    return plugin.getUserImpl("login", login);
+}
+
+
+// getUserByID
+/++
+ +  Queries the Twitch servers for information about a user, by id.
+ +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
+ +  by id string.
+ +/
+JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
+{
+    return plugin.getUserImpl("id", id);
+}
+
+
+// getUserByID
+/++
+ +  Queries the Twitch servers for information about a user, by id.
+ +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
+ +  by id integer.
+ +/
+JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
+{
+    return plugin.getUserImpl("id", id);
 }
 
 
