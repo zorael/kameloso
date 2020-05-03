@@ -255,7 +255,7 @@ $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --writeconfig
 ```
 
-Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit` (alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, and other non-Twitch-specific commands.)
+Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit`, `!followage` (alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, and other non-Twitch-specific commands.)
 
 > Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
@@ -286,6 +286,8 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * non-blocking FIFO
 * tweak `notes`
 * revamp `quotes`
+* handle home add by cycling
+* split large plugins into packages
 * more pairs of eyes
 
 # Built with
