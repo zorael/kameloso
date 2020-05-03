@@ -1614,6 +1614,75 @@ void onCommandSummary(AdminPlugin plugin)
 }
 
 
+// cycle
+/++
+ +  Cycles (parts and immediately rejoins) a channel.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.nickname, "cycle")
+@Description("Cycles (parts and immediately rejoins) a channel.")
+void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
+{
+    import lu.string : nom;
+
+    string slice = event.content;  // mutable
+
+    immutable channelName = slice.length ?
+        slice.nom!(Yes.inherit)(' ') :
+        event.channel;
+
+    if (event.content.length && (channelName !in plugin.state.channels))
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "I am not in that channel.");
+        return;
+    }
+
+    cycle(plugin, channelName, slice);
+}
+
+
+// cycle
+/++
+ +  Implementation of cycling, called by `onCommandCycle`
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      channelName = The name of the channel to cycle.
+ +      key = The key to use when rejoining the channel.
+ +/
+void cycle(AdminPlugin plugin, const string channelName, const string key)
+{
+    import kameloso.thread : CarryingFiber;
+    import core.thread : Fiber;
+
+    void dg()
+    {
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+        const partEvent = thisFiber.payload;
+
+        if (partEvent.channel != channelName)
+        {
+            // Wrong channel, wait for the next SELFPART
+            Fiber.yield();
+            return dg();
+        }
+
+        join(plugin.state, channelName, key);
+    }
+
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+    plugin.awaitEvent(fiber, IRCEvent.Type.SELFPART);
+    part(plugin.state, channelName, "Cycling");
+}
+
+
 // onCommandMask
 /++
  +  Adds, removes or lists hostmasks used to identify users on servers that
