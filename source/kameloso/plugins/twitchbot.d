@@ -1003,6 +1003,339 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// queryTwitch
+/++
+ +  Sends a HTTP GET to the pased URL, and returns the response by adding it
+ +  to the shared `bucket`.
+ +
+ +  Callers can as such spawn this function as a new thread and asynchronously
+ +  monitor the `bucket` for when the results arrive.
+ +
+ +  Example:
+ +  ---
+ +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+ +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+ +
+ +  plugin.delayFiberMsecs(plugin.approximateQueryTime);
+ +  Fiber.yield();
+ +
+ +  shared string* response;
+ +
+ +  while (!response)
+ +  {
+ +      synchronized
+ +      {
+ +          response = url in plugin.bucket;
+ +      }
+ +
+ +      if (!response)
+ +      {
+ +          // Too early
+ +          plugin.delayFiberMsecs(plugin.approximateQueryTime);
+ +          Fiber.yield();
+ +          continue;
+ +      }
+ +
+ +      plugin.bucket.remove(url);
+ +  }
+ +
+ +  // *response is the (shared) response body
+ +  ---
+ +
+ +  Params:
+ +      url = URL address to look up.
+ +      headers = HTTP headers to use when issuing the requests.
+ +      bucket = The shared bucket to put the results in, keyed by URL.
+ +/
+void queryTwitch(const string url, shared string[string] headers,
+    shared string[string] bucket)
+{
+    import requests.request : Request;
+    import std.traits : Unqual;
+    import lu.traits : UnqualArray;
+
+    Request req;
+    req.keepAlive = false;
+    req.addHeaders(cast(UnqualArray!(typeof(headers)))headers);
+    auto res = req.get(url);
+
+    if (res.code >= 400)
+    {
+        bucket[url] = string.init;
+    }
+    else
+    {
+        bucket[url] = cast(string)res.responseBody.data.idup;
+    }
+}
+
+
+// onFollowAge2
+/++
+ +  Implements "Follow Age", or the ability to query the server how long you
+ +  (or a specified user) have been a follower of the current channel.
+ +/
+version(Web)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "followage2")
+@Description("Queries the server for how long you have been a follower of the " ~
+    "current channel. Optionally takes a nickname parameter, to query for someone else.",
+    "$command [optional nickname]")
+void onFollowAge2(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.plugins.common : delayFiberMsecs;
+    import lu.string : nom, stripped;
+    import std.concurrency : spawn;
+    import std.conv : to;
+    import std.json : JSONType, JSONValue, parseJSON;
+    import core.thread : Fiber;
+    import std.stdio;
+
+    if (!plugin.twitchBotSettings.apiKey.length) return;
+
+    void dg()
+    {
+        string slice = event.content.stripped;  // mutable
+        immutable nameSpecified = (slice.length > 0);
+        string fromDisplayName;
+        writeln("followage2 dg here");
+
+        uint id;
+        string idString;
+
+        if (nameSpecified)
+        {
+            immutable givenName = slice.nom!(Yes.inherit)(' ');
+
+            if (const user = givenName in plugin.state.users)
+            {
+                // Stored user
+                id = user.id;
+                fromDisplayName = user.displayName;
+                writeln("stored user by login name, ", fromDisplayName);
+            }
+            else
+            {
+                foreach (const user; plugin.state.users)
+                {
+                    if (user.displayName == givenName)
+                    {
+                        // Found user by displayName
+                        id = user.id;
+                        fromDisplayName = user.displayName;
+                        writeln("stored user by display name, ", fromDisplayName);
+                    }
+                }
+
+                if (!id)
+                {
+                    // None on record, look up
+                    writeln("none on record, look up");
+
+                    immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+                    spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+
+                    plugin.delayFiberMsecs(plugin.approximateQueryTime);
+                    Fiber.yield();
+
+                    shared string* response;
+                    bool queryTimeLengthened;
+
+                    while (!response)
+                    {
+                        writeln("while !response");
+                        synchronized
+                        {
+                            response = url in plugin.bucket;
+                        }
+
+                        if (!response)
+                        {
+                            writeln("miss!");
+                            // Miss
+
+                            if (!queryTimeLengthened)
+                            {
+                                plugin.approximateQueryTime *= 1.1;
+                                queryTimeLengthened = true;
+                            }
+
+                            plugin.delayFiberMsecs(plugin.approximateQueryTime/5);
+                            Fiber.yield();
+                            continue;
+                        }
+
+                        writeln("hit!");
+                        plugin.bucket.remove(url);
+                    }
+
+                    if (response.length)
+                    {
+                        writeln("hit was real");
+                        // Hit
+                        const user = parseUserFromResponse(cast()*response);
+                        //id = user["id"].str.to!uint;
+                        idString = user["id"].str;
+                        fromDisplayName = user["display_name"].str;
+                    }
+                    else
+                    {
+                        writeln("hit was dud...");
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+                }
+            }
+        }
+        else
+        {
+            idString = event.sender.id.to!string;
+            fromDisplayName = event.sender.displayName;
+        }
+
+        writeln("idString:", idString);
+        writeln("fromDisplayName:", fromDisplayName);
+
+        // Identity ascertained; look up
+
+        immutable url = "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString;
+
+        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+
+        plugin.delayFiberMsecs(plugin.approximateQueryTime);
+        writeln("yielding");
+        Fiber.yield();
+
+        writeln("returned from yield!");
+
+        shared string* response;
+        bool queryTimeLengthened;
+
+        while (!response)
+        {
+            writeln("while !repsonse again");
+
+            synchronized
+            {
+                response = url in plugin.bucket;
+            }
+
+            if (!response)
+            {
+                writeln("miss");
+                // Miss
+
+                if (!queryTimeLengthened)
+                {
+                    plugin.approximateQueryTime *= 1.1;
+                    queryTimeLengthened = true;
+                }
+
+                plugin.delayFiberMsecs(plugin.approximateQueryTime/5);
+                Fiber.yield();
+                continue;
+            }
+
+            writeln("hit!");
+            plugin.bucket.remove(url);
+        }
+
+        const followsJSON = parseJSON(*response);
+
+        if ((followsJSON.type != JSONType.object) || ("data" !in followsJSON) ||
+            (followsJSON["data"].type != JSONType.array))
+        {
+            import std.stdio : writeln;
+
+            logger.error("Invalid Twitch response; is the API key correctly entered?");
+            writeln(followsJSON.toPrettyString);
+            return;
+        }
+
+        immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
+
+        foreach (const followingUserJSON; followsJSON["data"].array)
+        {
+            /*import std.stdio;
+
+            writeln(followingUserJSON.toPrettyString);
+            writeln(followingUserJSON["to_id"].str, " == ", roomIDString, " ?");*/
+
+            if (followingUserJSON["to_id"].str == roomIDString)
+            {
+                import kameloso.common : timeSince;
+                import lu.string : plurality;
+                import std.datetime.systime : Clock, SysTime;
+                import std.format : format;
+
+                static immutable string[12] months =
+                [
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
+                ];
+
+                /*{
+                    "followed_at": "2019-09-13T13:07:43Z",
+                    "from_id": "20739840",
+                    "from_name": "mike_bison",
+                    "to_id": "22216721",
+                    "to_name": "Zorael"
+                }*/
+
+                immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
+                immutable diff = Clock.currTime - when;
+                immutable timeline = diff.timeSince;
+                immutable datestamp = "%s %d"
+                    .format(months[cast(int)when.month-1], when.year);
+
+                if (nameSpecified)
+                {
+                    enum pattern = "%s has been a follower for %s, since %s.";
+                    chan(plugin.state, event.channel, pattern
+                        .format(fromDisplayName, timeline, datestamp));
+                }
+                else
+                {
+                    enum pattern = "You have been a follower for %s, since %s.";
+                    chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
+                }
+
+                return;
+            }
+        }
+
+        // If we're here there were no matches.
+
+        if (nameSpecified)
+        {
+            enum pattern = "%s is currently not a follower.";
+            chan(plugin.state, event.channel, pattern.format(fromDisplayName));
+        }
+        else
+        {
+            enum pattern = "You are currently not a follower.";
+            chan(plugin.state, event.channel, pattern);
+        }
+    }
+
+    Fiber fiber = new Fiber(&dg);
+    fiber.call();
+}
+
+
 // onFollowAge
 /++
  +  Implements "Follow Age", or the ability to query the server how long you
