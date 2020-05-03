@@ -1187,6 +1187,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import requests.request : Request;
     import std.json : JSONType, parseJSON;
+    import std.datetime.systime : Clock;
 
     auto channel = event.channel in plugin.activeChannels;
 
@@ -1199,7 +1200,9 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 
     channel.roomID = event.aux;
 
+    immutable pre = Clock.currTime;
     const broadcasterJSON = getUserByID(plugin, event.aux);
+    immutable post = Clock.currTime;
 
     if ((broadcasterJSON.type != JSONType.object) || ("display_name" !in broadcasterJSON))
     {
@@ -1207,6 +1210,8 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
+    immutable delta = (post - pre);
+    plugin.approximateQueryTime = cast(long)(delta.total!"msecs" * 1.1);
     channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
 }
 
