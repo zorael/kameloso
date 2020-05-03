@@ -2272,11 +2272,26 @@ private:
 
     version(Web)
     {
+        /// Whether or not to use features requiring querying Twitch API.
+        bool useAPIFeatures = true;
+
         /// HTTP headers to pass when querying Twitch servers for information.
         string[string] headers;
 
         /// How long a Twitch HTTP query usually takes.
         long approximateQueryTime;
+
+        /++
+         +  The multiplier of how much the `approximateQueryTime` should increase
+         +  when it turned out to be a bit short.
+         +/
+        enum approximateQueryGrowthMultiplier = 1.05;
+
+        /++
+         +  The divisor of how much to wait before retrying, after `approximateQueryTime`
+         +  turned out to be a bit short.
+         +/
+        enum retryTimeDivisor = 5;
 
         /// Results of async HTTP queries.
         shared string[string] bucket;
