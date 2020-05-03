@@ -25,6 +25,7 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import core.thread : Fiber;
+import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 
@@ -1422,37 +1423,6 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-import std.json : JSONValue;
-
-// getUser
-/++
- +  Queries the Twitch servers for information about a user, by name.
- +  Implementation function.
- +/
-JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier)
-in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
-    "`login` or `id`, got `" ~ field ~ '`')
-in (plugin.twitchBotSettings.apiKey.length, "Tried to `getUserImpl` with a " ~
-    "zero-length API key")
-{
-    import requests.request : Request;
-    import std.conv : to;
-    import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
-
-    immutable url = "https://api.twitch.tv/helix/users?%s=%s"
-        .format(field, identifier.to!string);  // String just passes through
-
-    Request req;
-    req.keepAlive = false;
-    req.addHeaders(plugin.headers);
-    auto res = req.get(url);
-
-    return parseUserFromResponse(cast(string)res.responseBody.data);
-}
-
-
 // parseUserFromResponse
 /++
  +  Given a string response from the Twitch servers when queried for information
@@ -1478,63 +1448,6 @@ JSONValue parseUserFromResponse(const string jsonString)
     }
 
     return json["data"].array[0];
-}
-
-
-// getUserByName
-/++
- +  Queries the Twitch servers for information about a user, by login.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by account string name.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      login = The Twitch login/account name to look up.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
-{
-    return plugin.getUserImpl("login", login);
-}
-
-
-// getUserByID
-/++
- +  Queries the Twitch servers for information about a user, by id.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by id string.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in string form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
-{
-    return plugin.getUserImpl("id", id);
-}
-
-
-// getUserByID
-/++
- +  Queries the Twitch servers for information about a user, by id.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by id integer.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in integer form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
-{
-    return plugin.getUserImpl("id", id);
 }
 
 
