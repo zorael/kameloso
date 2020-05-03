@@ -11,7 +11,7 @@ dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>0.3.3"
-dependency "dialect" version="~>0.5.1"
+dependency "dialect" version="~>0.5.2"
 
 sourcePaths "source"
 importPaths "source"
