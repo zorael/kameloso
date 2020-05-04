@@ -217,6 +217,9 @@ struct IRCBot
 
         /// Default reason given when quitting without specifying one.
         string quitReason;
+
+        /// Default reason given when parting a channel without specifying one.
+        string partReason;
     }
 
     @Separator(",")
