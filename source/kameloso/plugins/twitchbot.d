@@ -1042,6 +1042,54 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// persistentQuerier
+/++
+ +  Persistent worker issuing Twitch API queries based on the concurrency messages
+ +  sent to it.
+ +
+ +  Params:
+ +      headers = HTTP headers to use when issuing the requests.
+ +      bucket = The shared bucket to put the results in, keyed by URL.
+ +/
+version(Web)
+void persistentQuerier(shared string[string] headers, shared string[string] bucket)
+{
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : OwnerTerminated, receive;
+    import std.variant : Variant;
+
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("twitchquerier");
+    }
+
+    bool halt;
+
+    while (!halt)
+    {
+        receive(
+            (string url)
+            {
+                queryTwitch(url, headers, bucket);
+            },
+            (ThreadMessage.Teardown)
+            {
+                halt = true;
+            },
+            (OwnerTerminated e)
+            {
+                halt = true;
+            },
+            (Variant v)
+            {
+                // It's technically an error but do nothing for now
+            },
+        );
+    }
+}
+
+
 // queryTwitch
 /++
  +  Sends a HTTP GET to the pased URL, and returns the response by adding it
