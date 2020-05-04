@@ -258,9 +258,17 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             import std.traits : Unqual;
                             alias ThisEnabler = Unqual!(typeof(this.tupleof[i].tupleof[n]));
 
-                            static assert(is(ThisEnabler : bool),
-                                '`' ~ Unqual!(typeof(this)).stringof ~
-                                "` has a non-bool `Enabler`: `" ~ ThisEnabler.stringof ~ '`');
+                            static if (!is(ThisEnabler == bool))
+                            {
+                                import std.format : format;
+
+                                alias UnqualThis = Unqual!(typeof(this));
+                                enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
+
+                                static assert(0, pattern.format(UnqualThis.stringof,
+                                    ThisEnabler.stringof,
+                                    __traits(identifier, this.tupleof[i].tupleof[n])));
+                            }
 
                             retval = submember;
                             break top;
