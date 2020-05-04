@@ -19,7 +19,8 @@ public:
 enum KamelosoInfo
 {
     version_ = "%d.%d.%d%s"
-        .format(KamelosoSemVer.majorVersion,
+        .format(
+            KamelosoSemVer.majorVersion,
             KamelosoSemVer.minorVersion,
             KamelosoSemVer.patchVersion,
             KamelosoSemVerPrerelease),  /// Version as a string.
