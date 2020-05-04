@@ -152,7 +152,6 @@ void complainAboutIncompleteConfiguration()
 void applyDefaults(ref IRCClient client, ref IRCServer server)
 out (; (client.nickname.length), "Empty client nickname")
 out (; (client.user.length), "Empty client username")
-out (; (client.ident.length), "Empty client ident")
 out (; (client.realName.length), "Empty client GECOS/real name")
 out (; (server.address.length), "Empty server address")
 out (; (server.port != 0), "Server port of 0")
@@ -173,12 +172,6 @@ do
     if (!client.user.length)
     {
         client.user = KamelosoDefaultStrings.user;
-    }
-
-    // If no client.ident set, inherit.
-    if (!client.ident.length)
-    {
-        client.ident = KamelosoDefaultStrings.ident;
     }
 
     // If no client.realName set, inherit.
@@ -220,7 +213,7 @@ unittest
 
     assert(client.nickname.length);
     assert((client.user == KamelosoDefaultStrings.user), client.user);
-    assert((client.ident == KamelosoDefaultStrings.ident), client.ident);
+    assert(!client.ident.length, client.ident);
     assert((client.realName == KamelosoDefaultStrings.realName), client.realName);
     assert((server.address == KamelosoDefaultStrings.serverAddress), server.address);
     assert((server.port == KamelosoDefaultIntegers.port), server.port.text);

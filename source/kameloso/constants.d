@@ -32,16 +32,22 @@ enum KamelosoInfo
  +/
 enum KamelosoDefaultStrings
 {
-    /// Default user to use when logging onto a server (the USER command).
+    /++
+     +  Default user to use when logging onto a server (the USER command).
+     +  Additionally becomes the bot's IDENT identifier (prepended with a '~'),
+     +  if a separate `identd` server is not being run.
+     +/
     user = "kameloso",
-    /// Default IDENT identifier.
-    ident = "NaN",
+
     /// Default server address.
     serverAddress = "irc.freenode.net",
+
     /// The default GEOC/"real name" string.
     realName = "kameloso IRC bot",
+
     /// The default quit reason, when the bot exits normally (not through Ctrl+C).
     quitReason = "kameloso IRC bot @ " ~ KamelosoInfo.source,
+
     /// When a nickname is taken, append this to get a new name.
     altNickSign = "^",
 }
