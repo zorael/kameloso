@@ -1352,7 +1352,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
         immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
 
-        foreach (const followingUserJSON; getFollows(plugin, idString, Yes.from).array)
+        foreach (const followingUserJSON; getFollowsAsync(plugin, idString, Yes.from).array)
         {
             /*writefln("%s --> %s", followingUserJSON["from_name"],
                 followingUserJSON["to_name"]);*/
@@ -1365,7 +1365,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
             }
         }
 
-        foreach (const followingUserJSON; getFollows(plugin, roomIDString, No.from).array)
+        foreach (const followingUserJSON; getFollowsAsync(plugin, roomIDString, No.from).array)
         {
             /*writefln("%s --> %s", followingUserJSON["from_name"],
                 followingUserJSON["to_name"]);*/
@@ -1397,9 +1397,9 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// getFollows
+// getFollowsAsync
 /++
- +  Gets the list of followers of a channel.
+ +  Asynchronously gets the list of followers of a channel.
  +
  +  Warning: Must be called from within a Fiber.
  +
@@ -1412,14 +1412,15 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
  +      A `std.json.JSONValue` with the list of follows.
  +/
 version(Web)
-JSONValue getFollows(TwitchBotPlugin plugin, const string idString, const Flag!"from" from)
+JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
+    const Flag!"from" from)
 {
     import kameloso.plugins.common : delayFiberMsecs;
     import std.concurrency : send, spawn;
     import std.json : JSONType, JSONValue, parseJSON;
     import core.thread : Fiber;
 
-    assert(Fiber.getThis, "Tried to call `getFollows` from outside a Fiber");
+    assert(Fiber.getThis, "Tried to call `getFollowsAsync` from outside a Fiber");
 
     immutable url = from ?
         "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString :
