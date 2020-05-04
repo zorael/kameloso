@@ -2391,7 +2391,10 @@ int initBot(string[] args)
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
     // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
     // Skip if --force was passed.
-    if (!instance.settings.force) applyDefaults(instance.parser.client, instance.parser.server);
+    if (!instance.settings.force)
+    {
+        applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
+    }
 
     string pre, post;
 

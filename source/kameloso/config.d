@@ -215,6 +215,7 @@ unittest
 
     IRCClient client;
     IRCServer server;
+    IRCBot bot;
 
     assert(!client.nickname.length, client.nickname);
     assert(!client.user.length, client.user);
@@ -223,7 +224,7 @@ unittest
     assert(!server.address, server.address);
     assert((server.port == 0), server.port.text);
 
-    applyDefaults(client, server);
+    applyDefaults(client, server, bot);
 
     assert(client.nickname.length);
     assert((client.user == KamelosoDefaultStrings.user), client.user);
@@ -231,9 +232,11 @@ unittest
     assert((client.realName == KamelosoDefaultStrings.realName), client.realName);
     assert((server.address == KamelosoDefaultStrings.serverAddress), server.address);
     assert((server.port == KamelosoDefaultIntegers.port), server.port.text);
+    assert((bot.quitReason == KamelosoDefaultStrings.quitReason), bot.quitReason);
+    assert((bot.partReason == KamelosoDefaultStrings.partReason), bot.partReason);
 
     client.nickname = string.init;
-    applyDefaults(client, server);
+    applyDefaults(client, server, bot);
 
     assert(client.nickname.length, client.nickname);
 }

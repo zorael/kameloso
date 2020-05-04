@@ -286,7 +286,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
         settings.configFile.readConfigInto(missing, invalid,
             parser.client, bot, parser.server, settings);
-        applyDefaults(parser.client, parser.server);
+        applyDefaults(parser.client, parser.server, bot);
 
         // Cannot be const
         auto results = getopt(args,
