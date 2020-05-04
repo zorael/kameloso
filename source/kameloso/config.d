@@ -6,7 +6,7 @@ module kameloso.config;
 
 private:
 
-import kameloso.common : Kameloso;
+import kameloso.common : IRCBot, Kameloso;
 import dialect.defs : IRCClient, IRCServer;
 import std.typecons : Flag, No, Yes;
 
@@ -138,9 +138,10 @@ void complainAboutIncompleteConfiguration()
 
 // applyDefaults
 /++
- +  Completes a client's member fields with values needed to connect.
+ +  Completes a client's, server's and bot's member fields. Empty members are
+ +  given values from compile-time defaults.
  +
- +  Nickname, user, IDENT, GECOS/"real name", server address and server port are
+ +  Nickname, user, GECOS/"real name", server address and server port are
  +  required. If there is no nickname, generate a random one, then just update
  +  the other members to have the same value (if they're empty) OR with values
  +  stored in `kameloso.constants.KamelosoDefaultStrings`.
@@ -148,13 +149,16 @@ void complainAboutIncompleteConfiguration()
  +  Params:
  +      client = Reference to the `dialect.defs.IRCClient` to complete.
  +      server = Reference to the `dialect.defs.IRCServer` to complete.
+ +      bot = Reference to the `kameloso.common.IRCBot` to complete.
  +/
-void applyDefaults(ref IRCClient client, ref IRCServer server)
+void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")
 out (; (client.user.length), "Empty client username")
 out (; (client.realName.length), "Empty client GECOS/real name")
 out (; (server.address.length), "Empty server address")
 out (; (server.port != 0), "Server port of 0")
+out (; (bot.quitReason.length), "Empty bot quit reason")
+out (; (bot.partReason.length), "Empty bot part reason")
 do
 {
     import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
@@ -190,6 +194,16 @@ do
     if (server.port == 0)
     {
         server.port = KamelosoDefaultIntegers.port;
+    }
+
+    if (!bot.quitReason.length)
+    {
+        bot.quitReason = KamelosoDefaultStrings.quitReason;
+    }
+
+    if (!bot.partReason.length)
+    {
+        bot.partReason = KamelosoDefaultStrings.partReason;
     }
 }
 
