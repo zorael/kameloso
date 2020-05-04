@@ -1796,6 +1796,13 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
         plugin.bucket[string.init] = string.init;
         plugin.bucket.remove(string.init);
+
+        if (plugin.twitchBotSettings.singleWorkerThread)
+        {
+            import std.concurrency : spawn;
+            plugin.persistentWorkerTid = spawn(&persistentQuerier,
+                cast(shared)plugin.headers, plugin.bucket);
+        }
     }
 }
 
@@ -1981,6 +1988,23 @@ void start(TwitchBotPlugin plugin)
 {
     import std.datetime.systime : Clock;
     plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
+}
+
+
+// teardown
+/++
+ +  De-initialises the plugin. Shuts down any persistent worker threads.
+ +/
+version(Web)
+void teardown(TwitchBotPlugin plugin)
+{
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+
+    if (plugin.twitchBotSettings.singleWorkerThread)
+    {
+        plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
+    }
 }
 
 
