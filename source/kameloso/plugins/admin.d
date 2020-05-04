@@ -107,37 +107,6 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
         if (plugin.state.settings.flush) stdout.flush();
     }
-
-    version(AdminAssertGeneration)
-    {
-        if (plugin.adminSettings.printAsserts)
-        {
-            import lu.string : contains;
-
-            if (event.raw.contains(1))
-            {
-                logger.warning("event.raw contains CTCP 1 which might not get printed");
-            }
-
-            formatEventAssertBlock(stdout.lockingTextWriter, event);
-            writeln();
-
-            if (plugin.state.client != plugin.previousClient)
-            {
-                import lu.deltastrings : formatDeltaInto;
-
-                writeln("with (parser.client)");
-                writeln("{");
-                stdout.lockingTextWriter.formatDeltaInto!(Yes.asserts)
-                    (plugin.previousClient, plugin.state.client, 1);
-                writeln("}\n");
-
-                plugin.previousClient = plugin.state.client;
-            }
-
-            if (plugin.state.settings.flush) stdout.flush();
-        }
-    }
 }
 
 
@@ -1195,223 +1164,6 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAsserts
-/++
- +  Toggles a flag to print *assert statements* of incoming events.
- +
- +  This is used to creating unittest blocks in the source code.
- +/
-debug
-version(AdminAssertGeneration)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "printasserts")
-@Description("[debug] Toggles a flag to generate assert statements for incoming events.")
-void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
-{
-    import std.conv : text;
-    import std.stdio : stdout;
-
-    plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
-
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing asserts: " ~ plugin.adminSettings.printAsserts.text.ircBold :
-        "Printing asserts: " ~ plugin.adminSettings.printAsserts.text;
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
-
-    if (plugin.adminSettings.printAsserts)
-    {
-        import lu.deltastrings : formatDeltaInto;
-
-        // Print the bot assignment but only if we're toggling it on
-        formatClientAssignment(stdout.lockingTextWriter,
-            plugin.state.client, plugin.state.server);
-    }
-
-    if (plugin.state.settings.flush) stdout.flush();
-}
-
-
-// formatClientAssignment
-/++
- +  Constructs statement lines for each changed field of an
- +  `dialect.defs.IRCClient`, including instantiating a fresh one.
- +
- +  Example:
- +  ---
- +  IRCClient client;
- +  IRCServer server;
- +  Appender!string sink;
- +
- +  sink.formatClientAssignment(client, server);
- +  ---
- +
- +  Params:
- +      sink = Output buffer to write to.
- +      client = `dialect.defs.IRCClient` to simulate the assignment of.
- +      server = `dialect.defs.IRCServer` to simulate the assignment of.
- +/
-debug
-version(AdminAssertGeneration)
-void formatClientAssignment(Sink)(auto ref Sink sink, const IRCClient client, const IRCServer server)
-if (isOutputRange!(Sink, char[]))
-{
-    import lu.deltastrings : formatDeltaInto;
-
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
-    sink.put("IRCParser parser;\n\n");
-    sink.put("with (parser)\n");
-    sink.put("{\n");
-    sink.formatDeltaInto(IRCClient.init, client, 1, "client");
-    sink.formatDeltaInto(IRCServer.init, server, 1, "server");
-    sink.put('}');
-
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        sink.put('\n');
-    }
-}
-
-///
-debug
-version(AdminAssertGeneration)
-unittest
-{
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(128);
-
-    IRCClient client;
-    IRCServer server;
-
-    with (client)
-    {
-        nickname = "NICKNAME";
-        user = "UUUUUSER";
-        server.address = "something.freenode.net";
-        server.port = 6667;
-        server.daemon = IRCServer.Daemon.unreal;
-        server.aModes = "eIbq";
-    }
-
-    sink.formatClientAssignment(client, server);
-
-    assert(sink.data ==
-`IRCParser parser;
-
-with (parser)
-{
-    client.nickname = "NICKNAME";
-    client.user = "UUUUUSER";
-    server.address = "something.freenode.net";
-    server.port = 6667;
-    server.daemon = IRCServer.Daemon.unreal;
-    server.aModes = "eIbq";
-}`, '\n' ~ sink.data);
-}
-
-
-// formatEventAssertBlock
-/++
- +  Constructs assert statement blocks for each changed field of an
- +  `dialect.defs.IRCEvent`.
- +
- +  Example:
- +  ---
- +  IRCEvent event;
- +  Appender!string sink;
- +  sink.formatEventAssertBlock(event);
- +  ---
- +
- +  Params:
- +      sink = Output buffer to write to.
- +      event = `dialect.defs.IRCEvent` to construct assert statements for.
- +/
-debug
-version(AdminAssertGeneration)
-void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
-if (isOutputRange!(Sink, char[]))
-{
-    import lu.deltastrings : formatDeltaInto;
-    import lu.string : tabs;
-    import std.array : replace;
-    import std.format : format, formattedWrite;
-
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
-    immutable raw = event.tags.length ?
-        "@%s %s".format(event.tags, event.raw) : event.raw;
-
-    immutable escaped = raw
-        .replace('\\', `\\`)
-        .replace('"', `\"`);
-
-    sink.put("{\n");
-    if (escaped != raw) sink.formattedWrite("%s// %s\n", 1.tabs, raw);
-    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, escaped);
-    sink.formattedWrite("%swith (event)\n", 1.tabs);
-    sink.formattedWrite("%s{\n", 1.tabs);
-    sink.formatDeltaInto!(Yes.asserts)(IRCEvent.init, event, 2);
-    sink.formattedWrite("%s}\n", 1.tabs);
-    sink.put("}");
-
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        sink.put('\n');
-    }
-}
-
-///
-debug
-version(AdminAssertGeneration)
-unittest
-{
-    import dialect.parsing : IRCParser;
-    import lu.deltastrings : formatDeltaInto;
-    import lu.string : tabs;
-    import std.array : Appender;
-    import std.format : formattedWrite;
-
-    Appender!string sink;
-    sink.reserve(1024);
-
-    IRCClient client;
-    IRCServer server;
-    auto parser = IRCParser(client, server);
-
-    immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
-
-    // copy/paste the above
-    sink.put("{\n");
-    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, event.raw);
-    sink.formattedWrite("%swith (event)\n", 1.tabs);
-    sink.formattedWrite("%s{\n", 1.tabs);
-    sink.formatDeltaInto!(Yes.asserts)(IRCEvent.init, event, 2);
-    sink.formattedWrite("%s}\n", 1.tabs);
-    sink.put("}");
-
-    assert(sink.data ==
-`{
-    immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
-    with (event)
-    {
-        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-        assert((sender.nickname == "zorael"), sender.nickname);
-        assert((sender.ident == "~NaN"), sender.ident);
-        assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
-        assert((channel == "#flerrp"), channel);
-        assert((content == "kameloso: 8ball"), content);
-    }
-}`, '\n' ~ sink.data);
-}
-
-
 // onCommandJoin
 /++
  +  Joins a supplied channel.
@@ -1955,23 +1707,6 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         case "printbytes":
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             return;
-
-        debug
-        version(AdminAssertGeneration)
-        {
-            case "printasserts":
-                plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
-
-                if (plugin.adminSettings.printAsserts)
-                {
-                    import std.stdio : stdout;
-
-                    // Print the bot assignment but only if we're toggling it on
-                    formatClientAssignment(stdout.lockingTextWriter,
-                        plugin.state.client, plugin.state.server);
-                }
-                return;
-        }
     }
 
     case "resetterm":
@@ -2062,30 +1797,6 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 }
 
 
-// start
-/++
- +  Print the initial assignment of client member fields, if we're printing asserts.
- +
- +  This lets us copy and paste the environment of later generated asserts.
- +
- +  `printAsserts` is debug-only, so gate this behind debug too.
- +/
-debug
-version(AdminAssertGeneration)
-void start(AdminPlugin plugin)
-{
-    if (!plugin.adminSettings.printAsserts) return;
-
-    import std.stdio : stdout, writeln;
-
-    writeln();
-    formatClientAssignment(stdout.lockingTextWriter, plugin.state.client, plugin.state.server);
-    writeln();
-
-    plugin.previousClient = plugin.state.client;
-}
-
-
 version(OmniscientAdmin)
 {
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -2121,13 +1832,6 @@ private:
 
     /// All Admin options gathered.
     AdminSettings adminSettings;
-
-    debug
-    version(AdminAssertGeneration)
-    {
-        /// Snapshot of the previous `dialect.defs.IRCClient`.
-        IRCClient previousClient;
-    }
 
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = KamelosoFilenames.users;

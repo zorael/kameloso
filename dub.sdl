@@ -76,9 +76,8 @@ configuration "dev" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "ProfileGC" \
-        "AdminAssertGeneration" //\
-        //"TraceWhois"
+        "ProfileGC"
+        //"TraceWhois" \
 }
 
 configuration "unittest" {
@@ -95,6 +94,5 @@ configuration "unittest" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "ProfileGC" \
-        "AdminAssertGeneration"
+        "ProfileGC"
 }
