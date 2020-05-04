@@ -1733,7 +1733,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
         plugin.headers =
         [
             "Client-ID" : plugin.twitchBotSettings.apiKey,
-            "Authorization" : "Bearer " ~ plugin.state.bot.pass,
+            "Authorization" : "Bearer " ~ plugin.state.bot.pass[6..$],  // Strip "oauth:"
         ];
 
         plugin.bucket[string.init] = string.init;
