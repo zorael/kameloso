@@ -669,6 +669,8 @@ void onInvite(ConnectService service, const IRCEvent event)
 @(IRCEvent.Type.CAP)
 void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 {
+    import lu.string : strippedRight;
+
     // - http://ircv3.net/irc
     // - https://blog.irccloud.com/ircv3
 
@@ -685,6 +687,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
     }
 
     service.capabilityNegotiation = Progress.started;
+    immutable content = event.content.strippedRight;
 
     switch (event.aux)
     {
@@ -693,7 +696,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 
         bool tryingSASL;
 
-        foreach (const cap; event.content.splitter(' '))
+        foreach (const cap; content.splitter(' '))
         {
             switch (cap)
             {
@@ -764,16 +767,37 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         break;
 
     case "ACK":
-        import lu.string : strippedRight;
-
-        switch (event.content.strippedRight)
+        switch (content)
         {
         case "sasl":
             raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
             break;
 
         default:
-            //logger.warning("Unhandled capability ACK: ", event.content);
+            //logger.warning("Unhandled capability ACK: ", content);
+            break;
+        }
+        break;
+
+    case "NAK":
+        switch (content)
+        {
+        case "sasl":
+            // SASL refused, safe to end handshake? Too early?
+            // Consider making this a Fiber that triggers after say, 5 seconds
+            // That should give other CAPs time to process
+            raw(service.state, "CAP END", Yes.quiet);
+
+            if (service.capabilityNegotiation == Progress.started)
+            {
+                // As above
+                service.capabilityNegotiation = Progress.finished;
+                service.negotiateNick();
+            }
+            break;
+
+        default:
+            //logger.warning("Unhandled capability NAK: ", content);
             break;
         }
         break;
