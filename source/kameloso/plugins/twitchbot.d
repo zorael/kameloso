@@ -54,6 +54,16 @@ import std.typecons : Flag, No, Yes;
 
     /// API key to use when querying Twitch servers for information.
     string apiKey;
+
+    /// Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+    version(Windows)
+    {
+        bool singleWorkerThread = true;
+    }
+    else
+    {
+        bool singleWorkerThread = false;
+    }
 }
 
 
