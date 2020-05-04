@@ -380,16 +380,13 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         import kameloso.thread : ThreadMessage, busMessage;
         import std.algorithm.mutation : SwapStrategy, remove;
 
-        // We're converting a normal channel into a home. Let other plugins know
-        // (as there is no SELFJOIN trigger).
-        logger.info("We're already in this channel as a guest. Converting it to a home.");
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            "home add", busMessage(channel));
+        logger.info("We're already in this channel as a guest. Cycling.");
 
         // Make sure there are no duplicates between homes and channels.
         plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(existingChannelIndex);
-        return;
+
+        return cycle(plugin, channel);
     }
 
     join(plugin.state, channel);
