@@ -1177,7 +1177,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common : delayFiberMsecs;
     import lu.string : nom, stripped;
-    import std.concurrency : spawn;
+    import std.concurrency : send, spawn;
     import std.conv : to;
     import std.json : JSONType, JSONValue, parseJSON;
     import core.thread : Fiber;
@@ -1225,7 +1225,15 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
                 {
                     // None on record, look up
                     immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
-                    spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+
+                    if (plugin.twitchBotSettings.singleWorkerThread)
+                    {
+                        plugin.persistentWorkerTid.send(url);
+                    }
+                    else
+                    {
+                        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+                    }
 
                     plugin.delayFiberMsecs(plugin.approximateQueryTime);
                     Fiber.yield();
@@ -1407,7 +1415,7 @@ version(Web)
 JSONValue getFollows(TwitchBotPlugin plugin, const string idString, const Flag!"from" from)
 {
     import kameloso.plugins.common : delayFiberMsecs;
-    import std.concurrency : spawn;
+    import std.concurrency : send, spawn;
     import std.json : JSONType, JSONValue, parseJSON;
     import core.thread : Fiber;
 
@@ -1417,7 +1425,14 @@ JSONValue getFollows(TwitchBotPlugin plugin, const string idString, const Flag!"
         "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString :
         "https://api.twitch.tv/helix/users/follows?to_id=" ~ idString;
 
-    spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+    if (plugin.twitchBotSettings.singleWorkerThread)
+    {
+        plugin.persistentWorkerTid.send(url);
+    }
+    else
+    {
+        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+    }
 
     plugin.delayFiberMsecs(plugin.approximateQueryTime);
     Fiber.yield();
