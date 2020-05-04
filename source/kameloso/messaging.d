@@ -666,7 +666,7 @@ do
     event.type = IRCEvent.Type.PART;
     if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
-    event.content = reason;
+    event.content = reason.length ? reason : state.bot.partReason;
     if (background) event.altcount = 999;
     event.raw = caller;
 
