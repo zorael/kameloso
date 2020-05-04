@@ -833,59 +833,57 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
+    const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel;
+    if (!bannedPhrases) return;
+
+    foreach (immutable phrase; *bannedPhrases)
     {
-        foreach (immutable phrase; *bannedPhrases)
+        import lu.string : contains;
+        import std.algorithm.searching : canFind;
+        import std.format : format;
+        import std.uni : asLowerCase;
+
+        // Try not to allocate two whole new strings
+        immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
+            event.content.contains(phrase) :
+            event.content.asLowerCase.canFind(phrase.asLowerCase);
+
+        if (!match) continue;
+
+        static immutable int[3] durations = [ 5, 60, 3600 ];
+        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+
+        auto ban = event.sender.nickname in channel.phraseBans;
+
+        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+        if (ban)
         {
-            import lu.string : contains;
-            import std.algorithm.searching : canFind;
-            import std.uni : asLowerCase;
+            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
 
-            // Try not to allocate two whole new strings
-            immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
-                event.content.contains(phrase) :
-                event.content.asLowerCase.canFind(phrase.asLowerCase);
-
-            if (match)
+            if (banEndTime > event.time)
             {
-                import std.format : format;
-
-                static immutable int[3] durations = [ 5, 60, 3600 ];
-                static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-
-                auto ban = event.sender.nickname in channel.phraseBans;
-
-                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-                if (ban)
-                {
-                    immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-                    if (banEndTime > event.time)
-                    {
-                        ban.timestamp = event.time;
-                        if (ban.offense < 2) ++ban.offense;
-                    }
-                    else
-                    {
-                        // Force a new ban
-                        ban = null;
-                    }
-                }
-
-                if (!ban)
-                {
-                    TwitchBotPlugin.Channel.Ban newBan;
-                    newBan.timestamp = event.time;
-                    channel.phraseBans[event.sender.nickname] = newBan;
-                    ban = event.sender.nickname in channel.phraseBans;
-                }
-
-                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-                    .format(event.sender.nickname, durations[ban.offense]));
-                return;
+                ban.timestamp = event.time;
+                if (ban.offense < 2) ++ban.offense;
+            }
+            else
+            {
+                // Force a new ban
+                ban = null;
             }
         }
+
+        if (!ban)
+        {
+            TwitchBotPlugin.Channel.Ban newBan;
+            newBan.timestamp = event.time;
+            channel.phraseBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in channel.phraseBans;
+        }
+
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+            .format(event.sender.nickname, durations[ban.offense]));
+        return;
     }
 }
 
