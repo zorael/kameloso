@@ -251,7 +251,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             {
                 static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
                 {
-                    foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
+                    foreach (immutable n, const submember; this.tupleof[i].tupleof)
                     {
                         static if (isAnnotated!(this.tupleof[i].tupleof[n], Enabler))
                         {
