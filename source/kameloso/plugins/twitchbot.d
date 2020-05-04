@@ -1073,19 +1073,19 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
     while (!halt)
     {
         receive(
-            (string url)
+            (string url) scope
             {
                 queryTwitch(url, headers, bucket);
             },
-            (ThreadMessage.Teardown)
+            (ThreadMessage.Teardown) scope
             {
                 halt = true;
             },
-            (OwnerTerminated e)
+            (OwnerTerminated e) scope
             {
                 halt = true;
             },
-            (Variant v)
+            (Variant v) scope
             {
                 // It's technically an error but do nothing for now
             },
