@@ -933,7 +933,9 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
 
     if (add)
     {
-        if (!mask.contains('!') || !mask.contains('@'))
+        import dialect.common : isValidHostmask;
+
+        if (!mask.isValidHostmask(plugin.state.server))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Invalid hostmask.");
