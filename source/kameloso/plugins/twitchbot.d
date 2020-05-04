@@ -2201,6 +2201,14 @@ private:
          +/
         enum retryTimeDivisor = 5;
 
+        /++
+         +  The multiplier of how much the `approximateQueryTime` should increase
+         +  when it turned out to be enough for the query to finish. This prevents
+         +  inflation as it will slowly, slowly decrease until it becomes too
+         +  small again, at which point it will grow.
+         +/
+        enum approximateQueryAntiInflationMultiplier = 0.999;
+
         /// Results of async HTTP queries.
         shared string[string] bucket;
     }
