@@ -24,8 +24,9 @@ import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAware
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import core.thread : Fiber;
+import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 
 /// All Twitch bot plugin runtime settings.
@@ -1047,6 +1048,9 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +  Persistent worker issuing Twitch API queries based on the concurrency messages
  +  sent to it.
  +
+ +  Possibly best used on Windows where threads are comparatively expensive
+ +  compared to on Posix platforms.
+ +
  +  Params:
  +      headers = HTTP headers to use when issuing the requests.
  +      bucket = The shared bucket to put the results in, keyed by URL.
@@ -1092,7 +1096,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
 
 // queryTwitch
 /++
- +  Sends a HTTP GET to the pased URL, and returns the response by adding it
+ +  Sends a HTTP GET to the passed URL, and returns the response by adding it
  +  to the shared `bucket`.
  +
  +  Callers can as such spawn this function as a new thread and asynchronously
@@ -1117,8 +1121,8 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +
  +      if (!response)
  +      {
- +          // Too early
- +          plugin.delayFiberMsecs(plugin.approximateQueryTime);
+ +          // Too early, sleep briefly and try again
+ +          plugin.delayFiberMsecs(plugin.approximateQueryTime/retryTimeDivisor);
  +          Fiber.yield();
  +          continue;
  +      }
@@ -1539,20 +1543,25 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-import std.json : JSONValue;
-
-// getUser
+// getUserImpl
 /++
- +  Queries the Twitch servers for information about a user, by name.
- +  Implementation function.
+ +  Synchronously queries the Twitch servers for information about a user,
+ +  by name or by Twitch account ID number. Implementation function.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      field = The field to access via the HTTP URL. Can be either "login"
+ +          or "id".
+ +      identifier = The identifier of type `field` to look up.
+ +
+ +  Returns:
+ +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 version(Web)
 JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
     const Identifier identifier)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
-in (plugin.twitchBotSettings.apiKey.length, "Tried to `getUserImpl` with a " ~
-    "zero-length API key")
 {
     import requests.request : Request;
     import std.conv : to;
