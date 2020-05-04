@@ -1807,7 +1807,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
     {
         if (!plugin.twitchBotSettings.apiKey.length)
         {
-            logger.warning("No Twitch API key supplied in the configuration file. " ~
+            logger.info("No Twitch Client ID API key supplied in the configuration file. " ~
                 "Some commands will not work.");
             plugin.useAPIFeatures = false;
             return;
