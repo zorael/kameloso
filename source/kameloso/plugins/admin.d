@@ -1654,7 +1654,7 @@ void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
  +      channelName = The name of the channel to cycle.
  +      key = The key to use when rejoining the channel.
  +/
-void cycle(AdminPlugin plugin, const string channelName, const string key)
+void cycle(AdminPlugin plugin, const string channelName, const string key = string.init)
 {
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
