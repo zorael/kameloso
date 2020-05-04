@@ -20,6 +20,8 @@ version(WithAdminPlugin):
 
 private:
 
+debug import kameloso.plugins.admin.debugging;
+
 import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
@@ -87,26 +89,7 @@ debug
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.stdio : stdout, write, writefln, writeln;
-
-    if (plugin.adminSettings.printRaw)
-    {
-        if (event.tags.length) write('@', event.tags, ' ');
-        writeln(event.raw, '$');
-        if (plugin.state.settings.flush) stdout.flush();
-    }
-
-    if (plugin.adminSettings.printBytes)
-    {
-        import std.string : representation;
-
-        foreach (immutable i, immutable c; event.content.representation)
-        {
-            writefln("[%d] %s : %03d", i, cast(char)c, c);
-        }
-
-        if (plugin.state.settings.flush) stdout.flush();
-    }
+    return onAnyEventImpl(plugin, event);
 }
 
 
@@ -127,24 +110,7 @@ debug
     "to the local terminal.", "$command [nickname] [nickname] ...")
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.printing : printObject;
-    import std.algorithm.iteration : splitter;
-
-    foreach (immutable username; event.content.splitter(' '))
-    {
-        if (const user = username in plugin.state.users)
-        {
-            printObject(*user);
-        }
-        else
-        {
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "No such user: " ~ username.ircColour(IRCColour.red).ircBold :
-                "No such user: " ~ username;
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-    }
+    return onCommandShowUserImpl(plugin, event);
 }
 
 
@@ -187,17 +153,7 @@ debug
 @Description("[debug] Prints out the current users array to the local terminal.")
 void onCommandShowUsers(AdminPlugin plugin)
 {
-    import kameloso.printing : printObject;
-    import std.stdio : stdout, writeln;
-
-    foreach (immutable name, const user; plugin.state.users)
-    {
-        writeln(name);
-        printObject(user);
-    }
-
-    writeln(plugin.state.users.length, " users.");
-    if (plugin.state.settings.flush) stdout.flush();
+    return onCommandShowUsersImpl(plugin);
 }
 
 
@@ -218,7 +174,7 @@ debug
     "$command [raw string]")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    raw(plugin.state, event.content);
+    return onCommandSudoImpl(plugin, event);
 }
 
 
@@ -1124,15 +1080,7 @@ debug
 @Description("[debug] Toggles a flag to print all incoming events raw.")
 void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.conv : text;
-
-    plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
-
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold :
-        "Printing all: " ~ plugin.adminSettings.printRaw.text;
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    return onCommandPrintRawImpl(plugin, event);
 }
 
 
@@ -1152,15 +1100,7 @@ debug
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
 void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.conv : text;
-
-    plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
-
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold :
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    return onCommandPrintBytesImpl(plugin, event);
 }
 
 
@@ -1321,27 +1261,7 @@ debug
 @Description("[debug] Dumps information about the current state of the bot to the local terminal.")
 void onCommandStatus(AdminPlugin plugin)
 {
-    import kameloso.printing : printObjects;
-    import std.stdio : stdout, writeln;
-
-    logger.log("Current state:");
-    printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
-    writeln();
-
-    logger.log("Channels:");
-    foreach (immutable channelName, const channel; plugin.state.channels)
-    {
-        writeln(channelName);
-        printObjects(channel);
-    }
-    //writeln();
-
-    /*logger.log("Users:");
-    foreach (immutable nickname, const user; plugin.state.users)
-    {
-        writeln(nickname);
-        printObject(user);
-    }*/
+    return onCommandStatusImpl(plugin);
 }
 
 
@@ -1613,34 +1533,7 @@ debug
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
 void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage, busMessage;
-    import lu.string : contains, nom;
-    import std.stdio : stdout, writeln;
-
-    if (!event.content.length) return;
-
-    if (!event.content.contains!(Yes.decode)(" "))
-    {
-        logger.info("Sending bus message.");
-        writeln("Header: ", event.content);
-        writeln("Content: (empty)");
-        if (plugin.state.settings.flush) stdout.flush();
-
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
-    }
-    else
-    {
-        string slice = event.content;  // mutable
-        immutable header = slice.nom(" ");
-
-        logger.info("Sending bus message.");
-        writeln("Header: ", header);
-        writeln("Content: ", slice);
-        if (plugin.state.settings.flush) stdout.flush();
-
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            header, busMessage(slice));
-    }
+    return onCommandBusImpl(plugin, event);
 }
 
 
@@ -1827,7 +1720,7 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
-private:
+package:
     import kameloso.constants : KamelosoFilenames;
 
     /// All Admin options gathered.
