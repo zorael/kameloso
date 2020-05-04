@@ -86,7 +86,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 
 ## Prerequisites
 
-There are three [**D**](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 3.3 Gb of free memory for a minimal build, closer to 4.5 Gb for a development build with all features (Linux `dev` debug build). 4.8 Gb to run unit tests. (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
+There are three [**D**](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 3.3 Gb of free memory for a minimal build, and 4.5 Gb for a development build with all features (Linux `dev` debug build). Upwards of around 4.8 Gb to run unit tests. (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
@@ -111,7 +111,7 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use **ldc**, or to build with the `--build-mode=singleFile` flag appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
+On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
 
 ### Build configurations
 
@@ -134,7 +134,7 @@ If you want to customise your own build to only compile the plugins you want to 
 
 ## Configuration
 
-The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
+The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a log bot. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
 
 ```sh
 $ ./kameloso --writeconfig
@@ -144,7 +144,7 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 * Linux: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
 * OSX: `$HOME/Library/Application Support/kameloso`
-* Windows: `%LOCALAPPDATA%\kameloso`
+* Windows: `%APPDATA%\kameloso`
 * Other unexpected platforms: fallback to current working directory
 
 Open the file in a normal text editor.
@@ -165,7 +165,7 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently available setting, so settings that relate to plugins *that are currently not built in* are silently removed.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* setting, so settings that relate to plugins *that are currently not built in* are silently removed.
 
 ### Display settings
 
@@ -173,11 +173,13 @@ If you have compiled in colours and you have bright terminal background, the col
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **OSX** and **Windows** they will be put in subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **OSX** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
 
 ## Example use
 
 Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
+
+> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to "accounts".
 
 ```
      you joined #channel
@@ -233,10 +235,17 @@ It can technically be any string and not just one character. It may include spac
 To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`. You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
 ```ini
-[IRCBot]
+[IRCClient]
 nickname            twitchaccount
+#user
+#realName
+
+[IRCBot]
+#account
+#password
 pass                oauth:the50letteroauthstringgoeshere
-homeChannels        #twitchaccount
+admins              otheraccount
+homeChannels        #twitchaccount,#otheraccount
 guestChannels       #streamer1,#streamer2,#streamer3
 
 [IRCServer]
@@ -288,7 +297,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * non-blocking FIFO
 * tweak `notes`
 * revamp `quotes`
-* handle home add by cycling
 * split large plugins into packages
 * more pairs of eyes
 
