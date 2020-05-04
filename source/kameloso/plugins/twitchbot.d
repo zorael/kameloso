@@ -2204,6 +2204,8 @@ private:
 
     version(Web)
     {
+        import std.concurrency : Tid;
+
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
 
@@ -2232,6 +2234,9 @@ private:
          +  small again, at which point it will grow.
          +/
         enum approximateQueryAntiInflationMultiplier = 0.999;
+
+        /// The thread ID of the persistent worker thread.
+        Tid persistentWorkerTid;
 
         /// Results of async HTTP queries.
         shared string[string] bucket;
