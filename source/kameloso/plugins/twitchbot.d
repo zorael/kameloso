@@ -1197,6 +1197,13 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
                             Fiber.yield();
                             continue;
                         }
+                        else
+                        {
+                            // Slowly decrease it to avoid inflation
+                            plugin.approximateQueryTime =
+                                cast(long)(plugin.approximateQueryTime *
+                                plugin.approximateQueryAntiInflationMultiplier);
+                        }
 
                         plugin.bucket.remove(url);
                     }
@@ -1376,6 +1383,13 @@ JSONValue getFollows(TwitchBotPlugin plugin, const string idString, const Flag!"
                     cast(long)(plugin.approximateQueryTime *
                     plugin.approximateQueryGrowthMultiplier);
                 queryTimeLengthened = true;
+            }
+            else
+            {
+                // Slowly decrease it to avoid inflation
+                plugin.approximateQueryTime =
+                    cast(long)(plugin.approximateQueryTime *
+                    plugin.approximateQueryAntiInflationMultiplier);
             }
 
             plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
