@@ -158,8 +158,8 @@ $ ./kameloso \
     --server irc.freenode.net \
     --nickname "kameloso" \
     --admins "you,friend,thatguy" \
-    --homes "#channel,#elsewhere" \
-    --channels "#d,##networking" \
+    --homeChannels "#channel,#elsewhere" \
+    --guestChannels "#d,##networking" \
     --writeconfig
 
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
