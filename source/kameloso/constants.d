@@ -49,6 +49,9 @@ enum KamelosoDefaultStrings
     quitReason = "kameloso IRC bot v%s @ %s"
         .format(KamelosoInfo.version_, KamelosoInfo.source),
 
+    /// The default part reason, when the bot is asked to part a channel.
+    partReason = quitReason,
+
     /// When a nickname is taken, append this to get a new name.
     altNickSign = "^",
 }
