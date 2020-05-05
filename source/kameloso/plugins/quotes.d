@@ -92,7 +92,15 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.json : JSONException;
 
-    string slice = event.content.stripped;
+    string slice = event.content.stripped;  // mutable
+
+    if (!slice.length && (plugin.state.server.daemon != IRCServer.Daemon.twitch))
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [nickname] [optional text to add a new quote]"
+            .format(plugin.state.settings.prefix, event.aux));
+        return;
+    }
 
     version(TwitchSupport)
     {
