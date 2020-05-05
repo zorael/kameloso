@@ -855,7 +855,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 }
 
 
-// delayFiberMsecs
+// delayMsecs
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -868,7 +868,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
  +      msecs = Number of milliseconds to delay the `fiber`.
  +/
-void delayFiberMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
+void delayMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
     import kameloso.thread : ScheduledFiber;
@@ -880,7 +880,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 }
 
 
-// delayFiberMsecs
+// delayMsecs
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -891,16 +891,16 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +      msecs = Number of milliseconds to delay the implicit fiber in the current context.
  +      thenYield = Whether or not to immediately yield the Fiber.
  +/
-void delayFiberMsecs(IRCPlugin plugin, const long msecs,
+void delayMsecs(IRCPlugin plugin, const long msecs,
     const Flag!"thenYield" thenYield = No.thenYield)
 {
-    plugin.delayFiberMsecs(Fiber.getThis, msecs);
+    delayMsecs(plugin, Fiber.getThis, msecs);
 
     if (thenYield) Fiber.yield();
 }
 
 
-// delayFiber
+// delay
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -910,15 +910,15 @@ void delayFiberMsecs(IRCPlugin plugin, const long msecs,
  +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
  +      secs = Number of seconds to delay the `fiber`.
  +/
-void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
+void delay(IRCPlugin plugin, Fiber fiber, const long secs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
     // Pass the seconds as milliseconds
-    return plugin.delayFiberMsecs(fiber, secs * 1_000);
+    return delayMsecs(plugin, fiber, secs * 1_000);
 }
 
 
-// delayFiber
+// delay
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -929,14 +929,30 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +      secs = Number of seconds to delay the implicit fiber in the current context.
  +      thenYield = Whether or not to immediately yield the Fiber.
  +/
-void delayFiber(IRCPlugin plugin, const long secs,
+void delay(IRCPlugin plugin, const long secs,
     const Flag!"thenYield" thenYield = No.thenYield)
 {
     // Pass the seconds as milliseconds
-    plugin.delayFiberMsecs(Fiber.getThis, secs * 1_000);
+    delayMsecs(plugin, Fiber.getThis, secs * 1_000);
 
     if (thenYield) Fiber.yield();
 }
+
+
+// delayFiberMsecs
+/++
+ +  Compatibility alias of `delayMsecs`.
+ +/
+deprecated("Use `delayMsecs` instead")
+alias delayFiberMsecs = delayMsecs;
+
+
+// delayFiber
+/++
+ +  Compatibility alias of `delay`.
+ +/
+deprecated("Use `delay` instead")
+alias delayFiber = delay;
 
 
 // removeDelayedFiber
