@@ -104,7 +104,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     json.reset();
     json.load(plugin.userFile);
 
-    if (channel in json[list].object)
+    if ((channel in json[list].object) && json[list][channel].array.length)
     {
         import std.algorithm.iteration : map;
 
