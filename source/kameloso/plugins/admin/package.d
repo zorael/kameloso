@@ -355,7 +355,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
             return dg();
         }
 
-        scope(exit) plugin.unlistFiberAwaitingEvents(thisFiber, joinTypes[]);
+        scope(exit) unawait(plugin, joinTypes[]);
 
         with (IRCEvent.Type)
         switch (followupEvent.type)
@@ -396,7 +396,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
-    plugin.awaitEvents(fiber, joinTypes);
+    await(plugin, fiber, joinTypes);
 }
 
 
@@ -835,7 +835,7 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg);
-    plugin.awaitEvent(fiber, IRCEvent.Type.SELFPART);
+    await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
 }
 

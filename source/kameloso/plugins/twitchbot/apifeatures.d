@@ -91,7 +91,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
  +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
  +
- +  plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
+ +  delayMsecs(plugin, plugin.approximateQueryTime, Yes.yield);
  +
  +  shared string* response;
  +
@@ -105,7 +105,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +      if (!response)
  +      {
  +          // Too early, sleep briefly and try again
- +          plugin.delayFiberMsecs(plugin.approximateQueryTime/retryTimeDivisor, Yes.thenYield);
+ +          delayMsecs(plugin, plugin.approximateQueryTime/retryTimeDivisor, Yes.yield);
  +          continue;
  +      }
  +
@@ -151,7 +151,7 @@ void queryTwitch(const string url, shared string[string] headers,
  +/
 void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : delayFiberMsecs;
+    import kameloso.plugins.common : delayMsecs;
     import lu.string : nom, stripped;
     import std.concurrency : send, spawn;
     import std.conv : to;
@@ -211,7 +211,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
                     }
 
-                    plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
+                    delayMsecs(plugin, plugin.approximateQueryTime, Yes.yield);
 
                     shared string* response;
                     bool queryTimeLengthened;
@@ -235,7 +235,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                             }
 
                             immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
-                            plugin.delayFiberMsecs(briefWait, Yes.thenYield);
+                            delayMsecs(plugin, briefWait, Yes.yield);
                             continue;
                         }
                         else
@@ -391,7 +391,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
     const Flag!"from" from)
 {
-    import kameloso.plugins.common : delayFiberMsecs;
+    import kameloso.plugins.common : delayMsecs;
     import std.concurrency : send, spawn;
     import std.json : JSONType, JSONValue, parseJSON;
     import core.thread : Fiber;
@@ -411,7 +411,7 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
     }
 
-    plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
+    delayMsecs(plugin, plugin.approximateQueryTime, Yes.yield);
 
     shared string* response;
     bool queryTimeLengthened;
@@ -442,7 +442,7 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
             }
 
             immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
-            plugin.delayFiberMsecs(briefWait, Yes.thenYield);
+            delayMsecs(plugin, briefWait, Yes.yield);
             continue;
         }
 

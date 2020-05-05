@@ -362,7 +362,7 @@ void tryAuth(ConnectService service)
  +/
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
-    import kameloso.plugins.common : delayFiber;
+    import kameloso.plugins.common : delay;
     import core.thread : Fiber;
 
     void dg()
@@ -381,7 +381,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
     }
 
     Fiber fiber = new Fiber(&dg, 32_768);
-    service.delayFiber(fiber, service.authenticationGracePeriod);
+    delay(service, fiber, service.authenticationGracePeriod);
 }
 
 
@@ -1090,10 +1090,10 @@ void register(ConnectService service)
                     }
                 }
 
-                import kameloso.plugins.common : awaitEvent;
+                import kameloso.plugins.common : await;
 
                 Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
-                service.awaitEvent(fiber, IRCEvent.Type.CAP);
+                await(service, fiber, IRCEvent.Type.CAP);
                 return;
             }
         }
@@ -1112,10 +1112,10 @@ void register(ConnectService service)
             }
         }
 
-        import kameloso.plugins.common : delayFiber;
+        import kameloso.plugins.common : delay;
 
         Fiber fiber = new Fiber(&dgTimered, 32_768);
-        service.delayFiber(fiber, secsToWaitForCAP);
+        delay(service, fiber, secsToWaitForCAP);
     }
 }
 

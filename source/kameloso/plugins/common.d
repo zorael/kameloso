@@ -855,7 +855,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 }
 
 
-// delayFiberMsecs
+// delayMsecs
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -868,7 +868,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
  +      msecs = Number of milliseconds to delay the `fiber`.
  +/
-void delayFiberMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
+void delayMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
     import kameloso.thread : ScheduledFiber;
@@ -880,7 +880,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 }
 
 
-// delayFiberMsecs
+// delayMsecs
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -889,18 +889,17 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      msecs = Number of milliseconds to delay the implicit fiber in the current context.
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
-void delayFiberMsecs(IRCPlugin plugin, const long msecs,
-    const Flag!"thenYield" thenYield = No.thenYield)
+void delayMsecs(IRCPlugin plugin, const long msecs,
+    const Flag!"yield" yield = No.yield)
 {
-    plugin.delayFiberMsecs(Fiber.getThis, msecs);
-
-    if (thenYield) Fiber.yield();
+    delayMsecs(plugin, Fiber.getThis, msecs);
+    if (yield) Fiber.yield();
 }
 
 
-// delayFiber
+// delay
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -910,15 +909,15 @@ void delayFiberMsecs(IRCPlugin plugin, const long msecs,
  +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
  +      secs = Number of seconds to delay the `fiber`.
  +/
-void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
+void delay(IRCPlugin plugin, Fiber fiber, const long secs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
     // Pass the seconds as milliseconds
-    return plugin.delayFiberMsecs(fiber, secs * 1_000);
+    return delayMsecs(plugin, fiber, secs * 1_000);
 }
 
 
-// delayFiber
+// delay
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
  +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
@@ -927,16 +926,31 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      secs = Number of seconds to delay the implicit fiber in the current context.
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
-void delayFiber(IRCPlugin plugin, const long secs,
-    const Flag!"thenYield" thenYield = No.thenYield)
+void delay(IRCPlugin plugin, const long secs,
+    const Flag!"yield" yield = No.yield)
 {
     // Pass the seconds as milliseconds
-    plugin.delayFiberMsecs(Fiber.getThis, secs * 1_000);
-
-    if (thenYield) Fiber.yield();
+    delayMsecs(plugin, Fiber.getThis, secs * 1_000);
+    if (yield) Fiber.yield();
 }
+
+
+// delayFiberMsecs
+/++
+ +  Compatibility alias of `delayMsecs`.
+ +/
+deprecated("Use `delayMsecs` instead")
+alias delayFiberMsecs = delayMsecs;
+
+
+// delayFiber
+/++
+ +  Compatibility alias of `delay`.
+ +/
+deprecated("Use `delay` instead")
+alias delayFiber = delay;
 
 
 // removeDelayedFiber
@@ -993,7 +1007,7 @@ void removeDelayedFiber(IRCPlugin plugin)
 }
 
 
-// awaitEvents
+// await
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -1009,7 +1023,7 @@ void removeDelayedFiber(IRCPlugin plugin)
  +      type = The kind of `dialect.defs.IRCEvent` that should trigger the
  +          passed awaiting fiber.
  +/
-void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+void await(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
@@ -1017,7 +1031,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
 }
 
 
-// awaitEvents
+// await
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -1032,19 +1046,18 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +      plugin = The current `IRCPlugin`.
  +      type = The kind of `dialect.defs.IRCEvent` that should trigger this
  +          implicit awaiting fiber (in the current context).
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
-void awaitEvents(IRCPlugin plugin, const IRCEvent.Type type,
-    const Flag!"thenYield" thenYield = No.thenYield)
+void await(IRCPlugin plugin, const IRCEvent.Type type,
+    const Flag!"yield" yield = No.yield)
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
-
-    if (thenYield) Fiber.yield();
+    if (yield) Fiber.yield();
 }
 
 
-// awaitEvents
+// await
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
@@ -1061,7 +1074,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +          the passed awaiting fiber, in an array with elements of type
  +          `dialect.defs.IRCEvent.Type`.
  +/
-void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+void await(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
 {
     foreach (immutable type; types)
@@ -1073,7 +1086,7 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
 }
 
 
-// awaitEvents
+// await
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
@@ -1089,10 +1102,10 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
  +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          this implicit awaiting fiber (in the current context), in an array
  +          with elements of type `dialect.defs.IRCEvent.Type`.
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
-void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types,
-    const Flag!"thenYield" thenYield = No.thenYield)
+void await(IRCPlugin plugin, const IRCEvent.Type[] types,
+    const Flag!"yield" yield = No.yield)
 {
     foreach (immutable type; types)
     {
@@ -1101,25 +1114,27 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types,
         plugin.state.awaitingFibers[type] ~= Fiber.getThis;
     }
 
-    if (thenYield) Fiber.yield();
+    if (yield) Fiber.yield();
 }
 
 
 // awaitEvent
 /++
- +  Compatibility alias of `awaitEvents`.
+ +  Compatibility alias of `await`.
  +/
-alias awaitEvent = awaitEvents;
+deprecated("Use `await` instead")
+alias awaitEvent = await;
 
 
-// await
+// awaitEvents
 /++
- +  Compatibility alias of `awaitEvents`.
+ +  Compatibility alias of `await`.
  +/
-alias await = awaitEvents;
+deprecated("Use `await` instead")
+alias awaitEvents = await;
 
 
-// unlistFiberAwaitingEvents
+// unawait
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -1135,7 +1150,7 @@ alias await = awaitEvents;
  +      type = The kind of `dialect.defs.IRCEvent` that would trigger the
  +          passed awaiting fiber.
  +/
-void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to unlist a null Fiber from awaiting events")
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEvent.Type.UNSET`")
 {
@@ -1173,7 +1188,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
 }
 
 
-// unlistFiberAwaitingEvents
+// unawait
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
@@ -1188,13 +1203,13 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
  +      type = The kind of `dialect.defs.IRCEvent` that would trigger this
  +          implicit awaiting fiber (in the current context).
  +/
-void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type type)
+void unawait(IRCPlugin plugin, const IRCEvent.Type type)
 {
-    return plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
+    return unawait(plugin, Fiber.getThis, type);
 }
 
 
-// unlistFiberAwaitingEvents
+// unawait
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
@@ -1211,16 +1226,16 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type type)
  +          the passed awaiting fiber, in an array with elements of type
  +          `dialect.defs.IRCEvent.Type`.
  +/
-void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {
-        plugin.unlistFiberAwaitingEvent(fiber, type);
+        unawait(plugin, fiber, type);
     }
 }
 
 
-// unlistFiberAwaitingEvents
+// unawait
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
@@ -1236,27 +1251,29 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Typ
  +          this implicit awaiting fiber (in the current context), in an array
  +          with elements of type `dialect.defs.IRCEvent.Type`.
  +/
-void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
+void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {
-        plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
+        unawait(plugin, Fiber.getThis, type);
     }
 }
 
 
 // unlistFiberAwaitingEvent
 /++
- +  Compatibility alias of `unlistFiberAwaitingEvents`.
+ +  Compatibility alias of `unawait`.
  +/
-alias unlistFiberAwaitingEvent = unlistFiberAwaitingEvents;
+deprecated("Use `unawait` instead")
+alias unlistFiberAwaitingEvent = unawait;
 
 
 // unawait
 /++
- +  Compatibility alias of `unlistFiberAwaitingEvents`.
+ +  Compatibility alias of `unawait`.
  +/
-alias unawait = unlistFiberAwaitingEvents;
+deprecated("Use `unawait` instead")
+alias unlistFiberAwaitingEvents = unawait;
 
 
 private import std.traits : isSomeFunction;
@@ -1476,10 +1493,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             return whoisFiberDelegate();  // Recurse
         }
 
-        import kameloso.plugins.common : unlistFiberAwaitingEvents;
+        import kameloso.plugins.common : unawait;
 
         // Clean up awaiting fiber entries on exit, just to be neat.
-        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
+        scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
 
         with (IRCEvent.Type)
         switch (whoisEvent.type)
@@ -1636,10 +1653,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        import kameloso.plugins.common : awaitEvents;
+        import kameloso.plugins.common : await;
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
-        context.awaitEvents(fiber, whoisEventTypes[]);
+        await(context, fiber, whoisEventTypes[]);
 
         string slice = nickname;
 
