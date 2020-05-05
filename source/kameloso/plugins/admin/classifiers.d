@@ -227,6 +227,21 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
         immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channel);
         return report(result, nameOf(*user));
     }
+    else if (!specified.length)
+    {
+        if (event.sender.nickname.length)
+        {
+            // IRC report
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "No nickname supplied.");
+        }
+        else
+        {
+            // Terminal report
+            logger.warning("No nickname supplied.");
+        }
+        return;
+    }
     else if (!specified.isValidNickname(plugin.state.server))
     {
         if (event.sender.nickname.length)
