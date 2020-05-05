@@ -1035,7 +1035,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +      thenYield = Whether or not to immediately yield the Fiber.
  +/
 void awaitEvents(IRCPlugin plugin, const IRCEvent.Type type,
-    const Flag!"thenYield" thenYield)
+    const Flag!"thenYield" thenYield = No.thenYield)
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
@@ -1092,7 +1092,7 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
  +      thenYield = Whether or not to immediately yield the Fiber.
  +/
 void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types,
-    const Flag!"thenYield" thenYield)
+    const Flag!"thenYield" thenYield = No.thenYield)
 {
     foreach (immutable type; types)
     {
