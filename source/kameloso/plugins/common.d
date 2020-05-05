@@ -889,10 +889,14 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      msecs = Number of milliseconds to delay the implicit fiber in the current context.
+ +      thenYield = Whether or not to immediately yield the Fiber.
  +/
-void delayFiberMsecs(IRCPlugin plugin, const long msecs)
+void delayFiberMsecs(IRCPlugin plugin, const long msecs,
+    const Flag!"thenYield" thenYield = No.thenYield)
 {
-    return plugin.delayFiberMsecs(Fiber.getThis, msecs);
+    plugin.delayFiberMsecs(Fiber.getThis, msecs);
+
+    if (thenYield) Fiber.yield();
 }
 
 
@@ -923,11 +927,15 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      secs = Number of seconds to delay the implicit fiber in the current context.
+ +      thenYield = Whether or not to immediately yield the Fiber.
  +/
-void delayFiber(IRCPlugin plugin, const long secs)
+void delayFiber(IRCPlugin plugin, const long secs,
+    const Flag!"thenYield" thenYield = No.thenYield)
 {
     // Pass the seconds as milliseconds
-    return plugin.delayFiberMsecs(Fiber.getThis, secs * 1_000);
+    plugin.delayFiberMsecs(Fiber.getThis, secs * 1_000);
+
+    if (thenYield) Fiber.yield();
 }
 
 
