@@ -310,31 +310,35 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common : nameOf;
     import dialect.common : toLowerCase;
-    import lu.string : contains, nom;
+    import lu.string : SplitResults, splitInto;
     import std.json : JSONException;
     import std.typecons : No, Yes;
 
-    if (!event.content.contains!(Yes.decode)(" ")) return;
+    string slice = event.content;  // mutable
+    string target;
 
-    string slice = event.content;
-    immutable target = slice.nom!(Yes.decode)(" ")
-        .toLowerCase(plugin.state.server.caseMapping);
-    immutable lowercaseBotNickname = plugin.state.client.nickname
-        .toLowerCase(plugin.state.server.caseMapping);
+    immutable results = slice.splitInto(target);
 
-    if (target == lowercaseBotNickname)
+    if (results != SplitResults.overrun)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            "Usage: %s%s [nickname] [note text]"
+            .format(plugin.state.settings.prefix, event.aux));
+        return;
+    }
+
+    target = target.toLowerCase(plugin.state.server.caseMapping);
+
+    if (target == plugin.state.client.nickname.toLowerCase(plugin.state.server.caseMapping))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
         return;
     }
 
-    immutable sender = nameOf(event.sender);
-    immutable line = slice;
-
     try
     {
-        plugin.addNote(target, sender, event.channel, line);
+        plugin.addNote(target, nameOf(event.sender), event.channel, slice);
         privmsg(plugin.state, event.channel, event.sender.nickname, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
