@@ -91,7 +91,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
  +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
  +
- +  plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
+ +  delayMsecs(plugin, plugin.approximateQueryTime, Yes.yield);
  +
  +  shared string* response;
  +
@@ -105,7 +105,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +      if (!response)
  +      {
  +          // Too early, sleep briefly and try again
- +          plugin.delayFiberMsecs(plugin.approximateQueryTime/retryTimeDivisor, Yes.thenYield);
+ +          delayMsecs(plugin, plugin.approximateQueryTime/retryTimeDivisor, Yes.yield);
  +          continue;
  +      }
  +
@@ -211,7 +211,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
                     }
 
-                    delayMsecs(plugin, plugin.approximateQueryTime, Yes.thenYield);
+                    delayMsecs(plugin, plugin.approximateQueryTime, Yes.yield);
 
                     shared string* response;
                     bool queryTimeLengthened;
@@ -235,7 +235,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                             }
 
                             immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
-                            delayMsecs(plugin, briefWait, Yes.thenYield);
+                            delayMsecs(plugin, briefWait, Yes.yield);
                             continue;
                         }
                         else
@@ -411,7 +411,7 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
     }
 
-    delayMsecs(plugin, plugin.approximateQueryTime, Yes.thenYield);
+    delayMsecs(plugin, plugin.approximateQueryTime, Yes.yield);
 
     shared string* response;
     bool queryTimeLengthened;
@@ -442,7 +442,7 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
             }
 
             immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
-            delayMsecs(plugin, briefWait, Yes.thenYield);
+            delayMsecs(plugin, briefWait, Yes.yield);
             continue;
         }
 

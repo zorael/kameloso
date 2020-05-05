@@ -889,14 +889,13 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      msecs = Number of milliseconds to delay the implicit fiber in the current context.
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
 void delayMsecs(IRCPlugin plugin, const long msecs,
-    const Flag!"thenYield" thenYield = No.thenYield)
+    const Flag!"yield" yield = No.yield)
 {
     delayMsecs(plugin, Fiber.getThis, msecs);
-
-    if (thenYield) Fiber.yield();
+    if (yield) Fiber.yield();
 }
 
 
@@ -927,15 +926,14 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      secs = Number of seconds to delay the implicit fiber in the current context.
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
 void delay(IRCPlugin plugin, const long secs,
-    const Flag!"thenYield" thenYield = No.thenYield)
+    const Flag!"yield" yield = No.yield)
 {
     // Pass the seconds as milliseconds
     delayMsecs(plugin, Fiber.getThis, secs * 1_000);
-
-    if (thenYield) Fiber.yield();
+    if (yield) Fiber.yield();
 }
 
 
@@ -1048,15 +1046,14 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +      plugin = The current `IRCPlugin`.
  +      type = The kind of `dialect.defs.IRCEvent` that should trigger this
  +          implicit awaiting fiber (in the current context).
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type type,
-    const Flag!"thenYield" thenYield = No.thenYield)
+    const Flag!"yield" yield = No.yield)
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
-
-    if (thenYield) Fiber.yield();
+    if (yield) Fiber.yield();
 }
 
 
@@ -1105,10 +1102,10 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
  +      types = The kinds of `dialect.defs.IRCEvent` that should trigger
  +          this implicit awaiting fiber (in the current context), in an array
  +          with elements of type `dialect.defs.IRCEvent.Type`.
- +      thenYield = Whether or not to immediately yield the Fiber.
+ +      yield = Whether or not to immediately yield the Fiber.
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type[] types,
-    const Flag!"thenYield" thenYield = No.thenYield)
+    const Flag!"yield" yield = No.yield)
 {
     foreach (immutable type; types)
     {
@@ -1117,7 +1114,7 @@ void await(IRCPlugin plugin, const IRCEvent.Type[] types,
         plugin.state.awaitingFibers[type] ~= Fiber.getThis;
     }
 
-    if (thenYield) Fiber.yield();
+    if (yield) Fiber.yield();
 }
 
 
