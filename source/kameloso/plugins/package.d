@@ -98,7 +98,6 @@ version(WithPlugins)
         // Likewise we need to do this so as to let `EnabledWebPlugins` below  be
         // able to resolve these plugins.
         alias WebtitlesPlugin = AliasSeq!();
-        alias BashQuotesPlugin = AliasSeq!();
     }
 
 
