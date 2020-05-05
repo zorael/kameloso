@@ -94,7 +94,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
     void send(const string line)
     {
-        chan(plugin.state, origEvent.channel, line);
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
@@ -102,19 +102,19 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
     // ------------ !home
 
-    send(botNickname ~ ": home del #harpsteff");
+    send("home del #harpsteff");
     // Ignore reply
 
-    send(botNickname ~ ": home add #harpsteff");
+    send("home add #harpsteff");
     assert(thisFiber.payload.content == "Home added.");
 
-    send(botNickname ~ ": home add #harpsteff");
+    send("home add #harpsteff");
     assert(thisFiber.payload.content == "We are already in that home channel.");
 
-    send(botNickname ~ ": home del #harpsteff");
+    send("home del #harpsteff");
     assert(thisFiber.payload.content == "Home removed.");
 
-    send(botNickname ~ ": home del #harpsteff");
+    send("home del #harpsteff");
     assert(thisFiber.payload.content == "Channel #harpsteff was not listed as a home.");
 
     // ------------ lists
@@ -129,23 +129,23 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             (list == "whitelist") ? "a whitelisted user" :
             /*(list == "blacklist") ?*/ "a blacklisted user";
 
-        send(botNickname ~ ": " ~ list ~ " del wefpok");
+        send(list ~ " del wefpok");
         assert(thisFiber.payload.content == "Account wefpok isn't %s in %s."
             .format(asWhat, origEvent.channel));
 
-        send(botNickname ~ ": " ~ list ~ " add wefpok");
+        send(list ~ " add wefpok");
         assert(thisFiber.payload.content == "Added wefpok as %s in %s."
             .format(asWhat, origEvent.channel));
 
-        send(botNickname ~ ": " ~ list ~ " add wefpok");
+        send(list ~ " add wefpok");
         assert(thisFiber.payload.content == "wefpok was already %s in %s."
             .format(asWhat, origEvent.channel));
 
-        send(botNickname ~ ": " ~ list ~ " del wefpok");
+        send(list ~ " del wefpok");
         assert(thisFiber.payload.content == "Removed wefpok as %s in %s."
             .format(asWhat, origEvent.channel));
 
-        send(botNickname ~ ": " ~ list ~ " add");
+        send(list ~ " add");
         assert(thisFiber.payload.content == "No nickname supplied.");
 
         immutable asWhatList =
@@ -153,39 +153,39 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             (list == "whitelist") ? "whitelisted users" :
             /*(list == "blacklist") ?*/ "blacklisted users";
 
-        send(botNickname ~ ": " ~ list ~ " list");
+        send(list ~ " list");
         assert(thisFiber.payload.content == "There are no %s in %s."
             .format(asWhatList, origEvent.channel));
     }
 
     // ------------ misc
 
-    send(botNickname ~ ": cycle #flirrp");
+    send("cycle #flirrp");
     assert(thisFiber.payload.content == "I am not in that channel.");
 
     // ------------ hostmasks
 
-    send(botNickname ~ ": hostmask");
+    send("hostmask");
     if (thisFiber.payload.content != "This bot is not currently configured " ~
         "to use hostmasks for authentication.")
     {
-        send(botNickname ~ ": hostmask add");
+        send("hostmask add");
         assert(thisFiber.payload.content ==
             "Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
 
-        send(botNickname ~ ": hostmask add HIRF#%%!SNIRF$$$@''ä''.''.");
+        send("hostmask add HIRF#%%!SNIRF$$$@''ä''.''.");
         assert(thisFiber.payload.content == "Invalid hostmask.");
 
-        send(botNickname ~ ": hostmask add kameloso kameloso^!*@*");
+        send("hostmask add kameloso kameloso^!*@*");
         assert(thisFiber.payload.content == "Hostmask list updated.");
 
-        send(botNickname ~ ": hostmask add kameloso kameloso^!*@*");
+        send("hostmask add kameloso kameloso^!*@*");
         assert(thisFiber.payload.content == `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
 
-        send(botNickname ~ ": hostmask del kameloso^!*@*");
+        send("hostmask del kameloso^!*@*");
         assert(thisFiber.payload.content == "Hostmask list updated.");
 
-        send(botNickname ~ ": hostmask del kameloso^!*@*");
+        send("hostmask del kameloso^!*@*");
         assert(thisFiber.payload.content == "No such hostmask on file.");
     }
 
