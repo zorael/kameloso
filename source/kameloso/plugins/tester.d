@@ -133,8 +133,8 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -246,8 +246,8 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -320,8 +320,8 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -371,7 +371,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     // ------------ DANCE
 
-    awaitEvents(plugin, IRCEvent.Type.EMOTE);
+    await(plugin, IRCEvent.Type.EMOTE);
 
     send("get on up and DANCE");
     enforce(thisFiber.payload.content == "dances :D-<");
@@ -380,7 +380,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     Fiber.yield();
     enforce(thisFiber.payload.content == "dances :D/-<");
 
-    unlistFiberAwaitingEvents(plugin, IRCEvent.Type.EMOTE);
+    unawait(plugin, IRCEvent.Type.EMOTE);
 }
 
 
@@ -394,8 +394,8 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -414,9 +414,9 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     enforce(thisFiber.payload.content == "Note added.");
 
     part(plugin.state, origEvent.channel);
-    awaitEvents(plugin, IRCEvent.Type.SELFPART);
+    await(plugin, IRCEvent.Type.SELFPART);
     while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
-    unlistFiberAwaitingEvents(plugin, IRCEvent.Type.SELFPART);
+    unawait(plugin, IRCEvent.Type.SELFPART);
 
     join(plugin.state, origEvent.channel);
     enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note") &&
@@ -434,8 +434,8 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -485,8 +485,8 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -527,8 +527,8 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    awaitEvents(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unlistFiberAwaitingEvents(plugin, IRCEvent.Type.CHAN);
+    await(plugin, IRCEvent.Type.CHAN);
+    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
