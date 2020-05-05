@@ -1112,6 +1112,13 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types,
 alias awaitEvent = awaitEvents;
 
 
+// await
+/++
+ +  Compatibility alias of `awaitEvents`.
+ +/
+alias await = awaitEvents;
+
+
 // unlistFiberAwaitingEvents
 /++
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
@@ -1243,6 +1250,13 @@ void unlistFiberAwaitingEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
  +  Compatibility alias of `unlistFiberAwaitingEvents`.
  +/
 alias unlistFiberAwaitingEvent = unlistFiberAwaitingEvents;
+
+
+// unawait
+/++
+ +  Compatibility alias of `unlistFiberAwaitingEvents`.
+ +/
+alias unawait = unlistFiberAwaitingEvents;
 
 
 private import std.traits : isSomeFunction;
