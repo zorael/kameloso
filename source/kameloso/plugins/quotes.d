@@ -83,8 +83,8 @@ string getRandomQuote(QuotesPlugin plugin, const string nickname)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "quote")
-@Description("Fetches and repeats a random quote of a supplied nickname.",
-    "$command [nickname]")
+@Description("Fetches and repeats a random quote of a supplied nickname, " ~
+    "or adds a new one.", "$command [nickname]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
@@ -93,6 +93,22 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     import std.json : JSONException;
 
     string slice = event.content.stripped;
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import kameloso.plugins.common : nameOf;
+
+            if ((slice == event.channel[1..$]) ||
+                (slice == plugin.nameOf(event.channel[1..$])))
+            {
+                // Line was "!quote streamername";
+                // Slice away the name so a new one-word quote isn't added
+                slice = string.init;
+            }
+        }
+    }
 
     immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
         event.channel[1..$] :

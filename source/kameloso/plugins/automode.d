@@ -508,8 +508,11 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
 
         if (usersWithThatAccount.empty) continue;
 
-        const IRCUser user = usersWithThatAccount.front;  // There should be only one
-        plugin.applyAutomodes(event.channel, user.nickname, user.account);
+        foreach (const user; usersWithThatAccount)
+        {
+            // There can technically be more than one
+            plugin.applyAutomodes(event.channel, user.nickname, user.account);
+        }
     }
 }
 

@@ -91,8 +91,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
  +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
  +
- +  plugin.delayFiberMsecs(plugin.approximateQueryTime);
- +  Fiber.yield();
+ +  plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
  +
  +  shared string* response;
  +
@@ -106,8 +105,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +      if (!response)
  +      {
  +          // Too early, sleep briefly and try again
- +          plugin.delayFiberMsecs(plugin.approximateQueryTime/retryTimeDivisor);
- +          Fiber.yield();
+ +          plugin.delayFiberMsecs(plugin.approximateQueryTime/retryTimeDivisor, Yes.thenYield);
  +          continue;
  +      }
  +
@@ -213,8 +211,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
                     }
 
-                    plugin.delayFiberMsecs(plugin.approximateQueryTime);
-                    Fiber.yield();
+                    plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
 
                     shared string* response;
                     bool queryTimeLengthened;
@@ -237,8 +234,8 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                                 queryTimeLengthened = true;
                             }
 
-                            plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
-                            Fiber.yield();
+                            immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
+                            plugin.delayFiberMsecs(briefWait, Yes.thenYield);
                             continue;
                         }
                         else
@@ -414,8 +411,7 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
     }
 
-    plugin.delayFiberMsecs(plugin.approximateQueryTime);
-    Fiber.yield();
+    plugin.delayFiberMsecs(plugin.approximateQueryTime, Yes.thenYield);
 
     shared string* response;
     bool queryTimeLengthened;
@@ -445,8 +441,8 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
                     plugin.approximateQueryAntiInflationMultiplier);
             }
 
-            plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
-            Fiber.yield();
+            immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
+            plugin.delayFiberMsecs(briefWait, Yes.thenYield);
             continue;
         }
 

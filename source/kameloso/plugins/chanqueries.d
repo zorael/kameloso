@@ -108,8 +108,7 @@ void startChannelQueries(ChanQueriesService service)
             if (i > 0)
             {
                 // Delay between runs after first since aMode probes don't delay at end
-                service.delayFiber(service.secondsBetween);
-                Fiber.yield();  // delay
+                service.delayFiber(service.secondsBetween, Yes.thenYield);
             }
 
             version(WithPrinterPlugin)
@@ -121,16 +120,9 @@ void startChannelQueries(ChanQueriesService service)
             void queryAwaitAndUnlist(Types)(const string command, const Types types)
             {
                 import kameloso.messaging : raw;
-                import std.traits : isArray;
 
-                static if (isArray!Types)
-                {
-                    service.awaitEvents(types);
-                }
-                else
-                {
-                    service.awaitEvent(types);
-                }
+                service.awaitEvents(types);
+                scope(exit) service.unlistFiberAwaitingEvents(types);
 
                 version(WithPrinterPlugin)
                 {
@@ -144,17 +136,7 @@ void startChannelQueries(ChanQueriesService service)
 
                 while (thisFiber.payload.channel != channelName) Fiber.yield();
 
-                static if (isArray!Types)
-                {
-                    service.unlistFiberAwaitingEvents(types);
-                }
-                else
-                {
-                    service.unlistFiberAwaitingEvent(types);
-                }
-
-                service.delayFiber(service.secondsBetween);
-                Fiber.yield();  // delay
+                service.delayFiber(service.secondsBetween, Yes.thenYield);
             }
 
             /// Event types that signal the end of a query response.
@@ -177,8 +159,7 @@ void startChannelQueries(ChanQueriesService service)
                 if (n > 0)
                 {
                     // Cannot await by event type; there are too many types.
-                    service.delayFiber(service.secondsBetween);
-                    Fiber.yield();  // delay
+                    service.delayFiber(service.secondsBetween, Yes.thenYield);
                 }
 
                 version(WithPrinterPlugin)
@@ -267,13 +248,11 @@ void startChannelQueries(ChanQueriesService service)
             }
 
             // Delay between runs after first since aMode probes don't delay at end
-            service.delayFiber(service.secondsBetween);
-            Fiber.yield();  // delay
+            service.delayFiber(service.secondsBetween, Yes.thenYield);
 
             while ((Clock.currTime.toUnixTime - lastQueryResults) < service.secondsBetween-1)
             {
-                service.delayFiber(1);
-                Fiber.yield();
+                service.delayFiber(1, Yes.thenYield);
             }
 
             version(WithPrinterPlugin)

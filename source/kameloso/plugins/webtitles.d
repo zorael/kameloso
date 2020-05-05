@@ -165,10 +165,20 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
-        if (const cachedResult = url in plugin.cache)
+        TitleLookupResults cachedResult;
+
+        synchronized
+        {
+            if (const cachedResultPointer = url in plugin.cache)
+            {
+                cachedResult = *cachedResultPointer;
+            }
+        }
+
+        if (cachedResult != TitleLookupResults.init)
         {
             logger.log("Found cached lookup.");
-            request.results = *cachedResult;
+            request.results = cachedResult;
 
             if (request.results.youtubeTitle.length)
             {
@@ -280,7 +290,11 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                         webtitlesSettings, colouredOutgoing);
 
                     request.results.when = now;
-                    cache[request.url] = cast(shared)request.results;
+
+                    synchronized
+                    {
+                        cache[request.url] = cast(shared)request.results;
+                    }
                     return;
                 }
                 catch (JSONException e)
@@ -309,7 +323,11 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             request.results = lookupTitle(request.url);
             reportDispatch(&reportTitle, request, webtitlesSettings, colouredOutgoing);
             request.results.when = now;
-            cache[request.url] = cast(shared)request.results;
+
+            synchronized
+            {
+                cache[request.url] = cast(shared)request.results;
+            }
         }
 
         try
@@ -792,6 +810,7 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
  +/
 void start(WebtitlesPlugin plugin)
 {
+    // No need to synchronize this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
 }
