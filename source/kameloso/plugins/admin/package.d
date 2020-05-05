@@ -869,7 +869,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [account] [hostmask if adding]"
+            "Usage: %s%s [add|del|list] ([account] [hostmask]/[hostmask])"
             .format(plugin.state.settings.prefix, event.aux));
     }
 
