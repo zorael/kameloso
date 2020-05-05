@@ -115,7 +115,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     }
     else
     {
-        private enum hasMinimalAuthentication = true;
+        package enum hasMinimalAuthentication = true;
     }
 
 
@@ -273,7 +273,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        private enum hasUserAwareness = true;
+        package enum hasUserAwareness = true;
     }
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
@@ -665,7 +665,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
     else
     {
-        private enum hasChannelAwareness = true;
+        package enum hasChannelAwareness = true;
     }
 
     static if (!__traits(compiles, .hasUserAwareness))
@@ -1304,7 +1304,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        private enum hasTwitchAwareness = true;
+        package enum hasTwitchAwareness = true;
     }
 
     static if (!__traits(compiles, .hasChannelAwareness))
@@ -1469,7 +1469,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        private enum hasTwitchAwareness = true;
+        package enum hasTwitchAwareness = true;
     }
 
     static if (!__traits(compiles, .hasChannelAwareness))
