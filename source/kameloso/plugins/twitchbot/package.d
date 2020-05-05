@@ -17,7 +17,12 @@ version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 
+version(Web) version = TwitchAPIFeatures;
+
 private:
+
+import kameloso.plugins.twitchbot.apifeatures;
+import kameloso.plugins.twitchbot.timers;
 
 import kameloso.plugins.core;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
@@ -170,7 +175,7 @@ void onImportant(TwitchBotPlugin plugin)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
-void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
+package void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
 }
@@ -188,7 +193,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
  +      plugin = The current `TwitchBotPlugin`.
  +      channelName = The name of the channel we're supposedly joining.
  +/
-void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+package void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.activeChannels) return;
@@ -205,109 +210,6 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
     {
         channel.timers ~= plugin.createTimerFiber(timerDef, channelName);
     }
-}
-
-
-// createTimerFiber
-/++
- +  Given a `TimerDefinition` and a string channel name, creates a
- +  `core.thread.fiber.Fiber` that implements the timer.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      timerDef = Definition of the timer to apply.
- +      channelName = String channel to which the timer belongs.
- +/
-Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
-    const string channelName)
-{
-    void dg()
-    {
-        import std.datetime.systime : Clock;
-
-        const channel = channelName in plugin.activeChannels;
-
-        /// When this timer Fiber was created.
-        immutable creation = Clock.currTime.toUnixTime;
-
-        /// The channel message count at last successful trigger.
-        ulong lastMessageCount = channel.messageCount;
-
-        /// The timestamp at the last successful trigger.
-        long lastTimestamp = creation;
-
-        /// Whether or not stagger has passed, so we don't evaluate it every single time.
-        bool staggerDone;
-
-        version(Web)
-        {
-            immutable streamer = channel.broadcasterDisplayName;
-        }
-        else
-        {
-            import kameloso.plugins.common : nameOf;
-            immutable streamer = plugin.nameOf(channelName[1..$]);
-        }
-
-        while (true)
-        {
-            if (!staggerDone)
-            {
-                immutable now = Clock.currTime.toUnixTime;
-
-                if ((now - creation) < timerDef.stagger)
-                {
-                    // Reset counters so it starts fresh after stagger
-                    lastMessageCount = channel.messageCount;
-                    lastTimestamp = now;
-                    Fiber.yield();
-                    continue;
-                }
-            }
-
-            // Avoid evaluating current unix time after stagger is done
-            staggerDone = true;
-
-            if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
-            {
-                Fiber.yield();
-                continue;
-            }
-
-            immutable now = Clock.currTime.toUnixTime;
-
-            if ((now - lastTimestamp) < timerDef.timeThreshold)
-            {
-                Fiber.yield();
-                continue;
-            }
-
-            if (channel.enabled)
-            {
-                import std.array : replace;
-                import std.conv : text;
-                import std.random : uniform;
-
-                immutable line = timerDef.line
-                    .replace("$streamer", streamer)
-                    .replace("$channel", channelName[1..$])
-                    .replace("$bot", plugin.state.client.nickname)
-                    .replace("$random", uniform!"[]"(0, 100).text);
-
-                chan(plugin.state, channelName, line);
-            }
-
-            // If channel is disabled, silently fizzle but keep updating counts
-
-            lastMessageCount = channel.messageCount;
-            lastTimestamp = now;
-
-            Fiber.yield();
-            //continue;
-        }
-    }
-
-    return new Fiber(&dg, 32_768);
 }
 
 
@@ -524,214 +426,6 @@ void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// handleTimerCommand
-/++
- +  Adds, deletes, lists or clears timers for the specified target channel.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      targetChannels = The channel we're handling timers for.
- +/
-void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
-in (targetChannel.length, "Tried to handle timers with an empty target channel string")
-{
-    import lu.string : SplitResults, contains, nom, splitInto;
-    import std.format : format;
-
-    string slice = event.content;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
-
-    void sendUsage(const string verb = "[add|del|list|clear]")
-    {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]"
-            .format(plugin.state.settings.prefix, event.aux, verb));
-    }
-
-    switch (verb)
-    {
-    case "add":
-        import std.algorithm.searching : count;
-        import std.conv : ConvException, to;
-
-        if (slice.count(' ') < 3)
-        {
-            /*privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: add [message threshold] [time threshold] [stagger seconds] [text]");*/
-            //                                 1                2                 3
-            return sendUsage(verb);
-        }
-
-        TimerDefinition timerDef;
-
-        string rawMessageCountThreshold;
-        string rawTimeThreshold;
-        string rawStagger;
-
-        immutable results = slice.splitInto(rawMessageCountThreshold, rawTimeThreshold, rawStagger);
-        if (results != SplitResults.overrun) return sendUsage(verb);
-
-        try
-        {
-            timerDef.messageCountThreshold = rawMessageCountThreshold.to!int;
-            timerDef.timeThreshold = rawTimeThreshold.to!int;
-            timerDef.stagger = rawStagger.to!int;
-            timerDef.line = slice;
-        }
-        catch (ConvException e)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid parameters.");
-            return sendUsage(verb);
-        }
-
-        if ((timerDef.messageCountThreshold < 0) ||
-            (timerDef.timeThreshold < 0) || (timerDef.stagger < 0))
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Arguments for message count threshold, timer threshold and stagger " ~
-                "must all be positive numbers.");
-            return;
-        }
-        else if ((timerDef.messageCountThreshold == 0) && (timerDef.timeThreshold == 0))
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "A timer cannot have a message threshold *and* a time threshold of zero.");
-            return;
-        }
-
-        plugin.timerDefsByChannel[targetChannel] ~= timerDef;
-        plugin.timerDefsToJSON.save(plugin.timersFile);
-        plugin.activeChannels[targetChannel].timers ~=
-            plugin.createTimerFiber(timerDef, targetChannel);
-        privmsg(plugin.state, event.channel, event.sender.nickname, "New timer added.");
-        break;
-
-    case "del":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s del [timer index]".format(plugin.state.settings.prefix, event.aux));
-            return;
-        }
-
-        if (auto timerDefs = targetChannel in plugin.timerDefsByChannel)
-        {
-            import lu.string : stripped;
-            import std.algorithm.iteration : splitter;
-            import std.conv : ConvException, to;
-
-            auto channel = targetChannel in plugin.activeChannels;
-
-            if (slice == "*") goto case "clear";
-
-            try
-            {
-                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
-
-                if ((i >= 0) && (i < channel.timers.length))
-                {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
-                    channel.timers = channel.timers.remove!(SwapStrategy.unstable)(i);
-                }
-                else
-                {
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Timer index %s out of range. (max %d)"
-                        .format(slice, channel.timers.length));
-                    return;
-                }
-            }
-            catch (ConvException e)
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Invalid timer index: " ~ slice);
-                //version(PrintStacktraces) logger.trace(e.info);
-                return;
-            }
-
-            if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
-            plugin.timerDefsToJSON.save(plugin.timersFile);
-            privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
-        }
-        else
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "No timers registered for this channel.");
-        }
-        break;
-
-    case "list":
-        if (const timers = targetChannel in plugin.timerDefsByChannel)
-        {
-            import lu.string : stripped;
-            import std.algorithm.comparison : min;
-
-            enum toDisplay = 10;
-            enum maxLineLength = 100;
-
-            ptrdiff_t start;
-
-            if (slice.length)
-            {
-                import std.conv : ConvException, to;
-
-                try
-                {
-                    start = slice.stripped.to!ptrdiff_t - 1;
-
-                    if ((start < 0) || (start >= timers.length))
-                    {
-                        privmsg(plugin.state, event.channel, event.sender.nickname,
-                            "Invalid timer index or out of bounds.");
-                        return;
-                    }
-                }
-                catch (ConvException e)
-                {
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s%s list [optional starting position number]"
-                        .format(plugin.state.settings.prefix, event.aux));
-                    return;
-                }
-            }
-
-            immutable end = min(start+toDisplay, timers.length);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current timers (%d-%d of %d)"
-                .format(start+1, end, timers.length));
-
-            foreach (immutable i, const timer; (*timers)[start..end])
-            {
-                immutable maxLen = min(timer.line.length, maxLineLength);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "%d: %s%s (%d:%d:%d)".format(start+i+1, timer.line[0..maxLen],
-                    (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
-                    timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
-            }
-        }
-        else
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "No timers registered for this channel.");
-        }
-        break;
-
-    case "clear":
-        plugin.activeChannels[targetChannel].timers.length = 0;
-        plugin.timerDefsByChannel.remove(targetChannel);
-        plugin.timerDefsToJSON.save(plugin.timersFile);
-        privmsg(plugin.state, event.channel, event.sender.nickname, "All timers cleared.");
-        break;
-
-    default:
-        return sendUsage();
-    }
-}
-
-
 // onCommandEnableDisable
 /++
  +  Toggles whether or not the bot should operate in this channel.
@@ -778,7 +472,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
     const channel = event.channel in plugin.activeChannels;
     immutable broadcastStart = channel.broadcastStart;
 
-    version(Web)
+    version(TwitchAPIFeatures)
     {
         immutable streamer = channel.broadcasterDisplayName;
     }
@@ -831,7 +525,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (channel.broadcastStart != 0L)
     {
-        version(Web)
+        version(TwitchAPIFeatures)
         {
             immutable streamer = channel.broadcasterDisplayName;
         }
@@ -909,7 +603,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     const delta = now - SysTime.fromUnixTime(channel.broadcastStart);
     channel.broadcastStart = 0L;
 
-    version(Web)
+    version(TwitchAPIFeatures)
     {
         immutable streamer = channel.broadcasterDisplayName;
     }
@@ -1043,132 +737,17 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// persistentQuerier
-/++
- +  Persistent worker issuing Twitch API queries based on the concurrency messages
- +  sent to it.
- +
- +  Possibly best used on Windows where threads are comparatively expensive
- +  compared to on Posix platforms.
- +
- +  Params:
- +      headers = HTTP headers to use when issuing the requests.
- +      bucket = The shared bucket to put the results in, keyed by URL.
- +/
-version(Web)
-void persistentQuerier(shared string[string] headers, shared string[string] bucket)
-{
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : OwnerTerminated, receive;
-    import std.variant : Variant;
-
-    version(Posix)
-    {
-        import kameloso.thread : setThreadName;
-        setThreadName("twitchquerier");
-    }
-
-    bool halt;
-
-    while (!halt)
-    {
-        receive(
-            (string url) scope
-            {
-                queryTwitch(url, headers, bucket);
-            },
-            (ThreadMessage.Teardown) scope
-            {
-                halt = true;
-            },
-            (OwnerTerminated e) scope
-            {
-                halt = true;
-            },
-            (Variant v) scope
-            {
-                // It's technically an error but do nothing for now
-            },
-        );
-    }
-}
-
-
-// queryTwitch
-/++
- +  Sends a HTTP GET to the passed URL, and returns the response by adding it
- +  to the shared `bucket`.
- +
- +  Callers can as such spawn this function as a new thread and asynchronously
- +  monitor the `bucket` for when the results arrive.
- +
- +  Example:
- +  ---
- +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
- +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
- +
- +  plugin.delayFiberMsecs(plugin.approximateQueryTime);
- +  Fiber.yield();
- +
- +  shared string* response;
- +
- +  while (!response)
- +  {
- +      synchronized
- +      {
- +          response = url in plugin.bucket;
- +      }
- +
- +      if (!response)
- +      {
- +          // Too early, sleep briefly and try again
- +          plugin.delayFiberMsecs(plugin.approximateQueryTime/retryTimeDivisor);
- +          Fiber.yield();
- +          continue;
- +      }
- +
- +      plugin.bucket.remove(url);
- +  }
- +
- +  // *response is the (shared) response body
- +  ---
- +
- +  Params:
- +      url = URL address to look up.
- +      headers = HTTP headers to use when issuing the requests.
- +      bucket = The shared bucket to put the results in, keyed by URL.
- +/
-version(Web)
-void queryTwitch(const string url, shared string[string] headers,
-    shared string[string] bucket)
-{
-    import lu.traits : UnqualArray;
-    import requests.request : Request;
-
-    Request req;
-    req.keepAlive = false;
-    req.addHeaders(cast(UnqualArray!(typeof(headers)))headers);
-    auto res = req.get(url);
-
-    if (res.code >= 400)
-    {
-        bucket[url] = string.init;
-    }
-    else
-    {
-        bucket[url] = cast(string)res.responseBody.data.idup;
-    }
-}
-
-
 // onFollowAge
 /++
  +  Implements "Follow Age", or the ability to query the server how long you
  +  (or a specified user) have been a follower of the current channel.
  +
  +  Lookups are done asychronously in subthreads.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.apifeatures.onFollowAgeImpl
  +/
-version(Web)
+version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
@@ -1179,318 +758,7 @@ version(Web)
     "$command [optional nickname]")
 void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : delayFiberMsecs;
-    import lu.string : nom, stripped;
-    import std.concurrency : send, spawn;
-    import std.conv : to;
-    import std.json : JSONType, JSONValue, parseJSON;
-    import core.thread : Fiber;
-
-    if (!plugin.useAPIFeatures) return;
-
-    void dg()
-    {
-        string slice = event.content.stripped;  // mutable
-        immutable nameSpecified = (slice.length > 0);
-
-        uint id;
-        string idString;
-        string fromDisplayName;
-
-        if (!nameSpecified)
-        {
-            // Assume the user is asking about itself
-            idString = event.sender.id.to!string;
-            fromDisplayName = event.sender.displayName;
-        }
-        else
-        {
-            immutable givenName = slice.nom!(Yes.inherit)(' ');
-
-            if (const user = givenName in plugin.state.users)
-            {
-                // Stored user
-                id = user.id;
-                fromDisplayName = user.displayName;
-            }
-            else
-            {
-                foreach (const user; plugin.state.users)
-                {
-                    if (user.displayName == givenName)
-                    {
-                        // Found user by displayName
-                        id = user.id;
-                        fromDisplayName = user.displayName;
-                    }
-                }
-
-                if (!id)
-                {
-                    // None on record, look up
-                    immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
-
-                    if (plugin.twitchBotSettings.singleWorkerThread)
-                    {
-                        plugin.persistentWorkerTid.send(url);
-                    }
-                    else
-                    {
-                        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
-                    }
-
-                    plugin.delayFiberMsecs(plugin.approximateQueryTime);
-                    Fiber.yield();
-
-                    shared string* response;
-                    bool queryTimeLengthened;
-
-                    while (!response)
-                    {
-                        synchronized
-                        {
-                            response = url in plugin.bucket;
-                        }
-
-                        if (!response)
-                        {
-                            // Miss; fired too early, there is no response available yet
-                            if (!queryTimeLengthened)
-                            {
-                                plugin.approximateQueryTime =
-                                    cast(long)(plugin.approximateQueryTime *
-                                    plugin.approximateQueryGrowthMultiplier);
-                                queryTimeLengthened = true;
-                            }
-
-                            plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
-                            Fiber.yield();
-                            continue;
-                        }
-                        else
-                        {
-                            // Slowly decrease it to avoid inflation
-                            plugin.approximateQueryTime =
-                                cast(long)(plugin.approximateQueryTime *
-                                plugin.approximateQueryAntiInflationMultiplier);
-                        }
-
-                        plugin.bucket.remove(url);
-                    }
-
-                    if (response.length)
-                    {
-                        // Hit
-                        const user = parseUserFromResponse(cast()*response);
-
-                        if (user == JSONValue.init)
-                        {
-                            chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
-                            return;
-                        }
-
-                        idString = user["id"].str;
-                        fromDisplayName = user["display_name"].str;
-                    }
-                    else
-                    {
-                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
-                        return;
-                    }
-                }
-            }
-        }
-
-        void reportFollowAge(const JSONValue followingUserJSON)
-        {
-            import kameloso.common : timeSince;
-            import lu.string : plurality;
-            import std.datetime.systime : Clock, SysTime;
-            import std.format : format;
-
-            static immutable string[12] months =
-            [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ];
-
-            /*{
-                "followed_at": "2019-09-13T13:07:43Z",
-                "from_id": "20739840",
-                "from_name": "mike_bison",
-                "to_id": "22216721",
-                "to_name": "Zorael"
-            }*/
-
-            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
-            immutable diff = Clock.currTime - when;
-            immutable timeline = diff.timeSince;
-            immutable datestamp = "%s %d"
-                .format(months[cast(int)when.month-1], when.year);
-
-            if (nameSpecified)
-            {
-                enum pattern = "%s has been a follower for %s, since %s.";
-                chan(plugin.state, event.channel, pattern
-                    .format(fromDisplayName, timeline, datestamp));
-            }
-            else
-            {
-                enum pattern = "You have been a follower for %s, since %s.";
-                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
-            }
-
-        }
-
-        // Identity ascertained; look up
-
-        immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
-
-        foreach (const followingUserJSON; getFollowsAsync(plugin, idString, Yes.from).array)
-        {
-            /*writefln("%s --> %s", followingUserJSON["from_name"],
-                followingUserJSON["to_name"]);*/
-
-            if (followingUserJSON["to_id"].str == roomIDString)
-            {
-                /*writeln("FROM");
-                writeln(followingUserJSON.toPrettyString);*/
-                return reportFollowAge(followingUserJSON);
-            }
-        }
-
-        foreach (const followingUserJSON; getFollowsAsync(plugin, roomIDString, No.from).array)
-        {
-            /*writefln("%s --> %s", followingUserJSON["from_name"],
-                followingUserJSON["to_name"]);*/
-
-            if (followingUserJSON["from_id"].str == idString)
-            {
-                /*writeln("TO");
-                writeln(followingUserJSON.toPrettyString);*/
-                return reportFollowAge(followingUserJSON);
-            }
-        }
-
-        // If we're here there were no matches.
-
-        if (nameSpecified)
-        {
-            enum pattern = "%s is currently not a follower.";
-            chan(plugin.state, event.channel, pattern.format(fromDisplayName));
-        }
-        else
-        {
-            enum pattern = "You are currently not a follower.";
-            chan(plugin.state, event.channel, pattern);
-        }
-    }
-
-    Fiber fiber = new Fiber(&dg);
-    fiber.call();
-}
-
-
-// getFollowsAsync
-/++
- +  Asynchronously gets the list of followers of a channel.
- +
- +  Warning: Must be called from within a Fiber.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      idString = The room ID number as a string.
- +      from = Whether to query for followers from a channel or to a channel.
- +
- +  Params:
- +      A `std.json.JSONValue` with the list of follows.
- +/
-version(Web)
-JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
-    const Flag!"from" from)
-{
-    import kameloso.plugins.common : delayFiberMsecs;
-    import std.concurrency : send, spawn;
-    import std.json : JSONType, JSONValue, parseJSON;
-    import core.thread : Fiber;
-
-    assert(Fiber.getThis, "Tried to call `getFollowsAsync` from outside a Fiber");
-
-    immutable url = from ?
-        "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString :
-        "https://api.twitch.tv/helix/users/follows?to_id=" ~ idString;
-
-    if (plugin.twitchBotSettings.singleWorkerThread)
-    {
-        plugin.persistentWorkerTid.send(url);
-    }
-    else
-    {
-        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
-    }
-
-    plugin.delayFiberMsecs(plugin.approximateQueryTime);
-    Fiber.yield();
-
-    shared string* response;
-    bool queryTimeLengthened;
-
-    while (!response)
-    {
-        synchronized
-        {
-            response = url in plugin.bucket;
-        }
-
-        if (!response)
-        {
-            // Miss; fired too early, there is no response available yet
-            if (!queryTimeLengthened)
-            {
-                plugin.approximateQueryTime =
-                    cast(long)(plugin.approximateQueryTime *
-                    plugin.approximateQueryGrowthMultiplier);
-                queryTimeLengthened = true;
-            }
-            else
-            {
-                // Slowly decrease it to avoid inflation
-                plugin.approximateQueryTime =
-                    cast(long)(plugin.approximateQueryTime *
-                    plugin.approximateQueryAntiInflationMultiplier);
-            }
-
-            plugin.delayFiberMsecs(plugin.approximateQueryTime / plugin.retryTimeDivisor);
-            Fiber.yield();
-            continue;
-        }
-
-        plugin.bucket.remove(url);
-    }
-
-    auto followsJSON = parseJSON(*response);
-
-    if ((followsJSON.type != JSONType.object) || ("data" !in followsJSON) ||
-        (followsJSON["data"].type != JSONType.array))
-    {
-        /*import std.stdio : writeln;
-
-        logger.error("Invalid Twitch response; is the API key correctly entered?");
-        writeln(followsJSON.toPrettyString);*/
-        return JSONValue.init;
-    }
-
-    return followsJSON["data"];
+    return onFollowAgeImpl(plugin, event);
 }
 
 
@@ -1498,174 +766,16 @@ JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
 /++
  +  Records the room ID of a home channel, and queries the Twitch servers for
  +  the display name of its broadcaster.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.apifeatures.onRoomStateImpl
  +/
-version(Web)
+version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
 @(ChannelPolicy.home)
 void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import requests.request : Request;
-    import std.json : JSONType, parseJSON;
-    import std.datetime.systime : Clock;
-
-    auto channel = event.channel in plugin.activeChannels;
-
-    if (!channel)
-    {
-        // Race...
-        plugin.handleSelfjoin(event.channel);
-        channel = event.channel in plugin.activeChannels;
-    }
-
-    channel.roomID = event.aux;
-
-    if (!plugin.useAPIFeatures) return;
-
-    immutable pre = Clock.currTime;
-    const broadcasterJSON = getUserByID(plugin, event.aux);
-    immutable post = Clock.currTime;
-
-    if (broadcasterJSON.type != JSONType.object)// || ("display_name" !in broadcasterJSON))
-    {
-        // Something is deeply wrong.
-        logger.error("Failed to fetch broadcaster information; is the API key entered correctly?");
-        logger.error("Disabling API features.");
-        plugin.useAPIFeatures = false;
-        return;
-    }
-
-    immutable delta = (post - pre);
-    immutable newApproximateTime = cast(long)(delta.total!"msecs" * 1.1);
-    plugin.approximateQueryTime = (plugin.approximateQueryTime == 0) ?
-        newApproximateTime :
-        (plugin.approximateQueryTime+newApproximateTime) / 2;
-    channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
-}
-
-
-// getUserImpl
-/++
- +  Synchronously queries the Twitch servers for information about a user,
- +  by name or by Twitch account ID number. Implementation function.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      field = The field to access via the HTTP URL. Can be either "login"
- +          or "id".
- +      identifier = The identifier of type `field` to look up.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-version(Web)
-JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier)
-in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
-    "`login` or `id`, got `" ~ field ~ '`')
-{
-    import requests.request : Request;
-    import std.conv : to;
-    import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
-
-    immutable url = "https://api.twitch.tv/helix/users?%s=%s"
-        .format(field, identifier.to!string);  // String just passes through
-
-    Request req;
-    req.keepAlive = false;
-    req.addHeaders(plugin.headers);
-    auto res = req.get(url);
-
-    return parseUserFromResponse(cast(string)res.responseBody.data);
-}
-
-
-// parseUserFromResponse
-/++
- +  Given a string response from the Twitch servers when queried for information
- +  of a user, verifies and parses the JSON, returning only that which relates
- +  to the user.
- +
- +  Params:
- +      jsonString = String response as read from the server. In JSON form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-version(Web)
-JSONValue parseUserFromResponse(const string jsonString)
-{
-    import std.json : JSONType, JSONValue, parseJSON;
-
-    auto json = parseJSON(jsonString);
-
-    if ((json.type != JSONType.object) || ("data" !in json) ||
-        (json["data"].type != JSONType.array) || (json["data"].array.length != 1))
-    {
-        return JSONValue.init;
-    }
-
-    return json["data"].array[0];
-}
-
-
-// getUserByName
-/++
- +  Queries the Twitch servers for information about a user, by login.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by account string name.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      login = The Twitch login/account name to look up.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-version(Web)
-JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
-{
-    return plugin.getUserImpl("login", login);
-}
-
-
-// getUserByID
-/++
- +  Queries the Twitch servers for information about a user, by id.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by id string.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in string form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-version(Web)
-JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
-{
-    return plugin.getUserImpl("id", id);
-}
-
-
-// getUserByID
-/++
- +  Queries the Twitch servers for information about a user, by id.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by id integer.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in integer form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-version(Web)
-JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
-{
-    return plugin.getUserImpl("id", id);
+    return onRoomStateImpl(plugin, event);
 }
 
 
@@ -1723,59 +833,57 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    if (const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel)
+    const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel;
+    if (!bannedPhrases) return;
+
+    foreach (immutable phrase; *bannedPhrases)
     {
-        foreach (immutable phrase; *bannedPhrases)
+        import lu.string : contains;
+        import std.algorithm.searching : canFind;
+        import std.format : format;
+        import std.uni : asLowerCase;
+
+        // Try not to allocate two whole new strings
+        immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
+            event.content.contains(phrase) :
+            event.content.asLowerCase.canFind(phrase.asLowerCase);
+
+        if (!match) continue;
+
+        static immutable int[3] durations = [ 5, 60, 3600 ];
+        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+
+        auto ban = event.sender.nickname in channel.phraseBans;
+
+        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+        if (ban)
         {
-            import lu.string : contains;
-            import std.algorithm.searching : canFind;
-            import std.uni : asLowerCase;
+            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
 
-            // Try not to allocate two whole new strings
-            immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
-                event.content.contains(phrase) :
-                event.content.asLowerCase.canFind(phrase.asLowerCase);
-
-            if (match)
+            if (banEndTime > event.time)
             {
-                import std.format : format;
-
-                static immutable int[3] durations = [ 5, 60, 3600 ];
-                static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-
-                auto ban = event.sender.nickname in channel.phraseBans;
-
-                immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-                if (ban)
-                {
-                    immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-                    if (banEndTime > event.time)
-                    {
-                        ban.timestamp = event.time;
-                        if (ban.offense < 2) ++ban.offense;
-                    }
-                    else
-                    {
-                        // Force a new ban
-                        ban = null;
-                    }
-                }
-
-                if (!ban)
-                {
-                    TwitchBotPlugin.Channel.Ban newBan;
-                    newBan.timestamp = event.time;
-                    channel.phraseBans[event.sender.nickname] = newBan;
-                    ban = event.sender.nickname in channel.phraseBans;
-                }
-
-                chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-                    .format(event.sender.nickname, durations[ban.offense]));
-                return;
+                ban.timestamp = event.time;
+                if (ban.offense < 2) ++ban.offense;
+            }
+            else
+            {
+                // Force a new ban
+                ban = null;
             }
         }
+
+        if (!ban)
+        {
+            TwitchBotPlugin.Channel.Ban newBan;
+            newBan.timestamp = event.time;
+            channel.phraseBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in channel.phraseBans;
+        }
+
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+            .format(event.sender.nickname, durations[ban.offense]));
+        return;
     }
 }
 
@@ -1803,31 +911,9 @@ void onEndOfMotd(TwitchBotPlugin plugin)
         plugin.populateTimers(plugin.timersFile);
     }
 
-    version(Web)
+    version(TwitchAPIFeatures)
     {
-        if (!plugin.twitchBotSettings.apiKey.length)
-        {
-            logger.info("No Twitch Client ID API key supplied in the configuration file. " ~
-                "Some commands will not work.");
-            plugin.useAPIFeatures = false;
-            return;
-        }
-
-        plugin.headers =
-        [
-            "Client-ID" : plugin.twitchBotSettings.apiKey,
-            "Authorization" : "Bearer " ~ plugin.state.bot.pass[6..$],  // Strip "oauth:"
-        ];
-
-        plugin.bucket[string.init] = string.init;
-        plugin.bucket.remove(string.init);
-
-        if (plugin.twitchBotSettings.singleWorkerThread)
-        {
-            import std.concurrency : spawn;
-            plugin.persistentWorkerTid = spawn(&persistentQuerier,
-                cast(shared)plugin.headers, plugin.bucket);
-        }
+        onEndOfMotdImpl(plugin);
     }
 }
 
@@ -2020,7 +1106,7 @@ void start(TwitchBotPlugin plugin)
 /++
  +  De-initialises the plugin. Shuts down any persistent worker threads.
  +/
-version(Web)
+version(TwitchAPIFeatures)
 void teardown(TwitchBotPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
@@ -2030,140 +1116,6 @@ void teardown(TwitchBotPlugin plugin)
     {
         plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
     }
-}
-
-
-// TimerDefinition
-/++
- +  Definitions of a Twitch timer.
- +/
-struct TimerDefinition
-{
-    /// The timered line to send to the channel.
-    string line;
-
-    /++
-     +  How many messages must have been sent since the last announce before we
-     +  will allow another one.
-     +/
-    int messageCountThreshold;
-
-    /++
-     +  How many seconds must have passed since the last announce before we will
-     +  allow another one.
-     +/
-    int timeThreshold;
-
-    /// Delay in seconds before the timer comes into effect.
-    int stagger;
-}
-
-
-// populateTimers
-/++
- +  Populates the `TwitchBotPlugin.timerDefsByChannel` associative array with
- +  the timer definitions in the passed JSON file.
- +
- +  This reads the JSON values from disk and creates the `TimerDefinition`s
- +  appropriately.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      filename = Filename of the JSON file to read definitions from.
- +/
-void populateTimers(TwitchBotPlugin plugin, const string filename)
-in (filename.length, "Tried to populate timers from an empty filename")
-{
-    import std.conv : to;
-    import std.format : format;
-    import std.json : JSONType;
-
-    JSONStorage timersJSON;
-    timersJSON.load(filename);
-
-    bool errored;
-
-    foreach (immutable channel, const channelTimersJSON; timersJSON.object)
-    {
-        if (channelTimersJSON.type != JSONType.array)
-        {
-            logger.errorf("Twitch timer file malformed! Invalid channel timers " ~
-                "list type for %s: `%s`", channel, channelTimersJSON.type);
-            errored = true;
-            continue;
-        }
-
-        plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
-
-        foreach (timerArrayEntry; channelTimersJSON.array)
-        {
-            if (timerArrayEntry.type != JSONType.object)
-            {
-                logger.errorf("Twitch timer file malformed! Invalid timer type " ~
-                    "for %s: `%s`", channel, timerArrayEntry.type);
-                errored = true;
-                continue;
-            }
-
-            TimerDefinition timer;
-
-            timer.line = timerArrayEntry["line"].str;
-            timer.messageCountThreshold = timerArrayEntry["messageCountThreshold"].integer.to!int;
-            timer.timeThreshold = timerArrayEntry["timeThreshold"].integer.to!int;
-            timer.stagger = timerArrayEntry["stagger"].integer.to!int;
-
-            plugin.timerDefsByChannel[channel] ~= timer;
-        }
-    }
-
-    if (errored)
-    {
-        logger.warning("Errors encountered; all timers were not read.");
-    }
-}
-
-
-import lu.json : JSONStorage;
-
-// timerDefsToJSON
-/++
- +  Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
- +  in JSON form, for easier saving to and loading from disk.
- +
- +  Using `std.json.JSONValue` directly fails with an error.
- +/
-JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
-{
-    import std.json : JSONType, JSONValue;
-
-    JSONStorage json;
-    json.reset();
-
-    foreach (immutable channelName, channelTimers; plugin.timerDefsByChannel)
-    {
-        if (!channelTimers.length) continue;
-
-        json[channelName] = null;  // quirk to initialise it as a JSONType.object
-
-        foreach (const timer; channelTimers)
-        {
-            JSONValue value;
-            value = null;  // as above
-
-            if (json[channelName].type != JSONType.array)
-            {
-                json[channelName].array = null;
-            }
-
-            value["line"] = timer.line;
-            value["messageCountThreshold"] = timer.messageCountThreshold;
-            value["timeThreshold"] = timer.timeThreshold;
-            value["stagger"] = timer.stagger;
-            json[channelName].array ~= value;
-        }
-    }
-
-    return json;
 }
 
 
@@ -2182,7 +1134,7 @@ public:
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
-private:
+package:
     /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
@@ -2222,7 +1174,7 @@ private:
         /// Timer `core.thread.fiber.Fiber`s.
         Fiber[] timers;
 
-        version(Web)
+        version(TwitchAPIFeatures)
         {
             /// Display name of the broadcaster.
             string broadcasterDisplayName;
@@ -2259,7 +1211,7 @@ private:
      +/
     enum timerPeriodicity = 10;
 
-    version(Web)
+    version(TwitchAPIFeatures)
     {
         import std.concurrency : Tid;
 

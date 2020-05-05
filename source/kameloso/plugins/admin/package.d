@@ -20,6 +20,9 @@ version(WithAdminPlugin):
 
 private:
 
+import kameloso.plugins.admin.classifiers;
+debug import kameloso.plugins.admin.debugging;
+
 import kameloso.plugins.core;
 import kameloso.plugins.common;
 import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
@@ -87,26 +90,7 @@ debug
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.stdio : stdout, write, writefln, writeln;
-
-    if (plugin.adminSettings.printRaw)
-    {
-        if (event.tags.length) write('@', event.tags, ' ');
-        writeln(event.raw, '$');
-        if (plugin.state.settings.flush) stdout.flush();
-    }
-
-    if (plugin.adminSettings.printBytes)
-    {
-        import std.string : representation;
-
-        foreach (immutable i, immutable c; event.content.representation)
-        {
-            writefln("[%d] %s : %03d", i, cast(char)c, c);
-        }
-
-        if (plugin.state.settings.flush) stdout.flush();
-    }
+    return onAnyEventImpl(plugin, event);
 }
 
 
@@ -127,24 +111,7 @@ debug
     "to the local terminal.", "$command [nickname] [nickname] ...")
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.printing : printObject;
-    import std.algorithm.iteration : splitter;
-
-    foreach (immutable username; event.content.splitter(' '))
-    {
-        if (const user = username in plugin.state.users)
-        {
-            printObject(*user);
-        }
-        else
-        {
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "No such user: " ~ username.ircColour(IRCColour.red).ircBold :
-                "No such user: " ~ username;
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-    }
+    return onCommandShowUserImpl(plugin, event);
 }
 
 
@@ -187,17 +154,7 @@ debug
 @Description("[debug] Prints out the current users array to the local terminal.")
 void onCommandShowUsers(AdminPlugin plugin)
 {
-    import kameloso.printing : printObject;
-    import std.stdio : stdout, writeln;
-
-    foreach (immutable name, const user; plugin.state.users)
-    {
-        writeln(name);
-        printObject(user);
-    }
-
-    writeln(plugin.state.users.length, " users.");
-    if (plugin.state.settings.flush) stdout.flush();
+    return onCommandShowUsersImpl(plugin);
 }
 
 
@@ -218,7 +175,7 @@ debug
     "$command [raw string]")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    raw(plugin.state, event.content);
+    return onCommandSudoImpl(plugin, event);
 }
 
 
@@ -550,519 +507,6 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// manageClassLists
-/++
- +  Common code for whitelisting and blacklisting nicknames/accounts.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
- +/
-void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
-    list ~ " is not whitelist, operator nor blacklist")
-do
-{
-    import lu.string : nom;
-    import std.typecons : Flag, No, Yes;
-
-    void sendUsage()
-    {
-        import std.format : format;
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list]".format(plugin.state.settings.prefix, list));
-    }
-
-    if (!event.content.length)
-    {
-        return sendUsage();
-    }
-
-    string slice = event.content;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
-
-    switch (verb)
-    {
-    case "add":
-        return plugin.lookupEnlist(slice, list, event.channel, event);
-
-    case "del":
-        return plugin.delist(slice, list, event.channel, event);
-
-    case "list":
-        immutable channel = slice.length ? slice : event.channel;
-        if (!channel.length) return sendUsage();
-        return plugin.listList(channel, list, event);
-
-    default:
-        return sendUsage();
-    }
-}
-
-
-// listList
-/++
- +  Sends a list of the current users in the whitelist, operator list or the
- +  blacklist to the querying user or channel.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      channel = The channel the list relates to.
- +      list = Which list to list; "whitelist", "operator" or "blacklist".
- +      event = Optional `dialect.defs.IRCEvent` that instigated the listing.
- +/
-void listList(AdminPlugin plugin, const string channel, const string list,
-    const IRCEvent event = IRCEvent.init)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
-    list ~ " is not whitelist, operator nor blacklist")
-{
-    import lu.json : JSONStorage;
-    import std.format : format;
-
-    immutable asWhat =
-        (list == "operator") ? "operators" :
-        (list == "whitelist") ? "whitelisted users" :
-        /*(list == "blacklist") ?*/ "blacklisted users";
-
-    JSONStorage json;
-    json.reset();
-    json.load(plugin.userFile);
-
-    if (channel in json[list].object)
-    {
-        import std.algorithm.iteration : map;
-
-        auto userlist = json[list][channel].array
-            .map!(jsonEntry => jsonEntry.str);
-
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current %s in %s: %-(%s, %)"
-            .format(asWhat, channel, userlist));
-    }
-    else
-    {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are no %s in %s.".format(asWhat, channel));
-    }
-}
-
-
-// lookupEnlist
-/++
- +  Adds an account to either the whitelist, operator list or the blacklist.
- +
- +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      specified = The nickname or account to white-/blacklist.
- +      list = Which of "whitelist", "operator" or "blacklist" to add to.
- +      event = Optional instigating `dialect.defs.IRCEvent`.
- +/
-void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
-    const string channel, const IRCEvent event = IRCEvent.init)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
-    list ~ " is not whitelist, operator nor blacklist")
-{
-    import dialect.common : isValidNickname;
-    import lu.string : contains, stripped;
-    import std.range : only;
-
-    immutable specified = rawSpecified.stripped;
-
-    immutable asWhat =
-        (list == "operator") ? "an operator" :
-        (list == "whitelist") ? "a whitelisted user" :
-        /*(list == "blacklist") ?*/ "a blacklisted user";
-
-    /// Report result, either to the local terminal or to the IRC channel/sender
-    void report(const AlterationResult result, const string id)
-    {
-        import std.format : format;
-
-        if (event.sender.nickname.length)
-        {
-            // IRC report
-
-            with (AlterationResult)
-            final switch (result)
-            {
-            case success:
-                enum pattern = "Added %s as %s in %s.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
-                    pattern.format(id, asWhat, channel);
-
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-                break;
-
-            case noSuchAccount:
-            case noSuchChannel:
-                assert(0, "Invalid delist-only `AlterationResult` passed to `lookupEnlist.report`");
-
-            case alreadyInList:
-                enum pattern = "%s was already %s in %s.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
-                    pattern.format(id, asWhat, channel);
-
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-                break;
-            }
-        }
-        else
-        {
-            // Terminal report
-
-            with (AlterationResult)
-            final switch (result)
-            {
-            case success:
-                logger.logf("Added %s%s%s as %s in %s.",
-                    Tint.info, specified, Tint.log, asWhat, channel);
-                break;
-
-            case noSuchAccount:
-            case noSuchChannel:
-                assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
-
-            case alreadyInList:
-                logger.logf("%s%s%s is already %s in %s.",
-                    Tint.info, specified, Tint.log, asWhat, channel);
-                break;
-            }
-        }
-    }
-
-    const user = specified in plugin.state.users;
-
-    if (user && user.account.length)
-    {
-        // user.nickname == specified
-        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
-        {
-            if (thisList == list) continue;
-            plugin.alterAccountClassifier(No.add, thisList, user.account, channel);
-        }
-
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channel);
-        return report(result, nameOf(*user));
-    }
-    else if (!specified.isValidNickname(plugin.state.server))
-    {
-        if (event.sender.nickname.length)
-        {
-            // IRC report
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold :
-                "Invalid nickname/account: " ~ specified;
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-        else
-        {
-            // Terminal report
-            logger.warning("Invalid nickname/account: ", Tint.log, specified);
-        }
-        return;
-    }
-
-    void onSuccess(const string id)
-    {
-        version(TwitchSupport)
-        {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                import std.algorithm.iteration : filter;
-
-                if (const userInList = id in plugin.state.users)
-                {
-                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
-                    {
-                        if (thisList == list) continue;
-                        plugin.alterAccountClassifier(No.add, thisList, id, channel);
-                    }
-
-                    immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channel);
-                    return report(result, nameOf(*userInList));
-                }
-
-                // If we're here, assume a display name was specified and look up the account
-                auto usersWithThisDisplayName = plugin.state.users
-                    .byValue
-                    .filter!(u => u.displayName == id);
-
-                if (!usersWithThisDisplayName.empty)
-                {
-                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
-                    {
-                        if (thisList == list) continue;
-
-                        plugin.alterAccountClassifier(No.add, thisList,
-                            usersWithThisDisplayName.front.account, channel);
-                    }
-
-                    immutable result = plugin.alterAccountClassifier(Yes.add,
-                        list, usersWithThisDisplayName.front.account, channel);
-                    return report(result, id);
-                }
-
-                // Assume a valid account was specified even if we can't see it, and drop down
-            }
-        }
-
-        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
-        {
-            if (thisList == list) continue;
-            plugin.alterAccountClassifier(No.add, thisList, id, channel);
-        }
-
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channel);
-        report(result, id);
-    }
-
-    void onFailure(const IRCUser failureUser)
-    {
-        logger.log("(Assuming unauthenticated nickname or offline account was specified)");
-        return onSuccess(failureUser.nickname);
-    }
-
-    version(TwitchSupport)
-    {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            return onSuccess(specified);
-        }
-    }
-
-    // User not on record or on record but no account; WHOIS and try based on results
-
-    mixin WHOISFiberDelegate!(onSuccess, onFailure);
-
-    enqueueAndWHOIS(specified);
-}
-
-
-// delist
-/++
- +  Removes a nickname from either the whitelist, operator list or the blacklist.
- +
- +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      account = The account to delist as whitelisted/blacklisted or as operator.
- +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
- +      event = Optional instigating `dialect.defs.IRCEvent`.
- +/
-void delist(AdminPlugin plugin, const string account, const string list,
-    const string channel, const IRCEvent event = IRCEvent.init)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
-    list ~ " is not whitelist, operator nor blacklist")
-{
-    import std.format : format;
-
-    if (!account.length)
-    {
-        if (event.sender.nickname.length)
-        {
-            // IRC report
-            privmsg(plugin.state, event.channel, event.sender.nickname, "No account specified.");
-        }
-        else
-        {
-            // Terminal report
-            logger.warning("No account specified.");
-        }
-        return;
-    }
-
-    immutable asWhat =
-        (list == "operator") ? "an operator" :
-        (list == "whitelist") ? "a whitelisted user" :
-        /*(list == "blacklist") ?*/ "a blacklisted user";
-
-    immutable result = plugin.alterAccountClassifier(No.add, list, account, channel);
-
-    if (event.sender.nickname.length)
-    {
-        // IRC report
-
-        with (AlterationResult)
-        final switch (result)
-        {
-        case alreadyInList:
-            assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
-
-        case noSuchAccount:
-            enum pattern = "No such account %s to remove as %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            break;
-
-        case noSuchChannel:
-            enum pattern = "Account %s isn't %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            break;
-
-        case success:
-            enum pattern = "Removed %s as %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            break;
-        }
-    }
-    else
-    {
-        // Terminal report
-
-        with (AlterationResult)
-        final switch (result)
-        {
-        case alreadyInList:
-            assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
-
-        case noSuchAccount:
-            logger.logf("No such account %s%s%s was found as %s in %s.",
-                Tint.info, account, Tint.log, asWhat, channel);
-            break;
-
-        case noSuchChannel:
-            logger.logf("Account %s%s%s isn't %s in %s.",
-                Tint.info, account, Tint.log, asWhat, channel);
-            break;
-
-        case success:
-            logger.logf("Removed %s%s%s as %s in %s",
-                Tint.info, account, Tint.log, asWhat, channel);
-            break;
-        }
-    }
-}
-
-
-// AlterationResult
-/++
- +  Enum embodying the results of an account alteration.
- +
- +  Returned by functions to report success or failure, to let them give terminal
- +  or IRC feedback appropriately.
- +/
-enum AlterationResult
-{
-    alreadyInList,  /// When enlisting, an account already existed.
-    noSuchAccount,  /// When delisting, an account could not be found.
-    noSuchChannel,  /// When delisting, a channel count not be found.
-    success,        /// Successful enlist/delist.
-}
-
-
-// alterAccountClassifier
-/++
- +  Adds or removes an account from the file of user classifier definitions,
- +  and reloads all plugins to make them read the updated lists.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      add = Whether to add to or remove from lists.
- +      list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
- +      account = Services account name to add or remove.
- +      channel = Channel the account-class applies to.
- +
- +  Returns:
- +      `AlterationResult.alreadyInList` if enlisting (`Yes.add`) and the account
- +      was already in the specified list.
- +      `AlterationResult.noSuchAccount` if delisting (`No.add`) and no such
- +      account could be found in the specified list.
- +      `AlterationResult.noSuchChannel` if delisting (`No.add`) and no such
- +      channel could be found in the specified list.
- +      `AlterationResult.success` if enlisting or delisting succeeded.
- +/
-AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string list, const string account, const string channel)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
-    list ~ " is not whitelist, operator nor blacklist")
-{
-    import kameloso.thread : ThreadMessage;
-    import lu.json : JSONStorage;
-    import std.concurrency : send;
-    import std.json : JSONValue;
-
-    JSONStorage json;
-    json.reset();
-    json.load(plugin.userFile);
-
-    if (add)
-    {
-        import std.algorithm.searching : canFind;
-
-        const accountAsJSON = JSONValue(account);
-
-        if (channel in json[list].object)
-        {
-            if (json[list][channel].array.canFind(accountAsJSON))
-            {
-                return AlterationResult.alreadyInList;
-            }
-            else
-            {
-                json[list][channel].array ~= accountAsJSON;
-            }
-        }
-        else
-        {
-            json[list][channel] = null;
-            json[list][channel].array = null;
-            json[list][channel].array ~= accountAsJSON;
-        }
-    }
-    else
-    {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        import std.algorithm.searching : countUntil;
-
-        if (channel in json[list].object)
-        {
-            immutable index = json[list][channel].array.countUntil(JSONValue(account));
-
-            if (index == -1)
-            {
-                return AlterationResult.noSuchAccount;
-            }
-
-            json[list][channel] = json[list][channel].array.remove!(SwapStrategy.unstable)(index);
-        }
-        else
-        {
-            return AlterationResult.noSuchChannel;
-        }
-    }
-
-    json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.userFile);
-
-    // Force persistence to reload the file with the new changes
-    plugin.state.mainThread.send(ThreadMessage.Reload());
-    return AlterationResult.success;
-}
-
-
 // onCommandReload
 /++
  +  Asks plugins to reload their resources and/or configuration as they see fit.
@@ -1124,15 +568,7 @@ debug
 @Description("[debug] Toggles a flag to print all incoming events raw.")
 void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.conv : text;
-
-    plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
-
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold :
-        "Printing all: " ~ plugin.adminSettings.printRaw.text;
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    return onCommandPrintRawImpl(plugin, event);
 }
 
 
@@ -1152,15 +588,7 @@ debug
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
 void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.conv : text;
-
-    plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
-
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold :
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    return onCommandPrintBytesImpl(plugin, event);
 }
 
 
@@ -1321,27 +749,7 @@ debug
 @Description("[debug] Dumps information about the current state of the bot to the local terminal.")
 void onCommandStatus(AdminPlugin plugin)
 {
-    import kameloso.printing : printObjects;
-    import std.stdio : stdout, writeln;
-
-    logger.log("Current state:");
-    printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
-    writeln();
-
-    logger.log("Channels:");
-    foreach (immutable channelName, const channel; plugin.state.channels)
-    {
-        writeln(channelName);
-        printObjects(channel);
-    }
-    //writeln();
-
-    /*logger.log("Users:");
-    foreach (immutable nickname, const user; plugin.state.users)
-    {
-        writeln(nickname);
-        printObject(user);
-    }*/
+    return onCommandStatusImpl(plugin);
 }
 
 
@@ -1525,7 +933,9 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
 
     if (add)
     {
-        if (!mask.contains('!') || !mask.contains('@'))
+        import dialect.common : isValidHostmask;
+
+        if (!mask.isValidHostmask(plugin.state.server))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Invalid hostmask.");
@@ -1613,34 +1023,7 @@ debug
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
 void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage, busMessage;
-    import lu.string : contains, nom;
-    import std.stdio : stdout, writeln;
-
-    if (!event.content.length) return;
-
-    if (!event.content.contains!(Yes.decode)(" "))
-    {
-        logger.info("Sending bus message.");
-        writeln("Header: ", event.content);
-        writeln("Content: (empty)");
-        if (plugin.state.settings.flush) stdout.flush();
-
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
-    }
-    else
-    {
-        string slice = event.content;  // mutable
-        immutable header = slice.nom(" ");
-
-        logger.info("Sending bus message.");
-        writeln("Header: ", header);
-        writeln("Content: ", slice);
-        if (plugin.state.settings.flush) stdout.flush();
-
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            header, busMessage(slice));
-    }
+    return onCommandBusImpl(plugin, event);
 }
 
 
@@ -1827,7 +1210,7 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
-private:
+package:
     import kameloso.constants : KamelosoFilenames;
 
     /// All Admin options gathered.
