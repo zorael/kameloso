@@ -225,14 +225,14 @@ do
 
     void cleanup()
     {
-        import kameloso.plugins.common : unlistFiberAwaitingEvent, unlistFiberAwaitingEvents;
+        import kameloso.plugins.common : unawait;
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            plugin.unlistFiberAwaitingEvents(nonTwitchVoteEventTypes[]);
+            unawait(plugin, nonTwitchVoteEventTypes[]);
         }
 
-        plugin.unlistFiberAwaitingEvent(IRCEvent.Type.CHAN);
+        unawait(plugin, IRCEvent.Type.CHAN);
         plugin.channelVoteInstances.remove(event.channel);
     }
 
@@ -319,17 +319,17 @@ do
         // End Fiber
     }
 
-    import kameloso.plugins.common : awaitEvent, awaitEvents, delayFiber;
+    import kameloso.plugins.common : await, delay;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
     {
-        plugin.awaitEvents(fiber, nonTwitchVoteEventTypes[]);
+        await(plugin, fiber, nonTwitchVoteEventTypes[]);
     }
 
-    plugin.awaitEvent(fiber, IRCEvent.Type.CHAN);
-    plugin.delayFiber(fiber, dur);
+    await(plugin, fiber, IRCEvent.Type.CHAN);
+    delay(plugin, fiber, dur);
     plugin.channelVoteInstances[event.channel] = id;
 
     const sortedChoices = voteChoices
@@ -369,35 +369,35 @@ do
     {
         auto reminder600 = new CarryingFiber!int(&dgReminder, 32_768);
         reminder600.payload = 600;
-        plugin.delayFiber(reminder600, dur-600);
+        delay(plugin, reminder600, dur-600);
     }
 
     if (dur >= 600)
     {
         auto reminder300 = new CarryingFiber!int(&dgReminder, 32_768);
         reminder300.payload = 300;
-        plugin.delayFiber(reminder300, dur-300);
+        delay(plugin, reminder300, dur-300);
     }
 
     if (dur >= 240)
     {
         auto reminder60 = new CarryingFiber!int(&dgReminder, 32_768);
         reminder60.payload = 60;
-        plugin.delayFiber(reminder60, dur-180);
+        delay(plugin, reminder60, dur-180);
     }
 
     if (dur >= 60)
     {
         auto reminder30 = new CarryingFiber!int(&dgReminder, 32_768);
         reminder30.payload = 30;
-        plugin.delayFiber(reminder30, dur-30);
+        delay(plugin, reminder30, dur-30);
     }
 
     if (dur >= 20)
     {
         auto reminder10 = new CarryingFiber!int(&dgReminder, 32_768);
         reminder10.payload = 10;
-        plugin.delayFiber(reminder10, dur-10);
+        delay(plugin, reminder10, dur-10);
     }
 
     chan(plugin.state, event.channel,

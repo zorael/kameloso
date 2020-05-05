@@ -1123,7 +1123,7 @@ void await(IRCPlugin plugin, const IRCEvent.Type[] types,
 
 // awaitEvent
 /++
- +  Compatibility alias of `awaitEvents`.
+ +  Compatibility alias of `await`.
  +/
 deprecated("Use `await` instead")
 alias awaitEvent = await;
@@ -1131,7 +1131,7 @@ alias awaitEvent = await;
 
 // awaitEvents
 /++
- +  Compatibility alias of `awaitEvents`.
+ +  Compatibility alias of `await`.
  +/
 deprecated("Use `await` instead")
 alias awaitEvents = await;
@@ -1208,7 +1208,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type type)
 {
-    return plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
+    return unawait(plugin, Fiber.getThis, type);
 }
 
 
@@ -1233,7 +1233,7 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {
-        plugin.unlistFiberAwaitingEvent(fiber, type);
+        unawait(plugin, fiber, type);
     }
 }
 
@@ -1258,14 +1258,14 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {
-        plugin.unlistFiberAwaitingEvent(Fiber.getThis, type);
+        unawait(plugin, Fiber.getThis, type);
     }
 }
 
 
 // unlistFiberAwaitingEvent
 /++
- +  Compatibility alias of `unlistFiberAwaitingEvents`.
+ +  Compatibility alias of `unawait`.
  +/
 deprecated("Use `unawait` instead")
 alias unlistFiberAwaitingEvent = unawait;
@@ -1273,7 +1273,7 @@ alias unlistFiberAwaitingEvent = unawait;
 
 // unawait
 /++
- +  Compatibility alias of `unlistFiberAwaitingEvents`.
+ +  Compatibility alias of `unawait`.
  +/
 deprecated("Use `unawait` instead")
 alias unlistFiberAwaitingEvents = unawait;
@@ -1496,10 +1496,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             return whoisFiberDelegate();  // Recurse
         }
 
-        import kameloso.plugins.common : unlistFiberAwaitingEvents;
+        import kameloso.plugins.common : unawait;
 
         // Clean up awaiting fiber entries on exit, just to be neat.
-        scope(exit) context.unlistFiberAwaitingEvents(thisFiber, whoisEventTypes[]);
+        scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
 
         with (IRCEvent.Type)
         switch (whoisEvent.type)
@@ -1656,10 +1656,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        import kameloso.plugins.common : awaitEvents;
+        import kameloso.plugins.common : await;
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
-        context.awaitEvents(fiber, whoisEventTypes[]);
+        await(context, fiber, whoisEventTypes[]);
 
         string slice = nickname;
 

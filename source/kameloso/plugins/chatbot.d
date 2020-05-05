@@ -281,14 +281,14 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
 
     void dg()
     {
-        import kameloso.plugins.common : delayFiber;
+        import kameloso.plugins.common : delay;
         import kameloso.messaging : emote;
 
         emote(plugin.state, event.channel, "dances :D-<");
-        plugin.delayFiber(secondsBetweenDances, Yes.thenYield);
+        delay(plugin, secondsBetweenDances, Yes.thenYield);
 
         emote(plugin.state, event.channel, "dances :D|-<");
-        plugin.delayFiber(secondsBetweenDances, Yes.thenYield);
+        delay(plugin, secondsBetweenDances, Yes.thenYield);
 
         emote(plugin.state, event.channel, "dances :D/-<");
     }
