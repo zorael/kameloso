@@ -15,7 +15,7 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
-import lu.string : beginsWith;
+import lu.string : beginsWith, contains;
 import std.algorithm.searching : endsWith;
 import std.exception : enforce;
 import std.format : format;
@@ -41,14 +41,14 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     string pluginName;
     string botNickname;
 
-    immutable results = slice.splitInto(pluginName, botNickname);
+    immutable results = slice.splitInto(botNickname, pluginName);
 
     if (results != SplitResults.match)
     {
         import std.format : format;
 
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [plugin] [target bot nickname]"
+            "Usage: %s%s [target bot nickname] [plugin] "
             .format(plugin.state.settings.prefix, event.aux));
         return;
     }
@@ -62,37 +62,73 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         break;
 
     case "automodes":
-        void automodesDg() { return testAutomodesFiber(plugin, event, botNickname); }
+        void automodesDg()
+        {
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testAutomodesFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&automodesDg);
         fiber.call();
         break;
 
     case "chatbot":
-        void chatbotDg() { return testChatbotFiber(plugin, event, botNickname); }
+        void chatbotDg()
+        {
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testChatbotFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&chatbotDg);
         fiber.call();
         break;
 
     case "notes":
-        void notesDg() { return testNotesFiber(plugin, event, botNickname); }
+        void notesDg()
+        {
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testNotesFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&notesDg);
         fiber.call();
         break;
 
     case "oneliners":
-        void onelinersDg() { return testOnelinersFiber(plugin, event, botNickname); }
+        void onelinersDg()
+        {
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testOnelinersFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&onelinersDg);
         fiber.call();
         break;
 
     case "quotes":
-        void quotesDg() { return testQuotesFiber(plugin, event, botNickname); }
+        void quotesDg()
+        {
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testQuotesFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&quotesDg);
         fiber.call();
         break;
 
     case "sedreplace":
-        void sedReplaceDg() { return testSedReplaceFiber(plugin, event, botNickname); }
+        void sedReplaceDg()
+        {
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testSedReplaceFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&sedReplaceDg);
         fiber.call();
         break;
@@ -100,7 +136,17 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "all":
         void allDg()
         {
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+
             chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            Fiber.yield();
+            while ((thisFiber.payload.channel != event.channel) ||
+                (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+
             testAdminFiber(plugin, event, botNickname);
             testAutomodesFiber(plugin, event, botNickname);
             testChatbotFiber(plugin, event, botNickname);
@@ -117,7 +163,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
 
     default:
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Invalid plugin: " ~ event.content);
+            "Invalid plugin: " ~ pluginName);
         break;
     }
 }
@@ -133,9 +179,6 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
@@ -147,7 +190,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     // ------------ !home
 
     send("home del #harpsteff");
-    // Ignore reply
+    enforce(thisFiber.payload.content == "Channel #harpsteff was not listed as a home.");
 
     send("home add #harpsteff");
     enforce(thisFiber.payload.content == "Home added.");
@@ -172,24 +215,26 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             (list == "whitelist") ? "a whitelisted user" :
             /*(list == "blacklist") ?*/ "a blacklisted user";
 
-        send(list ~ " del wefpok");
-        enforce(thisFiber.payload.content == "Account wefpok isn't %s in %s."
-            .format(asWhat, origEvent.channel));
+        //"No such account zorael to remove as %s in %s."
+        send(list ~ " del zorael");
+        enforce((thisFiber.payload.content == "zorael isn't %s in %s."
+            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
-        send(list ~ " add wefpok");
-        enforce(thisFiber.payload.content == "Added wefpok as %s in %s."
-            .format(asWhat, origEvent.channel));
+        send(list ~ " add zorael");
+        enforce((thisFiber.payload.content == "Added zorael as %s in %s."
+            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
-        send(list ~ " add wefpok");
-        enforce(thisFiber.payload.content == "wefpok was already %s in %s."
-            .format(asWhat, origEvent.channel));
+        send(list ~ " add zorael");
+        enforce((thisFiber.payload.content == "zorael was already %s in %s."
+            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
-        send(list ~ " del wefpok");
-        enforce(thisFiber.payload.content == "Removed wefpok as %s in %s."
-            .format(asWhat, origEvent.channel));
+        send(list ~ " del zorael");
+        enforce((thisFiber.payload.content == "Removed zorael as %s in %s."
+            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
         send(list ~ " add");
-        enforce(thisFiber.payload.content == "No nickname supplied.");
+        enforce((thisFiber.payload.content == "No nickname supplied."),
+            thisFiber.payload.content);
 
         immutable asWhatList =
             (list == "operator") ? "operators" :
@@ -216,14 +261,15 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         enforce(thisFiber.payload.content ==
             "Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
 
-        send("hostmask add HIRF#%%!SNIRF$$$@''ä''.''.");
+        send("hostmask add kameloso HIRF#%%!SNIR@sdasdasd");
         enforce(thisFiber.payload.content == "Invalid hostmask.");
 
         send("hostmask add kameloso kameloso^!*@*");
         enforce(thisFiber.payload.content == "Hostmask list updated.");
 
-        send("hostmask add kameloso kameloso^!*@*");
-        enforce(thisFiber.payload.content == `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
+        send("hostmask list");
+        // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
+        enforce(thisFiber.payload.content.contains(`"kameloso^!*@*":"kameloso"`));
 
         send("hostmask del kameloso^!*@*");
         enforce(thisFiber.payload.content == "Hostmask list updated.");
@@ -246,9 +292,6 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
@@ -259,9 +302,9 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
 
     // ------------ !automode
 
-    send("automode list");
+    /*send("automode list");
     enforce(thisFiber.payload.content == "No automodes defined for channel %s."
-        .format(origEvent.channel));
+        .format(origEvent.channel));*/
 
     send("automode del");
     enforce(thisFiber.payload.content ==
@@ -273,7 +316,7 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
         "Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
         .format(plugin.state.settings.prefix));
 
-    send("automode add $¡$¡");
+    send("automode add $¡$¡ +o");
     enforce(thisFiber.payload.content == "Invalid nickname.");
 
     send("automode add kameloso -v");
@@ -291,7 +334,7 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
         .format(origEvent.channel));
 
     send("automode list");
-    enforce(thisFiber.payload.content == `Current automodes: ["kameloso":"o"]`);
+    enforce(thisFiber.payload.content.contains(`"kameloso":"v"`));
 
     send("automode del $¡$¡");
     enforce(thisFiber.payload.content == "Invalid nickname.");
@@ -299,9 +342,9 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     send("automode del kameloso");
     enforce(thisFiber.payload.content == "Automode for kameloso cleared.");
 
-    send("automode list");
+    /*send("automode list");
     enforce(thisFiber.payload.content == "No automodes defined for channel %s."
-        .format(origEvent.channel));
+        .format(origEvent.channel));*/
 
     send("automode del flerrp");
     enforce(thisFiber.payload.content == "Automode for flerrp cleared.");
@@ -320,9 +363,6 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
@@ -333,8 +373,8 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     // ------------ !say
 
-    send("say WEFPOK");
-    enforce(thisFiber.payload.content == "WEFPOK");
+    send("say zoraelblarbhl");
+    enforce(thisFiber.payload.content == "zoraelblarbhl");
 
     // ------------ !8ball
 
@@ -381,6 +421,8 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     enforce(thisFiber.payload.content == "dances :D/-<");
 
     unawait(plugin, IRCEvent.Type.EMOTE);
+
+    logger.info("Chatbot tests passed!");
 }
 
 
@@ -393,9 +435,6 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -413,14 +452,25 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     send("note %s test".format(plugin.state.client.nickname));
     enforce(thisFiber.payload.content == "Note added.");
 
+    unawait(plugin, IRCEvent.Type.CHAN);
     part(plugin.state, origEvent.channel);
     await(plugin, IRCEvent.Type.SELFPART);
+    Fiber.yield();
     while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
     unawait(plugin, IRCEvent.Type.SELFPART);
 
+    await(plugin, IRCEvent.Type.SELFJOIN);
     join(plugin.state, origEvent.channel);
-    enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note") &&
+    Fiber.yield();
+    while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
+    unawait(plugin, IRCEvent.Type.SELFJOIN);
+    await(plugin, IRCEvent.Type.CHAN);
+    Fiber.yield();
+    enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note"
+        .format(plugin.state.client.nickname)) &&
         thisFiber.payload.content.endsWith("ago: test"));
+
+    logger.info("Notes tests passed!");
 }
 
 
@@ -434,12 +484,17 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+        Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+    }
+
+    void sendNoPrefix(const string line)
+    {
+        chan(plugin.state, origEvent.channel, line);
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
@@ -451,7 +506,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     enforce(thisFiber.payload.content == "There are no commands available right now.");
 
     send("oneliner");
-    enforce(thisFiber.payload.content == "Usage: %soneliner [add|del|list] [text]"
+    enforce(thisFiber.payload.content == "Usage: %soneliner [add|del|list] [trigger] [text]"
         .format(plugin.state.settings.prefix));
 
     send("oneliner add herp derp dirp darp");
@@ -462,7 +517,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     enforce(thisFiber.payload.content == "Available commands: %sherp"
         .format(plugin.state.settings.prefix));
 
-    send("herp");
+    sendNoPrefix("%sherp".format(plugin.state.settings.prefix));
     enforce(thisFiber.payload.content == "derp dirp darp");
 
     send("oneliner del hirrp");
@@ -472,6 +527,8 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     send("oneliner del herp");
     enforce(thisFiber.payload.content == "Oneliner %sherp removed."
         .format(plugin.state.settings.prefix));
+
+    logger.info("Oneliners tests passed!");
 }
 
 
@@ -484,9 +541,6 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
     void send(const string line)
     {
@@ -514,6 +568,8 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flerrp");
     enforce(thisFiber.payload.content == "flerrp | flirrp flarrp flurble");
+
+    logger.info("Quotes tests passed!");
 }
 
 
@@ -527,9 +583,6 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
-    await(plugin, IRCEvent.Type.CHAN);
-    scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
@@ -538,20 +591,30 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    send("I am a fish");
-    send("s/fish/snek/");
+    void sendNoPrefix(const string line)
+    {
+        chan(plugin.state, origEvent.channel, line);
+        Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+    }
+
+    chan(plugin.state, origEvent.channel, "I am a fish");
+    sendNoPrefix("s/fish/snek/");
     enforce(thisFiber.payload.content == "%s | I am a snek"
         .format(plugin.state.client.nickname));
 
-    send("I am a fish fish");
-    send("s#fish#snek#");
+    chan(plugin.state, origEvent.channel, "I am a fish fish");
+    sendNoPrefix("s#fish#snek#");
     enforce(thisFiber.payload.content == "%s | I am a snek fish"
         .format(plugin.state.client.nickname));
 
-    send("I am a fish fish");
-    send("s_fish_snek_g");
+    chan(plugin.state, origEvent.channel, "I am a fish fish");
+    sendNoPrefix("s_fish_snek_g");
     enforce(thisFiber.payload.content == "%s | I am a snek snek"
         .format(plugin.state.client.nickname));
+
+    logger.info("SedReplace tests passed!");
 }
 
 
