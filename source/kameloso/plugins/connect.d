@@ -397,6 +397,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 void onNotRegistered(ConnectService service)
 {
     logger.info("Did we try to join too early?");
+    service.joinedChannels = false;
     service.delayJoinsAfterFailedAuth();
 }
 
