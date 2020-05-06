@@ -391,17 +391,8 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            enum pattern = "No such account %s to remove as %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            break;
-
         case noSuchChannel:
-            enum pattern = "Account %s isn't %s in %s.";
+            enum pattern = "%s isn't %s in %s.";
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
