@@ -48,7 +48,7 @@ enum KamelosoDefaultStrings
 
     /// The default quit reason, when the bot exits.
     quitReason = "kameloso IRC bot v%s @ %s"
-        .format(KamelosoInfo.version_, KamelosoInfo.source),
+        .format(cast(string)KamelosoInfo.version_, cast(string)KamelosoInfo.source),
 
     /// The default part reason, when the bot is asked to part a channel.
     partReason = quitReason,
