@@ -877,9 +877,9 @@ in ((fiber !is null), "Tried to delay a null Fiber")
     import kameloso.thread : ScheduledFiber;
     import std.datetime.systime : Clock;
 
-    immutable time = Clock.currStdTime + msecs ?
+    immutable time = Clock.currStdTime + (msecs ?
         (duration * 10_000) :  // hnsecs -> msecs
-        (duration * 10_000_000);  // hnsecs -> seconds
+        (duration * 10_000_000));  // hnsecs -> seconds
     plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
 
     plugin.state.updateNextFiberTimestamp();
