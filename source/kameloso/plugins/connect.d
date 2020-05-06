@@ -365,12 +365,19 @@ void delayJoinsAfterFailedAuth(ConnectService service)
     import kameloso.plugins.common : delay;
     import core.thread : Fiber;
 
+    enum secsBetweenRegistrationFinishedChecks = 5;
+
     void dg()
     {
-        if (service.authentication == Progress.started)
+        if (service.authentication == Progress.notStarted)
         {
-            logger.log("Auth timed out.");
+            logger.log("Timed out waiting to authenticate.");
             service.authentication = Progress.finished;
+        }
+
+        while (service.registration != Progress.finished)
+        {
+            delay(service, secsBetweenRegistrationFinishedChecks, Yes.yield);
         }
 
         if (!service.joinedChannels)
