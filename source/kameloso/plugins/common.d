@@ -918,7 +918,7 @@ void delay(IRCPlugin plugin, const long duration, const Flag!"msecs" msecs = No.
  +      duration = Amount of time to delay the implicit fiber in the current context.
  +      yield = Whether or not to immediately yield the Fiber.
  +/
-void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield = No.yield)
+void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield)
 {
     delay(plugin, Fiber.getThis, duration, No.msecs);
     if (yield) Fiber.yield();
