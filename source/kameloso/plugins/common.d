@@ -855,10 +855,11 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 }
 
 
-// delayMsecs
+// delay
 /++
- +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
- +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `duration`
+ +  seconds or milliseconds later, by appending it to the `plugin`'s
+ +  `IRCPluginState.scheduledFibers`.
  +
  +  Updates the `IRCPluginState.nextFiberTimestamp` timestamp so that the
  +  main loop knows when to next process the array of `kameloso.thread.ScheduledFiber`s.
@@ -866,91 +867,62 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
- +      msecs = Number of milliseconds to delay the `fiber`.
+ +      duration = Amount of time to delay the `fiber`.
+ +      msecs = Whether `duration` is in milliseconds or seconds.
  +/
-void delayMsecs(IRCPlugin plugin, Fiber fiber, const long msecs)
+void delay(IRCPlugin plugin, Fiber fiber, const long duration,
+    const Flag!"msecs" msecs = No.msecs)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
     import kameloso.thread : ScheduledFiber;
     import std.datetime.systime : Clock;
 
-    immutable time = Clock.currStdTime + (msecs * 10_000);  // hnsecs -> msecs
+    immutable time = Clock.currStdTime + msecs ?
+        (duration * 10_000) :  // hnsecs -> msecs
+        (duration * 10_000_000);  // hnsecs -> seconds
     plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
+
     plugin.state.updateNextFiberTimestamp();
 }
 
 
-// delayMsecs
+// delay
 /++
- +  Queues a `core.thread.fiber.Fiber` to be called at a point `msecs` milliseconds later, by
- +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `duration`
+ +  seconds or milliseconds later, by appending it to the `plugin`'s
+ +  `IRCPluginState.scheduledFibers`.
  +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      msecs = Number of milliseconds to delay the implicit fiber in the current context.
+ +      duration = Amount of time to delay the implicit fiber in the current context.
+ +      msecs = Whether `period` is in milliseconds or seconds.
  +      yield = Whether or not to immediately yield the Fiber.
  +/
-void delayMsecs(IRCPlugin plugin, const long msecs,
+void delay(IRCPlugin plugin, const long duration, const Flag!"msecs" msecs = No.msecs,
     const Flag!"yield" yield = No.yield)
 {
-    delayMsecs(plugin, Fiber.getThis, msecs);
+    delay(plugin, Fiber.getThis, duration, msecs);
     if (yield) Fiber.yield();
 }
 
 
 // delay
 /++
- +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
- +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
+ +  Queues a `core.thread.fiber.Fiber` to be called at a point `duration`
+ +  seconds later, by appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
+ +  Implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed at a later point in time.
- +      secs = Number of seconds to delay the `fiber`.
- +/
-void delay(IRCPlugin plugin, Fiber fiber, const long secs)
-in ((fiber !is null), "Tried to delay a null Fiber")
-{
-    // Pass the seconds as milliseconds
-    return delayMsecs(plugin, fiber, secs * 1_000);
-}
-
-
-// delay
-/++
- +  Queues a `core.thread.fiber.Fiber` to be called at a point `secs` seconds later, by
- +  appending it to the `plugin`'s `IRCPluginState.scheduledFibers`.
- +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
- +
- +  Params:
- +      plugin = The current `IRCPlugin`.
- +      secs = Number of seconds to delay the implicit fiber in the current context.
+ +      duration = Amount of time to delay the implicit fiber in the current context.
  +      yield = Whether or not to immediately yield the Fiber.
  +/
-void delay(IRCPlugin plugin, const long secs,
-    const Flag!"yield" yield = No.yield)
+void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield = No.yield)
 {
-    // Pass the seconds as milliseconds
-    delayMsecs(plugin, Fiber.getThis, secs * 1_000);
+    delay(plugin, Fiber.getThis, duration, No.msecs);
     if (yield) Fiber.yield();
 }
-
-
-// delayFiberMsecs
-/++
- +  Compatibility alias of `delayMsecs`.
- +/
-deprecated("Use `delayMsecs` instead")
-alias delayFiberMsecs = delayMsecs;
-
-
-// delayFiber
-/++
- +  Compatibility alias of `delay`.
- +/
-deprecated("Use `delay` instead")
-alias delayFiber = delay;
 
 
 // removeDelayedFiber
