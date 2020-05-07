@@ -1265,7 +1265,7 @@ package:
         Tid persistentWorkerTid;
 
         /// Results of async HTTP queries.
-        shared string[string] bucket;
+        shared QueryResponse[string] bucket;
 
         /// The file containing the bearer authorization key.
         @Resource string keyFile = "twitch.key";
