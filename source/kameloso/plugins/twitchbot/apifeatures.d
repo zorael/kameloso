@@ -505,7 +505,8 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
     if (broadcasterJSON.type != JSONType.object)// || ("display_name" !in broadcasterJSON))
     {
         // Something is deeply wrong.
-        logger.error("Failed to fetch broadcaster information; is the API key entered correctly?");
+        logger.error("Failed to fetch broadcaster information; " ~
+            "are the client-secret API keys and the authorization key file correctly set up?");
         logger.error("Disabling API features.");
         plugin.useAPIFeatures = false;
         return;
@@ -542,9 +543,10 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
 
     if (!plugin.useAPIFeatures) return;
 
-    if (!plugin.twitchBotSettings.apiKey.length)
+    if (!plugin.twitchBotSettings.clientKey.length ||
+        !plugin.twitchBotSettings.secretKey.length)
     {
-        logger.info("No Twitch Client ID API key supplied in the configuration file. " ~
+        logger.info("No Twitch Client ID API key pairs supplied in the configuration file. " ~
             "Some commands will not work.");
         plugin.useAPIFeatures = false;
         return;
