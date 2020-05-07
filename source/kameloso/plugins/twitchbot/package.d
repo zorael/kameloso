@@ -58,8 +58,11 @@ import core.thread : Fiber;
     /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
     bool permitOneLinkOnly = true;
 
-    /// API key to use when querying Twitch servers for information.
-    string apiKey;
+    /// Client-ID key to use when querying Twitch servers for information.
+    string clientKey;
+
+    /// Client secret to use when querying Twitch servers for information.
+    string secretKey;
 
     /// Whether to use one persistent worker for Twitch queries or to use separate subthreads.
     version(Windows)
