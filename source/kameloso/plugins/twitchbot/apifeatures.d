@@ -58,7 +58,7 @@ struct QueryResponse
  +      headers = HTTP headers to use when issuing the requests.
  +      bucket = The shared bucket to put the results in, keyed by URL.
  +/
-void persistentQuerier(shared string[string] headers, shared string[string] bucket)
+void persistentQuerier(shared string[string] headers, shared QueryResponse[string] bucket)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -123,7 +123,8 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +      if (!response)
  +      {
  +          // Too early, sleep briefly and try again
- +          delay(plugin, plugin.approximateQueryTime/retryTimeDivisor, Yes.msecs, Yes.yield);
+ +          delay(plugin, plugin.approximateQueryTime/plugin.approximateQueryRetryTimeDivisor,
+                Yes.msecs, Yes.yield);
  +          continue;
  +      }
  +
@@ -139,23 +140,38 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
  +      bucket = The shared bucket to put the results in, keyed by URL.
  +/
 void queryTwitch(const string url, shared string[string] headers,
-    shared string[string] bucket)
+    shared QueryResponse[string] bucket)
 {
     import lu.traits : UnqualArray;
     import requests.request : Request;
+    import std.datetime.systime : Clock;
 
     Request req;
     req.keepAlive = false;
     req.addHeaders(cast(UnqualArray!(typeof(headers)))headers);
+
+    immutable pre = Clock.currTime;
     auto res = req.get(url);
+    immutable post = Clock.currTime;
 
     if (res.code >= 400)
     {
-        bucket[url] = string.init;
+        synchronized
+        {
+            bucket[url] = QueryResponse.init;
+        }
     }
     else
     {
-        bucket[url] = cast(string)res.responseBody.data.idup;
+        QueryResponse response;
+        response.str = cast(string)res.responseBody.data.idup;
+        immutable delta = (post - pre);
+        response.msecs = delta.total!"msecs";
+
+        synchronized
+        {
+            bucket[url] = response;
+        }
     }
 }
 
@@ -229,9 +245,13 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                         spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
                     }
 
-                    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+                    immutable queryWaitTime = plugin.twitchBotSettings.singleWorkerThread ?
+                        plugin.approximateQueryTime + plugin.approximateQueryConcurrencyMessagePenalty :
+                        plugin.approximateQueryTime;
 
-                    shared string* response;
+                    delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
+
+                    shared QueryResponse* response;
                     bool queryTimeLengthened;
 
                     while (!response)
@@ -246,31 +266,31 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                             // Miss; fired too early, there is no response available yet
                             if (!queryTimeLengthened)
                             {
-                                plugin.approximateQueryTime =
-                                    cast(long)(plugin.approximateQueryTime *
-                                    plugin.approximateQueryGrowthMultiplier);
+                                immutable queryTime = plugin.approximateQueryTime;
+                                immutable multiplier = plugin.approximateQueryGrowthMultiplier;
+                                plugin.approximateQueryTime = cast(long)(queryTime * multiplier);
                                 queryTimeLengthened = true;
                             }
 
-                            immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
+                            immutable queryTime = plugin.approximateQueryTime;
+                            immutable divisor = plugin.approximateQueryRetryTimeDivisor;
+                            immutable briefWait = (queryTime / divisor);
                             delay(plugin, briefWait, Yes.msecs, Yes.yield);
                             continue;
                         }
                         else
                         {
-                            // Slowly decrease it to avoid inflation
-                            plugin.approximateQueryTime =
-                                cast(long)(plugin.approximateQueryTime *
-                                plugin.approximateQueryAntiInflationMultiplier);
+                            // Make the new approximate query time a weighted average
+                            plugin.averageApproximateQueryTime(response.msecs);
                         }
 
                         plugin.bucket.remove(url);
                     }
 
-                    if (response.length)
+                    if (response.str.length)
                     {
                         // Hit
-                        const user = parseUserFromResponse(cast()*response);
+                        const user = parseUserFromResponse(cast()response.str);
 
                         if (user == JSONValue.init)
                         {
@@ -584,7 +604,7 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
 
     if (plugin.bucket is null)
     {
-        plugin.bucket[string.init] = string.init;
+        plugin.bucket[string.init] = QueryResponse.init;
         plugin.bucket.remove(string.init);
     }
 
@@ -781,9 +801,13 @@ JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
             spawn(&queryTwitch, paginatedURL, cast(shared)plugin.headers, plugin.bucket);
         }
 
-        delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+        immutable queryWaitTime = plugin.twitchBotSettings.singleWorkerThread ?
+            plugin.approximateQueryTime + plugin.approximateQueryConcurrencyMessagePenalty :
+            plugin.approximateQueryTime;
 
-        shared string* response;
+        delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
+
+        shared QueryResponse* response;
         bool queryTimeLengthened;
 
         while (!response)
@@ -798,28 +822,28 @@ JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
                 // Miss; fired too early, there is no response available yet
                 if (!queryTimeLengthened)
                 {
-                    plugin.approximateQueryTime =
-                        cast(long)(plugin.approximateQueryTime *
-                        plugin.approximateQueryGrowthMultiplier);
+                    immutable queryTime = plugin.approximateQueryTime;
+                    immutable multiplier = plugin.approximateQueryGrowthMultiplier;
+                    plugin.approximateQueryTime = cast(long)(queryTime * multiplier);
                     queryTimeLengthened = true;
                 }
-                else
-                {
-                    // Slowly decrease it to avoid inflation
-                    plugin.approximateQueryTime =
-                        cast(long)(plugin.approximateQueryTime *
-                        plugin.approximateQueryAntiInflationMultiplier);
-                }
 
-                immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
+                immutable queryTime = plugin.approximateQueryTime;
+                immutable divisor = plugin.approximateQueryRetryTimeDivisor;
+                immutable briefWait = (queryTime / divisor);
                 delay(plugin, briefWait, Yes.msecs, Yes.yield);
                 continue;
+            }
+            else
+            {
+                // Make the new approximate query time a weighted average
+                plugin.averageApproximateQueryTime(response.msecs);
             }
 
             plugin.bucket.remove(paginatedURL);
         }
 
-        auto followsJSON = parseJSON(*response);
+        auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
         foreach (thisFollowJSON; followsJSON["data"].array)
