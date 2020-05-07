@@ -682,7 +682,9 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
  +/
 string getNewBearerToken(const string clientKey, const string secretKey)
 {
-    import requests;
+    import requests.request : Request;
+    import requests.utils : queryParams;
+    import requests : postContent;
     import std.json : parseJSON;
 
     Request req;
