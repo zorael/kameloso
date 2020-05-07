@@ -586,10 +586,15 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
  +/
 void resetAPIKeys(TwitchBotPlugin plugin)
 {
+    import lu.string : strippedRight;
+    import std.file : readText;
+
+    immutable key = readText(plugin.keyFile).strippedRight;
+
     plugin.headers =
     [
         "Client-ID" : plugin.twitchBotSettings.clientKey,
-        //"Authorization" : "Bearer " ~ readText(plugin.keyFile),
+        "Authorization" : "Bearer " ~ key,
     ];
 }
 
