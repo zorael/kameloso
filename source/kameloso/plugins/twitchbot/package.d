@@ -1245,21 +1245,31 @@ package:
          +  The multiplier of how much the `approximateQueryTime` should increase
          +  when it turned out to be a bit short.
          +/
-        enum approximateQueryGrowthMultiplier = 1.05;
+        enum approximateQueryGrowthMultiplier = 1.1;
 
         /++
          +  The divisor of how much to wait before retrying, after `approximateQueryTime`
          +  turned out to be a bit short.
          +/
-        enum retryTimeDivisor = 5;
+        enum approximateQueryRetryTimeDivisor = 3;
 
         /++
-         +  The multiplier of how much the `approximateQueryTime` should increase
-         +  when it turned out to be enough for the query to finish. This prevents
-         +  inflation as it will slowly, slowly decrease until it becomes too
-         +  small again, at which point it will grow.
+         +  By how many milliseconds to pad measurements of how long a query took
+         +  to be on the conservative side.
          +/
-        enum approximateQueryAntiInflationMultiplier = 0.999;
+        enum approximateQueryMeasurementPadding = 30;
+
+        /++
+         +  The weight to assign the current approximate query time before
+         +  making a weighted average based on a new value.
+         +/
+        enum approximateQueryAveragingWeight = 3;
+
+        /++
+         +  How many extra milliseconds to add to query wait time if single worker
+         +  mode is enabled and concurrency messages are being used to start queries.
+         +/
+        enum approximateQueryConcurrencyMessagePenalty = 100;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
