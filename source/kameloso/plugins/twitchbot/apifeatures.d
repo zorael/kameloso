@@ -28,6 +28,24 @@ import core.thread : Fiber;
 package:
 
 
+// QueryResponse
+/++
+ +  Embodies a response from a query to the Twitch servers. A string paired with
+ +  a millisecond count of how long the query took.
+ +
+ +  This is used instead of a `std.typecons.Tuple` because it doesn't really
+ +  work with `shared`.
+ +/
+struct QueryResponse
+{
+    /// Response body, may be several lines.
+    string str;
+
+    /// How long the query took.
+    long msecs;
+}
+
+
 // persistentQuerier
 /++
  +  Persistent worker issuing Twitch API queries based on the concurrency messages
