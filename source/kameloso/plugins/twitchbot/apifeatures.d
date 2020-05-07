@@ -665,8 +665,11 @@ void getNewAuthKey(TwitchBotPlugin plugin, const string scopes = "channel:read:s
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
+ +
+ +  Returns:
+ +      A new authorization token string.
  +/
-void getNewBearerToken(TwitchBotPlugin plugin)
+string getNewBearerToken(const string clientKey, const string secretKey)
 {
     import requests;
     import std.json : parseJSON;
@@ -678,12 +681,13 @@ void getNewBearerToken(TwitchBotPlugin plugin)
         &client_secret=${S}&grant_type=client_credentials"*/
 
     enum url = "https://id.twitch.tv/oauth2/token";
-    const response = postContent(url, queryParams(
-        "client_id", plugin.twitchBotSettings.clientKey,
-        "client_secret", plugin.twitchBotSettings.secretKey,
+
+    auto response = postContent(url, queryParams(
+        "client_id", clientKey,
+        "client_secret", secretKey,
         "grant_type", "client_credentials"));
 
-    /* actual:
+    /*
     {
         "access_token" : "HARBLSNARBL",
         "expires_in" : 4680249,
@@ -691,8 +695,18 @@ void getNewBearerToken(TwitchBotPlugin plugin)
     }
     */
 
-    const asJSON = parseJSON(response);
-    plugin.headers["Authorization"] = "Bearer " ~ asJSON["access_token"];
+    const asJSON = parseJSON(cast(string)response);
+
+    if (const token = "access_token" in asJSON)
+    {
+        return token.str;
+    }
+    else
+    {
+        logger.error("Could not get a new authorization bearer token. " ~
+            "Make sure that your client and secret keys are valid.");
+        return string.init;
+    }
 }
 
 
