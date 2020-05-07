@@ -1184,6 +1184,9 @@ package:
 
             /// Broadcaster user/account/room ID (not name).
             string roomID;
+
+            /// A JSON list of the followers of the channel.
+            JSONValue follows;
         }
     }
 
