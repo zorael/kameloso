@@ -554,11 +554,14 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
 
     if (!plugin.headers.length)
     {
-        plugin.headers =
-        [
-            "Client-ID" : plugin.twitchBotSettings.apiKey,
-            "Authorization" : "Bearer " ~ plugin.state.bot.pass[6..$],  // Strip "oauth:"
-        ];
+        immutable success = plugin.resetAPIKeys();
+
+        if (!success)
+        {
+            logger.info("Disabling API features due to key setup failure.");
+            plugin.useAPIFeatures = false;
+            return;
+        }
     }
 
     if (plugin.bucket is null)
