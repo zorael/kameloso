@@ -975,8 +975,10 @@ in (filename.length, "Tried to save resources to an empty filename")
 void initResources(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import std.file : exists;
     import std.json : JSONException;
     import std.path : baseName;
+    import std.stdio : File;
 
     JSONStorage bannedPhrasesJSON;
 
@@ -1006,6 +1008,15 @@ void initResources(TwitchBotPlugin plugin)
 
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
     timersJSON.save(plugin.timersFile);
+
+    version(TwitchAPIFeatures)
+    {
+        if (!plugin.keyFile.exists)
+        {
+            auto file = File(plugin.keyFile, "w");
+            file.writeln();
+        }
+    }
 }
 
 
