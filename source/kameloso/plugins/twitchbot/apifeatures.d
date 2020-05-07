@@ -583,19 +583,85 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
+ +
+ +  Returns:
+ +      true if keys seem to work, even if it took requesting new authorization
+ +      keys to make it so; false if not.
  +/
-void resetAPIKeys(TwitchBotPlugin plugin)
+bool resetAPIKeys(TwitchBotPlugin plugin)
 {
     import lu.string : strippedRight;
     import std.file : readText;
 
-    immutable key = readText(plugin.keyFile).strippedRight;
+    string getNewKey()
+    {
+        immutable key = getNewBearerToken(plugin.twitchBotSettings.clientKey,
+            plugin.twitchBotSettings.secretKey);
+
+        if (key.length)
+        {
+            import std.stdio : File;
+
+            auto keyFile = File(plugin.keyFile);
+            keyFile.writeln(key);
+            return key;
+        }
+        else
+        {
+            // Something's wrong.
+            return string.init;
+        }
+    }
+
+    bool currentKeysWork()
+    {
+        const test = getUserByLogin(plugin, "kameboto");
+        return (test != JSONValue.init);
+    }
+
+    string key = readText(plugin.keyFile).strippedRight;
+    bool gotNewKey;
+
+    if (!key.length)
+    {
+        key = getNewKey();
+        gotNewKey = true;
+
+        if (!key.length)
+        {
+            return false;
+        }
+    }
 
     plugin.headers =
     [
         "Client-ID" : plugin.twitchBotSettings.clientKey,
         "Authorization" : "Bearer " ~ key,
     ];
+
+    if (!currentKeysWork)
+    {
+        if (gotNewKey)
+        {
+            // Already got a new key and it still doesn't work.
+            return false;
+        }
+
+        immutable newKey = getNewKey();
+
+        if (newKey.length)
+        {
+            plugin.headers["Authorization"] = "Bearer " ~ newKey;
+            return currentKeysWork;
+        }
+        else
+        {
+            // Could not get a new key.
+            return false;
+        }
+    }
+
+    return true;
 }
 
 
