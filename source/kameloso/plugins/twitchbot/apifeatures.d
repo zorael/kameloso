@@ -323,34 +323,13 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 
         }
 
-        // Identity ascertained; look up
+        // Identity ascertained; look up in cached list
 
-        immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
+        const follows = plugin.activeChannels[event.channel].follows;
 
-        foreach (const followingUserJSON; getFollowsAsync(plugin, idString, Yes.from).array)
+        if (idString in follows)
         {
-            /*writefln("%s --> %s", followingUserJSON["from_name"],
-                followingUserJSON["to_name"]);*/
-
-            if (followingUserJSON["to_id"].str == roomIDString)
-            {
-                /*writeln("FROM");
-                writeln(followingUserJSON.toPrettyString);*/
-                return reportFollowAge(followingUserJSON);
-            }
-        }
-
-        foreach (const followingUserJSON; getFollowsAsync(plugin, roomIDString, No.from).array)
-        {
-            /*writefln("%s --> %s", followingUserJSON["from_name"],
-                followingUserJSON["to_name"]);*/
-
-            if (followingUserJSON["from_id"].str == idString)
-            {
-                /*writeln("TO");
-                writeln(followingUserJSON.toPrettyString);*/
-                return reportFollowAge(followingUserJSON);
-            }
+            return reportFollowAge(follows[idString]);
         }
 
         // If we're here there were no matches.
