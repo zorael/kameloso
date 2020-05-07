@@ -833,3 +833,31 @@ JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
 
     return allFollows;
 }
+
+
+// averageApproximateQueryTime
+/++
+ +  Given a query time measurement, make a new approximate query time based on
+ +  the weighted averages of the old one and said measurement.
+ +
+ +  The old value is given a weight of `plugin.approximateQueryAveragingWeight`
+ +  and the new measurement a weight of 1. Additionally the measurement is padded
+ +  by `plugin.approximateQueryMeasurementPadding` to be on the safe side.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      reponseMsecs = How many milliseconds the last query took.
+ +/
+void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
+{
+    immutable current = plugin.approximateQueryTime;
+    immutable weight = plugin.approximateQueryAveragingWeight;
+    immutable padding = plugin.approximateQueryMeasurementPadding;
+    immutable average = ((weight * current) + (responseMsecs + padding)) / (weight + 1);
+
+    /*import std.stdio;
+    writefln("time:%s | response: %d (+%d) | new average:%s",
+        current, responseMsecs, padding, average);*/
+
+    plugin.approximateQueryTime = cast(long)average;
+}
