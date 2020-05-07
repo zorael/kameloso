@@ -655,3 +655,211 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
             cast(shared)plugin.headers, plugin.bucket);
     }
 }
+
+
+// resetAPIKeys
+/++
+ +  Resets the API keys in the HTTP headers we pass.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +/
+void resetAPIKeys(TwitchBotPlugin plugin)
+{
+    plugin.headers =
+    [
+        "Client-ID" : plugin.twitchBotSettings.clientKey,
+        //"Authorization" : "Bearer " ~ readText(plugin.keyFile),
+    ];
+}
+
+
+// getNewAuthKey
+/++
+ +  Requests a new key for use when querying the server. Does not seem to work.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      scopes = The scopes (or privileges) to request authorization for.
+ +/
+version(none)
+void getNewAuthKey(TwitchBotPlugin plugin, const string scopes = "channel:read:subscriptions")
+{
+    /*https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=$C
+        &redirect_uri=http://localhost&scope=channel:read:subscriptions
+        &state=farkafrkafrk*/
+
+    import lu.string : nom;
+    import requests.request : Request;
+    import std.format : format;
+    import std.random : uniform;
+    import std.stdio;
+
+    // channel:read:subscriptions
+    immutable pattern = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+        "&client_id=%s&redirect_uri=http://localhost&scope=%s&state=%d";
+    immutable url = pattern.format(plugin.headers["Client-ID"], scopes,
+        uniform(0, 100_000_000));
+
+    writeln("URL:", url);
+    writeln();
+    writeln();
+
+    Request req;
+    req.keepAlive = false;
+    req.maxRedirects = 0;
+    //req.addHeaders(plugin.headers);
+    auto res = req.get(url);
+
+    // <a href="https://www.twitch.tv/login?client_id=<KEY>&amp;
+    // redirect_params=client_id%3D<KEY>%26redirect_uri%3Dhttp%253A%252F%252Flocalhost
+    // %26response_type%3Dcode%26scope%3Dchannel%253Aread%253Asubscriptions%26state%3D<state>">Found</a>.
+    immutable data = cast(string)res.responseBody.data;
+
+    import std.json;
+    writeln("--------");
+    writeln(data);
+    writeln("--------");
+
+    string slice = data;  // mutable
+    slice.nom("client_id=");
+    immutable key = slice.nom("&amp;");
+
+    writeln("old:", plugin.headers.get("Authorization", "<empty>"));
+    writeln("new:", "Bearer " ~ key);
+
+    plugin.headers["Authorization"] = "Bearer " ~ key;
+}
+
+
+// getNewBearerToken
+/++
+ +  Requests a new bearer authorization token from Twitch servers.
+ +
+ +  They expire in 60 days.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +/
+void getNewBearerToken(TwitchBotPlugin plugin)
+{
+    import requests;
+    import std.json : parseJSON;
+
+    Request req;
+    req.keepAlive = false;
+
+    /*curl -X POST "https://id.twitch.tv/oauth2/token?client_id=${C}
+        &client_secret=${S}&grant_type=client_credentials"*/
+
+    enum url = "https://id.twitch.tv/oauth2/token";
+    const response = postContent(url, queryParams(
+        "client_id", plugin.twitchBotSettings.clientKey,
+        "client_secret", plugin.twitchBotSettings.secretKey,
+        "grant_type", "client_credentials"));
+
+    /* actual:
+    {
+        "access_token" : "HARBLSNARBL",
+        "expires_in" : 4680249,
+        "token_type" : "bearer"
+    }
+    */
+
+    const asJSON = parseJSON(response);
+    plugin.headers["Authorization"] = "Bearer " ~ asJSON["access_token"];
+}
+
+
+// cacheFollows
+/++
+ +  Fetches a list of all follows to the passed channel and caches them in
+ +  the channel's entry in `TwitchBotPlugin.activeChannels`.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      roomid = The string identifier for the channel.
+ +
+ +  Returns:
+ +      A `JSONValue` containing follows, keyed by the ID string of the follower.
+ +/
+JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
+{
+    import kameloso.plugins.common : delay;
+    import std.concurrency : send, spawn;
+    import std.json : JSONType, JSONValue, parseJSON;
+    import core.thread : Fiber;
+
+    assert(Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber");
+
+    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ roomID;
+
+    JSONValue allFollows;
+    string after;
+
+    do
+    {
+        immutable paginatedURL = after.length ?
+            (url ~ "&after=" ~ after) : url;
+
+        if (plugin.twitchBotSettings.singleWorkerThread)
+        {
+            plugin.persistentWorkerTid.send(paginatedURL);
+        }
+        else
+        {
+            spawn(&queryTwitch, paginatedURL, cast(shared)plugin.headers, plugin.bucket);
+        }
+
+        delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+
+        shared string* response;
+        bool queryTimeLengthened;
+
+        while (!response)
+        {
+            synchronized
+            {
+                response = paginatedURL in plugin.bucket;
+            }
+
+            if (!response)
+            {
+                // Miss; fired too early, there is no response available yet
+                if (!queryTimeLengthened)
+                {
+                    plugin.approximateQueryTime =
+                        cast(long)(plugin.approximateQueryTime *
+                        plugin.approximateQueryGrowthMultiplier);
+                    queryTimeLengthened = true;
+                }
+                else
+                {
+                    // Slowly decrease it to avoid inflation
+                    plugin.approximateQueryTime =
+                        cast(long)(plugin.approximateQueryTime *
+                        plugin.approximateQueryAntiInflationMultiplier);
+                }
+
+                immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
+                delay(plugin, briefWait, Yes.msecs, Yes.yield);
+                continue;
+            }
+
+            plugin.bucket.remove(paginatedURL);
+        }
+
+        auto followsJSON = parseJSON(*response);
+        const cursor = "cursor" in followsJSON["pagination"];
+
+        foreach (thisFollowJSON; followsJSON["data"].array)
+        {
+            allFollows[thisFollowJSON["from_id"].str] = thisFollowJSON;
+        }
+
+        after = cursor ? cursor.str : string.init;
+    }
+    while (after.length);
+
+    return allFollows;
+}
