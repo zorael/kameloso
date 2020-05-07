@@ -482,8 +482,8 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import requests.request : Request;
-    import std.json : JSONType, parseJSON;
     import std.datetime.systime : Clock;
+    import std.json : JSONType, parseJSON;
 
     auto channel = event.channel in plugin.activeChannels;
 
@@ -516,7 +516,16 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.approximateQueryTime = (plugin.approximateQueryTime == 0) ?
         newApproximateTime :
         (plugin.approximateQueryTime+newApproximateTime) / 2;
+
     channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+
+    void dg()
+    {
+        channel.follows = plugin.cacheFollows(channel.roomID);
+    }
+
+    Fiber cacheFollowsFiber = new Fiber(&dg);
+    cacheFollowsFiber.call();
 }
 
 
