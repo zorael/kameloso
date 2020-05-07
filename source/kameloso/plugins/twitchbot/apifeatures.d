@@ -668,64 +668,6 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
 }
 
 
-// getNewAuthKey
-/++
- +  Requests a new key for use when querying the server. Does not seem to work.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      scopes = The scopes (or privileges) to request authorization for.
- +/
-version(none)
-void getNewAuthKey(TwitchBotPlugin plugin, const string scopes = "channel:read:subscriptions")
-{
-    /*https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=$C
-        &redirect_uri=http://localhost&scope=channel:read:subscriptions
-        &state=farkafrkafrk*/
-
-    import lu.string : nom;
-    import requests.request : Request;
-    import std.format : format;
-    import std.random : uniform;
-    import std.stdio;
-
-    // channel:read:subscriptions
-    immutable pattern = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
-        "&client_id=%s&redirect_uri=http://localhost&scope=%s&state=%d";
-    immutable url = pattern.format(plugin.headers["Client-ID"], scopes,
-        uniform(0, 100_000_000));
-
-    writeln("URL:", url);
-    writeln();
-    writeln();
-
-    Request req;
-    req.keepAlive = false;
-    req.maxRedirects = 0;
-    //req.addHeaders(plugin.headers);
-    auto res = req.get(url);
-
-    // <a href="https://www.twitch.tv/login?client_id=<KEY>&amp;
-    // redirect_params=client_id%3D<KEY>%26redirect_uri%3Dhttp%253A%252F%252Flocalhost
-    // %26response_type%3Dcode%26scope%3Dchannel%253Aread%253Asubscriptions%26state%3D<state>">Found</a>.
-    immutable data = cast(string)res.responseBody.data;
-
-    import std.json;
-    writeln("--------");
-    writeln(data);
-    writeln("--------");
-
-    string slice = data;  // mutable
-    slice.nom("client_id=");
-    immutable key = slice.nom("&amp;");
-
-    writeln("old:", plugin.headers.get("Authorization", "<empty>"));
-    writeln("new:", "Bearer " ~ key);
-
-    plugin.headers["Authorization"] = "Bearer " ~ key;
-}
-
-
 // getNewBearerToken
 /++
  +  Requests a new bearer authorization token from Twitch servers.
