@@ -1252,6 +1252,9 @@ package:
 
         /// Results of async HTTP queries.
         shared string[string] bucket;
+
+        /// The file containing the bearer authorization key.
+        @Resource string keyFile = "twitch.key";
     }
 
     mixin IRCPluginImpl;
