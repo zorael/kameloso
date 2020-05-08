@@ -98,6 +98,74 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
 
 // queryTwitch
 /++
+ +  Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
+ +  worker start it. Once the query returns, the response body is checked to see
+ +  whether or not it's an error. If it is, an attempt to reset API keys is made
+ +  and, if successful, the query is resent. If not successful, it throws an
+ +  exception and disables API features.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      url = The URL to query.
+ +      firstAttempt = Whether this is the first attempt or if it has recursed
+ +          once after resetting API keys.
+ +
+ +  Returns:
+ +      The `QueryResponse` that was discovered while monitoring the `bucket`
+ +      as having been received from the server.
+ +
+ +  Throws:
+ +      Exception if there were unrecoverable errors.
+ +/
+QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
+    const bool singleWorker, bool firstAttempt = true)
+{
+    import kameloso.plugins.common : delay;
+    import lu.string : beginsWith;
+    import std.concurrency : send, spawn;
+
+    if (singleWorker)
+    {
+        plugin.persistentWorkerTid.send(url);
+
+        immutable penalty = plugin.approximateQueryConcurrencyMessagePenalty;
+        immutable queryWaitTime = plugin.approximateQueryTime + penalty;
+
+        delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
+    }
+    else
+    {
+        spawn(&queryTwitchImpl, url, cast(shared)plugin.headers, plugin.bucket);
+        delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    }
+
+    const response = waitForQueryResponse(plugin, url);
+
+    // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+    if (response.str.beginsWith(`{"err`))
+    {
+        if (firstAttempt)
+        {
+            synchronized
+            {
+                plugin.bucket.remove(url);
+            }
+
+            immutable success = plugin.resetAPIKeys();
+            if (success) return queryTwitch(plugin, url, singleWorker, false);  // <-- second attempt
+            // Else drop down
+        }
+
+        plugin.useAPIFeatures = false;
+        throw new Exception("Failed to query Twitch; received error instead of data");
+    }
+
+    return response;
+}
+
+
+// queryTwitchImpl
+/++
  +  Sends a HTTP GET to the passed URL, and returns the response by adding it
  +  to the shared `bucket`.
  +
@@ -107,11 +175,11 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +  Example:
  +  ---
  +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
- +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+ +  spawn&(&queryTwitchImpl, url, cast(shared)plugin.headers, plugin.bucket);
  +
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
  +
- +  shared string* response;
+ +  shared QueryResponse* response;
  +
  +  while (!response)
  +  {
@@ -131,7 +199,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +      plugin.bucket.remove(url);
  +  }
  +
- +  // *response is the (shared) response body
+ +  // response.str is the response body
  +  ---
  +
  +  Params:
@@ -139,7 +207,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +      headers = HTTP headers to use when issuing the requests.
  +      bucket = The shared bucket to put the results in, keyed by URL.
  +/
-void queryTwitch(const string url, shared string[string] headers,
+void queryTwitchImpl(const string url, shared string[string] headers,
     shared QueryResponse[string] bucket)
 {
     import lu.traits : UnqualArray;
