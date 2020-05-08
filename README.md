@@ -243,7 +243,7 @@ nickname            twitchaccount
 [IRCBot]
 #account
 #password
-pass                oauth:the50letteroauthstringgoeshere
+pass                oauth:the30letteroauthstringgoeshere
 admins              otheraccount
 homeChannels        #twitchaccount,#otheraccount
 guestChannels       #streamer1,#streamer2,#streamer3
@@ -268,7 +268,7 @@ Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, 
 
 > Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
-To use some commands (currently only the `!followage` command) you need a Client ID API key, which you can get by registering the application [here](https://dev.twitch.tv/console/apps/create). Declare it to be a `Chat Bot`, give it a redirect URL of `http://localhost`, then simply enter the produced ID into the configuration file; `apiKey` under `[TwitchBot]`. The majority of the plugin will work just fine without it though, so it's far from a necessity.
+To use some commands (currently only the `!followage` command, so it's far from a necessity) you need a Client ID and a Client secret API key. You can get these by registering the application [here](https://dev.twitch.tv/console/apps/create). Declare it to be a `Chat Bot`, give it a redirect URL of `http://localhost`, then simply copy the produced Client ID into the configuration file at `clientKey` under `[TwitchBot]`. Additionally click "New Secret" to generate a secret key, then copy that and enter it as `secretKey` (also under `[TwitchBot]`).
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
