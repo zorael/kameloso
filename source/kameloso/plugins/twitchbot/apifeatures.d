@@ -264,7 +264,6 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
         string slice = event.content.stripped;  // mutable
         immutable nameSpecified = (slice.length > 0);
 
-        uint id;
         string idString;
         string fromDisplayName;
 
@@ -281,7 +280,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
             if (const user = givenName in plugin.state.users)
             {
                 // Stored user
-                id = user.id;
+                idString = user.id.to!string;
                 fromDisplayName = user.displayName;
             }
             else
@@ -291,38 +290,39 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                     if (user.displayName == givenName)
                     {
                         // Found user by displayName
-                        id = user.id;
+                        idString = user.id.to!string;
                         fromDisplayName = user.displayName;
+                        break;
                     }
                 }
 
-                if (!id)
+                if (!idString.length)
                 {
                     // None on record, look up
                     immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
 
+                    scope(failure) plugin.useAPIFeatures = false;
+
                     const response = queryTwitch(plugin, url,
                         plugin.twitchBotSettings.singleWorkerThread);
 
-                    if (response.str.length)
-                    {
-                        // Hit
-                        const user = parseUserFromResponse(cast()response.str);
-
-                        if (user == JSONValue.init)
-                        {
-                            chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
-                            return;
-                        }
-
-                        idString = user["id"].str;
-                        fromDisplayName = user["display_name"].str;
-                    }
-                    else
+                    if (!response.str.length)
                     {
                         chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
                         return;
                     }
+
+                    // Hit
+                    const user = parseUserFromResponse(cast()response.str);
+
+                    if (user == JSONValue.init)
+                    {
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+
+                    idString = user["id"].str;
+                    fromDisplayName = user["display_name"].str;
                 }
             }
         }
