@@ -256,7 +256,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.plugins.common : delay;
     import lu.string : nom, stripped;
     import std.conv : to;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : JSONValue;
     import core.thread : Fiber;
 
     if (!plugin.useAPIFeatures) return;
@@ -433,7 +433,6 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
     import requests.request : Request;
     import std.conv : to;
     import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
 
     immutable url = "https://api.twitch.tv/helix/users?%s=%s"
         .format(field, identifier.to!string);  // String just passes through
@@ -796,8 +795,7 @@ string getNewBearerToken(const string clientKey, const string secretKey)
 JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
 {
     import kameloso.plugins.common : delay;
-    import std.concurrency : send, spawn;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
 
     assert(Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber");
