@@ -220,24 +220,19 @@ void queryTwitchImpl(const string url, shared string[string] headers,
     auto res = req.get(url);
     immutable post = Clock.currTime;
 
-    if (res.code >= 400)
-    {
-        synchronized //()
-        {
-            bucket[url] = QueryResponse.init;
-        }
-    }
-    else
-    {
-        QueryResponse response;
-        response.str = cast(string)res.responseBody.data.idup;
-        immutable delta = (post - pre);
-        response.msecs = delta.total!"msecs";
+    QueryResponse response;
+    response.code = res.code;
+    immutable delta = (post - pre);
+    response.msecs = delta.total!"msecs";
 
-        synchronized //()
-        {
-            bucket[url] = response;
-        }
+    if (res.code < 400)
+    {
+        response.str = cast(string)res.responseBody.data.idup;
+    }
+
+    synchronized //()
+    {
+        bucket[url] = response;  // empty str if code >= 400
     }
 }
 
