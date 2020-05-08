@@ -1000,8 +1000,6 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             if ((now - startTime) >= plugin.queryResponseTimeout)
             {
                 response = new shared QueryResponse;
-                plugin.approximateQueryTime = plugin.queryResponseTimeoutResetTime;
-                plugin.bucket.remove(url);
                 break;
             }
 
