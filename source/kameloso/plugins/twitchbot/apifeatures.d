@@ -250,42 +250,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                         plugin.approximateQueryTime;
 
                     delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
-
-                    shared QueryResponse* response;
-                    bool queryTimeLengthened;
-
-                    while (!response)
-                    {
-                        synchronized
-                        {
-                            response = url in plugin.bucket;
-                        }
-
-                        if (!response)
-                        {
-                            // Miss; fired too early, there is no response available yet
-                            if (!queryTimeLengthened)
-                            {
-                                immutable queryTime = plugin.approximateQueryTime;
-                                immutable multiplier = plugin.approximateQueryGrowthMultiplier;
-                                plugin.approximateQueryTime = cast(long)(queryTime * multiplier);
-                                queryTimeLengthened = true;
-                            }
-
-                            immutable queryTime = plugin.approximateQueryTime;
-                            immutable divisor = plugin.approximateQueryRetryTimeDivisor;
-                            immutable briefWait = (queryTime / divisor);
-                            delay(plugin, briefWait, Yes.msecs, Yes.yield);
-                            continue;
-                        }
-                        else
-                        {
-                            // Make the new approximate query time a weighted average
-                            plugin.averageApproximateQueryTime(response.msecs);
-                        }
-
-                        plugin.bucket.remove(url);
-                    }
+                    const response = waitForQueryResponse(plugin, url);
 
                     if (response.str.length)
                     {
@@ -806,42 +771,7 @@ JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
             plugin.approximateQueryTime;
 
         delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
-
-        shared QueryResponse* response;
-        bool queryTimeLengthened;
-
-        while (!response)
-        {
-            synchronized
-            {
-                response = paginatedURL in plugin.bucket;
-            }
-
-            if (!response)
-            {
-                // Miss; fired too early, there is no response available yet
-                if (!queryTimeLengthened)
-                {
-                    immutable queryTime = plugin.approximateQueryTime;
-                    immutable multiplier = plugin.approximateQueryGrowthMultiplier;
-                    plugin.approximateQueryTime = cast(long)(queryTime * multiplier);
-                    queryTimeLengthened = true;
-                }
-
-                immutable queryTime = plugin.approximateQueryTime;
-                immutable divisor = plugin.approximateQueryRetryTimeDivisor;
-                immutable briefWait = (queryTime / divisor);
-                delay(plugin, briefWait, Yes.msecs, Yes.yield);
-                continue;
-            }
-            else
-            {
-                // Make the new approximate query time a weighted average
-                plugin.averageApproximateQueryTime(response.msecs);
-            }
-
-            plugin.bucket.remove(paginatedURL);
-        }
+        const response = waitForQueryResponse(plugin, paginatedURL);
 
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
