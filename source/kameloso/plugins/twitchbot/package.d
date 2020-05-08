@@ -1235,8 +1235,11 @@ package:
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
 
-        /// HTTP headers to pass when querying Twitch servers for information.
-        string[string] headers;
+        /++
+         +  HTTP headers to pass when querying Twitch servers for information.
+         +  `shared` to be able to be shared between threads.
+         +/
+        shared string[string] headers;
 
         /// How long a Twitch HTTP query usually takes.
         long approximateQueryTime;

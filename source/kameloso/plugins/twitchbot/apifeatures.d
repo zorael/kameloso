@@ -136,7 +136,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     }
     else
     {
-        spawn(&queryTwitchImpl, url, cast(shared)plugin.headers, plugin.bucket);
+        spawn(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
         delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
     }
 
@@ -431,6 +431,7 @@ JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
+    import lu.traits : UnqualArray;
     import requests.request : Request;
     import std.conv : to;
     import std.format : format;
@@ -440,7 +441,7 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
 
     Request req;
     req.keepAlive = false;
-    req.addHeaders(plugin.headers);
+    req.addHeaders(cast(UnqualArray!(typeof(plugin.headers)))plugin.headers);
     auto res = req.get(url);
 
     return parseUserFromResponse(cast(string)res.responseBody.data);
@@ -633,7 +634,7 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
     {
         import std.concurrency : spawn;
         plugin.persistentWorkerTid = spawn(&persistentQuerier,
-            cast(shared)plugin.headers, plugin.bucket);
+            plugin.headers, plugin.bucket);
     }
 }
 
