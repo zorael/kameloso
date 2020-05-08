@@ -33,7 +33,7 @@ package:
  +  Embodies a response from a query to the Twitch servers. A string paired with
  +  a millisecond count of how long the query took.
  +
- +  This is used instead of a `std.typecons.Tuple` because it doesn't really
+ +  This is used instead of a `std.typecons.Tuple` because it doesn't apparently
  +  work with `shared`.
  +/
 struct QueryResponse
@@ -41,7 +41,7 @@ struct QueryResponse
     /// Response body, may be several lines.
     string str;
 
-    /// How long the query took.
+    /// How long the query took, from issue to response.
     long msecs;
 
     /// The HTTP response code received.
@@ -55,11 +55,13 @@ struct QueryResponse
  +  sent to it.
  +
  +  Possibly best used on Windows where threads are comparatively expensive
- +  compared to on Posix platforms.
+ +  compared to Posix platforms.
  +
  +  Params:
- +      headers = HTTP headers to use when issuing the requests.
- +      bucket = The shared bucket to put the results in, keyed by URL.
+ +      headers = `shared` HTTP headers to use when issuing the requests.
+ +          Contains the API keys needed for Twitch to accept the queries.
+ +      bucket = The shared associative array bucket to put the results in,
+ +          response body values keyed by URL.
  +/
 void persistentQuerier(shared string[string] headers, shared QueryResponse[string] bucket)
 {
@@ -102,10 +104,15 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
 // queryTwitch
 /++
  +  Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
- +  worker start it. Once the query returns, the response body is checked to see
- +  whether or not it's an error. If it is, an attempt to reset API keys is made
- +  and, if successful, the query is resent. If not successful, it throws an
- +  exception and disables API features.
+ +  worker start it.
+ +
+ +  Once the query returns, the response body is checked to see whether or not
+ +  an error occured. If it did, an attempt to reset API keys is made and, if
+ +  successful, the query is resent and the cycle repeated while taking care not
+ +  to inifinitely loop. If not successful, it throws an exception and disables
+ +  API features.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
@@ -118,7 +125,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +      as having been received from the server.
  +
  +  Throws:
- +      Exception if there were unrecoverable errors.
+ +      `object.Exception` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
     const bool singleWorker, bool firstAttempt = true)
@@ -183,8 +190,8 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
 // queryTwitchImpl
 /++
- +  Sends a HTTP GET to the passed URL, and returns the response by adding it
- +  to the shared `bucket`.
+ +  Sends a HTTP GET request to the passed URL, and "returns" the response by
+ +  adding it to the shared `bucket`.
  +
  +  Callers can as such spawn this function as a new thread and asynchronously
  +  monitor the `bucket` for when the results arrive.
@@ -202,8 +209,9 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +
  +  Params:
  +      url = URL address to look up.
- +      headers = HTTP headers to use when issuing the requests.
- +      bucket = The shared bucket to put the results in, keyed by URL.
+ +      headers = `shared` HTTP headers to use when issuing the requests.
+ +      bucket = The shared associative array to put the results in, response
+ +          body values keyed by URL.
  +/
 void queryTwitchImpl(const string url, shared string[string] headers,
     shared QueryResponse[string] bucket)
@@ -239,10 +247,15 @@ void queryTwitchImpl(const string url, shared string[string] headers,
 
 // onFollowAgeImpl
 /++
- +  Implements "Follow Age", or the ability to query the server how long you
- +  (or a specified user) have been a follower of the current channel.
+ +  Implements "Follow Age", or the ability to query the server how long you have
+ +  (or a specified user has) been a follower of the current channel.
  +
- +  Lookups are done asychronously in subthreads.
+ +  Lookups are done asychronously in threads.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.onFollowAge
  +/
 void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
@@ -463,11 +476,13 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
 // parseUserFromResponse
 /++
  +  Given a string response from the Twitch servers when queried for information
- +  of a user, verifies and parses the JSON, returning only that which relates
+ +  on a user, verifies and parses the JSON, returning only that which relates
  +  to the user.
  +
+ +  Note: Only deals with the first user, if several were returned.
+ +
  +  Params:
- +      jsonString = String response as read from the server. In JSON form.
+ +      jsonString = String response as read from the server, in JSON form.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
@@ -488,7 +503,7 @@ JSONValue parseUserFromResponse(const string jsonString)
 }
 
 
-// getUserByName
+// getUserByLogin
 /++
  +  Queries the Twitch servers for information about a user, by login.
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
@@ -500,6 +515,10 @@ JSONValue parseUserFromResponse(const string jsonString)
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
+ +
+ +  See_Also:
+ +      getUserByID
+ +      getUserImpl
  +/
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
@@ -519,6 +538,10 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
+ +
+ +  See_Also:
+ +      getUserByLogin
+ +      getUserImpl
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
@@ -538,6 +561,10 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
+ +
+ +  See_Also:
+ +      getUserByLogin
+ +      getUserImpl
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
@@ -548,7 +575,10 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 // onRoomStateImpl
 /++
  +  Records the room ID of a home channel, and queries the Twitch servers for
- +  the display name of its broadcaster.
+ +  the display name of its broadcaster. Implementation function.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.onRoomState
  +/
 void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
@@ -608,10 +638,14 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onEndOfMotdImpl
 /++
- +  Sets up the worker thread at the end of MOTD.
+ +  Sets up the worker thread at the end of MOTD. Implementation function.
  +
- +  Additionally initialises the shared bucket, and sets the HTTP headers to use
- +  when querying information.
+ +  Additionally initialises the shared bucket, sets the HTTP headers to use
+ +  when querying information, and spawns the single worker thread if such is
+ +  set up to be used.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.onEndOfMotd
  +/
 void onEndOfMotdImpl(TwitchBotPlugin plugin)
 {
@@ -660,7 +694,8 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
 
 // resetAPIKeys
 /++
- +  Resets the API keys in the HTTP headers we pass.
+ +  Resets the API keys in the HTTP headers we pass. Additionally validates them
+ +  and tries to get new authorization keys if the current ones don't seem to work.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
@@ -761,15 +796,15 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
 
 // getNewBearerToken
 /++
- +  Requests a new bearer authorization token from Twitch servers.
+ +  Requests a new bearer authorization token from the Twitch servers.
  +
- +  They expire in 60 days.
+ +  They expire after 60 days (4680249 seconds).
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +
  +  Returns:
- +      A new authorization token string.
+ +      A new authorization token string, or an empty one if one could not be fetched.
  +/
 string getNewBearerToken(const string clientKey, const string secretKey)
 {
@@ -814,15 +849,18 @@ string getNewBearerToken(const string clientKey, const string secretKey)
 
 // cacheFollows
 /++
- +  Fetches a list of all follows to the passed channel and caches them in
+ +  Fetches a list of all follows of the passed channel and caches them in
  +  the channel's entry in `TwitchBotPlugin.activeChannels`.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      roomid = The string identifier for the channel.
+ +      roomID = The string identifier for the channel.
  +
  +  Returns:
- +      A `JSONValue` containing follows, keyed by the ID string of the follower.
+ +      A `JSONValue` containing follows, JSON values keyed by the ID string
+ +      of the follower.
  +/
 JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
 in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
@@ -864,16 +902,16 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 
 // averageApproximateQueryTime
 /++
- +  Given a query time measurement, make a new approximate query time based on
+ +  Given a query time measurement, calculate a new approximate query time based on
  +  the weighted averages of the old one and said measurement.
  +
- +  The old value is given a weight of `plugin.approximateQueryAveragingWeight`
+ +  The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
  +  and the new measurement a weight of 1. Additionally the measurement is padded
- +  by `plugin.approximateQueryMeasurementPadding` to be on the safe side.
+ +  by `TwitchBotPlugin.approximateQueryMeasurementPadding` to be on the safe side.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      reponseMsecs = How many milliseconds the last query took.
+ +      reponseMsecs = How many milliseconds the last query took to complete.
  +/
 void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
 {
@@ -894,9 +932,9 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 /++
  +  Common code to wait for a query response. Merely spins and monitors the shared
  +  `bucket` associative array for when a response has arrived, and then returns it.
+ +  Times out after a hardcoded 15 seconds if nothing was received.
  +
- +  Note: This function currently never gives up and will keep watching until
- +      execution end if a response does not appear.
+ +  Note: Must be called from inside a `core.thread.Fiber`.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
