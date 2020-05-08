@@ -984,7 +984,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
     immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;
-    bool queryTimeLengthened;
+    double accumulatingTime = plugin.approximateQueryTime;
 
     while (!response)
     {
@@ -1004,17 +1004,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             }
 
             // Miss; fired too early, there is no response available yet
-            if (!queryTimeLengthened)
-            {
-                immutable queryTime = plugin.approximateQueryTime;
-                immutable multiplier = plugin.approximateQueryGrowthMultiplier;
-                plugin.approximateQueryTime = cast(long)(queryTime * multiplier);
-                queryTimeLengthened = true;
-            }
-
-            immutable queryTime = plugin.approximateQueryTime;
-            immutable divisor = plugin.approximateQueryRetryTimeDivisor;
-            immutable briefWait = (queryTime / divisor);
+            accumulatingTime *= plugin.approximateQueryGrowthMultiplier;
+            alias divisor = plugin.approximateQueryRetryTimeDivisor;
+            immutable briefWait = cast(long)(accumulatingTime / divisor);
             delay(plugin, briefWait, Yes.msecs, Yes.yield);
             continue;
         }
