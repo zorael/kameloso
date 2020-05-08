@@ -782,11 +782,9 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
 
     synchronized //()
     {
-        plugin.headers =
-        [
-            "Client-ID" : plugin.twitchBotSettings.clientKey,
-            "Authorization" : "Bearer " ~ key,
-        ];
+        // Can't use a literal due to https://issues.dlang.org/show_bug.cgi?id=20812
+        plugin.headers["Client-ID"] = plugin.twitchBotSettings.clientKey;
+        plugin.headers["Authorization"] = "Bearer " ~ key;
     }
 
     if (!currentKeysWork)
