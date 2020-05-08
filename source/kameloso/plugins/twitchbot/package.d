@@ -1101,6 +1101,25 @@ void periodically(TwitchBotPlugin plugin, const long now)
         currTime.day, 0, 0, 0), currTime.timezone)
         .roll!"days"(1)
         .toUnixTime;
+
+
+    version(TwitchAPIFeatures)
+    {
+        // Clear and re-cache follows once as often as we prune
+
+        void dg()
+        {
+            foreach (immutable channelName, channel; plugin.activeChannels)
+            {
+                if (!channel.enabled) continue;
+
+                channel.follows = plugin.cacheFollows(channel.roomID);
+            }
+        }
+
+        Fiber cacheFollowsFiber = new Fiber(&dg);
+        cacheFollowsFiber.call();
+    }
 }
 
 
