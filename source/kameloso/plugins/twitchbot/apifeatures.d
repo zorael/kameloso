@@ -145,22 +145,35 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     const response = waitForQueryResponse(plugin, url);
 
-    // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-    if (response.str.beginsWith(`{"err`))
+    if (!response.str.length)
     {
+        if (response.code >= 400)
+        {
+            import std.conv : to;
+            throw new Exception("Failed to query Twitch; received code " ~ response.code.to!string);
+        }
+        else
+        {
+            throw new Exception("Failed to query Twitch; received empty string");
+        }
+    }
+    else if (response.str.beginsWith(`{"err`))
+    {
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+
+        synchronized //()
+        {
+            // Always remove, otherwise there'll be stale entries
+            plugin.bucket.remove(url);
+        }
+
         if (firstAttempt)
         {
-            synchronized //()
-            {
-                plugin.bucket.remove(url);
-            }
-
             immutable success = plugin.resetAPIKeys();
             if (success) return queryTwitch(plugin, url, singleWorker, false);  // <-- second attempt
             // Else drop down
         }
 
-        plugin.useAPIFeatures = false;
         throw new Exception("Failed to query Twitch; received error instead of data");
     }
 
