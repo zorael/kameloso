@@ -908,8 +908,11 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
+    import std.datetime.systime : Clock;
+
     import kameloso.plugins.common : delay;
 
+    immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;
     bool queryTimeLengthened;
 
@@ -922,6 +925,16 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
         if (!response)
         {
+            immutable now = Clock.currTime.toUnixTime;
+
+            if ((now - startTime) >= plugin.queryResponseTimeout)
+            {
+                response = new shared QueryResponse;
+                plugin.approximateQueryTime = plugin.queryResponseTimeoutResetTime;
+                plugin.bucket.remove(url);
+                break;
+            }
+
             // Miss; fired too early, there is no response available yet
             if (!queryTimeLengthened)
             {
