@@ -556,8 +556,7 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
  +/
 void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import requests.request : Request;
-    import std.datetime.systime : Clock;
+    import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
 
     auto channel = event.channel in plugin.activeChannels;
@@ -573,11 +572,17 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
-    immutable pre = Clock.currTime;
-    const broadcasterJSON = getUserByID(plugin, event.aux);
-    immutable post = Clock.currTime;
+    JSONValue broadcasterJSON;
+    SysTime pre;
+    SysTime post;
 
-    if (broadcasterJSON.type != JSONType.object)// || ("display_name" !in broadcasterJSON))
+    try
+    {
+        pre = Clock.currTime;
+        broadcasterJSON = getUserByID(plugin, event.aux);
+        post = Clock.currTime;
+    }
+    catch (Exception e)
     {
         // Something is deeply wrong.
         logger.error("Failed to fetch broadcaster information; " ~
