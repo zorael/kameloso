@@ -383,10 +383,11 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
         // Identity ascertained; look up in cached list
 
         const follows = plugin.activeChannels[event.channel].follows;
+        const thisFollow = idString in follows;
 
-        if (idString in follows)
+        if (thisFollow)
         {
-            return reportFollowAge(follows[idString]);
+            return reportFollowAge(*thisFollow);
         }
 
         // If we're here there were no matches.
