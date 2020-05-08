@@ -1241,8 +1241,13 @@ package:
          +/
         shared string[string] headers;
 
-        /// How long a Twitch HTTP query usually takes.
-        long approximateQueryTime;
+        /++
+         +  How long a Twitch HTTP query usually takes.
+         +
+         +  It tries its best to self-balance the number based on how long queries
+         +  actually take. Start off conservatively.
+         +/
+        long approximateQueryTime = 700;
 
         /++
          +  The multiplier of how much the `approximateQueryTime` should increase
