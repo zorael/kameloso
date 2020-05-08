@@ -147,7 +147,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     {
         if (firstAttempt)
         {
-            synchronized
+            synchronized //()
             {
                 plugin.bucket.remove(url);
             }
@@ -206,7 +206,7 @@ void queryTwitchImpl(const string url, shared string[string] headers,
 
     if (res.code >= 400)
     {
-        synchronized
+        synchronized //()
         {
             bucket[url] = QueryResponse.init;
         }
@@ -218,7 +218,7 @@ void queryTwitchImpl(const string url, shared string[string] headers,
         immutable delta = (post - pre);
         response.msecs = delta.total!"msecs";
 
-        synchronized
+        synchronized //()
         {
             bucket[url] = response;
         }
@@ -676,7 +676,7 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
         }
     }
 
-    synchronized
+    synchronized //()
     {
         plugin.headers =
         [
@@ -697,7 +697,7 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
 
         if (newKey.length)
         {
-            synchronized
+            synchronized //()
             {
                 plugin.headers["Authorization"] = "Bearer " ~ newKey;
             }
@@ -870,7 +870,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
     while (!response)
     {
-        synchronized
+        synchronized //()
         {
             response = url in plugin.bucket;
         }
