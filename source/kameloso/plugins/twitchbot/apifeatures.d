@@ -939,14 +939,19 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
  +/
 void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
 {
+    import std.algorithm.comparison : min;
+
+    enum maxDeltaToResponse = 1000;
+
     immutable current = plugin.approximateQueryTime;
-    immutable weight = plugin.approximateQueryAveragingWeight;
-    immutable padding = plugin.approximateQueryMeasurementPadding;
-    immutable average = ((weight * current) + (responseMsecs + padding)) / (weight + 1);
+    alias weight = plugin.approximateQueryAveragingWeight;
+    alias padding = plugin.approximateQueryMeasurementPadding;
+    immutable responseAdjusted = min(responseMsecs, (current + maxDeltaToResponse));
+    immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
 
     /*import std.stdio;
-    writefln("time:%s | response: %d (+%d) | new average:%s",
-        current, responseMsecs, padding, average);*/
+    writefln("time:%s | response: %d~%d (+%d) | new average:%s",
+        current, responseMsecs, responseAdjusted, padding, average);*/
 
     plugin.approximateQueryTime = cast(long)average;
 }
