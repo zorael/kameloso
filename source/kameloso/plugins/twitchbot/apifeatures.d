@@ -247,7 +247,6 @@ void queryTwitchImpl(const string url, shared string[string] headers,
 void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
 {
-    import kameloso.plugins.common : delay;
     import lu.string : nom, stripped;
     import std.conv : to;
     import std.json : JSONValue;
@@ -326,7 +325,6 @@ in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
         void reportFollowAge(const JSONValue followingUserJSON)
         {
             import kameloso.common : timeSince;
-            import lu.string : plurality;
             import std.datetime.systime : Clock, SysTime;
             import std.format : format;
 
