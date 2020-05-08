@@ -593,6 +593,7 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
  +/
 void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
+    import kameloso.plugins.common : delay;
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
 
@@ -609,54 +610,44 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
-    JSONValue broadcasterJSON;
-    SysTime pre;
-    SysTime post;
-
-    try
+    void getDisplayNameDg()
     {
-        pre = Clock.currTime;
-        broadcasterJSON = getUserByID(plugin, event.aux);
-        post = Clock.currTime;
-    }
-    catch (Exception e)
-    {
-        // Something is deeply wrong.
-        logger.error("Failed to fetch broadcaster information; " ~
-            "are the client-secret API keys and the authorization key file correctly set up?");
-        logger.error("Disabling API features.");
-        plugin.useAPIFeatures = false;
-        return;
-    }
+        immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
-    immutable delta = (post - pre);
-    immutable responseTime = delta.total!"msecs";
-
-    enum concurrencyPenalty = 300;  // Concurrency messages are just slower; compensate
-    immutable withConcurrencyPenalty = plugin.twitchBotSettings.singleWorkerThread ?
-        (responseTime + concurrencyPenalty) :
-        responseTime;
-
-    if (!plugin.approximateQueryTime)
-    {
-        // First reading. Pad here since averageApproximateQueryTime isn't doing it for us
-        alias padding = plugin.approximateQueryMeasurementPadding;
-        plugin.approximateQueryTime = withConcurrencyPenalty + padding;
-    }
-    else
-    {
-        plugin.averageApproximateQueryTime(withConcurrencyPenalty);
+        try
+        {
+            const response = queryTwitch(plugin, url,
+                plugin.twitchBotSettings.singleWorkerThread);
+            const broadcasterJSON = parseUserFromResponse(response.str);
+            channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+        }
+        catch (Exception e)
+        {
+            // Something is deeply wrong.
+            logger.error("Failed to fetch broadcaster information; " ~
+                "are the client-secret API keys and the authorization key file correctly set up?");
+            logger.error("Disabling API features.");
+            plugin.useAPIFeatures = false;
+            return;
+        }
     }
 
-    channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg);
+    getDisplayNameFiber.call();
 
-    void dg()
+    if ((plugin.state.nextPeriodical - event.time) > 60)
     {
-        channel.follows = plugin.cacheFollows(channel.roomID);
-    }
+        // The next periodical is far away, meaning we did not just connect
+        // Let the caching be done in periodically otherwise.
 
-    Fiber cacheFollowsFiber = new Fiber(&dg);
-    cacheFollowsFiber.call();
+        void cacheFollowsDg()
+        {
+            channel.follows = plugin.cacheFollows(channel.roomID);
+        }
+
+        Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg);
+        cacheFollowsFiber.call();
+    }
 }
 
 
