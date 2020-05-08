@@ -1274,6 +1274,18 @@ package:
          +/
         enum approximateQueryConcurrencyMessagePenalty = 120;
 
+        /++
+         +  How many seconds before a Twitch query response times out. Does not
+         +  affect the actual HTTP request, just how long we wait for it to arrive.
+         +/
+        enum queryResponseTimeout = 15;
+
+        /++
+         +  How many milliseconds to reset the approximate query time to after
+         +  a query response has timed out, so as to "start over" on a conservative value.
+         +/
+        enum queryResponseTimeoutResetTime = 500;
+
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
 
