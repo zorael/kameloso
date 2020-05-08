@@ -845,6 +845,8 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
         immutable paginatedURL = after.length ?
             (url ~ "&after=" ~ after) : url;
 
+        scope(failure) plugin.useAPIFeatures = false;
+
         const response = queryTwitch(plugin, paginatedURL,
             plugin.twitchBotSettings.singleWorkerThread);
 
