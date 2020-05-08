@@ -968,11 +968,14 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL that was queried prior to calling this function. Must match.
+ +      leaveTimingAlone = Whether or not to adjust the approximate query time.
+ +          Enabled by default but can be disabled if the caller wants to do it.
  +
  +  Returns:
  +      A `QueryResponse` as constructed by other parts of the program.
  +/
-QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url)
+QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
+    bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import std.datetime.systime : Clock;
@@ -1019,7 +1022,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         }
 
         // Make the new approximate query time a weighted average
-        plugin.averageApproximateQueryTime(response.msecs);
+        if (!leaveTimingAlone) plugin.averageApproximateQueryTime(response.msecs);
         plugin.bucket.remove(url);
     }
 
