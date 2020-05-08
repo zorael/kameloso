@@ -630,10 +630,23 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     immutable delta = (post - pre);
-    immutable newApproximateTime = cast(long)(delta.total!"msecs" * 1.1);
-    plugin.approximateQueryTime = (plugin.approximateQueryTime == 0) ?
-        newApproximateTime :
-        (plugin.approximateQueryTime+newApproximateTime) / 2;
+    immutable responseTime = delta.total!"msecs";
+
+    enum concurrencyPenalty = 300;  // Concurrency messages are just slower; compensate
+    immutable withConcurrencyPenalty = plugin.twitchBotSettings.singleWorkerThread ?
+        (responseTime + concurrencyPenalty) :
+        responseTime;
+
+    if (!plugin.approximateQueryTime)
+    {
+        // First reading. Pad here since averageApproximateQueryTime isn't doing it for us
+        alias padding = plugin.approximateQueryMeasurementPadding;
+        plugin.approximateQueryTime = withConcurrencyPenalty + padding;
+    }
+    else
+    {
+        plugin.averageApproximateQueryTime(withConcurrencyPenalty);
+    }
 
     channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
 
