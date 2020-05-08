@@ -77,7 +77,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
         receive(
             (string url) scope
             {
-                queryTwitch(url, headers, bucket);
+                queryTwitchImpl(url, headers, bucket);
             },
             (ThreadMessage.Teardown) scope
             {
@@ -255,7 +255,6 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common : delay;
     import lu.string : nom, stripped;
-    import std.concurrency : send, spawn;
     import std.conv : to;
     import std.json : JSONType, JSONValue, parseJSON;
     import core.thread : Fiber;
@@ -304,21 +303,8 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                     // None on record, look up
                     immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
 
-                    if (plugin.twitchBotSettings.singleWorkerThread)
-                    {
-                        plugin.persistentWorkerTid.send(url);
-                    }
-                    else
-                    {
-                        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
-                    }
-
-                    immutable queryWaitTime = plugin.twitchBotSettings.singleWorkerThread ?
-                        plugin.approximateQueryTime + plugin.approximateQueryConcurrencyMessagePenalty :
-                        plugin.approximateQueryTime;
-
-                    delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
-                    const response = waitForQueryResponse(plugin, url);
+                    const response = queryTwitch(plugin, url,
+                        plugin.twitchBotSettings.singleWorkerThread);
 
                     if (response.str.length)
                     {
@@ -825,21 +811,8 @@ JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
         immutable paginatedURL = after.length ?
             (url ~ "&after=" ~ after) : url;
 
-        if (plugin.twitchBotSettings.singleWorkerThread)
-        {
-            plugin.persistentWorkerTid.send(paginatedURL);
-        }
-        else
-        {
-            spawn(&queryTwitch, paginatedURL, cast(shared)plugin.headers, plugin.bucket);
-        }
-
-        immutable queryWaitTime = plugin.twitchBotSettings.singleWorkerThread ?
-            plugin.approximateQueryTime + plugin.approximateQueryConcurrencyMessagePenalty :
-            plugin.approximateQueryTime;
-
-        delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
-        const response = waitForQueryResponse(plugin, paginatedURL);
+        const response = queryTwitch(plugin, paginatedURL,
+            plugin.twitchBotSettings.singleWorkerThread);
 
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
