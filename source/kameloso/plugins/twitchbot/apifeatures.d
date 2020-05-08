@@ -119,6 +119,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
     const bool singleWorker, bool firstAttempt = true)
+in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common : delay;
     import lu.string : beginsWith;
@@ -793,12 +794,11 @@ string getNewBearerToken(const string clientKey, const string secretKey)
  +      A `JSONValue` containing follows, keyed by the ID string of the follower.
  +/
 JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
+in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 {
     import kameloso.plugins.common : delay;
     import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
-
-    assert(Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber");
 
     immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ roomID;
 
@@ -873,6 +873,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +      A `QueryResponse` as constructed by other parts of the program.
  +/
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.plugins.common : delay;
 
