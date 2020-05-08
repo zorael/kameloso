@@ -885,3 +885,59 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 
     plugin.approximateQueryTime = cast(long)average;
 }
+
+
+// waitForQueryResponse
+/++
+ +  Common code to wait for a query response. Merely spins and monitors the shared
+ +  `bucket` associative array for when a response has arrived, and then returns it.
+ +
+ +  Note: This function currently never gives up and will keep watching until
+ +      execution end if a response does not appear.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      url = The URL that was queried prior to calling this function. Must match.
+ +
+ +  Returns:
+ +      A `QueryResponse` as constructed by other parts of the program.
+ +/
+QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url)
+{
+    import kameloso.plugins.common : delay;
+
+    shared QueryResponse* response;
+    bool queryTimeLengthened;
+
+    while (!response)
+    {
+        synchronized
+        {
+            response = url in plugin.bucket;
+        }
+
+        if (!response)
+        {
+            // Miss; fired too early, there is no response available yet
+            if (!queryTimeLengthened)
+            {
+                immutable queryTime = plugin.approximateQueryTime;
+                immutable multiplier = plugin.approximateQueryGrowthMultiplier;
+                plugin.approximateQueryTime = cast(long)(queryTime * multiplier);
+                queryTimeLengthened = true;
+            }
+
+            immutable queryTime = plugin.approximateQueryTime;
+            immutable divisor = plugin.approximateQueryRetryTimeDivisor;
+            immutable briefWait = (queryTime / divisor);
+            delay(plugin, briefWait, Yes.msecs, Yes.yield);
+            continue;
+        }
+
+        // Make the new approximate query time a weighted average
+        plugin.averageApproximateQueryTime(response.msecs);
+        plugin.bucket.remove(url);
+    }
+
+    return *response;
+}
