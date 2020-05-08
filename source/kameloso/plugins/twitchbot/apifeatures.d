@@ -175,31 +175,12 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +
  +  Example:
  +  ---
- +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
- +  spawn&(&queryTwitchImpl, url, cast(shared)plugin.headers, plugin.bucket);
+ +  immutable url = "https://api.twitch.tv/helix/some/api/url";
  +
+ +  spawn&(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
  +
- +  shared QueryResponse* response;
- +
- +  while (!response)
- +  {
- +      synchronized
- +      {
- +          response = url in plugin.bucket;
- +      }
- +
- +      if (!response)
- +      {
- +          // Too early, sleep briefly and try again
- +          delay(plugin, plugin.approximateQueryTime/plugin.approximateQueryRetryTimeDivisor,
-                Yes.msecs, Yes.yield);
- +          continue;
- +      }
- +
- +      plugin.bucket.remove(url);
- +  }
- +
+ +  const response = waitForQueryResponse(plugin, url);
  +  // response.str is the response body
  +  ---
  +
