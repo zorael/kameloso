@@ -67,7 +67,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
     version(Posix)
     {
         import kameloso.thread : setThreadName;
-        setThreadName("twitchquerier");
+        setThreadName("twitchworker");
     }
 
     bool halt;
