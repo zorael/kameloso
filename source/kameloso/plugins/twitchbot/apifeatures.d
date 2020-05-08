@@ -134,23 +134,34 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     import kameloso.plugins.common : delay;
     import lu.string : beginsWith;
     import std.concurrency : send, spawn;
+    import std.datetime.systime : Clock, SysTime;
+
+    SysTime pre;
 
     if (singleWorker)
     {
+        pre = Clock.currTime;
         plugin.persistentWorkerTid.send(url);
-
-        immutable penalty = plugin.approximateQueryConcurrencyMessagePenalty;
-        immutable queryWaitTime = plugin.approximateQueryTime + penalty;
-
-        delay(plugin, queryWaitTime, Yes.msecs, Yes.yield);
     }
     else
     {
         spawn(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
-        delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
     }
 
-    const response = waitForQueryResponse(plugin, url);
+    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    const response = waitForQueryResponse(plugin, url, singleWorker);
+
+    if (singleWorker)
+    {
+        immutable post = Clock.currTime;
+        immutable diff = (post - pre);
+        immutable msecs = diff.total!"msecs";
+        plugin.averageApproximateQueryTime(msecs);
+    }
+    else
+    {
+        plugin.averageApproximateQueryTime(response.msecs);
+    }
 
     if (!response.str.length)
     {
