@@ -1269,7 +1269,7 @@ package:
          +  How many extra milliseconds to add to query wait time if single worker
          +  mode is enabled and concurrency messages are being used to start queries.
          +/
-        enum approximateQueryConcurrencyMessagePenalty = 100;
+        enum approximateQueryConcurrencyMessagePenalty = 120;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
