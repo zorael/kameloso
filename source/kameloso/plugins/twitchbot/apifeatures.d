@@ -43,6 +43,9 @@ struct QueryResponse
 
     /// How long the query took.
     long msecs;
+
+    /// The HTTP response code received.
+    uint code;
 }
 
 
