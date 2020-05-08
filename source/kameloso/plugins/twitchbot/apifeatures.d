@@ -676,11 +676,14 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
         }
     }
 
-    plugin.headers =
-    [
-        "Client-ID" : plugin.twitchBotSettings.clientKey,
-        "Authorization" : "Bearer " ~ key,
-    ];
+    synchronized
+    {
+        plugin.headers =
+        [
+            "Client-ID" : plugin.twitchBotSettings.clientKey,
+            "Authorization" : "Bearer " ~ key,
+        ];
+    }
 
     if (!currentKeysWork)
     {
@@ -694,7 +697,10 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
 
         if (newKey.length)
         {
-            plugin.headers["Authorization"] = "Bearer " ~ newKey;
+            synchronized
+            {
+                plugin.headers["Authorization"] = "Bearer " ~ newKey;
+            }
             return currentKeysWork;
         }
         else
