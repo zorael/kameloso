@@ -245,6 +245,7 @@ void queryTwitchImpl(const string url, shared string[string] headers,
  +  Lookups are done asychronously in subthreads.
  +/
 void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
+in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
 {
     import kameloso.plugins.common : delay;
     import lu.string : nom, stripped;
@@ -372,6 +373,8 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
             }
 
         }
+
+        assert(idString.length, "Empty idString despite lookup");
 
         // Identity ascertained; look up in cached list
 
