@@ -638,6 +638,8 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
 
         if (!success)
         {
+            logger.error("Could not get a new authorization bearer token. " ~
+                "Make sure that your client and secret keys are valid.");
             logger.info("Disabling API features due to key setup failure.");
             plugin.useAPIFeatures = false;
             return;
@@ -809,8 +811,6 @@ string getNewBearerToken(const string clientKey, const string secretKey)
     }
     else
     {
-        logger.error("Could not get a new authorization bearer token. " ~
-            "Make sure that your client and secret keys are valid.");
         return string.init;
     }
 }
