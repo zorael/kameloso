@@ -901,6 +901,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
  +/
 void delay(IRCPlugin plugin, const long duration, const Flag!"msecs" msecs = No.msecs,
     const Flag!"yield" yield = No.yield)
+in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 {
     delay(plugin, Fiber.getThis, duration, msecs);
     if (yield) Fiber.yield();
@@ -919,6 +920,7 @@ void delay(IRCPlugin plugin, const long duration, const Flag!"msecs" msecs = No.
  +      yield = Whether or not to immediately yield the Fiber.
  +/
 void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield)
+in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 {
     delay(plugin, Fiber.getThis, duration, No.msecs);
     if (yield) Fiber.yield();
