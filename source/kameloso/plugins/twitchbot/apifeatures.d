@@ -419,15 +419,18 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
  +      field = The field to access via the HTTP URL. Can be either "login"
  +          or "id".
  +      identifier = The identifier of type `field` to look up.
+ +      firstAttempt = Whether this is the first attempt or if it has recursed
+ +          once after resetting API keys.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier)
+    const Identifier identifier, bool firstAttempt = true)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
+    import lu.string : beginsWith;
     import lu.traits : UnqualArray;
     import requests.request : Request;
     import std.conv : to;
@@ -441,7 +444,23 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
     req.addHeaders(cast(UnqualArray!(typeof(plugin.headers)))plugin.headers);
     auto res = req.get(url);
 
-    return parseUserFromResponse(cast(string)res.responseBody.data);
+    immutable data = cast(string)res.responseBody.data;
+
+    if (data.beginsWith(`{"err`))
+    {
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+
+        if (firstAttempt)
+        {
+            immutable success = plugin.resetAPIKeys();
+            if (success) return getUserImpl(plugin, field, identifier, false);  // <-- second attempt
+            // Else drop down
+        }
+
+        throw new Exception("Failed to query Twitch; received error instead of data");
+    }
+
+    return parseUserFromResponse(data);
 }
 
 
