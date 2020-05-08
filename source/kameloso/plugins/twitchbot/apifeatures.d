@@ -698,8 +698,15 @@ bool resetAPIKeys(TwitchBotPlugin plugin)
 
     bool currentKeysWork()
     {
-        const test = getUserByLogin(plugin, "kameboto");
-        return (test != JSONValue.init);
+        try
+        {
+            const test = getUserByLogin(plugin, "kameboto");
+            return (test != JSONValue.init);
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 
     string key = readText(plugin.keyFile).strippedRight;
