@@ -1264,27 +1264,16 @@ package:
 
         /++
          +  The weight to assign the current approximate query time before
-         +  making a weighted average based on a new value.
+         +  making a weighted average based on a new value. This gives the
+         +  averaging some inertia.
          +/
         enum approximateQueryAveragingWeight = 3;
-
-        /++
-         +  How many extra milliseconds to add to query wait time if single worker
-         +  mode is enabled and concurrency messages are being used to start queries.
-         +/
-        enum approximateQueryConcurrencyMessagePenalty = 120;
 
         /++
          +  How many seconds before a Twitch query response times out. Does not
          +  affect the actual HTTP request, just how long we wait for it to arrive.
          +/
         enum queryResponseTimeout = 15;
-
-        /++
-         +  How many milliseconds to reset the approximate query time to after
-         +  a query response has timed out, so as to "start over" on a conservative value.
-         +/
-        enum queryResponseTimeoutResetTime = 500;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
