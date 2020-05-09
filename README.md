@@ -11,7 +11,7 @@
 * **sed**-replacement of the last message sent (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
 * channel polls
-* works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot.d)
+* works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot/package.d)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * more random stuff and gimmicks
 
@@ -23,7 +23,7 @@ All of the above are plugins and can be runtime disabled or compiled out. It is 
 
 Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue [to the **dialect** project](https://github.com/zorael/dialect/issues).
 
-Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) servers, so support and coverage is best there.
+Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
 
@@ -36,8 +36,8 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 -A        --account Services account name
 -p       --password Services account password
            --admins Administrators' services accounts, comma-separated
--H          --homes Home channels to operate in, comma-separated
--C       --channels Non-home channels to idle in, comma-separated
+-H   --homeChannels Home channels to operate in, comma-separated
+-C  --guestChannels Non-home channels to idle in, comma-separated
 -w    --writeconfig Write configuration to file
 
 A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
@@ -70,6 +70,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
   * [Twitch](#twitch)
+    * [Example configuration](#example-configuration)
     * [Streamer assistant bot](#streamer-assistant-bot)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
@@ -86,7 +87,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 
 ## Prerequisites
 
-There are three [**D**](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 3.3 Gb of free memory for a minimal build, and 4.5 Gb for a development build with all features (Linux `dev` debug build). Upwards of around 4.8 Gb to run unit tests. (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
+There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 3.3 Gb of free memory for a minimal build, and 4.5 Gb for a development build with all features (Linux `dev` debug build). Upwards of around 4.8 Gb to run unit tests. (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
@@ -111,7 +112,7 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x.
+On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster results, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
 
 ### Build configurations
 
@@ -128,13 +129,13 @@ List them with `dub build --print-configs`. You can specify which to compile wit
 $ dub build -c twitch
 ```
 
-If you want to customise your own build to only compile the plugins you want to use, simply delete the relevant lines from the `versions` list in `dub.sdl`.
+> If you want to customise your own build to only compile the plugins you want to use, simply delete the relevant lines from the `versions` list in `dub.sdl`.
 
 # How to use
 
 ## Configuration
 
-The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a log bot. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
+The bot needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
 
 ```sh
 $ ./kameloso --writeconfig
@@ -151,7 +152,7 @@ Open the file in a normal text editor.
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will apply these changes to the configuration file, without having to manually edit it.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig`, it will apply these changes to the configuration file, without having to manually edit it.
 
 ```sh
 $ ./kameloso \
@@ -177,49 +178,60 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Mind that you need to authorise yourself with services as an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
+Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
 
-> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to "accounts".
+> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to would-be "accounts".
 
 ```
-     you joined #channel
-kameloso sets mode +o you
-     you | I am a fish
-     you | s/fish/snek/
-kameloso | you | I am a snek
-     you | !quote kameloso I am a snek
-kameloso | Quote saved. (1 on record)
-     you | !quote kameloso
-kameloso | kameloso | I am a snek
-     you | !note OfflinePerson Why so offline?
-kameloso | Note added.
-     you | !seen OfflinePerson
-kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago.
-     you | !operator add bob
-kameloso | Added BOB as an operator in #channel.
-     you | !whitelist add alice
-kameloso | Added Alice as a whitelisted user in #channel.
-     you | !blacklist del steve
-kameloso | Removed steve as a blacklisted user in #channel.
-     you | !automode add frank +o
-kameloso | Automode modified! frank on #channel: +o
-     you | !poll 60 snek snik
-kameloso | Voting commenced! Please place your vote for one of: snik, snek (60 seconds)
-     BOB | snek
-   Alice | snek
-   frank | snik
-kameloso | Voting complete, results:
-kameloso | snek : 2 (66.6%)
-kameloso | snik : 1 (33.3%)
-     you | kameloso: sudo PRIVMSG #channel :this is a raw IRC command
-kameloso | this is a raw IRC command
-     you | https://youtu.be/ykj3Kpm3O0g
-kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
+      you joined #channel
+ kameloso sets mode +o you
+      you | I am a fish
+      you | s/fish/snek/
+ kameloso | you | I am a snek
+
+      you | !quote kameloso I am a snek
+ kameloso | Quote saved. (1 on record)
+      you | !quote kameloso
+ kameloso | kameloso | I am a snek
+
+      you | !seen MrOffline
+ kameloso | I last saw MrOffline 1 hour and 34 minutes ago.
+
+      you | !note MrOffline About the thing you mentioned, yeah no
+ kameloso | Note added.
+MrOffline joined #channel
+ kameloso | MrOffline! you left note 28 minutes ago: About the thing you mentioned, yeah no
+
+      you | !operator add bob
+ kameloso | Added BOB as an operator in #channel.
+      you | !whitelist add alice
+ kameloso | Added Alice as a whitelisted user in #channel.
+      you | !blacklist del steve
+ kameloso | Removed steve as a blacklisted user in #channel.
+
+      you | !automode add ray +o
+ kameloso | Automode modified! ray on #channel: +o
+    ray joined #channel
+ kameloso sets mode +o ray
+
+      you | !poll 60 snek snik
+ kameloso | Voting commenced! Please place your vote for one of: snik, snek (60 seconds)
+      BOB | snek
+    Alice | snek
+      ray | snik
+ kameloso | Voting complete, results:
+ kameloso | snek : 2 (66.6%)
+ kameloso | snik : 1 (33.3%)
+
+      you | https://github.com/zorael/kameloso
+ kameloso | [github.com] GitHub - zorael/kameloso: IRC bot
+      you | https://youtu.be/ykj3Kpm3O0g
+ kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
 ```
 
 ### Online help and commands
 
-Use the `help` command for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one.
+Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one.
 
 The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
@@ -228,24 +240,40 @@ The **prefix** character (here `!`) is configurable; refer to your generated con
 prefix              "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces, like `"please "` (making it `please note`, `please quote`, ...). Prefixing commands with the bot's nickname also works (and in some cases *only* works, like `kameloso: sudo [...]` in the example above).
+It can technically be any string and not just one character. It may include spaces, like `"please "` (making it `please note`, `please quote`, ...). Prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. Some administrative commands only work when called this way.
 
 ## Twitch
 
-To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`. You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`.
+
+You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). These authorisation tokens are unique to your user paired with the application in question. By extension, this is something that must be done separately for each and every program you want to use that wants to access Twitch.
+
+Run the bot with `--set twitchbot.keyGenerationMode` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `twitch.tv`, with the little lock symbol showing the connection is secure.
+
+> Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`onCAPImpl` in `twitchbot/apifeatures.d`](source/kameloso/plugins/twitchbot/apifeatures.d)
+
+After entering your login and password and clicking `Authorize`, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to the `kameloso.conf` configuration file.
+
+If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
+
+```
+https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor
+```
+
+### Example configuration
 
 ```ini
 [IRCClient]
-nickname            twitchaccount
-#user
-#realName
+nickname            yourtwitchaccount
+user                ignored
+realName            likewise
 
 [IRCBot]
 #account
 #password
-pass                oauth:the30letteroauthstringgoeshere
+pass                oauth:personalaccesstokengoeshere
 admins              otheraccount
-homeChannels        #twitchaccount,#otheraccount
+homeChannels        #yourtwitchaccount,#otheraccount
 guestChannels       #streamer1,#streamer2,#streamer3
 
 [IRCServer]
@@ -268,7 +296,7 @@ Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, 
 
 > Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
-To use some commands (currently only the `!followage` command, so it's far from a necessity) you need a Client ID and a Client secret API key. You can get these by registering the application [here](https://dev.twitch.tv/console/apps/create). Declare it to be a `Chat Bot`, give it a redirect URL of `http://localhost`, then simply copy the produced Client ID into the configuration file at `clientKey` under `[TwitchBot]`. Additionally click "New Secret" to generate a secret key, then copy that and enter it as `secretKey` (also under `[TwitchBot]`).
+To disable heavier commands that access Twitch's API (currently only the `!followage` command), set `enableAPIFeatures` under `[TwitchBot]` in the configuration file to `false`.
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
@@ -297,7 +325,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * non-blocking FIFO
 * tweak `notes`
 * revamp `quotes`
-* split large plugins into packages
 * more pairs of eyes
 
 # Built with
