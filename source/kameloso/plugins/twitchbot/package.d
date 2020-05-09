@@ -1253,6 +1253,9 @@ package:
     {
         import std.concurrency : Tid;
 
+        /// The Twitch application ID for kameloso.
+        enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
+
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
 
