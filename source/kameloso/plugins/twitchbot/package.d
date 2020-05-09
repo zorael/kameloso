@@ -82,7 +82,7 @@ import core.thread : Fiber;
      +  Whether or not to start a captive session for generating a Twitch
      +  authorisation key. Should not be permanently set in the configuration file!
      +/
-    bool generateKey = false;
+    bool keyGenerationMode = false;
 }
 
 

@@ -118,14 +118,14 @@ void onCAPImpl(TwitchBotPlugin plugin)
     import std.concurrency : prioritySend;
     import std.stdio : readln, stdin, stdout, write, writefln, writeln;
 
-    if (!plugin.twitchBotSettings.generateKey) return;
+    if (!plugin.twitchBotSettings.keyGenerationMode) return;
 
     writeln();
     logger.info("-- Twitch authorisation key generation mode --");
     writeln();
-    writefln("You are here because you passed %s--set twitchbot.generateKey%s",
+    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s",
         Tint.info, Tint.reset);
-    writefln("or because you have %sgenerateKey%s persistently set to %1$strue%2$s ",
+    writefln("or because you have %skeyGenerationMode%s persistently set to %1$strue%2$s ",
         Tint.info, Tint.reset);
     writeln("in the configuration file (which you really shouldn't set).");
     writeln();
@@ -214,7 +214,7 @@ void onCAPImpl(TwitchBotPlugin plugin)
     writeln(Tint.warning, "This will need to be repeated once every 60 days.", Tint.reset);
     writeln();
 
-    plugin.twitchBotSettings.generateKey = false;
+    plugin.twitchBotSettings.keyGenerationMode = false;
     plugin.state.botUpdated = true;
     plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
 }
