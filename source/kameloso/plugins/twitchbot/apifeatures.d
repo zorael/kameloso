@@ -805,6 +805,60 @@ void resetAPIKeys(TwitchBotPlugin plugin)
 }
 
 
+// getValidation
+/++
+ +  Validates the current access key, retrieving information about it.
+ +/
+JSONValue getValidation(TwitchBotPlugin plugin)
+in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
+{
+    import lu.traits : UnqualArray;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    alias UT = UnqualArray!(typeof(plugin.headers));
+    auto oauthHeaders = (cast(UT)plugin.headers).dup;
+    oauthHeaders["Authorization"] = "OAuth " ~ plugin.state.bot.pass[6..$];
+
+    enum url = "https://id.twitch.tv/oauth2/validate";
+    const response = queryTwitch(plugin, url,
+        plugin.twitchBotSettings.singleWorkerThread, cast(shared)oauthHeaders);
+
+    if (!response.str.length)
+    {
+        throw new Exception("Error validating, empty repsonse");
+    }
+
+    JSONValue validation = parseJSON(response.str);
+
+    if ((validation.type != JSONType.object) || ("client_id" !in validation))
+    {
+        throw new Exception("Error validating, unknown JSON");
+    }
+
+    /*
+    {
+        "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+        "expires_in": 5036421,
+        "login": "zorael",
+        "scopes": [
+            "bits:read",
+            "channel:moderate",
+            "channel:read:subscriptions",
+            "channel_editor",
+            "chat:edit",
+            "chat:read",
+            "user:edit:broadcast",
+            "whispers:edit",
+            "whispers:read"
+        ],
+        "user_id": "22216721"
+    }
+    */
+
+    return validation;
+}
+
+
 // cacheFollows
 /++
  +  Fetches a list of all follows of the passed channel and caches them in
