@@ -324,22 +324,10 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.bucket.remove(url);
     }
 
-    if (!response.str.length)
-    {
-        if (response.code >= 400)
-        {
-            import std.conv : to;
-            throw new Exception("Failed to query Twitch; received code " ~ response.code.to!string);
-        }
-        else
-        {
-            throw new Exception("Failed to query Twitch; received empty string");
-        }
-    }
-    else if (response.str.beginsWith(`{"err`))
+    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new Exception("Failed to query Twitch; received error instead of data");
+        throw new TwitchQueryException("Failed to query Twitch", response.str, response.code);
     }
 
     return response;
@@ -608,10 +596,10 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
 
     immutable data = cast(string)res.responseBody.data;
 
-    if (data.beginsWith(`{"err`))
+    if ((res.code >= 400) || !data.length || (data.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new Exception("Failed to query Twitch; received error instead of data");
+        throw new TwitchQueryException("Failed to query Twitch", data, res.code, __FILE__);
     }
 
     return parseUserFromResponse(data);
@@ -847,7 +835,7 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
                 Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
-        catch (Exception e)
+        catch (TwitchQueryException e)
         {
             // Something is deeply wrong.
             logger.error("Failed to validate API keys. Disabling API features.");
@@ -883,6 +871,7 @@ void resetAPIKeys(TwitchBotPlugin plugin)
 JSONValue getValidation(TwitchBotPlugin plugin)
 in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 {
+    import lu.string : beginsWith;
     import lu.traits : UnqualArray;
     import std.json : JSONType, JSONValue, parseJSON;
 
@@ -894,16 +883,19 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     const response = queryTwitch(plugin, url,
         plugin.twitchBotSettings.singleWorkerThread, cast(shared)oauthHeaders);
 
-    if (!response.str.length)
+    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
-        throw new Exception("Error validating, empty repsonse");
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        throw new TwitchQueryException("Failed to validate Twitch authorisation token",
+            response.str, response.code);
     }
 
     JSONValue validation = parseJSON(response.str);
 
     if ((validation.type != JSONType.object) || ("client_id" !in validation))
     {
-        throw new Exception("Error validating, unknown JSON");
+        throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
+            "token; unknown JSON", response.str, response.code);
     }
 
     return validation;
