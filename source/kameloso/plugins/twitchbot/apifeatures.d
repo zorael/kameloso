@@ -236,8 +236,6 @@ void onCAPImpl(TwitchBotPlugin plugin)
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL to query.
- +      firstAttempt = Whether this is the first attempt or if it has recursed
- +          once after resetting API keys.
  +
  +  Returns:
  +      The `QueryResponse` that was discovered while monitoring the `bucket`
@@ -247,7 +245,7 @@ void onCAPImpl(TwitchBotPlugin plugin)
  +      `object.Exception` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const bool singleWorker, bool firstAttempt = true)
+    const bool singleWorker, shared string[string] headers)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common : delay;
@@ -282,6 +280,12 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
+    synchronized //()
+    {
+        // Always remove, otherwise there'll be stale entries
+        plugin.bucket.remove(url);
+    }
+
     if (!response.str.length)
     {
         if (response.code >= 400)
@@ -297,20 +301,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     else if (response.str.beginsWith(`{"err`))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-
-        synchronized //()
-        {
-            // Always remove, otherwise there'll be stale entries
-            plugin.bucket.remove(url);
-        }
-
-        if (firstAttempt)
-        {
-            immutable success = plugin.resetAPIKeys();
-            if (success) return queryTwitch(plugin, url, singleWorker, false);  // <-- second attempt
-            // Else drop down
-        }
-
         throw new Exception("Failed to query Twitch; received error instead of data");
     }
 
@@ -558,14 +548,12 @@ in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
  +      field = The field to access via the HTTP URL. Can be either "login"
  +          or "id".
  +      identifier = The identifier of type `field` to look up.
- +      firstAttempt = Whether this is the first attempt or if it has recursed
- +          once after resetting API keys.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier, bool firstAttempt = true)
+    const Identifier identifier)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
@@ -588,14 +576,6 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
     if (data.beginsWith(`{"err`))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-
-        if (firstAttempt)
-        {
-            immutable success = plugin.resetAPIKeys();
-            if (success) return getUserImpl(plugin, field, identifier, false);  // <-- second attempt
-            // Else drop down
-        }
-
         throw new Exception("Failed to query Twitch; received error instead of data");
     }
 
@@ -742,10 +722,10 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
         }
         catch (Exception e)
         {
+            if (!plugin.useAPIFeatures) return;  // Already errored
+
             // Something is deeply wrong.
-            logger.error("Failed to fetch broadcaster information; " ~
-                "are the client-secret API keys and the authorization key file correctly set up?");
-            logger.error("Disabling API features.");
+            logger.error("Failed to fetch broadcaster information. Disabling API features.");
             plugin.useAPIFeatures = false;
             return;
         }
@@ -781,33 +761,16 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
  +  See_Also:
  +      kameloso.plugins.twitchbot.onEndOfMotd
  +/
+
 void onEndOfMotdImpl(TwitchBotPlugin plugin)
 {
     import std.concurrency : Tid;
 
     if (!plugin.useAPIFeatures) return;
 
-    if (!plugin.twitchBotSettings.clientKey.length ||
-        !plugin.twitchBotSettings.secretKey.length)
-    {
-        logger.info("No Twitch Client ID API key pairs supplied in the configuration file. " ~
-            "Some commands will not work.");
-        plugin.useAPIFeatures = false;
-        return;
-    }
-
     if (!plugin.headers.length)
     {
-        immutable success = plugin.resetAPIKeys();
-
-        if (!success)
-        {
-            logger.error("Could not get a new authorization bearer token. " ~
-                "Make sure that your client and secret keys are valid.");
-            logger.info("Disabling API features due to key setup failure.");
-            plugin.useAPIFeatures = false;
-            return;
-        }
+        plugin.resetAPIKeys();
     }
 
     if (plugin.bucket is null)
@@ -828,153 +791,15 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
 
 // resetAPIKeys
 /++
- +  Resets the API keys in the HTTP headers we pass. Additionally validates them
- +  and tries to get new authorization keys if the current ones don't seem to work.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +
- +  Returns:
- +      true if keys seem to work, even if it took requesting new authorization
- +      keys to make it so; false if not.
+ +  Resets the API keys in the HTTP headers we pass.
  +/
-bool resetAPIKeys(TwitchBotPlugin plugin)
+void resetAPIKeys(TwitchBotPlugin plugin)
 {
-    import lu.string : strippedRight;
-    import std.file : readText;
-
-    string getNewKey()
-    {
-        immutable key = getNewBearerToken(plugin.twitchBotSettings.clientKey,
-            plugin.twitchBotSettings.secretKey);
-
-        if (key.length)
-        {
-            import std.stdio : File;
-
-            auto keyFile = File(plugin.keyFile);
-            keyFile.writeln(key);
-            return key;
-        }
-        else
-        {
-            // Something's wrong.
-            return string.init;
-        }
-    }
-
-    bool currentKeysWork()
-    {
-        try
-        {
-            const test = getUserByLogin(plugin, "kameboto");
-            return (test != JSONValue.init);
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-    }
-
-    string key = readText(plugin.keyFile).strippedRight;
-    bool gotNewKey;
-
-    if (!key.length)
-    {
-        key = getNewKey();
-        gotNewKey = true;
-
-        if (!key.length)
-        {
-            return false;
-        }
-    }
-
     synchronized //()
     {
         // Can't use a literal due to https://issues.dlang.org/show_bug.cgi?id=20812
-        plugin.headers["Client-ID"] = plugin.twitchBotSettings.clientKey;
-        plugin.headers["Authorization"] = "Bearer " ~ key;
-    }
-
-    if (!currentKeysWork)
-    {
-        if (gotNewKey)
-        {
-            // Already got a new key and it still doesn't work.
-            return false;
-        }
-
-        immutable newKey = getNewKey();
-
-        if (newKey.length)
-        {
-            synchronized //()
-            {
-                plugin.headers["Authorization"] = "Bearer " ~ newKey;
-            }
-            return currentKeysWork;
-        }
-        else
-        {
-            // Could not get a new key.
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-// getNewBearerToken
-/++
- +  Requests a new bearer authorization token from the Twitch servers.
- +
- +  They expire after 60 days (4680249 seconds).
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +
- +  Returns:
- +      A new authorization token string, or an empty one if one could not be fetched.
- +/
-string getNewBearerToken(const string clientKey, const string secretKey)
-{
-    import requests.request : Request;
-    import requests.utils : queryParams;
-    import requests : postContent;
-    import std.json : parseJSON;
-
-    Request req;
-    req.keepAlive = false;
-
-    /*curl -X POST "https://id.twitch.tv/oauth2/token?client_id=${C}
-        &client_secret=${S}&grant_type=client_credentials"*/
-
-    enum url = "https://id.twitch.tv/oauth2/token";
-
-    auto response = postContent(url, queryParams(
-        "client_id", clientKey,
-        "client_secret", secretKey,
-        "grant_type", "client_credentials"));
-
-    /*
-    {
-        "access_token" : "HARBLSNARBL",
-        "expires_in" : 4680249,
-        "token_type" : "bearer"
-    }
-    */
-
-    const asJSON = parseJSON(cast(string)response);
-
-    if (const token = "access_token" in asJSON)
-    {
-        return token.str;
-    }
-    else
-    {
-        return string.init;
+        plugin.headers["Client-ID"] = plugin.clientID,
+        plugin.headers["Authorization"] = "Bearer " ~ plugin.state.bot.pass[6..$];
     }
 }
 
