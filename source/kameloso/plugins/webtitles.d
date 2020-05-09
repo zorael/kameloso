@@ -38,12 +38,6 @@ import std.typecons : Flag, No, Yes;
 
     /// Toggles whether YouTube lookups should be done for pasted URLs.
     bool youtubeLookup = true;
-
-    /// Toggles whether Reddit lookups should be done for pasted URLs.
-    bool redditLookup = false;
-
-    /// Toggles whether or not Reddit and title are reported simultaneously. This can be slow.
-    bool simultaneousReddit = false;
 }
 
 
@@ -68,9 +62,6 @@ struct TitleLookupResults
 
     /// YouTube video author, if such a YouTube link.
     string youtubeAuthor;
-
-    /// URL to the Reddit post linking to the requested URL.
-    string redditURL;
 
     /// The UNIX timestamp of when the title was looked up.
     long when;
@@ -163,6 +154,10 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
+        immutable colouredFlag = plugin.state.settings.colouredOutgoing ?
+            Yes.colouredOutgoing :
+            No.colouredOutgoing;
+
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
         TitleLookupResults cachedResult;
@@ -182,28 +177,17 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
             if (request.results.youtubeTitle.length)
             {
-                reportDispatch(&reportYouTubeTitle, request, plugin.webtitlesSettings,
-                    (plugin.state.settings.colouredOutgoing ?
-                        Yes.colouredOutgoing :
-                        No.colouredOutgoing));
+                reportYouTubeTitle(request, colouredFlag);
             }
             else
             {
-                reportDispatch(&reportTitle, request, plugin.webtitlesSettings,
-                    (plugin.state.settings.colouredOutgoing ?
-                        Yes.colouredOutgoing :
-                        No.colouredOutgoing));
+                reportTitle(request, colouredFlag);
             }
             continue;
         }
 
-        /// In the case of chained URL lookups, how much to delay each lookup by.
-        enum delayMsecs = 250;
-
-        spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs, plugin.webtitlesSettings,
-            (plugin.state.settings.colouredOutgoing ?
-                Yes.colouredOutgoing :
-                No.colouredOutgoing));
+        spawn(&worker, cast(shared)request, plugin.cache, (i * plugin.delayMsecs),
+            plugin.webtitlesSettings, colouredFlag);
     }
 }
 
@@ -212,8 +196,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 /++
  +  Looks up and reports the title of a URL.
  +
- +  Additionally supports YouTube titles and authors, as well as reporting
- +  Reddit post URLs if settings say to do such.
+ +  Additionally reports YouTube titles and authors if settings say to do such.
  +
  +  Worker to be run in its own thread.
  +
@@ -244,6 +227,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
     }
 
     TitleLookupRequest request = cast()sRequest;
+    immutable colouredFlag = colouredOutgoing ?
+        Yes.colouredOutgoing :
+        No.colouredOutgoing;
 
     try
     {
@@ -286,8 +272,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                     request.results.youtubeTitle = decodeTitle(info["title"].str);
                     request.results.youtubeAuthor = info["author_name"].str;
 
-                    reportDispatch(&reportYouTubeTitle, request,
-                        webtitlesSettings, colouredOutgoing);
+                    reportYouTubeTitle(request, colouredFlag);
 
                     request.results.when = now;
 
@@ -321,7 +306,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         void lookupAndReport()
         {
             request.results = lookupTitle(request.url);
-            reportDispatch(&reportTitle, request, webtitlesSettings, colouredOutgoing);
+            reportTitle(request, colouredFlag);
             request.results.when = now;
 
             synchronized
@@ -563,25 +548,6 @@ void reportYouTubeTitle(TitleLookupRequest request,
 }
 
 
-// reportReddit
-/++
- +  Reports the Reddit post that links to the looked up URL.
- +
- +  Params:
- +      request = A `TitleLookupRequest` containing the results of the lookup.
- +/
-void reportReddit(TitleLookupRequest request)
-{
-    with (request)
-    {
-        if (results.redditURL.length)
-        {
-            chan(state, event.channel, "Reddit: " ~ results.redditURL);
-        }
-    }
-}
-
-
 // rewriteDirectImgurURL
 /++
  +  Takes a direct imgur link (one that points to an image) and rewrites it to
@@ -716,65 +682,6 @@ unittest
     immutable t5 = "\n        Nyheter - NSD.se        \n";
     immutable t5p = decodeTitle(t5);
     assert(t5p == "Nyheter - NSD.se");
-}
-
-
-// lookupReddit
-/++
- +  Given a URL, looks it up on Reddit to see if it has been posted there.
- +
- +  Params:
- +      url = URL to query Reddit for.
- +      modified = Whether the URL has been modified to add an extra slash at
- +          the end, or remove one if one already existed.
- +
- +  Returns:
- +      URL to the Reddit post that links to `url`.
- +/
-string lookupReddit(const string url, const Flag!"modified" modified = No.modified)
-{
-    import kameloso.constants : BufferSize;
-    import lu.string : contains;
-
-    // Don't look up Reddit URLs. Naïve match, may have false negatives.
-    // Also skip YouTube links.
-    if (url.contains("reddit.com/") || url.contains("youtube.com/")) return string.init;
-
-    Request req;
-    req.useStreaming = true;  // we only want as little as possible
-    req.keepAlive = false;
-    req.bufferSize = BufferSize.titleLookup;
-    setRequestHeaders(req);
-
-    auto res = req.get("https://www.reddit.com/" ~ url);
-
-    with (res.finalURI)
-    {
-        import lu.string : beginsWith;
-
-        if (uri.beginsWith("https://www.reddit.com/login") ||
-            uri.beginsWith("https://www.reddit.com/submit") ||
-            uri.beginsWith("https://www.reddit.com/http"))
-        {
-            import std.algorithm.searching : endsWith;
-
-            // Whether URLs end with slashes or not seems to matter.
-            // If we're here, no post could be found, so strip any trailing
-            // slashes and retry, or append a slash and retry if no trailing.
-            // Pass a bool flag to only do this once, so we don't infinitely recurse.
-
-            if (modified) return string.init;
-
-            return url.endsWith("/") ?
-                lookupReddit(url[0..$-1], Yes.modified) :
-                lookupReddit(url ~ '/', Yes.modified);
-        }
-        else
-        {
-            // Has been posted to Reddit
-            return res.finalURI.uri;
-        }
-    }
 }
 
 
