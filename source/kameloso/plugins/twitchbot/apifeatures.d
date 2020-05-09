@@ -101,6 +101,125 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
 }
 
 
+// onCAP
+/++
+ +  Start the captive key generation routine at the earliest possible moment,
+ +  which are the CAP events.
+ +
+ +  We can't do it in `start` since the calls to save and exit would go unheard,
+ +  as `start` happens before the main loop starts. It would then immediately
+ +  fail to read if too much time has passed, and nothing would be saved.
+ +/
+void onCAPImpl(TwitchBotPlugin plugin)
+{
+    import kameloso.common : Tint;
+    import kameloso.thread : ThreadMessage;
+    import lu.string : contains, nom, stripped;
+    import std.concurrency : prioritySend;
+    import std.stdio : readln, stdin, stdout, write, writefln, writeln;
+
+    if (!plugin.twitchBotSettings.generateKey) return;
+
+    writeln();
+    logger.info("-- Twitch authorisation key generation mode --");
+    writeln();
+    writefln("You are here because you passed %s--set twitchbot.generateKey%s",
+        Tint.info, Tint.reset);
+    writefln("or because you have %sgenerateKey%s persistently set to %1$strue%2$s ",
+        Tint.info, Tint.reset);
+    writeln("in the configuration file (which you really shouldn't set).");
+    writeln();
+    writeln("As of early May 2020, Twitch requires the pass you connect with");
+    writeln("to be paired with the client ID of the program you use it with.");
+    writeln("As such, you need to generate one for each application.");
+    writeln();
+    writefln("Follow this Twitch link, follow the login instructions, then %spaste%s",
+        Tint.info, Tint.reset);
+    writefln("the %saddress of the page you are led to afterwards%s here.", Tint.info, Tint.reset);
+    writeln();
+    writefln("It should start with %shttp://localhost%s.", Tint.info, Tint.reset);
+    writefln(`The page will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
+    writeln();
+    writeln("(If you are running local web server, you may have to temporarily");
+    writeln("disable it for this to work.)");
+    writeln();
+    writeln("https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+        "&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1" ~
+        "&redirect_uri=http://localhost" ~
+        "&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
+        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~
+        "&state=kameloso-", plugin.state.client.nickname);
+    writeln();
+
+    string key;
+
+    while (!key.length)
+    {
+        writeln("Paste the resulting address here: (empty line aborts)");
+        writeln();
+
+        immutable url = readln().stripped;
+        stdin.flush();
+
+        if (!url.length)
+        {
+            //writeln("Empty input.");
+            return;
+        }
+
+        if (!url.contains("access_token="))
+        {
+            writeln("Could not make sense of URL. Try again or file a bug.");
+            continue;
+        }
+
+        string slice = url;  // mutable
+        slice.nom("access_token=");
+        key = slice.nom('&');
+    }
+
+    plugin.state.bot.pass = "oauth:" ~ key;
+
+    writeln();
+    writefln("%sYour private authorisation key is: %s%s%s", Tint.info, Tint.log,
+        plugin.state.bot.pass, Tint.reset);
+    writeln();
+    writefln("%sIt should be entered as %spass%1$s under %2$s[IRCBot]%1$s.%3$s",
+        Tint.info, Tint.log, Tint.reset);
+    writeln();
+
+    if (!plugin.state.settings.saveOnExit)
+    {
+        write("Do you want to save it there now? [Y/*]: ");
+        stdout.flush();
+        immutable input = readln().stripped;
+
+        if (!input.length || (input == "y") || (input == "Y"))
+        {
+            plugin.state.mainThread.prioritySend(ThreadMessage.Save());
+        }
+        else
+        {
+            writeln("Make sure to add it to %s%s%s, then.", Tint.info,
+                plugin.state.settings.configFile, Tint.reset);
+        }
+    }
+
+    writeln();
+    writeln(Tint.info, "All done! Restart the program and it should just work.", Tint.reset);
+    writeln();
+    writefln("If it doesn't, please file an issue at " ~
+        "%shttps://github.com/zorael/kameloso/issues/new", Tint.info);
+    writeln();
+    writeln(Tint.warning, "This will need to be repeated once every 60 days.", Tint.reset);
+    writeln();
+
+    plugin.twitchBotSettings.generateKey = false;
+    plugin.state.botUpdated = true;
+    plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
+}
+
+
 // queryTwitch
 /++
  +  Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
