@@ -120,6 +120,13 @@ void onCAPImpl(TwitchBotPlugin plugin)
 
     if (!plugin.twitchBotSettings.keyGenerationMode) return;
 
+    scope(exit)
+    {
+        plugin.twitchBotSettings.keyGenerationMode = false;
+        plugin.state.botUpdated = true;
+        plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
+    }
+
     writeln();
     logger.info("-- Twitch authorisation key generation mode --");
     writeln();
@@ -213,10 +220,6 @@ void onCAPImpl(TwitchBotPlugin plugin)
     writeln();
     writeln(Tint.warning, "This will need to be repeated once every 60 days.", Tint.reset);
     writeln();
-
-    plugin.twitchBotSettings.keyGenerationMode = false;
-    plugin.state.botUpdated = true;
-    plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
 }
 
 
