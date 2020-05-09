@@ -771,6 +771,55 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
         import std.concurrency : spawn;
         plugin.persistentWorkerTid = spawn(&persistentQuerier, plugin.bucket);
     }
+
+    void validationDg()
+    {
+        import kameloso.common : Tint;
+        import std.conv : to;
+        import std.datetime.systime : Clock, SysTime;
+
+        try
+        {
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5036421,
+                "login": "zorael",
+                "scopes": [
+                    "bits:read",
+                    "channel:moderate",
+                    "channel:read:subscriptions",
+                    "channel_editor",
+                    "chat:edit",
+                    "chat:read",
+                    "user:edit:broadcast",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "22216721"
+            }
+            */
+
+            const validation = getValidation(plugin);
+            plugin.userID = validation["user_id"].str;
+            immutable expiresIn = validation["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+
+            logger.infof("Your authorisation keys will expire on %s%02d-%02d-%02d %02d:%02d",
+                Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        catch (Exception e)
+        {
+            // Something is deeply wrong.
+            logger.error("Failed to validate API keys. Disabling API features.");
+            version(PrintStacktraces) logger.trace(e.toString);
+            plugin.useAPIFeatures = false;
+        }
+    }
+
+    Fiber validationFiber = new Fiber(&validationDg);
+    validationFiber.call();
 }
 
 
