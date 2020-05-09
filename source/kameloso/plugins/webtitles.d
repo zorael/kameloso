@@ -162,7 +162,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
         TitleLookupResults cachedResult;
 
-        synchronized
+        synchronized //()
         {
             if (const cachedResultPointer = url in plugin.cache)
             {
@@ -277,7 +277,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
                     request.results.when = now;
 
-                    synchronized
+                    synchronized //()
                     {
                         cache[request.url] = cast(shared)request.results;
                     }
@@ -314,7 +314,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             reportTitle(request, colouredFlag);
             request.results.when = now;
 
-            synchronized
+            synchronized //()
             {
                 cache[request.url] = cast(shared)request.results;
             }
@@ -663,7 +663,7 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 
     immutable now = Clock.currTime.toUnixTime;
 
-    synchronized
+    synchronized //()
     {
         pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
     }
