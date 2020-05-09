@@ -831,7 +831,7 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
             immutable expiresIn = validation["expires_in"].integer;
             immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
 
-            logger.infof("Your authorisation keys will expire on %s%02d-%02d-%02d %02d:%02d",
+            logger.infof("Your Twitch authorisation key will expire on %s%02d-%02d-%02d %02d:%02d",
                 Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
