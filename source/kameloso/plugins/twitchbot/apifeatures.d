@@ -710,23 +710,11 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
     {
         immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
-        try
-        {
-            const response = queryTwitch(plugin, url,
-                plugin.twitchBotSettings.singleWorkerThread,
-                plugin.headers);
-            const broadcasterJSON = parseUserFromResponse(response.str);
-            channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
-        }
-        catch (Exception e)
-        {
-            if (!plugin.useAPIFeatures) return;  // Already errored
-
-            // Something is deeply wrong.
-            logger.error("Failed to fetch broadcaster information. Disabling API features.");
-            plugin.useAPIFeatures = false;
-            return;
-        }
+        const response = queryTwitch(plugin, url,
+            plugin.twitchBotSettings.singleWorkerThread,
+            plugin.headers);
+        const broadcasterJSON = parseUserFromResponse(response.str);
+        channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
     }
 
     Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg);
