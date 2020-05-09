@@ -1057,3 +1057,42 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
     return *response;
 }
+
+
+// TwitchQueryException
+/++
+ +  Exception, to be thrown when an API query to the Twitch servers failed,
+ +  for whatever reason.
+ +
+ +  It is a normal `object.Exception` but with attached metadata.
+ +/
+final class TwitchQueryException : Exception
+{
+@safe:
+    /// The response body that was received.
+    string responseBody;
+
+    /// The HTTP code that was received.
+    uint code;
+
+    /++
+     +  Create a new `TwitchQueryException`, attaching a response body and a
+     +  HTTP return code.
+     +/
+    this(const string message, const string responseBody, const uint code,
+        const string file = __FILE__, const size_t line = __LINE__) pure nothrow @nogc
+    {
+        this.responseBody = responseBody;
+        this.code = code;
+        super(message, file, line);
+    }
+
+    /++
+     +  Create a new `TwitchQueryException`, without attaching anything.
+     +/
+    this(const string message, const string file = __FILE__,
+        const size_t line = __LINE__) pure nothrow @nogc
+    {
+        super(message, file, line);
+    }
+}
