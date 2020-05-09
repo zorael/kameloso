@@ -1289,13 +1289,13 @@ package:
         long approximateQueryTime = 700;
 
         /++
-         +  The multiplier of how much the `approximateQueryTime` should increase
+         +  The multiplier of how much the query time should temporarily increase
          +  when it turned out to be a bit short.
          +/
         enum approximateQueryGrowthMultiplier = 1.1;
 
         /++
-         +  The divisor of how much to wait before retrying, after `approximateQueryTime`
+         +  The divisor of how much to wait before retrying a query, after the timed waited
          +  turned out to be a bit short.
          +/
         enum approximateQueryRetryTimeDivisor = 3;
@@ -1322,7 +1322,7 @@ package:
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
 
-        /// Results of async HTTP queries.
+        /// Associative array of responses from async HTTP queries.
         shared QueryResponse[string] bucket;
     }
 
