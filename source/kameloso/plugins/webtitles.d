@@ -187,7 +187,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         }
 
         spawn(&worker, cast(shared)request, plugin.cache, (i * plugin.delayMsecs),
-            plugin.webtitlesSettings, colouredFlag);
+            plugin.webtitlesSettings, cast(shared)plugin.headers, colouredFlag);
     }
 }
 
@@ -207,11 +207,12 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
  +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
  +          parallel lookups without bursting all of them at once.
  +      webtitlesSettings = Copy of the plugin's settings.
+ +      headers = HTTP headers to use when looking up the URL.
  +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     const ulong delayMsecs, const WebtitlesSettings webtitlesSettings,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+    shared string[string] headers, const Flag!"colouredOutgoing" colouredOutgoing)
 {
     version(Posix)
     {
@@ -305,7 +306,11 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
         void lookupAndReport()
         {
-            request.results = lookupTitle(request.url);
+            import lu.traits : UnqualArray;
+
+            alias UT = UnqualArray!(typeof(headers));
+
+            request.results = lookupTitle(request.url, cast(UT)headers);
             reportTitle(request, colouredFlag);
             request.results.when = now;
 
@@ -351,70 +356,25 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 }
 
 
-// reportDispatch
+// requestHeaders
 /++
- +  Calls the passed report function in the correct order with regards to Reddit-reporting.
- +
- +  Params:
- +      reportFun = Actual reporting function to call.
- +      request = The `TitleLookupRequest` that embodies this lookup, including
- +          its looked-up results.
- +      webtitlesSettings = A copy of the plugin's `WebtitlesPlugin.webtitlesSettings`
- +          so we know whether to and in what manner to do Reddit lookups.
- +      colouredOutgoing = Whether or not to include mIRC colours in the IRC output.
- +/
-void reportDispatch(void function(TitleLookupRequest, const Flag!"colouredOutgoing") reportFun,
-    TitleLookupRequest request, const WebtitlesSettings webtitlesSettings,
-    const Flag!"colouredOutgoing" colouredOutgoing)
-{
-    // If simultaneous, check Reddit first and report later
-    if (webtitlesSettings.simultaneousReddit)
-    {
-        if (webtitlesSettings.redditLookup && !request.results.redditURL.length)
-        {
-            // This may be a cached entry, only look up if it isn't already known
-            request.results.redditURL = lookupReddit(request.url);
-        }
-
-        reportFun(request, colouredOutgoing);
-    }
-    else
-    {
-        reportFun(request, colouredOutgoing);
-
-        if (webtitlesSettings.redditLookup && !request.results.redditURL.length)
-        {
-            // Ditto
-            request.results.redditURL = lookupReddit(request.url);
-        }
-    }
-
-    if (webtitlesSettings.redditLookup) reportReddit(request);
-}
-
-
-// setRequestHeaders
-/++
- +  Sets the HTTP request headers of a `requests.Request` to better reflect our
+ +  Produces HTTP request headers to use with a `requests.Request` to better reflect our
  +  behaviour of only downloading text files.
  +
- +  By placing it into its own function we can reuse it when downloading pages
- +  normally and when requesting Reddit links.
- +
- +  Params:
- +      req = Reference to the `requests.Request` to add headers to.
+ +  Returns:
+ +      A `string[string]` associative array of HTTP headers.
  +/
-void setRequestHeaders(ref Request req)
+string[string] requestHeaders()
 {
     import kameloso.constants : KamelosoInfo;
 
-    immutable headers =
+    auto headers =
     [
         "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
         "Accept" : "text/html",
     ];
 
-    req.addHeaders(headers);
+    return headers;
 }
 
 
@@ -424,6 +384,7 @@ void setRequestHeaders(ref Request req)
  +
  +  Params:
  +      url = URL string to look up.
+ +      headers = HTTP headers to use when looking up `url`.
  +
  +  Returns:
  +      A finished `TitleLookupResults`.
@@ -431,7 +392,7 @@ void setRequestHeaders(ref Request req)
  +  Throws: `object.Exception` if URL could not be fetched, or if no title could be
  +      divined from it.
  +/
-TitleLookupResults lookupTitle(const string url)
+TitleLookupResults lookupTitle(const string url, const string[string] headers)
 {
     import kameloso.constants : BufferSize;
     import arsd.dom : Document;
@@ -442,7 +403,7 @@ TitleLookupResults lookupTitle(const string url)
     req.useStreaming = true;
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
-    setRequestHeaders(req);
+    req.addHeaders(headers);
 
     auto res = req.get(url);
 
@@ -720,6 +681,7 @@ void start(WebtitlesPlugin plugin)
     // No need to synchronize this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
+    plugin.headers = requestHeaders;
 }
 
 
