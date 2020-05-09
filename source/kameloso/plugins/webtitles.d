@@ -498,9 +498,7 @@ void reportYouTubeTitle(TitleLookupRequest request,
         immutable line = colouredOutgoing ?
             "[%s] %s (uploaded by %s)"
                 .format("youtube.com".ircBold, results.youtubeTitle,
-                colouredOutgoing ?
-                    results.youtubeAuthor.ircColourByHash :
-                    results.youtubeAuthor.ircBold) :
+                    results.youtubeAuthor.ircColourByHash) :
             "[youtube.com] %s (uploaded by %s)"
                 .format(results.youtubeTitle, results.youtubeAuthor);
 
