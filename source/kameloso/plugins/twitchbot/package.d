@@ -58,6 +58,9 @@ import core.thread : Fiber;
     /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
     bool permitOneLinkOnly = true;
 
+    /// Whether or not to use features dependent on the Twitch API.
+    bool enableAPIFeatures = true;
+
     /++
      +  Whether or not to start a captive session for generating a Twitch
      +  authorisation key. Should not be permanently set in the configuration file!
