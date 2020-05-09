@@ -62,12 +62,13 @@ import core.thread : Fiber;
     bool enableAPIFeatures = true;
 
     /++
-     +  Whether or not to start a captive session for generating a Twitch
-     +  authorisation key. Should not be permanently set in the configuration file!
+     +  Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+     +
+     +  It's a trade-off. A single worker thread obviously spawns fewer threads,
+     +  which makes it a better choice on Windows systems where creating such is
+     +  comparatively expensive. On the other hand, it's also slower (likely due to
+     +  concurrency message passing overhead).
      +/
-    bool generateKey = false;
-
-    /// Whether to use one persistent worker for Twitch queries or to use separate subthreads.
     version(Windows)
     {
         bool singleWorkerThread = true;
@@ -76,6 +77,12 @@ import core.thread : Fiber;
     {
         bool singleWorkerThread = false;
     }
+
+    /++
+     +  Whether or not to start a captive session for generating a Twitch
+     +  authorisation key. Should not be permanently set in the configuration file!
+     +/
+    bool generateKey = false;
 }
 
 
