@@ -262,7 +262,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     }
     else
     {
-        spawn(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
+        spawn(&queryTwitchImpl, url, headers, plugin.bucket);
     }
 
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
@@ -432,7 +432,8 @@ in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
                     scope(failure) plugin.useAPIFeatures = false;
 
                     const response = queryTwitch(plugin, url,
-                        plugin.twitchBotSettings.singleWorkerThread);
+                        plugin.twitchBotSettings.singleWorkerThread,
+                        plugin.headers);
 
                     if (!response.str.length)
                     {
@@ -716,7 +717,8 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
         try
         {
             const response = queryTwitch(plugin, url,
-                plugin.twitchBotSettings.singleWorkerThread);
+                plugin.twitchBotSettings.singleWorkerThread,
+                plugin.headers);
             const broadcasterJSON = parseUserFromResponse(response.str);
             channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
         }
@@ -839,7 +841,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
         scope(failure) plugin.useAPIFeatures = false;
 
         const response = queryTwitch(plugin, paginatedURL,
-            plugin.twitchBotSettings.singleWorkerThread);
+            plugin.twitchBotSettings.singleWorkerThread, plugin.headers);
 
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
