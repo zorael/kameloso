@@ -819,26 +819,6 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
         throw new Exception("Error validating, unknown JSON");
     }
 
-    /*
-    {
-        "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-        "expires_in": 5036421,
-        "login": "zorael",
-        "scopes": [
-            "bits:read",
-            "channel:moderate",
-            "channel:read:subscriptions",
-            "channel_editor",
-            "chat:edit",
-            "chat:read",
-            "user:edit:broadcast",
-            "whispers:edit",
-            "whispers:read"
-        ],
-        "user_id": "22216721"
-    }
-    */
-
     return validation;
 }
 
