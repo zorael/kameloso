@@ -1143,10 +1143,12 @@ version(TwitchAPIFeatures)
 void teardown(TwitchBotPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
+    import std.concurrency : Tid, send;
 
-    if (plugin.twitchBotSettings.singleWorkerThread)
+    if (plugin.twitchBotSettings.singleWorkerThread &&
+        (plugin.persistentWorkerTid != Tid.init))
     {
+        // It may not have been started if we're aborting pre-endofmotd.
         plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
     }
 }
