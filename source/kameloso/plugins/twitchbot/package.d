@@ -1286,6 +1286,9 @@ package:
          +/
         shared string[string] headers;
 
+        /// The bot's numeric account/ID.
+        string userID;
+
         /++
          +  How long a Twitch HTTP query usually takes.
          +
