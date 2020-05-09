@@ -152,7 +152,7 @@ void onCAPImpl(TwitchBotPlugin plugin)
     writeln();
 
     immutable url = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
-        "&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1" ~
+        "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
         "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~
