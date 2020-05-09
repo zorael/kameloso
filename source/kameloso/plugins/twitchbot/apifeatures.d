@@ -63,7 +63,7 @@ struct QueryResponse
  +      bucket = The shared associative array bucket to put the results in,
  +          response body values keyed by URL.
  +/
-void persistentQuerier(shared string[string] headers, shared QueryResponse[string] bucket)
+void persistentQuerier(shared QueryResponse[string] bucket)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -80,7 +80,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
     while (!halt)
     {
         receive(
-            (string url) scope
+            (string url, shared string[string] headers) scope
             {
                 queryTwitchImpl(url, headers, bucket);
             },
@@ -258,7 +258,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     if (singleWorker)
     {
         pre = Clock.currTime;
-        plugin.persistentWorkerTid.send(url);
+        plugin.persistentWorkerTid.send(url, headers);
     }
     else
     {
@@ -785,8 +785,7 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
         (plugin.persistentWorkerTid == Tid.init))
     {
         import std.concurrency : spawn;
-        plugin.persistentWorkerTid = spawn(&persistentQuerier,
-            plugin.headers, plugin.bucket);
+        plugin.persistentWorkerTid = spawn(&persistentQuerier, plugin.bucket);
     }
 }
 
