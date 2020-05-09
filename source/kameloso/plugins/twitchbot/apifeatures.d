@@ -352,11 +352,7 @@ void queryTwitchImpl(const string url, shared string[string] headers,
     response.code = res.code;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
-
-    if (res.code < 400)
-    {
-        response.str = cast(string)res.responseBody.data.idup;
-    }
+    response.str = cast(string)res.responseBody.data.idup;
 
     synchronized //()
     {
