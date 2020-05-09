@@ -25,6 +25,15 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
+version(linux)
+{
+    version = XDG;
+}
+else version(FreeBSD)
+{
+    version = XDG;
+}
+
 package:
 
 
@@ -116,6 +125,7 @@ void onCAPImpl(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.concurrency : prioritySend;
+    import std.process : execute;
     import std.stdio : readln, stdin, stdout, write, writefln, writeln;
 
     if (!plugin.twitchBotSettings.keyGenerationMode) return;
@@ -134,53 +144,78 @@ void onCAPImpl(TwitchBotPlugin plugin)
         Tint.info, Tint.reset);
     writefln("or because you have %skeyGenerationMode%s persistently set to %1$strue%2$s ",
         Tint.info, Tint.reset);
-    writeln("in the configuration file (which you really shouldn't set).");
+    writeln("in the configuration file (which you really shouldn't have).");
     writeln();
     writeln("As of early May 2020, Twitch requires the pass you connect with");
     writeln("to be paired with the client ID of the program you use it with.");
     writeln("As such, you need to generate one for each application.");
     writeln();
-    writefln("Follow this Twitch link, follow the login instructions, then %spaste%s",
-        Tint.info, Tint.reset);
-    writefln("the %saddress of the page you are led to afterwards%s here.", Tint.info, Tint.reset);
-    writeln();
-    writefln("It should start with %shttp://localhost%s.", Tint.info, Tint.reset);
-    writefln(`The page will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
-    writeln();
-    writeln("(If you are running local web server, you may have to temporarily");
-    writeln("disable it for this to work.)");
-    writeln();
-    writeln("https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+
+    immutable url = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
         "&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1" ~
         "&redirect_uri=http://localhost" ~
         "&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
         "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~
-        "&state=kameloso-", plugin.state.client.nickname);
+        "&state=kameloso-" ~ plugin.state.client.nickname;
+
+    writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
+    writefln("%sThen paste the address of the page you are redirected to afterwards%s here.",
+        Tint.info, Tint.reset);
+    writefln("* It should start with %shttp://localhost%s.", Tint.info, Tint.reset);
+    writefln(`* The page will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
     writeln();
+    writeln("(If you are running local web server, you may have to temporarily");
+    writeln("disable it for this to work.)");
+    writeln();
+    writeln("Press Enter to continue.");
+
+    readln();
+
+    version(XDG)
+    {
+        immutable openBrowser = [ "xdg-open", url ];
+        execute(openBrowser);
+    }
+    else version(OSX)
+    {
+        immutable openBrowser = [ "open", url ];
+        execute(openBrowser);
+    }
+    else version(Windows)
+    {
+        immutable openBrowser = [ "start", url ];
+        execute(openBrowser);
+    }
+    else
+    {
+        writeln("Unsupported platform! Open this link manually in your browser:");
+        writeln();
+        writeln("------------------------------------------------------------------");
+        writeln();
+        writeln(url);
+        writeln();
+        writeln("------------------------------------------------------------------");
+    }
 
     string key;
 
     while (!key.length)
     {
-        writeln("Paste the resulting address here: (empty line aborts)");
+        writeln(Tint.info, "Paste the resulting address here (empty line exits):", Tint.reset);
         writeln();
 
-        immutable url = readln().stripped;
+        immutable readURL = readln().stripped;
         stdin.flush();
 
-        if (!url.length)
-        {
-            //writeln("Empty input.");
-            return;
-        }
+        if (!readURL.length) return;
 
-        if (!url.contains("access_token="))
+        if (!readURL.contains("access_token="))
         {
             writeln("Could not make sense of URL. Try again or file a bug.");
             continue;
         }
 
-        string slice = url;  // mutable
+        string slice = readURL;  // mutable
         slice.nom("access_token=");
         key = slice.nom('&');
     }
@@ -188,9 +223,8 @@ void onCAPImpl(TwitchBotPlugin plugin)
     plugin.state.bot.pass = "oauth:" ~ key;
 
     writeln();
-    writefln("%sYour private authorisation key is: %s%s%s", Tint.info, Tint.log,
-        plugin.state.bot.pass, Tint.reset);
-    writeln();
+    writefln("%sYour private authorisation key is: %s%s%s",
+        Tint.info, Tint.log, key, Tint.reset);
     writefln("%sIt should be entered as %spass%1$s under %2$s[IRCBot]%1$s.%3$s",
         Tint.info, Tint.log, Tint.reset);
     writeln();
@@ -207,18 +241,19 @@ void onCAPImpl(TwitchBotPlugin plugin)
         }
         else
         {
-            writeln("Make sure to add it to %s%s%s, then.", Tint.info,
-                plugin.state.settings.configFile, Tint.reset);
+            writeln();
+            writefln("Make sure to add it to %s%s%s, then;",
+                Tint.info, plugin.state.settings.configFile, Tint.reset);
+            writefln("as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
         }
     }
 
     writeln();
-    writeln(Tint.info, "All done! Restart the program and it should just work.", Tint.reset);
-    writeln();
+    writeln("All done! Restart the program and it should just work.");
     writefln("If it doesn't, please file an issue at " ~
         "%shttps://github.com/zorael/kameloso/issues/new", Tint.info);
     writeln();
-    writeln(Tint.warning, "This will need to be repeated once every 60 days.", Tint.reset);
+    writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
     writeln();
 }
 
