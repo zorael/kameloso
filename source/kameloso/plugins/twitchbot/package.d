@@ -1028,15 +1028,6 @@ void initResources(TwitchBotPlugin plugin)
 
     bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
     timersJSON.save(plugin.timersFile);
-
-    version(TwitchAPIFeatures)
-    {
-        if (!plugin.keyFile.exists)
-        {
-            auto file = File(plugin.keyFile, "w");
-            file.writeln();
-        }
-    }
 }
 
 
@@ -1333,9 +1324,6 @@ package:
 
         /// Results of async HTTP queries.
         shared QueryResponse[string] bucket;
-
-        /// The file containing the bearer authorization key.
-        @Resource string keyFile = "twitch.key";
     }
 
     mixin IRCPluginImpl;
