@@ -1332,9 +1332,10 @@ package:
      +/
     override public void onEvent(const IRCEvent event)
     {
-        if (state.server.daemon != IRCServer.Daemon.twitch)
+        if ((state.server.daemon != IRCServer.Daemon.unset) &&
+            (state.server.daemon != IRCServer.Daemon.twitch))
         {
-            // Daemon known and not Twitch
+            // Daemon unknown or not Twitch
             return;
         }
 
