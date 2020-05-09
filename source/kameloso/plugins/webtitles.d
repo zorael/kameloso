@@ -871,10 +871,19 @@ private:
     shared TitleLookupResults[string] cache;
 
     /++
+     +  HTTP request headers to use with a `requests.Request` to better reflect our
+     +  behaviour of only downloading text files.
+     +/
+    string[string] headers;
+
+    /++
      +  How long before a cached title lookup expires and its address has to be
      +  looked up anew.
      +/
     enum expireSeconds = 600;
+
+    /// In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+    enum delayMsecs = 100;
 
     mixin IRCPluginImpl;
 
