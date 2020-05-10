@@ -175,9 +175,9 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(when.year, when.month, when.day, when.hour, when.minute,
-                nickname.ircColourByHash.ircBold, quote) :
+                nickname.ircColourByHash.ircBold, quote.line) :
             pattern.format(when.year, when.month, when.day, when.hour, when.minute,
-                nickname, quote);
+                nickname, quote.line);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
