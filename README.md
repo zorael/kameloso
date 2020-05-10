@@ -246,13 +246,13 @@ It can technically be any string and not just one character. It may include spac
 
 To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`.
 
-You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). These authorisation tokens are unique to your user paired with the application in question. By extension, this is something that must be done separately for each and every program you want to use that wants to access Twitch.
+You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). These authorisation tokens are unique to your user, *paired* with an application. As such, you need a new one for each and every program you want to access Twitch with, this one being no exception.
 
 Run the bot with `--set twitchbot.keyGenerationMode` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`onCAPImpl` in `twitchbot/apifeatures.d`](source/kameloso/plugins/twitchbot/apifeatures.d)
 
-After entering your login and password and clicking `Authorize`, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to the `kameloso.conf` configuration file.
+After entering your login and password and clicking `Authorize`, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your `kameloso.conf` configuration file.
 
 If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
 
@@ -271,7 +271,7 @@ realName            likewise
 [IRCBot]
 #account
 #password
-pass                oauth:personalaccesstokengoeshere
+pass                oauth:personalauthorisationtoken
 admins              otheraccount
 homeChannels        #yourtwitchaccount,#otheraccount
 guestChannels       #streamer1,#streamer2,#streamer3
@@ -297,6 +297,8 @@ Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, 
 > Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
 To disable heavier commands that access Twitch's API (currently only the `!followage` command), set `enableAPIFeatures` under `[TwitchBot]` in the configuration file to `false`.
+
+Do not set `keyGenerationMode` persistently to `true` in the configuration file, or you will be led to the generation guide on every startup.
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
