@@ -36,6 +36,30 @@ import std.typecons : Flag, No, Yes;
 }
 
 
+// Quote
+/++
+ +  Embodies the notion of a quote. A string line paired with a UNIX timestamp.
+ +/
+struct Quote
+{
+    import std.conv : to;
+    import std.json : JSONType, JSONValue;
+
+    /// Quote string line.
+    string line;
+
+    /// When the line was uttered, expressed in UNIX time.
+    long timestamp;
+
+    /// Constructor taking a `std.json.JSONValue`.
+    this(const JSONValue json)
+    {
+        this.line = json["line"].str;
+        this.timestamp = json["timestamp"].integer;
+    }
+}
+
+
 // getRandomQuote
 /++
  +  Fetches a quote for the specified nickname from the in-memory JSON array.
@@ -52,18 +76,23 @@ import std.typecons : Flag, No, Yes;
  +      nickname = Nickname of the user to fetch quotes for.
  +
  +  Returns:
- +      Random quote string. If no quote is available it returns an empty string instead.
+ +      A `Quote` containing a random quote string. If no quote is available it
+ +      returns an empty `Quote.init` instead.
  +/
-string getRandomQuote(QuotesPlugin plugin, const string nickname)
+Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
-    if (const arr = nickname in plugin.quotes)
+    if (const quotesForNickname = nickname in plugin.quotes)
     {
         import std.random : uniform;
-        return arr.array[uniform(0, arr.array.length)].str;
+
+        immutable len = quotesForNickname.array.length;
+        const storedQuoteJSON = quotesForNickname.array[uniform(0, len)];
+
+        return Quote(storedQuoteJSON);
     }
     else
     {
-        return string.init;
+        return Quote.init;
     }
 }
 
@@ -136,13 +165,19 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     }
 
     /// Report success to IRC
-    void report(const string nickname, const string endQuote)
+    void report(const string nickname, const Quote quote)
     {
-        enum pattern = "%s | %s";
+        import std.datetime.systime : SysTime;
+
+        enum pattern = "[%d-%02d-%02d %02d:%02d] %s | %s";
+
+        SysTime when = SysTime.fromUnixTime(quote.timestamp);
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold, endQuote) :
-            pattern.format(nickname, endQuote);
+            pattern.format(when.year, when.month, when.day, when.hour, when.minute,
+                nickname.ircColourByHash.ircBold, quote.line) :
+            pattern.format(when.year, when.month, when.day, when.hour, when.minute,
+                nickname, quote.line);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -163,7 +198,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
             immutable quote = plugin.getRandomQuote(endAccount);
 
-            if (quote.length)
+            if (quote.line.length)
             {
                 return report(endAccount, quote);
             }
@@ -193,7 +228,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         immutable quote = plugin.getRandomQuote(specified);
 
-        if (quote.length)
+        if (quote.line.length)
         {
             return report(specified, quote);
         }
@@ -234,19 +269,22 @@ in (line.length, "Tried to add an empty quote")
     try
     {
         import std.conv : text;
+        import std.datetime.systime : Clock;
         import std.format : format;
 
-        if (specified in plugin.quotes)
-        {
-            // cannot modify const expression (*nickquotes).array
-            plugin.quotes[specified].array ~= JSONValue(line);
-        }
-        else
+        JSONValue newQuote;
+        newQuote["line"] = line;
+        newQuote["timestamp"] = Clock.currTime.toUnixTime;
+
+        if (specified !in plugin.quotes)
         {
             // No previous quotes for nickname
-            plugin.quotes[specified] = JSONValue([ line ]);
+            // Initialise the JSONValue as an array
+            plugin.quotes[specified] = JSONValue.init;
+            plugin.quotes[specified].array = null;
         }
 
+        plugin.quotes[specified].array ~= newQuote;
         plugin.quotes.save(plugin.quotesFile);
 
         enum pattern = "Quote for %s saved (%s on record)";
@@ -341,7 +379,7 @@ private:
     /++
      +  The in-memory JSON storage of all user quotes.
      +
-     +  It is in the JSON form of `string[][string]`, where the first key is the
+     +  It is in the JSON form of `Quote[][string]`, where the first key is the
      +  nickname of a user.
      +/
     JSONStorage quotes;
