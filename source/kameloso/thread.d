@@ -38,9 +38,9 @@ public:
 
 // ScheduledFiber
 /++
- +  A tuple of a `core.thread.fiber.Fiber` and a `long` UNIX timestamp.
+ +  A `core.thread.fiber.Fiber` paired with a `long` UNIX timestamp.
  +
- +  If we pair the two together like this, we can associate a point in time
+ +  If we bundle the two together like this, we can associate a point in time
  +  with a `core.thread.fiber.Fiber` without having to to use an associative
  +  array (with UNIX timestamp keys).
  +
@@ -54,7 +54,14 @@ public:
  +  auto scheduledFiber = ScheduledFiber(new Fiber(&dg), Clock.currTime.toUnixTime + 10L);
  +  ---
  +/
-alias ScheduledFiber = Tuple!(Fiber, "fiber", long, "timestamp");
+struct ScheduledFiber
+{
+    /// Fiber to trigger at the point in time `timestamp`.
+    Fiber fiber;
+
+    /// When `fiber` is scheduled to be called.
+    long timestamp;
+}
 
 
 version(Posix)
