@@ -258,19 +258,22 @@ in (line.length, "Tried to add an empty quote")
     try
     {
         import std.conv : text;
+        import std.datetime.systime : Clock;
         import std.format : format;
 
-        if (specified in plugin.quotes)
-        {
-            // cannot modify const expression (*nickquotes).array
-            plugin.quotes[specified].array ~= JSONValue(line);
-        }
-        else
+        JSONValue newQuote;
+        newQuote["line"] = line;
+        newQuote["timestamp"] = Clock.currTime.toUnixTime;
+
+        if (specified !in plugin.quotes)
         {
             // No previous quotes for nickname
-            plugin.quotes[specified] = JSONValue([ line ]);
+            // Initialise the JSONValue as an array
+            plugin.quotes[specified] = JSONValue.init;
+            plugin.quotes[specified].array = null;
         }
 
+        plugin.quotes[specified].array ~= newQuote;
         plugin.quotes.save(plugin.quotesFile);
 
         enum pattern = "Quote for %s saved (%s on record)";
