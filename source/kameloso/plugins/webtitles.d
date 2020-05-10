@@ -358,7 +358,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
 // requestHeaders
 /++
- +  Produces HTTP request headers to use with a `requests.Request` to better reflect our
+ +  Produces HTTP request headers to use with a `requests.request.Request` to better reflect our
  +  behaviour of only downloading text files.
  +
  +  Returns:
@@ -738,7 +738,7 @@ private:
     shared TitleLookupResults[string] cache;
 
     /++
-     +  HTTP request headers to use with a `requests.Request` to better reflect our
+     +  HTTP request headers to use with a `requests.request.Request` to better reflect our
      +  behaviour of only downloading text files.
      +/
     string[string] headers;
