@@ -76,18 +76,23 @@ struct Quote
  +      nickname = Nickname of the user to fetch quotes for.
  +
  +  Returns:
- +      Random quote string. If no quote is available it returns an empty string instead.
+ +      A `Quote` containing a random quote string. If no quote is available it
+ +      returns an empty `Quote.init` instead.
  +/
-string getRandomQuote(QuotesPlugin plugin, const string nickname)
+Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
-    if (const arr = nickname in plugin.quotes)
+    if (const quotesForNickname = nickname in plugin.quotes)
     {
         import std.random : uniform;
-        return arr.array[uniform(0, arr.array.length)].str;
+
+        immutable len = quotesForNickname.array.length;
+        const storedQuoteJSON = quotesForNickname.array[uniform(0, len)];
+
+        return Quote(storedQuoteJSON);
     }
     else
     {
-        return string.init;
+        return Quote.init;
     }
 }
 
@@ -160,13 +165,19 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     }
 
     /// Report success to IRC
-    void report(const string nickname, const string endQuote)
+    void report(const string nickname, const Quote quote)
     {
-        enum pattern = "%s | %s";
+        import std.datetime.systime : SysTime;
+
+        enum pattern = "[%d-%02d-%02d %02d:%02d] %s | %s";
+
+        SysTime when = SysTime.fromUnixTime(quote.timestamp);
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold, endQuote) :
-            pattern.format(nickname, endQuote);
+            pattern.format(when.year, when.month, when.day, when.hour, when.minute,
+                nickname.ircColourByHash.ircBold, quote) :
+            pattern.format(when.year, when.month, when.day, when.hour, when.minute,
+                nickname, quote);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -187,7 +198,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
             immutable quote = plugin.getRandomQuote(endAccount);
 
-            if (quote.length)
+            if (quote.line.length)
             {
                 return report(endAccount, quote);
             }
@@ -217,7 +228,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         immutable quote = plugin.getRandomQuote(specified);
 
-        if (quote.length)
+        if (quote.line.length)
         {
             return report(specified, quote);
         }
@@ -368,7 +379,7 @@ private:
     /++
      +  The in-memory JSON storage of all user quotes.
      +
-     +  It is in the JSON form of `string[][string]`, where the first key is the
+     +  It is in the JSON form of `Quote[][string]`, where the first key is the
      +  nickname of a user.
      +/
     JSONStorage quotes;
