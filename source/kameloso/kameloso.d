@@ -219,9 +219,9 @@ void messageFiber(ref Kameloso instance)
             Flag!"quiet" quiet) scope
         {
             // This will automatically close the connection.
-            // Set quit to yes to propagate the decision up the stack.
             immutable reason = givenReason.length ? givenReason : instance.bot.quitReason;
-            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, quiet));
+            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
+                reason.replaceTokens(instance), quiet));
             next = Next.returnSuccess;
         }
 
@@ -400,7 +400,7 @@ void messageFiber(ref Kameloso instance)
                 if (content.length)
                 {
                     // Reason given, assume only one channel
-                    line = "PART " ~ channel ~ " :" ~ content;
+                    line = "PART " ~ channel ~ " :" ~ content.replaceTokens(instance);
                 }
                 else
                 {
@@ -410,7 +410,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content,
+                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance),
                     ((target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
 
             case NICK:
@@ -2564,16 +2564,20 @@ int initBot(string[] args)
             version(Colours)
             {
                 import kameloso.irccolours : mapEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason.mapEffects);
+                logger.trace("--> QUIT :", instance.bot.quitReason
+                    .mapEffects
+                    .replaceTokens(instance));
             }
             else
             {
                 import kameloso.irccolours : stripEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason.stripEffects);
+                logger.trace("--> QUIT :", instance.bot.quitReason
+                    .stripEffects
+                    .replaceTokens(instance));
             }
         }
 
-        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason);
+        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason.replaceTokens(instance));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
         !instance.settings.reconnectOnFailure)
