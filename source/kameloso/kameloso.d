@@ -118,6 +118,37 @@ string replaceTokens(const string line, const ref Kameloso instance)
         .replace("$source", cast(string)KamelosoInfo.source);
 }
 
+///
+unittest
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.format : format;
+
+    Kameloso instance;
+    instance.parser.client.nickname = "harbl";
+
+    {
+        immutable line = "asdf $nickname is kameloso version $version from $source";
+        immutable expected = "asdf %s is kameloso version %s from %s"
+            .format(instance.parser.client.nickname, cast(string)KamelosoInfo.version_,
+                cast(string)KamelosoInfo.source);
+        immutable actual = line.replaceTokens(instance);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        immutable actual = line.replaceTokens(instance);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "blerp";
+        immutable expected = "blerp";
+        immutable actual = line.replaceTokens(instance);
+        assert((actual == expected), actual);
+    }
+}
+
 
 // messageFiber
 /++
