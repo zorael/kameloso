@@ -96,6 +96,29 @@ void signalHandler(int sig) nothrow @nogc @system
 }
 
 
+// replaceTokens
+/++
+ +  Apply some common text replacements. Used on part and quit reasons.
+ +
+ +  Params:
+ +      line = String to replace tokens in.
+ +      instance = Reference to the current `Kameloso` instance.
+ +
+ +  Returns:
+ +      A modified string with token occurences replaced.
+ +/
+string replaceTokens(const string line, const ref Kameloso instance)
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.array : replace;
+
+    return line
+        .replace("$nickname", instance.parser.client.nickname)
+        .replace("$version", cast(string)KamelosoInfo.version_)
+        .replace("$source", cast(string)KamelosoInfo.source);
+}
+
+
 // messageFiber
 /++
  +  A Generator Fiber function that checks for concurrency messages and performs
