@@ -36,6 +36,30 @@ import std.typecons : Flag, No, Yes;
 }
 
 
+// Quote
+/++
+ +  Embodies the notion of a quote. A string line paired with a UNIX timestamp.
+ +/
+struct Quote
+{
+    import std.conv : to;
+    import std.json : JSONType, JSONValue;
+
+    /// Quote string line.
+    string line;
+
+    /// When the line was uttered, expressed in UNIX time.
+    long timestamp;
+
+    /// Constructor taking a `std.json.JSONValue`.
+    this(const JSONValue json)
+    {
+        this.line = json["line"].str;
+        this.timestamp = json["timestamp"].integer;
+    }
+}
+
+
 // getRandomQuote
 /++
  +  Fetches a quote for the specified nickname from the in-memory JSON array.
