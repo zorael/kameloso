@@ -409,6 +409,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
         `dialect.defs.IRCEvent.Type`s it is annotated with. Furthermore, it will
         only trigger if it took place in a home channel.
      +/
+
+    if (!event.sender.nickname) return;  // MODE can be server-sent
     plugin.updateUser(event.sender.nickname, event.time);
 }
 

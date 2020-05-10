@@ -541,6 +541,7 @@ void onAuthEnd(ConnectService service)
  +  Whitelist more nicknames as we discover them. Also English only for now but
  +  can be easily extended.
  +/
+@ChainableOnTwitch
 @(IRCEvent.Type.NOTICE)
 void onAuthEndNotice(ConnectService service, const IRCEvent event)
 {
@@ -562,6 +563,52 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
             service.joinedChannels = true;
         }
     }
+}
+
+
+// onTwitchAuthFailure
+/++
+ +  On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
+ +/
+version(TwitchSupport)
+@(IRCEvent.Type.NOTICE)
+void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage;
+    import std.algorithm.searching : endsWith;
+    import std.concurrency : prioritySend;
+    import std.typecons : Flag, No, Yes;
+
+    //if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
+    if (!service.state.server.address.endsWith(".twitch.tv")) return;
+
+    switch (event.content)
+    {
+    case "Improperly formatted auth":
+        import lu.string : beginsWith;
+
+        immutable message = !service.state.bot.pass.beginsWith("oauth:") ?
+            `Client pass is malformed; does not start with "oauth:"` :
+            "Client pass is malformed; cannot authenticate. Make sure it is entered correctly.";
+
+        logger.error(message);
+        break;
+
+    case "Login authentication failed":
+        logger.error("Wrong pass. Please make sure it is valid.");
+        break;
+
+    case "Login unsuccessful":
+        logger.error("Client pass probably has insufficient privileges.");
+        break;
+
+    default:
+        // Just some notice; return
+        return;
+    }
+
+    // Exit and let the user tend to it.
+    service.state.mainThread.prioritySend(ThreadMessage.Quit(), event.content, No.quiet);
 }
 
 

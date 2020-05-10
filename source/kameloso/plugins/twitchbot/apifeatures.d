@@ -25,7 +25,37 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
+version(linux)
+{
+    version = XDG;
+}
+else version(FreeBSD)
+{
+    version = XDG;
+}
+
 package:
+
+
+// QueryResponse
+/++
+ +  Embodies a response from a query to the Twitch servers. A string paired with
+ +  a millisecond count of how long the query took.
+ +
+ +  This is used instead of a `std.typecons.Tuple` because it doesn't apparently
+ +  work with `shared`.
+ +/
+struct QueryResponse
+{
+    /// Response body, may be several lines.
+    string str;
+
+    /// How long the query took, from issue to response.
+    long msecs;
+
+    /// The HTTP response code received.
+    uint code;
+}
 
 
 // persistentQuerier
@@ -34,13 +64,15 @@ package:
  +  sent to it.
  +
  +  Possibly best used on Windows where threads are comparatively expensive
- +  compared to on Posix platforms.
+ +  compared to Posix platforms.
  +
  +  Params:
- +      headers = HTTP headers to use when issuing the requests.
- +      bucket = The shared bucket to put the results in, keyed by URL.
+ +      headers = `shared` HTTP headers to use when issuing the requests.
+ +          Contains the API keys needed for Twitch to accept the queries.
+ +      bucket = The shared associative array bucket to put the results in,
+ +          response body values keyed by URL.
  +/
-void persistentQuerier(shared string[string] headers, shared string[string] bucket)
+void persistentQuerier(shared QueryResponse[string] bucket)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -49,7 +81,7 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
     version(Posix)
     {
         import kameloso.thread : setThreadName;
-        setThreadName("twitchquerier");
+        setThreadName("twitchworker");
     }
 
     bool halt;
@@ -57,9 +89,9 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
     while (!halt)
     {
         receive(
-            (string url) scope
+            (string url, shared string[string] headers) scope
             {
-                queryTwitch(url, headers, bucket);
+                queryTwitchImpl(url, headers, bucket);
             },
             (ThreadMessage.Teardown) scope
             {
@@ -78,84 +110,301 @@ void persistentQuerier(shared string[string] headers, shared string[string] buck
 }
 
 
+// onCAP
+/++
+ +  Start the captive key generation routine at the earliest possible moment,
+ +  which are the CAP events.
+ +
+ +  We can't do it in `start` since the calls to save and exit would go unheard,
+ +  as `start` happens before the main loop starts. It would then immediately
+ +  fail to read if too much time has passed, and nothing would be saved.
+ +/
+void onCAPImpl(TwitchBotPlugin plugin)
+{
+    import kameloso.common : Tint;
+    import kameloso.thread : ThreadMessage;
+    import lu.string : contains, nom, stripped;
+    import std.concurrency : prioritySend;
+    import std.process : execute;
+    import std.stdio : readln, stdin, stdout, write, writefln, writeln;
+
+    if (!plugin.twitchBotSettings.keyGenerationMode) return;
+
+    scope(exit)
+    {
+        plugin.twitchBotSettings.keyGenerationMode = false;
+        plugin.state.botUpdated = true;
+        plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
+    }
+
+    writeln();
+    logger.info("-- Twitch authorisation key generation mode --");
+    writeln();
+    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s",
+        Tint.info, Tint.reset);
+    writefln("or because you have %skeyGenerationMode%s persistently set to %1$strue%2$s ",
+        Tint.info, Tint.reset);
+    writeln("in the configuration file (which you really shouldn't have).");
+    writeln();
+    writeln("As of early May 2020, Twitch requires the pass you connect with");
+    writeln("to be paired with the client ID of the program you use it with.");
+    writeln("As such, you need to generate one for each application.");
+    writeln();
+
+    immutable url = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+        "&client_id=" ~ TwitchBotPlugin.clientID ~
+        "&redirect_uri=http://localhost" ~
+        "&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
+        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~
+        "&state=kameloso-" ~ plugin.state.client.nickname;
+
+    writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
+    writefln("%sThen paste the address of the page you are redirected to afterwards%s here.",
+        Tint.info, Tint.reset);
+    writefln("* It should start with %shttp://localhost%s.", Tint.info, Tint.reset);
+    writefln(`* The page will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
+    writeln();
+    writeln("(If you are running local web server, you may have to temporarily");
+    writeln("disable it for this to work.)");
+    writeln();
+    writeln("Press Enter to continue.");
+
+    readln();
+
+    version(XDG)
+    {
+        immutable openBrowser = [ "xdg-open", url ];
+        execute(openBrowser);
+    }
+    else version(OSX)
+    {
+        immutable openBrowser = [ "open", url ];
+        execute(openBrowser);
+    }
+    else version(Windows)
+    {
+        immutable openBrowser = [ "start", url ];
+        execute(openBrowser);
+    }
+    else
+    {
+        writeln("Unsupported platform! Open this link manually in your browser:");
+        writeln();
+        writeln("------------------------------------------------------------------");
+        writeln();
+        writeln(url);
+        writeln();
+        writeln("------------------------------------------------------------------");
+    }
+
+    string key;
+
+    while (!key.length)
+    {
+        writeln(Tint.info, "Paste the resulting address here (empty line exits):", Tint.reset);
+        writeln();
+
+        immutable readURL = readln().stripped;
+        stdin.flush();
+
+        if (!readURL.length) return;
+
+        if (!readURL.contains("access_token="))
+        {
+            writeln("Could not make sense of URL. Try again or file a bug.");
+            continue;
+        }
+
+        string slice = readURL;  // mutable
+        slice.nom("access_token=");
+        key = slice.nom('&');
+    }
+
+    plugin.state.bot.pass = "oauth:" ~ key;
+
+    writeln();
+    writefln("%sYour private authorisation key is: %s%s%s",
+        Tint.info, Tint.log, key, Tint.reset);
+    writefln("%sIt should be entered as %spass%1$s under %2$s[IRCBot]%1$s.%3$s",
+        Tint.info, Tint.log, Tint.reset);
+    writeln();
+
+    if (!plugin.state.settings.saveOnExit)
+    {
+        write("Do you want to save it there now? [Y/*]: ");
+        stdout.flush();
+        immutable input = readln().stripped;
+
+        if (!input.length || (input == "y") || (input == "Y"))
+        {
+            plugin.state.mainThread.prioritySend(ThreadMessage.Save());
+        }
+        else
+        {
+            writeln();
+            writefln("Make sure to add it to %s%s%s, then;",
+                Tint.info, plugin.state.settings.configFile, Tint.reset);
+            writefln("as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
+        }
+    }
+
+    writeln();
+    writeln("All done! Restart the program and it should just work.");
+    writefln("If it doesn't, please file an issue at " ~
+        "%shttps://github.com/zorael/kameloso/issues/new", Tint.info);
+    writeln();
+    writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
+    writeln();
+}
+
+
 // queryTwitch
 /++
- +  Sends a HTTP GET to the passed URL, and returns the response by adding it
- +  to the shared `bucket`.
+ +  Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
+ +  worker start it.
+ +
+ +  Once the query returns, the response body is checked to see whether or not
+ +  an error occured. If it did, an attempt to reset API keys is made and, if
+ +  successful, the query is resent and the cycle repeated while taking care not
+ +  to inifinitely loop. If not successful, it throws an exception and disables
+ +  API features.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      url = The URL to query.
+ +
+ +  Returns:
+ +      The `QueryResponse` that was discovered while monitoring the `bucket`
+ +      as having been received from the server.
+ +
+ +  Throws:
+ +      `object.Exception` if there were unrecoverable errors.
+ +/
+QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
+    const bool singleWorker, shared string[string] headers)
+in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
+{
+    import kameloso.plugins.common : delay;
+    import lu.string : beginsWith;
+    import std.concurrency : send, spawn;
+    import std.datetime.systime : Clock, SysTime;
+
+    SysTime pre;
+
+    if (singleWorker)
+    {
+        pre = Clock.currTime;
+        plugin.persistentWorkerTid.send(url, headers);
+    }
+    else
+    {
+        spawn(&queryTwitchImpl, url, headers, plugin.bucket);
+    }
+
+    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    const response = waitForQueryResponse(plugin, url, singleWorker);
+
+    if (singleWorker)
+    {
+        immutable post = Clock.currTime;
+        immutable diff = (post - pre);
+        immutable msecs = diff.total!"msecs";
+        plugin.averageApproximateQueryTime(msecs);
+    }
+    else
+    {
+        plugin.averageApproximateQueryTime(response.msecs);
+    }
+
+    synchronized //()
+    {
+        // Always remove, otherwise there'll be stale entries
+        plugin.bucket.remove(url);
+    }
+
+    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
+    {
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        throw new TwitchQueryException("Failed to query Twitch", response.str, response.code);
+    }
+
+    return response;
+}
+
+
+// queryTwitchImpl
+/++
+ +  Sends a HTTP GET request to the passed URL, and "returns" the response by
+ +  adding it to the shared `bucket`.
  +
  +  Callers can as such spawn this function as a new thread and asynchronously
  +  monitor the `bucket` for when the results arrive.
  +
  +  Example:
  +  ---
- +  immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
- +  spawn&(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
+ +  immutable url = "https://api.twitch.tv/helix/some/api/url";
  +
+ +  spawn&(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
  +
- +  shared string* response;
- +
- +  while (!response)
- +  {
- +      synchronized
- +      {
- +          response = url in plugin.bucket;
- +      }
- +
- +      if (!response)
- +      {
- +          // Too early, sleep briefly and try again
- +          delay(plugin, plugin.approximateQueryTime/retryTimeDivisor, Yes.msecs, Yes.yield);
- +          continue;
- +      }
- +
- +      plugin.bucket.remove(url);
- +  }
- +
- +  // *response is the (shared) response body
+ +  const response = waitForQueryResponse(plugin, url);
+ +  // response.str is the response body
  +  ---
  +
  +  Params:
  +      url = URL address to look up.
- +      headers = HTTP headers to use when issuing the requests.
- +      bucket = The shared bucket to put the results in, keyed by URL.
+ +      headers = `shared` HTTP headers to use when issuing the requests.
+ +      bucket = The shared associative array to put the results in, response
+ +          body values keyed by URL.
  +/
-void queryTwitch(const string url, shared string[string] headers,
-    shared string[string] bucket)
+void queryTwitchImpl(const string url, shared string[string] headers,
+    shared QueryResponse[string] bucket)
 {
     import lu.traits : UnqualArray;
     import requests.request : Request;
+    import std.datetime.systime : Clock;
 
     Request req;
     req.keepAlive = false;
     req.addHeaders(cast(UnqualArray!(typeof(headers)))headers);
-    auto res = req.get(url);
 
-    if (res.code >= 400)
+    immutable pre = Clock.currTime;
+    auto res = req.get(url);
+    immutable post = Clock.currTime;
+
+    QueryResponse response;
+    response.code = res.code;
+    immutable delta = (post - pre);
+    response.msecs = delta.total!"msecs";
+    response.str = cast(string)res.responseBody.data.idup;
+
+    synchronized //()
     {
-        bucket[url] = string.init;
-    }
-    else
-    {
-        bucket[url] = cast(string)res.responseBody.data.idup;
+        bucket[url] = response;  // empty str if code >= 400
     }
 }
 
 
 // onFollowAgeImpl
 /++
- +  Implements "Follow Age", or the ability to query the server how long you
- +  (or a specified user) have been a follower of the current channel.
+ +  Implements "Follow Age", or the ability to query the server how long you have
+ +  (or a specified user has) been a follower of the current channel.
  +
- +  Lookups are done asychronously in subthreads.
+ +  Lookups are done asychronously in threads.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.onFollowAge
  +/
 void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
+in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
 {
-    import kameloso.plugins.common : delay;
     import lu.string : nom, stripped;
-    import std.concurrency : send, spawn;
     import std.conv : to;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : JSONValue;
     import core.thread : Fiber;
 
     if (!plugin.useAPIFeatures) return;
@@ -165,7 +414,6 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
         string slice = event.content.stripped;  // mutable
         immutable nameSpecified = (slice.length > 0);
 
-        uint id;
         string idString;
         string fromDisplayName;
 
@@ -182,7 +430,7 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
             if (const user = givenName in plugin.state.users)
             {
                 // Stored user
-                id = user.id;
+                idString = user.id.to!string;
                 fromDisplayName = user.displayName;
             }
             else
@@ -192,82 +440,40 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
                     if (user.displayName == givenName)
                     {
                         // Found user by displayName
-                        id = user.id;
+                        idString = user.id.to!string;
                         fromDisplayName = user.displayName;
+                        break;
                     }
                 }
 
-                if (!id)
+                if (!idString.length)
                 {
                     // None on record, look up
                     immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
 
-                    if (plugin.twitchBotSettings.singleWorkerThread)
-                    {
-                        plugin.persistentWorkerTid.send(url);
-                    }
-                    else
-                    {
-                        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
-                    }
+                    scope(failure) plugin.useAPIFeatures = false;
 
-                    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+                    const response = queryTwitch(plugin, url,
+                        plugin.twitchBotSettings.singleWorkerThread,
+                        plugin.headers);
 
-                    shared string* response;
-                    bool queryTimeLengthened;
-
-                    while (!response)
-                    {
-                        synchronized
-                        {
-                            response = url in plugin.bucket;
-                        }
-
-                        if (!response)
-                        {
-                            // Miss; fired too early, there is no response available yet
-                            if (!queryTimeLengthened)
-                            {
-                                plugin.approximateQueryTime =
-                                    cast(long)(plugin.approximateQueryTime *
-                                    plugin.approximateQueryGrowthMultiplier);
-                                queryTimeLengthened = true;
-                            }
-
-                            immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
-                            delay(plugin, briefWait, Yes.msecs, Yes.yield);
-                            continue;
-                        }
-                        else
-                        {
-                            // Slowly decrease it to avoid inflation
-                            plugin.approximateQueryTime =
-                                cast(long)(plugin.approximateQueryTime *
-                                plugin.approximateQueryAntiInflationMultiplier);
-                        }
-
-                        plugin.bucket.remove(url);
-                    }
-
-                    if (response.length)
-                    {
-                        // Hit
-                        const user = parseUserFromResponse(cast()*response);
-
-                        if (user == JSONValue.init)
-                        {
-                            chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
-                            return;
-                        }
-
-                        idString = user["id"].str;
-                        fromDisplayName = user["display_name"].str;
-                    }
-                    else
+                    if (!response.str.length)
                     {
                         chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
                         return;
                     }
+
+                    // Hit
+                    const user = parseUserFromResponse(cast()response.str);
+
+                    if (user == JSONValue.init)
+                    {
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+
+                    idString = user["id"].str;
+                    fromDisplayName = user["display_name"].str;
                 }
             }
         }
@@ -275,7 +481,6 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
         void reportFollowAge(const JSONValue followingUserJSON)
         {
             import kameloso.common : timeSince;
-            import lu.string : plurality;
             import std.datetime.systime : Clock, SysTime;
             import std.format : format;
 
@@ -323,34 +528,16 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 
         }
 
-        // Identity ascertained; look up
+        assert(idString.length, "Empty idString despite lookup");
 
-        immutable roomIDString = plugin.activeChannels[event.channel].roomID.to!string;
+        // Identity ascertained; look up in cached list
 
-        foreach (const followingUserJSON; getFollowsAsync(plugin, idString, Yes.from).array)
+        const follows = plugin.activeChannels[event.channel].follows;
+        const thisFollow = idString in follows;
+
+        if (thisFollow)
         {
-            /*writefln("%s --> %s", followingUserJSON["from_name"],
-                followingUserJSON["to_name"]);*/
-
-            if (followingUserJSON["to_id"].str == roomIDString)
-            {
-                /*writeln("FROM");
-                writeln(followingUserJSON.toPrettyString);*/
-                return reportFollowAge(followingUserJSON);
-            }
-        }
-
-        foreach (const followingUserJSON; getFollowsAsync(plugin, roomIDString, No.from).array)
-        {
-            /*writefln("%s --> %s", followingUserJSON["from_name"],
-                followingUserJSON["to_name"]);*/
-
-            if (followingUserJSON["from_id"].str == idString)
-            {
-                /*writeln("TO");
-                writeln(followingUserJSON.toPrettyString);*/
-                return reportFollowAge(followingUserJSON);
-            }
+            return reportFollowAge(*thisFollow);
         }
 
         // If we're here there were no matches.
@@ -374,97 +561,6 @@ void onFollowAgeImpl(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// getFollowsAsync
-/++
- +  Asynchronously gets the list of followers of a channel.
- +
- +  Warning: Must be called from within a Fiber.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      idString = The room ID number as a string.
- +      from = Whether to query for followers from a channel or to a channel.
- +
- +  Params:
- +      A `std.json.JSONValue` with the list of follows.
- +/
-JSONValue getFollowsAsync(TwitchBotPlugin plugin, const string idString,
-    const Flag!"from" from)
-{
-    import kameloso.plugins.common : delay;
-    import std.concurrency : send, spawn;
-    import std.json : JSONType, JSONValue, parseJSON;
-    import core.thread : Fiber;
-
-    assert(Fiber.getThis, "Tried to call `getFollowsAsync` from outside a Fiber");
-
-    immutable url = from ?
-        "https://api.twitch.tv/helix/users/follows?from_id=" ~ idString :
-        "https://api.twitch.tv/helix/users/follows?to_id=" ~ idString;
-
-    if (plugin.twitchBotSettings.singleWorkerThread)
-    {
-        plugin.persistentWorkerTid.send(url);
-    }
-    else
-    {
-        spawn(&queryTwitch, url, cast(shared)plugin.headers, plugin.bucket);
-    }
-
-    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
-
-    shared string* response;
-    bool queryTimeLengthened;
-
-    while (!response)
-    {
-        synchronized
-        {
-            response = url in plugin.bucket;
-        }
-
-        if (!response)
-        {
-            // Miss; fired too early, there is no response available yet
-            if (!queryTimeLengthened)
-            {
-                plugin.approximateQueryTime =
-                    cast(long)(plugin.approximateQueryTime *
-                    plugin.approximateQueryGrowthMultiplier);
-                queryTimeLengthened = true;
-            }
-            else
-            {
-                // Slowly decrease it to avoid inflation
-                plugin.approximateQueryTime =
-                    cast(long)(plugin.approximateQueryTime *
-                    plugin.approximateQueryAntiInflationMultiplier);
-            }
-
-            immutable briefWait = (plugin.approximateQueryTime / plugin.retryTimeDivisor);
-            delay(plugin, briefWait, Yes.msecs, Yes.yield);
-            continue;
-        }
-
-        plugin.bucket.remove(url);
-    }
-
-    auto followsJSON = parseJSON(*response);
-
-    if ((followsJSON.type != JSONType.object) || ("data" !in followsJSON) ||
-        (followsJSON["data"].type != JSONType.array))
-    {
-        /*import std.stdio : writeln;
-
-        logger.error("Invalid Twitch response; is the API key correctly entered?");
-        writeln(followsJSON.toPrettyString);*/
-        return JSONValue.init;
-    }
-
-    return followsJSON["data"];
-}
-
-
 // getUserImpl
 /++
  +  Synchronously queries the Twitch servers for information about a user,
@@ -484,31 +580,42 @@ JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
+    import lu.string : beginsWith;
+    import lu.traits : UnqualArray;
     import requests.request : Request;
     import std.conv : to;
     import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
 
     immutable url = "https://api.twitch.tv/helix/users?%s=%s"
         .format(field, identifier.to!string);  // String just passes through
 
     Request req;
     req.keepAlive = false;
-    req.addHeaders(plugin.headers);
+    req.addHeaders(cast(UnqualArray!(typeof(plugin.headers)))plugin.headers);
     auto res = req.get(url);
 
-    return parseUserFromResponse(cast(string)res.responseBody.data);
+    immutable data = cast(string)res.responseBody.data;
+
+    if ((res.code >= 400) || !data.length || (data.beginsWith(`{"err`)))
+    {
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        throw new TwitchQueryException("Failed to query Twitch", data, res.code, __FILE__);
+    }
+
+    return parseUserFromResponse(data);
 }
 
 
 // parseUserFromResponse
 /++
  +  Given a string response from the Twitch servers when queried for information
- +  of a user, verifies and parses the JSON, returning only that which relates
+ +  on a user, verifies and parses the JSON, returning only that which relates
  +  to the user.
  +
+ +  Note: Only deals with the first user, if several were returned.
+ +
  +  Params:
- +      jsonString = String response as read from the server. In JSON form.
+ +      jsonString = String response as read from the server, in JSON form.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
@@ -529,7 +636,7 @@ JSONValue parseUserFromResponse(const string jsonString)
 }
 
 
-// getUserByName
+// getUserByLogin
 /++
  +  Queries the Twitch servers for information about a user, by login.
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
@@ -541,6 +648,10 @@ JSONValue parseUserFromResponse(const string jsonString)
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
+ +
+ +  See_Also:
+ +      getUserByID
+ +      getUserImpl
  +/
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
@@ -560,6 +671,10 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
+ +
+ +  See_Also:
+ +      getUserByLogin
+ +      getUserImpl
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
@@ -579,6 +694,10 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
+ +
+ +  See_Also:
+ +      getUserByLogin
+ +      getUserImpl
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
@@ -589,13 +708,16 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 // onRoomStateImpl
 /++
  +  Records the room ID of a home channel, and queries the Twitch servers for
- +  the display name of its broadcaster.
+ +  the display name of its broadcaster. Implementation function.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.onRoomState
  +/
 void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import requests.request : Request;
+    import kameloso.plugins.common : delay;
+    import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
-    import std.datetime.systime : Clock;
 
     auto channel = event.channel in plugin.activeChannels;
 
@@ -610,61 +732,62 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
-    immutable pre = Clock.currTime;
-    const broadcasterJSON = getUserByID(plugin, event.aux);
-    immutable post = Clock.currTime;
-
-    if (broadcasterJSON.type != JSONType.object)// || ("display_name" !in broadcasterJSON))
+    void getDisplayNameDg()
     {
-        // Something is deeply wrong.
-        logger.error("Failed to fetch broadcaster information; is the API key entered correctly?");
-        logger.error("Disabling API features.");
-        plugin.useAPIFeatures = false;
-        return;
+        immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
+        const response = queryTwitch(plugin, url,
+            plugin.twitchBotSettings.singleWorkerThread,
+            plugin.headers);
+        const broadcasterJSON = parseUserFromResponse(response.str);
+        channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
     }
 
-    immutable delta = (post - pre);
-    immutable newApproximateTime = cast(long)(delta.total!"msecs" * 1.1);
-    plugin.approximateQueryTime = (plugin.approximateQueryTime == 0) ?
-        newApproximateTime :
-        (plugin.approximateQueryTime+newApproximateTime) / 2;
-    channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg);
+    getDisplayNameFiber.call();
+
+    if ((plugin.state.nextPeriodical - event.time) > 60)
+    {
+        // The next periodical is far away, meaning we did not just connect
+        // Let the caching be done in periodically otherwise.
+
+        void cacheFollowsDg()
+        {
+            channel.follows = plugin.cacheFollows(channel.roomID);
+        }
+
+        Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg);
+        cacheFollowsFiber.call();
+    }
 }
 
 
 // onEndOfMotdImpl
 /++
- +  Sets up the worker thread at the end of MOTD.
+ +  Sets up the worker thread at the end of MOTD. Implementation function.
  +
- +  Additionally initialises the shared bucket, and sets the HTTP headers to use
- +  when querying information.
+ +  Additionally initialises the shared bucket, sets the HTTP headers to use
+ +  when querying information, and spawns the single worker thread if such is
+ +  set up to be used.
+ +
+ +  See_Also:
+ +      kameloso.plugins.twitchbot.onEndOfMotd
  +/
+
 void onEndOfMotdImpl(TwitchBotPlugin plugin)
 {
     import std.concurrency : Tid;
 
     if (!plugin.useAPIFeatures) return;
 
-    if (!plugin.twitchBotSettings.apiKey.length)
-    {
-        logger.info("No Twitch Client ID API key supplied in the configuration file. " ~
-            "Some commands will not work.");
-        plugin.useAPIFeatures = false;
-        return;
-    }
-
     if (!plugin.headers.length)
     {
-        plugin.headers =
-        [
-            "Client-ID" : plugin.twitchBotSettings.apiKey,
-            "Authorization" : "Bearer " ~ plugin.state.bot.pass[6..$],  // Strip "oauth:"
-        ];
+        plugin.resetAPIKeys();
     }
 
     if (plugin.bucket is null)
     {
-        plugin.bucket[string.init] = string.init;
+        plugin.bucket[string.init] = QueryResponse.init;
         plugin.bucket.remove(string.init);
     }
 
@@ -672,7 +795,296 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
         (plugin.persistentWorkerTid == Tid.init))
     {
         import std.concurrency : spawn;
-        plugin.persistentWorkerTid = spawn(&persistentQuerier,
-            cast(shared)plugin.headers, plugin.bucket);
+        plugin.persistentWorkerTid = spawn(&persistentQuerier, plugin.bucket);
+    }
+
+    void validationDg()
+    {
+        import kameloso.common : Tint;
+        import std.conv : to;
+        import std.datetime.systime : Clock, SysTime;
+
+        try
+        {
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5036421,
+                "login": "zorael",
+                "scopes": [
+                    "bits:read",
+                    "channel:moderate",
+                    "channel:read:subscriptions",
+                    "channel_editor",
+                    "chat:edit",
+                    "chat:read",
+                    "user:edit:broadcast",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "22216721"
+            }
+            */
+
+            const validation = getValidation(plugin);
+            plugin.userID = validation["user_id"].str;
+            immutable expiresIn = validation["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+
+            logger.infof("Your Twitch authorisation key will expire on %s%02d-%02d-%02d %02d:%02d",
+                Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        catch (TwitchQueryException e)
+        {
+            // Something is deeply wrong.
+            logger.error("Failed to validate API keys. Disabling API features.");
+            version(PrintStacktraces) logger.trace(e.toString);
+            plugin.useAPIFeatures = false;
+        }
+    }
+
+    Fiber validationFiber = new Fiber(&validationDg);
+    validationFiber.call();
+}
+
+
+// resetAPIKeys
+/++
+ +  Resets the API keys in the HTTP headers we pass.
+ +/
+void resetAPIKeys(TwitchBotPlugin plugin)
+{
+    synchronized //()
+    {
+        // Can't use a literal due to https://issues.dlang.org/show_bug.cgi?id=20812
+        plugin.headers["Client-ID"] = plugin.clientID,
+        plugin.headers["Authorization"] = "Bearer " ~ plugin.state.bot.pass[6..$];
+    }
+}
+
+
+// getValidation
+/++
+ +  Validates the current access key, retrieving information about it.
+ +/
+JSONValue getValidation(TwitchBotPlugin plugin)
+in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
+{
+    import lu.string : beginsWith;
+    import lu.traits : UnqualArray;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    alias UT = UnqualArray!(typeof(plugin.headers));
+    auto oauthHeaders = (cast(UT)plugin.headers).dup;
+    oauthHeaders["Authorization"] = "OAuth " ~ plugin.state.bot.pass[6..$];
+
+    enum url = "https://id.twitch.tv/oauth2/validate";
+    const response = queryTwitch(plugin, url,
+        plugin.twitchBotSettings.singleWorkerThread, cast(shared)oauthHeaders);
+
+    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
+    {
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        throw new TwitchQueryException("Failed to validate Twitch authorisation token",
+            response.str, response.code);
+    }
+
+    JSONValue validation = parseJSON(response.str);
+
+    if ((validation.type != JSONType.object) || ("client_id" !in validation))
+    {
+        throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
+            "token; unknown JSON", response.str, response.code);
+    }
+
+    return validation;
+}
+
+
+// cacheFollows
+/++
+ +  Fetches a list of all follows of the passed channel and caches them in
+ +  the channel's entry in `TwitchBotPlugin.activeChannels`.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      roomID = The string identifier for the channel.
+ +
+ +  Returns:
+ +      A `JSONValue` containing follows, JSON values keyed by the ID string
+ +      of the follower.
+ +/
+JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
+in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
+{
+    import kameloso.plugins.common : delay;
+    import std.json : JSONValue, parseJSON;
+    import core.thread : Fiber;
+
+    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ roomID;
+
+    JSONValue allFollows;
+    string after;
+
+    do
+    {
+        immutable paginatedURL = after.length ?
+            (url ~ "&after=" ~ after) : url;
+
+        scope(failure) plugin.useAPIFeatures = false;
+
+        const response = queryTwitch(plugin, paginatedURL,
+            plugin.twitchBotSettings.singleWorkerThread, plugin.headers);
+
+        auto followsJSON = parseJSON(response.str);
+        const cursor = "cursor" in followsJSON["pagination"];
+
+        foreach (thisFollowJSON; followsJSON["data"].array)
+        {
+            allFollows[thisFollowJSON["from_id"].str] = thisFollowJSON;
+        }
+
+        after = cursor ? cursor.str : string.init;
+    }
+    while (after.length);
+
+    return allFollows;
+}
+
+
+// averageApproximateQueryTime
+/++
+ +  Given a query time measurement, calculate a new approximate query time based on
+ +  the weighted averages of the old one and said measurement.
+ +
+ +  The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
+ +  and the new measurement a weight of 1. Additionally the measurement is padded
+ +  by `TwitchBotPlugin.approximateQueryMeasurementPadding` to be on the safe side.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      reponseMsecs = How many milliseconds the last query took to complete.
+ +/
+void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
+{
+    import std.algorithm.comparison : min;
+
+    enum maxDeltaToResponse = 1000;
+
+    immutable current = plugin.approximateQueryTime;
+    alias weight = plugin.approximateQueryAveragingWeight;
+    alias padding = plugin.approximateQueryMeasurementPadding;
+    immutable responseAdjusted = min(responseMsecs, (current + maxDeltaToResponse));
+    immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
+
+    /*import std.stdio;
+    writefln("time:%s | response: %d~%d (+%d) | new average:%s",
+        current, responseMsecs, responseAdjusted, padding, average);*/
+
+    plugin.approximateQueryTime = cast(long)average;
+}
+
+
+// waitForQueryResponse
+/++
+ +  Common code to wait for a query response. Merely spins and monitors the shared
+ +  `bucket` associative array for when a response has arrived, and then returns it.
+ +  Times out after a hardcoded 15 seconds if nothing was received.
+ +
+ +  Note: Must be called from inside a `core.thread.Fiber`.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      url = The URL that was queried prior to calling this function. Must match.
+ +      leaveTimingAlone = Whether or not to adjust the approximate query time.
+ +          Enabled by default but can be disabled if the caller wants to do it.
+ +
+ +  Returns:
+ +      A `QueryResponse` as constructed by other parts of the program.
+ +/
+QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
+    bool leaveTimingAlone = true)
+in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
+{
+    import std.datetime.systime : Clock;
+
+    import kameloso.plugins.common : delay;
+
+    immutable startTime = Clock.currTime.toUnixTime;
+    shared QueryResponse* response;
+    double accumulatingTime = plugin.approximateQueryTime;
+
+    while (!response)
+    {
+        synchronized //()
+        {
+            response = url in plugin.bucket;
+        }
+
+        if (!response)
+        {
+            immutable now = Clock.currTime.toUnixTime;
+
+            if ((now - startTime) >= plugin.queryResponseTimeout)
+            {
+                response = new shared QueryResponse;
+                break;
+            }
+
+            // Miss; fired too early, there is no response available yet
+            accumulatingTime *= plugin.approximateQueryGrowthMultiplier;
+            alias divisor = plugin.approximateQueryRetryTimeDivisor;
+            immutable briefWait = cast(long)(accumulatingTime / divisor);
+            delay(plugin, briefWait, Yes.msecs, Yes.yield);
+            continue;
+        }
+
+        // Make the new approximate query time a weighted average
+        if (!leaveTimingAlone) plugin.averageApproximateQueryTime(response.msecs);
+        plugin.bucket.remove(url);
+    }
+
+    return *response;
+}
+
+
+// TwitchQueryException
+/++
+ +  Exception, to be thrown when an API query to the Twitch servers failed,
+ +  for whatever reason.
+ +
+ +  It is a normal `object.Exception` but with attached metadata.
+ +/
+final class TwitchQueryException : Exception
+{
+@safe:
+    /// The response body that was received.
+    string responseBody;
+
+    /// The HTTP code that was received.
+    uint code;
+
+    /++
+     +  Create a new `TwitchQueryException`, attaching a response body and a
+     +  HTTP return code.
+     +/
+    this(const string message, const string responseBody, const uint code,
+        const string file = __FILE__, const size_t line = __LINE__) pure nothrow @nogc
+    {
+        this.responseBody = responseBody;
+        this.code = code;
+        super(message, file, line);
+    }
+
+    /++
+     +  Create a new `TwitchQueryException`, without attaching anything.
+     +/
+    this(const string message, const string file = __FILE__,
+        const size_t line = __LINE__) pure nothrow @nogc
+    {
+        super(message, file, line);
     }
 }

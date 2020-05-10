@@ -47,8 +47,7 @@ enum KamelosoDefaultStrings
     realName = "kameloso IRC bot",
 
     /// The default quit reason, when the bot exits.
-    quitReason = "kameloso IRC bot v%s @ %s"
-        .format(KamelosoInfo.version_, KamelosoInfo.source),
+    quitReason = "kameloso IRC bot v$version @ $source",
 
     /// The default part reason, when the bot is asked to part a channel.
     partReason = quitReason,

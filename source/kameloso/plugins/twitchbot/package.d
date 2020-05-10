@@ -58,10 +58,17 @@ import core.thread : Fiber;
     /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
     bool permitOneLinkOnly = true;
 
-    /// API key to use when querying Twitch servers for information.
-    string apiKey;
+    /// Whether or not to use features dependent on the Twitch API.
+    bool enableAPIFeatures = true;
 
-    /// Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+    /++
+     +  Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+     +
+     +  It's a trade-off. A single worker thread obviously spawns fewer threads,
+     +  which makes it a better choice on Windows systems where creating such is
+     +  comparatively expensive. On the other hand, it's also slower (likely due to
+     +  concurrency message passing overhead).
+     +/
     version(Windows)
     {
         bool singleWorkerThread = true;
@@ -70,6 +77,12 @@ import core.thread : Fiber;
     {
         bool singleWorkerThread = false;
     }
+
+    /++
+     +  Whether or not to start a captive session for generating a Twitch
+     +  authorisation key. Should not be permanently set in the configuration file!
+     +/
+    bool keyGenerationMode = false;
 }
 
 
@@ -918,6 +931,23 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 }
 
 
+// onCAP
+/++
+ +  Start the captive key generation routine at the earliest possible moment,
+ +  which are the CAP events.
+ +
+ +  We can't do it in `start` since the calls to save and exit would go unheard,
+ +  as `start` happens before the main loop starts. It would then immediately
+ +  fail to read if too much time has passed, and nothing would be saved.
+ +/
+version(TwitchAPIFeatures)
+@(IRCEvent.Type.CAP)
+void onCAP(TwitchBotPlugin plugin)
+{
+    return plugin.onCAPImpl();
+}
+
+
 // reload
 /++
  +  Reloads resources from disk.
@@ -972,8 +1002,10 @@ in (filename.length, "Tried to save resources to an empty filename")
 void initResources(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import std.file : exists;
     import std.json : JSONException;
     import std.path : baseName;
+    import std.stdio : File;
 
     JSONStorage bannedPhrasesJSON;
 
@@ -1087,6 +1119,25 @@ void periodically(TwitchBotPlugin plugin, const long now)
         currTime.day, 0, 0, 0), currTime.timezone)
         .roll!"days"(1)
         .toUnixTime;
+
+
+    version(TwitchAPIFeatures)
+    {
+        // Clear and re-cache follows once as often as we prune
+
+        void dg()
+        {
+            foreach (immutable channelName, channel; plugin.activeChannels)
+            {
+                if (!channel.enabled) continue;
+
+                channel.follows = plugin.cacheFollows(channel.roomID);
+            }
+        }
+
+        Fiber cacheFollowsFiber = new Fiber(&dg);
+        cacheFollowsFiber.call();
+    }
 }
 
 
@@ -1099,6 +1150,7 @@ void start(TwitchBotPlugin plugin)
 {
     import std.datetime.systime : Clock;
     plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
+    plugin.useAPIFeatures = plugin.twitchBotSettings.enableAPIFeatures;
 }
 
 
@@ -1110,10 +1162,12 @@ version(TwitchAPIFeatures)
 void teardown(TwitchBotPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
+    import std.concurrency : Tid, send;
 
-    if (plugin.twitchBotSettings.singleWorkerThread)
+    if (plugin.twitchBotSettings.singleWorkerThread &&
+        (plugin.persistentWorkerTid != Tid.init))
     {
+        // It may not have been started if we're aborting pre-endofmotd.
         plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
     }
 }
@@ -1181,6 +1235,9 @@ package:
 
             /// Broadcaster user/account/room ID (not name).
             string roomID;
+
+            /// A JSON list of the followers of the channel.
+            JSONValue follows;
         }
     }
 
@@ -1215,40 +1272,65 @@ package:
     {
         import std.concurrency : Tid;
 
+        /// The Twitch application ID for kameloso.
+        enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
+
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
 
-        /// HTTP headers to pass when querying Twitch servers for information.
-        string[string] headers;
+        /++
+         +  HTTP headers to pass when querying Twitch servers for information.
+         +  `shared` to be able to be shared between threads.
+         +/
+        shared string[string] headers;
 
-        /// How long a Twitch HTTP query usually takes.
-        long approximateQueryTime;
+        /// The bot's numeric account/ID.
+        string userID;
 
         /++
-         +  The multiplier of how much the `approximateQueryTime` should increase
+         +  How long a Twitch HTTP query usually takes.
+         +
+         +  It tries its best to self-balance the number based on how long queries
+         +  actually take. Start off conservatively.
+         +/
+        long approximateQueryTime = 700;
+
+        /++
+         +  The multiplier of how much the query time should temporarily increase
          +  when it turned out to be a bit short.
          +/
-        enum approximateQueryGrowthMultiplier = 1.05;
+        enum approximateQueryGrowthMultiplier = 1.1;
 
         /++
-         +  The divisor of how much to wait before retrying, after `approximateQueryTime`
+         +  The divisor of how much to wait before retrying a query, after the timed waited
          +  turned out to be a bit short.
          +/
-        enum retryTimeDivisor = 5;
+        enum approximateQueryRetryTimeDivisor = 3;
 
         /++
-         +  The multiplier of how much the `approximateQueryTime` should increase
-         +  when it turned out to be enough for the query to finish. This prevents
-         +  inflation as it will slowly, slowly decrease until it becomes too
-         +  small again, at which point it will grow.
+         +  By how many milliseconds to pad measurements of how long a query took
+         +  to be on the conservative side.
          +/
-        enum approximateQueryAntiInflationMultiplier = 0.999;
+        enum approximateQueryMeasurementPadding = 30;
+
+        /++
+         +  The weight to assign the current approximate query time before
+         +  making a weighted average based on a new value. This gives the
+         +  averaging some inertia.
+         +/
+        enum approximateQueryAveragingWeight = 3;
+
+        /++
+         +  How many seconds before a Twitch query response times out. Does not
+         +  affect the actual HTTP request, just how long we wait for it to arrive.
+         +/
+        enum queryResponseTimeout = 15;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
 
-        /// Results of async HTTP queries.
-        shared string[string] bucket;
+        /// Associative array of responses from async HTTP queries.
+        shared QueryResponse[string] bucket;
     }
 
     mixin IRCPluginImpl;
@@ -1269,9 +1351,10 @@ package:
      +/
     override public void onEvent(const IRCEvent event)
     {
-        if (state.server.daemon != IRCServer.Daemon.twitch)
+        if ((state.server.daemon != IRCServer.Daemon.unset) &&
+            (state.server.daemon != IRCServer.Daemon.twitch))
         {
-            // Daemon known and not Twitch
+            // Daemon unknown or not Twitch
             return;
         }
 

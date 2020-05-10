@@ -122,7 +122,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
         {
             import kameloso.plugins.common : idOf, nameOf;
 
-            immutable id = idOf(user).toLowerCase(plugin.state.server.caseMapping);
+            immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
 
             try
             {

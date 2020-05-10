@@ -38,12 +38,6 @@ import std.typecons : Flag, No, Yes;
 
     /// Toggles whether YouTube lookups should be done for pasted URLs.
     bool youtubeLookup = true;
-
-    /// Toggles whether Reddit lookups should be done for pasted URLs.
-    bool redditLookup = false;
-
-    /// Toggles whether or not Reddit and title are reported simultaneously. This can be slow.
-    bool simultaneousReddit = false;
 }
 
 
@@ -68,9 +62,6 @@ struct TitleLookupResults
 
     /// YouTube video author, if such a YouTube link.
     string youtubeAuthor;
-
-    /// URL to the Reddit post linking to the requested URL.
-    string redditURL;
 
     /// The UNIX timestamp of when the title was looked up.
     long when;
@@ -163,11 +154,15 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
+        immutable colouredFlag = plugin.state.settings.colouredOutgoing ?
+            Yes.colouredOutgoing :
+            No.colouredOutgoing;
+
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
         TitleLookupResults cachedResult;
 
-        synchronized
+        synchronized //()
         {
             if (const cachedResultPointer = url in plugin.cache)
             {
@@ -182,28 +177,17 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
             if (request.results.youtubeTitle.length)
             {
-                reportDispatch(&reportYouTubeTitle, request, plugin.webtitlesSettings,
-                    (plugin.state.settings.colouredOutgoing ?
-                        Yes.colouredOutgoing :
-                        No.colouredOutgoing));
+                reportYouTubeTitle(request, colouredFlag);
             }
             else
             {
-                reportDispatch(&reportTitle, request, plugin.webtitlesSettings,
-                    (plugin.state.settings.colouredOutgoing ?
-                        Yes.colouredOutgoing :
-                        No.colouredOutgoing));
+                reportTitle(request, colouredFlag);
             }
             continue;
         }
 
-        /// In the case of chained URL lookups, how much to delay each lookup by.
-        enum delayMsecs = 250;
-
-        spawn(&worker, cast(shared)request, plugin.cache, i*delayMsecs, plugin.webtitlesSettings,
-            (plugin.state.settings.colouredOutgoing ?
-                Yes.colouredOutgoing :
-                No.colouredOutgoing));
+        spawn(&worker, cast(shared)request, plugin.cache, (i * plugin.delayMsecs),
+            plugin.webtitlesSettings, cast(shared)plugin.headers, colouredFlag);
     }
 }
 
@@ -212,8 +196,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 /++
  +  Looks up and reports the title of a URL.
  +
- +  Additionally supports YouTube titles and authors, as well as reporting
- +  Reddit post URLs if settings say to do such.
+ +  Additionally reports YouTube titles and authors if settings say to do such.
  +
  +  Worker to be run in its own thread.
  +
@@ -224,11 +207,12 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
  +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
  +          parallel lookups without bursting all of them at once.
  +      webtitlesSettings = Copy of the plugin's settings.
+ +      headers = HTTP headers to use when looking up the URL.
  +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     const ulong delayMsecs, const WebtitlesSettings webtitlesSettings,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+    shared string[string] headers, const Flag!"colouredOutgoing" colouredOutgoing)
 {
     version(Posix)
     {
@@ -244,6 +228,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
     }
 
     TitleLookupRequest request = cast()sRequest;
+    immutable colouredFlag = colouredOutgoing ?
+        Yes.colouredOutgoing :
+        No.colouredOutgoing;
 
     try
     {
@@ -286,12 +273,11 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                     request.results.youtubeTitle = decodeTitle(info["title"].str);
                     request.results.youtubeAuthor = info["author_name"].str;
 
-                    reportDispatch(&reportYouTubeTitle, request,
-                        webtitlesSettings, colouredOutgoing);
+                    reportYouTubeTitle(request, colouredFlag);
 
                     request.results.when = now;
 
-                    synchronized
+                    synchronized //()
                     {
                         cache[request.url] = cast(shared)request.results;
                     }
@@ -320,11 +306,15 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
         void lookupAndReport()
         {
-            request.results = lookupTitle(request.url);
-            reportDispatch(&reportTitle, request, webtitlesSettings, colouredOutgoing);
+            import lu.traits : UnqualArray;
+
+            alias UT = UnqualArray!(typeof(headers));
+
+            request.results = lookupTitle(request.url, cast(UT)headers);
+            reportTitle(request, colouredFlag);
             request.results.when = now;
 
-            synchronized
+            synchronized //()
             {
                 cache[request.url] = cast(shared)request.results;
             }
@@ -366,70 +356,25 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 }
 
 
-// reportDispatch
+// requestHeaders
 /++
- +  Calls the passed report function in the correct order with regards to Reddit-reporting.
- +
- +  Params:
- +      reportFun = Actual reporting function to call.
- +      request = The `TitleLookupRequest` that embodies this lookup, including
- +          its looked-up results.
- +      webtitlesSettings = A copy of the plugin's `WebtitlesPlugin.webtitlesSettings`
- +          so we know whether to and in what manner to do Reddit lookups.
- +      colouredOutgoing = Whether or not to include mIRC colours in the IRC output.
- +/
-void reportDispatch(void function(TitleLookupRequest, const Flag!"colouredOutgoing") reportFun,
-    TitleLookupRequest request, const WebtitlesSettings webtitlesSettings,
-    const Flag!"colouredOutgoing" colouredOutgoing)
-{
-    // If simultaneous, check Reddit first and report later
-    if (webtitlesSettings.simultaneousReddit)
-    {
-        if (webtitlesSettings.redditLookup && !request.results.redditURL.length)
-        {
-            // This may be a cached entry, only look up if it isn't already known
-            request.results.redditURL = lookupReddit(request.url);
-        }
-
-        reportFun(request, colouredOutgoing);
-    }
-    else
-    {
-        reportFun(request, colouredOutgoing);
-
-        if (webtitlesSettings.redditLookup && !request.results.redditURL.length)
-        {
-            // Ditto
-            request.results.redditURL = lookupReddit(request.url);
-        }
-    }
-
-    if (webtitlesSettings.redditLookup) reportReddit(request);
-}
-
-
-// setRequestHeaders
-/++
- +  Sets the HTTP request headers of a `requests.Request` to better reflect our
+ +  Produces HTTP request headers to use with a `requests.request.Request` to better reflect our
  +  behaviour of only downloading text files.
  +
- +  By placing it into its own function we can reuse it when downloading pages
- +  normally and when requesting Reddit links.
- +
- +  Params:
- +      req = Reference to the `requests.Request` to add headers to.
+ +  Returns:
+ +      A `string[string]` associative array of HTTP headers.
  +/
-void setRequestHeaders(ref Request req)
+string[string] requestHeaders()
 {
     import kameloso.constants : KamelosoInfo;
 
-    immutable headers =
+    auto headers =
     [
         "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
         "Accept" : "text/html",
     ];
 
-    req.addHeaders(headers);
+    return headers;
 }
 
 
@@ -439,6 +384,7 @@ void setRequestHeaders(ref Request req)
  +
  +  Params:
  +      url = URL string to look up.
+ +      headers = HTTP headers to use when looking up `url`.
  +
  +  Returns:
  +      A finished `TitleLookupResults`.
@@ -446,7 +392,7 @@ void setRequestHeaders(ref Request req)
  +  Throws: `object.Exception` if URL could not be fetched, or if no title could be
  +      divined from it.
  +/
-TitleLookupResults lookupTitle(const string url)
+TitleLookupResults lookupTitle(const string url, const string[string] headers)
 {
     import kameloso.constants : BufferSize;
     import arsd.dom : Document;
@@ -457,7 +403,7 @@ TitleLookupResults lookupTitle(const string url)
     req.useStreaming = true;
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
-    setRequestHeaders(req);
+    req.addHeaders(headers);
 
     auto res = req.get(url);
 
@@ -552,32 +498,11 @@ void reportYouTubeTitle(TitleLookupRequest request,
         immutable line = colouredOutgoing ?
             "[%s] %s (uploaded by %s)"
                 .format("youtube.com".ircBold, results.youtubeTitle,
-                colouredOutgoing ?
-                    results.youtubeAuthor.ircColourByHash :
-                    results.youtubeAuthor.ircBold) :
+                    results.youtubeAuthor.ircColourByHash) :
             "[youtube.com] %s (uploaded by %s)"
                 .format(results.youtubeTitle, results.youtubeAuthor);
 
         chan(state, event.channel, line);
-    }
-}
-
-
-// reportReddit
-/++
- +  Reports the Reddit post that links to the looked up URL.
- +
- +  Params:
- +      request = A `TitleLookupRequest` containing the results of the lookup.
- +/
-void reportReddit(TitleLookupRequest request)
-{
-    with (request)
-    {
-        if (results.redditURL.length)
-        {
-            chan(state, event.channel, "Reddit: " ~ results.redditURL);
-        }
     }
 }
 
@@ -719,65 +644,6 @@ unittest
 }
 
 
-// lookupReddit
-/++
- +  Given a URL, looks it up on Reddit to see if it has been posted there.
- +
- +  Params:
- +      url = URL to query Reddit for.
- +      modified = Whether the URL has been modified to add an extra slash at
- +          the end, or remove one if one already existed.
- +
- +  Returns:
- +      URL to the Reddit post that links to `url`.
- +/
-string lookupReddit(const string url, const Flag!"modified" modified = No.modified)
-{
-    import kameloso.constants : BufferSize;
-    import lu.string : contains;
-
-    // Don't look up Reddit URLs. Naïve match, may have false negatives.
-    // Also skip YouTube links.
-    if (url.contains("reddit.com/") || url.contains("youtube.com/")) return string.init;
-
-    Request req;
-    req.useStreaming = true;  // we only want as little as possible
-    req.keepAlive = false;
-    req.bufferSize = BufferSize.titleLookup;
-    setRequestHeaders(req);
-
-    auto res = req.get("https://www.reddit.com/" ~ url);
-
-    with (res.finalURI)
-    {
-        import lu.string : beginsWith;
-
-        if (uri.beginsWith("https://www.reddit.com/login") ||
-            uri.beginsWith("https://www.reddit.com/submit") ||
-            uri.beginsWith("https://www.reddit.com/http"))
-        {
-            import std.algorithm.searching : endsWith;
-
-            // Whether URLs end with slashes or not seems to matter.
-            // If we're here, no post could be found, so strip any trailing
-            // slashes and retry, or append a slash and retry if no trailing.
-            // Pass a bool flag to only do this once, so we don't infinitely recurse.
-
-            if (modified) return string.init;
-
-            return url.endsWith("/") ?
-                lookupReddit(url[0..$-1], Yes.modified) :
-                lookupReddit(url ~ '/', Yes.modified);
-        }
-        else
-        {
-            // Has been posted to Reddit
-            return res.finalURI.uri;
-        }
-    }
-}
-
-
 // prune
 /++
  +  Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
@@ -795,7 +661,7 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 
     immutable now = Clock.currTime.toUnixTime;
 
-    synchronized
+    synchronized //()
     {
         pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
     }
@@ -813,6 +679,7 @@ void start(WebtitlesPlugin plugin)
     // No need to synchronize this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
+    plugin.headers = requestHeaders;
 }
 
 
@@ -871,10 +738,19 @@ private:
     shared TitleLookupResults[string] cache;
 
     /++
+     +  HTTP request headers to use with a `requests.request.Request` to better reflect our
+     +  behaviour of only downloading text files.
+     +/
+    string[string] headers;
+
+    /++
      +  How long before a cached title lookup expires and its address has to be
      +  looked up anew.
      +/
     enum expireSeconds = 600;
+
+    /// In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+    enum delayMsecs = 100;
 
     mixin IRCPluginImpl;
 

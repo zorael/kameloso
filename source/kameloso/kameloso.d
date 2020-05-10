@@ -96,6 +96,60 @@ void signalHandler(int sig) nothrow @nogc @system
 }
 
 
+// replaceTokens
+/++
+ +  Apply some common text replacements. Used on part and quit reasons.
+ +
+ +  Params:
+ +      line = String to replace tokens in.
+ +      instance = Reference to the current `Kameloso` instance.
+ +
+ +  Returns:
+ +      A modified string with token occurences replaced.
+ +/
+string replaceTokens(const string line, const ref Kameloso instance)
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.array : replace;
+
+    return line
+        .replace("$nickname", instance.parser.client.nickname)
+        .replace("$version", cast(string)KamelosoInfo.version_)
+        .replace("$source", cast(string)KamelosoInfo.source);
+}
+
+///
+unittest
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.format : format;
+
+    Kameloso instance;
+    instance.parser.client.nickname = "harbl";
+
+    {
+        immutable line = "asdf $nickname is kameloso version $version from $source";
+        immutable expected = "asdf %s is kameloso version %s from %s"
+            .format(instance.parser.client.nickname, cast(string)KamelosoInfo.version_,
+                cast(string)KamelosoInfo.source);
+        immutable actual = line.replaceTokens(instance);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        immutable actual = line.replaceTokens(instance);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "blerp";
+        immutable expected = "blerp";
+        immutable actual = line.replaceTokens(instance);
+        assert((actual == expected), actual);
+    }
+}
+
+
 // messageFiber
 /++
  +  A Generator Fiber function that checks for concurrency messages and performs
@@ -165,9 +219,9 @@ void messageFiber(ref Kameloso instance)
             Flag!"quiet" quiet) scope
         {
             // This will automatically close the connection.
-            // Set quit to yes to propagate the decision up the stack.
             immutable reason = givenReason.length ? givenReason : instance.bot.quitReason;
-            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~ reason, quiet));
+            instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
+                reason.replaceTokens(instance), quiet));
             next = Next.returnSuccess;
         }
 
@@ -346,7 +400,7 @@ void messageFiber(ref Kameloso instance)
                 if (content.length)
                 {
                     // Reason given, assume only one channel
-                    line = "PART " ~ channel ~ " :" ~ content;
+                    line = "PART " ~ channel ~ " :" ~ content.replaceTokens(instance);
                 }
                 else
                 {
@@ -356,7 +410,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content,
+                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance),
                     ((target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
 
             case NICK:
@@ -2510,16 +2564,20 @@ int initBot(string[] args)
             version(Colours)
             {
                 import kameloso.irccolours : mapEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason.mapEffects);
+                logger.trace("--> QUIT :", instance.bot.quitReason
+                    .mapEffects
+                    .replaceTokens(instance));
             }
             else
             {
                 import kameloso.irccolours : stripEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason.stripEffects);
+                logger.trace("--> QUIT :", instance.bot.quitReason
+                    .stripEffects
+                    .replaceTokens(instance));
             }
         }
 
-        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason);
+        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason.replaceTokens(instance));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
         !instance.settings.reconnectOnFailure)
