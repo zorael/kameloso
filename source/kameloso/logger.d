@@ -185,6 +185,12 @@ final class KamelosoLogger : Logger
     version(Colours)
     {
         /// Provides easy way to get a log tint.
+        auto tracetint() const @property @nogc { return tintImpl!(LogLevel.trace); }
+
+        /// Convenience alias to `tracetint`.
+        alias resettint = tracetint;
+
+        /// Provides easy way to get a log tint.
         auto logtint() const @property @nogc { return tintImpl!(LogLevel.all); }
 
         /// Provides easy way to get an info tint.

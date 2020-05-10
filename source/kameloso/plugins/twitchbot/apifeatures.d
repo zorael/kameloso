@@ -25,6 +25,15 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
+version(linux)
+{
+    version = XDG;
+}
+else version(FreeBSD)
+{
+    version = XDG;
+}
+
 package:
 
 
@@ -63,7 +72,7 @@ struct QueryResponse
  +      bucket = The shared associative array bucket to put the results in,
  +          response body values keyed by URL.
  +/
-void persistentQuerier(shared string[string] headers, shared QueryResponse[string] bucket)
+void persistentQuerier(shared QueryResponse[string] bucket)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -80,7 +89,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
     while (!halt)
     {
         receive(
-            (string url) scope
+            (string url, shared string[string] headers) scope
             {
                 queryTwitchImpl(url, headers, bucket);
             },
@@ -101,6 +110,154 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
 }
 
 
+// onCAP
+/++
+ +  Start the captive key generation routine at the earliest possible moment,
+ +  which are the CAP events.
+ +
+ +  We can't do it in `start` since the calls to save and exit would go unheard,
+ +  as `start` happens before the main loop starts. It would then immediately
+ +  fail to read if too much time has passed, and nothing would be saved.
+ +/
+void onCAPImpl(TwitchBotPlugin plugin)
+{
+    import kameloso.common : Tint;
+    import kameloso.thread : ThreadMessage;
+    import lu.string : contains, nom, stripped;
+    import std.concurrency : prioritySend;
+    import std.process : execute;
+    import std.stdio : readln, stdin, stdout, write, writefln, writeln;
+
+    if (!plugin.twitchBotSettings.keyGenerationMode) return;
+
+    scope(exit)
+    {
+        plugin.twitchBotSettings.keyGenerationMode = false;
+        plugin.state.botUpdated = true;
+        plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
+    }
+
+    writeln();
+    logger.info("-- Twitch authorisation key generation mode --");
+    writeln();
+    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s",
+        Tint.info, Tint.reset);
+    writefln("or because you have %skeyGenerationMode%s persistently set to %1$strue%2$s ",
+        Tint.info, Tint.reset);
+    writeln("in the configuration file (which you really shouldn't have).");
+    writeln();
+    writeln("As of early May 2020, Twitch requires the pass you connect with");
+    writeln("to be paired with the client ID of the program you use it with.");
+    writeln("As such, you need to generate one for each application.");
+    writeln();
+
+    immutable url = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+        "&client_id=" ~ TwitchBotPlugin.clientID ~
+        "&redirect_uri=http://localhost" ~
+        "&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
+        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~
+        "&state=kameloso-" ~ plugin.state.client.nickname;
+
+    writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
+    writefln("%sThen paste the address of the page you are redirected to afterwards%s here.",
+        Tint.info, Tint.reset);
+    writefln("* It should start with %shttp://localhost%s.", Tint.info, Tint.reset);
+    writefln(`* The page will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
+    writeln();
+    writeln("(If you are running local web server, you may have to temporarily");
+    writeln("disable it for this to work.)");
+    writeln();
+    writeln("Press Enter to continue.");
+
+    readln();
+
+    version(XDG)
+    {
+        immutable openBrowser = [ "xdg-open", url ];
+        execute(openBrowser);
+    }
+    else version(OSX)
+    {
+        immutable openBrowser = [ "open", url ];
+        execute(openBrowser);
+    }
+    else version(Windows)
+    {
+        immutable openBrowser = [ "start", url ];
+        execute(openBrowser);
+    }
+    else
+    {
+        writeln("Unsupported platform! Open this link manually in your browser:");
+        writeln();
+        writeln("------------------------------------------------------------------");
+        writeln();
+        writeln(url);
+        writeln();
+        writeln("------------------------------------------------------------------");
+    }
+
+    string key;
+
+    while (!key.length)
+    {
+        writeln(Tint.info, "Paste the resulting address here (empty line exits):", Tint.reset);
+        writeln();
+
+        immutable readURL = readln().stripped;
+        stdin.flush();
+
+        if (!readURL.length) return;
+
+        if (!readURL.contains("access_token="))
+        {
+            writeln("Could not make sense of URL. Try again or file a bug.");
+            continue;
+        }
+
+        string slice = readURL;  // mutable
+        slice.nom("access_token=");
+        key = slice.nom('&');
+    }
+
+    plugin.state.bot.pass = "oauth:" ~ key;
+
+    writeln();
+    writefln("%sYour private authorisation key is: %s%s%s",
+        Tint.info, Tint.log, key, Tint.reset);
+    writefln("%sIt should be entered as %spass%1$s under %2$s[IRCBot]%1$s.%3$s",
+        Tint.info, Tint.log, Tint.reset);
+    writeln();
+
+    if (!plugin.state.settings.saveOnExit)
+    {
+        write("Do you want to save it there now? [Y/*]: ");
+        stdout.flush();
+        immutable input = readln().stripped;
+
+        if (!input.length || (input == "y") || (input == "Y"))
+        {
+            plugin.state.mainThread.prioritySend(ThreadMessage.Save());
+        }
+        else
+        {
+            writeln();
+            writefln("Make sure to add it to %s%s%s, then;",
+                Tint.info, plugin.state.settings.configFile, Tint.reset);
+            writefln("as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
+        }
+    }
+
+    writeln();
+    writeln("All done! Restart the program and it should just work.");
+    writefln("If it doesn't, please file an issue at " ~
+        "%shttps://github.com/zorael/kameloso/issues/new", Tint.info);
+    writeln();
+    writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
+    writeln();
+}
+
+
 // queryTwitch
 /++
  +  Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
@@ -117,8 +274,6 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL to query.
- +      firstAttempt = Whether this is the first attempt or if it has recursed
- +          once after resetting API keys.
  +
  +  Returns:
  +      The `QueryResponse` that was discovered while monitoring the `bucket`
@@ -128,7 +283,7 @@ void persistentQuerier(shared string[string] headers, shared QueryResponse[strin
  +      `object.Exception` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const bool singleWorker, bool firstAttempt = true)
+    const bool singleWorker, shared string[string] headers)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common : delay;
@@ -141,11 +296,11 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     if (singleWorker)
     {
         pre = Clock.currTime;
-        plugin.persistentWorkerTid.send(url);
+        plugin.persistentWorkerTid.send(url, headers);
     }
     else
     {
-        spawn(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
+        spawn(&queryTwitchImpl, url, headers, plugin.bucket);
     }
 
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
@@ -163,36 +318,16 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if (!response.str.length)
+    synchronized //()
     {
-        if (response.code >= 400)
-        {
-            import std.conv : to;
-            throw new Exception("Failed to query Twitch; received code " ~ response.code.to!string);
-        }
-        else
-        {
-            throw new Exception("Failed to query Twitch; received empty string");
-        }
+        // Always remove, otherwise there'll be stale entries
+        plugin.bucket.remove(url);
     }
-    else if (response.str.beginsWith(`{"err`))
+
+    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-
-        synchronized //()
-        {
-            // Always remove, otherwise there'll be stale entries
-            plugin.bucket.remove(url);
-        }
-
-        if (firstAttempt)
-        {
-            immutable success = plugin.resetAPIKeys();
-            if (success) return queryTwitch(plugin, url, singleWorker, false);  // <-- second attempt
-            // Else drop down
-        }
-
-        throw new Exception("Failed to query Twitch; received error instead of data");
+        throw new TwitchQueryException("Failed to query Twitch", response.str, response.code);
     }
 
     return response;
@@ -243,11 +378,7 @@ void queryTwitchImpl(const string url, shared string[string] headers,
     response.code = res.code;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
-
-    if (res.code < 400)
-    {
-        response.str = cast(string)res.responseBody.data.idup;
-    }
+    response.str = cast(string)res.responseBody.data.idup;
 
     synchronized //()
     {
@@ -323,7 +454,8 @@ in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
                     scope(failure) plugin.useAPIFeatures = false;
 
                     const response = queryTwitch(plugin, url,
-                        plugin.twitchBotSettings.singleWorkerThread);
+                        plugin.twitchBotSettings.singleWorkerThread,
+                        plugin.headers);
 
                     if (!response.str.length)
                     {
@@ -439,14 +571,12 @@ in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
  +      field = The field to access via the HTTP URL. Can be either "login"
  +          or "id".
  +      identifier = The identifier of type `field` to look up.
- +      firstAttempt = Whether this is the first attempt or if it has recursed
- +          once after resetting API keys.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier, bool firstAttempt = true)
+    const Identifier identifier)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
@@ -466,18 +596,10 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
 
     immutable data = cast(string)res.responseBody.data;
 
-    if (data.beginsWith(`{"err`))
+    if ((res.code >= 400) || !data.length || (data.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-
-        if (firstAttempt)
-        {
-            immutable success = plugin.resetAPIKeys();
-            if (success) return getUserImpl(plugin, field, identifier, false);  // <-- second attempt
-            // Else drop down
-        }
-
-        throw new Exception("Failed to query Twitch; received error instead of data");
+        throw new TwitchQueryException("Failed to query Twitch", data, res.code, __FILE__);
     }
 
     return parseUserFromResponse(data);
@@ -614,22 +736,11 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
     {
         immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
-        try
-        {
-            const response = queryTwitch(plugin, url,
-                plugin.twitchBotSettings.singleWorkerThread);
-            const broadcasterJSON = parseUserFromResponse(response.str);
-            channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
-        }
-        catch (Exception e)
-        {
-            // Something is deeply wrong.
-            logger.error("Failed to fetch broadcaster information; " ~
-                "are the client-secret API keys and the authorization key file correctly set up?");
-            logger.error("Disabling API features.");
-            plugin.useAPIFeatures = false;
-            return;
-        }
+        const response = queryTwitch(plugin, url,
+            plugin.twitchBotSettings.singleWorkerThread,
+            plugin.headers);
+        const broadcasterJSON = parseUserFromResponse(response.str);
+        channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
     }
 
     Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg);
@@ -662,33 +773,16 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
  +  See_Also:
  +      kameloso.plugins.twitchbot.onEndOfMotd
  +/
+
 void onEndOfMotdImpl(TwitchBotPlugin plugin)
 {
     import std.concurrency : Tid;
 
     if (!plugin.useAPIFeatures) return;
 
-    if (!plugin.twitchBotSettings.clientKey.length ||
-        !plugin.twitchBotSettings.secretKey.length)
-    {
-        logger.info("No Twitch Client ID API key pairs supplied in the configuration file. " ~
-            "Some commands will not work.");
-        plugin.useAPIFeatures = false;
-        return;
-    }
-
     if (!plugin.headers.length)
     {
-        immutable success = plugin.resetAPIKeys();
-
-        if (!success)
-        {
-            logger.error("Could not get a new authorization bearer token. " ~
-                "Make sure that your client and secret keys are valid.");
-            logger.info("Disabling API features due to key setup failure.");
-            plugin.useAPIFeatures = false;
-            return;
-        }
+        plugin.resetAPIKeys();
     }
 
     if (plugin.bucket is null)
@@ -701,162 +795,110 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
         (plugin.persistentWorkerTid == Tid.init))
     {
         import std.concurrency : spawn;
-        plugin.persistentWorkerTid = spawn(&persistentQuerier,
-            plugin.headers, plugin.bucket);
+        plugin.persistentWorkerTid = spawn(&persistentQuerier, plugin.bucket);
     }
+
+    void validationDg()
+    {
+        import kameloso.common : Tint;
+        import std.conv : to;
+        import std.datetime.systime : Clock, SysTime;
+
+        try
+        {
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5036421,
+                "login": "zorael",
+                "scopes": [
+                    "bits:read",
+                    "channel:moderate",
+                    "channel:read:subscriptions",
+                    "channel_editor",
+                    "chat:edit",
+                    "chat:read",
+                    "user:edit:broadcast",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "22216721"
+            }
+            */
+
+            const validation = getValidation(plugin);
+            plugin.userID = validation["user_id"].str;
+            immutable expiresIn = validation["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+
+            logger.infof("Your Twitch authorisation key will expire on %s%02d-%02d-%02d %02d:%02d",
+                Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        catch (TwitchQueryException e)
+        {
+            // Something is deeply wrong.
+            logger.error("Failed to validate API keys. Disabling API features.");
+            version(PrintStacktraces) logger.trace(e.toString);
+            plugin.useAPIFeatures = false;
+        }
+    }
+
+    Fiber validationFiber = new Fiber(&validationDg);
+    validationFiber.call();
 }
 
 
 // resetAPIKeys
 /++
- +  Resets the API keys in the HTTP headers we pass. Additionally validates them
- +  and tries to get new authorization keys if the current ones don't seem to work.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +
- +  Returns:
- +      true if keys seem to work, even if it took requesting new authorization
- +      keys to make it so; false if not.
+ +  Resets the API keys in the HTTP headers we pass.
  +/
-bool resetAPIKeys(TwitchBotPlugin plugin)
+void resetAPIKeys(TwitchBotPlugin plugin)
 {
-    import lu.string : strippedRight;
-    import std.file : readText;
-
-    string getNewKey()
-    {
-        immutable key = getNewBearerToken(plugin.twitchBotSettings.clientKey,
-            plugin.twitchBotSettings.secretKey);
-
-        if (key.length)
-        {
-            import std.stdio : File;
-
-            auto keyFile = File(plugin.keyFile);
-            keyFile.writeln(key);
-            return key;
-        }
-        else
-        {
-            // Something's wrong.
-            return string.init;
-        }
-    }
-
-    bool currentKeysWork()
-    {
-        try
-        {
-            const test = getUserByLogin(plugin, "kameboto");
-            return (test != JSONValue.init);
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-    }
-
-    string key = readText(plugin.keyFile).strippedRight;
-    bool gotNewKey;
-
-    if (!key.length)
-    {
-        key = getNewKey();
-        gotNewKey = true;
-
-        if (!key.length)
-        {
-            return false;
-        }
-    }
-
     synchronized //()
     {
         // Can't use a literal due to https://issues.dlang.org/show_bug.cgi?id=20812
-        plugin.headers["Client-ID"] = plugin.twitchBotSettings.clientKey;
-        plugin.headers["Authorization"] = "Bearer " ~ key;
+        plugin.headers["Client-ID"] = plugin.clientID,
+        plugin.headers["Authorization"] = "Bearer " ~ plugin.state.bot.pass[6..$];
     }
-
-    if (!currentKeysWork)
-    {
-        if (gotNewKey)
-        {
-            // Already got a new key and it still doesn't work.
-            return false;
-        }
-
-        immutable newKey = getNewKey();
-
-        if (newKey.length)
-        {
-            synchronized //()
-            {
-                plugin.headers["Authorization"] = "Bearer " ~ newKey;
-            }
-            return currentKeysWork;
-        }
-        else
-        {
-            // Could not get a new key.
-            return false;
-        }
-    }
-
-    return true;
 }
 
 
-// getNewBearerToken
+// getValidation
 /++
- +  Requests a new bearer authorization token from the Twitch servers.
- +
- +  They expire after 60 days (4680249 seconds).
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +
- +  Returns:
- +      A new authorization token string, or an empty one if one could not be fetched.
+ +  Validates the current access key, retrieving information about it.
  +/
-string getNewBearerToken(const string clientKey, const string secretKey)
+JSONValue getValidation(TwitchBotPlugin plugin)
+in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 {
-    import requests.request : Request;
-    import requests.utils : queryParams;
-    import requests : postContent;
-    import std.json : parseJSON;
+    import lu.string : beginsWith;
+    import lu.traits : UnqualArray;
+    import std.json : JSONType, JSONValue, parseJSON;
 
-    Request req;
-    req.keepAlive = false;
+    alias UT = UnqualArray!(typeof(plugin.headers));
+    auto oauthHeaders = (cast(UT)plugin.headers).dup;
+    oauthHeaders["Authorization"] = "OAuth " ~ plugin.state.bot.pass[6..$];
 
-    /*curl -X POST "https://id.twitch.tv/oauth2/token?client_id=${C}
-        &client_secret=${S}&grant_type=client_credentials"*/
+    enum url = "https://id.twitch.tv/oauth2/validate";
+    const response = queryTwitch(plugin, url,
+        plugin.twitchBotSettings.singleWorkerThread, cast(shared)oauthHeaders);
 
-    enum url = "https://id.twitch.tv/oauth2/token";
-
-    auto response = postContent(url, queryParams(
-        "client_id", clientKey,
-        "client_secret", secretKey,
-        "grant_type", "client_credentials"));
-
-    /*
+    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
-        "access_token" : "HARBLSNARBL",
-        "expires_in" : 4680249,
-        "token_type" : "bearer"
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        throw new TwitchQueryException("Failed to validate Twitch authorisation token",
+            response.str, response.code);
     }
-    */
 
-    const asJSON = parseJSON(cast(string)response);
+    JSONValue validation = parseJSON(response.str);
 
-    if (const token = "access_token" in asJSON)
+    if ((validation.type != JSONType.object) || ("client_id" !in validation))
     {
-        return token.str;
+        throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
+            "token; unknown JSON", response.str, response.code);
     }
-    else
-    {
-        return string.init;
-    }
+
+    return validation;
 }
 
 
@@ -895,7 +937,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
         scope(failure) plugin.useAPIFeatures = false;
 
         const response = queryTwitch(plugin, paginatedURL,
-            plugin.twitchBotSettings.singleWorkerThread);
+            plugin.twitchBotSettings.singleWorkerThread, plugin.headers);
 
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
@@ -1006,4 +1048,43 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     }
 
     return *response;
+}
+
+
+// TwitchQueryException
+/++
+ +  Exception, to be thrown when an API query to the Twitch servers failed,
+ +  for whatever reason.
+ +
+ +  It is a normal `object.Exception` but with attached metadata.
+ +/
+final class TwitchQueryException : Exception
+{
+@safe:
+    /// The response body that was received.
+    string responseBody;
+
+    /// The HTTP code that was received.
+    uint code;
+
+    /++
+     +  Create a new `TwitchQueryException`, attaching a response body and a
+     +  HTTP return code.
+     +/
+    this(const string message, const string responseBody, const uint code,
+        const string file = __FILE__, const size_t line = __LINE__) pure nothrow @nogc
+    {
+        this.responseBody = responseBody;
+        this.code = code;
+        super(message, file, line);
+    }
+
+    /++
+     +  Create a new `TwitchQueryException`, without attaching anything.
+     +/
+    this(const string message, const string file = __FILE__,
+        const size_t line = __LINE__) pure nothrow @nogc
+    {
+        super(message, file, line);
+    }
 }
