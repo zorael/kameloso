@@ -230,21 +230,30 @@ void onCAPImpl(TwitchBotPlugin plugin)
     version(XDG)
     {
         immutable openBrowser = [ "xdg-open", url ];
-        execute(openBrowser);
+        immutable exitcode = execute(openBrowser).status;
     }
     else version(OSX)
     {
         immutable openBrowser = [ "open", url ];
-        execute(openBrowser);
+        immutable exitcode = execute(openBrowser).status;
     }
     else version(Windows)
     {
         immutable openBrowser = [ "start", url ];
-        execute(openBrowser);
+        immutable exitcode = execute(openBrowser).status;
     }
     else
     {
-        writeln("Unsupported platform! Open this link manually in your browser:");
+        writeln();
+        writeln(Tint.error, "Unexpected platform, cannot open link automatically.", Tint.reset);
+        writeln();
+
+        enum exitcode = 127;
+    }
+
+    if (exitcode > 0)
+    {
+        writeln("Copy and paste this link manually into your browser:");
         writeln();
         writeln("------------------------------------------------------------------");
         writeln();
