@@ -238,32 +238,38 @@ do
 
     void dg()
     {
-        const currentVoteInstance = event.channel in plugin.channelVoteInstances;
+        while (true)
+        {
+            const currentVoteInstance = event.channel in plugin.channelVoteInstances;
 
-        if (!currentVoteInstance)
-        {
-            return;  // Aborted
-        }
-        else if (*currentVoteInstance == -1)
-        {
-            // Magic number, end early
-            reportResults();
-            cleanup();
-            plugin.channelVoteInstances.remove(event.channel);
-            return;
-        }
-        else if (*currentVoteInstance != id)
-        {
-            return;  // Different vote started
-        }
+            if (!currentVoteInstance)
+            {
+                return;  // Aborted
+            }
+            else if (*currentVoteInstance == -1)
+            {
+                // Magic number, end early
+                reportResults();
+                cleanup();
+                return;
+            }
+            else if (*currentVoteInstance != id)
+            {
+                return;  // Different vote started
+            }
 
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
-        if (thisFiber.payload != IRCEvent.init)
-        {
+            if (thisFiber.payload == IRCEvent.init)
+            {
+                // Invoked by timer, not by event
+                reportResults();
+                cleanup();
+                return;  // End Fiber
+            }
+
             // Triggered by an event
-
             with (IRCEvent.Type)
             switch (event.type)
             {
@@ -310,13 +316,7 @@ do
 
             // Yield and await a new event
             Fiber.yield();
-            return dg();
         }
-
-        // Invoked by timer, not by event
-        reportResults();
-        cleanup();
-        // End Fiber
     }
 
     import kameloso.plugins.common : await, delay;
