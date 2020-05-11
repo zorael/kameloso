@@ -1126,22 +1126,22 @@ void register(ConnectService service)
 
                 void dg()
                 {
-                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                    assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-                    assert((thisFiber.payload.type == IRCEvent.Type.CAP),
-                        "Twitch nick negotiation delegate triggered on unknown type");
+                    while (true)
+                    {
+                        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+                        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+                        assert((thisFiber.payload.type == IRCEvent.Type.CAP),
+                            "Twitch nick negotiation delegate triggered on unknown type");
 
-                    if ((thisFiber.payload.aux == "ACK") &&
-                        (thisFiber.payload.content == "twitch.tv/tags"))
-                    {
-                        // tag capabilities negotiated, safe to register
-                        service.negotiateNick();
-                    }
-                    else
-                    {
+                        if ((thisFiber.payload.aux == "ACK") &&
+                            (thisFiber.payload.content == "twitch.tv/tags"))
+                        {
+                            // tag capabilities negotiated, safe to register
+                            return service.negotiateNick();
+                        }
+
                         // Wrong kind of CAP event; yield and retry.
                         Fiber.yield();
-                        return dg();
                     }
                 }
 

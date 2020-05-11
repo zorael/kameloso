@@ -342,18 +342,21 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+        CarryingFiber!IRCEvent thisFiber;
 
-        const followupEvent = thisFiber.payload;
-
-        if (followupEvent.channel != channel)
+        while (true)
         {
+            thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+            if (thisFiber.payload.channel == channel) break;
+
             // Different channel; yield fiber, wait for another event
             Fiber.yield();
-            return dg();
         }
+
+        const followupEvent = thisFiber.payload;
 
         scope(exit) unawait(plugin, joinTypes[]);
 
@@ -818,20 +821,22 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
-
-        const partEvent = thisFiber.payload;
-
-        if (partEvent.channel != channelName)
+        while (true)
         {
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+            const partEvent = thisFiber.payload;
+
+            if (partEvent.channel == channelName)
+            {
+                return join(plugin.state, channelName, key);
+            }
+
             // Wrong channel, wait for the next SELFPART
             Fiber.yield();
-            return dg();
         }
-
-        join(plugin.state, channelName, key);
     }
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg);
