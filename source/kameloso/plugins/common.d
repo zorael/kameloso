@@ -1312,16 +1312,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
 
 
-    // carriedVariable
+    // _kamelosoCarriedNickname
     /++
      +  Nickname being looked up, stored outside of any separate function to make
      +  it available to all of them.
-     +
-     +  Randomly generated name so as not to accidentally collide with the
-     +  mixing in site.
      +/
-    private enum carriedVariableName = text("_kamelosoCarriedNickname", hashOf(__FUNCTION__) % 100);
-    mixin("string " ~ carriedVariableName ~ ';');
+    string _kamelosoCarriedNickname;
 
 
     /++
@@ -1453,7 +1449,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable m = plugin.state.server.caseMapping;
 
-        if (toLowerCase(mixin(carriedVariableName), m) !=
+        if (toLowerCase(_kamelosoCarriedNickname, m) !=
             whoisEvent.target.nickname.toLowerCase(m))
         {
             // Wrong WHOIS; await a new one
@@ -1646,7 +1642,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        mixin(carriedVariableName) = nicknamePart;
+        _kamelosoCarriedNickname = nicknamePart;
     }
 }
 

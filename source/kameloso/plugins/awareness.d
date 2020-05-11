@@ -383,20 +383,16 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     void onUserAwarenessPingMixin(IRCPlugin plugin) @system
     {
         return kameloso.plugins.awareness.onUserAwarenessPing(plugin,
-            mixin(pingRehashVariableName));
+            _kamelosoNextPingRehashTimestamp);
     }
 
 
-    import std.conv : text;
-
+    // _kamelosoNextPingRehashTimestamp
     /++
      +  UNIX timestamp of when the `IRCPluginState.users` array is next to be
      +  rehashed in `onUserAwarenessPingMixin`.
-     +
-     +  Randomise the name to avoid any collisions, however far-fetched.
      +/
-    private enum pingRehashVariableName = text("_kamelosoNextPingRehashTimestamp", hashOf(module_) % 100);
-    mixin("long " ~ pingRehashVariableName ~ ';');
+    long _kamelosoNextPingRehashTimestamp;
 }
 
 
