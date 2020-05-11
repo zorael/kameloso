@@ -87,7 +87,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 
 ## Prerequisites
 
-There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 3.3 Gb of free memory for a minimal build, and 4.5 Gb for a development build with all features (Linux `dev` debug build). Upwards of around 4.8 Gb to run unit tests. (If you have less, consider using the `--build-mode=singleFile` flag when compiling.)
+There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 1.3 Gb of free memory for a minimal build (Linux plain `singleFile`), and 3.8 Gb for a standard build (Linux debug). Upwards of 4.3 Gb to run unittests.
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
@@ -112,7 +112,7 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster results, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
+On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
 
 ### Build configurations
 
@@ -325,8 +325,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
-* tweak `notes`
-* revamp `quotes`
 * more pairs of eyes
 
 # Built with
