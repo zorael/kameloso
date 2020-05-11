@@ -33,6 +33,11 @@ else version(FreeBSD)
 {
     version = XDG;
 }
+else version(OpenBSD)
+{
+    // Is this correct?
+    version = XDG;
+}
 
 package:
 
