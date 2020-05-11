@@ -274,17 +274,17 @@ do
             switch (event.type)
             {
             case NICK:
-                immutable oldNickname = thisFiber.payload.sender.nickname;
-
-                if (oldNickname in votedUsers)
+                if (thisFiber.payload.sender.nickname in votedUsers)
                 {
                     immutable newNickname = thisFiber.payload.target.nickname;
                     votedUsers[newNickname] = true;
-                    votedUsers.remove(oldNickname);
+                    votedUsers.remove(thisFiber.payload.sender.nickname);
                 }
                 break;
 
             case CHAN:
+                if (thisFiber.payload.channel != event.channel) break;
+
                 immutable vote = thisFiber.payload.content;
                 immutable nickname = thisFiber.payload.sender.nickname;
 
