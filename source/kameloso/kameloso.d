@@ -1398,13 +1398,13 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
         {
             // Postprocessing will reapply class, but not if there is already
             // a custom class (assuming channel cache hit)
-            repeat.event.sender.class_ = IRCUser.Class.unset;
-            repeat.event.target.class_ = IRCUser.Class.unset;
+            repeat.replay.event.sender.class_ = IRCUser.Class.unset;
+            repeat.replay.event.target.class_ = IRCUser.Class.unset;
         }
 
         foreach (postprocessor; instance.plugins)
         {
-            postprocessor.postprocess(repeat.event);
+            postprocessor.postprocess(repeat.replay.event);
         }
 
         if (repeat.isCarrying)

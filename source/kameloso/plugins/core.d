@@ -2242,19 +2242,19 @@ public:
         return cast(CarryingFiber!This)fiber !is null;
     }
 
-    /// The `dialect.defs.IRCEvent` to repeat.
-    IRCEvent event;
+    /// The `Replay` to repeat.
+    Replay replay;
 
     /// UNIX timestamp of when this repeat event was created.
     long created;
 
-    /// Constructor taking a `core.thread.fiber.Fiber` and an `dialect.defs.IRCEvent`.
-    this(Fiber fiber, const IRCEvent event) @safe
+    /// Constructor taking a `core.thread.fiber.Fiber` and a `Replay`.
+    this(Fiber fiber, Replay replay) @safe
     {
         import std.datetime.systime : Clock;
         created = Clock.currTime.toUnixTime;
         this.fiber = fiber;
-        this.event = event;
+        this.replay = replay;
     }
 }
 

@@ -582,9 +582,6 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
             "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
     }
 
-    private enum replayVariableName = text("_kamelosoReplay", hashOf(__FUNCTION__) % 100);
-    mixin("Replay " ~ replayVariableName ~ ';');
-
 
     // explainRepeat
     /++
@@ -594,16 +591,16 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
      +  Gated behind version `ExplainRepeat`.
      +/
     version(ExplainRepeat)
-    void explainRepeat(const IRCUser user)
+    void explainRepeat(const Repeat repeat)
     {
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
 
-        logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event " ~
-            "based on WHOIS results (user is %1$s%6$s%3$s class)",
+        logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user is %1$s%7$s%3$s class",
             Tint.info, context.name, Tint.log, contextName,
-            Enum!PrivilegeLevel.toString(mixin(replayVariableName).privilegeLevel),
-            Enum!(IRCUser.Class).toString(user.class_));
+            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel), repeat.replay.caller,
+            Enum!(IRCUser.Class).toString(repeat.replay.event.sender.class_));
     }
 
 
@@ -621,53 +618,52 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         assert((thisFiber.payload != thisFiber.payload.init),
             "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
-        Replay replay = mixin(replayVariableName);
-        replay.event = thisFiber.payload.event;
+        Repeat repeat = thisFiber.payload;
 
         with (PrivilegeLevel)
-        final switch (replay.privilegeLevel)
+        final switch (repeat.replay.privilegeLevel)
         {
         case admin:
-            if (replay.event.sender.class_ >= IRCUser.Class.admin)
+            if (repeat.replay.event.sender.class_ >= IRCUser.Class.admin)
             {
                 goto case ignore;
             }
             break;
 
         case operator:
-            if (replay.event.sender.class_ >= IRCUser.Class.operator)
+            if (repeat.replay.event.sender.class_ >= IRCUser.Class.operator)
             {
                 goto case ignore;
             }
             break;
 
         case whitelist:
-            if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
+            if (repeat.replay.event.sender.class_ >= IRCUser.Class.whitelist)
             {
                 goto case ignore;
             }
             break;
 
         case registered:
-            if (replay.event.sender.account.length)
+            if (repeat.replay.event.sender.account.length)
             {
                 goto case ignore;
             }
             break;
 
         case anyone:
-            if (replay.event.sender.class_ >= IRCUser.Class.anyone)
+            if (repeat.replay.event.sender.class_ >= IRCUser.Class.anyone)
             {
                 goto case ignore;
             }
 
-            // replay.event.sender.class_ is Class.blacklist here (or unset)
+            // repeat.replay.event.sender.class_ is Class.blacklist here (or unset)
             // Do nothing an drop down
             break;
 
         case ignore:
-            version(ExplainRepeat) explainRepeat(replay.event.sender);
-            replay.trigger();
+            version(ExplainRepeat) explainRepeat(repeat);
+            repeat.replay.trigger();
             break;
         }
     }
@@ -679,9 +675,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     void repeat(Replay replay)
     {
         import kameloso.plugins.common : repeat;
-
-        mixin(replayVariableName) = replay;
-        context.repeat(&repeaterDelegate, replay.event);
+        context.repeat(&repeaterDelegate, replay);
     }
 
     /// Compatibility alias of `repeat`.
@@ -805,21 +799,21 @@ alias doWhois = enqueue;
 // repeat
 /++
  +  Queues a `core.thread.fiber.Fiber` (actually a `kameloso.thread.CarryingFiber`
- +  with a `Repeat` payload) to repeat a passed `dialect.defs.IRCEvent` from the
+ +  with a `Repeat` payload) to repeat a passed `kameloso.plugins.common.Replay` from the
  +  context of the main loop after postprocessing the event once more.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      dg = Delegate/function pointer to wrap the `core.thread.fiber.Fiber` around.
- +      event = The `dialect.defs.IRCEvent` to repeat.
+ +      replay = The `kameloso.plugins.core.Replay` to repeat.
  +/
-void repeat(Dg)(IRCPlugin plugin, Dg dg, const IRCEvent event)
+void repeat(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
 if (isSomeFunction!Dg)
 in ((dg !is null), "Tried to queue a repeat with a null delegate pointer")
-in ((event != IRCEvent.init), "Tried to queue a repeat with an init IRCEvent")
+in ((replay.event != IRCEvent.init), "Tried to queue a repeat of an init `Replay`")
 {
     import kameloso.thread : CarryingFiber;
-    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, 32_768), event);
+    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, 32_768), replay);
 }
 
 
