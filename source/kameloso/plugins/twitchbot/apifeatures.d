@@ -621,7 +621,7 @@ in (Fiber.getThis, "Tried to call `onFollowAgeImpl` from outside a Fiber")
         }
     }
 
-    Fiber fiber = new Fiber(&dg);
+    Fiber fiber = new Fiber(&dg, 32_768);
     fiber.call();
 }
 
@@ -808,7 +808,7 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
         channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
     }
 
-    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg);
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
     getDisplayNameFiber.call();
 
     if ((plugin.state.nextPeriodical - event.time) > 60)
@@ -821,7 +821,7 @@ void onRoomStateImpl(TwitchBotPlugin plugin, const IRCEvent event)
             channel.follows = plugin.cacheFollows(channel.roomID);
         }
 
-        Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg);
+        Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
         cacheFollowsFiber.call();
     }
 }
@@ -909,7 +909,7 @@ void onEndOfMotdImpl(TwitchBotPlugin plugin)
         }
     }
 
-    Fiber validationFiber = new Fiber(&validationDg);
+    Fiber validationFiber = new Fiber(&validationDg, 32_768);
     validationFiber.call();
 }
 

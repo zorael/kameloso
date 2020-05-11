@@ -1129,12 +1129,11 @@ void periodically(TwitchBotPlugin plugin, const long now)
             foreach (immutable channelName, channel; plugin.activeChannels)
             {
                 if (!channel.enabled) continue;
-
                 channel.follows = plugin.cacheFollows(channel.roomID);
             }
         }
 
-        Fiber cacheFollowsFiber = new Fiber(&dg);
+        Fiber cacheFollowsFiber = new Fiber(&dg, 32_768);
         cacheFollowsFiber.call();
     }
 }

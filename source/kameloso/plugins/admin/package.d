@@ -839,7 +839,7 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
         }
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
 }
