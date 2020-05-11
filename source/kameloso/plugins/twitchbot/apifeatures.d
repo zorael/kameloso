@@ -156,13 +156,6 @@ void onCAPImpl(TwitchBotPlugin plugin)
     writeln("As such, you need to generate one for each application.");
     writeln();
 
-    immutable url = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
-        "&client_id=" ~ TwitchBotPlugin.clientID ~
-        "&redirect_uri=http://localhost" ~
-        "&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
-        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~
-        "&state=kameloso-" ~ plugin.state.client.nickname;
-
     writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
     writefln("%sThen paste the address of the page you are redirected to afterwards%s here.",
         Tint.info, Tint.reset);
@@ -175,6 +168,64 @@ void onCAPImpl(TwitchBotPlugin plugin)
     writeln("Press Enter to continue.");
 
     readln();
+
+    static immutable scopes =
+    [
+        // New Twitch API
+
+        //"analytics:read:extension",
+        //"analytics:read:games",
+        "bits:read",
+        "channel:edit:commercial",
+        "channel:read:subscriptions",
+        //"clips:edit",
+        "user:edit",
+        "user:edit:broadcast",  // implies user:read:broadcast
+        //"user:edit:follows",
+        //"user:read:broadcast",
+        //"user:read:email",
+
+        // Twitch APIv5
+
+        //"channel_check_subscription",
+        //"channel_commercial",
+        "channel_editor",
+        //"channel_feed_edit",
+        //"channel_feed_read",
+        //"channel_read",
+        //"channel_stream",
+        //"channel_subscriptions",
+        //"collections_edit",
+        //"communities_edit",
+        //"communities_moderate",
+        //"openid",
+        "user_blocks_edit",
+        "user_blocks_read",
+        "user_follows_edit",
+        //"user_read",
+        //"user_subscriptions",
+        //"viewing_activity_read",
+
+        // Chat and PubSub
+
+        "channel:moderate",
+        "chat:edit",
+        "chat:read",
+        "whispers:edit",
+        "whispers:read",
+    ];
+
+    import std.array : join;
+
+    enum ctBaseURL = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+        "&client_id=" ~ TwitchBotPlugin.clientID ~
+        "&redirect_uri=http://localhost" ~
+        '&' ~ scopes.join('&') ~
+        /*"&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
+        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~*/
+        "&state=kameloso-";
+
+    immutable url = ctBaseURL ~ plugin.state.client.nickname;
 
     version(XDG)
     {
