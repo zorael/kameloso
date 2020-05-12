@@ -315,6 +315,93 @@ in (line.length, "Tried to add an empty quote")
 }
 
 
+// removeWeeChatHead
+/++
+ +  Removes the WeeChat timestamp and nickname from the front of a string.
+ +
+ +  Params:
+ +      line = Full string line as copy/pasted from WeeChat.
+ +      specified = The nickname to remove (along with the timestamp).
+ +
+ +  Returns:
+ +      The original line with the WeeChat timestamp and nickname sliced away,
+ +      or as it was passed. No new string is ever allocated.
+ +/
+string removeWeeChatHead(const string line, const string nickname) pure @safe @nogc
+in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
+{
+    import lu.string : beginsWith, nom, strippedLeft;
+
+    static bool isN(const char c)
+    {
+        return ((c >= '0') && (c <= '9'));
+    }
+
+    string slice = line.strippedLeft;  // mutable
+
+    // See if it has WeeChat timestamps at the front of the message
+    // e.g. "12:34:56   @zorael | text text text"
+
+    if (slice.length > 8)
+    {
+        if (isN(slice[0]) && isN(slice[1]) && (slice[2] == ':') &&
+            isN(slice[3]) && isN(slice[4]) && (slice[5] == ':') &&
+            isN(slice[6]) && isN(slice[7]) && (slice[8] == ' '))
+        {
+            // Might yet be WeeChat, keep going
+            slice = slice[9..$].strippedLeft;
+        }
+    }
+
+    // See if it has WeeChat nickname at the front of the message
+    // e.g. "@zorael | text text text"
+
+    if (slice.length > nickname.length)
+    {
+        if ((((slice[0] == '@') || (slice[0] == '+')) &&
+            slice[1..$].beginsWith(nickname)) ||
+            slice.beginsWith(nickname))
+        {
+            slice.nom(nickname);
+            slice = slice.strippedLeft;
+
+            if ((slice.length > 2) && (slice[0] == '|'))
+            {
+                slice = slice[1..$];
+
+                if (slice[0] == ' ')
+                {
+                    slice = slice.strippedLeft;
+                    // Finished
+                }
+                else
+                {
+                    // Does not match pattern; undo
+                    slice = line;
+                }
+            }
+            else
+            {
+                // Does not match pattern; undo
+                slice = line;
+            }
+        }
+        else
+        {
+            // Does not match pattern; undo
+            slice = line;
+        }
+    }
+    else
+    {
+        // Only matches the timestmp so don't trust it
+        slice = line;
+    }
+
+    return slice;
+}
+
+
 // reload
 /++
  +  Reloads the JSON quotes from disk.
