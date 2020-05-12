@@ -755,9 +755,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +  (or a specified user) have been a follower of the current channel.
  +
  +  Lookups are done asychronously in subthreads.
- +
- +  See_Also:
- +      kameloso.plugins.twitchbot.apifeatures.onFollowAgeImpl
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
@@ -770,7 +767,162 @@ version(TwitchAPIFeatures)
     "$command [optional nickname]")
 void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    return onFollowAgeImpl(plugin, event);
+    import lu.string : nom, stripped;
+    import std.conv : to;
+    import std.json : JSONValue;
+    import core.thread : Fiber;
+
+    if (!plugin.useAPIFeatures) return;
+
+    void dg()
+    {
+        string slice = event.content.stripped;  // mutable
+        immutable nameSpecified = (slice.length > 0);
+
+        string idString;
+        string fromDisplayName;
+
+        if (!nameSpecified)
+        {
+            // Assume the user is asking about itself
+            idString = event.sender.id.to!string;
+            fromDisplayName = event.sender.displayName;
+        }
+        else
+        {
+            immutable givenName = slice.nom!(Yes.inherit)(' ');
+
+            if (const user = givenName in plugin.state.users)
+            {
+                // Stored user
+                idString = user.id.to!string;
+                fromDisplayName = user.displayName;
+            }
+            else
+            {
+                foreach (const user; plugin.state.users)
+                {
+                    if (user.displayName == givenName)
+                    {
+                        // Found user by displayName
+                        idString = user.id.to!string;
+                        fromDisplayName = user.displayName;
+                        break;
+                    }
+                }
+
+                if (!idString.length)
+                {
+                    // None on record, look up
+                    immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+
+                    scope(failure) plugin.useAPIFeatures = false;
+
+                    const response = queryTwitch(plugin, url,
+                        plugin.twitchBotSettings.singleWorkerThread,
+                        plugin.headers);
+
+                    if (!response.str.length)
+                    {
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+
+                    // Hit
+                    const user = parseUserFromResponse(cast()response.str);
+
+                    if (user == JSONValue.init)
+                    {
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+
+                    idString = user["id"].str;
+                    fromDisplayName = user["display_name"].str;
+                }
+            }
+        }
+
+        void reportFollowAge(const JSONValue followingUserJSON)
+        {
+            import kameloso.common : timeSince;
+            import std.datetime.systime : Clock, SysTime;
+            import std.format : format;
+
+            static immutable string[12] months =
+            [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+
+            /*{
+                "followed_at": "2019-09-13T13:07:43Z",
+                "from_id": "20739840",
+                "from_name": "mike_bison",
+                "to_id": "22216721",
+                "to_name": "Zorael"
+            }*/
+
+            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
+            immutable diff = Clock.currTime - when;
+            immutable timeline = diff.timeSince;
+            immutable datestamp = "%s %d"
+                .format(months[cast(int)when.month-1], when.year);
+
+            if (nameSpecified)
+            {
+                enum pattern = "%s has been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern
+                    .format(fromDisplayName, timeline, datestamp));
+            }
+            else
+            {
+                enum pattern = "You have been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
+            }
+
+        }
+
+        assert(idString.length, "Empty idString despite lookup");
+
+        // Identity ascertained; look up in cached list
+
+        const follows = plugin.activeChannels[event.channel].follows;
+        const thisFollow = idString in follows;
+
+        if (thisFollow)
+        {
+            return reportFollowAge(*thisFollow);
+        }
+
+        // If we're here there were no matches.
+
+        if (nameSpecified)
+        {
+            import std.format : format;
+
+            enum pattern = "%s is currently not a follower.";
+            chan(plugin.state, event.channel, pattern.format(fromDisplayName));
+        }
+        else
+        {
+            enum pattern = "You are currently not a follower.";
+            chan(plugin.state, event.channel, pattern);
+        }
+    }
+
+    Fiber fiber = new Fiber(&dg, 32_768);
+    fiber.call();
 }
 
 
@@ -778,16 +930,56 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 /++
  +  Records the room ID of a home channel, and queries the Twitch servers for
  +  the display name of its broadcaster.
- +
- +  See_Also:
- +      kameloso.plugins.twitchbot.apifeatures.onRoomStateImpl
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
 @(ChannelPolicy.home)
 void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    return onRoomStateImpl(plugin, event);
+    import kameloso.plugins.common : delay;
+    import std.datetime.systime : Clock, SysTime;
+    import std.json : JSONType, parseJSON;
+
+    auto channel = event.channel in plugin.activeChannels;
+
+    if (!channel)
+    {
+        // Race...
+        plugin.handleSelfjoin(event.channel);
+        channel = event.channel in plugin.activeChannels;
+    }
+
+    channel.roomID = event.aux;
+
+    if (!plugin.useAPIFeatures) return;
+
+    void getDisplayNameDg()
+    {
+        immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
+        const response = queryTwitch(plugin, url,
+            plugin.twitchBotSettings.singleWorkerThread,
+            plugin.headers);
+        const broadcasterJSON = parseUserFromResponse(response.str);
+        channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+    }
+
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
+    getDisplayNameFiber.call();
+
+    if ((plugin.state.nextPeriodical - event.time) > 60)
+    {
+        // The next periodical is far away, meaning we did not just connect
+        // Let the caching be done in periodically otherwise.
+
+        void cacheFollowsDg()
+        {
+            channel.follows = plugin.cacheFollows(channel.roomID);
+        }
+
+        Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
+        cacheFollowsFiber.call();
+    }
 }
 
 
@@ -925,7 +1117,76 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     version(TwitchAPIFeatures)
     {
-        onEndOfMotdImpl(plugin);
+        import std.concurrency : Tid;
+
+        if (!plugin.useAPIFeatures) return;
+
+        if (!plugin.headers.length)
+        {
+            plugin.resetAPIKeys();
+        }
+
+        if (plugin.bucket is null)
+        {
+            plugin.bucket[string.init] = QueryResponse.init;
+            plugin.bucket.remove(string.init);
+        }
+
+        if (plugin.twitchBotSettings.singleWorkerThread &&
+            (plugin.persistentWorkerTid == Tid.init))
+        {
+            import std.concurrency : spawn;
+            plugin.persistentWorkerTid = spawn(&persistentQuerier, plugin.bucket);
+        }
+
+        void validationDg()
+        {
+            import kameloso.common : Tint;
+            import std.conv : to;
+            import std.datetime.systime : Clock, SysTime;
+
+            try
+            {
+                /*
+                {
+                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                    "expires_in": 5036421,
+                    "login": "zorael",
+                    "scopes": [
+                        "bits:read",
+                        "channel:moderate",
+                        "channel:read:subscriptions",
+                        "channel_editor",
+                        "chat:edit",
+                        "chat:read",
+                        "user:edit:broadcast",
+                        "whispers:edit",
+                        "whispers:read"
+                    ],
+                    "user_id": "22216721"
+                }
+                */
+
+                const validation = getValidation(plugin);
+                plugin.userID = validation["user_id"].str;
+                immutable expiresIn = validation["expires_in"].integer;
+                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+
+                logger.infof("Your Twitch authorisation key will expire on %s%02d-%02d-%02d %02d:%02d",
+                    Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                    expiresWhen.hour, expiresWhen.minute);
+            }
+            catch (TwitchQueryException e)
+            {
+                // Something is deeply wrong.
+                logger.error("Failed to validate API keys. Disabling API features.");
+                version(PrintStacktraces) logger.trace(e.toString);
+                plugin.useAPIFeatures = false;
+            }
+        }
+
+        Fiber validationFiber = new Fiber(&validationDg, 32_768);
+        validationFiber.call();
     }
 }
 
