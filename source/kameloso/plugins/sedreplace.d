@@ -383,14 +383,30 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         Line line;
         line.content = string_;
         line.timestamp = time;
-        plugin.prevlines[sender] = line;
+
+        auto senderLines = sender in plugin.prevlines;
+
+        if (!senderLines)
+        {
+            plugin.prevlines[sender] = Line[].init;
+            senderLines = sender in plugin.prevlines;
+            senderLines.length = plugin.sedReplaceSettings.history;
+        }
+
+        foreach_reverse (immutable i; 1..plugin.sedReplaceSettings.history)
+        {
+            (*senderLines)[i] = (*senderLines)[i-1];
+        }
+
+        (*senderLines)[0] = line;
     }
 
     if (stripped_.beginsWith('s') && (stripped_.length >= 5))
     {
-        immutable delimeter = stripped_[1];
+        immutable delimiter = stripped_[1];
 
-        switch (delimeter)
+        delimiterswitch:
+        switch (delimiter)
         {
         case '/':
         case '|':
@@ -399,39 +415,42 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case ' ':
         case '_':
         case ';':
-            if (const line = event.sender.nickname in plugin.prevlines)
+            if (auto senderLines = event.sender.nickname in plugin.prevlines)
             {
-                if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
+                foreach (immutable line; (*senderLines)[])
                 {
-                    // Entry is too old, remove it
-                    plugin.prevlines.remove(event.sender.nickname);
-                    return;
+                    if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
+                    {
+                        // Entry is too old, any further entries will be even older
+                        break delimiterswitch;
+                    }
+
+                    immutable result = line.content.sedReplace(event.content,
+                        (plugin.sedReplaceSettings.relaxSyntax ? Yes.relaxSyntax : No.relaxSyntax));
+
+                    if ((result == line.content) || !result.length) continue;
+
+                    import kameloso.messaging : chan;
+                    import std.format : format;
+
+                    chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
+                    // Record as last even if there are more lines
+                    return recordLineAsLast(plugin, event.sender.nickname, result, event.time);
                 }
-
-                immutable result = line.content.sedReplace(event.content,
-                    (plugin.sedReplaceSettings.relaxSyntax ? Yes.relaxSyntax : No.relaxSyntax));
-
-                if ((result == event.content) || !result.length) return;
-
-                import kameloso.messaging : chan;
-                import std.format : format;
-
-                chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
-                recordLineAsLast(plugin, event.sender.nickname, result, event.time);
+                break;
+            }
+            else
+            {
+                // No lines to replace; don't record this as a line
+                return;
             }
 
-            // Processed a sed-replace command (successfully or not); return
-            return;
-
         default:
-            // Drop down
+            // Drop down to record line
             break;
         }
     }
 
-    // We're either here because !stripped_.beginsWith("s") *or* stripped_[1]
-    // is not '/', '|' nor '#'
-    // --> normal message, store as previous line
     recordLineAsLast(plugin, event.sender.nickname, stripped_, event.time);
 }
 
@@ -460,7 +479,7 @@ private:
      +  A `Line[string]` 1-buffer of the previous line every user said, with
      +  with nickname as key.
      +/
-    Line[string] prevlines;
+    Line[][string] prevlines;
 
     mixin IRCPluginImpl;
 }
