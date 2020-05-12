@@ -117,7 +117,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
-    import lu.string : nom, stripped;
+    import lu.string : nom, stripped, strippedLeft;
     import std.format : format;
     import std.json : JSONException;
 
@@ -150,7 +150,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
         event.channel[1..$] :
         slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
-    immutable trailing = slice;
+    immutable trailing = slice.strippedLeft;  // Already strippedRight earlier
 
     if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
         !specified.isValidNickname(plugin.state.server))
