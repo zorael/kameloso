@@ -72,7 +72,7 @@ auto currentPlatform()
 
 
 /+
-    Version identifier that catches non-OSX Posix platforms.
+    Version identifier that catches non-macOS Posix platforms.
     We need it to version code for freedesktop.org-aware environments.
  +/
 version(linux)
@@ -93,7 +93,7 @@ else version(FreeBSD)
  +  On Linux it defaults to `$XDG_CONFIG_HOME` and falls back to
  +  `~/.config` if no `$XDG_CONFIG_HOME` environment variable present.
  +
- +  On OSX it defaults to `$HOME/Library/Application Support`.
+ +  On macOS it defaults to `$HOME/Library/Application Support`.
  +
  +  On Windows it defaults to `%APPDATA%`.
  +
@@ -167,7 +167,7 @@ unittest
  +  On Posix it defaults to `$XDG_DATA_HOME` and falls back to
  +  `~/.local/share` if no `XDG_DATA_HOME` environment variable present.
  +
- +  On OSX it defaults to `$HOME/Library/Application Support`.
+ +  On macOS it defaults to `$HOME/Library/Application Support`.
  +
  +  On Windows it defaults to `%APPDATA%`.
  +
