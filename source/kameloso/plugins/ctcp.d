@@ -36,6 +36,9 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.CTCP_PING)
 @(IRCEvent.Type.CTCP_TIME)
 @(IRCEvent.Type.CTCP_USERINFO)
+@(IRCEvent.Type.CTCP_DCC)
+@(IRCEvent.Type.CTCP_AVATAR)
+@(IRCEvent.Type.CTCP_LAG)
 void onCTCPs(CTCPService service, const IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
