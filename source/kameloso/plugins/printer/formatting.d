@@ -405,9 +405,6 @@ if (isOutputRange!(Sink, char[]))
             .put(sink, " ! ", errors, " !");
         }
 
-        shouldBell = shouldBell || ((target.nickname == plugin.state.client.nickname) &&
-            ((event.type == IRCEvent.Type.QUERY) ||
-            (event.type == IRCEvent.Type.TWITCH_SUBGIFT)));
         shouldBell = shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors);
 
@@ -966,9 +963,6 @@ if (isOutputRange!(Sink, char[]))
 
         sink.colourWith(FG.default_);  // same for bright and dark
 
-        shouldBell = shouldBell || ((target.nickname == plugin.state.client.nickname) &&
-            ((event.type == IRCEvent.Type.QUERY) ||
-            (event.type == IRCEvent.Type.TWITCH_SUBGIFT)));
         shouldBell = shouldBell || (errors.length && bellOnError &&
             !plugin.printerSettings.silentErrors);
 
