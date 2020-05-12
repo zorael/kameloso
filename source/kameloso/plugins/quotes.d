@@ -401,6 +401,37 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
     return slice;
 }
 
+///
+unittest
+{
+    {
+        enum line = "20:08:27 @zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael");
+        assert((modified == "dresing"), modified);
+    }
+    {
+        enum line = "               20:08:27                   @zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael");
+        assert((modified == "dresing"), modified);
+    }
+    {
+        enum line = "+zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael");
+        assert((modified == "dresing"), modified);
+    }
+    {
+        enum line = "2y:08:27 @zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael");
+        assert((modified == line), modified);
+    }
+    {
+        enum line = "16:08:27       <-- | kameloso (~kameloso@2001:41d0:2:80b4::) " ~
+            "has quit (Remote host closed the connection)";
+        immutable modified = removeWeeChatHead(line, "kameloso");
+        assert((modified == line), modified);
+    }
+}
+
 
 // reload
 /++
