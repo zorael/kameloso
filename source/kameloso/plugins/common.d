@@ -1311,6 +1311,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
     }
 
+    static if (!alwaysLookup && !__traits(compiles, .hasUserAwareness))
+    {
+        pragma(msg, "Warning: " ~ __FUNCTION__ ~ " mixes in `WHOISFiberDelegate` " ~
+            "but its parent module does not mix in `UserAwareness`");
+    }
+
 
     // _kamelosoCarriedNickname
     /++
