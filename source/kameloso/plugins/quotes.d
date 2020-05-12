@@ -188,22 +188,22 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         {
             import kameloso.plugins.common : idOf;
 
-            immutable endAccount = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
+            immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 
             if (trailing.length)
             {
                 // There is trailing text, assume it was a quote to be added
-                return plugin.addQuoteAndReport(event, endAccount, trailing);
+                return plugin.addQuoteAndReport(event, id, trailing);
             }
 
             // No point looking up if we already did before onSuccess
-            if (endAccount != specified)
+            if (id != specified)
             {
-                immutable quote = plugin.getRandomQuote(endAccount);
+                immutable quote = plugin.getRandomQuote(id);
 
                 if (quote.line.length)
                 {
-                    return report(endAccount, quote);
+                    return report(id, quote);
                 }
             }
 
@@ -232,11 +232,15 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         // Try the specified nickname/account first, in case it's a nickname that
         // has quotes but resolve to a different account that doesn't.
-        immutable quote = plugin.getRandomQuote(specified);
-
-        if (quote.line.length)
+        // But only if there's no trailing text; would mean it's a new quote
+        if (!trailing.length)
         {
-            return report(specified, quote);
+            immutable quote = plugin.getRandomQuote(specified);
+
+            if (quote.line.length)
+            {
+                return report(specified, quote);
+            }
         }
 
         import kameloso.plugins.common : WHOISFiberDelegate;
