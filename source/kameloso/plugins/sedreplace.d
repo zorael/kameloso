@@ -59,6 +59,13 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
     @Enabler bool enabled = true;
 
     /++
+     +  How many lines back a sed-replacement call may reach. If this is 3, then
+     +  the last 3 messages will be taken into account and examined for
+     +  applicability when replacing.
+     +/
+    int history = 3;
+
+    /++
      +  Toggles whether or not replacement expressions have to properly end with
      +  the delimeter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
      +/
