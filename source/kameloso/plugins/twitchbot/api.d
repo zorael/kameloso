@@ -126,7 +126,7 @@ void generateKey(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.concurrency : prioritySend;
-    import std.process : execute;
+    import std.process : ProcessException, execute;
     import std.stdio : readln, stdin, stdout, write, writefln, writeln;
 
     if (!plugin.twitchBotSettings.keyGenerationMode) return;
@@ -138,30 +138,29 @@ void generateKey(TwitchBotPlugin plugin)
         plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
     }
 
-    writeln();
+    logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
     writeln();
-    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s",
+    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s, or because",
         Tint.info, Tint.reset);
-    writefln("or because you have %skeyGenerationMode%s persistently set to %1$strue%2$s ",
+    writefln("you have %skeyGenerationMode%s under %1$s[TwitchBot]%2$s persistently set to %1$strue%2$s in the",
         Tint.info, Tint.reset);
-    writeln("in the configuration file (which you really shouldn't have).");
+    writeln("configuration file (which you really shouldn't have).");
     writeln();
-    writeln("As of early May 2020, Twitch requires the pass you connect with");
-    writeln("to be paired with the client ID of the program you use it with.");
-    writeln("As such, you need to generate one for each application.");
+    writeln("As of early May 2020, the Twitch API requires your authorisation token to be");
+    writeln("paired with the client ID of the program you connect with.");
     writeln();
-
     writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
-    writefln("%sThen paste the address of the page you are redirected to afterwards%s here.",
-        Tint.info, Tint.reset);
-    writefln("* It should start with %shttp://localhost%s.", Tint.info, Tint.reset);
-    writefln(`* The page will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
+    writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.reset);
     writeln();
-    writeln("(If you are running local web server, you may have to temporarily");
-    writeln("disable it for this to work.)");
+    writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.reset);
+    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
+    writeln("* You may need to close the browser window if the terminal prompt to paste the");
+    writeln("  URL address doesn't appear.");
+    writeln("* If you are running local web server, you may have to temporarily disable it");
+    writeln("  for this to work.");
     writeln();
-    writeln("Press Enter to continue.");
+    writeln(Tint.log, "Press Enter to continue.", Tint.reset);
 
     readln();
 
@@ -216,46 +215,59 @@ void generateKey(TwitchBotPlugin plugin)
     enum ctBaseURL = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
-        '&' ~ scopes.join('&') ~
+        "&scope=" ~ scopes.join('+') ~
         /*"&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
         "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~*/
+        //"&force_verify=true" ~
         "&state=kameloso-";
 
     immutable url = ctBaseURL ~ plugin.state.client.nickname;
+    int exitcode;
 
-    version(XDG)
+    try
     {
-        immutable openBrowser = [ "xdg-open", url ];
-        immutable exitcode = execute(openBrowser).status;
-    }
-    else version(OSX)
-    {
-        immutable openBrowser = [ "open", url ];
-        immutable exitcode = execute(openBrowser).status;
-    }
-    else version(Windows)
-    {
-        immutable openBrowser = [ "start", url ];
-        immutable exitcode = execute(openBrowser).status;
-    }
-    else
-    {
-        writeln();
-        writeln(Tint.error, "Unexpected platform, cannot open link automatically.", Tint.reset);
-        writeln();
+        version(XDG)
+        {
+            immutable openBrowser = [ "xdg-open", url ];
+            exitcode = execute(openBrowser).status;
+        }
+        else version(OSX)
+        {
+            immutable openBrowser = [ "open", url ];
+            exitcode = execute(openBrowser).status;
+        }
+        else version(Windows)
+        {
+            immutable openBrowser = [ "start", url ];
+            exitcode = execute(openBrowser).status;
+        }
+        else
+        {
+            writeln();
+            writeln(Tint.error, "Unexpected platform, cannot open link automatically.", Tint.reset);
+            writeln();
 
-        enum exitcode = 127;
+            exitcode = 1;
+        }
+    }
+    catch (ProcessException e)
+    {
+        logger.warning("Error: could not automatically open browser.");
+        writeln();
+        // Probably we got some platform wrong and command was not found
+        exitcode = 127;
     }
 
     if (exitcode > 0)
     {
-        writeln("Copy and paste this link manually into your browser:");
+        writeln(Tint.info, "Copy and paste this link manually into your browser:", Tint.reset);
         writeln();
-        writeln("------------------------------------------------------------------");
+        writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
         writeln();
         writeln(url);
         writeln();
-        writeln("------------------------------------------------------------------");
+        writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
+        writeln();
     }
 
     string key;
@@ -264,11 +276,18 @@ void generateKey(TwitchBotPlugin plugin)
     {
         writeln(Tint.info, "Paste the resulting address here (empty line exits):", Tint.reset);
         writeln();
+        write("> ");
+        stdout.flush();
 
         immutable readURL = readln().stripped;
         stdin.flush();
 
-        if (!readURL.length) return;
+        if (!readURL.length)
+        {
+            writeln();
+            logger.warning("Aborting key generation.");
+            return;
+        }
 
         if (!readURL.contains("access_token="))
         {
@@ -286,8 +305,8 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writefln("%sYour private authorisation key is: %s%s%s",
         Tint.info, Tint.log, key, Tint.reset);
-    writefln("%sIt should be entered as %spass%1$s under %2$s[IRCBot]%1$s.%3$s",
-        Tint.info, Tint.log, Tint.reset);
+    writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
+        Tint.info, Tint.reset);
     writeln();
 
     if (!plugin.state.settings.saveOnExit)
@@ -303,16 +322,20 @@ void generateKey(TwitchBotPlugin plugin)
         else
         {
             writeln();
-            writefln("Make sure to add it to %s%s%s, then;",
+            writefln("* Make sure to add it to %s%s%s, then;",
                 Tint.info, plugin.state.settings.configFile, Tint.reset);
-            writefln("as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
+            writefln("  as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
         }
     }
 
     writeln();
-    writeln("All done! Restart the program and it should just work.");
-    writefln("If it doesn't, please file an issue at " ~
-        "%shttps://github.com/zorael/kameloso/issues/new", Tint.info);
+    writeln("-------------------------------------------------------------------------------");
+    writeln();
+    writefln("All done! Restart the program (without %s--set twichbot.generateKeyMode%s) and it",
+        Tint.info, Tint.reset);
+    writeln("should just work. If it doesn't, please file an issue, at:");
+    writeln();
+    writeln("    ", Tint.info, "https://github.com/zorael/kameloso/issues/new", Tint.reset);
     writeln();
     writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
     writeln();
