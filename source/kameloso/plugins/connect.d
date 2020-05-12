@@ -1184,6 +1184,7 @@ void negotiateNick(ConnectService service)
     if ((service.registration == Progress.finished) ||
         (service.nickNegotiation != Progress.notStarted)) return;
 
+    import kameloso.common : replaceTokens;
     import std.algorithm.searching : endsWith;
     import std.format : format;
 
@@ -1214,7 +1215,7 @@ void negotiateNick(ConnectService service)
                 s - marks a user for receipt of server notices.
          +/
         raw(service.state, "USER %s 8 * :%s".format(service.state.client.user,
-            service.state.client.realName));
+            service.state.client.realName.replaceTokens(service.state.client)));
     }
 
     raw(service.state, "NICK " ~ service.state.client.nickname);
