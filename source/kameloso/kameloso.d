@@ -6,7 +6,7 @@ module kameloso.kameloso;
 private:
 
 import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
-    initLogger, logger, printVersionInfo;
+    initLogger, logger, printVersionInfo, replaceTokens;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import dialect;
@@ -96,60 +96,6 @@ void signalHandler(int sig) nothrow @nogc @system
 }
 
 
-// replaceTokens
-/++
- +  Apply some common text replacements. Used on part and quit reasons.
- +
- +  Params:
- +      line = String to replace tokens in.
- +      instance = Reference to the current `Kameloso` instance.
- +
- +  Returns:
- +      A modified string with token occurences replaced.
- +/
-string replaceTokens(const string line, const ref Kameloso instance)
-{
-    import kameloso.constants : KamelosoInfo;
-    import std.array : replace;
-
-    return line
-        .replace("$nickname", instance.parser.client.nickname)
-        .replace("$version", cast(string)KamelosoInfo.version_)
-        .replace("$source", cast(string)KamelosoInfo.source);
-}
-
-///
-unittest
-{
-    import kameloso.constants : KamelosoInfo;
-    import std.format : format;
-
-    Kameloso instance;
-    instance.parser.client.nickname = "harbl";
-
-    {
-        immutable line = "asdf $nickname is kameloso version $version from $source";
-        immutable expected = "asdf %s is kameloso version %s from %s"
-            .format(instance.parser.client.nickname, cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.source);
-        immutable actual = line.replaceTokens(instance);
-        assert((actual == expected), actual);
-    }
-    {
-        immutable line = "";
-        immutable expected = "";
-        immutable actual = line.replaceTokens(instance);
-        assert((actual == expected), actual);
-    }
-    {
-        immutable line = "blerp";
-        immutable expected = "blerp";
-        immutable actual = line.replaceTokens(instance);
-        assert((actual == expected), actual);
-    }
-}
-
-
 // messageFiber
 /++
  +  A Generator Fiber function that checks for concurrency messages and performs
@@ -221,7 +167,7 @@ void messageFiber(ref Kameloso instance)
             // This will automatically close the connection.
             immutable reason = givenReason.length ? givenReason : instance.bot.quitReason;
             instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
-                reason.replaceTokens(instance), quiet));
+                reason.replaceTokens(instance.parser.client), quiet));
             next = Next.returnSuccess;
         }
 
@@ -400,7 +346,8 @@ void messageFiber(ref Kameloso instance)
                 if (content.length)
                 {
                     // Reason given, assume only one channel
-                    line = "PART " ~ channel ~ " :" ~ content.replaceTokens(instance);
+                    line = "PART " ~ channel ~ " :" ~
+                        content.replaceTokens(instance.parser.client);
                 }
                 else
                 {
@@ -410,7 +357,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance),
+                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance.parser.client),
                     ((target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
 
             case NICK:
@@ -2566,18 +2513,19 @@ int initBot(string[] args)
                 import kameloso.irccolours : mapEffects;
                 logger.trace("--> QUIT :", instance.bot.quitReason
                     .mapEffects
-                    .replaceTokens(instance));
+                    .replaceTokens(instance.parser.client));
             }
             else
             {
                 import kameloso.irccolours : stripEffects;
                 logger.trace("--> QUIT :", instance.bot.quitReason
                     .stripEffects
-                    .replaceTokens(instance));
+                    .replaceTokens(instance.parser.client));
             }
         }
 
-        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason.replaceTokens(instance));
+        instance.conn.sendline("QUIT :" ~
+            instance.bot.quitReason.replaceTokens(instance.parser.client));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
         !instance.settings.reconnectOnFailure)

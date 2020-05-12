@@ -1567,3 +1567,57 @@ unittest
         }
     }
 }
+
+
+// replaceTokens
+/++
+ +  Apply some common text replacements. Used on part and quit reasons.
+ +
+ +  Params:
+ +      line = String to replace tokens in.
+ +      client = The current `dialect.defs.IRCClient`.
+ +
+ +  Returns:
+ +      A modified string with token occurences replaced.
+ +/
+string replaceTokens(const string line, const IRCClient client)
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.array : replace;
+
+    return line
+        .replace("$nickname", client.nickname)
+        .replace("$version", cast(string)KamelosoInfo.version_)
+        .replace("$source", cast(string)KamelosoInfo.source);
+}
+
+///
+unittest
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.format : format;
+
+    IRCClient client;
+    client.nickname = "harbl";
+
+    {
+        immutable line = "asdf $nickname is kameloso version $version from $source";
+        immutable expected = "asdf %s is kameloso version %s from %s"
+            .format(client.nickname, cast(string)KamelosoInfo.version_,
+                cast(string)KamelosoInfo.source);
+        immutable actual = line.replaceTokens(client);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        immutable actual = line.replaceTokens(client);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "blerp";
+        immutable expected = "blerp";
+        immutable actual = line.replaceTokens(client);
+        assert((actual == expected), actual);
+    }
+}
