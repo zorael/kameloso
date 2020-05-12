@@ -1552,6 +1552,8 @@ unittest
             assert(Tint.warning is kl.warningtint);
             assert(Tint.error is kl.errortint);
             assert(Tint.fatal is kl.fataltint);
+            assert(Tint.trace is kl.tracetint);
+            assert(Tint.reset is kl.resettint);
         }
         else
         {
@@ -1560,6 +1562,8 @@ unittest
             assert(Tint.warning == string.init);
             assert(Tint.error == string.init);
             assert(Tint.fatal == string.init);
+            assert(Tint.trace == string.init);
+            assert(Tint.reset == string.init);
         }
     }
 }
