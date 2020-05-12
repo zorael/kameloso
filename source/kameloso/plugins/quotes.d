@@ -270,11 +270,15 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
  +      line = The quote string to add.
  +/
 void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
-    const string specified, const string line)
+    const string specified, const string rawLine)
 in (specified.length, "Tried to add a quote for an empty user")
-in (line.length, "Tried to add an empty quote")
+in (rawLine.length, "Tried to add an empty quote")
 {
+    import lu.string : unquoted;
     import std.json : JSONException, JSONValue;
+
+    immutable altered = removeWeeChatHead(rawLine.unquoted, specified).unquoted;
+    immutable line = altered.length ? altered : rawLine;
 
     try
     {
