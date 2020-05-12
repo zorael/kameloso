@@ -111,7 +111,7 @@ void persistentQuerier(shared QueryResponse[string] bucket)
 }
 
 
-// onCAP
+// generateKey
 /++
  +  Start the captive key generation routine at the earliest possible moment,
  +  which are the CAP events.
@@ -120,7 +120,7 @@ void persistentQuerier(shared QueryResponse[string] bucket)
  +  as `start` happens before the main loop starts. It would then immediately
  +  fail to read if too much time has passed, and nothing would be saved.
  +/
-void onCAPImpl(TwitchBotPlugin plugin)
+void generateKey(TwitchBotPlugin plugin)
 {
     import kameloso.common : Tint;
     import kameloso.thread : ThreadMessage;
