@@ -455,6 +455,29 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 }
 
 
+// onQuit
+/++
+ +  Removes the records of previous messages from a user when they quit.
+ +/
+void onQuit(SedReplacePlugin plugin, const IRCEvent event)
+{
+    plugin.prevlines.remove(event.sender.nickname);
+}
+
+
+// periodically
+/++
+ +  Clears the lists of previous messages from users once every hour.
+ +
+ +  This is to prevent it from becoming huge.
+ +/
+void periodically(SedReplacePlugin plugin, const long now)
+{
+    plugin.prevlines = typeof(plugin.prevlines).init;
+    plugin.state.nextPeriodical = now + (plugin.hoursBetweenPurges * 3600);
+}
+
+
 mixin MinimalAuthentication;
 
 public:
