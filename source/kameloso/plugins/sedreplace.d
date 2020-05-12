@@ -67,7 +67,7 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 
     /++
      +  Toggles whether or not replacement expressions have to properly end with
-     +  the delimeter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
+     +  the delimiter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
      +/
     bool relaxSyntax = true;
 }
@@ -103,7 +103,7 @@ struct Line
  +  Params:
  +      originalLine = Line to apply the `sed`-replace pattern to.
  +      expression = Replacement pattern to apply.
- +      relaxSyntax = Whether or not to require the expression to end with the delimeter.
+ +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
  +
  +  Returns:
  +      Original line with the changes the replace pattern incurred.
@@ -113,9 +113,9 @@ string sedReplace(const string line, const string expr,
 {
     if (expr.length < 5) return line;
 
-    immutable delimeter = expr[1];
+    immutable delimiter = expr[1];
 
-    switch (delimeter)
+    switch (delimiter)
     {
     foreach (immutable c; DelimiterCharacters)
     {
@@ -208,7 +208,7 @@ unittest
  +      char_ = Deliminator character, usually '/'.
  +      line = Original line to apply the replacement expression to.
  +      expr = Replacement expression to apply.
- +      relaxSyntax = Whether or not to require the expression to end with the delimeter.
+ +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
  +
  +  Returns:
  +      The passed line with the relevant bits replaced, or as is if the expression
