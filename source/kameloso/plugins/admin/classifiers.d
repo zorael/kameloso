@@ -13,7 +13,7 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.plugins.admin : AdminPlugin;
+import kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.common : Tint, logger;
