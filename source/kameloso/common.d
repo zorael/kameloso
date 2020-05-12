@@ -1530,6 +1530,8 @@ struct Tint
         alias warning = log;
         alias error = log;
         alias fatal = log;
+        alias trace = log;
+        alias reset = trace;
     }
 }
 
