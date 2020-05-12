@@ -475,6 +475,9 @@ private:
     /// Lifetime of a `Line` in `SedReplacePlugin.prevlines`, in seconds.
     enum replaceTimeoutSeconds = 3600;
 
+    /// How often to purge the `prevlines` list of messages.
+    enum hoursBetweenPurges = 1;
+
     /++
      +  A `Line[string]` 1-buffer of the previous line every user said, with
      +  with nickname as key.
