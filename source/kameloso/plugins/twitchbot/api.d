@@ -1,11 +1,7 @@
 /++
- +  Implementation of Twitch bot features using the Twitch API. For internal use.
- +
- +  The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
- +  as the `kameloso.plugins.twitchbot.TwitchBotPlugin`, but these implementation
- +  functions can be offloaded here to limit module size a bit.
+ +  Functions for accessing the Twitch API. For internal use.
  +/
-module kameloso.plugins.twitchbot.apifeatures;
+module kameloso.plugins.twitchbot.api;
 
 version(WithPlugins):
 version(TwitchSupport):
