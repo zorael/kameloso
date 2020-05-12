@@ -266,18 +266,18 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The current `QuotesPlugin`.
  +      event = The instigating `dialect.defs.IRCEvent`.
- +      specified = The specified nickname or (preferably) account.
+ +      id = The specified nickname or (preferably) account.
  +      line = The quote string to add.
  +/
 void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
-    const string specified, const string rawLine)
-in (specified.length, "Tried to add a quote for an empty user")
+    const string id, const string rawLine)
+in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")
 {
     import lu.string : unquoted;
     import std.json : JSONException, JSONValue;
 
-    immutable altered = removeWeeChatHead(rawLine.unquoted, specified).unquoted;
+    immutable altered = removeWeeChatHead(rawLine.unquoted, id).unquoted;
     immutable line = altered.length ? altered : rawLine;
 
     try
@@ -290,30 +290,30 @@ in (rawLine.length, "Tried to add an empty quote")
         newQuote["line"] = line;
         newQuote["timestamp"] = Clock.currTime.toUnixTime;
 
-        if (specified !in plugin.quotes)
+        if (id !in plugin.quotes)
         {
             // No previous quotes for nickname
             // Initialise the JSONValue as an array
-            plugin.quotes[specified] = JSONValue.init;
-            plugin.quotes[specified].array = null;
+            plugin.quotes[id] = null;
+            plugin.quotes[id].array = null;
         }
 
-        plugin.quotes[specified].array ~= newQuote;
+        plugin.quotes[id].array ~= newQuote;
         plugin.quotes.save(plugin.quotesFile);
 
         enum pattern = "Quote for %s saved (%s on record)";
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(specified.ircColourByHash.ircBold,
-                plugin.quotes[specified].array.length.text.ircBold) :
-            pattern.format(specified, plugin.quotes[specified].array.length);
+            pattern.format(id.ircColourByHash.ircBold,
+                plugin.quotes[id].array.length.text.ircBold) :
+            pattern.format(id, plugin.quotes[id].array.length);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
     catch (JSONException e)
     {
         logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
-            Tint.log, specified, Tint.error, e.msg);
+            Tint.log, id, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -325,7 +325,7 @@ in (rawLine.length, "Tried to add an empty quote")
  +
  +  Params:
  +      line = Full string line as copy/pasted from WeeChat.
- +      specified = The nickname to remove (along with the timestamp).
+ +      nickname = The nickname to remove (along with the timestamp).
  +
  +  Returns:
  +      The original line with the WeeChat timestamp and nickname sliced away,
