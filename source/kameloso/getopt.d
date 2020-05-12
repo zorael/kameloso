@@ -244,7 +244,7 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : printVersionInfo;
+    import kameloso.common : Tint, printVersionInfo;
     import kameloso.config : applyDefaults, readConfigInto;
     import std.format : format;
     import std.getopt : arraySep, config, getopt;
@@ -288,17 +288,23 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             parser.client, bot, parser.server, settings);
         applyDefaults(parser.client, parser.server, bot);
 
+        immutable setSyntax = "%splugin%s.%1$soption%2$s=%1$ssetting%2$s"
+            .format(Tint.info, Tint.reset);
+
         // Cannot be const
         auto results = getopt(args,
             config.caseSensitive,
             config.bundling,
             "n|nickname",   "Nickname",
                             &parser.client.nickname,
-            "s|server",     "Server address [%s]".format(parser.server.address),
+            "s|server",     "Server address [%s%s%s]"
+                            .format(Tint.info, parser.server.address, Tint.reset),
                             &parser.server.address,
-            "P|port",       "Server port [%d]".format(parser.server.port),
+            "P|port",       "Server port [%s%d%s]"
+                            .format(Tint.info, parser.server.port, Tint.reset),
                             &parser.server.port,
-            "6|ipv6",       "Use IPv6 when available [%s]".format(settings.ipv6),
+            "6|ipv6",       "Use IPv6 when available [%s%s%s]"
+                            .format(Tint.info, settings.ipv6, Tint.reset),
                             &settings.ipv6,
             "A|account",    "Services account name",
                             &bot.account,
@@ -309,33 +315,39 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "admins",       "Administrators' services accounts, comma-separated",
                             &inputAdmins,
             "H|homeChannels","Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe #s)",
+                            "(escape or enquote any octothorpe " ~
+                            Tint.info ~ '#' ~ Tint.reset ~ "s)",
                             &inputHomeChannels,
-            "homes",        &inputHomeChannels,
+            "homes",        "^",
+                            &inputHomeChannels,
             "C|guestChannels","Non-home channels to idle in, comma-separated (ditto)",
                             &inputGuestChannels,
-            "channels",     &inputGuestChannels,
+            "channels",     "^",
+                            &inputGuestChannels,
             "a|append",     "Append input home channels, guest channels and " ~
                             "admins instead of overriding",
                             &shouldAppendToArrays,
             "hideOutgoing", "Hide outgoing messages",
                             &settings.hideOutgoing,
-            "hide",         &settings.hideOutgoing,
+            "hide",         "^",
+                            &settings.hideOutgoing,
             "settings",     "Show all plugins' settings",
                             &shouldShowSettings,
-            "show",         &shouldShowSettings,
+            "show",         "^",
+                            &shouldShowSettings,
             "bright",       "Adjust colours for bright terminal backgrounds",
                             &settings.brightTerminal,
-            "brightTerminal",&settings.brightTerminal,
+            "brightTerminal", "^",
+                            &settings.brightTerminal,
             "monochrome",   "Use monochrome output",
                             &settings.monochrome,
-            "set",          "Manually change a setting (syntax: --set plugin.option=setting)",
+            "set",          "Manually change a setting (syntax: --set " ~ setSyntax ~ ')',
                             &customSettings,
-            "c|config",     "Specify a different configuration file [%s]"
-                            .format(settings.configFile),
+            "c|config",     "Specify a different configuration file [%s%s%s]"
+                            .format(Tint.info, settings.configFile, Tint.reset),
                             &settings.configFile,
-            "r|resourceDir","Specify a different resource directory [%s]"
-                            .format(settings.resourceDirectory),
+            "r|resourceDir","Specify a different resource directory [%s%s%s]"
+                            .format(Tint.info, settings.resourceDirectory, Tint.reset),
                             &settings.resourceDirectory,
             "summary",      "Show a connection summary on program exit",
                             &settings.exitSummary,
@@ -346,8 +358,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             &settings.flush,
             "w|writeconfig","Write configuration to file",
                             &shouldWriteConfig,
-            "save",         &shouldWriteConfig,
-            "init",         &shouldWriteConfig,
+            "save",         "^",
+                            &shouldWriteConfig,
+            "init",         "^",
+                            &shouldWriteConfig,
             "version",      "Show version information",
                             &shouldShowVersion,
         );
