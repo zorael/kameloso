@@ -16,7 +16,7 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.awareness : UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
@@ -357,7 +357,7 @@ void initResources(QuotesPlugin plugin)
 }
 
 
-mixin MinimalAuthentication;
+mixin UserAwareness;
 
 public:
 
