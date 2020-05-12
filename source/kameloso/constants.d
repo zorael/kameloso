@@ -44,7 +44,7 @@ enum KamelosoDefaultStrings
     serverAddress = "irc.freenode.net",
 
     /// The default GEOC/"real name" string.
-    realName = "kameloso IRC bot",
+    realName = "kameloso IRC bot v$version",
 
     /// The default quit reason, when the bot exits.
     quitReason = "kameloso IRC bot v$version @ $source",
