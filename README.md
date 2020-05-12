@@ -1,4 +1,4 @@
-# kameloso [![Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/OSX](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/issues/46) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.8.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.8.2...master)
+# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/issues/46) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.8.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.8.2...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -19,9 +19,7 @@ All of the above are plugins and can be runtime disabled or compiled out. It is 
 
 ## Current limitations
 
-[Services](https://en.wikipedia.org/wiki/IRC_services) accounts (`NickServ`/`Q`/`AuthServ`/...) are used to uniquely identify users. You will probably want to register yourself with such, where available. There is experimental support for servers that can only provide conventional hostmasks (`nickname!ident@address.tld`), but it needs testing. Caveat emptor.
-
-Note that while IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue [to the **dialect** project](https://github.com/zorael/dialect/issues).
+While IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue [to the **dialect** project](https://github.com/zorael/dialect/issues).
 
 Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
@@ -110,16 +108,18 @@ This will compile the bot in the default `debug` mode, which adds some extra cod
 
 You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-> The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. No guarantees. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+> The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd v2.089 and v2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command. Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
+On Windows with **dmd 2.089 and 2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
+
+> Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
 
 ### Build configurations
 
 There are several configurations in which the bot may be built.
 
-* `application`, default configuration; includes terminal colours and plugins that access the web
-* `vanilla`, barebones build with most plugins but without any specific extras
+* `application`, default configuration; includes terminal colours and plugins that access the web (both can still be disabled in runtime)
+* `vanilla`, barebones build with most plugins but without colours or any specific extras
 * `twitch`, essentially `application` plus Twitch support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more descriptive error messages
 
@@ -129,7 +129,7 @@ List them with `dub build --print-configs`. You can specify which to compile wit
 $ dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, simply delete the relevant lines from the `versions` list in `dub.sdl`.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` list in `dub.sdl`. Simply delete the lines that relate to the plugins you want to omit.
 
 # How to use
 
@@ -143,8 +143,8 @@ $ ./kameloso --writeconfig
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
-* Linux: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
-* OSX: `$HOME/Library/Application Support/kameloso`
+* Linux/FreeBSD: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
+* macOS: `$HOME/Library/Application Support/kameloso`
 * Windows: `%APPDATA%\kameloso`
 * Other unexpected platforms: fallback to current working directory
 
@@ -152,7 +152,7 @@ Open the file in a normal text editor.
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig`, it will apply these changes to the configuration file, without having to manually edit it.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig`, it will apply and save these changes to the configuration file, without having to manually edit it.
 
 ```sh
 $ ./kameloso \
@@ -166,7 +166,7 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* setting, so settings that relate to plugins *that are currently not built in* are silently removed.
+Later invocations of `--writeconfig` will regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* setting, so settings that relate to plugins *that are currently not built in* are silently removed.
 
 ### Display settings
 
@@ -174,13 +174,13 @@ If you have compiled in colours and you have bright terminal background, the col
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **OSX** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unexpected platforms.
 
 ## Example use
 
 Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
 
-> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to would-be "accounts".
+> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
 
 ```
       you joined #channel
@@ -250,14 +250,14 @@ You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pas
 
 Run the bot with `--set twitchbot.keyGenerationMode` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `twitch.tv`, with the little lock symbol showing the connection is secure.
 
-> Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`onCAPImpl` in `twitchbot/apifeatures.d`](source/kameloso/plugins/twitchbot/apifeatures.d)
+> Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/api.d`](source/kameloso/plugins/twitchbot/api.d).
 
 After entering your login and password and clicking `Authorize`, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your `kameloso.conf` configuration file.
 
 If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
 
 ```
-https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor
+https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=bits:read+channel:edit:commercial+channel:read:subscriptions+user:edit+user:edit:broadcast+channel_editor+user_blocks_edit+user_blocks_read+user_follows_edit+channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read
 ```
 
 ### Example configuration
@@ -322,8 +322,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 * pipedream: DCC
-* pipedream two: `ncurses`?
-* `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * non-blocking FIFO
 * more pairs of eyes
 
