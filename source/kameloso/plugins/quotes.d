@@ -150,6 +150,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
         event.channel[1..$] :
         slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
+    immutable trailing = slice;
 
     if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
         !specified.isValidNickname(plugin.state.server))
@@ -160,8 +161,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             pattern.format(specified.ircBold) :
             pattern.format(specified);
 
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     /// Report success to IRC
@@ -190,17 +190,21 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
             immutable endAccount = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 
-            if (slice.length)
+            if (trailing.length)
             {
                 // There is trailing text, assume it was a quote to be added
-                return plugin.addQuoteAndReport(event, endAccount, slice);
+                return plugin.addQuoteAndReport(event, endAccount, trailing);
             }
 
-            immutable quote = plugin.getRandomQuote(endAccount);
-
-            if (quote.line.length)
+            // No point looking up if we already did before onSuccess
+            if (endAccount != specified)
             {
-                return report(endAccount, quote);
+                immutable quote = plugin.getRandomQuote(endAccount);
+
+                if (quote.line.length)
+                {
+                    return report(endAccount, quote);
+                }
             }
 
             enum pattern = "No quote on record for %s";
@@ -226,6 +230,8 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             }
         }
 
+        // Try the specified nickname/account first, in case it's a nickname that
+        // has quotes but resolve to a different account that doesn't.
         immutable quote = plugin.getRandomQuote(specified);
 
         if (quote.line.length)
