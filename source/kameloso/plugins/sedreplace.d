@@ -271,12 +271,12 @@ string sedReplaceImpl(char char_)(const string line, const string expr,
     {
         if ((endDelimPos == -1) || (endDelimPos+1 == slice.length))
         {
-            // Either there were no more delimeters or there was one at the very end
+            // Either there were no more delimiters or there was one at the very end
             // Syntax is relaxed; continue
         }
         else
         {
-            // Found extra delimeters, expression is malformed; abort
+            // Found extra delimiters, expression is malformed; abort
             return line;
         }
     }
@@ -284,7 +284,7 @@ string sedReplaceImpl(char char_)(const string line, const string expr,
     {
         if ((endDelimPos == -1) || (endDelimPos+1 != slice.length))
         {
-            // Either there were no more delimeters or one was found before the end
+            // Either there were no more delimiters or one was found before the end
             // Syntax is strict; abort
             return line;
         }

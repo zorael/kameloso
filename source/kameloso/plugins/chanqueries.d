@@ -284,7 +284,7 @@ void startChannelQueries(ChanQueriesService service)
                     }
                     else
                     {
-                        // Someting else caused a WHOIS; yield until the right one comes along
+                        // Something else caused a WHOIS; yield until the right one comes along
                         Fiber.yield();
                         continue;
                     }

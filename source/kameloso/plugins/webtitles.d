@@ -676,7 +676,7 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
  +/
 void start(WebtitlesPlugin plugin)
 {
-    // No need to synchronize this; no worker threads are running
+    // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
     plugin.headers = requestHeaders;

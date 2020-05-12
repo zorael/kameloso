@@ -711,7 +711,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandAuth
 /++
- +  Asks the `kamloso.plugins.connect.ConnectService` to (re-)authenticate to services.
+ +  Asks the `kameloso.plugins.connect.ConnectService` to (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEvent.Type.CHAN)

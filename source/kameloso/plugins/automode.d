@@ -211,7 +211,7 @@ in (account.length, "Tried to apply automodes to an empty account")
         }
         else
         {
-            // No one has this mode, which by implication means the user doen't either
+            // No one has this mode, which by implication means the user doesn't either
             missingModes ~= mode;
         }
     }

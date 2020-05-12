@@ -1352,7 +1352,7 @@ void highlightEmotes(ref IRCEvent event,
         }
         else
         {
-            // Emote but mixed text and emotes OR we're doing colorful emotes
+            // Emote but mixed text and emotes OR we're doing colourful emotes
             immutable TerminalForeground emoteFgBase = brightTerminal ?
                 Bright.emote : Dark.emote;
             event.content.highlightEmotesImpl(sink, event.emotes, highlight,

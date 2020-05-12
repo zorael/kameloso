@@ -276,7 +276,7 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
         }
     }
 
-    // Should dance. Stagger it a bit with a second inbetween.
+    // Should dance. Stagger it a bit with a second in between.
     enum secondsBetweenDances = 1;
 
     void dg()

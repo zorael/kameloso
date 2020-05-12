@@ -133,7 +133,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +      plugin = The current `AdminPlugin`.
  +      rawSpecified = The nickname or account to white-/blacklist.
  +      list = Which of "whitelist", "operator" or "blacklist" to add to.
- +      channel = Which chanel the enlisting relates to.
+ +      channel = Which channel the enlisting relates to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
@@ -348,7 +348,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +      plugin = The current `AdminPlugin`.
  +      account = The account to delist as whitelisted/blacklisted or as operator.
  +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
- +      channel = Which chanel the enlisting relates to.
+ +      channel = Which channel the enlisting relates to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,

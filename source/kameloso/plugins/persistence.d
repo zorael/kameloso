@@ -427,7 +427,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
  +  associative array of the current `PersistenceService`'s
  +  `kameloso.plugins.core.IRCPluginState` upon them disconnecting.
  +
- +  Additionally from the nickname-chanel cache.
+ +  Additionally from the nickname-channel cache.
  +/
 @(IRCEvent.Type.QUIT)
 void onQuit(PersistenceService service, const IRCEvent event)

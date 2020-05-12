@@ -1819,7 +1819,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
         else if (level == PrivilegeLevel.ignore)
         {
             /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
-                "to it could have been skippped");*/
+                "to it could have been skipped");*/
             return FilterResult.pass;
         }
         else
@@ -1845,7 +1845,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
 
         case ignore:
             /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
-                "to it could have been skippped");*/
+                "to it could have been skipped");*/
             return FilterResult.pass;
         }
     }

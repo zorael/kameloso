@@ -108,7 +108,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 }
             }
 
-            // Avoid evaluating current unix time after stagger is done
+            // Avoid evaluating current UNIX time after stagger is done
             staggerDone = true;
 
             if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
