@@ -1621,3 +1621,26 @@ unittest
         assert((actual == expected), actual);
     }
 }
+
+
+// replaceTokens
+/++
+ +  Apply some common text replacements. Used on part and quit reasons.
+ +  Overload that doens't take an `dialect.defs.IRCClient` and as such can't
+ +  replace `$nickname`.
+ +
+ +  Params:
+ +      line = String to replace tokens in.
+ +
+ +  Returns:
+ +      A modified string with token occurences replaced.
+ +/
+string replaceTokens(const string line) @safe pure nothrow
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.array : replace;
+
+    return line
+        .replace("$version", cast(string)KamelosoInfo.version_)
+        .replace("$source", cast(string)KamelosoInfo.source);
+}
