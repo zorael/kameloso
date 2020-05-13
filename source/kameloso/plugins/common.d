@@ -1152,6 +1152,8 @@ in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
  +  triggering const `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
  +
+ +  Note: The delegate stays in the queue until a call to `unawait` it is made.
+ +
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      dg = Delegate to enqueue to be executed when the next const
