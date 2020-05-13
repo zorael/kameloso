@@ -64,6 +64,34 @@ struct ScheduledFiber
 }
 
 
+// ScheduledDelegate
+/++
+ +  A delegate paired with a `long` UNIX timestamp.
+ +
+ +  If we bundle the two together like this, we can associate a point in time
+ +  with a delegate without having to to use an associative array (with UNIX
+ +  timestamp keys).
+ +
+ +  Example:
+ +  ---
+ +  import std.datetime.systime : Clock;
+ +
+ +  void dg() { /* ... */ }
+ +
+ +  auto scheduledDg = ScheduledDelegate(&dg, Clock.currTime.toUnixTime + 10L);
+ +  ---
+ +/
+struct ScheduledDelegate
+{
+    /// Delegate to trigger at the point in time `timestamp`.
+    void delegate() dg;
+
+    /// When `dg` is scheduled to be called.
+    long timestamp;
+}
+
+
+
 version(Posix)
 {
     private import core.sys.posix.pthread : pthread_t;
