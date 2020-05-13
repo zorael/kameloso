@@ -1920,6 +1920,12 @@ struct IRCPluginState
      +/
     Fiber[][] awaitingFibers;
 
+    /++
+     +  The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
+     +  `dialect.defs.IRCEvent.Type`.
+     +/
+    void delegate(const IRCEvent)[][] awaitingDelegates;
+
     /// The list of scheduled `core.thread.fiber.Fiber`, UNIX time tuples.
     ScheduledFiber[] scheduledFibers;
 
