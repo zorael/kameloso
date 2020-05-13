@@ -373,6 +373,10 @@ void generateKey(TwitchBotPlugin plugin)
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL to query.
+ +      singleWorker = Whether the request should be passed onto a different
+ +          persistent worker thread by concurrency message, or spawned in a
+ +          new thread just for the occasion.
+ +      headers = `shared` HTTP headers to use when issuing the requests.
  +
  +  Returns:
  +      The `QueryResponse` that was discovered while monitoring the `bucket`
