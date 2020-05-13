@@ -1116,6 +1116,27 @@ void await(IRCPlugin plugin, const IRCEvent.Type[] types,
 }
 
 
+// await
+/++
+ +  Queues a `void delegate(const IRCEvent)` delegate to be called whenever the next parsed and
+ +  triggering const `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      dg = Delegate to enqueue to be executed when the next const
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `dialect.defs.IRCEvent` that should trigger the
+ +          passed awaiting delegate.
+ +/
+void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
+in ((dg !is null), "Tried to set up a null delegate to await events")
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEvent.Type.UNSET`")
+{
+    plugin.state.awaitingDelegates[type] ~= dg;
+}
+
+
 // awaitEvent
 /++
  +  Compatibility alias of `await`.
