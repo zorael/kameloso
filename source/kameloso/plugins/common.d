@@ -1006,6 +1006,45 @@ void removeDelayedFiber(IRCPlugin plugin)
 }
 
 
+// removeDelayedDelegate
+/++
+ +  Removes a `void delegate()` delegate from being called at any point later.
+ +
+ +  Updates the `nextScheduledTimestamp` UNIX timestamp so that the main loop knows
+ +  when to process the array of delegates.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      dg = Delegate to dequeue from being executed at a later point in time.
+ +/
+void removeDelayedDelegate(IRCPlugin plugin, void delegate() dg)
+in ((dg !is null), "Tried to remove a delayed null delegate")
+{
+    import std.algorithm.mutation : SwapStrategy, remove;
+    import std.algorithm.searching : countUntil;
+
+    size_t[] toRemove;
+
+    foreach (immutable i, scheduledDg; plugin.state.scheduledDelegates)
+    {
+        if (scheduledDg.dg is dg)
+        {
+            toRemove ~= i;
+        }
+    }
+
+    if (!toRemove.length) return;
+
+    foreach_reverse (immutable i; toRemove)
+    {
+        plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
+            .remove!(SwapStrategy.unstable)(i);
+    }
+
+    plugin.state.updateSchedule();
+}
+
+
 // await
 /++
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
