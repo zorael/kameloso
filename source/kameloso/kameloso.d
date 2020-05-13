@@ -853,6 +853,7 @@ Next mainLoop(ref Kameloso instance)
                         plugin.onEvent(event);
                         processRepeats(plugin, instance);
                         processReplays(instance, plugin.state.replays);
+                        processAwaitingDelegates(plugin, event);
                         processAwaitingFibers(plugin, event);
                     }
                     catch (NomException e)
