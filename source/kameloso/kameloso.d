@@ -1259,6 +1259,59 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 }
 
 
+// processScheduledDelegates
+/++
+ +  Processes the queued `kameloso.thread.ScheduledDelegate`s of an
+ +  `kameloso.plugins.core.IRCPlugin`.
+ +
+ +  Params:
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+ +          `kameloso.thread.ScheduledDelegate`s to iterate and process.
+ +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledDelegate`'s
+ +          timestamp with.
+ +/
+void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)
+in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an unset timestamp")
+do
+{
+    size_t[] toRemove;
+
+    foreach (immutable i, scheduledDg; plugin.state.scheduledDelegates)
+    {
+        if (scheduledDg.timestamp > nowInHnsecs) continue;
+
+        try
+        {
+            scheduledDg.dg();
+        }
+        catch (IRCParseException e)
+        {
+            logger.warningf("IRC Parse Exception %s.scheduledDelegates[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+
+            printEventDebugDetails(e.event, e.event.raw);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Exception %s.scheduledDelegates[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
+
+        toRemove ~= i;  // Always removed a scheduled delegate after processing
+    }
+
+    // Clean up processed delegates
+    foreach_reverse (immutable i; toRemove)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
+            .remove!(SwapStrategy.unstable)(i);
+    }
+}
+
+
 // processScheduledFibers
 /++
  +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
