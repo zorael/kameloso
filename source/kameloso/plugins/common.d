@@ -855,7 +855,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +  seconds or milliseconds later, by appending it to the `plugin`'s
  +  `IRCPluginState.scheduledFibers`.
  +
- +  Updates the `IRCPluginState.nextFiberTimestamp` timestamp so that the
+ +  Updates the `IRCPluginState.nextScheduledTimestamp` timestamp so that the
  +  main loop knows when to next process the array of `kameloso.thread.ScheduledFiber`s.
  +
  +  Params:
@@ -876,7 +876,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
         (duration * 10_000_000));  // hnsecs -> seconds
     plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
 
-    plugin.state.updateNextFiberTimestamp();
+    plugin.state.updateSchedule();
 }
 
 
@@ -986,7 +986,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
             .remove!(SwapStrategy.unstable)(i);
     }
 
-    plugin.state.updateNextFiberTimestamp();
+    plugin.state.updateSchedule();
 }
 
 
