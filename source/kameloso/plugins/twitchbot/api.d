@@ -318,7 +318,7 @@ void generateKey(TwitchBotPlugin plugin)
 
     writeln();
     writefln("%sYour private authorisation key is: %s%s%s",
-        Tint.info, Tint.log, key, Tint.reset);
+        Tint.info, Tint.log, plugin.state.bot.pass, Tint.reset);
     writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
         Tint.info, Tint.reset);
     writeln();
