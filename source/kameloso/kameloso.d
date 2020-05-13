@@ -1321,8 +1321,8 @@ do
  +
  +  Params:
  +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
- +          `ScheduledFiber`s to iterate and process.
- +      nowInHnsecs = Current timestamp to compare the `ScheduledFiber`'s
+ +          `kameloso.thread.ScheduledFiber`s to iterate and process.
+ +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledFiber`'s
  +          timestamp with.
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
@@ -1343,9 +1343,6 @@ do
             {
                 scheduledFiber.fiber.call();
             }
-
-            // Always removed a scheduled Fiber after processing
-            toRemove ~= i;
         }
         catch (IRCParseException e)
         {
@@ -1354,15 +1351,16 @@ do
 
             printEventDebugDetails(e.event, e.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
-            toRemove ~= i;
         }
         catch (Exception e)
         {
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.toString);
-            toRemove ~= i;
         }
+
+        // Always removed a scheduled Fiber after processing
+        toRemove ~= i;
     }
 
     // Clean up processed Fibers
