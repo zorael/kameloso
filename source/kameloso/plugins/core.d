@@ -1058,6 +1058,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         this.state.replays = state.replays.dup;
         this.state.repeats = state.repeats.dup;
         this.state.scheduledFibers = state.scheduledFibers.dup;
+        this.state.scheduledDelegates = state.scheduledDelegates.dup;
 
         foreach (immutable i, ref member; this.tupleof)
         {
