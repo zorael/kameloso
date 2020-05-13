@@ -5,6 +5,7 @@ module kameloso.kameloso;
 
 private:
 
+import kameloso.plugins.core : IRCPlugin, Replay;
 import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
     initLogger, logger, printVersionInfo, replaceTokens;
 import kameloso.printing;
@@ -185,7 +186,6 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(instance.settings.configFile);
         }
 
-        import kameloso.plugins.core : IRCPlugin;
         import kameloso.thread : CarryingFiber;
 
         /++
@@ -1429,8 +1429,6 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
     }
 }
 
-
-import kameloso.plugins.core : Replay;
 
 // processReplays
 /++
