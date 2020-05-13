@@ -161,6 +161,7 @@ void generateKey(TwitchBotPlugin plugin)
     writeln("  for this to work.");
     writeln();
     writeln(Tint.log, "Press Enter to continue.", Tint.reset);
+    stdout.flush();
 
     readln();
 
@@ -339,6 +340,7 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
     writeln();
+    stdout.flush();
 }
 
 
