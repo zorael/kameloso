@@ -2533,7 +2533,9 @@ int initBot(string[] args)
     import kameloso.printing : printObjects;
 
     // Print the current settings to show what's going on.
-    printObjects(instance.parser.client, instance.bot, instance.parser.server);
+    IRCClient prettyClient = instance.parser.client;
+    prettyClient.realName = replaceTokens(prettyClient.realName);
+    printObjects(prettyClient, instance.bot, instance.parser.server);
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
