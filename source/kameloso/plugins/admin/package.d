@@ -653,7 +653,7 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
     string reason;
 
     cast(void)slice.splitInto(channel, reason);
-    join(plugin.state, channel, reason);
+    part(plugin.state, channel, reason);
 }
 
 
