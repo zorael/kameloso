@@ -675,12 +675,14 @@ Next mainLoop(ref Kameloso instance)
 
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.state.scheduledFibers.length) continue;
+            if (!plugin.state.scheduledFibers.length &&
+                !plugin.state.scheduledDelegates.length) continue;
 
-            if (plugin.state.nextFiberTimestamp <= nowInHnsecs)
+            if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
             {
+                plugin.processScheduledDelegates(nowInHnsecs);
                 plugin.processScheduledFibers(nowInHnsecs);
-                plugin.state.updateNextFiberTimestamp();  // Something is always removed
+                plugin.state.updateSchedule();  // Something is always removed
                 instance.conn.receiveTimeout = 1;
                 readWasShortened = true;
             }
@@ -690,7 +692,7 @@ Next mainLoop(ref Kameloso instance)
                 immutable timeOfNextReadTimeout = cast(int)((nowInHnsecs/10_000) +
                     cachedReceiveTimeout);
                 immutable int delta = cast(int)(timeOfNextReadTimeout -
-                    (plugin.state.nextFiberTimestamp/10_000));
+                    (plugin.state.nextScheduledTimestamp/10_000));
 
                 if ((delta > 0) && (delta < instance.conn.receiveTimeout))
                 {
