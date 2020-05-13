@@ -1149,7 +1149,88 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
-import kameloso.plugins.core : IRCPlugin;
+// processAwaitingDelegates
+/++
+ +  Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
+ +
+ +  Params:
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
+ +          `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
+ +      event = The triggering const `dialect.defs.IRCEvent`.
+ +/
+void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
+{
+    import core.thread : Fiber;
+
+    alias Dg = void delegate(const IRCEvent);
+
+    /++
+     +  Handle awaiting delegates of a specified type.
+     +/
+    static void processAwaitingDelegatesImpl(IRCPlugin plugin, const IRCEvent event,
+        Dg[] dgsForType, ref Dg[] expiredDelegates)
+    {
+        foreach (immutable i, dg; dgsForType)
+        {
+            try
+            {
+                dg(event);
+            }
+            catch (IRCParseException e)
+            {
+                logger.warningf("IRC Parse Exception %s.awaitingDelegates[%d]: %s%s",
+                    plugin.name, i, Tint.log, e.msg);
+
+                printEventDebugDetails(e.event, e.event.raw);
+                version(PrintStacktraces) logger.trace(e.info);
+                expiredDelegates ~= dg;
+            }
+            catch (Exception e)
+            {
+                logger.warningf("Exception %s.awaitingDelegates[%d]: %s%s",
+                    plugin.name, i, Tint.log, e.msg);
+
+                printEventDebugDetails(event, event.raw);
+                version(PrintStacktraces) logger.trace(e.toString);
+                expiredDelegates ~= dg;
+            }
+        }
+    }
+
+    Dg[] expiredDelegates;
+
+    if (plugin.state.awaitingDelegates[event.type].length)
+    {
+        processAwaitingDelegatesImpl(plugin, event,
+            plugin.state.awaitingDelegates[event.type], expiredDelegates);
+    }
+
+    if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
+    {
+        processAwaitingDelegatesImpl(plugin, event,
+            plugin.state.awaitingDelegates[IRCEvent.Type.ANY], expiredDelegates);
+    }
+
+    if (!expiredDelegates.length) return;
+
+    // Clean up processed delegates
+    foreach (expiredDg; expiredDelegates)
+    {
+        foreach (ref dgsByType; plugin.state.awaitingDelegates)
+        {
+            foreach_reverse (immutable i, /*ref*/ dg; dgsByType)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+
+                if (dg is expiredDg)
+                {
+                    dgsByType = dgsByType.remove!(SwapStrategy.unstable)(i);
+                }
+            }
+        }
+    }
+}
+
 
 // processAwaitingFibers
 /++
