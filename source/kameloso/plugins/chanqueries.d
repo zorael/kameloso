@@ -418,8 +418,7 @@ void onEndOfMotd(ChanQueriesService service)
         service.startChannelQueries();
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
-    delay(service, fiber, service.secondsBeforeInitialQueries);
+    delay(service, &dg, service.secondsBeforeInitialQueries);
 }
 
 
