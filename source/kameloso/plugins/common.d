@@ -938,6 +938,7 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
  +/
 void delay(IRCPlugin plugin, void delegate() dg, const long duration,
     const Flag!"msecs" msecs = No.msecs)
+in ((dg !is null), "Tried to delay a null delegate")
 {
     import kameloso.thread : ScheduledDelegate;
     import std.datetime.systime : Clock;
@@ -1042,6 +1043,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type type,
     const Flag!"yield" yield = No.yield)
+in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= Fiber.getThis;
@@ -1092,11 +1094,12 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type[] types,
     const Flag!"yield" yield = No.yield)
+in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
 {
     foreach (immutable type; types)
     {
         assert((type != IRCEvent.Type.UNSET),
-            "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`");
+            "Tried to set up the current Fiber to await `IRCEvent.Type.UNSET`");
         plugin.state.awaitingFibers[type] ~= Fiber.getThis;
     }
 
