@@ -921,6 +921,36 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 }
 
 
+// delay
+/++
+ +  Queues a `void delegate()` delegate to be called at a point `duration`
+ +  seconds or milliseconds later, by appending it to the `plugin`'s
+ +  `IRCPluginState.scheduledDelegates`.
+ +
+ +  Updates the `IRCPluginState.nextScheduledTimestamp` timestamp so that the
+ +  main loop knows when to next process the array of `kameloso.thread.ScheduledDelegate`s.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = Delegate to enqueue to be executed at a later point in time.
+ +      duration = Amount of time to delay the `fiber`.
+ +      msecs = Whether `duration` is in milliseconds or seconds.
+ +/
+void delay(IRCPlugin plugin, void delegate() dg, const long duration,
+    const Flag!"msecs" msecs = No.msecs)
+{
+    import kameloso.thread : ScheduledDelegate;
+    import std.datetime.systime : Clock;
+
+    immutable time = Clock.currStdTime + (msecs ?
+        (duration * 10_000) :  // hnsecs -> msecs
+        (duration * 10_000_000));  // hnsecs -> seconds
+    plugin.state.scheduledDelegates ~= ScheduledDelegate(dg, time);
+
+    plugin.state.updateSchedule();
+}
+
+
 // removeDelayedFiber
 /++
  +  Removes a `core.thread.fiber.Fiber` from being called at any point later.
