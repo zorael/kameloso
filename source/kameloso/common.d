@@ -1580,7 +1580,7 @@ unittest
  +  Returns:
  +      A modified string with token occurences replaced.
  +/
-string replaceTokens(const string line, const IRCClient client)
+string replaceTokens(const string line, const IRCClient client) @safe pure nothrow
 {
     import kameloso.constants : KamelosoInfo;
     import std.array : replace;
