@@ -1154,6 +1154,9 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 /++
  +  Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
  +
+ +  Does not remove delegates after calling them. They are expected to remove
+ +  themvselves after finishing.
+ +
  +  Params:
  +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
  +          `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
@@ -1168,8 +1171,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
     /++
      +  Handle awaiting delegates of a specified type.
      +/
-    static void processAwaitingDelegatesImpl(IRCPlugin plugin, const IRCEvent event,
-        Dg[] dgsForType, ref Dg[] expiredDelegates)
+    static void processImpl(IRCPlugin plugin, const IRCEvent event, Dg[] dgsForType)
     {
         foreach (immutable i, dg; dgsForType)
         {
@@ -1184,7 +1186,6 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
 
                 printEventDebugDetails(e.event, e.event.raw);
                 version(PrintStacktraces) logger.trace(e.info);
-                expiredDelegates ~= dg;
             }
             catch (Exception e)
             {
@@ -1193,42 +1194,20 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
 
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e.toString);
-                expiredDelegates ~= dg;
             }
         }
     }
 
-    Dg[] expiredDelegates;
-
     if (plugin.state.awaitingDelegates[event.type].length)
     {
-        processAwaitingDelegatesImpl(plugin, event,
-            plugin.state.awaitingDelegates[event.type], expiredDelegates);
+        processImpl(plugin, event, plugin.state.awaitingDelegates[event.type]);
+        //plugin.state.awaitingDelegates[event.type].length = 0;
     }
 
     if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
     {
-        processAwaitingDelegatesImpl(plugin, event,
-            plugin.state.awaitingDelegates[IRCEvent.Type.ANY], expiredDelegates);
-    }
-
-    if (!expiredDelegates.length) return;
-
-    // Clean up processed delegates
-    foreach (expiredDg; expiredDelegates)
-    {
-        foreach (ref dgsByType; plugin.state.awaitingDelegates)
-        {
-            foreach_reverse (immutable i, /*ref*/ dg; dgsByType)
-            {
-                import std.algorithm.mutation : SwapStrategy, remove;
-
-                if (dg is expiredDg)
-                {
-                    dgsByType = dgsByType.remove!(SwapStrategy.unstable)(i);
-                }
-            }
-        }
+        processImpl(plugin, event, plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
+        //plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length = 0;
     }
 }
 
