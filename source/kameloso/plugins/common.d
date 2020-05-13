@@ -1279,6 +1279,57 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 }
 
 
+// unawait
+/++
+ +  Dequeues a `void delegate(const IRCEvent)` delegate from being called whenever
+ +  the next parsed and triggering `dialect.defs.IRCEvent` matches the passed
+ +  `dialect.defs.IRCEvent.Type` type.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      dg = Delegate to dequeue from being executed when the next
+ +          `dialect.defs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `dialect.defs.IRCEvent` that would trigger the
+ +          passed awaiting delegate.
+ +/
+void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
+in ((dg !is null), "Tried to unlist a null delegate from awaiting events")
+in ((type != IRCEvent.Type.UNSET), "Tried to unlist a delegate from awaiting `IRCEvent.Type.UNSET`")
+{
+    import std.algorithm.searching : countUntil;
+    import std.algorithm.mutation : SwapStrategy, remove;
+
+    void removeDelegateForType(const IRCEvent.Type type)
+    {
+        foreach (immutable i, awaitingDg; plugin.state.awaitingDelegates[type])
+        {
+            if (awaitingDg is dg)
+            {
+                plugin.state.awaitingDelegates[type] = plugin.state.awaitingDelegates[type]
+                    .remove!(SwapStrategy.unstable)(i);
+                break;
+            }
+        }
+    }
+
+    if (type == IRCEvent.Type.ANY)
+    {
+        import std.traits : EnumMembers;
+
+        static immutable allTypes = [ EnumMembers!(IRCEvent.Type) ];
+
+        foreach (immutable thisType; allTypes)
+        {
+            removeDelegateForType(thisType);
+        }
+    }
+    else
+    {
+        removeDelegateForType(type);
+    }
+}
+
+
 // unlistFiberAwaitingEvent
 /++
  +  Compatibility alias of `unawait`.
