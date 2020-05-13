@@ -1791,7 +1791,7 @@ string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
 }
 
 
-// EventAndURLs
+// EventURLs
 /++
  +  A struct imitating a `std.typecons.Tuple`, used to communicate the
  +  need for a Webtitles lookup.
@@ -1801,7 +1801,7 @@ string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
  +/
 version(WithWebtitlesPlugin)
 version(WithTwitchBotPlugin)
-struct EventAndURLs
+struct EventURLs
 {
     /// The `dialect.defs.IRCEvent` that should trigger a Webtitles lookup.
     IRCEvent event;

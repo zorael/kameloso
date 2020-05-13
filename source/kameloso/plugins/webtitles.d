@@ -705,10 +705,10 @@ void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable c
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    import kameloso.plugins.common : EventAndURLs;
+    import kameloso.plugins.common : EventURLs;
     import kameloso.thread : BusMessage;
 
-    auto message = cast(BusMessage!EventAndURLs)content;
+    auto message = cast(BusMessage!EventURLs)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     auto eventAndURLs = message.payload;  // Mustn't be const
