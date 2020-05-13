@@ -273,6 +273,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
+    import kameloso.plugins.common.delayawait : await, unawait;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
     import std.algorithm.searching : canFind, countUntil;
@@ -816,6 +817,7 @@ void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
  +/
 void cycle(AdminPlugin plugin, const string channelName, const string key = string.init)
 {
+    import kameloso.plugins.common.delayawait : await;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 

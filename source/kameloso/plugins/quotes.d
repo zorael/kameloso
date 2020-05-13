@@ -243,7 +243,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             }
         }
 
-        import kameloso.plugins.common : WHOISFiberDelegate;
+        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 

@@ -381,7 +381,7 @@ void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname
     const string channelName, const string mode = string.init)
 in ((!add || mode.length), "Tried to add an empty automode")
 {
-    import kameloso.plugins.common : WHOISFiberDelegate;
+    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
     void onSuccess(const string id)
     {

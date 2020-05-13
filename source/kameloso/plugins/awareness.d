@@ -164,7 +164,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
  +/
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common : Repeater, catchUser;
+    import kameloso.plugins.common : catchUser;
+    import kameloso.plugins.common.mixins : Repeater;
 
     // Catch the user here, before replaying anything.
     plugin.catchUser(event.target);
@@ -217,7 +218,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent e
  +/
 void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common : Repeater;
+    import kameloso.plugins.common.mixins : Repeater;
 
     if (event.aux != "WHOIS") return;
 

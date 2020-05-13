@@ -20,6 +20,7 @@ private:
 
 import kameloso.plugins.core;
 import kameloso.plugins.common;
+import kameloso.plugins.common.delayawait;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;

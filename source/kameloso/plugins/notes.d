@@ -226,7 +226,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
             continue;
         }
 
-        import kameloso.plugins.common : WHOISFiberDelegate;
+        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
         // Silence warnings about no UserAwareness by passing Yes.alwaysLookup
         // (it will always look up anyway because of only MinimalAuthentication)

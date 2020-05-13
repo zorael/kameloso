@@ -225,7 +225,7 @@ do
 
     void cleanup()
     {
-        import kameloso.plugins.common : unawait;
+        import kameloso.plugins.common.delayawait : unawait;
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
         {
@@ -319,7 +319,7 @@ do
         }
     }
 
-    import kameloso.plugins.common : await, delay;
+    import kameloso.plugins.common.delayawait : await, delay;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
 

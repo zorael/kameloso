@@ -370,7 +370,7 @@ QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
     const bool singleWorker, shared string[string] headers)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
-    import kameloso.plugins.common : delay;
+    import kameloso.plugins.common.delayawait : delay;
     import lu.string : beginsWith;
     import std.concurrency : send, spawn;
     import std.datetime.systime : Clock, SysTime;
@@ -686,7 +686,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
 in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 {
-    import kameloso.plugins.common : delay;
+    import kameloso.plugins.common.delayawait : delay;
     import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
 
@@ -777,7 +777,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import std.datetime.systime : Clock;
 
-    import kameloso.plugins.common : delay;
+    import kameloso.plugins.common.delayawait : delay;
 
     immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;

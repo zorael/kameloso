@@ -331,6 +331,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     }
 
     // User not on record or on record but no account; WHOIS and try based on results
+    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
 

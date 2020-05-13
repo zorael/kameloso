@@ -257,7 +257,7 @@ private:  // Module-level private.
     mixin IRCPluginImpl;
 
 
-    import kameloso.plugins.common : MessagingProxy;
+    import kameloso.plugins.common.mixins : MessagingProxy;
 
     // MessagingProxy
     /++

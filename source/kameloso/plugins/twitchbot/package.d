@@ -936,7 +936,7 @@ version(TwitchAPIFeatures)
 @(ChannelPolicy.home)
 void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : delay;
+    import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
 
