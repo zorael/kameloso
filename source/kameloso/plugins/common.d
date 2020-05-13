@@ -932,7 +932,7 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = Delegate to enqueue to be executed at a later point in time.
+ +      dg = Delegate to enqueue to be executed at a later point in time.
  +      duration = Amount of time to delay the `fiber`.
  +      msecs = Whether `duration` is in milliseconds or seconds.
  +/
@@ -955,7 +955,7 @@ void delay(IRCPlugin plugin, void delegate() dg, const long duration,
 /++
  +  Removes a `core.thread.fiber.Fiber` from being called at any point later.
  +
- +  Updates the `nextFiberTimestamp` UNIX timestamp so that the main loop knows
+ +  Updates the `nextScheduledTimestamp` UNIX timestamp so that the main loop knows
  +  when to process the array of `core.thread.fiber.Fiber`s.
  +
  +  Params:
@@ -1011,9 +1011,6 @@ void removeDelayedFiber(IRCPlugin plugin)
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
  +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
- +
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.fiber.Fiber` to enqueue to be executed when the next
@@ -1034,9 +1031,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
- +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
  +
  +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
@@ -1060,9 +1054,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
- +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -1089,9 +1080,6 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
  +  Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
- +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
  +
  +  Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
  +
@@ -1159,9 +1147,6 @@ alias awaitEvents = await;
  +  triggering `dialect.defs.IRCEvent` matches the passed
  +  `dialect.defs.IRCEvent.Type` type.
  +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
- +
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.fiber.Fiber` to dequeue from being executed when the next
@@ -1214,9 +1199,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a Fiber from awaiting `IRCEv
  +  `dialect.defs.IRCEvent.Type` type. Overload that implicitly dequeues
  +  `core.thread.fiber.Fiber.getThis`.
  +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
- +
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      type = The kind of `dialect.defs.IRCEvent` that would trigger this
@@ -1233,9 +1215,6 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type type)
  +  Dequeues a `core.thread.fiber.Fiber` from being called whenever the next parsed and
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types.
- +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
@@ -1260,9 +1239,6 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
  +  triggering `dialect.defs.IRCEvent` matches any of the passed
  +  `dialect.defs.IRCEvent.Type` types. Overload that implicitly dequeues
  +  `core.thread.fiber.Fiber.getThis`.
- +
- +  Not necessarily related to the `async/await` pattern in more than by name.
- +  Naming is hard.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
