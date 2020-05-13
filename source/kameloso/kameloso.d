@@ -5,6 +5,7 @@ module kameloso.kameloso;
 
 private:
 
+import kameloso.plugins.core : IRCPlugin, Replay;
 import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
     initLogger, logger, printVersionInfo, replaceTokens;
 import kameloso.printing;
@@ -185,7 +186,6 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(instance.settings.configFile);
         }
 
-        import kameloso.plugins.core : IRCPlugin;
         import kameloso.thread : CarryingFiber;
 
         /++
@@ -675,12 +675,14 @@ Next mainLoop(ref Kameloso instance)
 
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.state.scheduledFibers.length) continue;
+            if (!plugin.state.scheduledFibers.length &&
+                !plugin.state.scheduledDelegates.length) continue;
 
-            if (plugin.state.nextFiberTimestamp <= nowInHnsecs)
+            if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
             {
+                plugin.processScheduledDelegates(nowInHnsecs);
                 plugin.processScheduledFibers(nowInHnsecs);
-                plugin.state.updateNextFiberTimestamp();  // Something is always removed
+                plugin.state.updateSchedule();  // Something is always removed
                 instance.conn.receiveTimeout = 1;
                 readWasShortened = true;
             }
@@ -690,7 +692,7 @@ Next mainLoop(ref Kameloso instance)
                 immutable timeOfNextReadTimeout = cast(int)((nowInHnsecs/10_000) +
                     cachedReceiveTimeout);
                 immutable int delta = cast(int)(timeOfNextReadTimeout -
-                    (plugin.state.nextFiberTimestamp/10_000));
+                    (plugin.state.nextScheduledTimestamp/10_000));
 
                 if ((delta > 0) && (delta < instance.conn.receiveTimeout))
                 {
@@ -851,6 +853,7 @@ Next mainLoop(ref Kameloso instance)
                         plugin.onEvent(event);
                         processRepeats(plugin, instance);
                         processReplays(instance, plugin.state.replays);
+                        processAwaitingDelegates(plugin, event);
                         processAwaitingFibers(plugin, event);
                     }
                     catch (NomException e)
@@ -1147,7 +1150,67 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
-import kameloso.plugins.core : IRCPlugin;
+// processAwaitingDelegates
+/++
+ +  Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
+ +
+ +  Does not remove delegates after calling them. They are expected to remove
+ +  themvselves after finishing.
+ +
+ +  Params:
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
+ +          `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
+ +      event = The triggering const `dialect.defs.IRCEvent`.
+ +/
+void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
+{
+    import core.thread : Fiber;
+
+    alias Dg = void delegate(const IRCEvent);
+
+    /++
+     +  Handle awaiting delegates of a specified type.
+     +/
+    static void processImpl(IRCPlugin plugin, const IRCEvent event, Dg[] dgsForType)
+    {
+        foreach (immutable i, dg; dgsForType)
+        {
+            try
+            {
+                dg(event);
+            }
+            catch (IRCParseException e)
+            {
+                logger.warningf("IRC Parse Exception %s.awaitingDelegates[%d]: %s%s",
+                    plugin.name, i, Tint.log, e.msg);
+
+                printEventDebugDetails(e.event, e.event.raw);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (Exception e)
+            {
+                logger.warningf("Exception %s.awaitingDelegates[%d]: %s%s",
+                    plugin.name, i, Tint.log, e.msg);
+
+                printEventDebugDetails(event, event.raw);
+                version(PrintStacktraces) logger.trace(e.toString);
+            }
+        }
+    }
+
+    if (plugin.state.awaitingDelegates[event.type].length)
+    {
+        processImpl(plugin, event, plugin.state.awaitingDelegates[event.type]);
+        //plugin.state.awaitingDelegates[event.type].length = 0;
+    }
+
+    if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
+    {
+        processImpl(plugin, event, plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
+        //plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length = 0;
+    }
+}
+
 
 // processAwaitingFibers
 /++
@@ -1259,6 +1322,59 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 }
 
 
+// processScheduledDelegates
+/++
+ +  Processes the queued `kameloso.thread.ScheduledDelegate`s of an
+ +  `kameloso.plugins.core.IRCPlugin`.
+ +
+ +  Params:
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+ +          `kameloso.thread.ScheduledDelegate`s to iterate and process.
+ +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledDelegate`'s
+ +          timestamp with.
+ +/
+void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)
+in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an unset timestamp")
+do
+{
+    size_t[] toRemove;
+
+    foreach (immutable i, scheduledDg; plugin.state.scheduledDelegates)
+    {
+        if (scheduledDg.timestamp > nowInHnsecs) continue;
+
+        try
+        {
+            scheduledDg.dg();
+        }
+        catch (IRCParseException e)
+        {
+            logger.warningf("IRC Parse Exception %s.scheduledDelegates[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+
+            printEventDebugDetails(e.event, e.event.raw);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Exception %s.scheduledDelegates[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
+
+        toRemove ~= i;  // Always removed a scheduled delegate after processing
+    }
+
+    // Clean up processed delegates
+    foreach_reverse (immutable i; toRemove)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
+            .remove!(SwapStrategy.unstable)(i);
+    }
+}
+
+
 // processScheduledFibers
 /++
  +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
@@ -1266,8 +1382,8 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
- +          `ScheduledFiber`s to iterate and process.
- +      nowInHnsecs = Current timestamp to compare the `ScheduledFiber`'s
+ +          `kameloso.thread.ScheduledFiber`s to iterate and process.
+ +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledFiber`'s
  +          timestamp with.
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
@@ -1288,9 +1404,6 @@ do
             {
                 scheduledFiber.fiber.call();
             }
-
-            // Always removed a scheduled Fiber after processing
-            toRemove ~= i;
         }
         catch (IRCParseException e)
         {
@@ -1299,15 +1412,16 @@ do
 
             printEventDebugDetails(e.event, e.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
-            toRemove ~= i;
         }
         catch (Exception e)
         {
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.toString);
-            toRemove ~= i;
         }
+
+        // Always removed a scheduled Fiber after processing
+        toRemove ~= i;
     }
 
     // Clean up processed Fibers
@@ -1376,8 +1490,6 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
     }
 }
 
-
-import kameloso.plugins.core : Replay;
 
 // processReplays
 /++

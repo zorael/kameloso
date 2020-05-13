@@ -387,8 +387,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber fiber = new Fiber(&dg, 32_768);
-    delay(service, fiber, service.authenticationGracePeriod);
+    delay(service, &dg, service.authenticationGracePeriod);
 }
 
 
@@ -1168,9 +1167,7 @@ void register(ConnectService service)
         }
 
         import kameloso.plugins.common : delay;
-
-        Fiber fiber = new Fiber(&dgTimered, 32_768);
-        delay(service, fiber, secsToWaitForCAP);
+        delay(service, &dgTimered, secsToWaitForCAP);
     }
 }
 

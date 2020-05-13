@@ -1055,9 +1055,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         this.state = state;
         this.state.awaitingFibers = state.awaitingFibers.dup;
         this.state.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
+        this.state.awaitingDelegates = state.awaitingDelegates.dup;
+        this.state.awaitingDelegates.length = EnumMembers!(IRCEvent.Type).length;
         this.state.replays = state.replays.dup;
         this.state.repeats = state.repeats.dup;
         this.state.scheduledFibers = state.scheduledFibers.dup;
+        this.state.scheduledDelegates = state.scheduledDelegates.dup;
 
         foreach (immutable i, ref member; this.tupleof)
         {
@@ -1865,7 +1868,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
 struct IRCPluginState
 {
     import kameloso.common : CoreSettings, IRCBot;
-    import kameloso.thread : ScheduledFiber;
+    import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
@@ -1919,36 +1922,52 @@ struct IRCPluginState
      +/
     Fiber[][] awaitingFibers;
 
+    /++
+     +  The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
+     +  `dialect.defs.IRCEvent.Type`.
+     +/
+    void delegate(const IRCEvent)[][] awaitingDelegates;
+
     /// The list of scheduled `core.thread.fiber.Fiber`, UNIX time tuples.
     ScheduledFiber[] scheduledFibers;
+
+    /// The list of scheduled delegate, UNIX time tuples.
+    ScheduledDelegate[] scheduledDelegates;
 
     /// The next (UNIX time) timestamp at which to call `periodically`.
     long nextPeriodical;
 
     /++
-     +  The UNIX timestamp of when the next queued
-     +  `kameloso.thread.ScheduledFiber` should be triggered.
+     +  The UNIX timestamp of when the next scheduled
+     +  `kameloso.thread.ScheduledFiber` or delegate should be triggered.
      +/
-    long nextFiberTimestamp;
+    long nextScheduledTimestamp;
 
-
-    // updateNextFiberTimestamp
+    // updateSchedule
     /++
-     +  Updates the saved UNIX timestamp of when the next `core.thread.fiber.Fiber`
-     +  should be triggered.
+     +  Updates the saved UNIX timestamp of when the next scheduled
+     +  `core.thread.fiber.Fiber` or delegate should be triggered.
      +/
-    void updateNextFiberTimestamp() pure nothrow @nogc
+    void updateSchedule() pure nothrow @nogc
     {
         // Reset the next timestamp to an invalid value, then update it as we
-        // iterate the fibers' labels.
+        // iterate the fibers' and delegates' labels.
 
-        nextFiberTimestamp = long.max;
+        nextScheduledTimestamp = long.max;
 
         foreach (const scheduledFiber; scheduledFibers)
         {
-            if (scheduledFiber.timestamp < nextFiberTimestamp)
+            if (scheduledFiber.timestamp < nextScheduledTimestamp)
             {
-                nextFiberTimestamp = scheduledFiber.timestamp;
+                nextScheduledTimestamp = scheduledFiber.timestamp;
+            }
+        }
+
+        foreach (const scheduledDg; scheduledDelegates)
+        {
+            if (scheduledDg.timestamp < nextScheduledTimestamp)
+            {
+                nextScheduledTimestamp = scheduledDg.timestamp;
             }
         }
     }

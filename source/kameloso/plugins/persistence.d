@@ -508,8 +508,6 @@ void reload(PersistenceService service)
  +/
 void periodically(PersistenceService service, const long now)
 {
-    import std.datetime.systime : Clock;
-
     enum hoursBetweenRehashes = 3;
 
     service.state.users.rehash();
