@@ -409,6 +409,15 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
     const response = waitForQueryResponse(plugin, url, singleWorker);
 
+    scope(exit)
+    {
+        synchronized //()
+        {
+            // Always remove, otherwise there'll be stale entries
+            plugin.bucket.remove(url);
+        }
+    }
+
     if (singleWorker)
     {
         immutable post = Clock.currTime;
@@ -419,12 +428,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     else
     {
         plugin.averageApproximateQueryTime(response.msecs);
-    }
-
-    synchronized //()
-    {
-        // Always remove, otherwise there'll be stale entries
-        plugin.bucket.remove(url);
     }
 
     if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
