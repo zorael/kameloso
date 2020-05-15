@@ -159,20 +159,19 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
  +      colouredOutgoing = Whether or not to tint messages going to the server
  +          with mIRC colouring.
  +/
-void worker(shared IRCPluginState sState, const IRCEvent event,
-    const Flag!"colouredOutgoing" colouredOutgoing)
-{}
 version(Web)
-version(none)
 void worker(shared IRCPluginState sState, const IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
+    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
     import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
-    //import requests : getContent;
     import std.algorithm.iteration : splitter;
-    import std.array : replace;
+    import std.array : Appender, replace;
+    import std.exception : assumeUnique;
     import std.format : format;
+    import std.net.curl : HTTP;
+    import core.time : seconds;
 
     version(Posix)
     {
@@ -187,12 +186,25 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
     try
     {
-        import std.exception : assumeUnique;
+        auto client = HTTP(url);
+        client.operationTimeout = Timeout.httpGET.seconds;
+        client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+        client.addRequestHeader("Accept", "text/html");
 
-        immutable content = (cast(char[])getContent(url).data).assumeUnique;
-        auto doc = new Document;
-        doc.parseGarbage(content);
+        Document doc = new Document;
+        Appender!(ubyte[]) sink;
+        sink.reserve(BufferSize.titleLookup);
 
+        client.onReceive = (ubyte[] data)
+        {
+            sink.put(data);
+            return data.length;
+        };
+
+        client.perform();
+
+        immutable received = assumeUnique(cast(char[])sink.data);
+        doc.parseGarbage(received);
         auto numBlock = doc.getElementsByClassName("quote");
 
         if (!numBlock.length)
