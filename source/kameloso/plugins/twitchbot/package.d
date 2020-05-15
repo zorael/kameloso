@@ -32,6 +32,7 @@ import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import std.stdio;
 
 
 /// All Twitch bot plugin runtime settings.
@@ -819,8 +820,9 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
                     scope(failure) plugin.useAPIFeatures = false;
 
                     const response = queryTwitch(plugin, url,
+                        plugin.authorizationBearer,
                         plugin.twitchBotSettings.singleWorkerThread,
-                        plugin.headers);
+                        plugin.bucket);
 
                     if (!response.str.length)
                     {
@@ -897,10 +899,21 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
         // Identity ascertained; look up in cached list
 
-        const follows = plugin.activeChannels[event.channel].follows;
-        const thisFollow = idString in follows;
+        import std.json : JSONType;
 
-        if (thisFollow)
+        auto follows = plugin.activeChannels[event.channel].follows;
+
+        if (follows.type == JSONType.null_)
+        {
+            // Follows have not yet been cached!
+            // This can technically happen, though practically the caching is
+            // done immediately after joining so there should be no time for
+            // !followage queries to sneak in.
+            // Luckily we're inside a Fiber so we can cache it ourselves.
+            follows = plugin.cacheFollows(plugin.activeChannels[event.channel].roomID);
+        }
+
+        if (const thisFollow = idString in follows)
         {
             return reportFollowAge(*thisFollow);
         }
@@ -958,8 +971,10 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
         immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
         const response = queryTwitch(plugin, url,
+            plugin.authorizationBearer,
             plugin.twitchBotSettings.singleWorkerThread,
-            plugin.headers);
+            plugin.bucket);
+
         const broadcasterJSON = parseUserFromResponse(response.str);
         channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
     }
@@ -967,19 +982,14 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
     Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
     getDisplayNameFiber.call();
 
-    if ((plugin.state.nextPeriodical - event.time) > 60)
+    // Always cache as soon as possible, before we get any !followage requests
+    void cacheFollowsDg()
     {
-        // The next periodical is far away, meaning we did not just connect
-        // Let the caching be done in periodically otherwise.
-
-        void cacheFollowsDg()
-        {
-            channel.follows = plugin.cacheFollows(channel.roomID);
-        }
-
-        Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
-        cacheFollowsFiber.call();
+        channel.follows = plugin.cacheFollows(channel.roomID);
     }
+
+    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
+    cacheFollowsFiber.call();
 }
 
 
@@ -1121,10 +1131,8 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
         if (!plugin.useAPIFeatures) return;
 
-        if (!plugin.headers.length)
-        {
-            plugin.resetAPIKeys();
-        }
+        // Concatenate the Bearer and OAuth headers once.
+        plugin.authorizationBearer = "Bearer " ~ plugin.state.bot.pass[6..$];
 
         if (plugin.bucket is null)
         {
@@ -1136,7 +1144,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
             (plugin.persistentWorkerTid == Tid.init))
         {
             import std.concurrency : spawn;
-            plugin.persistentWorkerTid = spawn(&persistentQuerier, plugin.bucket);
+            plugin.persistentWorkerTid = spawn(&persistentQuerier);//, plugin.bucket);
         }
 
         void validationDg()
@@ -1534,6 +1542,12 @@ package:
         /// The Twitch application ID for kameloso.
         enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
 
+        /// Authorisation token for the "Authorization: OAuth <token>".
+        //string authorizationOAuth;
+
+        /// Authorisation token for the "Authorization: Bearer <token>".
+        string authorizationBearer;
+
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
 
@@ -1541,7 +1555,7 @@ package:
          +  HTTP headers to pass when querying Twitch servers for information.
          +  `shared` to be able to be shared between threads.
          +/
-        shared string[string] headers;
+        //shared string[string] headers;
 
         /// The bot's numeric account/ID.
         string userID;

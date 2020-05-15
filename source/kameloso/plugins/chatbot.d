@@ -159,13 +159,17 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
  +      colouredOutgoing = Whether or not to tint messages going to the server
  +          with mIRC colouring.
  +/
+void worker(shared IRCPluginState sState, const IRCEvent event,
+    const Flag!"colouredOutgoing" colouredOutgoing)
+{}
 version(Web)
+version(none)
 void worker(shared IRCPluginState sState, const IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
-    import requests : getContent;
+    //import requests : getContent;
     import std.algorithm.iteration : splitter;
     import std.array : replace;
     import std.format : format;

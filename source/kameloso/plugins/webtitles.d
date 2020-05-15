@@ -21,10 +21,11 @@ import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import requests : Request;
+//import requests : Request;
 import std.concurrency;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
+import std.stdio;
 
 
 // WebtitlesSettings
@@ -330,7 +331,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 e.msg ~ " (link is probably to an image or similar)");
             //version(PrintStacktraces) request.state.askToTrace(e.info);
         }
-        catch (Exception e)
+        /*catch (Exception e)
         {
             request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
             //version(PrintStacktraces) request.state.askToTrace(e.info);
@@ -346,7 +347,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
             }
 
             lookupAndReport();
-        }
+        }*/
     }
     catch (Exception e)
     {
@@ -394,36 +395,38 @@ string[string] requestHeaders()
  +/
 TitleLookupResults lookupTitle(const string url, const string[string] headers)
 {
-    import kameloso.constants : BufferSize;
+    import kameloso.constants : BufferSize, KamelosoInfo;
+    import lu.string : beginsWith, nom;
     import arsd.dom : Document;
     import std.array : Appender;
     import std.conv : to;
+    import std.net.curl : HTTP;
+    import core.time : seconds;
 
-    Request req;
-    req.useStreaming = true;
-    req.keepAlive = false;
-    req.bufferSize = BufferSize.titleLookup;
-    req.addHeaders(headers);
-
-    auto res = req.get(url);
-
-    if (res.code >= 400)
-    {
-        import std.conv : text;
-        throw new Exception(res.code.text ~ " fetching URL " ~ url);
-    }
+    auto client = HTTP(url);
+    client.operationTimeout = 10.seconds;  // FIXME
+    //client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+    client.addRequestHeader("Accept", "text/html");
+    client.verbose = true;
 
     Document doc = new Document;
     Appender!dstring sink;
     sink.reserve(BufferSize.titleLookup);
 
-    auto stream = res.receiveAsRange();
-
-    foreach (const part; stream)
+    client.onReceive = (ubyte[] data)
     {
-        sink.put((cast(char[])part).to!dstring);
+        sink.put((cast(char[])data).to!dstring);
         doc.parseGarbage(sink.data.to!string);
-        if (doc.title.length) break;
+        return doc.title.length ? HTTP.requestAbort : data.length;
+    };
+
+    client.perform();
+    immutable code = client.statusLine.code;
+
+    if (code >= 400)
+    {
+        import std.conv : text;
+        throw new Exception(code.text ~ " fetching URL " ~ url);
     }
 
     if (!doc.title.length)
@@ -431,16 +434,18 @@ TitleLookupResults lookupTitle(const string url, const string[string] headers)
         throw new Exception("No title tag found");
     }
 
+    string slice = url;  // mutable
+    slice.nom("://");
+    string host = slice.nom!(Yes.inherit)('/');
+    if (host.beginsWith("www.")) host = host[4..$];
+
     TitleLookupResults results;
     results.title = decodeTitle(doc.title);
-    results.domain = res.finalURI.original_host;  // thanks to ikod
+    //results.domain = res.finalURI.original_host;  // thanks to ikod
+    results.domain = host;
 
-    import lu.string : beginsWith;
-    if (results.domain.beginsWith("www."))
-    {
-        import lu.string : nom;
-        results.domain.nom('.');
-    }
+    client.shutdown();
+    writeln("-------------------------------------------------");
 
     return results;
 }
@@ -579,17 +584,19 @@ unittest
  +/
 JSONValue getYouTubeInfo(const string url)
 {
-    import requests : getContent;
+    //import requests : getContent;
     import std.json : parseJSON;
 
-    immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
+    /*immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
     const data = cast(char[])getContent(youtubeURL).data;
 
     if (data == "Not Found")
     {
         // Invalid video ID
         throw new Exception("Invalid YouTube video ID");
-    }
+    }*/
+
+    string data;
 
     return parseJSON(data);
 }
