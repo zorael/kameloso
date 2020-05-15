@@ -363,7 +363,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
  +/
 TitleLookupResults lookupTitle(const string url)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo;
+    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
     import arsd.dom : Document;
     import std.array : Appender;
@@ -372,7 +372,7 @@ TitleLookupResults lookupTitle(const string url)
     import core.time : seconds;
 
     auto client = HTTP(url);
-    client.operationTimeout = 10.seconds;  // FIXME
+    client.operationTimeout = Timeout.httpGET.seconds;
     client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
     client.addRequestHeader("Accept", "text/html");
 
@@ -550,7 +550,7 @@ unittest
  +/
 JSONValue getYouTubeInfo(const string url)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo;
+    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
@@ -560,11 +560,11 @@ JSONValue getYouTubeInfo(const string url)
     immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
 
     auto client = HTTP(youtubeURL);
-    client.operationTimeout = 10.seconds;  // FIXME
+    client.operationTimeout = Timeout.httpGET.seconds;
     client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
 
     Appender!(ubyte[]) sink;
-    sink.reserve(8192);  // FIXME
+    sink.reserve(8192);  // Magic number for now.
 
     client.onReceive = (ubyte[] data)
     {
