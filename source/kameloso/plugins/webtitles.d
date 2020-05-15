@@ -35,9 +35,6 @@ import std.stdio;
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
-
-    /// Toggles whether YouTube lookups should be done for pasted URLs.
-    bool youtubeLookup = true;
 }
 
 
@@ -243,9 +240,8 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         // Rewrite and look those up instead.
         request.url = rewriteDirectImgurURL(request.url);
     }
-    else if (webtitlesSettings.youtubeLookup &&
-        (request.url.contains("youtube.com/watch?v=") ||
-        request.url.contains("youtu.be/")))
+    else if (request.url.contains("youtube.com/watch?v=") ||
+        request.url.contains("youtu.be/"))
     {
         // Do our own slicing instead of using regexes, because footprint.
         string slice = request.url;
