@@ -238,20 +238,25 @@ void generateKey(TwitchBotPlugin plugin)
         else version(Windows)
         {
             import std.file : tempDir;
+            import std.format : format;
             import std.path : buildPath;
+            import std.stdio : File;
 
             immutable urlBasename = "kameloso-twitch-%s.url"
                 .format(plugin.state.client.nickname);
             immutable urlFileName = buildPath(tempDir, urlBasename);
 
             auto urlFile = File(urlFileName, "w");
-            scope(exit) urlFile.remove();
 
             urlFile.writeln("[InternetShortcut]");
             urlFile.writeln("URL=", url);
+            urlFile.flush();
 
             immutable openBrowser = [ "explorer", urlFileName ];
             exitcode = execute(openBrowser).status;
+
+            // Errorlevel 1 if it opened a browser window in the background?
+            if (exitcode == 1) exitcode = 0;
         }
         else
         {
