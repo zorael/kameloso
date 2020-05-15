@@ -25,6 +25,10 @@ import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;
 
+/++
+ +  The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with  depending
+ +  on whether version `OmniscientQueries` is set or not.
+ +/
 version(OmniscientQueries)
 {
     enum omniscientChannelPolicy = ChannelPolicy.any;

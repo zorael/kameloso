@@ -68,8 +68,6 @@ struct QueryResponse
  +  compared to Posix platforms.
  +
  +  Params:
- +      headers = `shared` HTTP headers to use when issuing the requests.
- +          Contains the API keys needed for Twitch to accept the queries.
  +      bucket = The shared associative array bucket to put the results in,
  +          response body values keyed by URL.
  +/
@@ -754,7 +752,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      reponseMsecs = How many milliseconds the last query took to complete.
+ +      responseMsecs = How many milliseconds the last query took to complete.
  +/
 void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
 {

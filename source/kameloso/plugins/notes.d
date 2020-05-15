@@ -442,7 +442,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
  +  saves it to disk.
  +
  +  Params:
- +      plugins = Current `NotesPlugin`.
+ +      plugin = Current `NotesPlugin`.
  +      id = Nickname or account whose notes to clear.
  +      channel = Channel for which the notes were stored.
  +/
@@ -508,7 +508,7 @@ void pruneNotes(NotesPlugin plugin)
  +      plugin = Current `NotesPlugin`.
  +      id = Identifier (nickname/account) for whom the note is meant.
  +      sender = Originating user who places the note.
- +      content = Channel for which we should save the note.
+ +      channel = Channel for which we should save the note.
  +      line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string id, const string sender,
