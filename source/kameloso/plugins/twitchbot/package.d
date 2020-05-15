@@ -1147,6 +1147,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
             import kameloso.common : Tint;
             import std.conv : to;
             import std.datetime.systime : Clock, SysTime;
+            import core.time : weeks;
 
             try
             {
@@ -1174,10 +1175,23 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 plugin.userID = validation["user_id"].str;
                 immutable expiresIn = validation["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                immutable now = Clock.currTime;
 
-                logger.infof("Your Twitch authorisation key will expire on %s%02d-%02d-%02d %02d:%02d",
-                    Tint.log, expiresWhen.year, expiresWhen.month, expiresWhen.day,
-                    expiresWhen.hour, expiresWhen.minute);
+                enum pattern = "Your Twitch authorisation key will expire on " ~
+                    "%s%02d-%02d-%02d %02d:%02d";
+
+                if ((expiresWhen - now) > 1.weeks)
+                {
+                    // More than a week away, just .info
+                    logger.infof(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
+                        expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                }
+                else
+                {
+                    // A week or less; warning
+                    logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
+                        expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                }
             }
             catch (TwitchQueryException e)
             {
