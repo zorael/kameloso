@@ -183,8 +183,8 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
             continue;
         }
 
-        spawn(&worker, cast(shared)request, plugin.cache, (i * plugin.delayMsecs),
-            plugin.webtitlesSettings, colouredFlag);
+        spawn(&worker, cast(shared)request, plugin.cache,
+            (i * plugin.delayMsecs), colouredFlag);
     }
 }
 
@@ -203,12 +203,10 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
  +      cache = Shared cache of previous `TitleLookupRequest`s.
  +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
  +          parallel lookups without bursting all of them at once.
- +      webtitlesSettings = Copy of the plugin's settings.
  +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const WebtitlesSettings webtitlesSettings,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
