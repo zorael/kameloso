@@ -171,6 +171,11 @@ enum Timeout
      +  at all before the connection is considered lost.
      +/
     connectionLost = 600,
+
+    /++
+     +  Timeout for HTTP GET requests.
+     +/
+    httpGET = 10,
 }
 
 
