@@ -819,10 +819,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
                     scope(failure) plugin.useAPIFeatures = false;
 
-                    const response = queryTwitch(plugin, url,
-                        plugin.authorizationBearer,
-                        plugin.twitchBotSettings.singleWorkerThread,
-                        plugin.bucket);
+                    const response = queryTwitch(plugin, url, plugin.authorizationBearer);
 
                     if (!response.str.length)
                     {
@@ -970,10 +967,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
     {
         immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
-        const response = queryTwitch(plugin, url,
-            plugin.authorizationBearer,
-            plugin.twitchBotSettings.singleWorkerThread,
-            plugin.bucket);
+        const response = queryTwitch(plugin, url, plugin.authorizationBearer);
 
         const broadcasterJSON = parseUserFromResponse(response.str);
         channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
@@ -1144,7 +1138,8 @@ void onEndOfMotd(TwitchBotPlugin plugin)
             (plugin.persistentWorkerTid == Tid.init))
         {
             import std.concurrency : spawn;
-            plugin.persistentWorkerTid = spawn(&persistentQuerier);//, plugin.bucket);
+            plugin.persistentWorkerTid = spawn(&persistentQuerier,
+                plugin.bucket, plugin.queryResponseTimeout);
         }
 
         void validationDg()

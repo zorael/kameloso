@@ -16,11 +16,9 @@ import kameloso.plugins.core;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import lu.json : JSONStorage;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
-import std.stdio;
 
 version(linux)
 {
@@ -69,10 +67,11 @@ struct QueryResponse
  +  compared to Posix platforms.
  +
  +  Params:
- +      bucket = The shared associative array bucket to put the results in,
- +          response body values keyed by URL.
+ +      bucket = The shared associative array to put the results in, response
+ +          values keyed by URL.
+ +      timeout = How long before queries time out.
  +/
-void persistentQuerier()//shared QueryResponse[string] bucket)
+void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -89,10 +88,9 @@ void persistentQuerier()//shared QueryResponse[string] bucket)
     while (!halt)
     {
         receive(
-            (string url, string clientID, string authToken, int timeout,
-                shared QueryResponse[string] bucket) scope
+            (string url, string authToken) scope
             {
-                queryTwitchImpl(url, clientID, authToken, timeout, bucket);
+                queryTwitchImpl(url, authToken, timeout, bucket);
             },
             (ThreadMessage.Teardown) scope
             {
@@ -373,10 +371,7 @@ void generateKey(TwitchBotPlugin plugin)
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL to query.
- +      singleWorker = Whether the request should be passed onto a different
- +          persistent worker thread by concurrency message, or spawned in a
- +          new thread just for the occasion.
- +      headers = `shared` HTTP headers to use when issuing the requests.
+ +      authorisationHeader = Authorisation HTTP header to pass.
  +
  +  Returns:
  +      The `QueryResponse` that was discovered while monitoring the `bucket`
@@ -386,8 +381,7 @@ void generateKey(TwitchBotPlugin plugin)
  +      `object.Exception` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const string authorisationHeader, const bool singleWorker,
-    shared QueryResponse[string] bucket)
+    const string authorisationHeader)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -397,20 +391,20 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     SysTime pre;
 
-    if (singleWorker)
+    if (plugin.twitchBotSettings.singleWorkerThread)
     {
         pre = Clock.currTime;
-        plugin.persistentWorkerTid.send(url, plugin.clientID, authorisationHeader,
-            plugin.queryResponseTimeout, bucket);
+        plugin.persistentWorkerTid.send(url, authorisationHeader);
     }
     else
     {
-        spawn(&queryTwitchImpl, url, plugin.clientID, authorisationHeader,
-            plugin.queryResponseTimeout, bucket);
+        spawn(&queryTwitchImpl, url, authorisationHeader,
+            plugin.queryResponseTimeout, plugin.bucket);
     }
 
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
-    const response = waitForQueryResponse(plugin, url, singleWorker);
+    const response = waitForQueryResponse(plugin, url,
+        plugin.twitchBotSettings.singleWorkerThread);
 
     scope(exit)
     {
@@ -421,7 +415,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         }
     }
 
-    if (singleWorker)
+    if (plugin.twitchBotSettings.singleWorkerThread)
     {
         immutable post = Clock.currTime;
         immutable diff = (post - pre);
@@ -432,8 +426,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     {
         plugin.averageApproximateQueryTime(response.msecs);
     }
-
-    //writeln("repsonse:'", response.str, "'");
 
     if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
@@ -466,14 +458,14 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +
  +  Params:
  +      url = URL address to look up.
- +      headers = `shared` HTTP headers to use when issuing the requests.
+ +      authToken = Authorisation token HTTP header to pass.
+ +      timeout = How long to let the query run before timing out.
  +      bucket = The shared associative array to put the results in, response
- +          body values keyed by URL.
+ +          values keyed by URL.
  +/
-void queryTwitchImpl(const string url, const string clientID, const string authToken,
+void queryTwitchImpl(const string url, const string authToken,
     const uint timeout, shared QueryResponse[string] bucket)
 {
-    import lu.traits : UnqualArray;
     import std.net.curl : HTTP;
     import std.datetime.systime : Clock, SysTime;
     import core.time : seconds;
@@ -482,7 +474,7 @@ void queryTwitchImpl(const string url, const string clientID, const string authT
 
     auto client = HTTP(url);
     client.operationTimeout = timeout.seconds;
-    client.addRequestHeader("Client-ID", clientID);
+    client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
     client.addRequestHeader("Authorization", authToken);
 
     Appender!(ubyte[]) sink;
@@ -518,17 +510,17 @@ void queryTwitchImpl(const string url, const string clientID, const string authT
  +  by name or by Twitch account ID number. Implementation function.
  +
  +  Params:
- +      plugin = The current `TwitchBotPlugin`.
  +      field = The field to access via the HTTP URL. Can be either "login"
  +          or "id".
  +      identifier = The identifier of type `field` to look up.
+ +      authToken = Authorisation token HTTP header to pass.
+ +      timeout = How long to let the query run before timing out.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
-JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier, const string clientID, const string authToken,
-    const uint timeout)
+JSONValue getUserImpl(Identifier)(const string field, const Identifier identifier,
+    const string authToken, const uint timeout)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
@@ -542,8 +534,8 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
         .format(field, identifier.to!string);  // String just passes through
 
     auto client = HTTP(url);
-    client.operationTimeout = timeout.seconds;  // FIXME
-    client.addRequestHeader("Client-ID", clientID);
+    client.operationTimeout = timeout.seconds;
+    client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
     client.addRequestHeader("Authorization", authToken);
 
     string received;
@@ -617,8 +609,7 @@ JSONValue parseUserFromResponse(const string jsonString)
  +/
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
-    return plugin.getUserImpl("login", login, plugin.clientID,
-        plugin.authorizationBearer, plugin.queryResponseTimeout);
+    return getUserImpl("login", login, plugin.authorizationBearer, plugin.queryResponseTimeout);
 }
 
 
@@ -641,8 +632,7 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
-    return plugin.getUserImpl("id", id, plugin.clientID,
-        plugin.authorizationBearer, plugin.queryResponseTimeout);
+    return getUserImpl("id", id, plugin.authorizationBearer, plugin.queryResponseTimeout);
 }
 
 
@@ -665,8 +655,7 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
-    return plugin.getUserImpl("id", id, plugin.clientID,
-        plugin.authorizationBearer, plugin.queryResponseTimeout);
+    return getUserImpl("id", id, plugin.authorizationBearer, plugin.queryResponseTimeout);
 }
 
 
@@ -687,8 +676,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     // "Authorization: Bearer xxx" used everywhere else.
     immutable authorizationHeader = "OAuth " ~ plugin.state.bot.pass[6..$];
 
-    const response = queryTwitch(plugin, url, authorizationHeader,
-        plugin.twitchBotSettings.singleWorkerThread, plugin.bucket);
+    const response = queryTwitch(plugin, url, authorizationHeader);
 
     if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
@@ -743,10 +731,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 
         scope(failure) plugin.useAPIFeatures = false;
 
-        const response = queryTwitch(plugin, paginatedURL,
-            plugin.authorizationBearer, plugin.twitchBotSettings.singleWorkerThread,
-            plugin.bucket);
-
+        const response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
@@ -843,16 +828,12 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             }
 
             // Miss; fired too early, there is no response available yet
-            writeln("MISS");
-            stdout.flush();
             accumulatingTime *= plugin.approximateQueryGrowthMultiplier;
             alias divisor = plugin.approximateQueryRetryTimeDivisor;
             immutable briefWait = cast(long)(accumulatingTime / divisor);
             delay(plugin, briefWait, Yes.msecs, Yes.yield);
             continue;
         }
-
-        writeln("HIT");
 
         // Make the new approximate query time a weighted average
         if (!leaveTimingAlone) plugin.averageApproximateQueryTime(response.msecs);
