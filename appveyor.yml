@@ -89,6 +89,7 @@ branches:
     - /circleci-.*/
     - /travis-.*/
     - gh-pages
+    - /dustmite-.*/
 
 artifacts:
   - path: kameloso.exe
