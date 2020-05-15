@@ -114,10 +114,10 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
-     +  How long a Webtitles title lookup lasts before it is considered to
-     +  have expired, and should be looked up anew.
+     +  How big a buffer to initially allocate when downloading web pages to get
+     +  their titles.
      +/
-    titleLookup = 8192,
+    titleLookup = 1_048_576,
 
     /++
      +  The maximum number of queued outgoing lines to buffer. Anything above
