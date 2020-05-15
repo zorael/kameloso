@@ -37,7 +37,6 @@ versions \
     "WithWebtitlesPlugin"
 
 configuration "application" {
-    //dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     libs "curl"
 
@@ -52,7 +51,6 @@ configuration "vanilla" {
 }
 
 configuration "twitch" {
-    //dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
     libs "curl"
@@ -65,7 +63,6 @@ configuration "twitch" {
 }
 
 configuration "dev" {
-    //dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
     libs "curl"
@@ -84,7 +81,6 @@ configuration "dev" {
 }
 
 configuration "unittest" {
-    //dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
     libs "curl"
