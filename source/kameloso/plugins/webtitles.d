@@ -295,61 +295,56 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         }
     }
 
-    import core.exception : UnicodeException;
-    import std.net.curl : CurlException;
-
-    void lookupAndReport()
+    void tryLookup(const bool firstTime = true)
     {
-        request.results = lookupTitle(request.url);
-        reportTitle(request, colouredFlag);
-        request.results.when = now;
-
-        synchronized //()
-        {
-            cache[request.url] = cast(shared)request.results;
-        }
-    }
-
-    try
-    {
-        lookupAndReport();
-    }
-    catch (CurlException)
-    {
-        request.state.askToError("Webtitles worker CURL exception: " ~ e.msg);
-        //version(PrintStacktraces) request.state.askToTrace(e.info);
-    }
-    catch (UnicodeException e)
-    {
-        request.state.askToError("Webtitles worker Unicode exception: " ~
-            e.msg ~ " (link is probably to an image or similar)");
-        //version(PrintStacktraces) request.state.askToTrace(e.info);
-    }
-    catch (Exception e)
-    {
-        request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
-        //version(PrintStacktraces) request.state.askToTrace(e.info);
-        request.state.askToLog("Rewriting URL and retrying ...");
-
-        if (request.url[$-1] == '/')
-        {
-            request.url = request.url[0..$-1];
-        }
-        else
-        {
-            request.url ~= '/';
-        }
+        import core.exception : UnicodeException;
+        import std.net.curl : CurlException;
 
         try
         {
-            lookupAndReport();
+            request.results = lookupTitle(request.url);
+            reportTitle(request, colouredFlag);
+            request.results.when = now;
+
+            synchronized //()
+            {
+                cache[request.url] = cast(shared)request.results;
+            }
+        }
+        catch (CurlException e)
+        {
+            request.state.askToError("Webtitles worker cURL exception: " ~ e.msg);
+            //version(PrintStacktraces) request.state.askToTrace(e.info);
+        }
+        catch (UnicodeException e)
+        {
+            request.state.askToError("Webtitles worker Unicode exception: " ~
+                e.msg ~ " (link is probably to an image or similar)");
+            //version(PrintStacktraces) request.state.askToTrace(e.info);
         }
         catch (Exception e)
         {
-            request.state.askToError("Webtitles worker exception: " ~ e.msg);
-            version(PrintStacktraces) request.state.askToTrace(e.toString);
+            request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
+            //version(PrintStacktraces) request.state.askToTrace(e.info);
+
+            if (!firstTime) return;
+
+            request.state.askToLog("Rewriting URL and retrying ...");
+
+            if (request.url[$-1] == '/')
+            {
+                request.url = request.url[0..$-1];
+            }
+            else
+            {
+                request.url ~= '/';
+            }
+
+            tryLookup(false);
         }
     }
+
+    tryLookup();
 }
 
 
