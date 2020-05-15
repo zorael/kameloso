@@ -267,7 +267,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
  +      plugin = The current `QuotesPlugin`.
  +      event = The instigating `dialect.defs.IRCEvent`.
  +      id = The specified nickname or (preferably) account.
- +      line = The quote string to add.
+ +      rawLine = The quote string to add.
  +/
 void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
     const string id, const string rawLine)

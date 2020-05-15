@@ -244,7 +244,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
  +  It will be named a passed filename.
  +
  +  Params:
- +      state = String filename of FIFO to create.
+ +      filename = String filename of FIFO to create.
  +
  +  Throws:
  +      `kameloso.common.ReturnValueException` if the FIFO could not be created.

@@ -101,8 +101,8 @@ struct Line
  +  ---
  +
  +  Params:
- +      originalLine = Line to apply the `sed`-replace pattern to.
- +      expression = Replacement pattern to apply.
+ +      line = Line to apply the `sed`-replace pattern to.
+ +      expr = Replacement pattern to apply.
  +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
  +
  +  Returns:

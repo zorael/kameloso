@@ -650,6 +650,8 @@ unittest
  +  Params:
  +      cache = Cache of previous `TitleLookupResults`, `shared` so that it can
  +          be reused in further lookup (other threads).
+ +      expireSeconds = After how many seconds a cached entry is considered to
+ +          have expired and should no longer be used as a valid entry.
  +/
 void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 {

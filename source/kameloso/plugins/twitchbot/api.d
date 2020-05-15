@@ -774,7 +774,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      reponseMsecs = How many milliseconds the last query took to complete.
+ +      responseMsecs = How many milliseconds the last query took to complete.
  +/
 void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
 {

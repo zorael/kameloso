@@ -786,6 +786,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +
  +  Params:
  +      filename = Filename of the file to read from.
+ +      verbosely = Whether or not to print how many seen users were loaded.
  +
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
