@@ -1037,15 +1037,16 @@ unittest
  +      truncateSeconds = Whether or no to always include seconds in the output.
  +          If not they are only included if the total time is less than a minute.
  +      numUnits = Number of units to include in the output text, where such is
- +          "weeks", "days", "hours", "minutes" and "seconds", and a fake approximate
- +          unit "months". Passing a `numUnits` of 6 will express the time difference
- +          using all units. Passing one of 4 will only express it in days, hours,
- +          minutes and seconds. Passing 1 will express it in only seconds.
+ +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
+ +          unit "months", and a fake "years" based on it. Passing a `numUnits`
+ +          of 7 will express the time difference using all units. Passing one
+ +          of 4 will only express it in days, hours, minutes and seconds.
+ +          Passing 1 will express it in only seconds.
  +      duration = A period of time.
  +      sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
-    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 6, Sink)
+    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 7, Sink)
     (const Duration duration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
 in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
@@ -1063,19 +1064,19 @@ do
 
     enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
 
-    static if ((numUnits < 1) || (numUnits > 6))
+    static if ((numUnits < 1) || (numUnits > 7))
     {
         import std.format : format;
 
         enum pattern = "Invalid number of units passed to `timeSince`: " ~
-            "expected `1` to `6`, got `%d`";
+            "expected `1` to `7`, got `%d`";
         static assert(0, pattern.format(numUnits));
     }
 
     immutable diff = duration.split!(units[units.length-min(numUnits, 5)..$]);
     bool putSomething;
 
-    static if (numUnits == 6)
+    static if (numUnits >= 6)
     {
         long days = diff.days;
         long weeks = diff.weeks;
@@ -1083,13 +1084,50 @@ do
         if (diff.weeks)
         {
             immutable totalDays = (diff.weeks * 7) + diff.days;
-            immutable months = cast(uint)(totalDays / daysInAMonth);
+            uint months = cast(uint)(totalDays / daysInAMonth);
             days = cast(uint)(totalDays % daysInAMonth);
             weeks = (days / 7);
             days %= 7;
 
             if (months)
             {
+                static if (numUnits == 7)
+                {
+                    if (months >= 12)
+                    {
+                        immutable years = cast(uint)(months / 12);
+                        months %= 12;
+
+                        static if (abbreviate)
+                        {
+                            sink.formattedWrite("%dy", years);
+
+                            if (months)
+                            {
+                                sink.put(' ');
+                            }
+                        }
+                        else
+                        {
+                            sink.formattedWrite("%d %s", years,
+                                years.plurality("year", "years"));
+
+                            if (months)
+                            {
+                                if (!truncateSeconds || days || diff.minutes ||
+                                    diff.hours || weeks)
+                                {
+                                    sink.put(", ");
+                                }
+                                else
+                                {
+                                    sink.put(" and ");
+                                }
+                            }
+                        }
+                    }
+                }
+
                 static if (abbreviate)
                 {
                     sink.formattedWrite("%dm", months);
@@ -1450,10 +1488,10 @@ unittest
 
     {
         immutable dur = 395.days + 11.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 6);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 6);
-        assert((since == "13 months and 5 days"), since);
-        assert((abbrev == "13m 5d"), abbrev);
+        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 7);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 7);
+        assert((since == "1 year, 1 month and 5 days"), since);
+        assert((abbrev == "1y 1m 5d"), abbrev);
     }
 
     {
