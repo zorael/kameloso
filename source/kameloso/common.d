@@ -1038,9 +1038,9 @@ unittest
  +          If not they are only included if the total time is less than a minute.
  +      numUnits = Number of units to include in the output text, where such is
  +          "weeks", "days", "hours", "minutes" and "seconds", and a fake approximate
- +          unit "months". Passing a `numUnits` of t will express the time difference
+ +          unit "months". Passing a `numUnits` of 6 will express the time difference
  +          using all units. Passing one of 4 will only express it in days, hours,
-            minutes and seconds. Passing 1 will express it in only seconds.
+ +          minutes and seconds. Passing 1 will express it in only seconds.
  +      duration = A period of time.
  +      sink = Output buffer sink to write to.
  +/
