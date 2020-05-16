@@ -45,15 +45,45 @@ configuration "application" {
         "Web"
 }
 
+configuration "application-lowmem" {
+    toolchainRequirements dmd="no" ldc="yes"
+    dependency "arsd-official:dom" version="~>7.2.0"
+    libs "curl"
+    dflags "-lowmem"
+
+    versions \
+        "Colours" \
+        "Web"
+}
+
 configuration "vanilla" {
     targetType "executable"
     // Mustn't be empty
+}
+
+configuration "vanilla-lowmem" {
+    toolchainRequirements dmd="no" ldc="yes"
+    dflags "-lowmem"
 }
 
 configuration "twitch" {
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
     libs "curl"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin"
+}
+
+configuration "twitch-lowmem" {
+    toolchainRequirements dmd="no" ldc="yes"
+    dependency "arsd-official:dom" version="~>7.2.0"
+    subConfiguration "dialect" "twitch"
+    libs "curl"
+    dflags "-lowmem"
 
     versions \
         "Colours" \
@@ -80,10 +110,49 @@ configuration "dev" {
         //"TraceWhois" \
 }
 
+configuration "dev-lowmem" {
+    toolchainRequirements dmd="no" ldc="yes"
+    dependency "arsd-official:dom" version="~>7.2.0"
+    subConfiguration "dialect" "dev"
+    libs "curl"
+    dflags "-lowmem"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "ProfileGC"
+        //"TraceWhois" \
+}
+
 configuration "unittest" {
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
     libs "curl"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "ProfileGC"
+}
+
+configuration "unittest-lowmem" {
+    toolchainRequirements dmd="no" ldc="yes"
+    dependency "arsd-official:dom" version="~>7.2.0"
+    subConfiguration "dialect" "dev"
+    libs "curl"
+    dflags "-lowmem"
 
     versions \
         "Colours" \
