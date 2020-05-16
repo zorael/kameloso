@@ -657,14 +657,14 @@ private:
         return kameloso.messaging.immediate(state, line);
     }
 
-    import std.range : only;
     import std.format : format;
+    import std.meta : AliasSeq;
 
     /+
      +  Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
      +  `askToInfo`, `askToWarning`, and `askToError`,
      +/
-    static foreach (immutable verb; only("Writeln", "Trace", "Log",
+    static foreach (immutable verb; AliasSeq!("Writeln", "Trace", "Log",
         "Info", "Warn", "Warning", "Error"))
     {
         /++
