@@ -734,6 +734,12 @@ private:
     /// In the case of chained URL lookups, how many milliseconds to delay each lookup by.
     enum delayMsecs = 100;
 
+    /++
+     +  How big a buffer to initially allocate when downloading web pages to get
+     +  their titles.
+     +/
+    enum lookupBufferSize = 8192;
+
     mixin IRCPluginImpl;
 
     // onEvent
