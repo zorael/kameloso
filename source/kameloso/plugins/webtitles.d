@@ -381,10 +381,11 @@ TitleLookupResults lookupTitle(const string url)
     client.onReceive = (ubyte[] data)
     {
         sink.put(data);
-        return data.length;
+        doc.parseGarbage(cast(string)sink.data);
+        return doc.title.length ? HTTP.requestAbort : data.length;
     };
 
-    client.perform();
+    client.perform(No.throwOnError);
     immutable code = client.statusLine.code;
 
     if (code >= 400)
@@ -392,11 +393,7 @@ TitleLookupResults lookupTitle(const string url)
         import std.conv : text;
         throw new Exception(code.text ~ " fetching URL " ~ url);
     }
-
-    immutable received = assumeUnique(cast(char[])sink.data);
-    doc.parseGarbage(received);
-
-    if (!doc.title.length)
+    else if (!doc.title.length)
     {
         throw new Exception("No title tag found");
     }
