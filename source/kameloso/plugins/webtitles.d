@@ -361,7 +361,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
  +/
 TitleLookupResults lookupTitle(const string url)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
+    import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
     import arsd.dom : Document;
     import std.array : Appender;
@@ -376,7 +376,7 @@ TitleLookupResults lookupTitle(const string url)
 
     Document doc = new Document;
     Appender!(ubyte[]) sink;
-    sink.reserve(BufferSize.titleLookup);
+    sink.reserve(WebtitlesPlugin.lookupBufferSize);
 
     client.onReceive = (ubyte[] data)
     {

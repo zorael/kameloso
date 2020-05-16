@@ -114,12 +114,6 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
-     +  How big a buffer to initially allocate when downloading web pages to get
-     +  their titles.
-     +/
-    titleLookup = 1_048_576,
-
-    /++
      +  The maximum number of queued outgoing lines to buffer. Anything above
      +  this will crash the program with a buffer overrun. It can be arbitrarily big.
      +/
