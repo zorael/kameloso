@@ -586,9 +586,12 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
     case "Improperly formatted auth":
         import lu.string : beginsWith;
 
-        immutable message = !service.state.bot.pass.beginsWith("oauth:") ?
-            `Client pass is malformed; does not start with "oauth:"` :
-            "Client pass is malformed; cannot authenticate. Make sure it is entered correctly.";
+        immutable message = !service.state.bot.pass.length ?
+            "You *need* a pass to join this server." :
+            (!service.state.bot.pass.beginsWith("oauth:") ?
+                `Client pass is malformed; does not start with "oauth:"` :
+                "Client pass is malformed; cannot authenticate. " ~
+                    "Make sure it is entered correctly.");
 
         logger.error(message);
         break;
@@ -1091,17 +1094,6 @@ void register(ConnectService service)
 
     with (service.state)
     {
-        version(TwitchSupport)
-        {
-            if (!bot.pass.length && server.address.endsWith(".twitch.tv"))
-            {
-                // server.daemon is always Daemon.unset at this point
-                logger.error("You *need* a pass to join this server.");
-                quit(service.state, "Authentication failure (missing pass)");
-                return;
-            }
-        }
-
         service.registration = Progress.started;
         raw(service.state, "CAP LS 302", Yes.quiet);
 
