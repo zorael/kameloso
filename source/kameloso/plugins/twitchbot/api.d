@@ -530,7 +530,9 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
     "`login` or `id`, got `" ~ field ~ '`')
 {
     import lu.string : beginsWith;
+    import std.array : Appender;
     import std.conv : to;
+    import std.exception : assumeUnique;
     import std.format : format;
     import std.net.curl : HTTP;
     import core.time : seconds;
@@ -543,16 +545,17 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
     client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
     client.addRequestHeader("Authorization", authToken);
 
-    string received;
+    Appender!(ubyte[]) sink;
 
     client.onReceive = (ubyte[] data)
     {
-        received = (cast(const(char)[])data).idup;
+        sink.put(data);
         return data.length;
     };
 
-    client.perform();
+    /*immutable curlCode =*/ client.perform();//(No.throwOnError);
     immutable code = client.statusLine.code;
+    immutable received = assumeUnique(cast(char[])sink.data);
 
     if ((code >= 400) || !received.length || (received.beginsWith(`{"err`)))
     {
