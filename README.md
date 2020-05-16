@@ -85,9 +85,11 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 
 ## Prerequisites
 
-There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 1.3 Gb of free memory for a minimal build (Linux plain `singleFile`), and 3.8 Gb for a standard build (Linux debug). Upwards of 4.3 Gb to run unittests.
+There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 1.2 Gb of free memory for a minimal build (Linux plain `singleFile`), and 3.8 Gb for a standard build (Linux debug).
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which is fast to compile; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which builds slower but produces faster code.
+
+The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it will need to be installed separately. Refer to your repositories.
 
@@ -110,9 +112,9 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd 2.089 and 2.090** and thereabouts (at time of writing, April 2020), builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
+On Windows with **dmd 2.089 and 2.090**, builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). Cursory testing shows it does not seem to happen with **2.091** and later. The workarounds are otherwise to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
 
-> Mind that `singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
+`singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
 
 ### Build configurations
 
@@ -121,7 +123,9 @@ There are several configurations in which the bot may be built.
 * `application`, default configuration; includes terminal colours and plugins that access the web (both can still be disabled in runtime)
 * `vanilla`, barebones build with most plugins but without colours or any specific extras
 * `twitch`, essentially `application` plus Twitch support and the Twitch streamer plugin
-* `dev`, all-inclusive development build equalling everything available, including things like more descriptive error messages
+* `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
+
+> All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory by raising compilation time, but so far they *only work with **ldc***. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -143,10 +147,10 @@ $ ./kameloso --writeconfig
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
-* Linux/FreeBSD: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
-* macOS: `$HOME/Library/Application Support/kameloso`
-* Windows: `%APPDATA%\kameloso`
-* Other unexpected platforms: fallback to current working directory
+* **Linux/FreeBSD**: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
+* **macOS**: `$HOME/Library/Application Support/kameloso`
+* **Windows**: `%APPDATA%\kameloso`
+* **Other unexpected platforms**: fallback to current working directory
 
 Open the file in a normal text editor.
 
@@ -185,6 +189,7 @@ Mind that you need to authorise yourself with services with an account listed as
 ```
       you joined #channel
  kameloso sets mode +o you
+
       you | I am a fish
       you | s/fish/snek/
  kameloso | you | I am a snek
@@ -310,9 +315,7 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 ## Windows
 
-Plugins that access the web will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
-
-When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `save` command, or its `quit` command outright to exit immediately.
+When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `!save` command, or its `!quit` command outright to exit immediately.
 
 ## Posix
 
@@ -331,7 +334,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * [`dub`](https://code.dlang.org)
 * [`dialect`](https://github.com/zorael/dialect) ([dub](http://dialect.dub.pm))
 * [`lu`](https://github.com/zorael/lu) ([dub](http://lu.dub.pm))
-* [`dlang-requests`](https://github.com/ikod/dlang-requests) ([dub](http://requests.dub.pm))
 * [`arsd`](https://github.com/adamdruppe/arsd) ([dub](http://arsd-official.dub.pm))
 
 # License

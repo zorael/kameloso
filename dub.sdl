@@ -37,8 +37,18 @@ versions \
     "WithWebtitlesPlugin"
 
 configuration "application" {
-    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
+    libs "curl"
+
+    versions \
+        "Colours" \
+        "Web"
+}
+
+configuration "application-lowmem" {
+    dependency "arsd-official:dom" version="~>7.2.0"
+    libs "curl"
+    dflags "-lowmem"
 
     versions \
         "Colours" \
@@ -50,10 +60,27 @@ configuration "vanilla" {
     // Mustn't be empty
 }
 
+configuration "vanilla-lowmem" {
+    dflags "-lowmem"
+}
+
 configuration "twitch" {
-    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
+    libs "curl"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin"
+}
+
+configuration "twitch-lowmem" {
+    dependency "arsd-official:dom" version="~>7.2.0"
+    subConfiguration "dialect" "twitch"
+    libs "curl"
+    dflags "-lowmem"
 
     versions \
         "Colours" \
@@ -63,9 +90,28 @@ configuration "twitch" {
 }
 
 configuration "dev" {
-    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
+    libs "curl"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "ProfileGC"
+        //"TraceWhois" \
+}
+
+configuration "dev-lowmem" {
+    dependency "arsd-official:dom" version="~>7.2.0"
+    subConfiguration "dialect" "dev"
+    libs "curl"
+    dflags "-lowmem"
 
     versions \
         "Colours" \
@@ -81,9 +127,27 @@ configuration "dev" {
 }
 
 configuration "unittest" {
-    dependency "requests" version="~>1.1.0"
     dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
+    libs "curl"
+
+    versions \
+        "Colours" \
+        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "ProfileGC"
+}
+
+configuration "unittest-lowmem" {
+    dependency "arsd-official:dom" version="~>7.2.0"
+    subConfiguration "dialect" "dev"
+    libs "curl"
+    dflags "-lowmem"
 
     versions \
         "Colours" \

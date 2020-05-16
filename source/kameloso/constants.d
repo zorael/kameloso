@@ -114,12 +114,6 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
-     +  How long a Webtitles title lookup lasts before it is considered to
-     +  have expired, and should be looked up anew.
-     +/
-    titleLookup = 8192,
-
-    /++
      +  The maximum number of queued outgoing lines to buffer. Anything above
      +  this will crash the program with a buffer overrun. It can be arbitrarily big.
      +/
@@ -171,6 +165,11 @@ enum Timeout
      +  at all before the connection is considered lost.
      +/
     connectionLost = 600,
+
+    /++
+     +  Timeout for HTTP GET requests.
+     +/
+    httpGET = 10,
 }
 
 

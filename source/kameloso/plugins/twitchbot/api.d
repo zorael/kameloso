@@ -16,7 +16,6 @@ import kameloso.plugins.core;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import lu.json : JSONStorage;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -68,10 +67,11 @@ struct QueryResponse
  +  compared to Posix platforms.
  +
  +  Params:
- +      bucket = The shared associative array bucket to put the results in,
- +          response body values keyed by URL.
+ +      bucket = The shared associative array to put the results in, response
+ +          values keyed by URL.
+ +      timeout = How long before queries time out.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket)
+void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -88,9 +88,9 @@ void persistentQuerier(shared QueryResponse[string] bucket)
     while (!halt)
     {
         receive(
-            (string url, shared string[string] headers) scope
+            (string url, string authToken) scope
             {
-                queryTwitchImpl(url, headers, bucket);
+                queryTwitchImpl(url, authToken, timeout, bucket);
             },
             (ThreadMessage.Teardown) scope
             {
@@ -376,10 +376,7 @@ void generateKey(TwitchBotPlugin plugin)
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL to query.
- +      singleWorker = Whether the request should be passed onto a different
- +          persistent worker thread by concurrency message, or spawned in a
- +          new thread just for the occasion.
- +      headers = `shared` HTTP headers to use when issuing the requests.
+ +      authorisationHeader = Authorisation HTTP header to pass.
  +
  +  Returns:
  +      The `QueryResponse` that was discovered while monitoring the `bucket`
@@ -389,7 +386,7 @@ void generateKey(TwitchBotPlugin plugin)
  +      `object.Exception` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const bool singleWorker, shared string[string] headers)
+    const string authorisationHeader)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -399,18 +396,20 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     SysTime pre;
 
-    if (singleWorker)
+    if (plugin.twitchBotSettings.singleWorkerThread)
     {
         pre = Clock.currTime;
-        plugin.persistentWorkerTid.send(url, headers);
+        plugin.persistentWorkerTid.send(url, authorisationHeader);
     }
     else
     {
-        spawn(&queryTwitchImpl, url, headers, plugin.bucket);
+        spawn(&queryTwitchImpl, url, authorisationHeader,
+            plugin.queryResponseTimeout, plugin.bucket);
     }
 
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
-    const response = waitForQueryResponse(plugin, url, singleWorker);
+    const response = waitForQueryResponse(plugin, url,
+        plugin.twitchBotSettings.singleWorkerThread);
 
     scope(exit)
     {
@@ -421,7 +420,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         }
     }
 
-    if (singleWorker)
+    if (plugin.twitchBotSettings.singleWorkerThread)
     {
         immutable post = Clock.currTime;
         immutable diff = (post - pre);
@@ -464,30 +463,45 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +
  +  Params:
  +      url = URL address to look up.
- +      headers = `shared` HTTP headers to use when issuing the requests.
+ +      authToken = Authorisation token HTTP header to pass.
+ +      timeout = How long to let the query run before timing out.
  +      bucket = The shared associative array to put the results in, response
- +          body values keyed by URL.
+ +          values keyed by URL.
  +/
-void queryTwitchImpl(const string url, shared string[string] headers,
-    shared QueryResponse[string] bucket)
+void queryTwitchImpl(const string url, const string authToken,
+    const uint timeout, shared QueryResponse[string] bucket)
 {
-    import lu.traits : UnqualArray;
-    import requests.request : Request;
-    import std.datetime.systime : Clock;
+    import std.net.curl : HTTP;
+    import std.datetime.systime : Clock, SysTime;
+    import core.time : seconds;
+    import std.array : Appender;
+    import std.exception : assumeUnique;
 
-    Request req;
-    req.keepAlive = false;
-    req.addHeaders(cast(UnqualArray!(typeof(headers)))headers);
+    auto client = HTTP(url);
+    client.operationTimeout = timeout.seconds;
+    client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
+    client.addRequestHeader("Authorization", authToken);
+
+    Appender!(ubyte[]) sink;
+    sink.reserve(TwitchBotPlugin.queryBufferSize);
+
+    client.onReceive = (ubyte[] data)
+    {
+        sink.put(data);
+        return data.length;
+    };
+
+    // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
 
     immutable pre = Clock.currTime;
-    auto res = req.get(url);
+    /*immutable curlCode =*/ client.perform();//(No.throwOnError);
     immutable post = Clock.currTime;
 
     QueryResponse response;
-    response.code = res.code;
+    response.code = client.statusLine.code;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
-    response.str = cast(string)res.responseBody.data.idup;
+    response.str = assumeUnique(cast(char[])sink.data);
 
     synchronized //()
     {
@@ -502,42 +516,57 @@ void queryTwitchImpl(const string url, shared string[string] headers,
  +  by name or by Twitch account ID number. Implementation function.
  +
  +  Params:
- +      plugin = The current `TwitchBotPlugin`.
  +      field = The field to access via the HTTP URL. Can be either "login"
  +          or "id".
  +      identifier = The identifier of type `field` to look up.
+ +      authToken = Authorisation token HTTP header to pass.
+ +      timeout = How long to let the query run before timing out.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
-JSONValue getUserImpl(Identifier)(TwitchBotPlugin plugin, const string field,
-    const Identifier identifier)
+JSONValue getUserImpl(Identifier)(const string field, const Identifier identifier,
+    const string authToken, const uint timeout)
 in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
     import lu.string : beginsWith;
-    import lu.traits : UnqualArray;
-    import requests.request : Request;
+    import std.array : Appender;
     import std.conv : to;
+    import std.exception : assumeUnique;
     import std.format : format;
+    import std.net.curl : HTTP;
+    import core.time : seconds;
 
     immutable url = "https://api.twitch.tv/helix/users?%s=%s"
         .format(field, identifier.to!string);  // String just passes through
 
-    Request req;
-    req.keepAlive = false;
-    req.addHeaders(cast(UnqualArray!(typeof(plugin.headers)))plugin.headers);
-    auto res = req.get(url);
+    auto client = HTTP(url);
+    client.operationTimeout = timeout.seconds;
+    client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
+    client.addRequestHeader("Authorization", authToken);
 
-    immutable data = cast(string)res.responseBody.data;
+    Appender!(ubyte[]) sink;
+    sink.reserve(TwitchBotPlugin.queryBufferSize);
 
-    if ((res.code >= 400) || !data.length || (data.beginsWith(`{"err`)))
+    client.onReceive = (ubyte[] data)
     {
+        sink.put(data);
+        return data.length;
+    };
+
+    /*immutable curlCode =*/ client.perform();//(No.throwOnError);
+    immutable code = client.statusLine.code;
+    immutable received = assumeUnique(cast(char[])sink.data);
+
+    if ((code >= 400) || !received.length || (received.beginsWith(`{"err`)))
+    {
+        // {"status":401,"message":"missing authorization token"}
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new TwitchQueryException("Failed to query Twitch", data, res.code, __FILE__);
+        throw new TwitchQueryException("Failed to query Twitch", received, code, __FILE__);
     }
 
-    return parseUserFromResponse(data);
+    return parseUserFromResponse(received);
 }
 
 
@@ -590,7 +619,7 @@ JSONValue parseUserFromResponse(const string jsonString)
  +/
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
-    return plugin.getUserImpl("login", login);
+    return getUserImpl("login", login, plugin.authorizationBearer, plugin.queryResponseTimeout);
 }
 
 
@@ -613,7 +642,7 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
-    return plugin.getUserImpl("id", id);
+    return getUserImpl("id", id, plugin.authorizationBearer, plugin.queryResponseTimeout);
 }
 
 
@@ -636,22 +665,7 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
-    return plugin.getUserImpl("id", id);
-}
-
-
-// resetAPIKeys
-/++
- +  Resets the API keys in the HTTP headers we pass.
- +/
-void resetAPIKeys(TwitchBotPlugin plugin)
-{
-    synchronized //()
-    {
-        // Can't use a literal due to https://issues.dlang.org/show_bug.cgi?id=20812
-        plugin.headers["Client-ID"] = plugin.clientID,
-        plugin.headers["Authorization"] = "Bearer " ~ plugin.state.bot.pass[6..$];
-    }
+    return getUserImpl("id", id, plugin.authorizationBearer, plugin.queryResponseTimeout);
 }
 
 
@@ -666,13 +680,13 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     import lu.traits : UnqualArray;
     import std.json : JSONType, JSONValue, parseJSON;
 
-    alias UT = UnqualArray!(typeof(plugin.headers));
-    auto oauthHeaders = (cast(UT)plugin.headers).dup;
-    oauthHeaders["Authorization"] = "OAuth " ~ plugin.state.bot.pass[6..$];
-
     enum url = "https://id.twitch.tv/oauth2/validate";
-    const response = queryTwitch(plugin, url,
-        plugin.twitchBotSettings.singleWorkerThread, cast(shared)oauthHeaders);
+
+    // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
+    // "Authorization: Bearer xxx" used everywhere else.
+    immutable authorizationHeader = "OAuth " ~ plugin.state.bot.pass[6..$];
+
+    const response = queryTwitch(plugin, url, authorizationHeader);
 
     if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
     {
@@ -727,9 +741,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 
         scope(failure) plugin.useAPIFeatures = false;
 
-        const response = queryTwitch(plugin, paginatedURL,
-            plugin.twitchBotSettings.singleWorkerThread, plugin.headers);
-
+        const response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
