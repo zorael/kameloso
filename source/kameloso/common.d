@@ -1034,129 +1034,170 @@ unittest
  +  Params:
  +      abbreviate = Whether or not to abbreviate the output, using `h` instead
  +          of `hours`, `m` instead of `minutes`, etc.
- +      truncateSeconds = Whether or no to always include seconds in the output.
- +          If not they are only included if the total time is less than a minute.
  +      numUnits = Number of units to include in the output text, where such is
  +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
  +          unit "months", and a fake "years" based on it. Passing a `numUnits`
  +          of 7 will express the time difference using all units. Passing one
  +          of 4 will only express it in days, hours, minutes and seconds.
  +          Passing 1 will express it in only seconds.
+ +      truncateUnits = Number of units to skip from output, going from least
+ +          significant (seconds) to most significant (years).
  +      duration = A period of time.
  +      sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
-    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 7, Sink)
+    uint numUnits = 7, uint truncateUnits = 0, Sink)
     (const Duration duration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
-in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
+in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration")
 do
 {
     import lu.string : plurality;
     import std.algorithm.comparison : min;
     import std.format : formattedWrite;
     import std.meta : AliasSeq;
-    import std.traits : isIntegral, isSomeString;
-
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
-    alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
-
-    enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
 
     static if ((numUnits < 1) || (numUnits > 7))
     {
         import std.format : format;
 
-        enum pattern = "Invalid number of units passed to `timeSince`: " ~
+        enum pattern = "Invalid number of units passed to `timeSinceInto`: " ~
             "expected `1` to `7`, got `%d`";
         static assert(0, pattern.format(numUnits));
     }
 
+    static if ((truncateUnits < 0) || (truncateUnits > 6))
+    {
+        import std.format : format;
+
+        enum pattern = "Invalid number of units to truncate passed to `timeSinceInto`: " ~
+            "expected `0` to `6`, got `%d`";
+        static assert(0, pattern.format(truncateUnits));
+    }
+
+    alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
+    enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
+
     immutable diff = duration.split!(units[units.length-min(numUnits, 5)..$]);
+
     bool putSomething;
+
+    static if (numUnits >= 1)
+    {
+        immutable trailingSeconds = (diff.seconds && (truncateUnits < 1));
+    }
+
+    static if (numUnits >= 2)
+    {
+        immutable trailingMinutes = (diff.minutes && (truncateUnits < 2));
+    }
+
+    static if (numUnits >= 3)
+    {
+        immutable trailingHours = (diff.hours && (truncateUnits < 3));
+    }
+
+    static if (numUnits >= 4)
+    {
+        immutable trailingDays = (diff.days && (truncateUnits < 4));
+        long days = diff.days;
+    }
+
+    static if (numUnits >= 5)
+    {
+        immutable trailingWeeks = (diff.weeks && (truncateUnits < 5));
+        long weeks = diff.weeks;
+    }
 
     static if (numUnits >= 6)
     {
-        long days = diff.days;
-        long weeks = diff.weeks;
+        uint months;
 
-        if (diff.weeks)
         {
             immutable totalDays = (diff.weeks * 7) + diff.days;
-            uint months = cast(uint)(totalDays / daysInAMonth);
+            months = cast(uint)(totalDays / daysInAMonth);
             days = cast(uint)(totalDays % daysInAMonth);
             weeks = (days / 7);
             days %= 7;
+        }
+    }
 
-            if (months)
+    static if (numUnits >= 7)
+    {
+        uint years;
+
+        if (months >= 12) // && (truncateUnits < 7))
+        {
+            years = cast(uint)(months / 12);
+            months %= 12;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+
+    static if (numUnits >= 7)
+    {
+        if (years)
+        {
+            static if (abbreviate)
             {
-                static if (numUnits == 7)
-                {
-                    if (months >= 12)
-                    {
-                        immutable years = cast(uint)(months / 12);
-                        months %= 12;
-
-                        static if (abbreviate)
-                        {
-                            sink.formattedWrite("%dy", years);
-
-                            if (months)
-                            {
-                                sink.put(' ');
-                            }
-                        }
-                        else
-                        {
-                            sink.formattedWrite("%d %s", years,
-                                years.plurality("year", "years"));
-
-                            if (months)
-                            {
-                                if (!truncateSeconds || days || diff.minutes ||
-                                    diff.hours || weeks)
-                                {
-                                    sink.put(", ");
-                                }
-                                else
-                                {
-                                    sink.put(" and ");
-                                }
-                            }
-                        }
-                    }
-                }
-
-                static if (abbreviate)
-                {
-                    sink.formattedWrite("%dm", months);
-                }
-                else
-                {
-                    sink.formattedWrite("%d %s", months,
-                        months.plurality("month", "months"));
-                }
+                sink.formattedWrite("%dy", years);
+            }
+            else
+            {
+                sink.formattedWrite("%d %s", years,
+                    years.plurality("year", "years"));
             }
 
             putSomething = true;
         }
     }
-    else
+
+    static if (numUnits >= 6)
     {
-        static if (numUnits >= 5)
+        if (months && (!putSomething || (truncateUnits < 6)))
         {
-            immutable weeks = diff.weeks;
-        }
-        static if (numUnits >= 4)
-        {
-            immutable days = diff.days;
+            static if (abbreviate)
+            {
+                static if (numUnits >= 7)
+                {
+                    if (putSomething) sink.put(' ');
+                }
+
+                sink.formattedWrite("%dm", months);
+            }
+            else
+            {
+                static if (numUnits >= 7)
+                {
+                    if (putSomething)
+                    {
+                        if (trailingSeconds ||
+                            trailingMinutes ||
+                            trailingHours ||
+                            trailingDays ||
+                            trailingWeeks)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
+                    }
+                }
+
+                sink.formattedWrite("%d %s", months,
+                    months.plurality("month", "months"));
+            }
+
+            putSomething = true;
         }
     }
 
     static if (numUnits >= 5)
     {
-        if (weeks)
+        if (weeks && (!putSomething || (truncateUnits < 5)))
         {
             static if (abbreviate)
             {
@@ -1173,8 +1214,17 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds || days || diff.minutes || diff.hours) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds ||
+                            trailingMinutes ||
+                            trailingHours ||
+                            trailingDays)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
                 }
 
@@ -1188,7 +1238,7 @@ do
 
     static if (numUnits >= 4)
     {
-        if (days)
+        if (days && (!putSomething || (truncateUnits < 4)))
         {
             static if (abbreviate)
             {
@@ -1205,8 +1255,16 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds || diff.minutes || diff.hours) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds ||
+                            trailingMinutes ||
+                            trailingHours)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
                 }
 
@@ -1220,7 +1278,7 @@ do
 
     static if (numUnits >= 3)
     {
-        if (diff.hours)
+        if (diff.hours && (!putSomething || (truncateUnits < 3)))
         {
             static if (abbreviate)
             {
@@ -1237,8 +1295,15 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds || diff.minutes) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds ||
+                            trailingMinutes)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
                 }
 
@@ -1252,7 +1317,7 @@ do
 
     static if (numUnits >= 2)
     {
-        if (diff.minutes)
+        if (diff.minutes && (!putSomething || (truncateUnits < 2)))
         {
             static if (abbreviate)
             {
@@ -1269,11 +1334,15 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
-                    /*if (putSomething && !truncateSeconds) sink.put(", ");
-                    else if (putSomething) sink.put(" and ");*/
                 }
 
                 sink.formattedWrite("%d %s", diff.minutes,
@@ -1284,7 +1353,7 @@ do
         }
     }
 
-    if (!truncateSeconds || !putSomething)
+    if (trailingSeconds || !putSomething)
     {
         static if (abbreviate)
         {
@@ -1329,31 +1398,51 @@ unittest
 
     {
         immutable dur = 3_141_519_265.msecs;
-        dur.timeSinceInto!(No.abbreviate, Yes.truncateSeconds, 4)(sink);
+        dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
         assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate, Yes.truncateSeconds, 4)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1)(sink);
         assert((sink.data == "36d 8h 38m"), sink.data);
         sink.clear();
     }
 
     {
         immutable dur = 3599.seconds;
-        dur.timeSinceInto(sink);
+        dur.timeSinceInto!(No.abbreviate, 2, 1)(sink);
         assert((sink.data == "59 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 2, 1)(sink);
         assert((sink.data == "59m"), sink.data);
         sink.clear();
     }
 
     {
         immutable dur = 3.days + 35.minutes;
-        dur.timeSinceInto(sink);
+        dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
         assert((sink.data == "3 days and 35 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate)(sink);
+        dur.timeSinceInto!(Yes.abbreviate,4, 1)(sink);
         assert((sink.data == "3d 35m"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 57.weeks + 1.days + 2.hours + 3.minutes + 4.seconds;
+        dur.timeSinceInto!(No.abbreviate, 7, 4)(sink);
+        assert((sink.data == "1 year, 1 month and 1 week"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 7, 4)(sink);
+        assert((sink.data == "1y 1m 1w"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 4.seconds;
+        dur.timeSinceInto!(No.abbreviate, 7, 4)(sink);
+        assert((sink.data == "4 seconds"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 7, 4)(sink);
+        assert((sink.data == "4s"), sink.data);
         sink.clear();
     }
 }
@@ -1377,27 +1466,28 @@ unittest
  +  Params:
  +      abbreviate = Whether or not to abbreviate the output, using `h` instead
  +          of `hours`, `m` instead of `minutes`, etc.
- +      truncateSeconds = Whether or no to always include seconds in the output.
- +          If not they are only included if the total time is less than a minute.
  +      numUnits = Number of units to include in the output text, where such is
- +          "weeks", "days", "hours", "minutes" and "seconds". Passing a `numUnits`
- +          of 5 will express the time difference using all units. Passing one of
- +          4 will only express it in days, hours, minutes and seconds. Passing
- +          1 will express it in only seconds.
+ +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
+ +          unit "months", and a fake "years" based on it. Passing a `numUnits`
+ +          of 7 will express the time difference using all units. Passing one
+ +          of 4 will only express it in days, hours, minutes and seconds.
+ +          Passing 1 will express it in only seconds.
+ +      truncateUnits = Number of units to skip from output, going from least
+ +          significant (seconds) to most significant (years).
  +      duration = A period of time.
  +
  +  Returns:
  +      A string with the passed duration expressed in natural English language.
  +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
-    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 5)
+    uint numUnits = 7, uint truncateUnits = 0)
     (const Duration duration) pure
 {
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(50);
-    duration.timeSinceInto!(abbreviate, truncateSeconds, numUnits)(sink);
+    sink.reserve(60);
+    duration.timeSinceInto!(abbreviate, numUnits, truncateUnits)(sink);
     return sink.data;
 }
 
@@ -1408,40 +1498,40 @@ unittest
 
     {
         immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 4);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 4);
+        immutable since = dur.timeSince!(No.abbreviate, 4, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 4, 1);
         assert((since == "9 days, 3 hours and 16 minutes"), since);
         assert((abbrev == "9d 3h 16m"), abbrev);
     }
 
     {
         immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 5);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 5);
+        immutable since = dur.timeSince!(No.abbreviate, 5, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 5, 1);
         assert((since == "1 week, 2 days, 3 hours and 16 minutes"), since);
         assert((abbrev == "1w 2d 3h 16m"), abbrev);
     }
 
     {
         immutable dur = 789_383.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 1);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 1);
+        immutable since = dur.timeSince!(No.abbreviate, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 1);
         assert((since == "789383 seconds"), since);
         assert((abbrev == "789383s"), abbrev);
     }
 
     {
         immutable dur = 789_383.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, No.truncateSeconds, 2);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, No.truncateSeconds, 2);
+        immutable since = dur.timeSince!(No.abbreviate, 2, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 2, 0);
         assert((since == "13156 minutes and 23 seconds"), since);
         assert((abbrev == "13156m 23s"), abbrev);
     }
 
     {
         immutable dur = 3_620.seconds;  // 1 hour and 20 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
+        immutable since = dur.timeSince!(No.abbreviate, 7, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 1);
         assert((since == "1 hour"), since);
         assert((abbrev == "1h"), abbrev);
     }
@@ -1464,58 +1554,82 @@ unittest
 
     {
         immutable dur = 1.days + 1.minutes + 1.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, No.truncateSeconds);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, No.truncateSeconds);
+        immutable since = dur.timeSince!(No.abbreviate, 7, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 0);
         assert((since == "1 day, 1 minute and 1 second"), since);
         assert((abbrev == "1d 1m 1s"), abbrev);
     }
 
     {
         immutable dur = 3.weeks + 6.days + 10.hours;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds);
+        immutable since = dur.timeSince!(No.abbreviate);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate);
         assert((since == "3 weeks, 6 days and 10 hours"), since);
         assert((abbrev == "3w 6d 10h"), abbrev);
     }
 
     {
         immutable dur = 377.days + 11.hours;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 6);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 6);
+        immutable since = dur.timeSince!(No.abbreviate, 6);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 6);
         assert((since == "12 months, 2 weeks, 3 days and 11 hours"), since);
         assert((abbrev == "12m 2w 3d 11h"), abbrev);
     }
 
     {
         immutable dur = 395.days + 11.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 7);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 7);
+        immutable since = dur.timeSince!(No.abbreviate, 7, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 1);
         assert((since == "1 year, 1 month and 5 days"), since);
         assert((abbrev == "1y 1m 5d"), abbrev);
     }
 
     {
         immutable dur = 1.weeks + 9.days;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 5);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 5);
+        immutable since = dur.timeSince!(No.abbreviate, 5);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 5);
         assert((since == "2 weeks and 2 days"), since);
         assert((abbrev == "2w 2d"), abbrev);
     }
 
     {
         immutable dur = 30.days + 1.weeks;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 5);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 5);
+        immutable since = dur.timeSince!(No.abbreviate, 5);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 5);
         assert((since == "5 weeks and 2 days"), since);
         assert((abbrev == "5w 2d"), abbrev);
     }
 
     {
         immutable dur = 30.days + 1.weeks + 1.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, No.truncateSeconds, 4);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, No.truncateSeconds, 4);
+        immutable since = dur.timeSince!(No.abbreviate, 4, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 4, 0);
         assert((since == "37 days and 1 second"), since);
         assert((abbrev == "37d 1s"), abbrev);
+    }
+
+    {
+        immutable dur = 267.weeks + 4.days + 9.hours + 15.minutes + 1.seconds;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 0);
+        assert((since == "5 years, 2 months, 1 week, 6 days, 9 hours, 15 minutes and 1 second"), since);
+        assert((abbrev == "5y 2m 1w 6d 9h 15m 1s"), abbrev);
+    }
+
+    {
+        immutable dur = 360.days + 350.days;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 6);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 6);
+        assert((since == "1 year"), since);
+        assert((abbrev == "1y"), abbrev);
+    }
+
+    {
+        immutable dur = 267.weeks + 4.days + 9.hours + 15.minutes + 1.seconds;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 3);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 3);
+        assert((since == "5 years, 2 months, 1 week and 6 days"), since);
+        assert((abbrev == "5y 2m 1w 6d"), abbrev);
     }
 }
 
