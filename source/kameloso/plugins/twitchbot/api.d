@@ -483,6 +483,7 @@ void queryTwitchImpl(const string url, const string authToken,
     client.addRequestHeader("Authorization", authToken);
 
     Appender!(ubyte[]) sink;
+    sink.reserve(TwitchBotPlugin.queryBufferSize);
 
     client.onReceive = (ubyte[] data)
     {
@@ -546,6 +547,7 @@ in (((field == "login") || (field == "id")), "Invalid field supplied; expected "
     client.addRequestHeader("Authorization", authToken);
 
     Appender!(ubyte[]) sink;
+    sink.reserve(TwitchBotPlugin.queryBufferSize);
 
     client.onReceive = (ubyte[] data)
     {
