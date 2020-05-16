@@ -1608,6 +1608,11 @@ package:
          +/
         enum queryResponseTimeout = 15;
 
+        /++
+         +  How big a buffer to preallocate when doing HTTP API queries.
+         +/
+        enum queryBufferSize = 4096;
+
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
 
