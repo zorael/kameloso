@@ -1177,18 +1177,21 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                 immutable now = Clock.currTime;
 
-                enum pattern = "Your Twitch authorisation key will expire on " ~
-                    "%s%02d-%02d-%02d %02d:%02d";
 
                 if ((expiresWhen - now) > 1.weeks)
                 {
                     // More than a week away, just .info
-                    logger.infof(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
-                        expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                    enum pattern = "Your Twitch authorisation key will expire on " ~
+                        "%s%02d-%02d-%02d";
+
+                    logger.infof(pattern, Tint.log, expiresWhen.year,
+                        expiresWhen.month, expiresWhen.day);
                 }
                 else
                 {
                     // A week or less; warning
+                    enum pattern = "Warning: Your Twitch authorisation key will expire on " ~
+                        "%s%02d-%02d-%02d %02d:%02d";
                     logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
                         expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
                 }
