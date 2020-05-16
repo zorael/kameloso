@@ -193,7 +193,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
         Document doc = new Document;
         Appender!(ubyte[]) sink;
-        sink.reserve(BufferSize.titleLookup);
+        sink.reserve(1_048_576);  // 1M
 
         client.onReceive = (ubyte[] data)
         {
