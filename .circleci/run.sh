@@ -13,7 +13,7 @@ install_deps() {
     # fingerprint 0xEBCF975E5BA24D5E
     sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
     sudo apt update
-    sudo apt install -y --allow-unauthenticated dmd-compiler dub
+    sudo apt install -y --allow-unauthenticated dmd-compiler dub libcurl4-openssl-dev
 
     #git clone https://github.com/zorael/lu.git
     #git clone https://github.com/zorael/dialect.git
