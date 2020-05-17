@@ -670,6 +670,8 @@ Next mainLoop(ref Kameloso instance)
         immutable nowInUnix = Clock.currTime.toUnixTime;
         immutable nowInHnsecs = Clock.currStdTime;
 
+        historyEntry.stopTime = nowInUnix;
+
         foreach (plugin; instance.plugins)
         {
             plugin.periodically(nowInUnix);
@@ -822,7 +824,6 @@ Next mainLoop(ref Kameloso instance)
 
                 // Successful parse; record as such
                 ++historyEntry.numEvents;
-                historyEntry.stopTime = nowInUnix;
                 event.time = nowInUnix;
 
                 foreach (plugin; instance.plugins)
