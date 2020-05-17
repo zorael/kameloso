@@ -274,12 +274,17 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
          +/
 
         // Can be const
-        const configFileResults = getopt(args,
+        auto argsDup = args.dup;
+        const configFileResults = getopt(argsDup,
             config.caseSensitive,
             config.bundling,
             config.passThrough,
             "c|config", &settings.configFile,
+            "monochrome", &settings.monochrome,
         );
+
+        // Set Tint.monochrome manually so setSyntax below is properly (un-)tinted
+        Tint.monochrome = settings.monochrome;
 
         string[][string] missing;
         string[][string] invalid;

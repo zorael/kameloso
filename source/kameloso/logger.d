@@ -68,10 +68,10 @@ final class KamelosoLogger : Logger
     bool flush;  /// Whether or not we should flush stdout after finishing writing to it.
 
     /// Create a new `KamelosoLogger` with the passed settings.
-    this(LogLevel lv = LogLevel.all,
-        const Flag!"monochrome" monochrom = No.monochrome,
-        const Flag!"brightTerminal" brightTerminal = No.brightTerminal,
-        const Flag!"flush" flush = No.flush)
+    this(LogLevel lv,
+        const Flag!"monochrome" monochrome,
+        const Flag!"brightTerminal" brightTerminal,
+        const Flag!"flush" flush)
     {
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
