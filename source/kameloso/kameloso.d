@@ -723,6 +723,7 @@ Next mainLoop(ref Kameloso instance)
             final switch (actionAfterListen)
             {
             case continue_:
+                historyEntry.bytesReceived += attempt.bytesReceived;
                 // Drop down and continue
                 break;
 
@@ -2383,6 +2384,7 @@ void printSummary(const ref Kameloso instance)
     import core.time : Duration;
 
     Duration totalTime;
+    long totalBytesReceived;
 
     logger.info("-- Connection summary --");
 
@@ -2397,12 +2399,14 @@ void printSummary(const ref Kameloso instance)
         stop.fracSecs = 0.msecs;
         immutable duration = (stop - start);
         totalTime += duration;
+        totalBytesReceived += entry.bytesReceived;
 
-        writefln("%2d: %s, %d events parsed (%s to %s)",
-            i+1, duration, entry.numEvents, start, stop);
+        writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
+            i+1, duration, entry.numEvents, entry.bytesReceived, start, stop);
     }
 
     logger.info("Total time connected: ", Tint.log, totalTime);
+    logger.infof("Total received: %s%,d%s bytes", Tint.log, totalBytesReceived, Tint.info);
 }
 
 
