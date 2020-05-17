@@ -67,6 +67,11 @@ struct QueryResponse
  +  Possibly best used on Windows where threads are comparatively expensive
  +  compared to Posix platforms.
  +
+ +  Example:
+ +  ---
+ +  spawn(&persistentQuerier, plugin.bucket, plugin.queryResponseTimeout);
+ +  ---
+ +
  +  Params:
  +      bucket = The shared associative array to put the results in, response
  +          values keyed by URL.
@@ -374,6 +379,11 @@ void generateKey(TwitchBotPlugin plugin)
  +
  +  Note: Must be called from inside a `core.thread.Fiber`.
  +
+ +  Example:
+ +  ---
+ +  immutable QueryResponse = queryTwitch(plugin, "https://id.twitch.tv/oauth2/validate", "OAuth 30letteroauthstring");
+ +  ---
+ +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      url = The URL to query.
@@ -455,10 +465,9 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +  ---
  +  immutable url = "https://api.twitch.tv/helix/some/api/url";
  +
- +  spawn&(&queryTwitchImpl, url, plugin.headers, plugin.bucket);
+ +  spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket);
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +
- +  const response = waitForQueryResponse(plugin, url);
+ +  const response = waitForQueryResponse(plugin, url, plugin.twitchBotSettings.singleWorkerThread);
  +  // response.str is the response body
  +  ---
  +
@@ -517,9 +526,9 @@ void queryTwitchImpl(const string url, const string authToken,
  +  by name or by Twitch account ID number. Implementation function.
  +
  +  Params:
- +      field = The field to access via the HTTP URL. Can be either "login"
- +          or "id".
- +      identifier = The identifier of type `field` to look up.
+ +      field = The field to access via the HTTP URL. Can be either "login" or "id".
+ +      identifier = The identifier of type `field` to look up (e.g. an account
+ +          name or string of numeric account ID).
  +      authToken = Authorisation token HTTP header to pass.
  +      timeout = How long to let the query run before timing out.
  +
@@ -607,6 +616,11 @@ JSONValue parseUserFromResponse(const string jsonString)
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
  +  by account string name.
  +
+ +  Example:
+ +  ---
+ +  const userJSON = getUserByLogin(plugin, "zorael");
+ +  ---
+ +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      login = The Twitch login/account name to look up.
@@ -630,6 +644,11 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
  +  by id string.
  +
+ +  Example:
+ +  ---
+ +  const userJSON = getUserByID(plugin, "22216721");
+ +  ---
+ +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      id = The Twitch account ID to look up. Number in string form.
@@ -652,6 +671,11 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +  Queries the Twitch servers for information about a user, by id.
  +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
  +  by id integer.
+ +
+ +  Example:
+ +  ---
+ +  const userJSON = getUserByID(plugin, 22216721);
+ +  ---
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
@@ -796,9 +820,28 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 /++
  +  Common code to wait for a query response. Merely spins and monitors the shared
  +  `bucket` associative array for when a response has arrived, and then returns it.
- +  Times out after a hardcoded 15 seconds if nothing was received.
+ +  Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
+ +  was received.
  +
  +  Note: Must be called from inside a `core.thread.Fiber`.
+ +
+ +  Example:
+ +  ---
+ +  immutable url = "https://api.twitch.tv/helix/users?login=zorael";
+ +
+ +  if (plugin.twitchBotSettings.singleWorkerThread)
+ +  {
+ +      plugin.persistentWorkerTid.send(url, plugin.authorizationBearer);
+ +  }
+ +  else
+ +  {
+ +      spawn(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket);
+ +  }
+ +
+ +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+ +  const response = waitForQueryResponse(plugin, url, plugin.twitchBotSettings.singleWorkerThread);
+ +  // response.str is the response body
+ +  ---
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
@@ -810,7 +853,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +      A `QueryResponse` as constructed by other parts of the program.
  +/
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
-    bool leaveTimingAlone = true)
+    const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import std.datetime.systime : Clock;
