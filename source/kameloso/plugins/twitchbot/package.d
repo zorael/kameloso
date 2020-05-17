@@ -32,7 +32,6 @@ import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
-import std.stdio;
 
 
 /// All Twitch bot plugin runtime settings.
