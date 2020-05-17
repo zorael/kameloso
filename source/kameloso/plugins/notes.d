@@ -136,7 +136,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                 if (noteArray.length == 1)
                 {
                     const note = noteArray[0];
-                    immutable timestamp = (currTime - note.when).timeSince;
+                    immutable timestamp = (currTime - note.when)
+                        .timeSince!(No.abbreviate, 7, 2);
 
                     enum pattern = "%s%s! %s left note %s ago: %s";
 
@@ -162,7 +163,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     foreach (const note; noteArray)
                     {
                         immutable timestamp = (currTime - note.when)
-                            .timeSince!(Yes.abbreviate);
+                            .timeSince!(Yes.abbreviate, 7, 2);
 
                         enum entryPattern = "%s %s ago: %s";
 

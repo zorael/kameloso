@@ -874,7 +874,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
             immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
             immutable diff = Clock.currTime - when;
-            immutable timeline = diff.timeSince;
+            immutable timeline = diff.timeSince!(No.abbreviate, 7, 3);
             immutable datestamp = "%s %d"
                 .format(months[cast(int)when.month-1], when.year);
 

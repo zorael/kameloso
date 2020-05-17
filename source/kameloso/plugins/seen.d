@@ -691,7 +691,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             enum pattern =  "I last saw %s %s ago.";
 
             const timestamp = SysTime.fromUnixTime(*userTimestamp);
-            immutable elapsed = timeSince(Clock.currTime - timestamp);
+            immutable diff = (Clock.currTime - timestamp);
+            immutable elapsed = timeSince!(No.abbreviate, 7, 2)(diff);
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(requestedUser.ircColourByHash.ircBold, elapsed) :
