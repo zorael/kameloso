@@ -911,6 +911,9 @@ final class TwitchQueryException : Exception
     /// The response body that was received.
     string responseBody;
 
+    /// The message of any thrown exception, if the query failed.
+    string error;
+
     /// The HTTP code that was received.
     uint code;
 
@@ -918,10 +921,11 @@ final class TwitchQueryException : Exception
      +  Create a new `TwitchQueryException`, attaching a response body and a
      +  HTTP return code.
      +/
-    this(const string message, const string responseBody, const uint code,
+    this(const string message, const string responseBody, const string error, const uint code,
         const string file = __FILE__, const size_t line = __LINE__) pure nothrow @nogc
     {
         this.responseBody = responseBody;
+        this.error = error;
         this.code = code;
         super(message, file, line);
     }
