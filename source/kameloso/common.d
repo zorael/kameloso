@@ -1732,7 +1732,7 @@ struct Tint
     /++
      +  Whether or not output should be coloured at all.
      +/
-    private static bool monochrome;
+    static bool monochrome;
 
     version(Colours)
     {
