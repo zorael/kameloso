@@ -321,8 +321,6 @@ version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
     sink.put(TerminalToken.format);
     sink.put('[');
 

@@ -228,8 +228,6 @@ final class KamelosoLogger : Logger
     {
         import std.datetime : DateTime;
 
-        static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
         version(Colours)
         {
             if (!monochrome)
@@ -276,8 +274,6 @@ final class KamelosoLogger : Logger
     protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
     if (isOutputRange!(Sink, char[]))
     {
-        static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
         sink.put(msg);
     }
 
