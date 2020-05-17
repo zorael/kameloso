@@ -20,9 +20,10 @@ version(unittest)
 shared static this()
 {
     import kameloso.logger : KamelosoLogger;
+    import std.experimental.logger : LogLevel;
 
     // This is technically before settings have been read...
-    logger = new KamelosoLogger;
+    logger = new KamelosoLogger(LogLevel.all, No.monochrome, No.brightTerminal, Yes.flush);
 
     // settings needs instantiating now.
     settings = new CoreSettings;
@@ -104,7 +105,10 @@ do
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
+    logger = new KamelosoLogger(LogLevel.all,
+        monochrome ? Yes.monochrome : No.monochrome,
+        bright ? Yes.brightTerminal : No.brightTerminal,
+        flush ? Yes.flush : No.flush);
     Tint.monochrome = monochrome;
 }
 

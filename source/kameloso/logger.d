@@ -79,17 +79,6 @@ final class KamelosoLogger : Logger
         super(lv);
     }
 
-    /// Create a new `KamelosoLogger` with the passed settings.
-    deprecated("Use the constructor that takes `Flag` parameters instead")
-    this(LogLevel lv = LogLevel.all, bool monochrome = false,
-        bool brightTerminal = false, bool flush = false)
-    {
-        this.monochrome = monochrome;
-        this.brightTerminal = brightTerminal;
-        this.flush = flush;
-        super(lv);
-    }
-
     // tint
     /++
      +  Returns the corresponding `kameloso.terminal.TerminalForeground` for the
@@ -331,7 +320,7 @@ unittest
     import std.experimental.logger : LogLevel;
     import std.typecons : Flag, No, Yes;
 
-    Logger log_ = new KamelosoLogger(LogLevel.all, Yes.monochrome, No.brightTerminal);
+    Logger log_ = new KamelosoLogger(LogLevel.all, Yes.monochrome, No.brightTerminal, Yes.flush);
 
     log_.log("log: log");
     log_.info("log: info");
@@ -342,7 +331,7 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(LogLevel.all, No.monochrome, Yes.brightTerminal);
+        log_ = new KamelosoLogger(LogLevel.all, No.monochrome, Yes.brightTerminal, Yes.flush);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -351,7 +340,7 @@ unittest
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
 
-        log_ = new KamelosoLogger(LogLevel.all, No.monochrome, No.brightTerminal);
+        log_ = new KamelosoLogger(LogLevel.all, No.monochrome, No.brightTerminal, Yes.flush);
 
         log_.log("log: log");
         log_.info("log: info");
