@@ -16,6 +16,7 @@ import kameloso.plugins.core;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
+import std.algorithm.comparison : among;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -527,7 +528,7 @@ void queryTwitchImpl(const string url, const string authToken,
  +/
 JSONValue getUserImpl(Identifier)(const string field, const Identifier identifier,
     const string authToken, const uint timeout)
-in (((field == "login") || (field == "id")), "Invalid field supplied; expected " ~
+in (field.among!("login", "id"), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
     import lu.string : beginsWith;
