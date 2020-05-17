@@ -56,6 +56,9 @@ struct QueryResponse
 
     /// The HTTP response code received.
     uint code;
+
+    /// The message of any exception thrown while querying.
+    string error;
 }
 
 
