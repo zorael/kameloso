@@ -446,10 +446,12 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
+    if ((response.code >= 400) || response.error.length ||
+        !response.str.length || (response.str.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new TwitchQueryException("Failed to query Twitch", response.str, response.code);
+        throw new TwitchQueryException("Failed to query Twitch: " ~ response.error,
+            response.str, response.error, response.code);
     }
 
     return response;
@@ -504,13 +506,21 @@ void queryTwitchImpl(const string url, const string authToken,
         return data.length;
     };
 
-    // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
-
+    QueryResponse response;
     immutable pre = Clock.currTime;
-    /*immutable curlCode =*/ client.perform();//(No.throwOnError);
+
+    try
+    {
+        // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
+        /*immutable curlCode =*/ client.perform();//(No.throwOnError);
+    }
+    catch (Exception e)
+    {
+        response.error = e.msg;
+    }
+
     immutable post = Clock.currTime;
 
-    QueryResponse response;
     response.code = client.statusLine.code;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
@@ -568,15 +578,27 @@ in (field.among!("login", "id"), "Invalid field supplied; expected " ~
         return data.length;
     };
 
-    /*immutable curlCode =*/ client.perform();//(No.throwOnError);
+    string error;
+
+    try
+    {
+        // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
+        /*immutable curlCode =*/ client.perform();//(No.throwOnError);
+    }
+    catch (Exception e)
+    {
+        error = e.msg;
+    }
+
     immutable code = client.statusLine.code;
     immutable received = assumeUnique(cast(char[])sink.data);
 
-    if ((code >= 400) || !received.length || (received.beginsWith(`{"err`)))
+    if ((code >= 400) || error.length || !received.length || (received.beginsWith(`{"err`)))
     {
         // {"status":401,"message":"missing authorization token"}
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new TwitchQueryException("Failed to query Twitch", received, code, __FILE__);
+        throw new TwitchQueryException("Failed to query Twitch: " ~ error,
+            received, error, code);
     }
 
     return parseUserFromResponse(received);
@@ -716,11 +738,12 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 
     const response = queryTwitch(plugin, url, authorizationHeader);
 
-    if ((response.code >= 400) || !response.str.length || (response.str.beginsWith(`{"err`)))
+    if ((response.code >= 400) || response.error.length ||
+        !response.str.length || (response.str.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
         throw new TwitchQueryException("Failed to validate Twitch authorisation token",
-            response.str, response.code);
+            response.str, response.error, response.code);
     }
 
     JSONValue validation = parseJSON(response.str);
@@ -728,7 +751,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     if ((validation.type != JSONType.object) || ("client_id" !in validation))
     {
         throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
-            "token; unknown JSON", response.str, response.code);
+            "token; unknown JSON", response.str, response.error, response.code);
     }
 
     return validation;
