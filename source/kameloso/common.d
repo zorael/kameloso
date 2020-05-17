@@ -779,6 +779,9 @@ struct Kameloso
 
         /// How many events fired during this connection.
         long numEvents;
+
+        /// How many bytses were read during this connection.
+        long bytesReceived;
     }
 
     /// History records of established connections this execution run.
