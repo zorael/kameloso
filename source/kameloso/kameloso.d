@@ -2626,14 +2626,21 @@ int initBot(string[] args)
 
         if (!instance.settings.hideOutgoing)
         {
+            bool printed;
+
             version(Colours)
             {
-                import kameloso.irccolours : mapEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason
-                    .mapEffects
-                    .replaceTokens(instance.parser.client));
+                if (!instance.settings.monochrome)
+                {
+                    import kameloso.irccolours : mapEffects;
+                    logger.trace("--> QUIT :", instance.bot.quitReason
+                        .mapEffects
+                        .replaceTokens(instance.parser.client));
+                    printed = true;
+                }
             }
-            else
+
+            if (!printed)
             {
                 import kameloso.irccolours : stripEffects;
                 logger.trace("--> QUIT :", instance.bot.quitReason

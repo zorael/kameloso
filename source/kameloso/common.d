@@ -464,12 +464,19 @@ struct Kameloso
 
                 if (!buffer.front.quiet)
                 {
+                    bool printed;
+
                     version(Colours)
                     {
-                        import kameloso.irccolours : mapEffects;
-                        logger.trace("--> ", buffer.front.line.mapEffects);
+                        if (!settings.monochrome)
+                        {
+                            import kameloso.irccolours : mapEffects;
+                            logger.trace("--> ", buffer.front.line.mapEffects);
+                            printed = true;
+                        }
                     }
-                    else
+
+                    if (!printed)
                     {
                         import kameloso.irccolours : stripEffects;
                         logger.trace("--> ", buffer.front.line.stripEffects);
