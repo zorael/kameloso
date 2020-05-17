@@ -823,10 +823,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
     while (!response)
     {
-        synchronized //()
-        {
-            response = url in plugin.bucket;
-        }
+        response = url in plugin.bucket;
 
         if (!response)
         {
