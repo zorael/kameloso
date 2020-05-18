@@ -1201,7 +1201,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 // Something is deeply wrong.
                 logger.error("Failed to validate API keys: ", Tint.log, e.error);
 
-                if (e.error.beginsWith("Peer certificates cannot be " ~
+                if (e.error.beginsWith("Peer certificate cannot be " ~
                     "authenticated with given CA certificates"))
                 {
                     logger.error("See the readme for more information on a workaround.");
