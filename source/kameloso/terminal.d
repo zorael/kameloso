@@ -70,7 +70,7 @@ enum TerminalToken
     reset = 15,
 }
 
-version (Windows)
+version(Windows)
 {
     // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
     // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a

@@ -1176,7 +1176,6 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                 immutable now = Clock.currTime;
 
-
                 if ((expiresWhen - now) > 1.weeks)
                 {
                     // More than a week away, just .info
