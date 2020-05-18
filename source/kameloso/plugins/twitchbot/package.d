@@ -1197,8 +1197,18 @@ void onEndOfMotd(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
+                import lu.string : beginsWith;
+
                 // Something is deeply wrong.
-                logger.error("Failed to validate API keys. Disabling API features.");
+                logger.error("Failed to validate API keys: ", Tint.log, e.error);
+
+                if (e.error.beginsWith("Peer certificates cannot be " ~
+                    "authenticated with given CA certificates"))
+                {
+                    logger.error("See the readme for more information on a workaround.");
+                }
+
+                logger.error("Disabling API features.");
                 version(PrintStacktraces) logger.trace(e.toString);
                 plugin.useAPIFeatures = false;
             }
