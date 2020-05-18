@@ -1620,6 +1620,7 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
+    import std.process : ProcessException;
 
     try
     {
@@ -1647,6 +1648,11 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     catch (DeserialisationException e)
     {
         logger.error("Error parsing configuration file: ", Tint.log, e.msg);
+    }
+    catch (ProcessException e)
+    {
+        logger.errorf("Failed to open %s%s%s in a text editor: %1$s%4$s",
+            Tint.log, instance.settings.configFile, Tint.error, e.msg);
     }
     catch (Exception e)
     {
