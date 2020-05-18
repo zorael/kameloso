@@ -16,6 +16,15 @@ import lu.common : Next;
 import std.getopt : GetoptResult;
 import std.typecons : Flag, No, Yes;
 
+version(linux)
+{
+    version = XDG;
+}
+else version(FreeBSD)
+{
+    version = XDG;
+}
+
 @safe:
 
 
@@ -473,4 +482,95 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
         return Next.continue_;
     }
+}
+
+
+// manageConfigFile
+/++
+ +  Writes and/or edits the configuration file. Broken out into a separate
+ +  function to lower size of `handleGetopt`.
+ +
+ +  bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
+ +
+ +  Params:
+ +      instance = The current `kameloso.common.Kameloso` instance.
+ +      shouldWriteConfig = Writing to the configuration file was requested.
+ +      shouldOpenEditor = Opening the configuration file in an editor was requested.
+ +      customSettings = Custom settings supplied at the command line, to be
+ +          passed to `writeConfig` when writing to the configuration file.
+ +
+ +  Throws:
+ +      `object.Exception` on unexpected platforms where we did not know how to
+ +      open the configuration file in a text editor.
+ +/
+void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
+    const bool shouldOpenEditor, ref string[] customSettings) @system
+{
+    /++
+     +  Opens up the configuration file in a text editor.
+     +/
+    void openEditor()
+    {
+        import std.process : execute;
+
+        // Let exceptions (ProcessExceptions) fall through and get caught
+        // by `kameloso.kameloso.tryGetopt`.
+
+        version(XDG)
+        {
+            immutable command = [ "xdg-open", instance.settings.configFile ];
+            execute(command);
+        }
+        else version (OSX)
+        {
+            immutable command = [ "open", instance.settings.configFile ];
+            execute(command);
+        }
+        else version (Windows)
+        {
+            immutable command = [ "explorer", instance.settings.configFile ];
+            execute(command);
+        }
+        else
+        {
+            throw new Exception("Unexpected platform");
+        }
+    }
+
+    if (shouldWriteConfig)
+    {
+        // --writeconfig was passed; write configuration to file and quit
+        writeConfig(instance, instance.parser.client, instance.parser.server,
+            instance.bot, customSettings);
+
+        if (shouldOpenEditor)
+        {
+            // Additionally --edit was passed, so edit the file after writing to it
+            openEditor();
+        }
+    }
+
+    if (shouldOpenEditor)
+    {
+        import std.file : exists;
+
+        // --edit as passed, so open up a text editor before exiting
+
+        if (!instance.settings.configFile.exists)
+        {
+            // No config file exists to open up, so create one first
+            writeConfig(instance, instance.parser.client, instance.parser.server,
+                instance.bot, customSettings, No.giveInstructions);
+        }
+
+        import kameloso.common : Tint, logger;
+
+        logger.logf("Attempting to open %s%s%s in a text editor ...",
+            Tint.info, instance.settings.configFile, Tint.log);
+
+        openEditor();
+    }
+
+    import std.stdio : writeln;
+    writeln();  // pad slightly, for cosmetics
 }
