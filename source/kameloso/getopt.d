@@ -267,6 +267,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     scope(exit) if (instance.settings.flush) stdout.flush();
 
     bool shouldWriteConfig;
+    bool shouldOpenEditor;
     bool shouldShowVersion;
     bool shouldShowSettings;
     bool shouldAppendToArrays;
@@ -381,6 +382,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             &shouldWriteConfig,
             "init",         "^",
                             &shouldWriteConfig,
+            "edit",         "Open the configuration file in a text editor " ~
+                            "(or the default application used to open " ~ Tint.log ~
+                            "*.conf" ~ Tint.trace ~ " files on your system",
+                            &shouldOpenEditor,
             "version",      "Show version information",
                             &shouldShowVersion,
         );
@@ -464,10 +469,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         bot.replaceMembers("-");
 
         // Handle showstopper arguments (that display something and then exits)
-        if (shouldWriteConfig)
+        if (shouldWriteConfig || shouldOpenEditor)
         {
-            // --writeconfig was passed; write configuration to file and quit
-            writeConfig(instance, parser.client, parser.server, bot, customSettings);
+            // --writeconfig and/or --edit was passed; defer to manageConfigFile
+            manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
             return Next.returnSuccess;
         }
 
