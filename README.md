@@ -17,10 +17,6 @@
 
 All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
 
-## Current limitations
-
-While IRC is standardised, servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, generally it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Please file a GitHub issue [to the **dialect** project](https://github.com/zorael/dialect/issues).
-
 Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
@@ -110,11 +106,11 @@ This will compile the bot in the default `debug` mode, which adds some extra cod
 
 You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-> The above *might* currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+> The above *might* not work, albeit rarely, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
 On Windows with **dmd 2.089 and 2.090**, builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). Cursory testing shows it does not seem to happen with **2.091** and later. The workarounds are otherwise to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
 
-`singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it does produce faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
+`singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it's not *that* slow. In addition it also produces faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
 
 ### Build configurations
 
@@ -152,7 +148,7 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 * **Windows**: `%APPDATA%\kameloso`
 * **Other unexpected platforms**: fallback to current working directory
 
-Open the file in a normal text editor.
+Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in editors, you can open it by passing `--edit`.
 
 ### Command-line arguments
 
@@ -314,6 +310,8 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 # Known issues
 
 ## Windows
+
+On some old and/or **not up-to-date** Windows systems, plugins that access the web may misbehave and throw *"Peer certificates cannot be authenticated with given CA certificates"* errors. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and define an environmental variable `CURL_CA_BUNDLE` to point to it. To do this in a way that persists across reboots, open up the start menu and just type "environment", and an option *"Edit environment variables for your account"* should be offered. Click it, then click *"New..."* in the opened window and add the variable.
 
 When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `!save` command, or its `!quit` command outright to exit immediately.
 
