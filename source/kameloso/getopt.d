@@ -106,9 +106,12 @@ void printHelp(GetoptResult results,
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      customSettings = const string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
+ +      giveInstructions = Whether or not to give instructions to edit the
+ +          generated file and supply admins and/or home channels.
  +/
 void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
-    ref IRCBot bot, const string[] customSettings) @system
+    ref IRCBot bot, const string[] customSettings,
+    const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
     import kameloso.common : Tint, logger, printVersionInfo;
     import kameloso.config : writeConfigurationFile;
@@ -149,11 +152,13 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     instance.writeConfigurationFile(instance.settings.configFile);
 
-    logger.logf("Configuration written to %s%s\n", Tint.info, instance.settings.configFile);
+    logger.logf("Configuration written to %s%s", Tint.info, instance.settings.configFile);
 
-    if (!instance.bot.admins.length && !instance.bot.homeChannels.length)
+    if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
     {
         import kameloso.config : complainAboutIncompleteConfiguration;
+
+        logger.trace("---");
         logger.log("Edit it and make sure it contains at least one of the following:");
         complainAboutIncompleteConfiguration();
     }
