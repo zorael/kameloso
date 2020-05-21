@@ -1735,7 +1735,6 @@ Next tryConnect(ref Kameloso instance)
 
         case connected:
             logger.log("Connected!");
-            conn.connected = true;
             connector.reset();
             return Next.continue_;
 
