@@ -326,6 +326,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "6|ipv6",       "Use IPv6 when available [%s%s%s]"
                             .format(Tint.info, settings.ipv6, Tint.reset),
                             &settings.ipv6,
+            "ssl",          "Use SSL connections [%s%s%s]"
+                            .format(Tint.info, settings.ssl, Tint.reset),
+                            &settings.ssl,
             "A|account",    "Services account name",
                             &bot.account,
             "p|password",   "Services account password",
