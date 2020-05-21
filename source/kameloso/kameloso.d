@@ -2522,6 +2522,9 @@ int initBot(string[] args)
         applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
     }
 
+    // Copy SSL'edness to the Connection
+    instance.conn.isSSL = instance.settings.ssl;
+
     string pre, post;
 
     version(Colours)
