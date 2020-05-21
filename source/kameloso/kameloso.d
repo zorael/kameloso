@@ -2528,14 +2528,14 @@ int initBot(string[] args)
     import std.algorithm.comparison : among;
 
     // Copy SSL'edness to the Connection
-    instance.conn.isSSL = instance.settings.ssl;
+    instance.conn.ssl = instance.settings.ssl;
 
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
-    if (!instance.conn.isSSL && !instance.settings.force &&
+    if (!instance.conn.ssl && !instance.settings.force &&
         instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999))
     {
-        instance.conn.isSSL = true;
+        instance.conn.ssl = true;
     }
 
     string pre, post;
