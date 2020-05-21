@@ -2532,9 +2532,10 @@ int initBot(string[] args)
 
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
-    if (instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999))
+    if (!instance.conn.isSSL && !instance.settings.force &&
+        instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999))
     {
-        instance.conn.isSSL = !instance.settings.force;
+        instance.conn.isSSL = true;
     }
 
     string pre, post;
