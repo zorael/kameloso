@@ -410,7 +410,7 @@ struct Kameloso
      +/
     double throttleline(Buffer)(ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
-        const Flag!"sendFaster" sendFaster = No.sendFaster)
+        const Flag!"sendFaster" sendFaster = No.sendFaster) @system
     {
         with (throttle)
         {
