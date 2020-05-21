@@ -178,6 +178,11 @@ struct CoreSettings
     bool eagerLookups = false;
 
     /++
+     +  Whether or not to attempt an SSL connection.
+     +/
+    bool ssl = false;
+
+    /++
      +  Character(s) that prefix a bot chat command.
      +
      +  These decide what bot commands will look like; "!" for "!command",
