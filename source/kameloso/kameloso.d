@@ -1777,6 +1777,10 @@ Next tryConnect(ref Kameloso instance)
             logger.warning("IPv6 connection failed. Disabling IPv6.");
             continue;
 
+        case sslFailure:
+            logger.error("Failed to connect due to SSL failure: ", attempt.error);
+            return Next.returnFailure;
+
         case error:
             logger.error("Failed to connect: ", attempt.error);
             return Next.returnFailure;
