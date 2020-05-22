@@ -2216,7 +2216,6 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         // May as well check once here, in case something in initPlugins aborted or so.
         if (*instance.abort) break outerloop;
 
-        instance.conn.connected = false;
         instance.conn.reset();
 
         immutable actionAfterResolve = tryResolve(instance,
