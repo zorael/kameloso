@@ -1562,6 +1562,9 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
 /++
  +  Registers some process signals to redirect to our own `signalHandler`, so we
  +  can (for instance) catch Ctrl+C and gracefully shut down.
+ +
+ +  On Posix, additionally ignore `SIGPIPE` so that we can catch SSL errors and
+ +  not just immediately terminate.
  +/
 void setupSignals() nothrow @nogc
 {
@@ -1572,9 +1575,11 @@ void setupSignals() nothrow @nogc
 
     version(Posix)
     {
-        import core.sys.posix.signal : SIGHUP, SIGQUIT;
+        import core.sys.posix.signal : SIG_IGN, SIGHUP, SIGPIPE, SIGQUIT;
+
         signal(SIGHUP, &signalHandler);
         signal(SIGQUIT, &signalHandler);
+        signal(SIGPIPE, SIG_IGN);
     }
 }
 
