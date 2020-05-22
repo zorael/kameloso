@@ -1782,7 +1782,8 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case sslFailure:
-            logger.error("Failed to connect due to SSL failure: ", attempt.error);
+            logger.error("Failed to connect due to SSL setup/handshake failure: ",
+                Tint.log, attempt.error);
             return Next.returnFailure;
 
         case error:
