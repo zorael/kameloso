@@ -1696,6 +1696,8 @@ Next tryConnect(ref Kameloso instance)
     {
         import core.time : seconds;
 
+        if (*abort) return Next.returnFailure;
+
         with (ConnectionAttempt.State)
         final switch (attempt.state)
         {
