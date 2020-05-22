@@ -1722,15 +1722,17 @@ Next tryConnect(ref Kameloso instance)
 
             immutable pattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
-                "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
-                "Connecting to %s%s%s:%1$s%4$s%3$s ...";
+                "Connecting to [%s%s%s]:%1$s%4$s%3$s %5$s..." :
+                "Connecting to %s%s%s:%1$s%4$s%3$s %5$s...";
+
+            immutable ssl = instance.conn.ssl ? "(SSL) " : string.init;
 
             immutable address = (!resolvedHost.length ||
                 (parser.server.address == resolvedHost) ||
                 (sharedDomains(parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
-            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString);
+            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString, ssl);
             continue;
 
         case connected:
