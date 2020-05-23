@@ -1974,6 +1974,8 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
         logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
             Tint.info, binaryPath.baseName, Tint.log);
     }
+
+    logger.trace("---");
 }
 
 
