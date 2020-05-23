@@ -2538,6 +2538,7 @@ int initBot(string[] args)
 
     // Copy some stuff over to our Connection
     instance.conn.cacertFile = instance.settings.cacertFile;
+    instance.conn.privateKeyFile = instance.settings.privateKeyFile;
     instance.conn.ssl = instance.settings.ssl;
 
     // Additionally if the port is an SSL-like port, assume SSL,
