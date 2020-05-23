@@ -185,6 +185,9 @@ struct CoreSettings
     /// Path to `cacert.pem` or equivalent, for SSL certificates.
     @CannotContainComments string cacertFile;
 
+    /// Path to an SSL privat key file.
+    @CannotContainComments string privateKeyFile;
+
     /++
      +  Character(s) that prefix a bot chat command.
      +
