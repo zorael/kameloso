@@ -2693,7 +2693,7 @@ int initBot(string[] args)
         }
     }
 
-    if (instance.settings.exitSummary)
+    if (instance.settings.exitSummary && instance.connectionHistory.length)
     {
         instance.printSummary();
     }
