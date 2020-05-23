@@ -2536,7 +2536,8 @@ int initBot(string[] args)
 
     import std.algorithm.comparison : among;
 
-    // Copy SSL'edness to the Connection
+    // Copy some stuff over to our Connection
+    instance.conn.cacertFile = instance.settings.cacertFile;
     instance.conn.ssl = instance.settings.ssl;
 
     // Additionally if the port is an SSL-like port, assume SSL,
