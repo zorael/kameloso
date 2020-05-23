@@ -182,6 +182,9 @@ struct CoreSettings
      +/
     bool ssl = false;
 
+    /// Path to `cacert.pem` or equivalent, for SSL certificates.
+    @CannotContainComments string cacertFile;
+
     /++
      +  Character(s) that prefix a bot chat command.
      +
