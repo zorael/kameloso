@@ -144,17 +144,11 @@ struct CoreSettings
         bool monochrome = true;  /// Non-colours version defaults to true.
     }
 
-    /// Flag denoting whether or not the program should reconnect after disconnect.
-    bool reconnectOnFailure = true;
-
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
     /// Flag denoting that usermask should be used instead of accounts to authenticate.
     bool preferHostmasks = false;
-
-    /// Whether to connect to IPv6 addresses or only use IPV4 ones.
-    bool ipv6 = true;
 
     /// Whether or not to hide outgoing messages, not printing them to screen.
     bool hideOutgoing = false;
@@ -165,9 +159,6 @@ struct CoreSettings
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 
-    /// Whether to endlessly connect or whether to give up after a while.
-    bool endlesslyConnect = true;
-
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
 
@@ -176,11 +167,6 @@ struct CoreSettings
      +  and not do a just-in-time lookup when needed.
      +/
     bool eagerLookups = false;
-
-    /++
-     +  Whether or not to attempt an SSL connection.
-     +/
-    bool ssl = false;
 
     /++
      +  Character(s) that prefix a bot chat command.
@@ -215,7 +201,7 @@ struct ConnectionSettings
     /// Whether to endlessly connect or whether to give up after a while.
     bool endlesslyConnect = true;
 
-    /// Whether to connect to IPv6 addresses or only use IPV4 ones.
+    /// Whether to connect to IPv6 addresses or only use IPv4 ones.
     bool ipv6 = true;
 
     /// Whether or not to attempt an SSL connection.
