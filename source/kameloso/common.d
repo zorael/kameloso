@@ -340,6 +340,11 @@ struct Kameloso
     CoreSettings settings;
 
     /++
+     +  Settings relating to the connection between the bot and the IRC server.
+     +/
+    ConnectionSettings connSettings;
+
+    /++
      +  When a nickname was last issued a WHOIS query for, for hysteresis
      +  and rate-limiting.
      +/
