@@ -1690,7 +1690,7 @@ Next tryConnect(ref Kameloso instance)
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn, instance.settings.endlesslyConnect,
+        connectFiber(instance.conn, instance.connSettings.endlesslyConnect,
             ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.retry;
 
@@ -1822,12 +1822,12 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     import std.concurrency : Generator;
 
     enum defaultResolveAttempts = 15;
-    immutable resolveAttempts = instance.settings.endlesslyConnect ?
+    immutable resolveAttempts = instance.connSettings.endlesslyConnect ?
         int.max : defaultResolveAttempts;
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, instance.settings.ipv6, resolveAttempts, *instance.abort));
+        instance.parser.server.port, instance.connSettings.ipv6, resolveAttempts, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -2350,7 +2350,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         attempt.firstConnect = false;
     }
     while (!*instance.abort && ((attempt.next == Next.continue_) || (attempt.next == Next.retry) ||
-        ((attempt.next == Next.returnFailure) && instance.settings.reconnectOnFailure)));
+        ((attempt.next == Next.returnFailure) && instance.connSettings.reconnectOnFailure)));
 }
 
 
@@ -2537,7 +2537,7 @@ int initBot(string[] args)
     import std.algorithm.comparison : among;
 
     // Copy SSL'edness to the Connection
-    instance.conn.ssl = instance.settings.ssl;
+    instance.conn.ssl = instance.connSettings.ssl;
 
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
@@ -2687,7 +2687,7 @@ int initBot(string[] args)
             instance.bot.quitReason.replaceTokens(instance.parser.client));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
-        !instance.settings.reconnectOnFailure)
+        !instance.connSettings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)",
