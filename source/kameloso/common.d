@@ -203,6 +203,26 @@ struct CoreSettings
 }
 
 
+// ConnectionSettings
+/++
+ +  Aggregate of values used in the connection between the bot and the IRC server.
+ +/
+struct ConnectionSettings
+{
+    /// Flag denoting whether or not the program should reconnect after disconnect.
+    bool reconnectOnFailure = true;
+
+    /// Whether to endlessly connect or whether to give up after a while.
+    bool endlesslyConnect = true;
+
+    /// Whether to connect to IPv6 addresses or only use IPV4 ones.
+    bool ipv6 = true;
+
+    /// Whether or not to attempt an SSL connection.
+    bool ssl = false;
+}
+
+
 // IRCBot
 /++
  +  Aggregate of information relevant for an IRC *bot* that goes beyond what is
