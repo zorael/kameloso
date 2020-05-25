@@ -758,7 +758,11 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!service.connectSettings.sasl || !service.state.bot.password.length) continue;
+                if (!service.connectSettings.sasl ||
+                    (!service.state.bot.password.length &&
+                    (service.state.settings.ssl &&
+                    !service.state.settings.privateKeyFile.length))) continue;
+
                 raw(service.state, "CAP REQ :sasl", Yes.quiet);
                 tryingSASL = true;
                 break;
