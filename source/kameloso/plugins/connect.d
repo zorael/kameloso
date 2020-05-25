@@ -827,7 +827,11 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         switch (content)
         {
         case "sasl":
-            raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+            immutable mechanism = (service.state.settings.ssl &&
+                service.state.settings.privateKeyFile.length) ?
+                    "AUTHENTICATE EXTERNAL" :
+                    "AUTHENTICATE PLAIN";
+            raw(service.state, mechanism, Yes.quiet);
             break;
 
         default:
@@ -868,6 +872,35 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 
 // onSASLAuthenticate
 /++
+ +  Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
+ +  key is set in the configuration file, and by PLAIN otherwise.
+ +/
+@(IRCEvent.Type.SASL_AUTHENTICATE)
+void onSASLAuthenticate(ConnectService service)
+{
+    import lu.string : beginsWith, decode64, encode64;
+    import std.base64 : Base64Exception;
+
+    service.authentication = Progress.started;
+
+    if (service.state.settings.ssl && service.state.settings.privateKeyFile.length &&
+        (service.saslExternal == Progress.notStarted))
+    {
+        service.saslExternal = Progress.started;
+        raw(service.state, "AUTHENTICATE +");
+        return;
+    }
+
+    immutable plainSuccess = trySASLPlain(service);
+    if (!plainSuccess) return service.onSASLFailure();
+
+    // If we're still authenticating after n seconds, abort and join channels.
+    delayJoinsAfterFailedAuth(service);
+}
+
+
+// trySASLPlain
+/++
  +  Constructs a SASL plain authentication token from the bot's
  +  `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
  +  then sends it to the server, during registration.
@@ -878,39 +911,37 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
  +
  +  ...where `dialect.defs.IRCbot.account` is the services account name and
  +  `dialect.defs.IRCbot.password` is the account password.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
  +/
-@(IRCEvent.Type.SASL_AUTHENTICATE)
-void onSASLAuthenticate(ConnectService service)
+bool trySASLPlain(ConnectService service)
 {
-    with (service.state.client)
-    with (service.state.bot)
+    import lu.string : beginsWith, decode64, encode64;
+    import std.base64 : Base64Exception;
+
+    try
     {
-        import lu.string : beginsWith, decode64, encode64;
-        import std.base64 : Base64Exception;
+        immutable account_ = service.state.bot.account.length ?
+            service.state.bot.account :
+            service.state.client.origNickname;
 
-        service.authentication = Progress.started;
+        immutable password_ = service.state.bot.password.beginsWith("base64:") ?
+            decode64(service.state.bot.password[7..$]) :
+            service.state.bot.password;
 
-        try
-        {
-            immutable account_ = account.length ? account : origNickname;
-            immutable password_ = password.beginsWith("base64:") ?
-                decode64(password[7..$]) :
-                password;
-            immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
-            immutable encoded = encode64(authToken);
+        immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
+        immutable encoded = encode64(authToken);
 
-            raw(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
-            if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
-        }
-        catch (Base64Exception e)
-        {
-            logger.error("Could not authenticate: malformed password");
-            version(PrintStacktraces) logger.trace(e.info);
-            return service.onSASLFailure();
-        }
-
-        // If we're still authenticating after n seconds, abort and join channels.
-        delayJoinsAfterFailedAuth(service);
+        raw(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
+        if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+        return true;
+    }
+    catch (Base64Exception e)
+    {
+        logger.error("Could not authenticate: malformed password");
+        version(PrintStacktraces) logger.trace(e.info);
+        return false;
     }
 }
 
