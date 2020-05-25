@@ -1000,6 +1000,14 @@ void onSASLSuccess(ConnectService service)
 @(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure(ConnectService service)
 {
+    if ((service.saslExternal == Progress.started) && service.state.bot.password.length)
+    {
+        // Fall back to PLAIN
+        service.saslExternal = Progress.finished;
+        raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+        return;
+    }
+
     if (service.connectSettings.exitOnSASLFailure)
     {
         quit(service.state, "SASL Negotiation Failure");
