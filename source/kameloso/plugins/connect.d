@@ -1287,6 +1287,9 @@ private:
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
 
+    /// At what step we're currently at with regards to SASL EXTERNAL authentication.
+    Progress saslExternal;
+
     /// At what step we're currently at with regards to registration.
     Progress registration;
 
