@@ -2546,6 +2546,7 @@ int initBot(string[] args)
     if (!instance.conn.ssl && !instance.settings.force &&
         instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
+        instance.connSettings.ssl = true;  // Is this wise?
         instance.conn.ssl = true;
     }
 
