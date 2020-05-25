@@ -2537,7 +2537,7 @@ int initBot(string[] args)
     import std.algorithm.comparison : among;
 
     // Copy some stuff over to our Connection
-    instance.conn.cacertFile = instance.connSettings.cacertFile;
+    instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
     instance.conn.ssl = instance.connSettings.ssl;
 

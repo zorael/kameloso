@@ -1139,7 +1139,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
             import std.concurrency : spawn;
             plugin.persistentWorkerTid = spawn(&persistentQuerier,
                 plugin.bucket, plugin.queryResponseTimeout,
-                plugin.state.connSettings.cacertFile);
+                plugin.state.connSettings.caBundleFile);
         }
 
         void validationDg()

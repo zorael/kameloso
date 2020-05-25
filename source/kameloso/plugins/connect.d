@@ -762,7 +762,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
                     (!service.state.bot.password.length &&
                     (service.state.connSettings.ssl &&
                     (!service.state.connSettings.privateKeyFile.length &&
-                    !service.state.connSettings.cacertFile.length))))
+                    !service.state.connSettings.certFile.length))))
                 {
                     continue;
                 }
@@ -837,7 +837,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         case "sasl":
             immutable mechanism = (service.state.connSettings.ssl &&
                 (service.state.connSettings.privateKeyFile.length ||
-                service.state.connSettings.cacertFile.length)) ?
+                service.state.connSettings.certFile.length)) ?
                     "AUTHENTICATE EXTERNAL" :
                     "AUTHENTICATE PLAIN";
             raw(service.state, mechanism, Yes.quiet);
@@ -900,7 +900,7 @@ void onSASLAuthenticate(ConnectService service)
 
     if (service.state.connSettings.ssl &&
         (service.state.connSettings.privateKeyFile.length ||
-        service.state.connSettings.cacertFile.length) &&
+        service.state.connSettings.certFile.length) &&
         (service.saslExternal == Progress.notStarted))
     {
         service.saslExternal = Progress.started;
