@@ -888,7 +888,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
- +  key is set in the configuration file, and by PLAIN otherwise.
+ +  key and/or certificate is set in the configuration file, and by PLAIN otherwise.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
