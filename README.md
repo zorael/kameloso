@@ -312,7 +312,7 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 ## Windows
 
-On Windows systems, you may see SSL errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and define an environmental variable `SSL_CERT_FILE` to point to it. To do this in a way that persists across terminal sessions, open the start menu and just type "environment", and an option *"Edit environment variables for your account"* should be offered. Click it, then click *"New..."* in the opened window, and add the variable. You will have to close and reopen your terminal/console for the changes to apply.
+On Windows systems, you may see SSL errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
 When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `!save` command, or its `!quit` command outright to exit immediately. Note that this includes committing logs to disk; there may be log lines queued to be written in batch if `bufferedWrites` is set.
 
