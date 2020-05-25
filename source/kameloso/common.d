@@ -206,14 +206,17 @@ struct ConnectionSettings
     /// Whether to connect to IPv6 addresses or only use IPv4 ones.
     bool ipv6 = true;
 
-    /// Whether or not to attempt an SSL connection.
-    bool ssl = false;
+    /// Path to private (`.pem`) key file, used in SSL connections.
+    @CannotContainComments string privateKeyFile;
+
+    /// Path to certificate (`.pem`) file.
+    @CannotContainComments string certFile;
 
     /// Path to certificate bundle `cacert.pem` file or equivalent.
-    @CannotContainComments string cacertFile;
+    @CannotContainComments string caBundleFile;
 
-    /// Path to private key file, used in SSL connections.
-    @CannotContainComments string privateKeyFile;
+    /// Whether or not to attempt an SSL connection.
+    bool ssl = false;
 }
 
 
