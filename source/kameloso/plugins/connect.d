@@ -848,6 +848,12 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         switch (content)
         {
         case "sasl":
+            if (service.connectSettings.exitOnSASLFailure)
+            {
+                quit(service.state, "SASL Negotiation Failure");
+                return;
+            }
+
             // SASL refused, safe to end handshake? Too early?
             // Consider making this a Fiber that triggers after say, 5 seconds
             // That should give other CAPs time to process
