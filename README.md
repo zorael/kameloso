@@ -12,7 +12,8 @@
 * saving notes to offline users that get played back when they come online
 * channel polls
 * works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot/package.d)
-* [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+* SSL support
+* [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication, `PLAIN` and `EXTERNAL` (SSL)
 * more random stuff and gimmicks
 
 All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
@@ -311,9 +312,9 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 ## Windows
 
-On some old and/or **not up-to-date** Windows systems, plugins that access the web may misbehave and throw *"Peer certificates cannot be authenticated with given CA certificates"* errors. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and define an environmental variable `CURL_CA_BUNDLE` to point to it. To do this in a way that persists across reboots, open up the start menu and just type "environment", and an option *"Edit environment variables for your account"* should be offered. Click it, then click *"New..."* in the opened window and add the variable.
+On Windows systems, you may see SSL errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and define an environmental variable `SSL_CERT_FILE` to point to it. To do this in a way that persists across terminal sessions, open the start menu and just type "environment", and an option *"Edit environment variables for your account"* should be offered. Click it, then click *"New..."* in the opened window, and add the variable. You will have to close and reopen your terminal/console for the changes to apply.
 
-When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `!save` command, or its `!quit` command outright to exit immediately.
+When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `!save` command, or its `!quit` command outright to exit immediately. Note that this includes committing logs to disk; there may be log lines queued to be written in batch if `bufferedWrites` is set.
 
 ## Posix
 
