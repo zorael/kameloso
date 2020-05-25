@@ -195,6 +195,8 @@ struct CoreSettings
  +/
 struct ConnectionSettings
 {
+    import lu.uda : CannotContainComments;
+
     /// Flag denoting whether or not the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
@@ -206,6 +208,12 @@ struct ConnectionSettings
 
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
+
+    /// Path to certificate bundle `cacert.pem` file or equivalent.
+    @CannotContainComments string cacertFile;
+
+    /// Path to private key file, used in SSL connections.
+    @CannotContainComments string privateKeyFile;
 }
 
 
@@ -544,6 +552,7 @@ struct Kameloso
         state.bot = this.bot;
         state.mainThread = thisTid;
         state.settings = settings;
+        state.connSettings = connSettings;
         immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length);

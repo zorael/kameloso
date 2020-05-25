@@ -372,6 +372,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "r|resourceDir","Specify a different resource directory [%s%s%s]"
                             .format(Tint.info, settings.resourceDirectory, Tint.reset),
                             &settings.resourceDirectory,
+            "privateKey",   "Path to private key, used to authenticate some SSL connections",
+                            &connSettings.privateKeyFile,
+            "cacert",       "Path to %scacert.pem%s (optional, hopefully not needed)"
+                            .format(Tint.info, Tint.reset),
+                            &connSettings.cacertFile,
             "summary",      "Show a connection summary on program exit",
                             &settings.exitSummary,
             "force",        "Force connect (skips some sanity checks)",

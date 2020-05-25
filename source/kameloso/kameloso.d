@@ -2536,13 +2536,15 @@ int initBot(string[] args)
 
     import std.algorithm.comparison : among;
 
-    // Copy SSL'edness to the Connection
+    // Copy some stuff over to our Connection
+    instance.conn.cacertFile = instance.connSettings.cacertFile;
+    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
     instance.conn.ssl = instance.connSettings.ssl;
 
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
     if (!instance.conn.ssl && !instance.settings.force &&
-        instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999))
+        instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
         instance.conn.ssl = true;
     }
