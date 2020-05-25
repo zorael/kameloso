@@ -306,7 +306,9 @@ Do not set `keyGenerationMode` persistently to `true` in the configuration file,
 
 ## Further help
 
-For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
+For more information and help see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
+
+There is also a channel `#kameloso` on freenode, but replies may be delayed.
 
 # Known issues
 
