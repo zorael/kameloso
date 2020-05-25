@@ -1205,7 +1205,9 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 if (e.error.beginsWith("Peer certificate cannot be " ~
                     "authenticated with given CA certificates"))
                 {
-                    logger.error("See the readme for more information on a workaround.");
+                    logger.errorf("You may need to supply a CA bundle file " ~
+                        "(e.g. %scacert.pem%s) in the configuration file.",
+                        Tint.log, Tint.error);
                 }
 
                 logger.error("Disabling API features.");
