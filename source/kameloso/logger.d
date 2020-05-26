@@ -54,7 +54,6 @@ private:
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
-    import std.stdio : stdout;
     import std.typecons : Flag, No, Yes;
 
     /// Buffer to compose a line in before printing it to screen.
@@ -83,6 +82,7 @@ public:
         const Flag!"brightTerminal" brightTerminal,
         const Flag!"flush" flush)
     {
+        linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
         this.flush = flush;
@@ -253,14 +253,13 @@ public:
     /++
      +  Outputs the header of a logger message.
      +
-     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
-     +  the other `beginLogMsg`.
+     +  Overload that passes `linebuffer` to the other `beginLogMsg`.
      +/
     override protected void beginLogMsg(string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) @trusted const
+        Tid threadId, SysTime timestamp, Logger logger)
     {
-        return beginLogMsg(stdout.lockingTextWriter, file, line, funcName,
+        return beginLogMsg(linebuffer, file, line, funcName,
             prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
     }
 
@@ -270,7 +269,7 @@ public:
      +  Overload that takes an output range sink.
      +/
     pragma(inline)
-    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
+    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg)
     if (isOutputRange!(Sink, char[]))
     {
         sink.put(msg);
@@ -279,14 +278,13 @@ public:
     /++
      +  Outputs the message part of a logger message; the content.
      +
-     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
-     +  the other `logMsgPart`.
+     +  Overload that passes `linebuffer` to the other `logMsgPart`.
      +/
-    override protected void logMsgPart(scope const(char)[] msg) @trusted const
+    override protected void logMsgPart(scope const(char)[] msg)
     {
         if (!msg.length) return;
 
-        return logMsgPart(stdout.lockingTextWriter, msg);
+        return logMsgPart(linebuffer, msg);
     }
 
     /++
@@ -308,18 +306,23 @@ public:
 
     /++
      +  Outputs the tail of a logger message.
+     +  Overload that passes `linebuffer` to the other `finishLogMsg`.
      +
-     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
-     +  the other `finishLogMsg`.
+     +  @trusted to allow us to flush `stdout`. `std.stdio.writeln` seems to
+     +  do this and it's annotated @trusted, so just mimic that.
      +/
-    override protected void finishLogMsg() @trusted const
+    override protected void finishLogMsg() @trusted
     {
+        import std.stdio : stdout, writeln;
+
         version(Colours)
         {
-            finishLogMsg(stdout.lockingTextWriter);
+            finishLogMsg(linebuffer);
         }
 
-        stdout.lockingTextWriter.put('\n');
+        writeln(linebuffer.data);
+        linebuffer.clear();
+
         if (flush) stdout.flush();
     }
 }
