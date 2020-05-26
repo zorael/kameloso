@@ -2039,7 +2039,7 @@ void setupSettings(ref CoreSettings settings)
 
     switch (platform)
     {
-    case "Cygwin":
+    //case "Cygwin":  // No longer seems to need this
     case "vscode":
         // Whitelist more as we find them.
         settings.flush = true;
