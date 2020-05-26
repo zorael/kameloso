@@ -785,6 +785,16 @@ unittest
 }
 
 
+// start
+/++
+ +  Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+ +/
+void start(PrinterPlugin plugin)
+{
+    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
+}
+
+
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
 
