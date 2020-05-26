@@ -340,7 +340,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     default:
         import lu.string : strippedRight;
         import std.array : replace;
-        import std.stdio : stdout;
+        import std.stdio : stdout, writeln;
 
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
@@ -349,25 +349,28 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             .replace(cast(ubyte)7, string.init)
             .strippedRight;
 
-        bool printed;
+        bool put;
 
         version(Colours)
         {
             if (!plugin.state.settings.monochrome)
             {
-                plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
+                plugin.formatMessageColoured(plugin.linebuffer, mutEvent,
                     (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                     (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
-                printed = true;
+                put = true;
             }
         }
 
-        if (!printed)
+        if (!put)
         {
-            plugin.formatMessageMonochrome(stdout.lockingTextWriter, mutEvent,
+            plugin.formatMessageMonochrome(plugin.linebuffer, mutEvent,
                 (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                 (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
         }
+
+        writeln(plugin.linebuffer.data);
+        plugin.linebuffer.clear();
 
         if (plugin.state.settings.flush) stdout.flush();
         break;
