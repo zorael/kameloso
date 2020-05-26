@@ -123,6 +123,12 @@ enum BufferSize
      +  The maximum number of queued priority lines to buffer. These are rare.
      +/
     priorityBuffer = 64,
+
+    /++
+     +  How many bytes to preallocate a buffer for when printing objects to
+     +  screen with the `kameloso.printing` templates.
+     +/
+    printObjectBuffer = 10_240,
 }
 
 /++
