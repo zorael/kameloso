@@ -159,29 +159,28 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                 // Normal buffers
                 if (plugin.printerSettings.bufferedWrites)
                 {
-                    import std.array : Appender;
-
                     // Normal log
-                    Appender!string sink;
-                    sink.reserve(512);
-                    // false bell on mention and errors
-                    plugin.formatMessageMonochrome(sink, event,
+                    plugin.formatMessageMonochrome(plugin.linebuffer, event,
                         No.bellOnMention, No.bellOnError);
-                    buffer.lines ~= sink.data;
+                    buffer.lines ~= plugin.linebuffer.data.idup;
+                    plugin.linebuffer.clear();
                 }
                 else
                 {
                     import std.file : exists, mkdirRecurse;
+                    import std.stdio : File;
 
                     if (!buffer.dir.exists)
                     {
                         mkdirRecurse(buffer.dir);
                     }
 
-                    import std.stdio : File;
                     auto file = File(buffer.file, "a");
-                    plugin.formatMessageMonochrome(file.lockingTextWriter, event,
+
+                    plugin.formatMessageMonochrome(plugin.linebuffer, event,
                         No.bellOnMention, No.bellOnError);
+                    file.writeln(plugin.linebuffer);
+                    plugin.linebuffer.clear();
                 }
             }
             else
@@ -194,13 +193,13 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                 else
                 {
                     import std.file : exists, mkdirRecurse;
+                    import std.stdio : File;
 
                     if (!buffer.dir.exists)
                     {
                         mkdirRecurse(buffer.dir);
                     }
 
-                    import std.stdio : File;
                     auto file = File(buffer.file, "a");
                     file.writeln(event.raw);
                 }
@@ -240,24 +239,32 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                 }
                 else
                 {
-                    import std.stdio : File;
+                    import std.stdio : File, writeln;
 
-                    File(errBuffer.file, "a")
-                        .lockingTextWriter
-                        .formatObjects!(Yes.all, No.coloured)(No.brightTerminal, event);
+                    auto errFile = File(errBuffer.file, "a");
+
+                    // This is an abuse of plugin.linebuffer and is pretty much
+                    // guaranteed to grow it, but what do?
+
+                    formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
+                        No.brightTerminal, event);
+                    errFile.writeln(plugin.linebuffer.data);
+                    plugin.linebuffer.clear();
 
                     if (event.sender.nickname.length || event.sender.address.length)
                     {
-                        File(errBuffer.file, "a")
-                            .lockingTextWriter
-                            .formatObjects!(Yes.all, No.coloured)(No.brightTerminal, event.sender);
+                        formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
+                            No.brightTerminal, event.sender);
+                        errFile.writeln(plugin.linebuffer.data);
+                        plugin.linebuffer.clear();
                     }
 
                     if (event.target.nickname.length || event.target.address.length)
                     {
-                        File(errBuffer.file, "a")
-                            .lockingTextWriter
-                            .formatObjects!(Yes.all, No.coloured)(No.brightTerminal, event.target);
+                        formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
+                            No.brightTerminal, event.target);
+                        errFile.writeln(plugin.linebuffer.data);
+                        plugin.linebuffer.clear();
                     }
                 }
             }
