@@ -74,28 +74,35 @@ void printObjects(Flag!"all" all = No.all, uint widthArg = 0, Things...)
     (auto ref Things things) @trusted
 {
     import kameloso.common : settings;
-    import std.stdio : stdout;
+    import kameloso.constants : BufferSize;
+    import std.array : Appender;
+    import std.stdio : stdout, writeln;
 
-    // writeln trusts `lockingTextWriter` so we will too.
+    // writeln trusts `stdout.flush()` so we will too.
 
-    bool printed;
+    Appender!(char[]) outbuffer;
+    outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
+
+    bool put;
 
     version(Colours)
     {
         if (!settings.monochrome)
         {
-            formatObjects!(all, Yes.coloured, widthArg)(stdout.lockingTextWriter,
+            formatObjects!(all, Yes.coloured, widthArg)(outbuffer,
                 (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal), things);
-            printed = true;
+            put = true;
         }
     }
 
-    if (!printed)
+    if (!put)
     {
         // Brightness setting is irrelevant; pass false
-        formatObjects!(all, No.coloured, widthArg)(stdout.lockingTextWriter,
-            No.brightTerminal, things);
+        formatObjects!(all, No.coloured, widthArg)(outbuffer, No.brightTerminal, things);
     }
+
+    writeln(outbuffer.data);
+    //outbuffer.clear();  // No need to clear, the appender goes out of scope now
 
     if (settings.flush) stdout.flush();
 }
