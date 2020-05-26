@@ -568,7 +568,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(1024);
 
     sink.formatObjects!(all, coloured, widthArg)(bright, things);
