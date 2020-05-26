@@ -802,12 +802,17 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
+    private import std.array : Appender;
+
 package:
     /// All Printer plugin options gathered.
     PrinterSettings printerSettings;
 
     /// How many seconds before a request to squelch list events times out.
     enum squelchTimeout = 10;  // seconds
+
+    /// How many bytes to preallocate for the `linebuffer`.
+    enum linebufferInitialSize = 2048;
 
     /// From which channel or for which user events are being squelched.
     string squelchTarget;
@@ -827,6 +832,9 @@ package:
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
+
+    /// Buffer to fill with the line to print to screen.
+    Appender!(char[]) linebuffer;
 
     /// Where to save logs.
     @Resource string logDirectory = "logs";
