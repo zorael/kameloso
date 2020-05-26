@@ -219,10 +219,8 @@ public:
      +  Overload that takes an output range sink.
      +/
     pragma(inline)
-    protected void beginLogMsg(Sink)(auto ref Sink sink,
-        string file, int line, string funcName,
-        string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) const
+    protected void beginLogMsg(Sink)(auto ref Sink sink, string, int, string,
+        string, string, LogLevel thisLogLevel, Tid, SysTime timestamp, Logger) const
     if (isOutputRange!(Sink, char[]))
     {
         import std.datetime : DateTime;
@@ -245,8 +243,8 @@ public:
         version(Colours)
         {
             sink.colourWith(brightTerminal ?
-                logcoloursBright[logLevel] :
-                logcoloursDark[logLevel]);
+                logcoloursBright[thisLogLevel] :
+                logcoloursDark[thisLogLevel]);
         }
     }
 
