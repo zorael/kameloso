@@ -108,9 +108,9 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* not work, albeit rarely, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd 2.089 and 2.090**, builds may fail due to an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). Cursory testing shows it does not seem to happen with **2.091** and later. The workarounds are otherwise to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
+On Windows with **dmd 2.089 and above** builds may fail, either silently with no output, or with an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
 
-`singleFile` mode drastically increases compilation times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it's not *that* slow. In addition it also produces faster binaries, so if you hit this error **ldc** might be the better alternative (over `singleFile`).
+`singleFile` mode compiles one file at a time and drastically increases build times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it's not *that* slow. In addition it also produces faster binaries, so if you hit this error **ldc** might be the better alternative, over `singleFile`.
 
 ### Build configurations
 
@@ -313,7 +313,7 @@ For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or
 
 On some old and/or **not up-to-date** Windows systems, plugins that access the web may misbehave and throw *"Peer certificates cannot be authenticated with given CA certificates"* errors. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and define an environmental variable `CURL_CA_BUNDLE` to point to it. To do this in a way that persists across reboots, open up the start menu and just type "environment", and an option *"Edit environment variables for your account"* should be offered. Click it, then click *"New..."* in the opened window and add the variable.
 
-When run in Cygwin/mintty terminals, the bot will not gracefully shut down upon hitting Ctrl+C, instead terminating abruptly. Any changes to configuration will thus have to be otherwise saved prior to forcefully exiting like that, such as with the Admin plugin's `!save` command, or its `!quit` command outright to exit immediately.
+In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, and lines may arbitrarily break at a certain length. Unsure how to solve. The workaround is to use `cmd.exe` and/or the Powershell console instead.
 
 ## Posix
 
