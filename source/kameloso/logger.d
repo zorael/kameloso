@@ -48,12 +48,22 @@ version = CtTints;
 final class KamelosoLogger : Logger
 {
 @safe:
+
+private:
+    import std.array : Appender;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
     import std.stdio : stdout;
     import std.typecons : Flag, No, Yes;
 
+    /// Buffer to compose a line in before printing it to screen.
+    Appender!(char[]) linebuffer;
+
+    /// The initial size to allocate for `linebuffer`. It will grow if needed.
+    enum linebufferInitialSize = 4096;
+
+public:
     version(Colours)
     {
         import kameloso.constants : DefaultColours;
