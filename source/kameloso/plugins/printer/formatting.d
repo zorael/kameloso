@@ -25,6 +25,7 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 
 package:
 
+@safe:
 
 version(Colours)
 {
@@ -136,7 +137,7 @@ unittest
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     .put(sink, "abc", 123, "def", 456, true);
     assert((sink.data == "abc123def456true"), sink.data);
@@ -417,11 +418,11 @@ if (isOutputRange!(Sink, char[]))
 }
 
 ///
-unittest
+@system unittest
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     IRCPluginState state;
     state.server.daemon = IRCServer.Daemon.twitch;
@@ -442,7 +443,7 @@ unittest
     event.channel = "#channel";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
-    immutable joinLine = sink.data[11..$];
+    immutable joinLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
     sink = typeof(sink).init;
@@ -451,7 +452,7 @@ unittest
     event.content = "Harbl snarbl";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
-    immutable chanLine = sink.data[11..$];
+    immutable chanLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
     sink = typeof(sink).init;
@@ -463,7 +464,7 @@ unittest
         //colour = "#3c507d";
 
         plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
-        immutable twitchLine = sink.data[11..$];
+        immutable twitchLine = sink.data[11..$].idup;
         version(TwitchSupport) assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
         else assert((twitchLine == `[chan] [#channel] nickname [BMS]: "Harbl snarbl"`), twitchLine);
         sink = typeof(sink).init;
@@ -477,7 +478,7 @@ unittest
     event.aux = "n1ckn4m3";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
-    immutable accountLine = sink.data[11..$];
+    immutable accountLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
     sink = typeof(sink).init;
@@ -490,7 +491,7 @@ unittest
     event.type = IRCEvent.Type.ERROR;
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
-    immutable errorLine = sink.data[11..$];
+    immutable errorLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
     else assert((errorLine == `[error] nickname: "Blah balah" {-42} (#666) ` ~
@@ -1327,7 +1328,7 @@ void highlightEmotes(ref IRCEvent event,
 
     if (!event.emotes.length) return;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(event.content.length + 60);  // mostly +10
 
     immutable TerminalForeground highlight = brightTerminal ?
@@ -1376,7 +1377,7 @@ void highlightEmotes(ref IRCEvent event,
         return;
     }
 
-    event.content = sink.data;
+    event.content = sink.data.idup;
 }
 
 
