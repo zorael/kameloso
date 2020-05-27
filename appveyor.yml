@@ -155,7 +155,7 @@ test_script:
  #- echo %Ddflags%
  - '%DC% --version'
  - dub --version
- - git clone https://github.com/zorael/lu.git -b ssl
+ - git clone https://github.com/zorael/lu.git
  #- git clone https://github.com/zorael/dialect.git
  - dub add-local lu
  #- dub add-local dialect
