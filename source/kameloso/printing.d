@@ -566,10 +566,11 @@ string formatObjects(Flag!"all" all = No.all,
     (const Flag!"brightTerminal" bright, Things things)
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
+    import kameloso.constants : BufferSize;
     import std.array : Appender;
 
     Appender!(char[]) sink;
-    sink.reserve(1024);
+    sink.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
     sink.formatObjects!(all, coloured, widthArg)(bright, things);
     return sink.data;
