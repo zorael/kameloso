@@ -12,11 +12,10 @@
 * saving notes to offline users that get played back when they come online
 * channel polls
 * works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot/package.d)
-* SSL support
-* [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication, `PLAIN` and `EXTERNAL` (SSL)
-* more random stuff and gimmicks
+* **SSL** support, including certificate and private key authentication
+* more [random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
 
 Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
@@ -82,11 +81,9 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 
 ## Prerequisites
 
-There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019). You will also need around 1.2 Gb of free memory for a minimal build (Linux plain `singleFile`), and 3.8 Gb for a standard build (Linux debug).
+There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019).
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which is fast to compile; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which builds slower but produces faster code.
-
-The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower but produces faster code. The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it will need to be installed separately. Refer to your repositories.
 
@@ -109,9 +106,9 @@ You can automatically skip these and add some optimisations by building it in `r
 
 > The above *might* not work, albeit rarely, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-On Windows with **dmd 2.089 and above** builds may fail, either silently with no output, or with an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
+On Windows with **dmd 2.089 and above** builds may fail, either silently with no output, or with an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc2`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
 
-`singleFile` mode compiles one file at a time and drastically increases build times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd** it's not *that* slow. In addition it also produces faster binaries, so if you hit this error **ldc** might be the better alternative, over `singleFile`.
+`singleFile` mode compiles one file at a time and as such drastically increases build times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd**, it's not *that* slow. In addition it also produces faster binaries, so if you hit this bug **ldc** might be the better alternative, over `singleFile`.
 
 ### Build configurations
 
@@ -149,7 +146,7 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 * **Windows**: `%APPDATA%\kameloso`
 * **Other unexpected platforms**: fallback to current working directory
 
-Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in editors, you can open it by passing `--edit`.
+Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in an editor, you can open it by passing `--edit`.
 
 ### Command-line arguments
 
@@ -171,7 +168,7 @@ Later invocations of `--writeconfig` will regenerate the file. It will never ove
 
 ### Display settings
 
-If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
+If you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
@@ -213,7 +210,7 @@ MrOffline joined #channel
 
       you | !automode add ray +o
  kameloso | Automode modified! ray on #channel: +o
-    ray joined #channel
+      ray joined #channel
  kameloso sets mode +o ray
 
       you | !poll 60 snek snik
@@ -254,7 +251,7 @@ Run the bot with `--set twitchbot.keyGenerationMode` to start the captive proces
 
 > Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/api.d`](source/kameloso/plugins/twitchbot/api.d).
 
-After entering your login and password and clicking `Authorize`, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your `kameloso.conf` configuration file.
+After entering your login and password and clicking **Authorize**, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your `kameloso.conf` configuration file.
 
 If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
 
@@ -287,7 +284,7 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Streamer assistant bot
 
-The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot. As previously alluded to, configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.
+The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot plugin. As previously alluded to, configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.
 
 ```sh
 $ dub build -c twitch
@@ -314,9 +311,11 @@ There is also a channel `#kameloso` on freenode, but replies may be delayed.
 
 ## Windows
 
-On Windows systems, you may see SSL errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
+If SSL flat doesn't work at all, you may simply be missing the necessary libraries. Download and install **OpenSSL** [here](https://slproweb.com/products/Win32OpenSSL.html), and install to system directories when asked.
 
-In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, and lines may arbitrarily break at a certain length. Unsure how to solve. The workaround is to use `cmd.exe` and/or the Powershell console instead.
+Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
+
+In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, and lines may arbitrarily break at a certain length. Unsure how to solve this. The current workaround is to just use `cmd.exe` and/or the Powershell console instead.
 
 ## Posix
 
@@ -333,9 +332,9 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 
 * [**D**](https://dlang.org)
 * [`dub`](https://code.dlang.org)
-* [`dialect`](https://github.com/zorael/dialect) ([dub](http://dialect.dub.pm))
-* [`lu`](https://github.com/zorael/lu) ([dub](http://lu.dub.pm))
-* [`arsd`](https://github.com/adamdruppe/arsd) ([dub](http://arsd-official.dub.pm))
+* [`dialect`](https://github.com/zorael/dialect) ([dub](https://code.dlang.org/packages/dialect))
+* [`lu`](https://github.com/zorael/lu) ([dub](https://code.dlang.org/packages/lu))
+* [`arsd`](https://github.com/adamdruppe/arsd) ([dub](https://code.dlang.org/packages/arsd-official))
 
 # License
 
@@ -343,7 +342,7 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 
 # Acknowledgements
 
-* [kameloso](https://youtu.be/ykj3Kpm3O0g) for obvious reasons
+* [Kameloso](https://youtu.be/ykj3Kpm3O0g)
 * [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
