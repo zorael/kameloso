@@ -1341,7 +1341,6 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.TWITCH_EXTENDSUB)
     @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     @(IRCEvent.Type.TWITCH_PAYFORWARD)
-    @(IRCEvent.Type.TWITCH_SKIPSUBSMODEMESSAGE)
     @(IRCEvent.Type.CLEARMSG)
     @channelPolicy
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const IRCEvent event)

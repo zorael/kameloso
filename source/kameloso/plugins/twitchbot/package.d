@@ -653,10 +653,42 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
 
-    if (!plugin.twitchBotSettings.filterURLs) return;
+    version(WithWebtitlesPlugin)
+    {
+        // Webtitles soft-disables itself on Twitch servers to allow us to filter links.
+        // It's still desirable to have their titles echoed however, when a link
+        // was allowed. So pass allowed links as bus messages to it.
+
+        void passToWebtitles(string[] urls)
+        {
+            import kameloso.plugins.common : EventURLs;
+            import kameloso.thread : ThreadMessage, busMessage;
+            import std.concurrency : send;
+
+            auto eventAndURLs = EventURLs(event, urls);
+
+            plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+                "webtitles", busMessage(eventAndURLs));
+        }
+    }
+    else
+    {
+        // No Webtitles so just abort if we're not filtering
+        if (!plugin.twitchBotSettings.filterURLs) return;
+    }
 
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
+
+    version(WithWebtitlesPlugin)
+    {
+        if (!plugin.twitchBotSettings.filterURLs)
+        {
+            // Not filtering but Webtitles available; pass to it to emulate it
+            // not being soft-disabled.
+            return passToWebtitles(urls);
+        }
+    }
 
     bool allowed;
 
@@ -686,7 +718,15 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         break;
     }
 
-    if (!allowed)
+    if (allowed)
+    {
+        version(WithWebtitlesPlugin)
+        {
+            // Pass to Webtitles if available, otherwise just ignore
+            return passToWebtitles(urls);
+        }
+    }
+    else
     {
         import std.format : format;
 
@@ -733,18 +773,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
             .format(event.sender.nickname, messages[ban.offense]));
         return;
-    }
-
-    version(WithWebtitlesPlugin)
-    {
-        import kameloso.plugins.common : EventURLs;
-        import kameloso.thread : ThreadMessage, busMessage;
-        import std.concurrency : send;
-
-        auto eventAndURLs = EventURLs(event, urls);
-
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            "webtitles", busMessage(eventAndURLs));
     }
 }
 

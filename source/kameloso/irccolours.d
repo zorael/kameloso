@@ -135,7 +135,7 @@ do
 
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
     line.ircColourInto(sink, fg, bg);
@@ -681,7 +681,7 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
 
     immutable tail = slice;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(line.length + segments.length * 8);
 
     static if (strip)

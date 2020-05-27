@@ -1987,6 +1987,8 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
         logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
             Tint.info, binaryPath.baseName, Tint.log);
     }
+
+    logger.trace("---");
 }
 
 
@@ -2050,7 +2052,7 @@ void setupSettings(ref CoreSettings settings)
 
     switch (platform)
     {
-    case "Cygwin":
+    //case "Cygwin":  // No longer seems to need this
     case "vscode":
         // Whitelist more as we find them.
         settings.flush = true;
@@ -2619,20 +2621,25 @@ int initBot(string[] args)
 
     try
     {
+        import std.file : exists;
+
         string[][string] missingEntries;
         string[][string] invalidEntries;
 
         instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
 
-        if (missingEntries.length) complainAboutMissingConfigurationEntries(missingEntries);
-        if (invalidEntries.length) complainAboutInvalidConfigurationEntries(invalidEntries);
-
-        if (missingEntries.length || invalidEntries.length)
+        if (instance.settings.configFile.exists)
         {
-            logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-                Tint.info, Tint.log, instance.settings.configFile);
-            logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
-            logger.trace("---");
+            if (missingEntries.length) complainAboutMissingConfigurationEntries(missingEntries);
+            if (invalidEntries.length) complainAboutInvalidConfigurationEntries(invalidEntries);
+
+            if (missingEntries.length || invalidEntries.length)
+            {
+                logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
+                    Tint.info, Tint.log, instance.settings.configFile);
+                logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+                logger.trace("---");
+            }
         }
     }
     catch (ConvException e)
@@ -2714,7 +2721,7 @@ int initBot(string[] args)
         }
     }
 
-    if (instance.settings.exitSummary)
+    if (instance.settings.exitSummary && instance.connectionHistory.length)
     {
         instance.printSummary();
     }

@@ -48,12 +48,21 @@ version = CtTints;
 final class KamelosoLogger : Logger
 {
 @safe:
+
+private:
+    import std.array : Appender;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
-    import std.stdio : stdout;
     import std.typecons : Flag, No, Yes;
 
+    /// Buffer to compose a line in before printing it to screen.
+    Appender!(char[]) linebuffer;
+
+    /// The initial size to allocate for `linebuffer`. It will grow if needed.
+    enum linebufferInitialSize = 4096;
+
+public:
     version(Colours)
     {
         import kameloso.constants : DefaultColours;
@@ -73,6 +82,7 @@ final class KamelosoLogger : Logger
         const Flag!"brightTerminal" brightTerminal,
         const Flag!"flush" flush)
     {
+        linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
         this.flush = flush;
@@ -209,10 +219,8 @@ final class KamelosoLogger : Logger
      +  Overload that takes an output range sink.
      +/
     pragma(inline)
-    protected void beginLogMsg(Sink)(auto ref Sink sink,
-        string file, int line, string funcName,
-        string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) const
+    protected void beginLogMsg(Sink)(auto ref Sink sink, string, int, string,
+        string, string, LogLevel thisLogLevel, Tid, SysTime timestamp, Logger) const
     if (isOutputRange!(Sink, char[]))
     {
         import std.datetime : DateTime;
@@ -235,22 +243,21 @@ final class KamelosoLogger : Logger
         version(Colours)
         {
             sink.colourWith(brightTerminal ?
-                logcoloursBright[logLevel] :
-                logcoloursDark[logLevel]);
+                logcoloursBright[thisLogLevel] :
+                logcoloursDark[thisLogLevel]);
         }
     }
 
     /++
      +  Outputs the header of a logger message.
      +
-     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
-     +  the other `beginLogMsg`.
+     +  Overload that passes `linebuffer` to the other `beginLogMsg`.
      +/
     override protected void beginLogMsg(string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) @trusted const
+        Tid threadId, SysTime timestamp, Logger logger)
     {
-        return beginLogMsg(stdout.lockingTextWriter, file, line, funcName,
+        return beginLogMsg(linebuffer, file, line, funcName,
             prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
     }
 
@@ -260,7 +267,7 @@ final class KamelosoLogger : Logger
      +  Overload that takes an output range sink.
      +/
     pragma(inline)
-    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
+    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg)
     if (isOutputRange!(Sink, char[]))
     {
         sink.put(msg);
@@ -269,14 +276,13 @@ final class KamelosoLogger : Logger
     /++
      +  Outputs the message part of a logger message; the content.
      +
-     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
-     +  the other `logMsgPart`.
+     +  Overload that passes `linebuffer` to the other `logMsgPart`.
      +/
-    override protected void logMsgPart(scope const(char)[] msg) @trusted const
+    override protected void logMsgPart(scope const(char)[] msg)
     {
         if (!msg.length) return;
 
-        return logMsgPart(stdout.lockingTextWriter, msg);
+        return logMsgPart(linebuffer, msg);
     }
 
     /++
@@ -298,18 +304,23 @@ final class KamelosoLogger : Logger
 
     /++
      +  Outputs the tail of a logger message.
+     +  Overload that passes `linebuffer` to the other `finishLogMsg`.
      +
-     +  Overload that passes a `std.stdio.stdout.lockingTextWriter` to
-     +  the other `finishLogMsg`.
+     +  @trusted to allow us to flush `stdout`. `std.stdio.writeln` seems to
+     +  do this and it's annotated @trusted, so just mimic that.
      +/
-    override protected void finishLogMsg() @trusted const
+    override protected void finishLogMsg() @trusted
     {
+        import std.stdio : stdout, writeln;
+
         version(Colours)
         {
-            finishLogMsg(stdout.lockingTextWriter);
+            finishLogMsg(linebuffer);
         }
 
-        stdout.lockingTextWriter.put('\n');
+        writeln(linebuffer.data);
+        linebuffer.clear();
+
         if (flush) stdout.flush();
     }
 }
