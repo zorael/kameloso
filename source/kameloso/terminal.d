@@ -290,7 +290,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(16);
 
     sink.colourWith(codes);
@@ -364,7 +364,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(text.length + 15);
 
     sink.colourWith(codes);
@@ -703,11 +703,11 @@ if (isOutputRange!(Sink, char[]))
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
     (const string word, const uint r, const uint g, const uint b,
-    const Flag!"bright" bright = No.bright)
+    const Flag!"bright" bright = No.bright) pure
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     // \033[38;2;255;255;255m<word>\033[m
     // \033[48 for background
     sink.reserve(word.length + 23);

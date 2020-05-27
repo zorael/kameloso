@@ -1499,7 +1499,7 @@ string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(60);
     duration.timeSinceInto!(abbreviate, numUnits, truncateUnits)(sink);
     return sink.data;

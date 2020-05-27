@@ -135,7 +135,7 @@ do
 
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
     line.ircColourInto(sink, fg, bg);
