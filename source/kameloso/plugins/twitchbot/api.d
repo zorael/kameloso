@@ -79,8 +79,10 @@ struct QueryResponse
  +      bucket = The shared associative array to put the results in, response
  +          values keyed by URL.
  +      timeout = How long before queries time out.
+ +      caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout)
+void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
+    const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -99,7 +101,7 @@ void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout)
         receive(
             (string url, string authToken) scope
             {
-                queryTwitchImpl(url, authToken, timeout, bucket);
+                queryTwitchImpl(url, authToken, timeout, bucket, caBundleFile);
             },
             (ThreadMessage.Teardown) scope
             {
@@ -418,7 +420,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     else
     {
         spawn(&queryTwitchImpl, url, authorisationHeader,
-            plugin.queryResponseTimeout, plugin.bucket);
+            plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
@@ -482,9 +484,10 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +      timeout = How long to let the query run before timing out.
  +      bucket = The shared associative array to put the results in, response
  +          values keyed by URL.
+ +      caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void queryTwitchImpl(const string url, const string authToken,
-    const uint timeout, shared QueryResponse[string] bucket)
+    const uint timeout, shared QueryResponse[string] bucket, const string caBundleFile)
 {
     import std.net.curl : HTTP;
     import std.datetime.systime : Clock, SysTime;
@@ -496,6 +499,7 @@ void queryTwitchImpl(const string url, const string authToken,
     client.operationTimeout = timeout.seconds;
     client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
     client.addRequestHeader("Authorization", authToken);
+    if (caBundleFile.length) client.caInfo = caBundleFile;
 
     Appender!(ubyte[]) sink;
     sink.reserve(TwitchBotPlugin.queryBufferSize);
@@ -544,12 +548,13 @@ void queryTwitchImpl(const string url, const string authToken,
  +          name or string of numeric account ID).
  +      authToken = Authorisation token HTTP header to pass.
  +      timeout = How long to let the query run before timing out.
+ +      caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
  +/
 JSONValue getUserImpl(Identifier)(const string field, const Identifier identifier,
-    const string authToken, const uint timeout)
+    const string authToken, const uint timeout, const string caBundleFile)
 in (field.among!("login", "id"), "Invalid field supplied; expected " ~
     "`login` or `id`, got `" ~ field ~ '`')
 {
@@ -568,6 +573,7 @@ in (field.among!("login", "id"), "Invalid field supplied; expected " ~
     client.operationTimeout = timeout.seconds;
     client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
     client.addRequestHeader("Authorization", authToken);
+    if (caBundleFile.length) client.caInfo = caBundleFile;
 
     Appender!(ubyte[]) sink;
     sink.reserve(TwitchBotPlugin.queryBufferSize);
@@ -659,7 +665,8 @@ JSONValue parseUserFromResponse(const string jsonString)
  +/
 JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
 {
-    return getUserImpl("login", login, plugin.authorizationBearer, plugin.queryResponseTimeout);
+    return getUserImpl("login", login, plugin.authorizationBearer,
+        plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
 }
 
 
@@ -687,7 +694,8 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
 {
-    return getUserImpl("id", id, plugin.authorizationBearer, plugin.queryResponseTimeout);
+    return getUserImpl("id", id, plugin.authorizationBearer,
+        plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
 }
 
 
@@ -715,7 +723,8 @@ JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
  +/
 JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
 {
-    return getUserImpl("id", id, plugin.authorizationBearer, plugin.queryResponseTimeout);
+    return getUserImpl("id", id, plugin.authorizationBearer,
+        plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
 }
 
 
@@ -861,7 +870,8 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +  }
  +  else
  +  {
- +      spawn(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket);
+ +      spawn(&queryTwitchImpl, url, plugin.authorizationBearer,
+ +          plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
  +  }
  +
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);

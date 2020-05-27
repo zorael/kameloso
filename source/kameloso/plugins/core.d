@@ -1867,7 +1867,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
  +/
 struct IRCPluginState
 {
-    import kameloso.common : CoreSettings, IRCBot;
+    import kameloso.common : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -1894,6 +1894,11 @@ struct IRCPluginState
      +  The current program-wide `kameloso.common.CoreSettings`.
      +/
     CoreSettings settings;
+
+    /++
+     +  The current program-wide `kameloso.common.ConnectionSettings`.
+     +/
+    ConnectionSettings connSettings;
 
     /// Thread ID to the main thread.
     Tid mainThread;

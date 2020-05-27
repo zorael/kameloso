@@ -144,17 +144,11 @@ struct CoreSettings
         bool monochrome = true;  /// Non-colours version defaults to true.
     }
 
-    /// Flag denoting whether or not the program should reconnect after disconnect.
-    bool reconnectOnFailure = true;
-
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
     /// Flag denoting that usermask should be used instead of accounts to authenticate.
     bool preferHostmasks = false;
-
-    /// Whether to connect to IPv6 addresses or only use IPV4 ones.
-    bool ipv6 = true;
 
     /// Whether or not to hide outgoing messages, not printing them to screen.
     bool hideOutgoing = false;
@@ -164,9 +158,6 @@ struct CoreSettings
 
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
-
-    /// Whether to endlessly connect or whether to give up after a while.
-    bool endlesslyConnect = true;
 
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
@@ -195,6 +186,37 @@ struct CoreSettings
         bool force;  /// Whether or not to force connecting, skipping some sanity checks.
         bool flush;  /// Whether or not to flush stdout after writing to it.
     }
+}
+
+
+// ConnectionSettings
+/++
+ +  Aggregate of values used in the connection between the bot and the IRC server.
+ +/
+struct ConnectionSettings
+{
+    import lu.uda : CannotContainComments;
+
+    /// Flag denoting whether or not the program should reconnect after disconnect.
+    bool reconnectOnFailure = true;
+
+    /// Whether to endlessly connect or whether to give up after a while.
+    bool endlesslyConnect = true;
+
+    /// Whether to connect to IPv6 addresses or only use IPv4 ones.
+    bool ipv6 = true;
+
+    /// Path to private (`.pem`) key file, used in SSL connections.
+    @CannotContainComments string privateKeyFile;
+
+    /// Path to certificate (`.pem`) file.
+    @CannotContainComments string certFile;
+
+    /// Path to certificate bundle `cacert.pem` file or equivalent.
+    @CannotContainComments string caBundleFile;
+
+    /// Whether or not to attempt an SSL connection.
+    bool ssl = false;
 }
 
 
@@ -315,6 +337,11 @@ struct Kameloso
     CoreSettings settings;
 
     /++
+     +  Settings relating to the connection between the bot and the IRC server.
+     +/
+    ConnectionSettings connSettings;
+
+    /++
      +  When a nickname was last issued a WHOIS query for, for hysteresis
      +  and rate-limiting.
      +/
@@ -405,7 +432,7 @@ struct Kameloso
      +/
     double throttleline(Buffer)(ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
-        const Flag!"sendFaster" sendFaster = No.sendFaster)
+        const Flag!"sendFaster" sendFaster = No.sendFaster) @system
     {
         with (throttle)
         {
@@ -528,6 +555,7 @@ struct Kameloso
         state.bot = this.bot;
         state.mainThread = thisTid;
         state.settings = settings;
+        state.connSettings = connSettings;
         immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length);

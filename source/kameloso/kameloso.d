@@ -1562,6 +1562,9 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
 /++
  +  Registers some process signals to redirect to our own `signalHandler`, so we
  +  can (for instance) catch Ctrl+C and gracefully shut down.
+ +
+ +  On Posix, additionally ignore `SIGPIPE` so that we can catch SSL errors and
+ +  not just immediately terminate.
  +/
 void setupSignals() nothrow @nogc
 {
@@ -1572,9 +1575,11 @@ void setupSignals() nothrow @nogc
 
     version(Posix)
     {
-        import core.sys.posix.signal : SIGHUP, SIGQUIT;
+        import core.sys.posix.signal : SIG_IGN, SIGHUP, SIGPIPE, SIGQUIT;
+
         signal(SIGHUP, &signalHandler);
         signal(SIGQUIT, &signalHandler);
+        signal(SIGPIPE, SIG_IGN);
     }
 }
 
@@ -1685,7 +1690,7 @@ Next tryConnect(ref Kameloso instance)
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn, instance.settings.endlesslyConnect,
+        connectFiber(instance.conn, instance.connSettings.endlesslyConnect,
             ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.retry;
 
@@ -1695,6 +1700,8 @@ Next tryConnect(ref Kameloso instance)
     foreach (const attempt; connector)
     {
         import core.time : seconds;
+
+        if (*abort) return Next.returnFailure;
 
         with (ConnectionAttempt.State)
         final switch (attempt.state)
@@ -1722,20 +1729,21 @@ Next tryConnect(ref Kameloso instance)
 
             immutable pattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
-                "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
-                "Connecting to %s%s%s:%1$s%4$s%3$s ...";
+                "Connecting to [%s%s%s]:%1$s%4$s%3$s %5$s..." :
+                "Connecting to %s%s%s:%1$s%4$s%3$s %5$s...";
+
+            immutable ssl = instance.conn.ssl ? "(SSL) " : string.init;
 
             immutable address = (!resolvedHost.length ||
                 (parser.server.address == resolvedHost) ||
                 (sharedDomains(parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
-            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString);
+            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString, ssl);
             continue;
 
         case connected:
             logger.log("Connected!");
-            conn.connected = true;
             connector.reset();
             return Next.continue_;
 
@@ -1778,6 +1786,11 @@ Next tryConnect(ref Kameloso instance)
             logger.warning("IPv6 connection failed. Disabling IPv6.");
             continue;
 
+        case sslFailure:
+            logger.error("Failed to connect due to SSL setup/handshake failure: ",
+                Tint.log, attempt.error);
+            return Next.returnFailure;
+
         case error:
             logger.error("Failed to connect: ", attempt.error);
             return Next.returnFailure;
@@ -1809,12 +1822,12 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     import std.concurrency : Generator;
 
     enum defaultResolveAttempts = 15;
-    immutable resolveAttempts = instance.settings.endlesslyConnect ?
+    immutable resolveAttempts = instance.connSettings.endlesslyConnect ?
         int.max : defaultResolveAttempts;
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, instance.settings.ipv6, resolveAttempts, *instance.abort));
+        instance.parser.server.port, instance.connSettings.ipv6, resolveAttempts, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -2211,7 +2224,6 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         // May as well check once here, in case something in initPlugins aborted or so.
         if (*instance.abort) break outerloop;
 
-        instance.conn.connected = false;
         instance.conn.reset();
 
         immutable actionAfterResolve = tryResolve(instance,
@@ -2340,7 +2352,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         attempt.firstConnect = false;
     }
     while (!*instance.abort && ((attempt.next == Next.continue_) || (attempt.next == Next.retry) ||
-        ((attempt.next == Next.returnFailure) && instance.settings.reconnectOnFailure)));
+        ((attempt.next == Next.returnFailure) && instance.connSettings.reconnectOnFailure)));
 }
 
 
@@ -2524,6 +2536,22 @@ int initBot(string[] args)
         applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
     }
 
+    import std.algorithm.comparison : among;
+
+    // Copy some stuff over to our Connection
+    instance.conn.certFile = instance.connSettings.certFile;
+    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
+    instance.conn.ssl = instance.connSettings.ssl;
+
+    // Additionally if the port is an SSL-like port, assume SSL,
+    // but only if the user isn't forcing settings
+    if (!instance.conn.ssl && !instance.settings.force &&
+        instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999, 443))
+    {
+        instance.connSettings.ssl = true;  // Is this wise?
+        instance.conn.ssl = true;
+    }
+
     string pre, post;
 
     version(Colours)
@@ -2669,7 +2697,7 @@ int initBot(string[] args)
             instance.bot.quitReason.replaceTokens(instance.parser.client));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
-        !instance.settings.reconnectOnFailure)
+        !instance.connSettings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)",

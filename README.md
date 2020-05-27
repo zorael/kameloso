@@ -12,7 +12,8 @@
 * saving notes to offline users that get played back when they come online
 * channel polls
 * works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot/package.d)
-* [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+* SSL support
+* [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication, `PLAIN` and `EXTERNAL` (SSL)
 * more random stuff and gimmicks
 
 All of the above are plugins and can be runtime disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
@@ -305,13 +306,15 @@ Do not set `keyGenerationMode` persistently to `true` in the configuration file,
 
 ## Further help
 
-For more information see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
+For more information and help see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
+
+There is also a channel `#kameloso` on freenode, but replies may be delayed.
 
 # Known issues
 
 ## Windows
 
-On some old and/or **not up-to-date** Windows systems, plugins that access the web may misbehave and throw *"Peer certificates cannot be authenticated with given CA certificates"* errors. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and define an environmental variable `CURL_CA_BUNDLE` to point to it. To do this in a way that persists across reboots, open up the start menu and just type "environment", and an option *"Edit environment variables for your account"* should be offered. Click it, then click *"New..."* in the opened window and add the variable.
+On Windows systems, you may see SSL errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
 In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, and lines may arbitrarily break at a certain length. Unsure how to solve. The workaround is to use `cmd.exe` and/or the Powershell console instead.
 

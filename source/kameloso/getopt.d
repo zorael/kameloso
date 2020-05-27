@@ -154,10 +154,10 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     // Take the opportunity to set a default quit reason. We can't do this in
     // applyDefaults because it's a perfectly valid use-case not to have a quit
-    // string, and havig it there would enforce the default string if none present.
+    // string, and having it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;
 
-    printObjects(client, instance.bot, server, instance.settings);
+    printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
 
     instance.writeConfigurationFile(instance.settings.configFile);
 
@@ -214,7 +214,7 @@ void printSettings(ref Kameloso instance, const string[] customSettings,
     writeln();
 
     printObjects!(No.all)(instance.parser.client, instance.bot,
-        instance.parser.server, instance.settings);
+        instance.parser.server, instance.connSettings, instance.settings);
 
     string[][string] ignore;
     instance.initPlugins(customSettings, ignore, ignore);
@@ -305,7 +305,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         string[][string] invalid;
 
         settings.configFile.readConfigInto(missing, invalid,
-            parser.client, bot, parser.server, settings);
+            parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
 
         immutable setSyntax = "%splugin%s.%1$soption%2$s=%1$ssetting%2$s"
@@ -324,8 +324,11 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             .format(Tint.info, parser.server.port, Tint.reset),
                             &parser.server.port,
             "6|ipv6",       "Use IPv6 when available [%s%s%s]"
-                            .format(Tint.info, settings.ipv6, Tint.reset),
-                            &settings.ipv6,
+                            .format(Tint.info, connSettings.ipv6, Tint.reset),
+                            &connSettings.ipv6,
+            "ssl",          "Use SSL connections [%s%s%s]"
+                            .format(Tint.info, connSettings.ssl, Tint.reset),
+                            &connSettings.ssl,
             "A|account",    "Services account name",
                             &bot.account,
             "p|password",   "Services account password",
@@ -369,6 +372,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "r|resourceDir","Specify a different resource directory [%s%s%s]"
                             .format(Tint.info, settings.resourceDirectory, Tint.reset),
                             &settings.resourceDirectory,
+            /*"privateKey",   "Path to private key file, used to authenticate some SSL connections",
+                            &connSettings.privateKeyFile,
+            "cert",         "Path to certificate file, ditto",
+                            &connSettings.certFile,
+            "cacert",       "Path to %scacert.pem%s certificate bundle, or equivalent"
+                            .format(Tint.info, Tint.reset),
+                            &connSettings.caBundleFile,*/
             "summary",      "Show a connection summary on program exit",
                             &settings.exitSummary,
             "force",        "Force connect (skips some sanity checks)",
