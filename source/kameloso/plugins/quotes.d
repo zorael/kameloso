@@ -277,7 +277,8 @@ in (rawLine.length, "Tried to add an empty quote")
     import lu.string : unquoted;
     import std.json : JSONException, JSONValue;
 
-    immutable altered = removeWeeChatHead(rawLine.unquoted, id).unquoted;
+    immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
+    immutable altered = removeWeeChatHead(rawLine.unquoted, id, prefixSigns).unquoted;
     immutable line = altered.length ? altered : rawLine;
 
     try
@@ -326,15 +327,17 @@ in (rawLine.length, "Tried to add an empty quote")
  +  Params:
  +      line = Full string line as copy/pasted from WeeChat.
  +      nickname = The nickname to remove (along with the timestamp).
+ +      prefixes = The available user prefixes on the current server.
  +
  +  Returns:
  +      The original line with the WeeChat timestamp and nickname sliced away,
  +      or as it was passed. No new string is ever allocated.
  +/
-string removeWeeChatHead(const string line, const string nickname) pure @safe @nogc
+string removeWeeChatHead(const string line, const string nickname,
+    const string prefixes) pure @safe @nogc
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
-    import lu.string : beginsWith, nom, strippedLeft;
+    import lu.string : beginsWith, contains, nom, strippedLeft;
 
     static bool isN(const char c)
     {
@@ -362,7 +365,7 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
 
     if (slice.length > nickname.length)
     {
-        if ((((slice[0] == '@') || (slice[0] == '+')) &&
+        if ((prefixes.contains(slice[0]) &&
             slice[1..$].beginsWith(nickname)) ||
             slice.beginsWith(nickname))
         {
@@ -408,30 +411,32 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
 ///
 unittest
 {
+    immutable prefixes = "!~&@%+";
+
     {
         enum line = "20:08:27 @zorael | dresing";
-        immutable modified = removeWeeChatHead(line, "zorael");
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
         assert((modified == "dresing"), modified);
     }
     {
         enum line = "               20:08:27                   @zorael | dresing";
-        immutable modified = removeWeeChatHead(line, "zorael");
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
         assert((modified == "dresing"), modified);
     }
     {
         enum line = "+zorael | dresing";
-        immutable modified = removeWeeChatHead(line, "zorael");
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
         assert((modified == "dresing"), modified);
     }
     {
         enum line = "2y:08:27 @zorael | dresing";
-        immutable modified = removeWeeChatHead(line, "zorael");
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
         assert((modified == line), modified);
     }
     {
         enum line = "16:08:27       <-- | kameloso (~kameloso@2001:41d0:2:80b4::) " ~
             "has quit (Remote host closed the connection)";
-        immutable modified = removeWeeChatHead(line, "kameloso");
+        immutable modified = removeWeeChatHead(line, "kameloso", prefixes);
         assert((modified == line), modified);
     }
 }
