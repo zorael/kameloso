@@ -114,9 +114,8 @@ On Windows with **dmd 2.089 and above** builds may fail, either silently with no
 
 There are several configurations in which the bot may be built.
 
-* `application`, default configuration; includes terminal colours and plugins that access the web (both can still be disabled in runtime)
-* `vanilla`, barebones build with most plugins but without colours or any specific extras
-* `twitch`, essentially `application` plus Twitch support and the Twitch streamer plugin
+* `application`, base configuration
+* `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
 > All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory by raising compilation time, but so far they *only work with **ldc***. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
@@ -311,11 +310,11 @@ There is also a channel `#kameloso` on freenode, but replies may be delayed.
 
 ## Windows
 
-If SSL flat doesn't work at all, you may simply be missing the necessary libraries. Download and install **OpenSSL** [here](https://slproweb.com/products/Win32OpenSSL.html), and install to system directories when asked.
+If SSL flat doesn't work at all, you may simply be missing the necessary libraries. Download and install **OpenSSL** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
 
 Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
-In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, and lines may arbitrarily break at a certain length. Unsure how to solve this. The current workaround is to just use `cmd.exe` and/or the Powershell console instead.
+In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use `cmd.exe` and/or the Powershell console instead.
 
 ## Posix
 
