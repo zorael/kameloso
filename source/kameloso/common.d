@@ -1752,16 +1752,11 @@ struct Tint
         static string opDispatch(string tint)()
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
-            import kameloso.logger : KamelosoLogger;
             import std.traits : isSomeFunction;
 
-            KamelosoLogger kamelog = cast(KamelosoLogger)logger;
-            assert(kamelog, "`logger` is null or is not a `KamelosoLogger` " ~
-                "as seen from `Tint.opDispatch`");
+            enum tintfun = "logger." ~ tint ~ "tint";
 
-            enum tintfun = "kamelog." ~ tint ~ "tint";
-
-            static if (__traits(hasMember, kamelog, tint ~ "tint") &&
+            static if (__traits(hasMember, logger, tint ~ "tint") &&
                 isSomeFunction!(mixin(tintfun)))
             {
                 return monochrome ? string.init : mixin(tintfun);
@@ -1795,22 +1790,17 @@ struct Tint
 ///
 unittest
 {
-    import kameloso.logger : KamelosoLogger;
-
     if (logger !is null)
     {
-        KamelosoLogger kl = cast(KamelosoLogger)logger;
-        assert(kl);
-
         version(Colours)
         {
-            assert(Tint.log is kl.logtint);
-            assert(Tint.info is kl.infotint);
-            assert(Tint.warning is kl.warningtint);
-            assert(Tint.error is kl.errortint);
-            assert(Tint.fatal is kl.fataltint);
-            assert(Tint.trace is kl.tracetint);
-            assert(Tint.reset is kl.resettint);
+            assert(Tint.log is logger.logtint);
+            assert(Tint.info is logger.infotint);
+            assert(Tint.warning is logger.warningtint);
+            assert(Tint.error is logger.errortint);
+            assert(Tint.fatal is logger.fataltint);
+            assert(Tint.trace is logger.tracetint);
+            assert(Tint.reset is logger.resettint);
         }
         else
         {
