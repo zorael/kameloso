@@ -440,12 +440,12 @@ unittest
 
     auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, Yes.flush);
 
-    log_.log("log: log");
-    log_.info("log: info");
-    log_.warning("log: warning");
-    log_.error("log: error");
-    // log_.fatal("log: FATAL");  // crashes the program
-    log_.trace("log: trace");
+    log_.logf!"log: %s"("log");
+    log_.infof!"log: %s"("info");
+    log_.warningf!"log: %s"("warning");
+    log_.errorf!"log: %s"("error");
+    // log_.fatalf!"log: %s"("FATAL");
+    log_.tracef("log: %s", "trace");
 
     version(Colours)
     {
