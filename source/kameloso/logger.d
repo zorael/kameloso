@@ -293,10 +293,6 @@ public:
                 import lu.conv : Enum;
                 linebuffer.put(Enum!T.toString(arg));
             }
-            else static if (__traits(compiles, arg.toString(linebuffer)))
-            {
-                arg.toString(linebuffer);
-            }
             else static if ((is(T == struct) || is(T == class) || is(T == interface)) &&
                 is(typeof(T.toString)))
             {
@@ -338,6 +334,8 @@ public:
             else
             {
                 import std.conv : to;
+
+                // std.conv.to fallback
                 linebuffer.put(arg.to!string);
             }
         }
