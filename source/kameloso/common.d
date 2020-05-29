@@ -6,8 +6,8 @@ module kameloso.common;
 
 private:
 
+import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient, IRCServer;
-import std.experimental.logger.core : Logger;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Tuple, Yes;
 import core.time : Duration, seconds;
@@ -19,11 +19,10 @@ public:
 version(unittest)
 shared static this()
 {
-    import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
     // This is technically before settings have been read...
-    logger = new KamelosoLogger(LogLevel.all, No.monochrome, No.brightTerminal, Yes.flush);
+    logger = new KamelosoLogger(No.monochrome, No.brightTerminal, Yes.flush);
 
     // settings needs instantiating now.
     settings = new CoreSettings;
@@ -37,13 +36,13 @@ shared static this()
  +
  +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
  +  and `fatal`. It is not `__gshared`, so instantiate a thread-local
- +  `std.experimental.logger.Logger` if threading.
+ +  `kameloso.logger.KamelosoLogger` if threading.
  +
  +  Having this here is unfortunate; ideally plugins should not use variables
  +  from other modules, but unsure of any way to fix this other than to have
- +  each plugin keep their own `std.experimental.logger.Logger`.
+ +  each plugin keep their own `kameloso.logger.KamelosoLogger`.
  +/
-Logger logger;
+KamelosoLogger logger;
 
 
 // initLogger
@@ -73,42 +72,7 @@ do
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
-    Tint.monochrome = monochrome;
-}
-
-
-// initLogger
-/++
- +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
- +  Deprecated overload that takes bool parameters.
- +
- +  It needs to be separately instantiated per thread, and even so there may be
- +  race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
- +  to log to screen from other threads.
- +
- +  Example:
- +  ---
- +  initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
- +  ---
- +
- +  Params:
- +      monochrome = Whether the terminal is set to monochrome or not.
- +      bright = Whether the terminal has a bright background or not.
- +      flush = Whether or not to flush stdout after finishing writing to it.
- +/
-deprecated("Use the overload that takes `Flag` parameters instead")
-void initLogger(const bool monochrome, const bool bright, const bool flush)
-out (; (logger !is null), "Failed to initialise logger")
-do
-{
-    import kameloso.logger : KamelosoLogger;
-    import std.experimental.logger : LogLevel;
-
-    logger = new KamelosoLogger(LogLevel.all,
-        monochrome ? Yes.monochrome : No.monochrome,
-        bright ? Yes.brightTerminal : No.brightTerminal,
-        flush ? Yes.flush : No.flush);
+    logger = new KamelosoLogger(monochrome, bright, flush);
     Tint.monochrome = monochrome;
 }
 
@@ -1788,16 +1752,11 @@ struct Tint
         static string opDispatch(string tint)()
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
-            import kameloso.logger : KamelosoLogger;
             import std.traits : isSomeFunction;
 
-            KamelosoLogger kamelog = cast(KamelosoLogger)logger;
-            assert(kamelog, "`logger` is null or is not a `KamelosoLogger` " ~
-                "as seen from `Tint.opDispatch`");
+            enum tintfun = "logger." ~ tint ~ "tint";
 
-            enum tintfun = "kamelog." ~ tint ~ "tint";
-
-            static if (__traits(hasMember, kamelog, tint ~ "tint") &&
+            static if (__traits(hasMember, logger, tint ~ "tint") &&
                 isSomeFunction!(mixin(tintfun)))
             {
                 return monochrome ? string.init : mixin(tintfun);
@@ -1831,22 +1790,17 @@ struct Tint
 ///
 unittest
 {
-    import kameloso.logger : KamelosoLogger;
-
     if (logger !is null)
     {
-        KamelosoLogger kl = cast(KamelosoLogger)logger;
-        assert(kl);
-
         version(Colours)
         {
-            assert(Tint.log is kl.logtint);
-            assert(Tint.info is kl.infotint);
-            assert(Tint.warning is kl.warningtint);
-            assert(Tint.error is kl.errortint);
-            assert(Tint.fatal is kl.fataltint);
-            assert(Tint.trace is kl.tracetint);
-            assert(Tint.reset is kl.resettint);
+            assert(Tint.log is logger.logtint);
+            assert(Tint.info is logger.infotint);
+            assert(Tint.warning is logger.warningtint);
+            assert(Tint.error is logger.errortint);
+            assert(Tint.fatal is logger.fataltint);
+            assert(Tint.trace is logger.tracetint);
+            assert(Tint.reset is logger.resettint);
         }
         else
         {
