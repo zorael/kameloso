@@ -297,10 +297,6 @@ public:
             {
                 arg.toString(linebuffer);
             }
-            /*else static if (isSomeFunction!(arg.toString) && is(ReturnType!(arg.toString) : string))
-            {
-                linebuffer.put(arg.toString);
-            }*/
             else static if ((is(T == struct) || is(T == class) || is(T == interface)) &&
                 is(typeof(T.toString)))
             {
@@ -341,10 +337,6 @@ public:
             }
             else
             {
-                pragma(msg, T.stringof);
-                pragma(msg, is(T == struct));
-                pragma(msg, is(T == class));
-                pragma(msg, __traits(isTemplate, T));
                 import std.conv : to;
                 linebuffer.put(arg.to!string);
             }
