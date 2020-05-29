@@ -52,7 +52,7 @@ private:
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;   /// Whether or not to use colours for a bright background.
-    bool flush;  /// Whether or not we should flush stdout after finishing writing to it.
+    bool flush;  /// Whether or not we should flush `stdout` after finishing writing to it.
 
 public:
     version(Colours)
@@ -64,7 +64,14 @@ public:
         alias logcoloursDark = DefaultColours.logcoloursDark;
     }
 
-    /// Create a new `KamelosoLogger` with the passed settings.
+    /++
+     +  Create a new `KamelosoLogger` with the passed settings.
+     +
+     +  Params:
+     +      monochrome = Whether or not to print colours.
+     +      brightTerminal = Bright terminal setting.
+     +      flush = Whether or not to flush `stdout` after printing.
+     +/
     this(const Flag!"monochrome" monochrome,
         const Flag!"brightTerminal" brightTerminal,
         const Flag!"flush" flush) @safe
