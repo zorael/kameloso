@@ -171,7 +171,7 @@ public:
         }
         else
         {
-            return tint(level, brightTerminal).colour;
+            return tint(level, brightTerminal ? Yes.brightTerminal : No.brightTerminal).colour;
         }
     }
 
@@ -179,25 +179,25 @@ public:
     version(Colours)
     {
         /// Provides easy way to get a log tint.
-        auto tracetint() const @property @nogc { return tintImpl!(LogLevel.trace); }
+        auto tracetint() const @property { return tintImpl!(LogLevel.trace); }
 
         /// Convenience alias to `tracetint`.
         alias resettint = tracetint;
 
         /// Provides easy way to get a log tint.
-        auto logtint() const @property @nogc { return tintImpl!(LogLevel.all); }
+        auto logtint() const @property { return tintImpl!(LogLevel.all); }
 
         /// Provides easy way to get an info tint.
-        auto infotint() const @property @nogc { return tintImpl!(LogLevel.info); }
+        auto infotint() const @property { return tintImpl!(LogLevel.info); }
 
         /// Provides easy way to get a warning tint.
-        auto warningtint() const @property @nogc { return tintImpl!(LogLevel.warning); }
+        auto warningtint() const @property { return tintImpl!(LogLevel.warning); }
 
         /// Provides easy way to get an error tint.
-        auto errortint() const @property @nogc { return tintImpl!(LogLevel.error); }
+        auto errortint() const @property { return tintImpl!(LogLevel.error); }
 
         /// Provides easy way to get a fatal tint.
-        auto fataltint() const @property @nogc { return tintImpl!(LogLevel.fatal); }
+        auto fataltint() const @property { return tintImpl!(LogLevel.fatal); }
     }
 
 
