@@ -12,11 +12,16 @@ x:ddoxTool "scod"
 
 dependency "lu" version="~>0.4.0"
 dependency "dialect" version="~>0.6.0"
+dependency "arsd-official:dom" version="~>7.2.0"
+
+libs "curl"
 
 sourcePaths "source"
 importPaths "source"
 
 versions \
+    "Colours" \
+    "Web" \
     "WithPlugins" \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
@@ -37,66 +42,35 @@ versions \
     "WithWebtitlesPlugin"
 
 configuration "application" {
-    dependency "arsd-official:dom" version="~>7.2.0"
-    libs "curl"
-
-    versions \
-        "Colours" \
-        "Web"
-}
-
-configuration "application-lowmem" {
-    dependency "arsd-official:dom" version="~>7.2.0"
-    libs "curl"
-    dflags "-lowmem"
-
-    versions \
-        "Colours" \
-        "Web"
-}
-
-configuration "vanilla" {
     targetType "executable"
     // Mustn't be empty
 }
 
-configuration "vanilla-lowmem" {
+configuration "application-lowmem" {
     dflags "-lowmem"
 }
 
 configuration "twitch" {
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
-    libs "curl"
 
     versions \
-        "Colours" \
-        "Web" \
         "TwitchSupport" \
         "WithTwitchBotPlugin"
 }
 
 configuration "twitch-lowmem" {
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
-    libs "curl"
     dflags "-lowmem"
 
     versions \
-        "Colours" \
-        "Web" \
         "TwitchSupport" \
         "WithTwitchBotPlugin"
 }
 
 configuration "dev" {
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
-    libs "curl"
 
     versions \
-        "Colours" \
-        "Web" \
         "TwitchSupport" \
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
@@ -108,14 +82,10 @@ configuration "dev" {
 }
 
 configuration "dev-lowmem" {
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
-    libs "curl"
     dflags "-lowmem"
 
     versions \
-        "Colours" \
-        "Web" \
         "TwitchSupport" \
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
@@ -127,13 +97,9 @@ configuration "dev-lowmem" {
 }
 
 configuration "unittest" {
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
-    libs "curl"
 
     versions \
-        "Colours" \
-        "Web" \
         "TwitchSupport" \
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
@@ -144,14 +110,10 @@ configuration "unittest" {
 }
 
 configuration "unittest-lowmem" {
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
-    libs "curl"
     dflags "-lowmem"
 
     versions \
-        "Colours" \
-        "Web" \
         "TwitchSupport" \
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
