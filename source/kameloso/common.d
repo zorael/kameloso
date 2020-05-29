@@ -6,8 +6,8 @@ module kameloso.common;
 
 private:
 
+import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient, IRCServer;
-import std.experimental.logger.core : Logger;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Tuple, Yes;
 import core.time : Duration, seconds;
@@ -19,11 +19,10 @@ public:
 version(unittest)
 shared static this()
 {
-    import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
     // This is technically before settings have been read...
-    logger = new KamelosoLogger(LogLevel.all, No.monochrome, No.brightTerminal, Yes.flush);
+    logger = new KamelosoLogger(No.monochrome, No.brightTerminal, Yes.flush);
 
     // settings needs instantiating now.
     settings = new CoreSettings;
@@ -43,7 +42,7 @@ shared static this()
  +  from other modules, but unsure of any way to fix this other than to have
  +  each plugin keep their own `std.experimental.logger.Logger`.
  +/
-Logger logger;
+KamelosoLogger logger;
 
 
 // initLogger
@@ -73,42 +72,7 @@ do
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
-    Tint.monochrome = monochrome;
-}
-
-
-// initLogger
-/++
- +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
- +  Deprecated overload that takes bool parameters.
- +
- +  It needs to be separately instantiated per thread, and even so there may be
- +  race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
- +  to log to screen from other threads.
- +
- +  Example:
- +  ---
- +  initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
- +  ---
- +
- +  Params:
- +      monochrome = Whether the terminal is set to monochrome or not.
- +      bright = Whether the terminal has a bright background or not.
- +      flush = Whether or not to flush stdout after finishing writing to it.
- +/
-deprecated("Use the overload that takes `Flag` parameters instead")
-void initLogger(const bool monochrome, const bool bright, const bool flush)
-out (; (logger !is null), "Failed to initialise logger")
-do
-{
-    import kameloso.logger : KamelosoLogger;
-    import std.experimental.logger : LogLevel;
-
-    logger = new KamelosoLogger(LogLevel.all,
-        monochrome ? Yes.monochrome : No.monochrome,
-        bright ? Yes.brightTerminal : No.brightTerminal,
-        flush ? Yes.flush : No.flush);
+    logger = new KamelosoLogger(monochrome, bright, flush);
     Tint.monochrome = monochrome;
 }
 
