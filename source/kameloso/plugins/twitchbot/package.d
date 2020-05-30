@@ -37,6 +37,8 @@ import core.thread : Fiber;
 /// All Twitch bot plugin runtime settings.
 @Settings struct TwitchBotSettings
 {
+    import lu.uda : Unserialisable;
+
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
@@ -82,7 +84,7 @@ import core.thread : Fiber;
      +  Whether or not to start a captive session for generating a Twitch
      +  authorisation key. Should not be permanently set in the configuration file!
      +/
-    bool keyGenerationMode = false;
+    @Unserialisable bool keyGenerationMode = false;
 }
 
 
