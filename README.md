@@ -296,8 +296,6 @@ Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, 
 
 To disable heavier commands that access Twitch's API (currently only the `!followage` command), set `enableAPIFeatures` under `[TwitchBot]` in the configuration file to `false`.
 
-Do not set `keyGenerationMode` persistently to `true` in the configuration file, or you will be led to the generation guide on every startup.
-
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
 ## Further help
