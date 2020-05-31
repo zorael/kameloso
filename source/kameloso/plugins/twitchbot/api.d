@@ -295,6 +295,7 @@ void generateKey(TwitchBotPlugin plugin)
         if (!readURL.contains("access_token="))
         {
             writeln("Could not make sense of URL. Try again or file a bug.");
+            writeln();
             continue;
         }
 
@@ -317,6 +318,7 @@ void generateKey(TwitchBotPlugin plugin)
         write("Do you want to save it there now? [Y/*]: ");
         stdout.flush();
         immutable input = readln().stripped;
+        stdin.flush();
 
         if (!input.length || (input == "y") || (input == "Y"))
         {
