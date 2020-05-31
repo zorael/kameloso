@@ -138,11 +138,10 @@ void generateKey(TwitchBotPlugin plugin)
     import std.process : ProcessException, execute;
     import std.stdio : readln, stdin, stdout, write, writefln, writeln;
 
-    if (!plugin.twitchBotSettings.keyGenerationMode) return;
+    if (!plugin.twitchBotSettings.keygen) return;
 
     scope(exit)
     {
-        plugin.twitchBotSettings.keyGenerationMode = false;
         plugin.state.botUpdated = true;
         plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
     }
@@ -359,9 +358,9 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writeln("-------------------------------------------------------------------------------");
     writeln();
-    writefln("All done! Restart the program (without %s--set twichbot.generateKeyMode%s) and it",
+    writefln("All done! Restart the program (without %s--set twichbot.keygen%s) and it should",
         Tint.info, Tint.reset);
-    writeln("should just work. If it doesn't, please file an issue, at:");
+    writeln("just work. If it doesn't, please file an issue, at:");
     writeln();
     writeln("    ", Tint.info, "https://github.com/zorael/kameloso/issues/new", Tint.reset);
     writeln();
