@@ -135,8 +135,8 @@ void generateKey(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.concurrency : prioritySend;
-    import std.process : ProcessException, execute;
-    import std.stdio : readln, stdin, stdout, write, writefln, writeln;
+    import std.process : Pid, ProcessException, wait;
+    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
 
     if (!plugin.twitchBotSettings.keygen) return;
 
@@ -219,27 +219,36 @@ void generateKey(TwitchBotPlugin plugin)
         //"&force_verify=true" ~
         "&state=kameloso-";
 
-    immutable url = ctBaseURL ~ plugin.state.client.nickname;
-    int exitcode;
+    Pid browser;
+    immutable url = ctBaseURL ~ plugin.state.client.nickname ~
+        (plugin.state.settings.force ? "&force_verify=true" : string.init);
 
     try
     {
-        version(XDG)
+        version(Posix)
         {
-            immutable openBrowser = [ "xdg-open", url ];
-            exitcode = execute(openBrowser).status;
-        }
-        else version(OSX)
-        {
-            immutable openBrowser = [ "open", url ];
-            exitcode = execute(openBrowser).status;
+            import std.process : environment, spawnProcess;
+
+            version(OSX)
+            {
+                enum defaultCommand = "open";
+            }
+            else
+            {
+                // Assume XDG
+                enum defaultCommand = "xdg-open";
+            }
+
+            immutable browserCommand = environment.get("BROWSER", defaultCommand);
+            immutable openBrowser = [ browserCommand, url ];
+            auto devNull = File("/dev/null", "r+");
+            browser = spawnProcess(openBrowser, devNull, devNull, devNull);
         }
         else version(Windows)
         {
             import std.file : tempDir;
             import std.format : format;
             import std.path : buildPath;
-            import std.stdio : File;
 
             immutable urlBasename = "kameloso-twitch-%s.url"
                 .format(plugin.state.client.nickname);
@@ -252,30 +261,20 @@ void generateKey(TwitchBotPlugin plugin)
             urlFile.flush();
 
             immutable openBrowser = [ "explorer", urlFileName ];
-            exitcode = execute(openBrowser).status;
-
-            // Errorlevel 1 if it opened a browser window in the background?
-            if (exitcode == 1) exitcode = 0;
+            auto nulFile = File("NUL", "r+");
+            browser = spawnProcess(openBrowser, nulFile, nulFile, nulFile);
         }
         else
         {
-            writeln();
-            writeln(Tint.error, "Unexpected platform, cannot open link automatically.", Tint.reset);
-            writeln();
-
-            exitcode = 1;
+            // Jump to the catch
+            throw new ProcessException("Unexpected platform");
         }
     }
     catch (ProcessException e)
     {
+        // Probably we got some platform wrong and command was not found
         logger.warning("Error: could not automatically open browser.");
         writeln();
-        // Probably we got some platform wrong and command was not found
-        exitcode = 127;
-    }
-
-    if (exitcode > 0)
-    {
         writeln(Tint.info, "Copy and paste this link manually into your browser:", Tint.reset);
         writeln();
         writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
@@ -285,6 +284,8 @@ void generateKey(TwitchBotPlugin plugin)
         writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
         writeln();
     }
+
+    scope(exit) if (browser !is null) wait(browser);
 
     string key;
 
