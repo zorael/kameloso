@@ -235,6 +235,7 @@ void generateKey(TwitchBotPlugin plugin)
             import std.file : tempDir;
             import std.format : format;
             import std.path : buildPath;
+            import std.process : spawnProcess;
 
             immutable urlBasename = "kameloso-twitch-%s.url"
                 .format(plugin.state.client.nickname);
