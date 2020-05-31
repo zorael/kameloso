@@ -21,20 +21,6 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-version(linux)
-{
-    version = XDG;
-}
-else version(FreeBSD)
-{
-    version = XDG;
-}
-else version(OpenBSD)
-{
-    // Is this correct?
-    version = XDG;
-}
-
 package:
 
 
