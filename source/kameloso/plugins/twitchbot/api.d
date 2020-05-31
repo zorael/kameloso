@@ -149,22 +149,11 @@ void generateKey(TwitchBotPlugin plugin)
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
     writeln();
-    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s, or because",
-        Tint.info, Tint.reset);
-    writefln("you have %skeyGenerationMode%s under %1$s[TwitchBot]%2$s persistently set to %1$strue%2$s in the",
-        Tint.info, Tint.reset);
-    writeln("configuration file (which you really shouldn't have).");
-    writeln();
-    writeln("As of early May 2020, the Twitch API requires your authorisation token to be");
-    writeln("paired with the client ID of the program you connect with.");
-    writeln();
-    writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
+    writeln("Press Enter to open a link to a Twitch login page and follow the instructions.");
     writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.reset);
     writeln();
     writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.reset);
     writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
-    writeln("* You may need to close the browser window if the terminal prompt to paste the");
-    writeln("  URL address doesn't appear.");
     writeln("* If you are running local web server, you may have to temporarily disable it");
     writeln("  for this to work.");
     writeln();
