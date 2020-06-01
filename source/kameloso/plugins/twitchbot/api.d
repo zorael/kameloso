@@ -201,9 +201,6 @@ void generateKey(TwitchBotPlugin plugin)
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
-        /*"&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
-        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~*/
-        //"&force_verify=true" ~
         "&state=kameloso-";
 
     Pid browser;
