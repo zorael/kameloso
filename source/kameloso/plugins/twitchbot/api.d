@@ -128,7 +128,6 @@ void generateKey(TwitchBotPlugin plugin)
 
     scope(exit)
     {
-        plugin.state.botUpdated = true;
         plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
     }
 
@@ -309,6 +308,7 @@ void generateKey(TwitchBotPlugin plugin)
     }
 
     plugin.state.bot.pass = "oauth:" ~ key;
+    plugin.state.botUpdated = true;
 
     writeln();
     writefln("%sYour private authorisation key is: %s%s%s",
