@@ -262,14 +262,18 @@ void generateKey(TwitchBotPlugin plugin)
     {
         // Probably we got some platform wrong and command was not found
         logger.warning("Error: could not automatically open browser.");
+
+        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
+
         writeln();
-        writeln(Tint.info, "Copy and paste this link manually into your browser:", Tint.reset);
+        writeln(Tint.info, "Copy and paste this link manually into your browser, " ~
+            "and login as asked:", Tint.reset);
         writeln();
-        writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
+        writeln(Tint.log, scissors, Tint.reset);
         writeln();
         writeln(url);
         writeln();
-        writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
+        writeln(Tint.log, scissors, Tint.reset);
         writeln();
     }
 
@@ -279,7 +283,8 @@ void generateKey(TwitchBotPlugin plugin)
 
     while (!key.length)
     {
-        writeln(Tint.info, "Paste the resulting address here (empty line exits):", Tint.reset);
+        writeln(Tint.info, "Paste the address of the page you were redirected to here " ~
+            "(empty line exits):", Tint.reset);
         writeln();
         write("> ");
         stdout.flush();
