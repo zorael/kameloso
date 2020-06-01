@@ -520,6 +520,7 @@ struct Kameloso
         state.mainThread = thisTid;
         state.settings = settings;
         state.connSettings = connSettings;
+        state.abort = abort;
         immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length);
