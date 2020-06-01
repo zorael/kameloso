@@ -147,6 +147,8 @@ void generateKey(TwitchBotPlugin plugin)
     stdout.flush();
 
     readln();
+    if (*plugin.state.abort) return;
+    stdin.flush();
 
     static immutable scopes =
     [
@@ -284,6 +286,7 @@ void generateKey(TwitchBotPlugin plugin)
         stdout.flush();
 
         immutable readURL = readln().stripped;
+        if (*plugin.state.abort) return;
         stdin.flush();
 
         if (!readURL.length)
@@ -318,7 +321,9 @@ void generateKey(TwitchBotPlugin plugin)
     {
         write("Do you want to save it there now? [Y/*]: ");
         stdout.flush();
+
         immutable input = readln().stripped;
+        if (*plugin.state.abort) return;
         stdin.flush();
 
         if (!input.length || (input == "y") || (input == "Y"))
