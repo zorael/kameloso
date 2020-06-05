@@ -312,10 +312,10 @@ final class ConfigurationFileReadFailureException : Exception
      +  Create a new `ConfigurationFileReadFailureException`, without attaching
      +  a filename.
      +/
-    this(const string message, const string file = __FILE__,
-        const size_t line = __LINE__) pure nothrow @nogc
+    this(const string message, const string file = __FILE__, const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        super(message, file, line);
+        super(message, file, line, nextInChain);
     }
 
     /++
@@ -323,10 +323,10 @@ final class ConfigurationFileReadFailureException : Exception
      +  filename.
      +/
     this(const string message, const string filename, const string file = __FILE__,
-        const size_t line = __LINE__) pure nothrow @nogc
+        const size_t line = __LINE__, Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.filename = filename;
-        super(message, file, line);
+        super(message, file, line, nextInChain);
     }
 }
 
