@@ -341,9 +341,8 @@ void generateKey(TwitchBotPlugin plugin)
         else
         {
             writeln();
-            writefln("* Make sure to add it to %s%s%s, then;",
+            writefln("* Make sure to add it to %s%s%s, then.",
                 Tint.info, plugin.state.settings.configFile, Tint.reset);
-            writefln("  as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
         }
     }
 
