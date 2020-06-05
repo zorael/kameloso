@@ -134,7 +134,9 @@ void generateKey(TwitchBotPlugin plugin)
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
     writeln();
-    writeln("Press Enter to open a link to a Twitch login page and follow the instructions.");
+    writeln("Attempting to open a Twitch login page in your default web browser. Follow the");
+    writeln("instructions and log in to authorise the use of this program with your account.");
+    writeln();
     writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.reset);
     writeln();
     writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.reset);
@@ -142,12 +144,7 @@ void generateKey(TwitchBotPlugin plugin)
     writeln("* If you are running local web server, you may have to temporarily disable it");
     writeln("  for this to work.");
     writeln();
-    writeln(Tint.log, "Press Enter to continue.", Tint.reset);
     stdout.flush();
-
-    readln();
-    if (*plugin.state.abort) return;
-    stdin.flush();
 
     static immutable scopes =
     [
@@ -258,13 +255,12 @@ void generateKey(TwitchBotPlugin plugin)
     catch (ProcessException e)
     {
         // Probably we got some platform wrong and command was not found
-        logger.warning("Error: could not automatically open browser.");
-
         enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
 
+        logger.warning("Error: could not automatically open browser.");
         writeln();
         writeln(Tint.info, "Copy and paste this link manually into your browser, " ~
-            "and login as asked:", Tint.reset);
+            "and log in as asked:", Tint.reset);
         writeln();
         writeln(Tint.log, scissors, Tint.reset);
         writeln();
@@ -294,12 +290,14 @@ void generateKey(TwitchBotPlugin plugin)
         {
             writeln();
             logger.warning("Aborting key generation.");
+            logger.trace();
             return;
         }
 
         if (!readURL.contains("access_token="))
         {
-            writeln("Could not make sense of URL. Try again or file a bug.");
+            writeln();
+            logger.error("Could not make sense of URL. Try again or file a bug.");
             writeln();
             continue;
         }
@@ -344,7 +342,7 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writeln("-------------------------------------------------------------------------------");
     writeln();
-    writefln("All done! Restart the program (without %s--set twichbot.keygen%s) and it should",
+    writefln("All done! Restart the program (without %s--set twitchbot.keygen%s) and it should",
         Tint.info, Tint.reset);
     writeln("just work. If it doesn't, please file an issue, at:");
     writeln();
