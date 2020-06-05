@@ -204,6 +204,8 @@ void generateKey(TwitchBotPlugin plugin)
     immutable url = ctBaseURL ~ plugin.state.client.nickname ~
         (plugin.state.settings.force ? "&force_verify=true" : string.init);
 
+    scope(exit) if (browser !is null) wait(browser);
+
     try
     {
         version(Posix)
@@ -269,8 +271,6 @@ void generateKey(TwitchBotPlugin plugin)
         writeln(Tint.log, scissors, Tint.reset);
         writeln();
     }
-
-    scope(exit) if (browser !is null) wait(browser);
 
     string key;
 
