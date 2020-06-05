@@ -140,7 +140,7 @@ void generateKey(TwitchBotPlugin plugin)
     writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.reset);
     writeln();
     writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.reset);
-    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
+    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.log, Tint.reset);
     writeln("* If you are running local web server, you may have to temporarily disable it");
     writeln("  for this to work.");
     writeln();
@@ -261,14 +261,14 @@ void generateKey(TwitchBotPlugin plugin)
 
         logger.warning("Error: could not automatically open browser.");
         writeln();
-        writeln(Tint.info, "Copy and paste this link manually into your browser, " ~
+        writeln(Tint.log, "Copy and paste this link manually into your browser, " ~
             "and log in as asked:", Tint.reset);
         writeln();
-        writeln(Tint.log, scissors, Tint.reset);
+        writeln(Tint.info, scissors, Tint.reset);
         writeln();
         writeln(url);
         writeln();
-        writeln(Tint.log, scissors, Tint.reset);
+        writeln(Tint.info, scissors, Tint.reset);
         writeln();
     }
 
@@ -276,7 +276,7 @@ void generateKey(TwitchBotPlugin plugin)
 
     while (!key.length)
     {
-        writeln(Tint.info, "Paste the address of the page you were redirected to here " ~
+        writeln(Tint.log, "Paste the address of the page you were redirected to here " ~
             "(empty line exits):", Tint.reset);
         writeln();
         write("> ");
@@ -320,7 +320,7 @@ void generateKey(TwitchBotPlugin plugin)
 
     writeln();
     writefln("%sYour private authorisation key is: %s%s%s",
-        Tint.info, Tint.log, plugin.state.bot.pass, Tint.reset);
+        Tint.log, Tint.info, plugin.state.bot.pass, Tint.reset);
     writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
         Tint.info, Tint.reset);
     writeln();
