@@ -305,6 +305,14 @@ void generateKey(TwitchBotPlugin plugin)
         string slice = readURL;  // mutable
         slice.nom("access_token=");
         key = slice.nom('&');
+
+        if (key.length != 30L)
+        {
+            writeln();
+            logger.error("Invalid key length!");
+            writeln();
+            key = string.init;  // reset it so the while loop repeats
+        }
     }
 
     plugin.state.bot.pass = "oauth:" ~ key;
