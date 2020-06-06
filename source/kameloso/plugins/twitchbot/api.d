@@ -120,13 +120,13 @@ void generateKey(TwitchBotPlugin plugin)
     import kameloso.common : Tint;
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
-    import std.concurrency : prioritySend;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
 
     scope(exit)
     {
-        plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
+        import kameloso.messaging : quit;
+        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
     }
 
     logger.trace();
@@ -333,6 +333,7 @@ void generateKey(TwitchBotPlugin plugin)
 
         if (!input.length || (input == "y") || (input == "Y"))
         {
+            import std.concurrency : prioritySend;
             plugin.state.mainThread.prioritySend(ThreadMessage.Save());
         }
         else

@@ -256,7 +256,7 @@ https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr
 
 ```ini
 [IRCClient]
-nickname            yourtwitchaccount
+nickname            botaccount
 user                ignored
 realName            likewise
 
@@ -264,14 +264,16 @@ realName            likewise
 #account
 #password
 pass                oauth:personalauthorisationtoken
-admins              otheraccount
-homeChannels        #yourtwitchaccount,#otheraccount
+admins              mainaccount
+homeChannels        #mainaccount,#botaccount
 guestChannels       #streamer1,#streamer2,#streamer3
 
 [IRCServer]
 address             irc.chat.twitch.tv
 port                6667
 ```
+
+The Twitch SSL port is **443**.
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
