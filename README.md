@@ -12,7 +12,7 @@
 * saving notes to offline users that get played back when they come online
 * channel polls
 * works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot/package.d)
-* **SSL** support, including certificate and private key authentication
+* **SSL** support
 * more [random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
@@ -100,15 +100,9 @@ $ cd kameloso
 $ dub build
 ```
 
-This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols.
+This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols. You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
-
-> The above *might* not work, albeit rarely, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
-
-On Windows with **dmd 2.089 and above** builds may fail, either silently with no output, or with an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc2`, or to build with the `--build-mode=singleFile` flag, both appended to the `dub build` command.
-
-`singleFile` mode compiles one file at a time and as such drastically increases build times by at least a factor of 4x. While **ldc** is slower to compile than the default **dmd**, it's not *that* slow. In addition it also produces faster binaries, so if you hit this bug **ldc** might be the better alternative, over `singleFile`.
+See the [known issues](#known-issues) section for compilation caveats.
 
 ### Build configurations
 
@@ -140,7 +134,7 @@ $ ./kameloso --save
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
-* **Linux/FreeBSD**: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
+* **Linux/other Posix**: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 * **Windows**: `%APPDATA%\kameloso`
 * **Other unexpected platforms**: fallback to current working directory
@@ -171,7 +165,7 @@ If you have bright terminal background, the colours may be hard to see and the t
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unexpected platforms.
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unexpected platforms.
 
 ## Example use
 
@@ -306,7 +300,13 @@ There is also a channel `#kameloso` on freenode, but replies may be delayed.
 
 # Known issues
 
+Compiling in a non-`debug` build mode might fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
+
 ## Windows
+
+On Windows with **dmd 2.089 and above** builds may fail, either silently with no output, or with an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc2`, or to build with the `--build-mode=singleFile` flag.
+
+> While **ldc** is slower to compile than the default **dmd**, it's not `singleFile`-level slow. In addition it also produces faster binaries, so if you hit this bug **ldc** might be the better alternative, over `singleFile`.
 
 If SSL flat doesn't work at all, you may simply be missing the necessary libraries. Download and install **OpenSSL** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
 
@@ -320,7 +320,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 
 # Roadmap
 
-* pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+* pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * pipedream: DCC
 * non-blocking FIFO
 * more pairs of eyes
