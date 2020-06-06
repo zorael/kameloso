@@ -84,7 +84,7 @@ import core.thread : Fiber;
      +  Whether or not to start a captive session for generating a Twitch
      +  authorisation key. Should not be permanently set in the configuration file!
      +/
-    @Unserialisable bool keyGenerationMode = false;
+    @Unserialisable bool keygen = false;
 }
 
 
@@ -1265,7 +1265,7 @@ version(TwitchAPIFeatures)
 @(IRCEvent.Type.CAP)
 void onCAP(TwitchBotPlugin plugin)
 {
-    return plugin.generateKey();
+    if (plugin.twitchBotSettings.keygen) return plugin.generateKey();
 }
 
 

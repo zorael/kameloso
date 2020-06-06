@@ -21,20 +21,6 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-version(linux)
-{
-    version = XDG;
-}
-else version(FreeBSD)
-{
-    version = XDG;
-}
-else version(OpenBSD)
-{
-    // Is this correct?
-    version = XDG;
-}
-
 package:
 
 
@@ -135,44 +121,28 @@ void generateKey(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.concurrency : prioritySend;
-    import std.process : ProcessException, execute;
-    import std.stdio : readln, stdin, stdout, write, writefln, writeln;
-
-    if (!plugin.twitchBotSettings.keyGenerationMode) return;
+    import std.process : Pid, ProcessException, wait;
+    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
 
     scope(exit)
     {
-        plugin.twitchBotSettings.keyGenerationMode = false;
-        plugin.state.botUpdated = true;
         plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);
     }
 
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
     writeln();
-    writefln("You are here because you passed %s--set twitchbot.keyGenerationMode%s, or because",
-        Tint.info, Tint.reset);
-    writefln("you have %skeyGenerationMode%s under %1$s[TwitchBot]%2$s persistently set to %1$strue%2$s in the",
-        Tint.info, Tint.reset);
-    writeln("configuration file (which you really shouldn't have).");
+    writeln("Attempting to open a Twitch login page in your default web browser. Follow the");
+    writeln("instructions and log in to authorise the use of this program with your account.");
     writeln();
-    writeln("As of early May 2020, the Twitch API requires your authorisation token to be");
-    writeln("paired with the client ID of the program you connect with.");
-    writeln();
-    writeln("Press Enter to open a link to a Twitch login page, and follow the instructions.");
     writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.reset);
     writeln();
     writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.reset);
-    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.info, Tint.reset);
-    writeln("* You may need to close the browser window if the terminal prompt to paste the");
-    writeln("  URL address doesn't appear.");
+    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.log, Tint.reset);
     writeln("* If you are running local web server, you may have to temporarily disable it");
     writeln("  for this to work.");
     writeln();
-    writeln(Tint.log, "Press Enter to continue.", Tint.reset);
     stdout.flush();
-
-    readln();
 
     static immutable scopes =
     [
@@ -226,32 +196,41 @@ void generateKey(TwitchBotPlugin plugin)
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
-        /*"&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+" ~
-        "channel:read:subscriptions+bits:read+user:edit:broadcast+channel_editor" ~*/
-        //"&force_verify=true" ~
         "&state=kameloso-";
 
-    immutable url = ctBaseURL ~ plugin.state.client.nickname;
-    int exitcode;
+    Pid browser;
+    immutable url = ctBaseURL ~ plugin.state.client.nickname ~
+        (plugin.state.settings.force ? "&force_verify=true" : string.init);
+
+    scope(exit) if (browser !is null) wait(browser);
 
     try
     {
-        version(XDG)
+        version(Posix)
         {
-            immutable openBrowser = [ "xdg-open", url ];
-            exitcode = execute(openBrowser).status;
-        }
-        else version(OSX)
-        {
-            immutable openBrowser = [ "open", url ];
-            exitcode = execute(openBrowser).status;
+            import std.process : environment, spawnProcess;
+
+            version(OSX)
+            {
+                enum defaultCommand = "open";
+            }
+            else
+            {
+                // Assume XDG
+                enum defaultCommand = "xdg-open";
+            }
+
+            immutable browserCommand = environment.get("BROWSER", defaultCommand);
+            immutable openBrowser = [ browserCommand, url ];
+            auto devNull = File("/dev/null", "r+");
+            browser = spawnProcess(openBrowser, devNull, devNull, devNull);
         }
         else version(Windows)
         {
             import std.file : tempDir;
             import std.format : format;
             import std.path : buildPath;
-            import std.stdio : File;
+            import std.process : spawnProcess;
 
             immutable urlBasename = "kameloso-twitch-%s.url"
                 .format(plugin.state.client.nickname);
@@ -264,37 +243,30 @@ void generateKey(TwitchBotPlugin plugin)
             urlFile.flush();
 
             immutable openBrowser = [ "explorer", urlFileName ];
-            exitcode = execute(openBrowser).status;
-
-            // Errorlevel 1 if it opened a browser window in the background?
-            if (exitcode == 1) exitcode = 0;
+            auto nulFile = File("NUL", "r+");
+            browser = spawnProcess(openBrowser, nulFile, nulFile, nulFile);
         }
         else
         {
-            writeln();
-            writeln(Tint.error, "Unexpected platform, cannot open link automatically.", Tint.reset);
-            writeln();
-
-            exitcode = 1;
+            // Jump to the catch
+            throw new ProcessException("Unexpected platform");
         }
     }
     catch (ProcessException e)
     {
+        // Probably we got some platform wrong and command was not found
+        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
+
         logger.warning("Error: could not automatically open browser.");
         writeln();
-        // Probably we got some platform wrong and command was not found
-        exitcode = 127;
-    }
-
-    if (exitcode > 0)
-    {
-        writeln(Tint.info, "Copy and paste this link manually into your browser:", Tint.reset);
+        writeln(Tint.log, "Copy and paste this link manually into your browser, " ~
+            "and log in as asked:", Tint.reset);
         writeln();
-        writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
+        writeln(Tint.info, scissors, Tint.reset);
         writeln();
         writeln(url);
         writeln();
-        writeln("8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<");
+        writeln(Tint.info, scissors, Tint.reset);
         writeln();
     }
 
@@ -302,37 +274,51 @@ void generateKey(TwitchBotPlugin plugin)
 
     while (!key.length)
     {
-        writeln(Tint.info, "Paste the resulting address here (empty line exits):", Tint.reset);
+        writeln(Tint.log, "Paste the address of the page you were redirected to here " ~
+            "(empty line exits):", Tint.reset);
         writeln();
         write("> ");
         stdout.flush();
 
         immutable readURL = readln().stripped;
+        if (*plugin.state.abort) return;
         stdin.flush();
 
         if (!readURL.length)
         {
             writeln();
             logger.warning("Aborting key generation.");
+            logger.trace();
             return;
         }
 
         if (!readURL.contains("access_token="))
         {
-            writeln("Could not make sense of URL. Try again or file a bug.");
+            writeln();
+            logger.error("Could not make sense of URL. Try again or file a bug.");
+            writeln();
             continue;
         }
 
         string slice = readURL;  // mutable
         slice.nom("access_token=");
         key = slice.nom('&');
+
+        if (key.length != 30L)
+        {
+            writeln();
+            logger.error("Invalid key length!");
+            writeln();
+            key = string.init;  // reset it so the while loop repeats
+        }
     }
 
     plugin.state.bot.pass = "oauth:" ~ key;
+    plugin.state.botUpdated = true;
 
     writeln();
     writefln("%sYour private authorisation key is: %s%s%s",
-        Tint.info, Tint.log, plugin.state.bot.pass, Tint.reset);
+        Tint.log, Tint.info, plugin.state.bot.pass, Tint.reset);
     writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
         Tint.info, Tint.reset);
     writeln();
@@ -341,7 +327,10 @@ void generateKey(TwitchBotPlugin plugin)
     {
         write("Do you want to save it there now? [Y/*]: ");
         stdout.flush();
+
         immutable input = readln().stripped;
+        if (*plugin.state.abort) return;
+        stdin.flush();
 
         if (!input.length || (input == "y") || (input == "Y"))
         {
@@ -350,18 +339,17 @@ void generateKey(TwitchBotPlugin plugin)
         else
         {
             writeln();
-            writefln("* Make sure to add it to %s%s%s, then;",
+            writefln("* Make sure to add it to %s%s%s, then.",
                 Tint.info, plugin.state.settings.configFile, Tint.reset);
-            writefln("  as %spass%s under %1$s[IRCBot]%2$s.", Tint.info, Tint.reset);
         }
     }
 
     writeln();
     writeln("-------------------------------------------------------------------------------");
     writeln();
-    writefln("All done! Restart the program (without %s--set twichbot.generateKeyMode%s) and it",
+    writefln("All done! Restart the program (without %s--set twitchbot.keygen%s) and it should",
         Tint.info, Tint.reset);
-    writeln("should just work. If it doesn't, please file an issue, at:");
+    writeln("just work. If it doesn't, please file an issue, at:");
     writeln();
     writeln("    ", Tint.info, "https://github.com/zorael/kameloso/issues/new", Tint.reset);
     writeln();

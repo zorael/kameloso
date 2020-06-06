@@ -1987,6 +1987,9 @@ struct IRCPluginState
 
     /// Whether or not `settings` was altered. Must be reset manually.
     bool settingsUpdated;
+
+    /// Pointer to the global abort flag.
+    bool* abort;
 }
 
 
