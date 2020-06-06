@@ -41,6 +41,73 @@ import std.typecons : Flag, No, Yes;
 public:
 
 
+// Widths
+/++
+ +  Calculates the minimum padding needed to accomodate the strings of all the
+ +  types and names of the members of the passed struct and/or classes, for
+ +  formatting into neat columns.
+ +
+ +  Params:
+ +      all = Whether or not to also include `Unserialisable` members.
+ +      Things = Variadic list of aggregates to inspect.
+ +/
+private template Widths(Flag!"all" all, Things...)
+{
+private:
+    import std.algorithm.comparison : max;
+
+    enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
+    enum minimumNameWidth = 24;  // Current minimum 22, TwitchBotSettings' "caseSensitiveTriggers"
+
+    static if (all)
+    {
+        import kameloso.traits : longestUnserialisableMemberName,
+            longestUnserialisableMemberTypeName;
+
+        public enum type = max(minimumTypeWidth,
+            (longestUnserialisableMemberTypeName!Things.length + 1));
+        enum initialWidth = longestUnserialisableMemberName!Things.length;
+    }
+    else
+    {
+        import kameloso.traits : longestMemberName, longestMemberTypeName;
+        public enum type = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
+        enum initialWidth = longestMemberName!Things.length;
+    }
+
+    enum ptrdiff_t compensatedWidth = (type > minimumTypeWidth) ?
+        (initialWidth - type + minimumTypeWidth) : initialWidth;
+    public enum ptrdiff_t name = max(minimumNameWidth, compensatedWidth);
+}
+
+///
+unittest
+{
+    import std.algorithm.comparison : max;
+
+    enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
+    enum minimumNameWidth = 24;  // Current minimum 22, TwitchBotSettings' "caseSensitiveTriggers"
+
+    struct S1
+    {
+        string someString;
+        int someInt;
+        string[] aaa;
+    }
+
+    struct S2
+    {
+        string longerString;
+        int i;
+    }
+
+    alias widths = Widths!(No.all, S1, S2);
+
+    static assert(widths.type == max(minimumTypeWidth, ("string[]".length + 1)));
+    static assert(widths.name == max(minimumNameWidth, "longerString".length));
+}
+
+
 // printObjects
 /++
  +  Prints out struct objects, with all their printable members with all their
