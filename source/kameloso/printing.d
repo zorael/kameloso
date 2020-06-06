@@ -134,10 +134,9 @@ unittest
  +      all = Whether or not to also display members marked as
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
- +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
  +/
-void printObjects(Flag!"all" all = No.all, uint widthArg = 0, Things...)
+void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things) @trusted
 {
     import kameloso.common : settings;
@@ -147,25 +146,37 @@ void printObjects(Flag!"all" all = No.all, uint widthArg = 0, Things...)
 
     // writeln trusts `stdout.flush()` so we will too.
 
+    alias widths = Widths!(all, Things);
+
     Appender!(char[]) outbuffer;
     outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
-    bool put;
-
-    version(Colours)
+    foreach (immutable i, thing; things)
     {
-        if (!settings.monochrome)
+        bool put;
+
+        version(Colours)
         {
-            formatObjects!(all, Yes.coloured, widthArg)(outbuffer,
-                (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal), things);
-            put = true;
+            if (!settings.monochrome)
+            {
+                formatObjectsImpl!(all, Yes.coloured, widths.type, widths.name)(outbuffer,
+                    (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal), thing);
+                put = true;
+            }
         }
-    }
 
-    if (!put)
-    {
-        // Brightness setting is irrelevant; pass false
-        formatObjects!(all, No.coloured, widthArg)(outbuffer, No.brightTerminal, things);
+        if (!put)
+        {
+            // Brightness setting is irrelevant; pass false
+            formatObjectsImpl!(all, No.coloured, widths.type, widths.name)
+                (outbuffer, No.brightTerminal, thing);
+        }
+
+        static if (i+1 < things.length)
+        {
+            // Pad between things
+            outbuffer.put('\n');
+        }
     }
 
     writeln(outbuffer.data);
@@ -181,9 +192,6 @@ alias printObject = printObjects;
 /++
  +  Formats a struct object, with all its printable members with all their
  +  printable values. Overload that writes to a passed output range sink.
- +
- +  This is an implementation template and should not be called directly;
- +  instead use `printObject` and `printObjects`.
  +
  +  Example:
  +  ---
@@ -208,18 +216,55 @@ alias printObject = printObjects;
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
- +      widthArg = The width with which to pad output columns.
  +      sink = Output range to write to.
  +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs to enumerate and format.
+ +      things = Variadic list of structs or classes to enumerate and format.
  +/
 void formatObjects(Flag!"all" all = No.all,
-    Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
+    Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Things things)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.algorithm.comparison : max;
+    alias widths = Widths!(all, Things);
 
+    foreach (immutable i, thing; things)
+    {
+        formatObjectsImpl!(all, coloured, widths.type, widths.name)(sink, bright, thing);
+
+        static if ((i+1 < things.length) || !__traits(hasMember, Sink, "data"))
+        {
+            // Not an Appender, make sure it has a final linebreak to be consistent
+            // with Appender writeln
+            sink.put('\n');
+        }
+    }
+}
+
+alias formatObject = formatObjects;
+
+
+// formatObjectsImpl
+/++
+ +  Formats a struct object, with all its printable members with all their
+ +  printable values. This is an implementation template and should not be
+ +  called directly; instead use `printObjects` or `formatObjects`.
+ +
+ +  Params:
+ +      all = Whether or not to also display members marked as
+ +          `lu.uda.Unserialisable`, usually transitive information that
+ +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+ +      coloured = Whether to display in colours or not.
+ +      typewidth = The width with which to pad type names, to align properly.
+ +      namewidth = The width with which to pad variable names, to align properly.
+ +      sink = Output range to write to.
+ +      bright = Whether or not to format for a bright terminal background.
+ +      thing = Struct or class to enumerate and format.
+ +/
+private void formatObjectsImpl(Flag!"all" all = No.all,
+    Flag!"coloured" coloured = Yes.coloured, uint typewidth, uint namewidth, Sink, Thing)
+    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing)
+if (isOutputRange!(Sink, char[]))
+{
     static if (coloured)
     {
         import kameloso.terminal : TerminalForeground, colour;
@@ -232,215 +277,180 @@ if (isOutputRange!(Sink, char[]))
         sink.put(string.init);
     }
 
-    enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
-    enum minimumNameWidth = 24;  // Current minimum, TwitchBotSettings' "regularsAreWhitelisted"
+    import lu.string : stripSuffix;
+    import std.format : formattedWrite;
+    import std.traits : Unqual;
 
-    static if (all)
+    alias Thing = Unqual!(typeof(thing));
+
+    static if (coloured)
     {
-        import kameloso.traits : longestUnserialisableMemberName,
-            longestUnserialisableMemberTypeName;
-
-        enum typewidth = max(minimumTypeWidth,
-            (longestUnserialisableMemberTypeName!Things.length + 1));
-        enum initialWidth = !widthArg ?
-            longestUnserialisableMemberName!Things.length :
-            widthArg;
+        immutable titleCode = bright ? F.black : F.white;
+        sink.formattedWrite("%s-- %s\n", titleCode.colour,
+            Thing.stringof.stripSuffix("Settings"));
     }
     else
     {
-        import kameloso.traits : longestMemberName, longestMemberTypeName;
-        enum typewidth = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
-        enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
+        sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
     }
 
-    enum ptrdiff_t compensatedWidth = (typewidth > minimumTypeWidth) ?
-        (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
-    enum ptrdiff_t namewidth = max(minimumNameWidth, compensatedWidth);
-
-    foreach (immutable n, ref thing; things)
+    foreach (immutable i, member; thing.tupleof)
     {
-        import lu.string : stripSuffix;
-        import std.format : formattedWrite;
-        import std.traits : Unqual;
+        import lu.traits : isAnnotated, isSerialisable;
+        import lu.uda : Hidden, Unserialisable;
+        import std.traits : isAssociativeArray, isType;
 
-        alias Thing = Unqual!(typeof(thing));
+        enum shouldNormallyBePrinted =
+            !__traits(isDeprecated, thing.tupleof[i]) &&
+            isSerialisable!member &&
+            !isAnnotated!(thing.tupleof[i], Hidden) &&
+            !isAnnotated!(thing.tupleof[i], Unserialisable);
 
-        static if (coloured)
+        static if (shouldNormallyBePrinted || all)
         {
-            immutable titleCode = bright ? F.black : F.white;
-            sink.formattedWrite("%s-- %s\n", titleCode.colour,
-                Thing.stringof.stripSuffix("Settings"));
-        }
-        else
-        {
-            sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
-        }
+            import lu.traits : isTrulyString;
+            import std.traits : isArray;
 
-        foreach (immutable i, member; thing.tupleof)
-        {
-            import lu.traits : isAnnotated, isSerialisable;
-            import lu.uda : Hidden, Unserialisable;
-            import std.traits : isAssociativeArray, isType;
+            alias T = Unqual!(typeof(member));
 
-            enum shouldNormallyBePrinted =
-                !__traits(isDeprecated, thing.tupleof[i]) &&
-                isSerialisable!member &&
-                !isAnnotated!(thing.tupleof[i], Hidden) &&
-                !isAnnotated!(thing.tupleof[i], Unserialisable);
+            enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-            static if (shouldNormallyBePrinted || all)
+            static if (isTrulyString!T)
             {
-                import lu.traits : isTrulyString;
-                import std.traits : isArray;
-
-                alias T = Unqual!(typeof(member));
-
-                enum memberstring = __traits(identifier, thing.tupleof[i]);
-
-                static if (isTrulyString!T)
+                static if (coloured)
                 {
-                    static if (coloured)
-                    {
-                        enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
-                        immutable memberCode = bright ? F.black : F.white;
-                        immutable valueCode = bright ? F.green : F.lightgreen;
-                        immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
-                        immutable typeCode = bright ? F.lightcyan : F.cyan;
+                    enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
+                    immutable memberCode = bright ? F.black : F.white;
+                    immutable valueCode = bright ? F.green : F.lightgreen;
+                    immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
+                    immutable typeCode = bright ? F.lightcyan : F.cyan;
 
-                        sink.formattedWrite(stringPattern,
-                            typeCode.colour, typewidth, T.stringof,
-                            memberCode.colour, (namewidth + 2), memberstring,
-                            (member.length < 2) ? " " : string.init,
-                            valueCode.colour, member,
-                            lengthCode.colour, member.length);
-                    }
-                    else
-                    {
-                        enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
-                        sink.formattedWrite(stringPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring,
-                            (member.length < 2) ? " " : string.init,
-                            member, member.length);
-                    }
-                }
-                else static if (isArray!T || isAssociativeArray!T)
-                {
-                    import std.range.primitives : ElementEncodingType;
-
-                    alias ElemType = Unqual!(ElementEncodingType!T);
-
-                    enum elemIsCharacter = is(ElemType == char) ||
-                        is(ElemType == dchar) || is(ElemType == wchar);
-
-                    immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
-
-                    static if (coloured)
-                    {
-                        static if (elemIsCharacter)
-                        {
-                            enum arrayPattern = "%s%*s %s%-*s%s[%(%s, %)]%s(%d)\n";
-                        }
-                        else
-                        {
-                            enum arrayPattern = "%s%*s %s%-*s%s%s%s(%d)\n";
-                        }
-
-                        immutable memberCode = bright ? F.black : F.white;
-                        immutable valueCode = bright ? F.green : F.lightgreen;
-                        immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
-                        immutable typeCode = bright ? F.lightcyan : F.cyan;
-
-                        import lu.traits : UnqualArray;
-
-                        sink.formattedWrite(arrayPattern,
-                            typeCode.colour, typewidth, UnqualArray!T.stringof,
-                            memberCode.colour, thisWidth, memberstring,
-                            valueCode.colour, member,
-                            lengthCode.colour, member.length);
-                    }
-                    else
-                    {
-                        static if (elemIsCharacter)
-                        {
-                            enum arrayPattern = "%*s %-*s[%(%s, %)](%d)\n";
-                        }
-                        else
-                        {
-                            enum arrayPattern = "%*s %-*s%s(%d)\n";
-                        }
-
-                        import lu.traits : UnqualArray;
-
-                        sink.formattedWrite(arrayPattern,
-                            typewidth, UnqualArray!T.stringof,
-                            thisWidth, memberstring,
-                            member,
-                            member.length);
-                    }
-                }
-                else static if (is(T == struct) || is(T == class))
-                {
-                    enum classOrStruct = is(T == struct) ? "struct" : "class";
-
-                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
-                        " (init)" :
-                        string.init;
-
-                    static if (coloured)
-                    {
-                        enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
-                        immutable memberCode = bright ? F.black : F.white;
-                        immutable valueCode = bright ? F.green : F.lightgreen;
-                        immutable typeCode = bright ? F.lightcyan : F.cyan;
-
-                        sink.formattedWrite(normalPattern,
-                            typeCode.colour, typewidth, T.stringof,
-                            memberCode.colour, (namewidth + 2), memberstring,
-                            valueCode.colour, classOrStruct, initText);
-                    }
-                    else
-                    {
-                        enum normalPattern = "%*s %-*s <%s>%s\n";
-                        sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring, classOrStruct, initText);
-                    }
+                    sink.formattedWrite(stringPattern,
+                        typeCode.colour, typewidth, T.stringof,
+                        memberCode.colour, (namewidth + 2), memberstring,
+                        (member.length < 2) ? " " : string.init,
+                        valueCode.colour, member,
+                        lengthCode.colour, member.length);
                 }
                 else
                 {
-                    static if (coloured)
-                    {
-                        enum normalPattern = "%s%*s %s%-*s  %s%s\n";
-                        immutable memberCode = bright ? F.black : F.white;
-                        immutable valueCode = bright ? F.green : F.lightgreen;
-                        immutable typeCode = bright ? F.lightcyan : F.cyan;
+                    enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
+                    sink.formattedWrite(stringPattern, typewidth, T.stringof,
+                        (namewidth + 2), memberstring,
+                        (member.length < 2) ? " " : string.init,
+                        member, member.length);
+                }
+            }
+            else static if (isArray!T || isAssociativeArray!T)
+            {
+                import std.range.primitives : ElementEncodingType;
 
-                        sink.formattedWrite(normalPattern,
-                            typeCode.colour, typewidth, T.stringof,
-                            memberCode.colour, (namewidth + 2), memberstring,
-                            valueCode.colour, member);
+                alias ElemType = Unqual!(ElementEncodingType!T);
+
+                enum elemIsCharacter = is(ElemType == char) ||
+                    is(ElemType == dchar) || is(ElemType == wchar);
+
+                immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
+
+                static if (coloured)
+                {
+                    static if (elemIsCharacter)
+                    {
+                        enum arrayPattern = "%s%*s %s%-*s%s[%(%s, %)]%s(%d)\n";
                     }
                     else
                     {
-                        enum normalPattern = "%*s %-*s  %s\n";
-                        sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring, member);
+                        enum arrayPattern = "%s%*s %s%-*s%s%s%s(%d)\n";
                     }
+
+                    immutable memberCode = bright ? F.black : F.white;
+                    immutable valueCode = bright ? F.green : F.lightgreen;
+                    immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
+                    immutable typeCode = bright ? F.lightcyan : F.cyan;
+
+                    import lu.traits : UnqualArray;
+
+                    sink.formattedWrite(arrayPattern,
+                        typeCode.colour, typewidth, UnqualArray!T.stringof,
+                        memberCode.colour, thisWidth, memberstring,
+                        valueCode.colour, member,
+                        lengthCode.colour, member.length);
+                }
+                else
+                {
+                    static if (elemIsCharacter)
+                    {
+                        enum arrayPattern = "%*s %-*s[%(%s, %)](%d)\n";
+                    }
+                    else
+                    {
+                        enum arrayPattern = "%*s %-*s%s(%d)\n";
+                    }
+
+                    import lu.traits : UnqualArray;
+
+                    sink.formattedWrite(arrayPattern,
+                        typewidth, UnqualArray!T.stringof,
+                        thisWidth, memberstring,
+                        member,
+                        member.length);
+                }
+            }
+            else static if (is(T == struct) || is(T == class))
+            {
+                enum classOrStruct = is(T == struct) ? "struct" : "class";
+
+                immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
+                    " (init)" :
+                    string.init;
+
+                static if (coloured)
+                {
+                    enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
+                    immutable memberCode = bright ? F.black : F.white;
+                    immutable valueCode = bright ? F.green : F.lightgreen;
+                    immutable typeCode = bright ? F.lightcyan : F.cyan;
+
+                    sink.formattedWrite(normalPattern,
+                        typeCode.colour, typewidth, T.stringof,
+                        memberCode.colour, (namewidth + 2), memberstring,
+                        valueCode.colour, classOrStruct, initText);
+                }
+                else
+                {
+                    enum normalPattern = "%*s %-*s <%s>%s\n";
+                    sink.formattedWrite(normalPattern, typewidth, T.stringof,
+                        (namewidth + 2), memberstring, classOrStruct, initText);
+                }
+            }
+            else
+            {
+                static if (coloured)
+                {
+                    enum normalPattern = "%s%*s %s%-*s  %s%s\n";
+                    immutable memberCode = bright ? F.black : F.white;
+                    immutable valueCode = bright ? F.green : F.lightgreen;
+                    immutable typeCode = bright ? F.lightcyan : F.cyan;
+
+                    sink.formattedWrite(normalPattern,
+                        typeCode.colour, typewidth, T.stringof,
+                        memberCode.colour, (namewidth + 2), memberstring,
+                        valueCode.colour, member);
+                }
+                else
+                {
+                    enum normalPattern = "%*s %-*s  %s\n";
+                    sink.formattedWrite(normalPattern, typewidth, T.stringof,
+                        (namewidth + 2), memberstring, member);
                 }
             }
         }
+    }
 
-        static if (coloured)
-        {
-            enum defaultColour = F.default_.colour.idup;
-            sink.put(defaultColour);
-        }
-
-        static if ((n+1 < things.length) || !__traits(hasMember, Sink, "data"))
-        {
-            // Not an Appender, make sure it has a final linebreak to be consistent
-            // with Appender writeln
-            sink.put('\n');
-        }
+    static if (coloured)
+    {
+        enum defaultColour = F.default_.colour.idup;
+        sink.put(defaultColour);
     }
 }
 
@@ -621,7 +631,6 @@ if (isOutputRange!(Sink, char[]))
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
- +      widthArg = The width with which to pad output columns.
  +      bright = Whether or not to format for a bright terminal background.
  +      things = Variadic list of structs to enumerate and format.
  +
@@ -629,7 +638,7 @@ if (isOutputRange!(Sink, char[]))
  +      String with the object formatted, as per the passed arguments.
  +/
 string formatObjects(Flag!"all" all = No.all,
-    Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
+    Flag!"coloured" coloured = Yes.coloured, Things...)
     (const Flag!"brightTerminal" bright, Things things)
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
@@ -639,7 +648,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
     Appender!(char[]) sink;
     sink.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
-    sink.formatObjects!(all, coloured, widthArg)(bright, things);
+    formatObjects!(all, coloured)(sink, bright, things);
     return sink.data;
 }
 
