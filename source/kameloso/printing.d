@@ -159,8 +159,9 @@ void printObjects(Flag!"all" all = No.all, Things...)
         {
             if (!settings.monochrome)
             {
-                formatObjectsImpl!(all, Yes.coloured, widths.type, widths.name)(outbuffer,
-                    (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal), thing);
+                formatObjectsImpl!(all, Yes.coloured)(outbuffer,
+                    (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+                    thing, widths.type, widths.name);
                 put = true;
             }
         }
@@ -168,8 +169,8 @@ void printObjects(Flag!"all" all = No.all, Things...)
         if (!put)
         {
             // Brightness setting is irrelevant; pass false
-            formatObjectsImpl!(all, No.coloured, widths.type, widths.name)
-                (outbuffer, No.brightTerminal, thing);
+            formatObjectsImpl!(all, No.coloured)(outbuffer, No.brightTerminal,
+                thing, widths.type, widths.name);
         }
 
         static if (i+1 < things.length)
@@ -229,7 +230,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i, thing; things)
     {
-        formatObjectsImpl!(all, coloured, widths.type, widths.name)(sink, bright, thing);
+        formatObjectsImpl!(all, coloured)(sink, bright, thing, widths.type, widths.name);
 
         static if ((i+1 < things.length) || !__traits(hasMember, Sink, "data"))
         {
@@ -254,15 +255,16 @@ alias formatObject = formatObjects;
  +          `lu.uda.Unserialisable`, usually transitive information that
  +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
  +      coloured = Whether to display in colours or not.
- +      typewidth = The width with which to pad type names, to align properly.
- +      namewidth = The width with which to pad variable names, to align properly.
  +      sink = Output range to write to.
  +      bright = Whether or not to format for a bright terminal background.
  +      thing = Struct or class to enumerate and format.
+ +      typewidth = The width with which to pad type names, to align properly.
+ +      namewidth = The width with which to pad variable names, to align properly.
  +/
 private void formatObjectsImpl(Flag!"all" all = No.all,
-    Flag!"coloured" coloured = Yes.coloured, uint typewidth, uint namewidth, Sink, Thing)
-    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing)
+    Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
+    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing,
+    const uint typewidth, const uint namewidth)
 if (isOutputRange!(Sink, char[]))
 {
     static if (coloured)
