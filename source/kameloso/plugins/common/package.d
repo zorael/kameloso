@@ -413,7 +413,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.
  +/
-pragma(inline)
+pragma(inline, true)
 string nameOf(const IRCUser user) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
@@ -466,7 +466,6 @@ unittest
  +  Returns:
  +      The nickname of the user if there is no alias known, else the alias.
  +/
-pragma(inline)
 string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
@@ -495,7 +494,7 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
  +  Returns:
  +
  +/
-pragma(inline)
+pragma(inline, true)
 string idOf(const IRCUser user) pure @safe nothrow @nogc
 in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
 {
@@ -516,7 +515,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
  +  Returns:
  +
  +/
-pragma(inline)
+pragma(inline, true)
 string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
 {
     version(TwitchSupport)

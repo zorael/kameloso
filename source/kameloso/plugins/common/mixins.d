@@ -476,7 +476,7 @@ private:
         private enum hasMessagingProxy = true;
     }
 
-    pragma(inline):
+    pragma(inline, true);
 
     // chan
     /++

@@ -107,7 +107,7 @@ public:
      +      A `kameloso.terminal.TerminalForeground` of the right colour. Use with
      +      `kameloso.terminal.colour` to get a string.
      +/
-    pragma(inline)
+    pragma(inline, true)
     version(Colours)
     static auto tint(const LogLevel level, const Flag!"brightTerminal" bright)
     {
@@ -152,7 +152,7 @@ public:
      +  Returns:
      +      A tint string.
      +/
-    pragma(inline)
+    pragma(inline, true)
     version(Colours)
     private string tintImpl(LogLevel level)() const @property
     {
@@ -175,7 +175,7 @@ public:
         }
     }
 
-    pragma(inline)
+    pragma(inline, true)
     version(Colours)
     {
         /// Provides easy way to get a log tint.

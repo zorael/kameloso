@@ -235,7 +235,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +      `true` if the plugin is deemed enabled (or cannot be disabled),
      +      `false` if not.
      +/
-    pragma(inline)
     override public bool isEnabled() const @property pure nothrow @nogc
     {
         import lu.traits : getSymbolsByUDA, isAnnotated;
@@ -1396,7 +1395,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  Returns:
      +      The module name of the mixing-in class.
      +/
-    pragma(inline)
+    pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
         mixin("static import thisModule = " ~ module_ ~ ";");

@@ -1748,7 +1748,7 @@ struct Tint
          +  This saves us the boilerplate of copy/pasting one function for each
          +  `std.experimental.logger.core.LogLevel`.
          +/
-        pragma(inline)
+        pragma(inline, true)
         static string opDispatch(string tint)()
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
@@ -1772,7 +1772,7 @@ struct Tint
         /++
          +  Returns an empty string, since we're not versioned `Colours`.
          +/
-        pragma(inline)
+        pragma(inline, true)
         static string log()
         {
             return string.init;
