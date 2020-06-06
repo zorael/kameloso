@@ -277,6 +277,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             `readConfigInto`  call. Then call getopt on the rest.
             Include "c|config" in the normal getopt to have it automatically
             included in the --help text.
+
+            .dup the args array so we preserve --monochrome for later.
          +/
 
         // Can be const
@@ -495,14 +497,14 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 // manageConfigFile
 /++
  +  Writes and/or edits the configuration file. Broken out into a separate
- +  function to lower size of `handleGetopt`.
+ +  function to lower the size of `handleGetopt`.
  +
  +  bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
  +
  +  Params:
  +      instance = The current `kameloso.common.Kameloso` instance.
  +      shouldWriteConfig = Writing to the configuration file was requested.
- +      shouldOpenEditor = Opening the configuration file in an editor was requested.
+ +      shouldOpenEditor = Opening the configuration file in a text editor was requested.
  +      customSettings = Custom settings supplied at the command line, to be
  +          passed to `writeConfig` when writing to the configuration file.
  +
@@ -562,7 +564,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
     {
         import std.file : exists;
 
-        // --edit as passed, so open up a text editor before exiting
+        // --edit was passed, so open up a text editor before exiting
 
         if (!instance.settings.configFile.exists)
         {
