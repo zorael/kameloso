@@ -56,7 +56,7 @@ private template Widths(Flag!"all" all, Things...)
 private:
     import std.algorithm.comparison : max;
 
-    enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
+    enum minimumTypeWidth = 8;  // Current sweet spot, accommodates well for `string[]`
     enum minimumNameWidth = 24;  // Current minimum 22, TwitchBotSettings' "caseSensitiveTriggers"
 
     static if (all)
@@ -65,13 +65,13 @@ private:
             longestUnserialisableMemberTypeName;
 
         public enum type = max(minimumTypeWidth,
-            (longestUnserialisableMemberTypeName!Things.length + 1));
+            longestUnserialisableMemberTypeName!Things.length);
         enum initialWidth = longestUnserialisableMemberName!Things.length;
     }
     else
     {
         import kameloso.traits : longestMemberName, longestMemberTypeName;
-        public enum type = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
+        public enum type = max(minimumTypeWidth, longestMemberTypeName!Things.length);
         enum initialWidth = longestMemberName!Things.length;
     }
 
@@ -85,7 +85,7 @@ unittest
 {
     import std.algorithm.comparison : max;
 
-    enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
+    enum minimumTypeWidth = 8;  // Current sweet spot, accommodates well for `string[]`
     enum minimumNameWidth = 24;  // Current minimum 22, TwitchBotSettings' "caseSensitiveTriggers"
 
     struct S1
@@ -103,7 +103,7 @@ unittest
 
     alias widths = Widths!(No.all, S1, S2);
 
-    static assert(widths.type == max(minimumTypeWidth, ("string[]".length + 1)));
+    static assert(widths.type == max(minimumTypeWidth, "string[]".length));
     static assert(widths.name == max(minimumNameWidth, "longerString".length));
 }
 
@@ -161,7 +161,7 @@ void printObjects(Flag!"all" all = No.all, Things...)
             {
                 formatObjectsImpl!(all, Yes.coloured)(outbuffer,
                     (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
-                    thing, widths.type, widths.name);
+                    thing, widths.type+1, widths.name);
                 put = true;
             }
         }
@@ -170,7 +170,7 @@ void printObjects(Flag!"all" all = No.all, Things...)
         {
             // Brightness setting is irrelevant; pass false
             formatObjectsImpl!(all, No.coloured)(outbuffer, No.brightTerminal,
-                thing, widths.type, widths.name);
+                thing, widths.type+1, widths.name);
         }
 
         static if (i+1 < things.length)
@@ -230,7 +230,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i, thing; things)
     {
-        formatObjectsImpl!(all, coloured)(sink, bright, thing, widths.type, widths.name);
+        formatObjectsImpl!(all, coloured)(sink, bright, thing, widths.type+1, widths.name);
 
         static if ((i+1 < things.length) || !__traits(hasMember, Sink, "data"))
         {
