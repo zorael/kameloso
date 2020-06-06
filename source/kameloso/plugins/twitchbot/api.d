@@ -280,11 +280,10 @@ void generateKey(TwitchBotPlugin plugin)
         write("> ");
         stdout.flush();
 
-        immutable readURL = readln().stripped;
-        if (*plugin.state.abort) return;
         stdin.flush();
+        immutable readURL = readln().stripped;
 
-        if (!readURL.length)
+        if (!readURL.length || *plugin.state.abort)
         {
             writeln();
             logger.warning("Aborting key generation.");
@@ -328,9 +327,9 @@ void generateKey(TwitchBotPlugin plugin)
         write("Do you want to save it there now? [Y/*]: ");
         stdout.flush();
 
+        stdin.flush();
         immutable input = readln().stripped;
         if (*plugin.state.abort) return;
-        stdin.flush();
 
         if (!input.length || (input == "y") || (input == "Y"))
         {
