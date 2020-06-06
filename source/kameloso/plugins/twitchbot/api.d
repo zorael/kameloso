@@ -124,8 +124,6 @@ void generateKey(TwitchBotPlugin plugin)
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
 
-    if (!plugin.twitchBotSettings.keygen) return;
-
     scope(exit)
     {
         plugin.state.mainThread.prioritySend(ThreadMessage.Quit(), string.init, Yes.quiet);

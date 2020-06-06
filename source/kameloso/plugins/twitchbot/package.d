@@ -1265,7 +1265,7 @@ version(TwitchAPIFeatures)
 @(IRCEvent.Type.CAP)
 void onCAP(TwitchBotPlugin plugin)
 {
-    return plugin.generateKey();
+    if (plugin.twitchBotSettings.keygen) return plugin.generateKey();
 }
 
 
