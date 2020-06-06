@@ -474,6 +474,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         {
             // --writeconfig and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
+            writeln();  // pad slightly, for cosmetics
             return Next.returnSuccess;
         }
 
@@ -577,7 +578,4 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
 
         openEditor();
     }
-
-    import std.stdio : writeln;
-    writeln();  // pad slightly, for cosmetics
 }
