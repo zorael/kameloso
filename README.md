@@ -32,7 +32,7 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
            --admins Administrators' services accounts, comma-separated
 -H   --homeChannels Home channels to operate in, comma-separated
 -C  --guestChannels Non-home channels to idle in, comma-separated
--w    --writeconfig Write configuration to file
+-w           --save Write configuration to file
 
 A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
 ```
@@ -135,7 +135,7 @@ $ dub build -c twitch
 The bot needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
 
 ```sh
-$ ./kameloso --writeconfig
+$ ./kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
@@ -149,7 +149,7 @@ Open the file in a normal text editor. If you have your system file associations
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig`, it will apply and save these changes to the configuration file, without having to manually edit it.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--save`, it will apply and save these changes to the configuration file, without having to manually edit it.
 
 ```sh
 $ ./kameloso \
@@ -158,12 +158,12 @@ $ ./kameloso \
     --admins "you,friend,thatguy" \
     --homeChannels "#channel,#elsewhere" \
     --guestChannels "#d,##networking" \
-    --writeconfig
+    --save
 
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* setting, so settings that relate to plugins *that are currently not built in* are silently removed.
+Later invocations of `--save` will regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* setting, so settings that relate to plugins *that are currently not built in* are silently removed.
 
 ### Display settings
 
@@ -287,7 +287,7 @@ The streamer bot plugin is opt-in during compilation; build the `twitch` configu
 
 ```sh
 $ dub build -c twitch
-$ ./kameloso --set twitchbot.enabled=false --writeconfig
+$ ./kameloso --set twitchbot.enabled=false --save
 ```
 
 Assuming a prefix of "`!`", commands to test are: `!uptime`, `!start`, `!stop`, `!enable`, `!disable`, `!phrase`, `!timer`, `!permit`, `!followage` (alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, and other non-Twitch-specific commands.)

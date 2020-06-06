@@ -119,7 +119,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
-    // --writeconfig was passed; write configuration to file and quit
+    // --save was passed; write configuration to file and quit
 
     string post;
 
@@ -379,11 +379,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "flush",        "Flush screen output after each write to it. " ~
                             "(Use this if the screen only occasionally updates.)",
                             &settings.flush,
-            "w|writeconfig","Write configuration to file",
+            "w|save",       "Write configuration to file",
                             &shouldWriteConfig,
-            "save",         "^",
-                            &shouldWriteConfig,
-            "init",         "^",
+            "writeconfig",  "^",
                             &shouldWriteConfig,
             "edit",         "Open the configuration file in a text editor " ~
                             "(or the default application used to open " ~ Tint.log ~
@@ -474,7 +472,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         // Handle showstopper arguments (that display something and then exits)
         if (shouldWriteConfig || shouldOpenEditor)
         {
-            // --writeconfig and/or --edit was passed; defer to manageConfigFile
+            // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
             writeln();  // pad slightly, for cosmetics
             return Next.returnSuccess;
@@ -549,7 +547,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
 
     if (shouldWriteConfig)
     {
-        // --writeconfig was passed; write configuration to file and quit
+        // --save was passed; write configuration to file and quit
         writeConfig(instance, instance.parser.client, instance.parser.server,
             instance.bot, customSettings);
 

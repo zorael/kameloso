@@ -1984,7 +1984,7 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
     }
     else
     {
-        logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+        logger.logf("Use %s%s --save%s to generate a configuration file.",
             Tint.info, binaryPath.baseName, Tint.log);
     }
 
@@ -2635,7 +2635,7 @@ int initBot(string[] args)
 
             if (missingEntries.length || invalidEntries.length)
             {
-                logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
+                logger.logf("Use %s--save%s to update your configuration file. [%1$s%3$s%2$s]",
                     Tint.info, Tint.log, instance.settings.configFile);
                 logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
                 logger.trace("---");
