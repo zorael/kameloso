@@ -2666,9 +2666,26 @@ int initBot(string[] args)
 
     if (*instance.abort && instance.conn.connected)
     {
-        // Connected and aborting
+        import std.concurrency : receiveTimeout;
+        import core.time : seconds;
 
-        if (!instance.settings.hideOutgoing)
+        // Connected and aborting
+        // Catch any queued quit calls and use their reasons and quit settings
+
+        bool quiet;
+        string reason;
+
+        immutable received = receiveTimeout((-1).seconds,
+            (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
+            {
+                reason = givenReason;
+                quiet = givenQuiet;
+            },
+        );
+
+        if (!received) reason = instance.bot.quitReason;
+
+        if (!instance.settings.hideOutgoing && !quiet)
         {
             bool printed;
 
@@ -2677,7 +2694,8 @@ int initBot(string[] args)
                 if (!instance.settings.monochrome)
                 {
                     import kameloso.irccolours : mapEffects;
-                    logger.trace("--> QUIT :", instance.bot.quitReason
+
+                    logger.trace("--> QUIT :", reason
                         .mapEffects
                         .replaceTokens(instance.parser.client));
                     printed = true;
@@ -2687,14 +2705,14 @@ int initBot(string[] args)
             if (!printed)
             {
                 import kameloso.irccolours : stripEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason
+
+                logger.trace("--> QUIT :", reason
                     .stripEffects
                     .replaceTokens(instance.parser.client));
             }
         }
 
-        instance.conn.sendline("QUIT :" ~
-            instance.bot.quitReason.replaceTokens(instance.parser.client));
+        instance.conn.sendline("QUIT :" ~ reason.replaceTokens(instance.parser.client));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
         !instance.connSettings.reconnectOnFailure)
