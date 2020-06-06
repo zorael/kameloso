@@ -16,15 +16,6 @@ import lu.common : Next;
 import std.getopt : GetoptResult;
 import std.typecons : Flag, No, Yes;
 
-version(linux)
-{
-    version = XDG;
-}
-else version(FreeBSD)
-{
-    version = XDG;
-}
-
 @safe:
 
 
@@ -531,17 +522,18 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by `kameloso.kameloso.tryGetopt`.
 
-        version(XDG)
-        {
-            immutable command = [ "xdg-open", instance.settings.configFile ];
-            execute(command);
-        }
-        else version (OSX)
+        version(OSX)
         {
             immutable command = [ "open", instance.settings.configFile ];
             execute(command);
         }
-        else version (Windows)
+        else version(Posix)
+        {
+            // Assume XDG
+            immutable command = [ "xdg-open", instance.settings.configFile ];
+            execute(command);
+        }
+        else version(Windows)
         {
             immutable command = [ "explorer", instance.settings.configFile ];
             execute(command);
