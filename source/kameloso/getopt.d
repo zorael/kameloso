@@ -343,10 +343,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             "a|append",     "Append input home channels, guest channels and " ~
                             "admins instead of overriding",
                             &shouldAppendToArrays,
-            "hideOutgoing", "Hide outgoing messages",
-                            &settings.hideOutgoing,
-            "hide",         "^",
-                            &settings.hideOutgoing,
             "settings",     "Show all plugins' settings",
                             &shouldShowSettings,
             "show",         "^",
