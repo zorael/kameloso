@@ -643,9 +643,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    // Reset between iterations as we nom the contents
-                    mutEvent = event;
-
                     if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy,
                         state.client, state.settings.prefix))
                     {
@@ -663,7 +660,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     import std.typecons : No, Yes;
                     import std.uni : asLowerCase;
 
-                    mutEvent.content = mutEvent.content.strippedLeft;
+                    mutEvent.content = event.content.strippedLeft;
                     immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
 
                     if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
@@ -702,9 +699,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             writeln("BotRegex: `", regexUDA.expression, "`");
                             if (state.settings.flush) stdout.flush();
                         }
-
-                        // Reset between iterations; BotCommands may have altered it
-                        mutEvent = event;
 
                         if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy,
                             state.client, state.settings.prefix))
