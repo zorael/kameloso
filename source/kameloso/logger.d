@@ -298,35 +298,40 @@ public:
             {
                 import std.traits : isSomeFunction;
 
-                static if (isSomeFunction!(T.toString))
+                static if (isSomeFunction!(T.toString) || __traits(isTemplate, T.toString))
                 {
-                    import std.traits : ReturnType;
-
                     static if (__traits(compiles, arg.toString(linebuffer)))
                     {
+                        // Output range sink overload (accepts an Appender)
                         arg.toString(linebuffer);
                     }
-                    else static if (is(ReturnType!(T.toString) : string))
+                    else static if (__traits(compiles,
+                        arg.toString((const(char)[] text) => linebuffer.put(text))))
                     {
+                        // Output delegate sink overload
+                        arg.toString((const(char)[] text) => linebuffer.put(text));
+                    }
+                    else static if (__traits(compiles, linebuffer.put(arg.toString)))
+                    {
+                        // Plain string-returning function or template
                         linebuffer.put(arg.toString);
                     }
                     else
                     {
                         import std.conv : to;
-
                         // std.conv.to fallback
                         linebuffer.put(arg.to!string);
                     }
                 }
-                else static if (__traits(isTemplate, T.toString) &&
-                    __traits(compiles, arg.toString(linebuffer)))
+                else static if (is(typeof(T.toString)) &&
+                    (is(typeof(T.toString) : string) || is(typeof(T.toString) : char[])))
                 {
-                    arg.toString(linebuffer);
+                    // toString string/char[] literal
+                    linebuffer.put(arg.toString);
                 }
                 else
                 {
                     import std.conv : to;
-
                     // std.conv.to fallback
                     linebuffer.put(arg.to!string);
                 }
@@ -334,7 +339,6 @@ public:
             else
             {
                 import std.conv : to;
-
                 // std.conv.to fallback
                 linebuffer.put(arg.to!string);
             }
