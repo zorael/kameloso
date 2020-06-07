@@ -442,6 +442,48 @@ unittest
     import std.experimental.logger : LogLevel;
     import std.typecons : Flag, No, Yes;
 
+    struct S1
+    {
+        void toString(Sink)(auto ref Sink sink)
+        {
+            sink.put("sink toString");
+        }
+    }
+
+    struct S2
+    {
+        void toString(scope void delegate(const(char)[]) dg)
+        {
+            dg("delegate toString");
+        }
+    }
+
+    struct S3
+    {
+        string s = "no toString";
+    }
+
+    struct S4
+    {
+        string toString = "toString literal";
+    }
+
+    struct S5
+    {
+        string toString()()
+        {
+            return "template toString";
+        }
+    }
+
+    class C
+    {
+        override string toString()
+        {
+            return "plain toString";
+        }
+    }
+
     auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, Yes.flush);
 
     log_.logf!"log: %s"("log");
@@ -471,4 +513,20 @@ unittest
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
     }
+
+    S1 s1;
+    S2 s2;
+    S3 s3;
+    S4 s4;
+    S5 s5;
+    C c = new C;
+
+    log_.trace("---");
+
+    log_.log(s1);
+    log_.info(s2);
+    log_.warning(s3);
+    log_.error(s4);
+    log_.trace(s5);
+    log_.log(c);
 }
