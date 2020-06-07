@@ -1277,8 +1277,7 @@ void reload(TwitchBotPlugin plugin)
 {
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    logger.info("Reloading Twitch bot resources from disk.");
-
+    //logger.info("Reloading Twitch bot resources from disk.");
     plugin.bannedPhrasesByChannel = typeof(plugin.bannedPhrasesByChannel).init;
     plugin.onEndOfMotd();
 }
