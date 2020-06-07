@@ -11,6 +11,7 @@ private:
 import kameloso.plugins.core;
 import kameloso.plugins.awareness : MinimalAuthentication;
 import kameloso.plugins.common;
+import kameloso.plugins.common.delayawait;
 import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : CarryingFiber;
