@@ -1612,7 +1612,6 @@ unittest
  +/
 bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
-do
 {
     import dialect.common : isValidNicknameCharacter;
     import std.string : indexOf;

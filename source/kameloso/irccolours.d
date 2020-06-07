@@ -72,7 +72,6 @@ void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour 
     const IRCColour bg = IRCColour.unset)
 if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
-do
 {
     import lu.conv : toAlphaInto;
     import std.conv : to;
@@ -129,7 +128,6 @@ unittest
  +/
 string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
-do
 {
     if (!line.length) return string.init;
 
@@ -244,7 +242,6 @@ unittest
  +/
 string ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
-do
 {
     if (!word.length) return string.init;
 
@@ -293,7 +290,6 @@ unittest
  +/
 string ircBold(const string word) pure nothrow
 in (word.length, "Tried to apply IRC bold to a string but no string was given")
-do
 {
     return IRCControlCharacter.bold ~ word ~ IRCControlCharacter.bold;
 }
@@ -321,7 +317,6 @@ unittest
  +/
 string ircItalics(const string word) pure nothrow
 in (word.length, "Tried to apply IRC italics to a string but no string was given")
-do
 {
     return IRCControlCharacter.italics ~ word ~ IRCControlCharacter.italics;
 }
@@ -349,7 +344,6 @@ unittest
  +/
 string ircUnderlined(const string word) pure nothrow
 in (word.length, "Tried to apply IRC underlined to a string but no string was given")
-do
 {
     return IRCControlCharacter.underlined ~ word ~ IRCControlCharacter.underlined;
 }

@@ -38,7 +38,6 @@ package:
 void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
 in (list.among!("whitelist", "blacklist", "operator"),
     list ~ " is not whitelist, operator nor blacklist")
-do
 {
     import lu.string : nom;
     import std.typecons : Flag, No, Yes;

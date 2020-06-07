@@ -159,7 +159,6 @@ out (; (server.address.length), "Empty server address")
 out (; (server.port != 0), "Server port of 0")
 out (; (bot.quitReason.length), "Empty bot quit reason")
 out (; (bot.partReason.length), "Empty bot part reason")
-do
 {
     import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
 

@@ -46,7 +46,6 @@ import std.typecons : Flag, No, Yes;
 @Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
     "$command [seconds] [choice1] [choice2] ...")
 void onCommandVote(VotesPlugin plugin, const IRCEvent event)
-do
 {
     import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;

@@ -1064,7 +1064,6 @@ version(Colours)
 TerminalForeground colourByHash(const string word,
     const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to colour by hash but no word was given")
-do
 {
     import std.traits : EnumMembers;
 

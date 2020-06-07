@@ -67,7 +67,6 @@ void initLogger(const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" bright,
     const Flag!"flush" flush)
 out (; (logger !is null), "Failed to initialise logger")
-do
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
@@ -1057,7 +1056,6 @@ void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
     (const Duration duration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
 in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration")
-do
 {
     import lu.string : plurality;
     import std.algorithm.comparison : min;
@@ -1669,7 +1667,6 @@ unittest
 string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
-do
 {
     import lu.string : beginsWithOneOf, nom, strippedLeft;
 

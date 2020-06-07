@@ -1339,7 +1339,6 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +/
 void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an unset timestamp")
-do
 {
     size_t[] toRemove;
 
@@ -1392,7 +1391,6 @@ do
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
-do
 {
     size_t[] toRemove;
 
