@@ -116,20 +116,21 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 /++
  +  Prints an event to the local terminal.
  +
- +  Avoids extra allocation by writing directly to a `std.stdio.LockingTextWriter`.
+ +  Buffer output in an `std.array.Appender`.
+ +
+ +  Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
+ +  (as this is a hotspot).
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
+void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     if (!plugin.printerSettings.printToScreen) return;
 
-    IRCEvent mutEvent = event; // need a mutable copy
-
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
-    mutEvent.clearTargetNicknameIfUs(plugin.state);
+    event.clearTargetNicknameIfUs(plugin.state);
 
     /++
      +  Update the squelchstamp and return whether or not the current event
@@ -345,7 +346,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
         // Do it in this order in case bells hide whitespace.
-        mutEvent.content = mutEvent.content
+        event.content = event.content
             .replace(cast(ubyte)7, string.init)
             .strippedRight;
 
@@ -355,7 +356,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         {
             if (!plugin.state.settings.monochrome)
             {
-                plugin.formatMessageColoured(plugin.linebuffer, mutEvent,
+                plugin.formatMessageColoured(plugin.linebuffer, event,
                     (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                     (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
                 put = true;
@@ -364,7 +365,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
         if (!put)
         {
-            plugin.formatMessageMonochrome(plugin.linebuffer, mutEvent,
+            plugin.formatMessageMonochrome(plugin.linebuffer, event,
                 (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                 (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
         }
