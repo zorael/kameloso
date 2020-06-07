@@ -5,15 +5,15 @@
 ## Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
-* automatic mode sets (eg. auto `+o` on join for op)
+* automatic mode sets (e.g. auto `+o` on join for op)
 * logs
 * fetching and echoing titles of pasted URLs
-* **sed**-replacement of the last message sent (`s/this/that/` substitution)
+* **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
 * channel polls
 * works on **Twitch**, including optional [streamer plugin](source/kameloso/plugins/twitchbot/package.d)
-* **SSL** support
-* more [random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
+* SSL support
+* [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
 
