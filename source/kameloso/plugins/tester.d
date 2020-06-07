@@ -49,7 +49,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         import std.format : format;
 
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [target bot nickname] [plugin] "
+            "Usage: %s%s [target bot nickname] [plugin]"
             .format(plugin.state.settings.prefix, event.aux));
         return;
     }
@@ -57,7 +57,16 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     switch (pluginName)
     {
     case "admin":
-        void adminDg() { return testAdminFiber(plugin, event, botNickname); }
+        void adminDg()
+        {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testAdminFiber(plugin, event, botNickname);
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&adminDg);
         fiber.call();
         break;
@@ -65,6 +74,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "automodes":
         void automodesDg()
         {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
             return testAutomodesFiber(plugin, event, botNickname);
@@ -77,6 +89,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "chatbot":
         void chatbotDg()
         {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
             return testChatbotFiber(plugin, event, botNickname);
@@ -89,6 +104,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "notes":
         void notesDg()
         {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
             return testNotesFiber(plugin, event, botNickname);
@@ -101,6 +119,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "oneliners":
         void onelinersDg()
         {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
             return testOnelinersFiber(plugin, event, botNickname);
@@ -113,6 +134,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "quotes":
         void quotesDg()
         {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
             return testQuotesFiber(plugin, event, botNickname);
@@ -125,12 +149,30 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "sedreplace":
         void sedReplaceDg()
         {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
             return testSedReplaceFiber(plugin, event, botNickname);
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&sedReplaceDg);
+        fiber.call();
+        break;
+
+    case "seen":
+        void seenDg()
+        {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testSeenFiber(plugin, event, botNickname);
+        }
+
+        Fiber fiber = new CarryingFiber!IRCEvent(&seenDg);
         fiber.call();
         break;
 
@@ -144,6 +186,8 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
             chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
             Fiber.yield();
             while ((thisFiber.payload.channel != event.channel) ||
                 (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
@@ -155,7 +199,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             testOnelinersFiber(plugin, event, botNickname);
             testQuotesFiber(plugin, event, botNickname);
             testSedReplaceFiber(plugin, event, botNickname);
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+            testSeenFiber(plugin, event, botNickname);
+
+            logger.info("All tests passed!");
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&allDg);
@@ -540,6 +586,8 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
 void testQuotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Quotes with empty channel in original event")
 {
+    import std.algorithm.searching : endsWith;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -568,7 +616,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     //enforce(thisFiber.payload.content == "Quote for flerrp saved (1 on record)");
 
     send("quote flerrp");
-    enforce(thisFiber.payload.content == "flerrp | flirrp flarrp flurble");
+    enforce(thisFiber.payload.content.endsWith("] flerrp | flirrp flarrp flurble"));
 
     logger.info("Quotes tests passed!");
 }
@@ -616,6 +664,43 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
         .format(plugin.state.client.nickname));
 
     logger.info("SedReplace tests passed!");
+}
+
+
+// testSeen
+/++
+ +
+ +/
+void testSeenFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Seen with empty channel in original event")
+{
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+        Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+    }
+
+    send("!seen");
+    enforce(thisFiber.payload.content == "Usage: !seen [nickname]");
+
+    send("!seen ####");
+    enforce(thisFiber.payload.content == "Invalid user: ####");
+
+    send("!seen HarblSnarbl");
+    enforce(thisFiber.payload.content == "I have never seen HarblSnarbl.");
+
+    send("!seen " ~ plugin.state.client.nickname);
+    enforce(thisFiber.payload.content == "That's you!");
+
+    send("!seen " ~ botNickname);
+    enforce(thisFiber.payload.content == "T-that's me though...");
+
+    logger.info("Seen tests passed!");
 }
 
 
