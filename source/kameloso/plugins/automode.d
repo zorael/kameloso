@@ -74,7 +74,7 @@ void initResources(AutomodePlugin plugin)
     {
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.automodeFile.baseName ~ " may be malformed.");
     }
 

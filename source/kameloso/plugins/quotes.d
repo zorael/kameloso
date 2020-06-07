@@ -484,7 +484,7 @@ void initResources(QuotesPlugin plugin)
     {
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.quotesFile.baseName ~ " may be malformed.");
     }
 

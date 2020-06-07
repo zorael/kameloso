@@ -571,7 +571,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         catch (Exception e)
         {
             logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 }
@@ -642,7 +642,7 @@ void initAccountResources(PersistenceService service)
         import kameloso.common : logger;
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
     }
 
@@ -697,7 +697,7 @@ void initAccountResources(PersistenceService service)
                 import kameloso.common : logger;
                 import std.path : baseName;
 
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
                 throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
             }
         }
@@ -734,7 +734,7 @@ void initHostmaskResources(PersistenceService service)
         import kameloso.common : logger;
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
     }
 

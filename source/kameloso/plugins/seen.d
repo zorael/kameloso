@@ -943,7 +943,7 @@ void initResources(SeenPlugin plugin)
         logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.",
             cast(char)TerminalToken.bell);
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
     }
 
     // Let other Exceptions pass.

@@ -217,7 +217,7 @@ void messageFiber(ref Kameloso instance)
                 {
                     logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
                         "configuration: %1$s%4$s", Tint.log, plugin.name, Tint.error, e.msg);
-                    version(PrintStacktraces) logger.trace(e.toString);
+                    version(PrintStacktraces) logger.trace(e);
                 }
             }
         }
@@ -843,7 +843,7 @@ Next mainLoop(ref Kameloso instance)
                         logger.warningf("Exception %s.postprocess: %s%s",
                             plugin.name, Tint.log, e.msg);
                         printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.toString);
+                        version(PrintStacktraces) logger.trace(e);
                     }
 
                     checkUpdatesAndPropagate(instance, plugin);
@@ -879,7 +879,7 @@ Next mainLoop(ref Kameloso instance)
                         logger.warningf("Exception %s: %s%s",
                             plugin.name, Tint.log, e.msg);
                         printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.toString);
+                        version(PrintStacktraces) logger.trace(e);
                     }
                     finally
                     {
@@ -959,7 +959,7 @@ Next mainLoop(ref Kameloso instance)
                     Tint.log, e.msg, Tint.warning, e.file, e.line);
 
                 printEventDebugDetails(event, attempt.line);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
             }
         }
 
@@ -972,7 +972,7 @@ Next mainLoop(ref Kameloso instance)
         {
             logger.warningf("Unhandled messenger exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 Tint.log, e.msg, Tint.warning, e.file, e.line);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         if (messenger.state == Fiber.State.HOLD)
@@ -1197,7 +1197,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
                     plugin.name, i, Tint.log, e.msg);
 
                 printEventDebugDetails(event, event.raw);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
             }
         }
     }
@@ -1285,7 +1285,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                     plugin.name, i, Tint.log, e.msg);
 
                 printEventDebugDetails(event, event.raw);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
                 expiredFibers ~= fiber;
             }
         }
@@ -1362,7 +1362,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         {
             logger.warningf("Exception %s.scheduledDelegates[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         toRemove ~= i;  // Always removed a scheduled delegate after processing
@@ -1419,7 +1419,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         {
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         // Always removed a scheduled Fiber after processing
@@ -2304,7 +2304,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file, e.line, TerminalToken.bell);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
             attempt.retval = 1;
             break outerloop;
         }
@@ -2337,7 +2337,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file.baseName, e.line, TerminalToken.bell);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
             attempt.retval = 1;
             break outerloop;
         }
@@ -2733,7 +2733,7 @@ int initBot(string[] args)
             logger.warningf("Caught Exception when saving settings: " ~
                 "%s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 Tint.log, e.msg, Tint.warning, e.file, e.line);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 

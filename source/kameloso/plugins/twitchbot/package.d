@@ -335,7 +335,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid phrase ban index: " ~ slice);
-                //version(PrintStacktraces) logger.trace(e.toString);
+                //version(PrintStacktraces) logger.trace(e);
                 return;
             }
 
@@ -1241,7 +1241,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 }
 
                 logger.error("Disabling API features.");
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
         }
@@ -1335,7 +1335,7 @@ void initResources(TwitchBotPlugin plugin)
     }
     catch (JSONException e)
     {
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.bannedPhrasesFile.baseName ~ " may be malformed.");
     }
 
@@ -1347,7 +1347,7 @@ void initResources(TwitchBotPlugin plugin)
     }
     catch (JSONException e)
     {
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.timersFile.baseName ~ " may be malformed.");
     }
 

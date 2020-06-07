@@ -282,7 +282,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         catch (Exception e)
         {
             logger.warning("Unhandled exception caught when writing to log: ", e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 
@@ -514,7 +514,7 @@ void commitLog(ref LogLineBuffer buffer)
     {
         logger.warning("Unhandled exception caught when committing log: ",
             e.msg, cast(char)TerminalToken.bell);
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
     }
 }
 

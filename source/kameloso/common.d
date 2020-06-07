@@ -626,7 +626,7 @@ struct Kameloso
             catch (Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
             }
 
             destroy(plugin);

@@ -426,7 +426,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
                     catch (Base64Exception e)
                     {
                         noteArray[i].line = "(An error occurred and the note could not be read)";
-                        version(PrintStacktraces) logger.trace(e.toString);
+                        version(PrintStacktraces) logger.trace(e);
                     }
                 }
             }
@@ -589,7 +589,7 @@ void initResources(NotesPlugin plugin)
     {
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.notesFile.baseName ~ " may be malformed.");
     }
 

@@ -750,7 +750,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             static if (verbose)
                             {
                                 writeln("...BotRegex exception: ", e.msg);
-                                version(PrintStacktraces) writeln(e.toString);
+                                version(PrintStacktraces) writeln(e);
                                 if (state.settings.flush) stdout.flush();
                             }
                             continue;  // next BotRegex
