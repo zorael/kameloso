@@ -2412,12 +2412,12 @@ void printSummary(const ref Kameloso instance)
     foreach (immutable i, const entry; instance.connectionHistory)
     {
         import std.datetime.systime : SysTime;
-        import core.time : msecs;
+        import core.time : hnsecs;
 
         auto start = SysTime.fromUnixTime(entry.startTime);
-        start.fracSecs = 0.msecs;
+        start.fracSecs = 0.hnsecs;
         auto stop = SysTime.fromUnixTime(entry.stopTime);
-        stop.fracSecs = 0.msecs;
+        stop.fracSecs = 0.hnsecs;
         immutable duration = (stop - start);
         totalTime += duration;
         totalBytesReceived += entry.bytesReceived;
