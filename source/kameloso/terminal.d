@@ -70,7 +70,7 @@ enum TerminalToken
     reset = 15,
 }
 
-version (Windows)
+version(Windows)
 {
     // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
     // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
@@ -290,7 +290,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(16);
 
     sink.colourWith(codes);
@@ -321,8 +321,6 @@ version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
     sink.put(TerminalToken.format);
     sink.put('[');
 
@@ -366,7 +364,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(text.length + 15);
 
     sink.colourWith(codes);
@@ -705,11 +703,11 @@ if (isOutputRange!(Sink, char[]))
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
     (const string word, const uint r, const uint g, const uint b,
-    const Flag!"bright" bright = No.bright)
+    const Flag!"bright" bright = No.bright) pure
 {
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     // \033[38;2;255;255;255m<word>\033[m
     // \033[48 for background
     sink.reserve(word.length + 23);
@@ -1066,7 +1064,6 @@ version(Colours)
 TerminalForeground colourByHash(const string word,
     const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to colour by hash but no word was given")
-do
 {
     import std.traits : EnumMembers;
 

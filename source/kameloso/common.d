@@ -6,8 +6,8 @@ module kameloso.common;
 
 private:
 
+import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient, IRCServer;
-import std.experimental.logger.core : Logger;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Tuple, Yes;
 import core.time : Duration, seconds;
@@ -19,10 +19,10 @@ public:
 version(unittest)
 shared static this()
 {
-    import kameloso.logger : KamelosoLogger;
+    import std.experimental.logger : LogLevel;
 
     // This is technically before settings have been read...
-    logger = new KamelosoLogger;
+    logger = new KamelosoLogger(No.monochrome, No.brightTerminal, Yes.flush);
 
     // settings needs instantiating now.
     settings = new CoreSettings;
@@ -36,13 +36,13 @@ shared static this()
  +
  +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
  +  and `fatal`. It is not `__gshared`, so instantiate a thread-local
- +  `std.experimental.logger.Logger` if threading.
+ +  `kameloso.logger.KamelosoLogger` if threading.
  +
  +  Having this here is unfortunate; ideally plugins should not use variables
  +  from other modules, but unsure of any way to fix this other than to have
- +  each plugin keep their own `std.experimental.logger.Logger`.
+ +  each plugin keep their own `kameloso.logger.KamelosoLogger`.
  +/
-Logger logger;
+KamelosoLogger logger;
 
 
 // initLogger
@@ -67,44 +67,11 @@ void initLogger(const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" bright,
     const Flag!"flush" flush)
 out (; (logger !is null), "Failed to initialise logger")
-do
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
-    Tint.monochrome = monochrome;
-}
-
-
-// initLogger
-/++
- +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
- +  Deprecated overload that takes bool parameters.
- +
- +  It needs to be separately instantiated per thread, and even so there may be
- +  race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
- +  to log to screen from other threads.
- +
- +  Example:
- +  ---
- +  initLogger(settings.monochrome, settings.brightTerminal, settings.flush);
- +  ---
- +
- +  Params:
- +      monochrome = Whether the terminal is set to monochrome or not.
- +      bright = Whether the terminal has a bright background or not.
- +      flush = Whether or not to flush stdout after finishing writing to it.
- +/
-deprecated("Use the overload that takes `Flag` parameters instead")
-void initLogger(const bool monochrome, const bool bright, const bool flush)
-out (; (logger !is null), "Failed to initialise logger")
-do
-{
-    import kameloso.logger : KamelosoLogger;
-    import std.experimental.logger : LogLevel;
-
-    logger = new KamelosoLogger(LogLevel.all, monochrome, bright, flush);
+    logger = new KamelosoLogger(monochrome, bright, flush);
     Tint.monochrome = monochrome;
 }
 
@@ -140,17 +107,11 @@ struct CoreSettings
         bool monochrome = true;  /// Non-colours version defaults to true.
     }
 
-    /// Flag denoting whether or not the program should reconnect after disconnect.
-    bool reconnectOnFailure = true;
-
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
     /// Flag denoting that usermask should be used instead of accounts to authenticate.
     bool preferHostmasks = false;
-
-    /// Whether to connect to IPv6 addresses or only use IPV4 ones.
-    bool ipv6 = true;
 
     /// Whether or not to hide outgoing messages, not printing them to screen.
     bool hideOutgoing = false;
@@ -160,9 +121,6 @@ struct CoreSettings
 
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
-
-    /// Whether to endlessly connect or whether to give up after a while.
-    bool endlesslyConnect = true;
 
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
@@ -191,6 +149,37 @@ struct CoreSettings
         bool force;  /// Whether or not to force connecting, skipping some sanity checks.
         bool flush;  /// Whether or not to flush stdout after writing to it.
     }
+}
+
+
+// ConnectionSettings
+/++
+ +  Aggregate of values used in the connection between the bot and the IRC server.
+ +/
+struct ConnectionSettings
+{
+    import lu.uda : CannotContainComments;
+
+    /// Flag denoting whether or not the program should reconnect after disconnect.
+    bool reconnectOnFailure = true;
+
+    /// Whether to endlessly connect or whether to give up after a while.
+    bool endlesslyConnect = true;
+
+    /// Whether to connect to IPv6 addresses or only use IPv4 ones.
+    bool ipv6 = true;
+
+    /// Path to private (`.pem`) key file, used in SSL connections.
+    @CannotContainComments string privateKeyFile;
+
+    /// Path to certificate (`.pem`) file.
+    @CannotContainComments string certFile;
+
+    /// Path to certificate bundle `cacert.pem` file or equivalent.
+    @CannotContainComments string caBundleFile;
+
+    /// Whether or not to attempt an SSL connection.
+    bool ssl = false;
 }
 
 
@@ -311,6 +300,11 @@ struct Kameloso
     CoreSettings settings;
 
     /++
+     +  Settings relating to the connection between the bot and the IRC server.
+     +/
+    ConnectionSettings connSettings;
+
+    /++
      +  When a nickname was last issued a WHOIS query for, for hysteresis
      +  and rate-limiting.
      +/
@@ -401,7 +395,7 @@ struct Kameloso
      +/
     double throttleline(Buffer)(ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
-        const Flag!"sendFaster" sendFaster = No.sendFaster)
+        const Flag!"sendFaster" sendFaster = No.sendFaster) @system
     {
         with (throttle)
         {
@@ -460,12 +454,19 @@ struct Kameloso
 
                 if (!buffer.front.quiet)
                 {
+                    bool printed;
+
                     version(Colours)
                     {
-                        import kameloso.irccolours : mapEffects;
-                        logger.trace("--> ", buffer.front.line.mapEffects);
+                        if (!settings.monochrome)
+                        {
+                            import kameloso.irccolours : mapEffects;
+                            logger.trace("--> ", buffer.front.line.mapEffects);
+                            printed = true;
+                        }
                     }
-                    else
+
+                    if (!printed)
                     {
                         import kameloso.irccolours : stripEffects;
                         logger.trace("--> ", buffer.front.line.stripEffects);
@@ -517,6 +518,8 @@ struct Kameloso
         state.bot = this.bot;
         state.mainThread = thisTid;
         state.settings = settings;
+        state.connSettings = connSettings;
+        state.abort = abort;
         immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length);
@@ -779,6 +782,9 @@ struct Kameloso
 
         /// How many events fired during this connection.
         long numEvents;
+
+        /// How many bytses were read during this connection.
+        long bytesReceived;
     }
 
     /// History records of established connections this execution run.
@@ -1034,56 +1040,201 @@ unittest
  +  Params:
  +      abbreviate = Whether or not to abbreviate the output, using `h` instead
  +          of `hours`, `m` instead of `minutes`, etc.
- +      truncateSeconds = Whether or no to always include seconds in the output.
- +          If not they are only included if the total time is less than a minute.
  +      numUnits = Number of units to include in the output text, where such is
- +          "weeks", "days", "hours", "minutes" and "seconds". Passing a `numUnits`
- +          of 5 will express the time difference using all units. Passing one of
- +          4 will only express it in days, hours, minutes and seconds. Passing
- +          1 will express it in only seconds.
+ +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
+ +          unit "months", and a fake "years" based on it. Passing a `numUnits`
+ +          of 7 will express the time difference using all units. Passing one
+ +          of 4 will only express it in days, hours, minutes and seconds.
+ +          Passing 1 will express it in only seconds.
+ +      truncateUnits = Number of units to skip from output, going from least
+ +          significant (seconds) to most significant (years).
  +      duration = A period of time.
  +      sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
-    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 5, Sink)
+    uint numUnits = 7, uint truncateUnits = 0, Sink)
     (const Duration duration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
-in ((duration >= 0.seconds), "Cannot call `timeSince` on a negative duration")
-do
+in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration")
 {
     import lu.string : plurality;
+    import std.algorithm.comparison : min;
     import std.format : formattedWrite;
     import std.meta : AliasSeq;
-    import std.traits : isIntegral, isSomeString;
 
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
-
-    alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
-
-    static if ((numUnits < 1) || (numUnits > 5))
+    static if ((numUnits < 1) || (numUnits > 7))
     {
         import std.format : format;
 
-        enum pattern = "Invalid number of units passed to `timeSince`: " ~
-            "expected `1` to `5`, got `%d`";
+        enum pattern = "Invalid number of units passed to `timeSinceInto`: " ~
+            "expected `1` to `7`, got `%d`";
         static assert(0, pattern.format(numUnits));
     }
 
-    immutable diff = duration.split!(units[units.length-numUnits..$]);
+    static if ((truncateUnits < 0) || (truncateUnits > 6))
+    {
+        import std.format : format;
+
+        enum pattern = "Invalid number of units to truncate passed to `timeSinceInto`: " ~
+            "expected `0` to `6`, got `%d`";
+        static assert(0, pattern.format(truncateUnits));
+    }
+
+    alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
+    enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
+
+    immutable diff = duration.split!(units[units.length-min(numUnits, 5)..$]);
+
     bool putSomething;
 
-    static if (numUnits == 5)
+    static if (numUnits >= 1)
     {
-        if (diff.weeks)
+        immutable trailingSeconds = (diff.seconds && (truncateUnits < 1));
+    }
+
+    static if (numUnits >= 2)
+    {
+        immutable trailingMinutes = (diff.minutes && (truncateUnits < 2));
+    }
+
+    static if (numUnits >= 3)
+    {
+        immutable trailingHours = (diff.hours && (truncateUnits < 3));
+    }
+
+    static if (numUnits >= 4)
+    {
+        immutable trailingDays = (diff.days && (truncateUnits < 4));
+        long days = diff.days;
+    }
+
+    static if (numUnits >= 5)
+    {
+        immutable trailingWeeks = (diff.weeks && (truncateUnits < 5));
+        long weeks = diff.weeks;
+    }
+
+    static if (numUnits >= 6)
+    {
+        uint months;
+
+        {
+            immutable totalDays = (diff.weeks * 7) + diff.days;
+            months = cast(uint)(totalDays / daysInAMonth);
+            days = cast(uint)(totalDays % daysInAMonth);
+            weeks = (days / 7);
+            days %= 7;
+        }
+    }
+
+    static if (numUnits >= 7)
+    {
+        uint years;
+
+        if (months >= 12) // && (truncateUnits < 7))
+        {
+            years = cast(uint)(months / 12);
+            months %= 12;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+
+    static if (numUnits >= 7)
+    {
+        if (years)
         {
             static if (abbreviate)
             {
-                sink.formattedWrite("%dw", diff.weeks);
+                sink.formattedWrite("%dy", years);
             }
             else
             {
-                sink.formattedWrite("%d %s", diff.weeks,
-                    diff.weeks.plurality("week", "weeks"));
+                sink.formattedWrite("%d %s", years,
+                    years.plurality("year", "years"));
+            }
+
+            putSomething = true;
+        }
+    }
+
+    static if (numUnits >= 6)
+    {
+        if (months && (!putSomething || (truncateUnits < 6)))
+        {
+            static if (abbreviate)
+            {
+                static if (numUnits >= 7)
+                {
+                    if (putSomething) sink.put(' ');
+                }
+
+                sink.formattedWrite("%dm", months);
+            }
+            else
+            {
+                static if (numUnits >= 7)
+                {
+                    if (putSomething)
+                    {
+                        if (trailingSeconds ||
+                            trailingMinutes ||
+                            trailingHours ||
+                            trailingDays ||
+                            trailingWeeks)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
+                    }
+                }
+
+                sink.formattedWrite("%d %s", months,
+                    months.plurality("month", "months"));
+            }
+
+            putSomething = true;
+        }
+    }
+
+    static if (numUnits >= 5)
+    {
+        if (weeks && (!putSomething || (truncateUnits < 5)))
+        {
+            static if (abbreviate)
+            {
+                static if (numUnits >= 6)
+                {
+                    if (putSomething) sink.put(' ');
+                }
+
+                sink.formattedWrite("%dw", weeks);
+            }
+            else
+            {
+                static if (numUnits >= 6)
+                {
+                    if (putSomething)
+                    {
+                        if (trailingSeconds ||
+                            trailingMinutes ||
+                            trailingHours ||
+                            trailingDays)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
+                    }
+                }
+
+                sink.formattedWrite("%d %s", weeks,
+                    weeks.plurality("week", "weeks"));
             }
 
             putSomething = true;
@@ -1092,7 +1243,7 @@ do
 
     static if (numUnits >= 4)
     {
-        if (diff.days)
+        if (days && (!putSomething || (truncateUnits < 4)))
         {
             static if (abbreviate)
             {
@@ -1101,7 +1252,7 @@ do
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dd", diff.days);
+                sink.formattedWrite("%dd", days);
             }
             else
             {
@@ -1109,13 +1260,21 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds || diff.minutes || diff.hours) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds ||
+                            trailingMinutes ||
+                            trailingHours)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
                 }
 
-                sink.formattedWrite("%d %s", diff.days,
-                    diff.days.plurality("day", "days"));
+                sink.formattedWrite("%d %s", days,
+                    days.plurality("day", "days"));
             }
 
             putSomething = true;
@@ -1124,15 +1283,16 @@ do
 
     static if (numUnits >= 3)
     {
-        if (diff.hours)
+        if (diff.hours && (!putSomething || (truncateUnits < 3)))
         {
             static if (abbreviate)
             {
                 static if (numUnits >= 4)
                 {
                     if (putSomething) sink.put(' ');
-                    sink.formattedWrite("%dh", diff.hours);
                 }
+
+                sink.formattedWrite("%dh", diff.hours);
             }
             else
             {
@@ -1140,8 +1300,15 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds || diff.minutes) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds ||
+                            trailingMinutes)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
                 }
 
@@ -1155,7 +1322,7 @@ do
 
     static if (numUnits >= 2)
     {
-        if (diff.minutes)
+        if (diff.minutes && (!putSomething || (truncateUnits < 2)))
         {
             static if (abbreviate)
             {
@@ -1172,11 +1339,15 @@ do
                 {
                     if (putSomething)
                     {
-                        if (!truncateSeconds) sink.put(", ");
-                        else sink.put(" and ");
+                        if (trailingSeconds)
+                        {
+                            sink.put(", ");
+                        }
+                        else
+                        {
+                            sink.put(" and ");
+                        }
                     }
-                    /*if (putSomething && !truncateSeconds) sink.put(", ");
-                    else if (putSomething) sink.put(" and ");*/
                 }
 
                 sink.formattedWrite("%d %s", diff.minutes,
@@ -1187,7 +1358,7 @@ do
         }
     }
 
-    if (!truncateSeconds || !putSomething)
+    if (trailingSeconds || !putSomething)
     {
         static if (abbreviate)
         {
@@ -1232,31 +1403,51 @@ unittest
 
     {
         immutable dur = 3_141_519_265.msecs;
-        dur.timeSinceInto!(No.abbreviate, Yes.truncateSeconds, 4)(sink);
+        dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
         assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate, Yes.truncateSeconds, 4)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1)(sink);
         assert((sink.data == "36d 8h 38m"), sink.data);
         sink.clear();
     }
 
     {
         immutable dur = 3599.seconds;
-        dur.timeSinceInto(sink);
+        dur.timeSinceInto!(No.abbreviate, 2, 1)(sink);
         assert((sink.data == "59 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 2, 1)(sink);
         assert((sink.data == "59m"), sink.data);
         sink.clear();
     }
 
     {
         immutable dur = 3.days + 35.minutes;
-        dur.timeSinceInto(sink);
+        dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
         assert((sink.data == "3 days and 35 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate)(sink);
+        dur.timeSinceInto!(Yes.abbreviate,4, 1)(sink);
         assert((sink.data == "3d 35m"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 57.weeks + 1.days + 2.hours + 3.minutes + 4.seconds;
+        dur.timeSinceInto!(No.abbreviate, 7, 4)(sink);
+        assert((sink.data == "1 year, 1 month and 1 week"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 7, 4)(sink);
+        assert((sink.data == "1y 1m 1w"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 4.seconds;
+        dur.timeSinceInto!(No.abbreviate, 7, 4)(sink);
+        assert((sink.data == "4 seconds"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 7, 4)(sink);
+        assert((sink.data == "4s"), sink.data);
         sink.clear();
     }
 }
@@ -1280,27 +1471,28 @@ unittest
  +  Params:
  +      abbreviate = Whether or not to abbreviate the output, using `h` instead
  +          of `hours`, `m` instead of `minutes`, etc.
- +      truncateSeconds = Whether or no to always include seconds in the output.
- +          If not they are only included if the total time is less than a minute.
  +      numUnits = Number of units to include in the output text, where such is
- +          "weeks", "days", "hours", "minutes" and "seconds". Passing a `numUnits`
- +          of 5 will express the time difference using all units. Passing one of
- +          4 will only express it in days, hours, minutes and seconds. Passing
- +          1 will express it in only seconds.
+ +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
+ +          unit "months", and a fake "years" based on it. Passing a `numUnits`
+ +          of 7 will express the time difference using all units. Passing one
+ +          of 4 will only express it in days, hours, minutes and seconds.
+ +          Passing 1 will express it in only seconds.
+ +      truncateUnits = Number of units to skip from output, going from least
+ +          significant (seconds) to most significant (years).
  +      duration = A period of time.
  +
  +  Returns:
  +      A string with the passed duration expressed in natural English language.
  +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
-    Flag!"truncateSeconds" truncateSeconds = Yes.truncateSeconds, uint numUnits = 5)
+    uint numUnits = 7, uint truncateUnits = 0)
     (const Duration duration) pure
 {
     import std.array : Appender;
 
-    Appender!string sink;
-    sink.reserve(50);
-    duration.timeSinceInto!(abbreviate, truncateSeconds, numUnits)(sink);
+    Appender!(char[]) sink;
+    sink.reserve(60);
+    duration.timeSinceInto!(abbreviate, numUnits, truncateUnits)(sink);
     return sink.data;
 }
 
@@ -1311,40 +1503,40 @@ unittest
 
     {
         immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 4);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 4);
+        immutable since = dur.timeSince!(No.abbreviate, 4, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 4, 1);
         assert((since == "9 days, 3 hours and 16 minutes"), since);
         assert((abbrev == "9d 3h 16m"), abbrev);
     }
 
     {
         immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 5);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 5);
+        immutable since = dur.timeSince!(No.abbreviate, 5, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 5, 1);
         assert((since == "1 week, 2 days, 3 hours and 16 minutes"), since);
         assert((abbrev == "1w 2d 3h 16m"), abbrev);
     }
 
     {
         immutable dur = 789_383.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds, 1);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds, 1);
+        immutable since = dur.timeSince!(No.abbreviate, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 1);
         assert((since == "789383 seconds"), since);
         assert((abbrev == "789383s"), abbrev);
     }
 
     {
         immutable dur = 789_383.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, No.truncateSeconds, 2);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, No.truncateSeconds, 2);
+        immutable since = dur.timeSince!(No.abbreviate, 2, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 2, 0);
         assert((since == "13156 minutes and 23 seconds"), since);
         assert((abbrev == "13156m 23s"), abbrev);
     }
 
     {
         immutable dur = 3_620.seconds;  // 1 hour and 20 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
+        immutable since = dur.timeSince!(No.abbreviate, 7, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 1);
         assert((since == "1 hour"), since);
         assert((abbrev == "1h"), abbrev);
     }
@@ -1367,18 +1559,82 @@ unittest
 
     {
         immutable dur = 1.days + 1.minutes + 1.seconds;
-        immutable since = dur.timeSince!(No.abbreviate, No.truncateSeconds);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, No.truncateSeconds);
+        immutable since = dur.timeSince!(No.abbreviate, 7, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 0);
         assert((since == "1 day, 1 minute and 1 second"), since);
         assert((abbrev == "1d 1m 1s"), abbrev);
     }
 
     {
         immutable dur = 3.weeks + 6.days + 10.hours;
-        immutable since = dur.timeSince!(No.abbreviate, Yes.truncateSeconds);
-        immutable abbrev = dur.timeSince!(Yes.abbreviate, Yes.truncateSeconds);
+        immutable since = dur.timeSince!(No.abbreviate);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate);
         assert((since == "3 weeks, 6 days and 10 hours"), since);
         assert((abbrev == "3w 6d 10h"), abbrev);
+    }
+
+    {
+        immutable dur = 377.days + 11.hours;
+        immutable since = dur.timeSince!(No.abbreviate, 6);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 6);
+        assert((since == "12 months, 2 weeks, 3 days and 11 hours"), since);
+        assert((abbrev == "12m 2w 3d 11h"), abbrev);
+    }
+
+    {
+        immutable dur = 395.days + 11.seconds;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 1);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 1);
+        assert((since == "1 year, 1 month and 5 days"), since);
+        assert((abbrev == "1y 1m 5d"), abbrev);
+    }
+
+    {
+        immutable dur = 1.weeks + 9.days;
+        immutable since = dur.timeSince!(No.abbreviate, 5);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 5);
+        assert((since == "2 weeks and 2 days"), since);
+        assert((abbrev == "2w 2d"), abbrev);
+    }
+
+    {
+        immutable dur = 30.days + 1.weeks;
+        immutable since = dur.timeSince!(No.abbreviate, 5);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 5);
+        assert((since == "5 weeks and 2 days"), since);
+        assert((abbrev == "5w 2d"), abbrev);
+    }
+
+    {
+        immutable dur = 30.days + 1.weeks + 1.seconds;
+        immutable since = dur.timeSince!(No.abbreviate, 4, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 4, 0);
+        assert((since == "37 days and 1 second"), since);
+        assert((abbrev == "37d 1s"), abbrev);
+    }
+
+    {
+        immutable dur = 267.weeks + 4.days + 9.hours + 15.minutes + 1.seconds;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 0);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 0);
+        assert((since == "5 years, 2 months, 1 week, 6 days, 9 hours, 15 minutes and 1 second"), since);
+        assert((abbrev == "5y 2m 1w 6d 9h 15m 1s"), abbrev);
+    }
+
+    {
+        immutable dur = 360.days + 350.days;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 6);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 6);
+        assert((since == "1 year"), since);
+        assert((abbrev == "1y"), abbrev);
+    }
+
+    {
+        immutable dur = 267.weeks + 4.days + 9.hours + 15.minutes + 1.seconds;
+        immutable since = dur.timeSince!(No.abbreviate, 7, 3);
+        immutable abbrev = dur.timeSince!(Yes.abbreviate, 7, 3);
+        assert((since == "5 years, 2 months, 1 week and 6 days"), since);
+        assert((abbrev == "5y 2m 1w 6d"), abbrev);
     }
 }
 
@@ -1411,7 +1667,6 @@ unittest
 string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
-do
 {
     import lu.string : beginsWithOneOf, nom, strippedLeft;
 
@@ -1478,7 +1733,7 @@ struct Tint
     /++
      +  Whether or not output should be coloured at all.
      +/
-    private static bool monochrome;
+    static bool monochrome;
 
     version(Colours)
     {
@@ -1491,20 +1746,15 @@ struct Tint
          +  This saves us the boilerplate of copy/pasting one function for each
          +  `std.experimental.logger.core.LogLevel`.
          +/
-        pragma(inline)
+        pragma(inline, true)
         static string opDispatch(string tint)()
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
         {
-            import kameloso.logger : KamelosoLogger;
             import std.traits : isSomeFunction;
 
-            KamelosoLogger kamelog = cast(KamelosoLogger)logger;
-            assert(kamelog, "`logger` is null or is not a `KamelosoLogger` " ~
-                "as seen from `Tint.opDispatch`");
+            enum tintfun = "logger." ~ tint ~ "tint";
 
-            enum tintfun = "kamelog." ~ tint ~ "tint";
-
-            static if (__traits(hasMember, kamelog, tint ~ "tint") &&
+            static if (__traits(hasMember, logger, tint ~ "tint") &&
                 isSomeFunction!(mixin(tintfun)))
             {
                 return monochrome ? string.init : mixin(tintfun);
@@ -1520,7 +1770,7 @@ struct Tint
         /++
          +  Returns an empty string, since we're not versioned `Colours`.
          +/
-        pragma(inline)
+        pragma(inline, true)
         static string log()
         {
             return string.init;
@@ -1530,26 +1780,25 @@ struct Tint
         alias warning = log;
         alias error = log;
         alias fatal = log;
+        alias trace = log;
+        alias reset = trace;
     }
 }
 
 ///
 unittest
 {
-    import kameloso.logger : KamelosoLogger;
-
     if (logger !is null)
     {
-        KamelosoLogger kl = cast(KamelosoLogger)logger;
-        assert(kl);
-
         version(Colours)
         {
-            assert(Tint.log is kl.logtint);
-            assert(Tint.info is kl.infotint);
-            assert(Tint.warning is kl.warningtint);
-            assert(Tint.error is kl.errortint);
-            assert(Tint.fatal is kl.fataltint);
+            assert(Tint.log is logger.logtint);
+            assert(Tint.info is logger.infotint);
+            assert(Tint.warning is logger.warningtint);
+            assert(Tint.error is logger.errortint);
+            assert(Tint.fatal is logger.fataltint);
+            assert(Tint.trace is logger.tracetint);
+            assert(Tint.reset is logger.resettint);
         }
         else
         {
@@ -1558,6 +1807,85 @@ unittest
             assert(Tint.warning == string.init);
             assert(Tint.error == string.init);
             assert(Tint.fatal == string.init);
+            assert(Tint.trace == string.init);
+            assert(Tint.reset == string.init);
         }
     }
+}
+
+
+// replaceTokens
+/++
+ +  Apply some common text replacements. Used on part and quit reasons.
+ +
+ +  Params:
+ +      line = String to replace tokens in.
+ +      client = The current `dialect.defs.IRCClient`.
+ +
+ +  Returns:
+ +      A modified string with token occurences replaced.
+ +/
+string replaceTokens(const string line, const IRCClient client) @safe pure nothrow
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.array : replace;
+
+    return line
+        .replace("$nickname", client.nickname)
+        .replace("$version", cast(string)KamelosoInfo.version_)
+        .replace("$source", cast(string)KamelosoInfo.source);
+}
+
+///
+unittest
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.format : format;
+
+    IRCClient client;
+    client.nickname = "harbl";
+
+    {
+        immutable line = "asdf $nickname is kameloso version $version from $source";
+        immutable expected = "asdf %s is kameloso version %s from %s"
+            .format(client.nickname, cast(string)KamelosoInfo.version_,
+                cast(string)KamelosoInfo.source);
+        immutable actual = line.replaceTokens(client);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "";
+        immutable expected = "";
+        immutable actual = line.replaceTokens(client);
+        assert((actual == expected), actual);
+    }
+    {
+        immutable line = "blerp";
+        immutable expected = "blerp";
+        immutable actual = line.replaceTokens(client);
+        assert((actual == expected), actual);
+    }
+}
+
+
+// replaceTokens
+/++
+ +  Apply some common text replacements. Used on part and quit reasons.
+ +  Overload that doens't take an `dialect.defs.IRCClient` and as such can't
+ +  replace `$nickname`.
+ +
+ +  Params:
+ +      line = String to replace tokens in.
+ +
+ +  Returns:
+ +      A modified string with token occurences replaced.
+ +/
+string replaceTokens(const string line) @safe pure nothrow
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.array : replace;
+
+    return line
+        .replace("$version", cast(string)KamelosoInfo.version_)
+        .replace("$source", cast(string)KamelosoInfo.source);
 }

@@ -7,7 +7,7 @@
  +  named FIFO pipe.
  +
  +  This requires version `Posix`, which is true for UNIX-like systems (like
- +  Linux and OSX).
+ +  Linux and macOS).
  +/
 module kameloso.plugins.pipeline;
 
@@ -30,10 +30,10 @@ import std.typecons : Flag, No, Yes;
 /+
     For storage location of the FIFO it makes sense to default to /tmp;
     Posix however defines a variable $TMPDIR, which should take precedence.
-    However, this supposedly makes the file really difficult to access on OSX
+    However, this supposedly makes the file really difficult to access on macOS
     where it translates to some really long, programmatically generated path.
-    OSX naturally does support /tmp though. So shrug and version it to
-    default-ignore $TMPDIR on OSX but obey it on other platforms.
+    macOS naturally does support /tmp though. So shrug and version it to
+    default-ignore $TMPDIR on macOS but obey it on other platforms.
  +/
 //version = OSXTMPDIR;
 
@@ -49,7 +49,7 @@ import std.typecons : Flag, No, Yes;
 
     /++
      +  Whether or not to place the FIFO in the working directory. If false, it
-     +  will be saved in `/tmp` or wherever `$TMPDIR` points. If OSX, then there
+     +  will be saved in `/tmp` or wherever `$TMPDIR` points. If macOS, then there
      +  only if version `OSXTMPDIR`.
      +/
     bool fifoInWorkingDir = false;
@@ -244,7 +244,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
  +  It will be named a passed filename.
  +
  +  Params:
- +      state = String filename of FIFO to create.
+ +      filename = String filename of FIFO to create.
  +
  +  Throws:
  +      `kameloso.common.ReturnValueException` if the FIFO could not be created.

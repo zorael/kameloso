@@ -340,7 +340,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     default:
         import lu.string : strippedRight;
         import std.array : replace;
-        import std.stdio : stdout;
+        import std.stdio : stdout, writeln;
 
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
@@ -349,25 +349,28 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             .replace(cast(ubyte)7, string.init)
             .strippedRight;
 
-        bool printed;
+        bool put;
 
         version(Colours)
         {
             if (!plugin.state.settings.monochrome)
             {
-                plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
+                plugin.formatMessageColoured(plugin.linebuffer, mutEvent,
                     (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                     (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
-                printed = true;
+                put = true;
             }
         }
 
-        if (!printed)
+        if (!put)
         {
-            plugin.formatMessageMonochrome(stdout.lockingTextWriter, mutEvent,
+            plugin.formatMessageMonochrome(plugin.linebuffer, mutEvent,
                 (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                 (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
         }
+
+        writeln(plugin.linebuffer.data);
+        plugin.linebuffer.clear();
 
         if (plugin.state.settings.flush) stdout.flush();
         break;
@@ -785,6 +788,16 @@ unittest
 }
 
 
+// start
+/++
+ +  Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+ +/
+void start(PrinterPlugin plugin)
+{
+    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
+}
+
+
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
 
@@ -802,12 +815,17 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
+    private import std.array : Appender;
+
 package:
     /// All Printer plugin options gathered.
     PrinterSettings printerSettings;
 
     /// How many seconds before a request to squelch list events times out.
     enum squelchTimeout = 10;  // seconds
+
+    /// How many bytes to preallocate for the `linebuffer`.
+    enum linebufferInitialSize = 2048;
 
     /// From which channel or for which user events are being squelched.
     string squelchTarget;
@@ -827,6 +845,9 @@ package:
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
+
+    /// Buffer to fill with the line to print to screen.
+    Appender!(char[]) linebuffer;
 
     /// Where to save logs.
     @Resource string logDirectory = "logs";

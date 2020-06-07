@@ -21,7 +21,7 @@ version(Web) version = TwitchAPIFeatures;
 
 private:
 
-import kameloso.plugins.twitchbot.apifeatures;
+import kameloso.plugins.twitchbot.api;
 import kameloso.plugins.twitchbot.timers;
 
 import kameloso.plugins.core;
@@ -37,6 +37,8 @@ import core.thread : Fiber;
 /// All Twitch bot plugin runtime settings.
 @Settings struct TwitchBotSettings
 {
+    import lu.uda : Unserialisable;
+
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
@@ -82,7 +84,7 @@ import core.thread : Fiber;
      +  Whether or not to start a captive session for generating a Twitch
      +  authorisation key. Should not be permanently set in the configuration file!
      +/
-    bool keyGenerationMode = false;
+    @Unserialisable bool keygen = false;
 }
 
 
@@ -653,10 +655,42 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
 
-    if (!plugin.twitchBotSettings.filterURLs) return;
+    version(WithWebtitlesPlugin)
+    {
+        // Webtitles soft-disables itself on Twitch servers to allow us to filter links.
+        // It's still desirable to have their titles echoed however, when a link
+        // was allowed. So pass allowed links as bus messages to it.
+
+        void passToWebtitles(string[] urls)
+        {
+            import kameloso.plugins.common : EventURLs;
+            import kameloso.thread : ThreadMessage, busMessage;
+            import std.concurrency : send;
+
+            auto eventAndURLs = EventURLs(event, urls);
+
+            plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+                "webtitles", busMessage(eventAndURLs));
+        }
+    }
+    else
+    {
+        // No Webtitles so just abort if we're not filtering
+        if (!plugin.twitchBotSettings.filterURLs) return;
+    }
 
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
+
+    version(WithWebtitlesPlugin)
+    {
+        if (!plugin.twitchBotSettings.filterURLs)
+        {
+            // Not filtering but Webtitles available; pass to it to emulate it
+            // not being soft-disabled.
+            return passToWebtitles(urls);
+        }
+    }
 
     bool allowed;
 
@@ -686,7 +720,15 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         break;
     }
 
-    if (!allowed)
+    if (allowed)
+    {
+        version(WithWebtitlesPlugin)
+        {
+            // Pass to Webtitles if available, otherwise just ignore
+            return passToWebtitles(urls);
+        }
+    }
+    else
     {
         import std.format : format;
 
@@ -734,19 +776,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
             .format(event.sender.nickname, messages[ban.offense]));
         return;
     }
-
-    version(WithWebtitlesPlugin)
-    {
-        import kameloso.thread : ThreadMessage, busMessage;
-        import std.concurrency : send;
-        import std.typecons : Tuple;
-
-        alias EventAndURLs = Tuple!(IRCEvent, string[]);
-        auto eventAndURLs = EventAndURLs(event, urls);
-
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            "webtitles", busMessage(eventAndURLs));
-    }
 }
 
 
@@ -756,9 +785,6 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +  (or a specified user) have been a follower of the current channel.
  +
  +  Lookups are done asychronously in subthreads.
- +
- +  See_Also:
- +      kameloso.plugins.twitchbot.apifeatures.onFollowAgeImpl
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
@@ -771,7 +797,171 @@ version(TwitchAPIFeatures)
     "$command [optional nickname]")
 void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    return onFollowAgeImpl(plugin, event);
+    import lu.string : nom, stripped;
+    import std.conv : to;
+    import std.json : JSONValue;
+    import core.thread : Fiber;
+
+    if (!plugin.useAPIFeatures) return;
+
+    void dg()
+    {
+        string slice = event.content.stripped;  // mutable
+        immutable nameSpecified = (slice.length > 0);
+
+        string idString;
+        string fromDisplayName;
+
+        if (!nameSpecified)
+        {
+            // Assume the user is asking about itself
+            idString = event.sender.id.to!string;
+            fromDisplayName = event.sender.displayName;
+        }
+        else
+        {
+            immutable givenName = slice.nom!(Yes.inherit)(' ');
+
+            if (const user = givenName in plugin.state.users)
+            {
+                // Stored user
+                idString = user.id.to!string;
+                fromDisplayName = user.displayName;
+            }
+            else
+            {
+                foreach (const user; plugin.state.users)
+                {
+                    if (user.displayName == givenName)
+                    {
+                        // Found user by displayName
+                        idString = user.id.to!string;
+                        fromDisplayName = user.displayName;
+                        break;
+                    }
+                }
+
+                if (!idString.length)
+                {
+                    // None on record, look up
+                    immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+
+                    scope(failure) plugin.useAPIFeatures = false;
+
+                    const response = queryTwitch(plugin, url, plugin.authorizationBearer);
+
+                    if (!response.str.length)
+                    {
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+
+                    // Hit
+                    const user = parseUserFromResponse(cast()response.str);
+
+                    if (user == JSONValue.init)
+                    {
+                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        return;
+                    }
+
+                    idString = user["id"].str;
+                    fromDisplayName = user["display_name"].str;
+                }
+            }
+        }
+
+        void reportFollowAge(const JSONValue followingUserJSON)
+        {
+            import kameloso.common : timeSince;
+            import std.datetime.systime : Clock, SysTime;
+            import std.format : format;
+
+            static immutable string[12] months =
+            [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+
+            /*{
+                "followed_at": "2019-09-13T13:07:43Z",
+                "from_id": "20739840",
+                "from_name": "mike_bison",
+                "to_id": "22216721",
+                "to_name": "Zorael"
+            }*/
+
+            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
+            immutable diff = Clock.currTime - when;
+            immutable timeline = diff.timeSince!(No.abbreviate, 7, 3);
+            immutable datestamp = "%s %d"
+                .format(months[cast(int)when.month-1], when.year);
+
+            if (nameSpecified)
+            {
+                enum pattern = "%s has been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern
+                    .format(fromDisplayName, timeline, datestamp));
+            }
+            else
+            {
+                enum pattern = "You have been a follower for %s, since %s.";
+                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
+            }
+
+        }
+
+        assert(idString.length, "Empty idString despite lookup");
+
+        // Identity ascertained; look up in cached list
+
+        import std.json : JSONType;
+
+        auto follows = plugin.activeChannels[event.channel].follows;
+
+        if (follows.type == JSONType.null_)
+        {
+            // Follows have not yet been cached!
+            // This can technically happen, though practically the caching is
+            // done immediately after joining so there should be no time for
+            // !followage queries to sneak in.
+            // Luckily we're inside a Fiber so we can cache it ourselves.
+            follows = plugin.cacheFollows(plugin.activeChannels[event.channel].roomID);
+        }
+
+        if (const thisFollow = idString in follows)
+        {
+            return reportFollowAge(*thisFollow);
+        }
+
+        // If we're here there were no matches.
+
+        if (nameSpecified)
+        {
+            import std.format : format;
+
+            enum pattern = "%s is currently not a follower.";
+            chan(plugin.state, event.channel, pattern.format(fromDisplayName));
+        }
+        else
+        {
+            enum pattern = "You are currently not a follower.";
+            chan(plugin.state, event.channel, pattern);
+        }
+    }
+
+    Fiber fiber = new Fiber(&dg, 32_768);
+    fiber.call();
 }
 
 
@@ -779,16 +969,50 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 /++
  +  Records the room ID of a home channel, and queries the Twitch servers for
  +  the display name of its broadcaster.
- +
- +  See_Also:
- +      kameloso.plugins.twitchbot.apifeatures.onRoomStateImpl
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
 @(ChannelPolicy.home)
 void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    return onRoomStateImpl(plugin, event);
+    import kameloso.plugins.common.delayawait : delay;
+    import std.datetime.systime : Clock, SysTime;
+    import std.json : JSONType, parseJSON;
+
+    auto channel = event.channel in plugin.activeChannels;
+
+    if (!channel)
+    {
+        // Race...
+        plugin.handleSelfjoin(event.channel);
+        channel = event.channel in plugin.activeChannels;
+    }
+
+    channel.roomID = event.aux;
+
+    if (!plugin.useAPIFeatures) return;
+
+    void getDisplayNameDg()
+    {
+        immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
+        const response = queryTwitch(plugin, url, plugin.authorizationBearer);
+
+        const broadcasterJSON = parseUserFromResponse(response.str);
+        channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+    }
+
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
+    getDisplayNameFiber.call();
+
+    // Always cache as soon as possible, before we get any !followage requests
+    void cacheFollowsDg()
+    {
+        channel.follows = plugin.cacheFollows(channel.roomID);
+    }
+
+    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
+    cacheFollowsFiber.call();
 }
 
 
@@ -926,7 +1150,104 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     version(TwitchAPIFeatures)
     {
-        onEndOfMotdImpl(plugin);
+        import std.concurrency : Tid;
+
+        if (!plugin.useAPIFeatures) return;
+
+        // Concatenate the Bearer and OAuth headers once.
+        plugin.authorizationBearer = "Bearer " ~ plugin.state.bot.pass[6..$];
+
+        if (plugin.bucket is null)
+        {
+            plugin.bucket[string.init] = QueryResponse.init;
+            plugin.bucket.remove(string.init);
+        }
+
+        if (plugin.twitchBotSettings.singleWorkerThread &&
+            (plugin.persistentWorkerTid == Tid.init))
+        {
+            import std.concurrency : spawn;
+            plugin.persistentWorkerTid = spawn(&persistentQuerier,
+                plugin.bucket, plugin.queryResponseTimeout,
+                plugin.state.connSettings.caBundleFile);
+        }
+
+        void validationDg()
+        {
+            import kameloso.common : Tint;
+            import std.conv : to;
+            import std.datetime.systime : Clock, SysTime;
+            import core.time : weeks;
+
+            try
+            {
+                /*
+                {
+                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                    "expires_in": 5036421,
+                    "login": "zorael",
+                    "scopes": [
+                        "bits:read",
+                        "channel:moderate",
+                        "channel:read:subscriptions",
+                        "channel_editor",
+                        "chat:edit",
+                        "chat:read",
+                        "user:edit:broadcast",
+                        "whispers:edit",
+                        "whispers:read"
+                    ],
+                    "user_id": "22216721"
+                }
+                */
+
+                const validation = getValidation(plugin);
+                plugin.userID = validation["user_id"].str;
+                immutable expiresIn = validation["expires_in"].integer;
+                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                immutable now = Clock.currTime;
+
+                if ((expiresWhen - now) > 1.weeks)
+                {
+                    // More than a week away, just .info
+                    enum pattern = "Your Twitch authorisation key will expire on " ~
+                        "%s%02d-%02d-%02d";
+
+                    logger.infof(pattern, Tint.log, expiresWhen.year,
+                        expiresWhen.month, expiresWhen.day);
+                }
+                else
+                {
+                    // A week or less; warning
+                    enum pattern = "Warning: Your Twitch authorisation key will expire on " ~
+                        "%s%02d-%02d-%02d %02d:%02d";
+                    logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
+                        expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                }
+            }
+            catch (TwitchQueryException e)
+            {
+                import lu.string : beginsWith;
+
+                // Something is deeply wrong.
+                logger.error("Failed to validate API keys: ", Tint.log, e.error);
+
+                if (e.error.beginsWith("Peer certificate cannot be " ~
+                    "authenticated with given CA certificates"))
+                {
+                    logger.errorf("You may need to supply a CA bundle file " ~
+                        "(e.g. %scacert.pem%s) in the configuration file.",
+                        Tint.log, Tint.error);
+                }
+
+                logger.error("Disabling API features.");
+                version(PrintStacktraces) logger.trace(e.toString);
+                plugin.useAPIFeatures = false;
+            }
+        }
+
+        Fiber validationFiber = new Fiber(&validationDg, 32_768);
+        validationFiber.call();
     }
 }
 
@@ -944,7 +1265,7 @@ version(TwitchAPIFeatures)
 @(IRCEvent.Type.CAP)
 void onCAP(TwitchBotPlugin plugin)
 {
-    return plugin.onCAPImpl();
+    if (plugin.twitchBotSettings.keygen) return plugin.generateKey();
 }
 
 
@@ -1130,12 +1451,11 @@ void periodically(TwitchBotPlugin plugin, const long now)
             foreach (immutable channelName, channel; plugin.activeChannels)
             {
                 if (!channel.enabled) continue;
-
                 channel.follows = plugin.cacheFollows(channel.roomID);
             }
         }
 
-        Fiber cacheFollowsFiber = new Fiber(&dg);
+        Fiber cacheFollowsFiber = new Fiber(&dg, 32_768);
         cacheFollowsFiber.call();
     }
 }
@@ -1275,6 +1595,12 @@ package:
         /// The Twitch application ID for kameloso.
         enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
 
+        /// Authorisation token for the "Authorization: OAuth <token>".
+        //string authorizationOAuth;
+
+        /// Authorisation token for the "Authorization: Bearer <token>".
+        string authorizationBearer;
+
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
 
@@ -1282,7 +1608,7 @@ package:
          +  HTTP headers to pass when querying Twitch servers for information.
          +  `shared` to be able to be shared between threads.
          +/
-        shared string[string] headers;
+        //shared string[string] headers;
 
         /// The bot's numeric account/ID.
         string userID;
@@ -1325,6 +1651,11 @@ package:
          +  affect the actual HTTP request, just how long we wait for it to arrive.
          +/
         enum queryResponseTimeout = 15;
+
+        /++
+         +  How big a buffer to preallocate when doing HTTP API queries.
+         +/
+        enum queryBufferSize = 4096;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;

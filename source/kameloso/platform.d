@@ -71,29 +71,15 @@ auto currentPlatform()
 }
 
 
-/+
-    Version identifier that catches non-OSX Posix platforms.
-    We need it to version code for freedesktop.org-aware environments.
- +/
-version(linux)
-{
-    version = XDG;
-}
-else version(FreeBSD)
-{
-    version = XDG;
-}
-
-
 // configurationBaseDirectory
 /++
  +  Divines the default configuration file base directory, depending on what
  +  platform we're currently running.
  +
- +  On Linux it defaults to `$XDG_CONFIG_HOME` and falls back to
+ +  On non-macOS Posix it defaults to `$XDG_CONFIG_HOME` and falls back to
  +  `~/.config` if no `$XDG_CONFIG_HOME` environment variable present.
  +
- +  On OSX it defaults to `$HOME/Library/Application Support`.
+ +  On macOS it defaults to `$HOME/Library/Application Support`.
  +
  +  On Windows it defaults to `%APPDATA%`.
  +
@@ -104,17 +90,19 @@ auto configurationBaseDirectory()
 {
     import std.process : environment;
 
-    version(XDG)
-    {
-        import std.path : expandTilde;
-        enum defaultDir = "~/.config";
-        return environment.get("XDG_CONFIG_HOME", defaultDir).expandTilde;
-    }
-    else version(OSX)
+    version(OSX)
     {
         import std.path : buildNormalizedPath;
         return buildNormalizedPath(environment["HOME"], "Library",
             "Application Support");
+    }
+    else version(Posix)
+    {
+        import std.path : expandTilde;
+
+        // Assume XDG
+        enum defaultDir = "~/.config";
+        return environment.get("XDG_CONFIG_HOME", defaultDir).expandTilde;
     }
     else version(Windows)
     {
@@ -136,7 +124,11 @@ unittest
 
     immutable cfgd = configurationBaseDirectory;
 
-    version(XDG)
+    version(OSX)
+    {
+        assert(cfgd.endsWith("Library/Application Support"), cfgd);
+    }
+    else version(Posix)
     {
         import std.process : environment;
 
@@ -147,10 +139,6 @@ unittest
         environment.remove("XDG_CONFIG_HOME");
         immutable cfgdWithout = configurationBaseDirectory;
         assert(cfgdWithout.endsWith("/.config"), cfgdWithout);
-    }
-    else version(OSX)
-    {
-        assert(cfgd.endsWith("Library/Application Support"), cfgd);
     }
     else version(Windows)
     {
@@ -164,10 +152,10 @@ unittest
  +  Divines the default resource base directory, depending on what platform
  +  we're currently running.
  +
- +  On Posix it defaults to `$XDG_DATA_HOME` and falls back to
+ +  On non-macOS Posix it defaults to `$XDG_DATA_HOME` and falls back to
  +  `~/.local/share` if no `XDG_DATA_HOME` environment variable present.
  +
- +  On OSX it defaults to `$HOME/Library/Application Support`.
+ +  On macOS it defaults to `$HOME/Library/Application Support`.
  +
  +  On Windows it defaults to `%APPDATA%`.
  +
@@ -178,17 +166,17 @@ auto resourceBaseDirectory()
 {
     import std.process : environment;
 
-    version(XDG)
-    {
-        import std.path : expandTilde;
-        enum defaultDir = "~/.local/share";
-        return environment.get("XDG_DATA_HOME", defaultDir).expandTilde;
-    }
-    else version(OSX)
+    version(OSX)
     {
         import std.path : buildNormalizedPath;
         return buildNormalizedPath(environment["HOME"], "Library",
             "Application Support");
+    }
+    else version(Posix)
+    {
+        import std.path : expandTilde;
+        enum defaultDir = "~/.local/share";
+        return environment.get("XDG_DATA_HOME", defaultDir).expandTilde;
     }
     else version(Windows)
     {
@@ -208,7 +196,12 @@ unittest
 {
     import std.algorithm.searching : endsWith;
 
-    version(XDG)
+    version(OSX)
+    {
+        immutable rbd = resourceBaseDirectory;
+        assert(rbd.endsWith("Library/Application Support"), rbd);
+    }
+    else version(Posix)
     {
         import lu.string : beginsWith;
         import std.process : environment;
@@ -220,11 +213,6 @@ unittest
         environment.remove("XDG_DATA_HOME");
         rbd = resourceBaseDirectory;
         assert(rbd.beginsWith("/home/") && rbd.endsWith("/.local/share"));
-    }
-    else version(OSX)
-    {
-        immutable rbd = resourceBaseDirectory;
-        assert(rbd.endsWith("Library/Application Support"), rbd);
     }
     else version(Windows)
     {

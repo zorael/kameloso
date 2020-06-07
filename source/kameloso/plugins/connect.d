@@ -362,7 +362,7 @@ void tryAuth(ConnectService service)
  +/
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
-    import kameloso.plugins.common : delay;
+    import kameloso.plugins.common.delayawait : delay;
     import core.thread : Fiber;
 
     enum secsBetweenRegistrationFinishedChecks = 5;
@@ -387,8 +387,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber fiber = new Fiber(&dg, 32_768);
-    delay(service, fiber, service.authenticationGracePeriod);
+    delay(service, &dg, service.authenticationGracePeriod);
 }
 
 
@@ -587,9 +586,12 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
     case "Improperly formatted auth":
         import lu.string : beginsWith;
 
-        immutable message = !service.state.bot.pass.beginsWith("oauth:") ?
-            `Client pass is malformed; does not start with "oauth:"` :
-            "Client pass is malformed; cannot authenticate. Make sure it is entered correctly.";
+        immutable message = !service.state.bot.pass.length ?
+            "You *need* a pass to join this server." :
+            (!service.state.bot.pass.beginsWith("oauth:") ?
+                `Client pass is malformed; does not start with "oauth:"` :
+                "Client pass is malformed; cannot authenticate. " ~
+                    "Make sure it is entered correctly.");
 
         logger.error(message);
         break;
@@ -756,7 +758,15 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!service.connectSettings.sasl || !service.state.bot.password.length) continue;
+                if (!service.connectSettings.sasl ||
+                    (!service.state.bot.password.length &&
+                    (service.state.connSettings.ssl &&
+                    (!service.state.connSettings.privateKeyFile.length &&
+                    !service.state.connSettings.certFile.length))))
+                {
+                    continue;
+                }
+
                 raw(service.state, "CAP REQ :sasl", Yes.quiet);
                 tryingSASL = true;
                 break;
@@ -825,7 +835,12 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         switch (content)
         {
         case "sasl":
-            raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+            immutable mechanism = (service.state.connSettings.ssl &&
+                (service.state.connSettings.privateKeyFile.length ||
+                service.state.connSettings.certFile.length)) ?
+                    "AUTHENTICATE EXTERNAL" :
+                    "AUTHENTICATE PLAIN";
+            raw(service.state, mechanism, Yes.quiet);
             break;
 
         default:
@@ -838,6 +853,12 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         switch (content)
         {
         case "sasl":
+            if (service.connectSettings.exitOnSASLFailure)
+            {
+                quit(service.state, "SASL Negotiation Failure");
+                return;
+            }
+
             // SASL refused, safe to end handshake? Too early?
             // Consider making this a Fiber that triggers after say, 5 seconds
             // That should give other CAPs time to process
@@ -866,6 +887,37 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 
 // onSASLAuthenticate
 /++
+ +  Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
+ +  key and/or certificate is set in the configuration file, and by PLAIN otherwise.
+ +/
+@(IRCEvent.Type.SASL_AUTHENTICATE)
+void onSASLAuthenticate(ConnectService service)
+{
+    import lu.string : beginsWith, decode64, encode64;
+    import std.base64 : Base64Exception;
+
+    service.authentication = Progress.started;
+
+    if (service.state.connSettings.ssl &&
+        (service.state.connSettings.privateKeyFile.length ||
+        service.state.connSettings.certFile.length) &&
+        (service.saslExternal == Progress.notStarted))
+    {
+        service.saslExternal = Progress.started;
+        raw(service.state, "AUTHENTICATE +");
+        return;
+    }
+
+    immutable plainSuccess = trySASLPlain(service);
+    if (!plainSuccess) return service.onSASLFailure();
+
+    // If we're still authenticating after n seconds, abort and join channels.
+    delayJoinsAfterFailedAuth(service);
+}
+
+
+// trySASLPlain
+/++
  +  Constructs a SASL plain authentication token from the bot's
  +  `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
  +  then sends it to the server, during registration.
@@ -876,39 +928,37 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
  +
  +  ...where `dialect.defs.IRCbot.account` is the services account name and
  +  `dialect.defs.IRCbot.password` is the account password.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
  +/
-@(IRCEvent.Type.SASL_AUTHENTICATE)
-void onSASLAuthenticate(ConnectService service)
+bool trySASLPlain(ConnectService service)
 {
-    with (service.state.client)
-    with (service.state.bot)
+    import lu.string : beginsWith, decode64, encode64;
+    import std.base64 : Base64Exception;
+
+    try
     {
-        import lu.string : beginsWith, decode64, encode64;
-        import std.base64 : Base64Exception;
+        immutable account_ = service.state.bot.account.length ?
+            service.state.bot.account :
+            service.state.client.origNickname;
 
-        service.authentication = Progress.started;
+        immutable password_ = service.state.bot.password.beginsWith("base64:") ?
+            decode64(service.state.bot.password[7..$]) :
+            service.state.bot.password;
 
-        try
-        {
-            immutable account_ = account.length ? account : origNickname;
-            immutable password_ = password.beginsWith("base64:") ?
-                decode64(password[7..$]) :
-                password;
-            immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
-            immutable encoded = encode64(authToken);
+        immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
+        immutable encoded = encode64(authToken);
 
-            raw(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
-            if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
-        }
-        catch (Base64Exception e)
-        {
-            logger.error("Could not authenticate: malformed password");
-            version(PrintStacktraces) logger.trace(e.info);
-            return service.onSASLFailure();
-        }
-
-        // If we're still authenticating after n seconds, abort and join channels.
-        delayJoinsAfterFailedAuth(service);
+        raw(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
+        if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+        return true;
+    }
+    catch (Base64Exception e)
+    {
+        logger.error("Could not authenticate: malformed password");
+        version(PrintStacktraces) logger.trace(e.info);
+        return false;
     }
 }
 
@@ -957,6 +1007,14 @@ void onSASLSuccess(ConnectService service)
 @(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure(ConnectService service)
 {
+    if ((service.saslExternal == Progress.started) && service.state.bot.password.length)
+    {
+        // Fall back to PLAIN
+        service.saslExternal = Progress.finished;
+        raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+        return;
+    }
+
     if (service.connectSettings.exitOnSASLFailure)
     {
         quit(service.state, "SASL Negotiation Failure");
@@ -1092,17 +1150,6 @@ void register(ConnectService service)
 
     with (service.state)
     {
-        version(TwitchSupport)
-        {
-            if (!bot.pass.length && server.address.endsWith(".twitch.tv"))
-            {
-                // server.daemon is always Daemon.unset at this point
-                logger.error("You *need* a pass to join this server.");
-                quit(service.state, "Authentication failure (missing pass)");
-                return;
-            }
-        }
-
         service.registration = Progress.started;
         raw(service.state, "CAP LS 302", Yes.quiet);
 
@@ -1126,26 +1173,26 @@ void register(ConnectService service)
 
                 void dg()
                 {
-                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                    assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-                    assert((thisFiber.payload.type == IRCEvent.Type.CAP),
-                        "Twitch nick negotiation delegate triggered on unknown type");
+                    while (true)
+                    {
+                        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+                        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+                        assert((thisFiber.payload.type == IRCEvent.Type.CAP),
+                            "Twitch nick negotiation delegate triggered on unknown type");
 
-                    if ((thisFiber.payload.aux == "ACK") &&
-                        (thisFiber.payload.content == "twitch.tv/tags"))
-                    {
-                        // tag capabilities negotiated, safe to register
-                        service.negotiateNick();
-                    }
-                    else
-                    {
+                        if ((thisFiber.payload.aux == "ACK") &&
+                            (thisFiber.payload.content == "twitch.tv/tags"))
+                        {
+                            // tag capabilities negotiated, safe to register
+                            return service.negotiateNick();
+                        }
+
                         // Wrong kind of CAP event; yield and retry.
                         Fiber.yield();
-                        return dg();
                     }
                 }
 
-                import kameloso.plugins.common : await;
+                import kameloso.plugins.common.delayawait : await;
 
                 Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
                 await(service, fiber, IRCEvent.Type.CAP);
@@ -1167,10 +1214,8 @@ void register(ConnectService service)
             }
         }
 
-        import kameloso.plugins.common : delay;
-
-        Fiber fiber = new Fiber(&dgTimered, 32_768);
-        delay(service, fiber, secsToWaitForCAP);
+        import kameloso.plugins.common.delayawait : delay;
+        delay(service, &dgTimered, secsToWaitForCAP);
     }
 }
 
@@ -1184,6 +1229,7 @@ void negotiateNick(ConnectService service)
     if ((service.registration == Progress.finished) ||
         (service.nickNegotiation != Progress.notStarted)) return;
 
+    import kameloso.common : replaceTokens;
     import std.algorithm.searching : endsWith;
     import std.format : format;
 
@@ -1214,7 +1260,7 @@ void negotiateNick(ConnectService service)
                 s - marks a user for receipt of server notices.
          +/
         raw(service.state, "USER %s 8 * :%s".format(service.state.client.user,
-            service.state.client.realName));
+            service.state.client.realName.replaceTokens(service.state.client)));
     }
 
     raw(service.state, "NICK " ~ service.state.client.nickname);
@@ -1296,6 +1342,9 @@ private:
 
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
+
+    /// At what step we're currently at with regards to SASL EXTERNAL authentication.
+    Progress saslExternal;
 
     /// At what step we're currently at with regards to registration.
     Progress registration;

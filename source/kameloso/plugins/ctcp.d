@@ -36,6 +36,9 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.CTCP_PING)
 @(IRCEvent.Type.CTCP_TIME)
 @(IRCEvent.Type.CTCP_USERINFO)
+@(IRCEvent.Type.CTCP_DCC)
+@(IRCEvent.Type.CTCP_AVATAR)
+@(IRCEvent.Type.CTCP_LAG)
 void onCTCPs(CTCPService service, const IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
@@ -146,7 +149,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             Query:     USERINFO
             Response:  USERINFO fred (Fred Foobar)
          */
-        line = "USERINFO %s (%s)".format(client.nickname, client.user);
+        line = "USERINFO %s (%s)".format(client.nickname, client.realName);
         break;
 
     case CTCP_DCC:

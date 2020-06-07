@@ -78,7 +78,6 @@ void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to send a channel message but no channel was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -159,7 +158,6 @@ void query(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (nickname.length, "Tried to send a private query but no nickname was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -220,7 +218,6 @@ void privmsg(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -292,7 +289,6 @@ void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -372,7 +368,6 @@ void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -430,7 +425,6 @@ void topic(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a topic but no channel was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -487,7 +481,6 @@ void invite(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -543,7 +536,6 @@ void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to join a channel but no channel was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -600,7 +592,6 @@ void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -658,7 +649,6 @@ void part(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to part a channel but no channel was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -761,7 +751,6 @@ void whois(Flag!"priority" priority = No.priority)(IRCPluginState state, const s
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
-do
 {
     static if (priority) import std.concurrency : send = prioritySend;
 

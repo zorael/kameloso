@@ -211,7 +211,7 @@ in (account.length, "Tried to apply automodes to an empty account")
         }
         else
         {
-            // No one has this mode, which by implication means the user doen't either
+            // No one has this mode, which by implication means the user doesn't either
             missingModes ~= mode;
         }
     }
@@ -220,10 +220,9 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        logger.log("Could not apply this automode because we are not an operator in the channel:");
-        logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
-            Tint.info, channel.name, Tint.log, missingModes, nickname);
-
+        logger.logf("Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
+            "because we are not an operator in the channel.",
+            Tint.info, missingModes, Tint.log, nickname, channelName);
         return;
     }
 
@@ -382,7 +381,7 @@ void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname
     const string channelName, const string mode = string.init)
 in ((!add || mode.length), "Tried to add an empty automode")
 {
-    import kameloso.plugins.common : WHOISFiberDelegate;
+    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
     void onSuccess(const string id)
     {

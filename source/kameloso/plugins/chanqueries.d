@@ -20,10 +20,15 @@ private:
 
 import kameloso.plugins.core;
 import kameloso.plugins.common;
+import kameloso.plugins.common.delayawait;
 import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;
 
+/++
+ +  The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with  depending
+ +  on whether version `OmniscientQueries` is set or not.
+ +/
 version(OmniscientQueries)
 {
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -284,7 +289,7 @@ void startChannelQueries(ChanQueriesService service)
                     }
                     else
                     {
-                        // Someting else caused a WHOIS; yield until the right one comes along
+                        // Something else caused a WHOIS; yield until the right one comes along
                         Fiber.yield();
                         continue;
                     }
@@ -418,8 +423,7 @@ void onEndOfMotd(ChanQueriesService service)
         service.startChannelQueries();
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
-    delay(service, fiber, service.secondsBeforeInitialQueries);
+    delay(service, &dg, service.secondsBeforeInitialQueries);
 }
 
 

@@ -13,7 +13,7 @@ public:
 
     Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
  +/
-static if (__VERSION__ <= 2088L)
+static if (__VERSION__ <= 2092L)
 {
     debug
     {

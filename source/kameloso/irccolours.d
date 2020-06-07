@@ -72,13 +72,10 @@ void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour 
     const IRCColour bg = IRCColour.unset)
 if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
-do
 {
     import lu.conv : toAlphaInto;
     import std.conv : to;
     import std.format : formattedWrite;
-
-    static if (!__traits(hasMember, Sink, "put")) import std.range.primitives : put;
 
     assert((fg != IRCColour.unset), "Tried to IRC colour with an unset colour");
 
@@ -131,13 +128,12 @@ unittest
  +/
 string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
-do
 {
     if (!line.length) return string.init;
 
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
     line.ircColourInto(sink, fg, bg);
@@ -246,7 +242,6 @@ unittest
  +/
 string ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
-do
 {
     if (!word.length) return string.init;
 
@@ -295,7 +290,6 @@ unittest
  +/
 string ircBold(const string word) pure nothrow
 in (word.length, "Tried to apply IRC bold to a string but no string was given")
-do
 {
     return IRCControlCharacter.bold ~ word ~ IRCControlCharacter.bold;
 }
@@ -323,7 +317,6 @@ unittest
  +/
 string ircItalics(const string word) pure nothrow
 in (word.length, "Tried to apply IRC italics to a string but no string was given")
-do
 {
     return IRCControlCharacter.italics ~ word ~ IRCControlCharacter.italics;
 }
@@ -351,7 +344,6 @@ unittest
  +/
 string ircUnderlined(const string word) pure nothrow
 in (word.length, "Tried to apply IRC underlined to a string but no string was given")
-do
 {
     return IRCControlCharacter.underlined ~ word ~ IRCControlCharacter.underlined;
 }
@@ -683,7 +675,7 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
 
     immutable tail = slice;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(line.length + segments.length * 8);
 
     static if (strip)

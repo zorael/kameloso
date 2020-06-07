@@ -13,7 +13,7 @@ install_deps() {
     # fingerprint 0xEBCF975E5BA24D5E
     sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
     sudo apt update
-    sudo apt install -y --allow-unauthenticated dmd-compiler dub
+    sudo apt install -y --allow-unauthenticated dmd-compiler dub libcurl4-openssl-dev
 
     #git clone https://github.com/zorael/lu.git
     #git clone https://github.com/zorael/dialect.git
@@ -36,13 +36,8 @@ build() {
     time dub test $A $C $S
     S="$S --nodeps --force"
 
-    time dub test $A $C $S -c vanilla
-
 
     ## debug
-    time dub build $A $C $S -b debug -c vanilla
-    #mv kameloso artifacts/kameloso-vanilla
-
     time dub build $A $C $S -b debug -c twitch
     mv kameloso artifacts/kameloso
 
@@ -51,11 +46,7 @@ build() {
 
 
     ## plain
-    time dub build $A $C $S -b plain -c vanilla || true
-    #mv kameloso artifacts/kameloso-plain-vanilla || \
-    #    touch artifacts/kameloso-plain-vanilla.failed
-
-    time dub build $A $C $S -b plain -c twitch || true
+    #time dub build $A $C $S -b plain -c twitch || true
     #mv kameloso artifacts/kameloso-plain || \
     #    touch artifacts/kameloso-plain.failed
 
@@ -65,10 +56,6 @@ build() {
 
 
     ## release
-    time dub build $A $C $S -b release -c vanilla || true
-    #mv kameloso artifacts/kameloso-release-vanilla || \
-    #    touch artifacts/kameloso-release-vanilla.failed
-
     time dub build $A $C $S -b release -c twitch || true
     mv kameloso artifacts/kameloso-release || \
         touch artifacts/kameloso-release.failed

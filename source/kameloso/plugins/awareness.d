@@ -164,7 +164,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
  +/
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common : Repeater, catchUser;
+    import kameloso.plugins.common : catchUser;
+    import kameloso.plugins.common.mixins : Repeater;
 
     // Catch the user here, before replaying anything.
     plugin.catchUser(event.target);
@@ -217,7 +218,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent e
  +/
 void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common : Repeater;
+    import kameloso.plugins.common.mixins : Repeater;
 
     if (event.aux != "WHOIS") return;
 
@@ -383,20 +384,16 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     void onUserAwarenessPingMixin(IRCPlugin plugin) @system
     {
         return kameloso.plugins.awareness.onUserAwarenessPing(plugin,
-            mixin(pingRehashVariableName));
+            _kamelosoNextPingRehashTimestamp);
     }
 
 
-    import std.conv : text;
-
+    // _kamelosoNextPingRehashTimestamp
     /++
      +  UNIX timestamp of when the `IRCPluginState.users` array is next to be
      +  rehashed in `onUserAwarenessPingMixin`.
-     +
-     +  Randomise the name to avoid any collisions, however far-fetched.
      +/
-    private enum pingRehashVariableName = text("_kamelosoNextPingRehashTimestamp", hashOf(module_) % 100);
-    mixin("long " ~ pingRehashVariableName ~ ';');
+    long _kamelosoNextPingRehashTimestamp;
 }
 
 
@@ -1344,7 +1341,6 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.TWITCH_EXTENDSUB)
     @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     @(IRCEvent.Type.TWITCH_PAYFORWARD)
-    @(IRCEvent.Type.TWITCH_SKIPSUBSMODEMESSAGE)
     @(IRCEvent.Type.CLEARMSG)
     @channelPolicy
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const IRCEvent event)

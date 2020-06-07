@@ -59,8 +59,15 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
     @Enabler bool enabled = true;
 
     /++
+     +  How many lines back a sed-replacement call may reach. If this is 3, then
+     +  the last 3 messages will be taken into account and examined for
+     +  applicability when replacing.
+     +/
+    int history = 3;
+
+    /++
      +  Toggles whether or not replacement expressions have to properly end with
-     +  the delimeter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
+     +  the delimiter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
      +/
     bool relaxSyntax = true;
 }
@@ -94,9 +101,9 @@ struct Line
  +  ---
  +
  +  Params:
- +      originalLine = Line to apply the `sed`-replace pattern to.
- +      expression = Replacement pattern to apply.
- +      relaxSyntax = Whether or not to require the expression to end with the delimeter.
+ +      line = Line to apply the `sed`-replace pattern to.
+ +      expr = Replacement pattern to apply.
+ +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
  +
  +  Returns:
  +      Original line with the changes the replace pattern incurred.
@@ -106,9 +113,9 @@ string sedReplace(const string line, const string expr,
 {
     if (expr.length < 5) return line;
 
-    immutable delimeter = expr[1];
+    immutable delimiter = expr[1];
 
-    switch (delimeter)
+    switch (delimiter)
     {
     foreach (immutable c; DelimiterCharacters)
     {
@@ -201,7 +208,7 @@ unittest
  +      char_ = Deliminator character, usually '/'.
  +      line = Original line to apply the replacement expression to.
  +      expr = Replacement expression to apply.
- +      relaxSyntax = Whether or not to require the expression to end with the delimeter.
+ +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
  +
  +  Returns:
  +      The passed line with the relevant bits replaced, or as is if the expression
@@ -271,12 +278,12 @@ string sedReplaceImpl(char char_)(const string line, const string expr,
     {
         if ((endDelimPos == -1) || (endDelimPos+1 == slice.length))
         {
-            // Either there were no more delimeters or there was one at the very end
+            // Either there were no more delimiters or there was one at the very end
             // Syntax is relaxed; continue
         }
         else
         {
-            // Found extra delimeters, expression is malformed; abort
+            // Found extra delimiters, expression is malformed; abort
             return line;
         }
     }
@@ -284,7 +291,7 @@ string sedReplaceImpl(char char_)(const string line, const string expr,
     {
         if ((endDelimPos == -1) || (endDelimPos+1 != slice.length))
         {
-            // Either there were no more delimeters or one was found before the end
+            // Either there were no more delimiters or one was found before the end
             // Syntax is strict; abort
             return line;
         }
@@ -376,14 +383,30 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         Line line;
         line.content = string_;
         line.timestamp = time;
-        plugin.prevlines[sender] = line;
+
+        auto senderLines = sender in plugin.prevlines;
+
+        if (!senderLines)
+        {
+            plugin.prevlines[sender] = Line[].init;
+            senderLines = sender in plugin.prevlines;
+            senderLines.length = plugin.sedReplaceSettings.history;
+        }
+
+        foreach_reverse (immutable i; 1..plugin.sedReplaceSettings.history)
+        {
+            (*senderLines)[i] = (*senderLines)[i-1];
+        }
+
+        (*senderLines)[0] = line;
     }
 
     if (stripped_.beginsWith('s') && (stripped_.length >= 5))
     {
-        immutable delimeter = stripped_[1];
+        immutable delimiter = stripped_[1];
 
-        switch (delimeter)
+        delimiterswitch:
+        switch (delimiter)
         {
         case '/':
         case '|':
@@ -392,40 +415,66 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case ' ':
         case '_':
         case ';':
-            if (const line = event.sender.nickname in plugin.prevlines)
+            if (auto senderLines = event.sender.nickname in plugin.prevlines)
             {
-                if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
+                foreach (immutable line; (*senderLines)[])
                 {
-                    // Entry is too old, remove it
-                    plugin.prevlines.remove(event.sender.nickname);
-                    return;
+                    if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
+                    {
+                        // Entry is too old, any further entries will be even older
+                        break delimiterswitch;
+                    }
+
+                    immutable result = line.content.sedReplace(event.content,
+                        (plugin.sedReplaceSettings.relaxSyntax ? Yes.relaxSyntax : No.relaxSyntax));
+
+                    if ((result == line.content) || !result.length) continue;
+
+                    import kameloso.messaging : chan;
+                    import std.format : format;
+
+                    chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
+                    // Record as last even if there are more lines
+                    return recordLineAsLast(plugin, event.sender.nickname, result, event.time);
                 }
-
-                immutable result = line.content.sedReplace(event.content,
-                    (plugin.sedReplaceSettings.relaxSyntax ? Yes.relaxSyntax : No.relaxSyntax));
-
-                if ((result == event.content) || !result.length) return;
-
-                import kameloso.messaging : chan;
-                import std.format : format;
-
-                chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
-                recordLineAsLast(plugin, event.sender.nickname, result, event.time);
+                break;
+            }
+            else
+            {
+                // No lines to replace; don't record this as a line
+                return;
             }
 
-            // Processed a sed-replace command (successfully or not); return
-            return;
-
         default:
-            // Drop down
+            // Drop down to record line
             break;
         }
     }
 
-    // We're either here because !stripped_.beginsWith("s") *or* stripped_[1]
-    // is not '/', '|' nor '#'
-    // --> normal message, store as previous line
     recordLineAsLast(plugin, event.sender.nickname, stripped_, event.time);
+}
+
+
+// onQuit
+/++
+ +  Removes the records of previous messages from a user when they quit.
+ +/
+void onQuit(SedReplacePlugin plugin, const IRCEvent event)
+{
+    plugin.prevlines.remove(event.sender.nickname);
+}
+
+
+// periodically
+/++
+ +  Clears the lists of previous messages from users once every hour.
+ +
+ +  This is to prevent it from becoming huge.
+ +/
+void periodically(SedReplacePlugin plugin, const long now)
+{
+    plugin.prevlines = typeof(plugin.prevlines).init;
+    plugin.state.nextPeriodical = now + (plugin.hoursBetweenPurges * 3600);
 }
 
 
@@ -449,11 +498,14 @@ private:
     /// Lifetime of a `Line` in `SedReplacePlugin.prevlines`, in seconds.
     enum replaceTimeoutSeconds = 3600;
 
+    /// How often to purge the `prevlines` list of messages.
+    enum hoursBetweenPurges = 1;
+
     /++
      +  A `Line[string]` 1-buffer of the previous line every user said, with
      +  with nickname as key.
      +/
-    Line[string] prevlines;
+    Line[][string] prevlines;
 
     mixin IRCPluginImpl;
 }

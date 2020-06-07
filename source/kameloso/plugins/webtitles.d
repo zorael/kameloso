@@ -21,7 +21,6 @@ import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import requests : Request;
 import std.concurrency;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -35,9 +34,6 @@ import std.typecons : Flag, No, Yes;
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
-
-    /// Toggles whether YouTube lookups should be done for pasted URLs.
-    bool youtubeLookup = true;
 }
 
 
@@ -129,7 +125,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
     import kameloso.common : Tint, logger;
     import lu.string : beginsWith, contains, nom;
 
-    bool[string] duplicates;
+    bool[string] uniques;
 
     foreach (immutable i, url; urls)
     {
@@ -143,9 +139,9 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
             url = url[0..$-1];
         }
 
-        if (url in duplicates) continue;
+        if (url in uniques) continue;
 
-        duplicates[url] = true;
+        uniques[url] = true;
 
         logger.info("Caught URL: ", Tint.log, url);
 
@@ -186,8 +182,8 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
             continue;
         }
 
-        spawn(&worker, cast(shared)request, plugin.cache, (i * plugin.delayMsecs),
-            plugin.webtitlesSettings, cast(shared)plugin.headers, colouredFlag);
+        spawn(&worker, cast(shared)request, plugin.cache,
+            (i * plugin.delayMsecs), colouredFlag);
     }
 }
 
@@ -206,14 +202,15 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
  +      cache = Shared cache of previous `TitleLookupRequest`s.
  +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
  +          parallel lookups without bursting all of them at once.
- +      webtitlesSettings = Copy of the plugin's settings.
- +      headers = HTTP headers to use when looking up the URL.
  +      colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const WebtitlesSettings webtitlesSettings,
-    shared string[string] headers, const Flag!"colouredOutgoing" colouredOutgoing)
+    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredOutgoing)
 {
+    import lu.string : beginsWith, contains, nom;
+    import std.datetime.systime : Clock;
+    import std.typecons : No, Yes;
+
     version(Posix)
     {
         import kameloso.thread : setThreadName;
@@ -232,85 +229,77 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         Yes.colouredOutgoing :
         No.colouredOutgoing;
 
-    try
+    immutable now = Clock.currTime.toUnixTime;
+
+    if (request.url.contains("://i.imgur.com/"))
     {
-        import lu.string : beginsWith, contains, nom;
-        import std.datetime.systime : Clock;
-        import std.typecons : No, Yes;
+        // imgur direct links naturally have no titles, but the normal pages do.
+        // Rewrite and look those up instead.
+        request.url = rewriteDirectImgurURL(request.url);
+    }
+    else if (request.url.contains("youtube.com/watch?v=") ||
+        request.url.contains("youtu.be/"))
+    {
+        // Do our own slicing instead of using regexes, because footprint.
+        string slice = request.url;
 
-        immutable now = Clock.currTime.toUnixTime;
+        slice.nom!(Yes.decode)("http");
+        if (slice[0] == 's') slice = slice[1..$];
+        slice = slice[3..$];  // ://
 
-        if (request.url.contains("://i.imgur.com/"))
+        if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
+
+        if (slice.beginsWith("youtube.com/watch?v=") ||
+            slice.beginsWith("youtu.be/"))
         {
-            // imgur direct links naturally have no titles, but the normal pages do.
-            // Rewrite and look those up instead.
-            request.url = rewriteDirectImgurURL(request.url);
-        }
-        else if (webtitlesSettings.youtubeLookup &&
-            (request.url.contains("youtube.com/watch?v=") ||
-            request.url.contains("youtu.be/")))
-        {
-            // Do our own slicing instead of using regexes, because footprint.
-            string slice = request.url;
+            import std.json : JSONException;
 
-            slice.nom!(Yes.decode)("http");
-            if (slice[0] == 's') slice = slice[1..$];
-            slice = slice[3..$];  // ://
-
-            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
-
-            if (slice.beginsWith("youtube.com/watch?v=") ||
-                slice.beginsWith("youtu.be/"))
+            try
             {
-                import std.json : JSONException;
+                immutable info = getYouTubeInfo(request.url);
 
-                try
+                // Let's assume all YouTube clips have titles and authors
+                // Should we decode the author too?
+                request.results.youtubeTitle = decodeTitle(info["title"].str);
+                request.results.youtubeAuthor = info["author_name"].str;
+
+                reportYouTubeTitle(request, colouredFlag);
+
+                request.results.when = now;
+
+                synchronized //()
                 {
-                    immutable info = getYouTubeInfo(request.url);
-
-                    // Let's assume all YouTube clips have titles and authors
-                    // Should we decode the author too?
-                    request.results.youtubeTitle = decodeTitle(info["title"].str);
-                    request.results.youtubeAuthor = info["author_name"].str;
-
-                    reportYouTubeTitle(request, colouredFlag);
-
-                    request.results.when = now;
-
-                    synchronized //()
-                    {
-                        cache[request.url] = cast(shared)request.results;
-                    }
-                    return;
+                    cache[request.url] = cast(shared)request.results;
                 }
-                catch (JSONException e)
-                {
-                    request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
-                    //version(PrintStacktraces) request.state.askToTrace(e.info);
-                    // Drop down
-                }
-                catch (Exception e)
-                {
-                    request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
-                    version(PrintStacktraces) request.state.askToTrace(e.toString);
-                    // Drop down
-                }
+                return;
             }
-            else
+            catch (JSONException e)
             {
-                // Unsure what this is really. Drop down and treat like normal link
+                request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
+                //version(PrintStacktraces) request.state.askToTrace(e.info);
+                // Drop down
+            }
+            catch (Exception e)
+            {
+                request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
+                version(PrintStacktraces) request.state.askToTrace(e.toString);
+                // Drop down
             }
         }
+        else
+        {
+            // Unsure what this is really. Drop down and treat like normal link
+        }
+    }
 
+    void tryLookup(const bool firstTime = true)
+    {
         import core.exception : UnicodeException;
+        import std.net.curl : CurlException;
 
-        void lookupAndReport()
+        try
         {
-            import lu.traits : UnqualArray;
-
-            alias UT = UnqualArray!(typeof(headers));
-
-            request.results = lookupTitle(request.url, cast(UT)headers);
+            request.results = lookupTitle(request.url);
             reportTitle(request, colouredFlag);
             request.results.when = now;
 
@@ -319,10 +308,10 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 cache[request.url] = cast(shared)request.results;
             }
         }
-
-        try
+        catch (CurlException e)
         {
-            lookupAndReport();
+            request.state.askToError("Webtitles worker cURL exception: " ~ e.msg);
+            //version(PrintStacktraces) request.state.askToTrace(e.info);
         }
         catch (UnicodeException e)
         {
@@ -334,6 +323,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         {
             request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
             //version(PrintStacktraces) request.state.askToTrace(e.info);
+
+            if (!firstTime) return;
+
             request.state.askToLog("Rewriting URL and retrying ...");
 
             if (request.url[$-1] == '/')
@@ -345,36 +337,11 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
                 request.url ~= '/';
             }
 
-            lookupAndReport();
+            tryLookup(false);
         }
     }
-    catch (Exception e)
-    {
-        request.state.askToError("Webtitles worker exception: " ~ e.msg);
-        version(PrintStacktraces) request.state.askToTrace(e.toString);
-    }
-}
 
-
-// requestHeaders
-/++
- +  Produces HTTP request headers to use with a `requests.request.Request` to better reflect our
- +  behaviour of only downloading text files.
- +
- +  Returns:
- +      A `string[string]` associative array of HTTP headers.
- +/
-string[string] requestHeaders()
-{
-    import kameloso.constants : KamelosoInfo;
-
-    auto headers =
-    [
-        "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-        "Accept" : "text/html",
-    ];
-
-    return headers;
+    tryLookup();
 }
 
 
@@ -384,7 +351,6 @@ string[string] requestHeaders()
  +
  +  Params:
  +      url = URL string to look up.
- +      headers = HTTP headers to use when looking up `url`.
  +
  +  Returns:
  +      A finished `TitleLookupResults`.
@@ -392,56 +358,55 @@ string[string] requestHeaders()
  +  Throws: `object.Exception` if URL could not be fetched, or if no title could be
  +      divined from it.
  +/
-TitleLookupResults lookupTitle(const string url, const string[string] headers)
+TitleLookupResults lookupTitle(const string url)
 {
-    import kameloso.constants : BufferSize;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import lu.string : beginsWith, contains, nom;
     import arsd.dom : Document;
     import std.array : Appender;
-    import std.conv : to;
+    import std.exception : assumeUnique;
+    import std.net.curl : HTTP;
+    import core.time : seconds;
 
-    Request req;
-    req.useStreaming = true;
-    req.keepAlive = false;
-    req.bufferSize = BufferSize.titleLookup;
-    req.addHeaders(headers);
-
-    auto res = req.get(url);
-
-    if (res.code >= 400)
-    {
-        import std.conv : text;
-        throw new Exception(res.code.text ~ " fetching URL " ~ url);
-    }
+    auto client = HTTP(url);
+    client.operationTimeout = Timeout.httpGET.seconds;
+    client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+    client.addRequestHeader("Accept", "text/html");
 
     Document doc = new Document;
-    Appender!dstring sink;
-    sink.reserve(BufferSize.titleLookup);
+    Appender!(ubyte[]) sink;
+    sink.reserve(WebtitlesPlugin.lookupBufferSize);
 
-    auto stream = res.receiveAsRange();
-
-    foreach (const part; stream)
+    client.onReceive = (ubyte[] data)
     {
-        sink.put((cast(char[])part).to!dstring);
-        doc.parseGarbage(sink.data.to!string);
-        if (doc.title.length) break;
-    }
+        sink.put(data);
+        doc.parseGarbage(cast(string)sink.data);
+        return doc.title.length ? HTTP.requestAbort : data.length;
+    };
 
-    if (!doc.title.length)
+    client.perform(No.throwOnError);
+    immutable code = client.statusLine.code;
+
+    if (code >= 400)
+    {
+        import std.conv : text;
+        throw new Exception(code.text ~ " fetching URL " ~ url);
+    }
+    else if (!doc.title.length)
     {
         throw new Exception("No title tag found");
     }
 
+    string slice = url;  // mutable
+    slice.nom("//");
+    string host = slice.nom!(Yes.inherit)('/');
+    if (host.beginsWith("www.")) host = host[4..$];
+
     TitleLookupResults results;
     results.title = decodeTitle(doc.title);
-    results.domain = res.finalURI.original_host;  // thanks to ikod
+    results.domain = host;
 
-    import lu.string : beginsWith;
-    if (results.domain.beginsWith("www."))
-    {
-        import lu.string : nom;
-        results.domain.nom('.');
-    }
-
+    client.shutdown();
     return results;
 }
 
@@ -579,19 +544,38 @@ unittest
  +/
 JSONValue getYouTubeInfo(const string url)
 {
-    import requests : getContent;
+    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
+    import std.array : Appender;
+    import std.exception : assumeUnique;
     import std.json : parseJSON;
+    import std.net.curl : HTTP;
+    import core.time : seconds;
 
     immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
-    const data = cast(char[])getContent(youtubeURL).data;
 
-    if (data == "Not Found")
+    auto client = HTTP(youtubeURL);
+    client.operationTimeout = Timeout.httpGET.seconds;
+    client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+
+    Appender!(ubyte[]) sink;
+    sink.reserve(8192);  // Magic number for now.
+
+    client.onReceive = (ubyte[] data)
+    {
+        sink.put(data);
+        return data.length;
+    };
+
+    client.perform();
+    immutable received = assumeUnique(cast(char[])sink.data);
+
+    if (received == "Not Found")
     {
         // Invalid video ID
         throw new Exception("Invalid YouTube video ID");
     }
 
-    return parseJSON(data);
+    return parseJSON(received);
 }
 
 
@@ -651,6 +635,8 @@ unittest
  +  Params:
  +      cache = Cache of previous `TitleLookupResults`, `shared` so that it can
  +          be reused in further lookup (other threads).
+ +      expireSeconds = After how many seconds a cached entry is considered to
+ +          have expired and should no longer be used as a valid entry.
  +/
 void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 {
@@ -676,10 +662,9 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
  +/
 void start(WebtitlesPlugin plugin)
 {
-    // No need to synchronize this; no worker threads are running
+    // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
-    plugin.headers = requestHeaders;
 }
 
 
@@ -690,30 +675,29 @@ import kameloso.thread : Sendable;
  +  Catches bus messages with the "`webtitles`" header requesting URLs to be
  +  looked up and the titles of which reported.
  +
- +  Only relevant on Twitch servers, so gate it behind version TwitchSupport.
- +  No point in checking `plugin.state.server.daemon == IRCServer.Daemon.twitch`
- +  as these messages will never be sent on other servers.
+ +  Only relevant on Twitch servers with the Twitch bot plugin when it's filtering
+ +  links, so gate it behind version TwitchBotPlugin.
  +
  +  Params:
  +      plugin = The current `WebtitlesPlugin`.
  +      header = String header describing the passed content payload.
  +      content = Message content.
  +/
-version(TwitchSupport)
+version(TwitchBotPlugin)
 void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
 {
     if (header != "webtitles") return;
 
+    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
+
+    import kameloso.plugins.common : EventURLs;
     import kameloso.thread : BusMessage;
-    import std.typecons : Tuple;
 
-    alias EventAndURLs = Tuple!(IRCEvent, string[]);
-
-    auto message = cast(BusMessage!EventAndURLs)content;
+    auto message = cast(BusMessage!EventURLs)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
-    auto eventAndURLs = cast(EventAndURLs)message.payload;
-    plugin.lookupURLs(eventAndURLs[0], eventAndURLs[1]);
+    auto eventAndURLs = message.payload;  // Mustn't be const
+    plugin.lookupURLs(eventAndURLs.event, eventAndURLs.urls);
 }
 
 
@@ -738,12 +722,6 @@ private:
     shared TitleLookupResults[string] cache;
 
     /++
-     +  HTTP request headers to use with a `requests.request.Request` to better reflect our
-     +  behaviour of only downloading text files.
-     +/
-    string[string] headers;
-
-    /++
      +  How long before a cached title lookup expires and its address has to be
      +  looked up anew.
      +/
@@ -751,6 +729,12 @@ private:
 
     /// In the case of chained URL lookups, how many milliseconds to delay each lookup by.
     enum delayMsecs = 100;
+
+    /++
+     +  How big a buffer to initially allocate when downloading web pages to get
+     +  their titles.
+     +/
+    enum lookupBufferSize = 8192;
 
     mixin IRCPluginImpl;
 

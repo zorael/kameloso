@@ -10,13 +10,18 @@ mainSourceFile "source/kameloso/main.d"
 dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>0.3.4"
-dependency "dialect" version="~>0.5.2"
+dependency "lu" version="~>0.4.0"
+dependency "dialect" version="~>0.6.0"
+dependency "arsd-official:dom" version="~>7.2.0"
+
+libs "curl"
 
 sourcePaths "source"
 importPaths "source"
 
 versions \
+    "Colours" \
+    "Web" \
     "WithPlugins" \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
@@ -37,39 +42,50 @@ versions \
     "WithWebtitlesPlugin"
 
 configuration "application" {
-    dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.2.0"
-
-    versions \
-        "Colours" \
-        "Web"
-}
-
-configuration "vanilla" {
     targetType "executable"
     // Mustn't be empty
 }
 
+configuration "application-lowmem" {
+    dflags "-lowmem"
+}
+
 configuration "twitch" {
-    dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "twitch"
 
     versions \
-        "Colours" \
-        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin"
+}
+
+configuration "twitch-lowmem" {
+    subConfiguration "dialect" "twitch"
+    dflags "-lowmem"
+
+    versions \
         "TwitchSupport" \
         "WithTwitchBotPlugin"
 }
 
 configuration "dev" {
-    dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
 
     versions \
-        "Colours" \
-        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "ProfileGC"
+        //"TraceWhois" \
+}
+
+configuration "dev-lowmem" {
+    subConfiguration "dialect" "dev"
+    dflags "-lowmem"
+
+    versions \
         "TwitchSupport" \
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
@@ -81,13 +97,23 @@ configuration "dev" {
 }
 
 configuration "unittest" {
-    dependency "requests" version="~>1.1.0"
-    dependency "arsd-official:dom" version="~>7.2.0"
     subConfiguration "dialect" "dev"
 
     versions \
-        "Colours" \
-        "Web" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "ProfileGC"
+}
+
+configuration "unittest-lowmem" {
+    subConfiguration "dialect" "dev"
+    dflags "-lowmem"
+
+    versions \
         "TwitchSupport" \
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \

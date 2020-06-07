@@ -108,7 +108,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 }
             }
 
-            // Avoid evaluating current unix time after stagger is done
+            // Avoid evaluating current UNIX time after stagger is done
             staggerDone = true;
 
             if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
@@ -161,7 +161,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      event = The triggering `dialect.defs.IRCEvent`.
- +      targetChannels = The channel we're handling timers for.
+ +      targetChannel = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")

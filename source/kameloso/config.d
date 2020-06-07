@@ -49,7 +49,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             bot.password = "base64:" ~ encode64(bot.password);
         }
 
-        sink.serialise(parser.client, bot, parser.server, settings);
+        sink.serialise(parser.client, bot, parser.server, connSettings, settings);
         sink.put('\n');
 
         foreach (immutable i, plugin; instance.plugins)
@@ -159,7 +159,6 @@ out (; (server.address.length), "Empty server address")
 out (; (server.port != 0), "Server port of 0")
 out (; (bot.quitReason.length), "Empty bot quit reason")
 out (; (bot.partReason.length), "Empty bot part reason")
-do
 {
     import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
 
@@ -312,10 +311,10 @@ final class ConfigurationFileReadFailureException : Exception
      +  Create a new `ConfigurationFileReadFailureException`, without attaching
      +  a filename.
      +/
-    this(const string message, const string file = __FILE__,
-        const size_t line = __LINE__) pure nothrow @nogc
+    this(const string message, const string file = __FILE__, const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        super(message, file, line);
+        super(message, file, line, nextInChain);
     }
 
     /++
@@ -323,10 +322,10 @@ final class ConfigurationFileReadFailureException : Exception
      +  filename.
      +/
     this(const string message, const string filename, const string file = __FILE__,
-        const size_t line = __LINE__) pure nothrow @nogc
+        const size_t line = __LINE__, Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.filename = filename;
-        super(message, file, line);
+        super(message, file, line, nextInChain);
     }
 }
 

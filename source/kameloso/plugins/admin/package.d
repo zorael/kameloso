@@ -273,6 +273,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
+    import kameloso.plugins.common.delayawait : await, unawait;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
     import std.algorithm.searching : canFind, countUntil;
@@ -342,18 +343,21 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+        CarryingFiber!IRCEvent thisFiber;
 
-        const followupEvent = thisFiber.payload;
-
-        if (followupEvent.channel != channel)
+        while (true)
         {
+            thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+            if (thisFiber.payload.channel == channel) break;
+
             // Different channel; yield fiber, wait for another event
             Fiber.yield();
-            return dg();
         }
+
+        const followupEvent = thisFiber.payload;
 
         scope(exit) unawait(plugin, joinTypes[]);
 
@@ -650,7 +654,7 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
     string reason;
 
     cast(void)slice.splitInto(channel, reason);
-    join(plugin.state, channel, reason);
+    part(plugin.state, channel, reason);
 }
 
 
@@ -708,7 +712,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandAuth
 /++
- +  Asks the `kamloso.plugins.connect.ConnectService` to (re-)authenticate to services.
+ +  Asks the `kameloso.plugins.connect.ConnectService` to (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEvent.Type.CHAN)
@@ -813,28 +817,31 @@ void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
  +/
 void cycle(AdminPlugin plugin, const string channelName, const string key = string.init)
 {
+    import kameloso.plugins.common.delayawait : await;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
-
-        const partEvent = thisFiber.payload;
-
-        if (partEvent.channel != channelName)
+        while (true)
         {
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+            const partEvent = thisFiber.payload;
+
+            if (partEvent.channel == channelName)
+            {
+                return join(plugin.state, channelName, key);
+            }
+
             // Wrong channel, wait for the next SELFPART
             Fiber.yield();
-            return dg();
         }
-
-        join(plugin.state, channelName, key);
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
 }
@@ -1180,6 +1187,10 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 }
 
 
+/++
+ +  The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with  depending
+ +  on whether version `OmniscientAdmin` is set or not.
+ +/
 version(OmniscientAdmin)
 {
     enum omniscientChannelPolicy = ChannelPolicy.any;

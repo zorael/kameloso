@@ -235,7 +235,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +      `true` if the plugin is deemed enabled (or cannot be disabled),
      +      `false` if not.
      +/
-    pragma(inline)
     override public bool isEnabled() const @property pure nothrow @nogc
     {
         import lu.traits : getSymbolsByUDA, isAnnotated;
@@ -1055,9 +1054,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         this.state = state;
         this.state.awaitingFibers = state.awaitingFibers.dup;
         this.state.awaitingFibers.length = EnumMembers!(IRCEvent.Type).length;
+        this.state.awaitingDelegates = state.awaitingDelegates.dup;
+        this.state.awaitingDelegates.length = EnumMembers!(IRCEvent.Type).length;
         this.state.replays = state.replays.dup;
         this.state.repeats = state.repeats.dup;
         this.state.scheduledFibers = state.scheduledFibers.dup;
+        this.state.scheduledDelegates = state.scheduledDelegates.dup;
 
         foreach (immutable i, ref member; this.tupleof)
         {
@@ -1393,7 +1395,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  Returns:
      +      The module name of the mixing-in class.
      +/
-    pragma(inline)
+    pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -1819,7 +1821,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
         else if (level == PrivilegeLevel.ignore)
         {
             /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
-                "to it could have been skippped");*/
+                "to it could have been skipped");*/
             return FilterResult.pass;
         }
         else
@@ -1845,7 +1847,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
 
         case ignore:
             /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
-                "to it could have been skippped");*/
+                "to it could have been skipped");*/
             return FilterResult.pass;
         }
     }
@@ -1864,8 +1866,8 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
  +/
 struct IRCPluginState
 {
-    import kameloso.common : CoreSettings, IRCBot;
-    import kameloso.thread : ScheduledFiber;
+    import kameloso.common : ConnectionSettings, CoreSettings, IRCBot;
+    import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
@@ -1891,6 +1893,11 @@ struct IRCPluginState
      +  The current program-wide `kameloso.common.CoreSettings`.
      +/
     CoreSettings settings;
+
+    /++
+     +  The current program-wide `kameloso.common.ConnectionSettings`.
+     +/
+    ConnectionSettings connSettings;
 
     /// Thread ID to the main thread.
     Tid mainThread;
@@ -1919,36 +1926,52 @@ struct IRCPluginState
      +/
     Fiber[][] awaitingFibers;
 
+    /++
+     +  The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
+     +  `dialect.defs.IRCEvent.Type`.
+     +/
+    void delegate(const IRCEvent)[][] awaitingDelegates;
+
     /// The list of scheduled `core.thread.fiber.Fiber`, UNIX time tuples.
     ScheduledFiber[] scheduledFibers;
+
+    /// The list of scheduled delegate, UNIX time tuples.
+    ScheduledDelegate[] scheduledDelegates;
 
     /// The next (UNIX time) timestamp at which to call `periodically`.
     long nextPeriodical;
 
     /++
-     +  The UNIX timestamp of when the next queued
-     +  `kameloso.thread.ScheduledFiber` should be triggered.
+     +  The UNIX timestamp of when the next scheduled
+     +  `kameloso.thread.ScheduledFiber` or delegate should be triggered.
      +/
-    long nextFiberTimestamp;
+    long nextScheduledTimestamp;
 
-
-    // updateNextFiberTimestamp
+    // updateSchedule
     /++
-     +  Updates the saved UNIX timestamp of when the next `core.thread.fiber.Fiber`
-     +  should be triggered.
+     +  Updates the saved UNIX timestamp of when the next scheduled
+     +  `core.thread.fiber.Fiber` or delegate should be triggered.
      +/
-    void updateNextFiberTimestamp() pure nothrow @nogc
+    void updateSchedule() pure nothrow @nogc
     {
         // Reset the next timestamp to an invalid value, then update it as we
-        // iterate the fibers' labels.
+        // iterate the fibers' and delegates' labels.
 
-        nextFiberTimestamp = long.max;
+        nextScheduledTimestamp = long.max;
 
         foreach (const scheduledFiber; scheduledFibers)
         {
-            if (scheduledFiber.timestamp < nextFiberTimestamp)
+            if (scheduledFiber.timestamp < nextScheduledTimestamp)
             {
-                nextFiberTimestamp = scheduledFiber.timestamp;
+                nextScheduledTimestamp = scheduledFiber.timestamp;
+            }
+        }
+
+        foreach (const scheduledDg; scheduledDelegates)
+        {
+            if (scheduledDg.timestamp < nextScheduledTimestamp)
+            {
+                nextScheduledTimestamp = scheduledDg.timestamp;
             }
         }
     }
@@ -1964,6 +1987,9 @@ struct IRCPluginState
 
     /// Whether or not `settings` was altered. Must be reset manually.
     bool settingsUpdated;
+
+    /// Pointer to the global abort flag.
+    bool* abort;
 }
 
 
@@ -1977,9 +2003,10 @@ struct IRCPluginState
 final class IRCPluginInitialisationException : Exception
 {
     /// Wraps normal Exception constructors.
-    this(const string message, const string file = __FILE__, const int line = __LINE__)
+    this(const string message, const string file = __FILE__, const int line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        super(message, file, line);
+        super(message, file, line, nextInChain);
     }
 }
 
@@ -2242,19 +2269,19 @@ public:
         return cast(CarryingFiber!This)fiber !is null;
     }
 
-    /// The `dialect.defs.IRCEvent` to repeat.
-    IRCEvent event;
+    /// The `Replay` to repeat.
+    Replay replay;
 
     /// UNIX timestamp of when this repeat event was created.
     long created;
 
-    /// Constructor taking a `core.thread.fiber.Fiber` and an `dialect.defs.IRCEvent`.
-    this(Fiber fiber, const IRCEvent event) @safe
+    /// Constructor taking a `core.thread.fiber.Fiber` and a `Replay`.
+    this(Fiber fiber, Replay replay) @safe
     {
         import std.datetime.systime : Clock;
         created = Clock.currTime.toUnixTime;
         this.fiber = fiber;
-        this.event = event;
+        this.replay = replay;
     }
 }
 

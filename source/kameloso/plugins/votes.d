@@ -46,7 +46,6 @@ import std.typecons : Flag, No, Yes;
 @Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
     "$command [seconds] [choice1] [choice2] ...")
 void onCommandVote(VotesPlugin plugin, const IRCEvent event)
-do
 {
     import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;
@@ -225,7 +224,7 @@ do
 
     void cleanup()
     {
-        import kameloso.plugins.common : unawait;
+        import kameloso.plugins.common.delayawait : unawait;
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
         {
@@ -238,47 +237,53 @@ do
 
     void dg()
     {
-        const currentVoteInstance = event.channel in plugin.channelVoteInstances;
+        while (true)
+        {
+            const currentVoteInstance = event.channel in plugin.channelVoteInstances;
 
-        if (!currentVoteInstance)
-        {
-            return;  // Aborted
-        }
-        else if (*currentVoteInstance == -1)
-        {
-            // Magic number, end early
-            reportResults();
-            cleanup();
-            plugin.channelVoteInstances.remove(event.channel);
-            return;
-        }
-        else if (*currentVoteInstance != id)
-        {
-            return;  // Different vote started
-        }
+            if (!currentVoteInstance)
+            {
+                return;  // Aborted
+            }
+            else if (*currentVoteInstance == -1)
+            {
+                // Magic number, end early
+                reportResults();
+                cleanup();
+                return;
+            }
+            else if (*currentVoteInstance != id)
+            {
+                return;  // Different vote started
+            }
 
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
-        if (thisFiber.payload != IRCEvent.init)
-        {
+            if (thisFiber.payload == IRCEvent.init)
+            {
+                // Invoked by timer, not by event
+                reportResults();
+                cleanup();
+                return;  // End Fiber
+            }
+
             // Triggered by an event
-
             with (IRCEvent.Type)
             switch (event.type)
             {
             case NICK:
-                immutable oldNickname = thisFiber.payload.sender.nickname;
-
-                if (oldNickname in votedUsers)
+                if (thisFiber.payload.sender.nickname in votedUsers)
                 {
                     immutable newNickname = thisFiber.payload.target.nickname;
                     votedUsers[newNickname] = true;
-                    votedUsers.remove(oldNickname);
+                    votedUsers.remove(thisFiber.payload.sender.nickname);
                 }
                 break;
 
             case CHAN:
+                if (thisFiber.payload.channel != event.channel) break;
+
                 immutable vote = thisFiber.payload.content;
                 immutable nickname = thisFiber.payload.sender.nickname;
 
@@ -310,16 +315,10 @@ do
 
             // Yield and await a new event
             Fiber.yield();
-            return dg();
         }
-
-        // Invoked by timer, not by event
-        reportResults();
-        cleanup();
-        // End Fiber
     }
 
-    import kameloso.plugins.common : await, delay;
+    import kameloso.plugins.common.delayawait : await, delay;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
 

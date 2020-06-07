@@ -22,7 +22,7 @@ import kameloso.messaging;
 import dialect.defs;
 
 
-/// All Oneliner plugin runime settings.
+/// All Oneliner plugin runtime settings.
 @Settings struct OnelinersSettings
 {
     /// Toggle whether or not this plugin should do anything at all.

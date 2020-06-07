@@ -13,13 +13,14 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.plugins.admin : AdminPlugin;
+import kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
+import std.algorithm.comparison : among;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -35,9 +36,8 @@ package:
  +      list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+in (list.among!("whitelist", "blacklist", "operator"),
     list ~ " is not whitelist, operator nor blacklist")
-do
 {
     import lu.string : nom;
     import std.typecons : Flag, No, Yes;
@@ -89,7 +89,7 @@ do
  +/
 void listList(AdminPlugin plugin, const string channel, const string list,
     const IRCEvent event = IRCEvent.init)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+in (list.among!("whitelist", "blacklist", "operator"),
     list ~ " is not whitelist, operator nor blacklist")
 {
     import lu.json : JSONStorage;
@@ -133,12 +133,12 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +      plugin = The current `AdminPlugin`.
  +      rawSpecified = The nickname or account to white-/blacklist.
  +      list = Which of "whitelist", "operator" or "blacklist" to add to.
- +      channel = Which chanel the enlisting relates to.
+ +      channel = Which channel the enlisting relates to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+in (list.among!("whitelist", "blacklist", "operator"),
     list ~ " is not whitelist, operator nor blacklist")
 {
     import dialect.common : isValidNickname;
@@ -331,6 +331,7 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
     }
 
     // User not on record or on record but no account; WHOIS and try based on results
+    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
@@ -348,12 +349,12 @@ in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
  +      plugin = The current `AdminPlugin`.
  +      account = The account to delist as whitelisted/blacklisted or as operator.
  +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
- +      channel = Which chanel the enlisting relates to.
+ +      channel = Which channel the enlisting relates to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+in (list.among!("whitelist", "blacklist", "operator"),
     list ~ " is not whitelist, operator nor blacklist")
 {
     import std.format : format;
@@ -480,7 +481,7 @@ enum AlterationResult
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account, const string channel)
-in (((list == "whitelist") || (list == "blacklist") || (list == "operator")),
+in (list.among!("whitelist", "blacklist", "operator"),
     list ~ " is not whitelist, operator nor blacklist")
 {
     import kameloso.thread : ThreadMessage;

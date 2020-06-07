@@ -163,12 +163,15 @@ version(Web)
 void worker(shared IRCPluginState sState, const IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
+    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
     import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
-    import requests : getContent;
     import std.algorithm.iteration : splitter;
-    import std.array : replace;
+    import std.array : Appender, replace;
+    import std.exception : assumeUnique;
     import std.format : format;
+    import std.net.curl : HTTP;
+    import core.time : seconds;
 
     version(Posix)
     {
@@ -183,12 +186,25 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
     try
     {
-        import std.exception : assumeUnique;
+        auto client = HTTP(url);
+        client.operationTimeout = Timeout.httpGET.seconds;
+        client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+        client.addRequestHeader("Accept", "text/html");
 
-        immutable content = (cast(char[])getContent(url).data).assumeUnique;
-        auto doc = new Document;
-        doc.parseGarbage(content);
+        Document doc = new Document;
+        Appender!(ubyte[]) sink;
+        sink.reserve(1_048_576);  // 1M
 
+        client.onReceive = (ubyte[] data)
+        {
+            sink.put(data);
+            return data.length;
+        };
+
+        client.perform();
+
+        immutable received = assumeUnique(cast(char[])sink.data);
+        doc.parseGarbage(received);
         auto numBlock = doc.getElementsByClassName("quote");
 
         if (!numBlock.length)
@@ -276,12 +292,12 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
         }
     }
 
-    // Should dance. Stagger it a bit with a second inbetween.
+    // Should dance. Stagger it a bit with a second in between.
     enum secondsBetweenDances = 1;
 
     void dg()
     {
-        import kameloso.plugins.common : delay;
+        import kameloso.plugins.common.delayawait : delay;
         import kameloso.messaging : emote;
 
         emote(plugin.state, event.channel, "dances :D-<");
@@ -293,7 +309,7 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
         emote(plugin.state, event.channel, "dances :D/-<");
     }
 
-    Fiber fiber = new Fiber(&dg);
+    Fiber fiber = new Fiber(&dg, 32_768);
     fiber.call();
 }
 

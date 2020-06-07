@@ -257,7 +257,7 @@ private:  // Module-level private.
     mixin IRCPluginImpl;
 
 
-    import kameloso.plugins.common : MessagingProxy;
+    import kameloso.plugins.common.mixins : MessagingProxy;
 
     // MessagingProxy
     /++
@@ -393,7 +393,6 @@ private:
 @(IRCEvent.Type.TWITCH_PAYFORWARD)
 @(IRCEvent.Type.TWITCH_REWARDGIFT)
 @(IRCEvent.Type.TWITCH_RITUAL)
-@(IRCEvent.Type.TWITCH_SKIPSUBSMODEMESSAGE)
 @(IRCEvent.Type.TWITCH_SUB)
 @(IRCEvent.Type.TWITCH_SUBGIFT)
 @(IRCEvent.Type.TWITCH_SUBUPGRADE)
@@ -691,7 +690,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             enum pattern =  "I last saw %s %s ago.";
 
             const timestamp = SysTime.fromUnixTime(*userTimestamp);
-            immutable elapsed = timeSince(Clock.currTime - timestamp);
+            immutable diff = (Clock.currTime - timestamp);
+            immutable elapsed = timeSince!(No.abbreviate, 7, 2)(diff);
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(requestedUser.ircColourByHash.ircBold, elapsed) :
@@ -786,6 +786,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +
  +  Params:
  +      filename = Filename of the file to read from.
+ +      verbosely = Whether or not to print how many seen users were loaded.
  +
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.

@@ -136,7 +136,8 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                 if (noteArray.length == 1)
                 {
                     const note = noteArray[0];
-                    immutable timestamp = (currTime - note.when).timeSince;
+                    immutable timestamp = (currTime - note.when)
+                        .timeSince!(No.abbreviate, 7, 2);
 
                     enum pattern = "%s%s! %s left note %s ago: %s";
 
@@ -162,7 +163,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     foreach (const note; noteArray)
                     {
                         immutable timestamp = (currTime - note.when)
-                            .timeSince!(Yes.abbreviate);
+                            .timeSince!(Yes.abbreviate, 7, 2);
 
                         enum entryPattern = "%s %s ago: %s";
 
@@ -226,9 +227,12 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
             continue;
         }
 
-        import kameloso.plugins.common : WHOISFiberDelegate;
+        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
-        mixin WHOISFiberDelegate!(onSuccess, onFailure);
+        // Silence warnings about no UserAwareness by passing Yes.alwaysLookup
+        // (it will always look up anyway because of only MinimalAuthentication)
+        // Rely on PesistenceService for account names.
+        mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
 
         // Only WHOIS once
         enqueueAndWHOIS(givenUser.nickname,
@@ -439,7 +443,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
  +  saves it to disk.
  +
  +  Params:
- +      plugins = Current `NotesPlugin`.
+ +      plugin = Current `NotesPlugin`.
  +      id = Nickname or account whose notes to clear.
  +      channel = Channel for which the notes were stored.
  +/
@@ -505,7 +509,7 @@ void pruneNotes(NotesPlugin plugin)
  +      plugin = Current `NotesPlugin`.
  +      id = Identifier (nickname/account) for whom the note is meant.
  +      sender = Originating user who places the note.
- +      content = Channel for which we should save the note.
+ +      channel = Channel for which we should save the note.
  +      line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string id, const string sender,

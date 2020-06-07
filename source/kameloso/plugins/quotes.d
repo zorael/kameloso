@@ -16,7 +16,7 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.awareness : UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
@@ -36,6 +36,30 @@ import std.typecons : Flag, No, Yes;
 }
 
 
+// Quote
+/++
+ +  Embodies the notion of a quote. A string line paired with a UNIX timestamp.
+ +/
+struct Quote
+{
+    import std.conv : to;
+    import std.json : JSONType, JSONValue;
+
+    /// Quote string line.
+    string line;
+
+    /// When the line was uttered, expressed in UNIX time.
+    long timestamp;
+
+    /// Constructor taking a `std.json.JSONValue`.
+    this(const JSONValue json)
+    {
+        this.line = json["line"].str;
+        this.timestamp = json["timestamp"].integer;
+    }
+}
+
+
 // getRandomQuote
 /++
  +  Fetches a quote for the specified nickname from the in-memory JSON array.
@@ -52,18 +76,23 @@ import std.typecons : Flag, No, Yes;
  +      nickname = Nickname of the user to fetch quotes for.
  +
  +  Returns:
- +      Random quote string. If no quote is available it returns an empty string instead.
+ +      A `Quote` containing a random quote string. If no quote is available it
+ +      returns an empty `Quote.init` instead.
  +/
-string getRandomQuote(QuotesPlugin plugin, const string nickname)
+Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
-    if (const arr = nickname in plugin.quotes)
+    if (const quotesForNickname = nickname in plugin.quotes)
     {
         import std.random : uniform;
-        return arr.array[uniform(0, arr.array.length)].str;
+
+        immutable len = quotesForNickname.array.length;
+        const storedQuoteJSON = quotesForNickname.array[uniform(0, len)];
+
+        return Quote(storedQuoteJSON);
     }
     else
     {
-        return string.init;
+        return Quote.init;
     }
 }
 
@@ -84,11 +113,11 @@ string getRandomQuote(QuotesPlugin plugin, const string nickname)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname, " ~
-    "or adds a new one.", "$command [nickname]")
+    "or adds a new one.", "$command [nickname] [text if adding new quote]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
-    import lu.string : nom, stripped;
+    import lu.string : nom, stripped, strippedLeft;
     import std.format : format;
     import std.json : JSONException;
 
@@ -121,6 +150,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
         event.channel[1..$] :
         slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
+    immutable trailing = slice.strippedLeft;  // Already strippedRight earlier
 
     if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
         !specified.isValidNickname(plugin.state.server))
@@ -131,18 +161,23 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             pattern.format(specified.ircBold) :
             pattern.format(specified);
 
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     /// Report success to IRC
-    void report(const string nickname, const string endQuote)
+    void report(const string nickname, const Quote quote)
     {
-        enum pattern = "%s | %s";
+        import std.datetime.systime : SysTime;
+
+        enum pattern = "[%d-%02d-%02d %02d:%02d] %s | %s";
+
+        SysTime when = SysTime.fromUnixTime(quote.timestamp);
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold, endQuote) :
-            pattern.format(nickname, endQuote);
+            pattern.format(when.year, when.month, when.day, when.hour, when.minute,
+                nickname.ircColourByHash.ircBold, quote.line) :
+            pattern.format(when.year, when.month, when.day, when.hour, when.minute,
+                nickname, quote.line);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -153,19 +188,23 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         {
             import kameloso.plugins.common : idOf;
 
-            immutable endAccount = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
+            immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 
-            if (slice.length)
+            if (trailing.length)
             {
                 // There is trailing text, assume it was a quote to be added
-                return plugin.addQuoteAndReport(event, endAccount, slice);
+                return plugin.addQuoteAndReport(event, id, trailing);
             }
 
-            immutable quote = plugin.getRandomQuote(endAccount);
-
-            if (quote.length)
+            // No point looking up if we already did before onSuccess
+            if (id != specified)
             {
-                return report(endAccount, quote);
+                immutable quote = plugin.getRandomQuote(id);
+
+                if (quote.line.length)
+                {
+                    return report(id, quote);
+                }
             }
 
             enum pattern = "No quote on record for %s";
@@ -191,14 +230,20 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             }
         }
 
-        immutable quote = plugin.getRandomQuote(specified);
-
-        if (quote.length)
+        // Try the specified nickname/account first, in case it's a nickname that
+        // has quotes but resolve to a different account that doesn't.
+        // But only if there's no trailing text; would mean it's a new quote
+        if (!trailing.length)
         {
-            return report(specified, quote);
+            immutable quote = plugin.getRandomQuote(specified);
+
+            if (quote.line.length)
+            {
+                return report(specified, quote);
+            }
         }
 
-        import kameloso.plugins.common : WHOISFiberDelegate;
+        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
 
         mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
@@ -221,48 +266,178 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The current `QuotesPlugin`.
  +      event = The instigating `dialect.defs.IRCEvent`.
- +      specified = The specified nickname or (preferably) account.
- +      line = The quote string to add.
+ +      id = The specified nickname or (preferably) account.
+ +      rawLine = The quote string to add.
  +/
 void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
-    const string specified, const string line)
-in (specified.length, "Tried to add a quote for an empty user")
-in (line.length, "Tried to add an empty quote")
+    const string id, const string rawLine)
+in (id.length, "Tried to add a quote for an empty user")
+in (rawLine.length, "Tried to add an empty quote")
 {
+    import lu.string : unquoted;
     import std.json : JSONException, JSONValue;
+
+    immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
+    immutable altered = removeWeeChatHead(rawLine.unquoted, id, prefixSigns).unquoted;
+    immutable line = altered.length ? altered : rawLine;
 
     try
     {
         import std.conv : text;
+        import std.datetime.systime : Clock;
         import std.format : format;
 
-        if (specified in plugin.quotes)
-        {
-            // cannot modify const expression (*nickquotes).array
-            plugin.quotes[specified].array ~= JSONValue(line);
-        }
-        else
+        JSONValue newQuote;
+        newQuote["line"] = line;
+        newQuote["timestamp"] = Clock.currTime.toUnixTime;
+
+        if (id !in plugin.quotes)
         {
             // No previous quotes for nickname
-            plugin.quotes[specified] = JSONValue([ line ]);
+            // Initialise the JSONValue as an array
+            plugin.quotes[id] = null;
+            plugin.quotes[id].array = null;
         }
 
+        plugin.quotes[id].array ~= newQuote;
         plugin.quotes.save(plugin.quotesFile);
 
         enum pattern = "Quote for %s saved (%s on record)";
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(specified.ircColourByHash.ircBold,
-                plugin.quotes[specified].array.length.text.ircBold) :
-            pattern.format(specified, plugin.quotes[specified].array.length);
+            pattern.format(id.ircColourByHash.ircBold,
+                plugin.quotes[id].array.length.text.ircBold) :
+            pattern.format(id, plugin.quotes[id].array.length);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
     catch (JSONException e)
     {
         logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
-            Tint.log, specified, Tint.error, e.msg);
+            Tint.log, id, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
+    }
+}
+
+
+// removeWeeChatHead
+/++
+ +  Removes the WeeChat timestamp and nickname from the front of a string.
+ +
+ +  Params:
+ +      line = Full string line as copy/pasted from WeeChat.
+ +      nickname = The nickname to remove (along with the timestamp).
+ +      prefixes = The available user prefixes on the current server.
+ +
+ +  Returns:
+ +      The original line with the WeeChat timestamp and nickname sliced away,
+ +      or as it was passed. No new string is ever allocated.
+ +/
+string removeWeeChatHead(const string line, const string nickname,
+    const string prefixes) pure @safe @nogc
+in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
+{
+    import lu.string : beginsWith, contains, nom, strippedLeft;
+
+    static bool isN(const char c)
+    {
+        return ((c >= '0') && (c <= '9'));
+    }
+
+    string slice = line.strippedLeft;  // mutable
+
+    // See if it has WeeChat timestamps at the front of the message
+    // e.g. "12:34:56   @zorael | text text text"
+
+    if (slice.length > 8)
+    {
+        if (isN(slice[0]) && isN(slice[1]) && (slice[2] == ':') &&
+            isN(slice[3]) && isN(slice[4]) && (slice[5] == ':') &&
+            isN(slice[6]) && isN(slice[7]) && (slice[8] == ' '))
+        {
+            // Might yet be WeeChat, keep going
+            slice = slice[9..$].strippedLeft;
+        }
+    }
+
+    // See if it has WeeChat nickname at the front of the message
+    // e.g. "@zorael | text text text"
+
+    if (slice.length > nickname.length)
+    {
+        if ((prefixes.contains(slice[0]) &&
+            slice[1..$].beginsWith(nickname)) ||
+            slice.beginsWith(nickname))
+        {
+            slice.nom(nickname);
+            slice = slice.strippedLeft;
+
+            if ((slice.length > 2) && (slice[0] == '|'))
+            {
+                slice = slice[1..$];
+
+                if (slice[0] == ' ')
+                {
+                    slice = slice.strippedLeft;
+                    // Finished
+                }
+                else
+                {
+                    // Does not match pattern; undo
+                    slice = line;
+                }
+            }
+            else
+            {
+                // Does not match pattern; undo
+                slice = line;
+            }
+        }
+        else
+        {
+            // Does not match pattern; undo
+            slice = line;
+        }
+    }
+    else
+    {
+        // Only matches the timestmp so don't trust it
+        slice = line;
+    }
+
+    return slice;
+}
+
+///
+unittest
+{
+    immutable prefixes = "!~&@%+";
+
+    {
+        enum line = "20:08:27 @zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
+        assert((modified == "dresing"), modified);
+    }
+    {
+        enum line = "               20:08:27                   @zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
+        assert((modified == "dresing"), modified);
+    }
+    {
+        enum line = "+zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
+        assert((modified == "dresing"), modified);
+    }
+    {
+        enum line = "2y:08:27 @zorael | dresing";
+        immutable modified = removeWeeChatHead(line, "zorael", prefixes);
+        assert((modified == line), modified);
+    }
+    {
+        enum line = "16:08:27       <-- | kameloso (~kameloso@2001:41d0:2:80b4::) " ~
+            "has quit (Remote host closed the connection)";
+        immutable modified = removeWeeChatHead(line, "kameloso", prefixes);
+        assert((modified == line), modified);
     }
 }
 
@@ -319,7 +494,7 @@ void initResources(QuotesPlugin plugin)
 }
 
 
-mixin MinimalAuthentication;
+mixin UserAwareness;
 
 public:
 
@@ -341,7 +516,7 @@ private:
     /++
      +  The in-memory JSON storage of all user quotes.
      +
-     +  It is in the JSON form of `string[][string]`, where the first key is the
+     +  It is in the JSON form of `Quote[][string]`, where the first key is the
      +  nickname of a user.
      +/
     JSONStorage quotes;

@@ -5,8 +5,9 @@ module kameloso.kameloso;
 
 private:
 
+import kameloso.plugins.core : IRCPlugin, Replay;
 import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
-    initLogger, logger, printVersionInfo;
+    initLogger, logger, printVersionInfo, replaceTokens;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 import dialect;
@@ -53,8 +54,10 @@ version(ProfileGC)
  +  This is set when the program is interrupted (such as via Ctrl+C). Other
  +  parts of the program will be monitoring it, to take the cue and abort when
  +  it is set.
+ +
+ +  Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-public bool abort;
+public __gshared bool abort;
 
 
 version(Posix)
@@ -93,60 +96,6 @@ void signalHandler(int sig) nothrow @nogc @system
 
     // Restore signal handlers to the default
     resetSignals();
-}
-
-
-// replaceTokens
-/++
- +  Apply some common text replacements. Used on part and quit reasons.
- +
- +  Params:
- +      line = String to replace tokens in.
- +      instance = Reference to the current `Kameloso` instance.
- +
- +  Returns:
- +      A modified string with token occurences replaced.
- +/
-string replaceTokens(const string line, const ref Kameloso instance)
-{
-    import kameloso.constants : KamelosoInfo;
-    import std.array : replace;
-
-    return line
-        .replace("$nickname", instance.parser.client.nickname)
-        .replace("$version", cast(string)KamelosoInfo.version_)
-        .replace("$source", cast(string)KamelosoInfo.source);
-}
-
-///
-unittest
-{
-    import kameloso.constants : KamelosoInfo;
-    import std.format : format;
-
-    Kameloso instance;
-    instance.parser.client.nickname = "harbl";
-
-    {
-        immutable line = "asdf $nickname is kameloso version $version from $source";
-        immutable expected = "asdf %s is kameloso version %s from %s"
-            .format(instance.parser.client.nickname, cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.source);
-        immutable actual = line.replaceTokens(instance);
-        assert((actual == expected), actual);
-    }
-    {
-        immutable line = "";
-        immutable expected = "";
-        immutable actual = line.replaceTokens(instance);
-        assert((actual == expected), actual);
-    }
-    {
-        immutable line = "blerp";
-        immutable expected = "blerp";
-        immutable actual = line.replaceTokens(instance);
-        assert((actual == expected), actual);
-    }
 }
 
 
@@ -221,7 +170,7 @@ void messageFiber(ref Kameloso instance)
             // This will automatically close the connection.
             immutable reason = givenReason.length ? givenReason : instance.bot.quitReason;
             instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
-                reason.replaceTokens(instance), quiet));
+                reason.replaceTokens(instance.parser.client), quiet));
             next = Next.returnSuccess;
         }
 
@@ -239,7 +188,6 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(instance.settings.configFile);
         }
 
-        import kameloso.plugins.core : IRCPlugin;
         import kameloso.thread : CarryingFiber;
 
         /++
@@ -400,7 +348,8 @@ void messageFiber(ref Kameloso instance)
                 if (content.length)
                 {
                     // Reason given, assume only one channel
-                    line = "PART " ~ channel ~ " :" ~ content.replaceTokens(instance);
+                    line = "PART " ~ channel ~ " :" ~
+                        content.replaceTokens(instance.parser.client);
                 }
                 else
                 {
@@ -410,7 +359,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance),
+                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance.parser.client),
                     ((target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
 
             case NICK:
@@ -721,6 +670,8 @@ Next mainLoop(ref Kameloso instance)
         immutable nowInUnix = Clock.currTime.toUnixTime;
         immutable nowInHnsecs = Clock.currStdTime;
 
+        historyEntry.stopTime = nowInUnix;
+
         foreach (plugin; instance.plugins)
         {
             plugin.periodically(nowInUnix);
@@ -728,12 +679,14 @@ Next mainLoop(ref Kameloso instance)
 
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.state.scheduledFibers.length) continue;
+            if (!plugin.state.scheduledFibers.length &&
+                !plugin.state.scheduledDelegates.length) continue;
 
-            if (plugin.state.nextFiberTimestamp <= nowInHnsecs)
+            if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
             {
+                plugin.processScheduledDelegates(nowInHnsecs);
                 plugin.processScheduledFibers(nowInHnsecs);
-                plugin.state.updateNextFiberTimestamp();  // Something is always removed
+                plugin.state.updateSchedule();  // Something is always removed
                 instance.conn.receiveTimeout = 1;
                 readWasShortened = true;
             }
@@ -743,7 +696,7 @@ Next mainLoop(ref Kameloso instance)
                 immutable timeOfNextReadTimeout = cast(int)((nowInHnsecs/10_000) +
                     cachedReceiveTimeout);
                 immutable int delta = cast(int)(timeOfNextReadTimeout -
-                    (plugin.state.nextFiberTimestamp/10_000));
+                    (plugin.state.nextScheduledTimestamp/10_000));
 
                 if ((delta > 0) && (delta < instance.conn.receiveTimeout))
                 {
@@ -774,6 +727,7 @@ Next mainLoop(ref Kameloso instance)
             final switch (actionAfterListen)
             {
             case continue_:
+                historyEntry.bytesReceived += attempt.bytesReceived;
                 // Drop down and continue
                 break;
 
@@ -870,7 +824,6 @@ Next mainLoop(ref Kameloso instance)
 
                 // Successful parse; record as such
                 ++historyEntry.numEvents;
-                historyEntry.stopTime = nowInUnix;
                 event.time = nowInUnix;
 
                 foreach (plugin; instance.plugins)
@@ -904,6 +857,7 @@ Next mainLoop(ref Kameloso instance)
                         plugin.onEvent(event);
                         processRepeats(plugin, instance);
                         processReplays(instance, plugin.state.replays);
+                        processAwaitingDelegates(plugin, event);
                         processAwaitingFibers(plugin, event);
                     }
                     catch (NomException e)
@@ -1200,7 +1154,67 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
-import kameloso.plugins.core : IRCPlugin;
+// processAwaitingDelegates
+/++
+ +  Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
+ +
+ +  Does not remove delegates after calling them. They are expected to remove
+ +  themvselves after finishing.
+ +
+ +  Params:
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
+ +          `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
+ +      event = The triggering const `dialect.defs.IRCEvent`.
+ +/
+void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
+{
+    import core.thread : Fiber;
+
+    alias Dg = void delegate(const IRCEvent);
+
+    /++
+     +  Handle awaiting delegates of a specified type.
+     +/
+    static void processImpl(IRCPlugin plugin, const IRCEvent event, Dg[] dgsForType)
+    {
+        foreach (immutable i, dg; dgsForType)
+        {
+            try
+            {
+                dg(event);
+            }
+            catch (IRCParseException e)
+            {
+                logger.warningf("IRC Parse Exception %s.awaitingDelegates[%d]: %s%s",
+                    plugin.name, i, Tint.log, e.msg);
+
+                printEventDebugDetails(e.event, e.event.raw);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (Exception e)
+            {
+                logger.warningf("Exception %s.awaitingDelegates[%d]: %s%s",
+                    plugin.name, i, Tint.log, e.msg);
+
+                printEventDebugDetails(event, event.raw);
+                version(PrintStacktraces) logger.trace(e.toString);
+            }
+        }
+    }
+
+    if (plugin.state.awaitingDelegates[event.type].length)
+    {
+        processImpl(plugin, event, plugin.state.awaitingDelegates[event.type]);
+        //plugin.state.awaitingDelegates[event.type].length = 0;
+    }
+
+    if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
+    {
+        processImpl(plugin, event, plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
+        //plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length = 0;
+    }
+}
+
 
 // processAwaitingFibers
 /++
@@ -1312,6 +1326,58 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 }
 
 
+// processScheduledDelegates
+/++
+ +  Processes the queued `kameloso.thread.ScheduledDelegate`s of an
+ +  `kameloso.plugins.core.IRCPlugin`.
+ +
+ +  Params:
+ +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+ +          `kameloso.thread.ScheduledDelegate`s to iterate and process.
+ +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledDelegate`'s
+ +          timestamp with.
+ +/
+void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)
+in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an unset timestamp")
+{
+    size_t[] toRemove;
+
+    foreach (immutable i, scheduledDg; plugin.state.scheduledDelegates)
+    {
+        if (scheduledDg.timestamp > nowInHnsecs) continue;
+
+        try
+        {
+            scheduledDg.dg();
+        }
+        catch (IRCParseException e)
+        {
+            logger.warningf("IRC Parse Exception %s.scheduledDelegates[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+
+            printEventDebugDetails(e.event, e.event.raw);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Exception %s.scheduledDelegates[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
+        }
+
+        toRemove ~= i;  // Always removed a scheduled delegate after processing
+    }
+
+    // Clean up processed delegates
+    foreach_reverse (immutable i; toRemove)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
+            .remove!(SwapStrategy.unstable)(i);
+    }
+}
+
+
 // processScheduledFibers
 /++
  +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
@@ -1319,13 +1385,12 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
- +          `ScheduledFiber`s to iterate and process.
- +      nowInHnsecs = Current timestamp to compare the `ScheduledFiber`'s
+ +          `kameloso.thread.ScheduledFiber`s to iterate and process.
+ +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledFiber`'s
  +          timestamp with.
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
-do
 {
     size_t[] toRemove;
 
@@ -1341,9 +1406,6 @@ do
             {
                 scheduledFiber.fiber.call();
             }
-
-            // Always removed a scheduled Fiber after processing
-            toRemove ~= i;
         }
         catch (IRCParseException e)
         {
@@ -1352,15 +1414,16 @@ do
 
             printEventDebugDetails(e.event, e.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
-            toRemove ~= i;
         }
         catch (Exception e)
         {
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.toString);
-            toRemove ~= i;
         }
+
+        // Always removed a scheduled Fiber after processing
+        toRemove ~= i;
     }
 
     // Clean up processed Fibers
@@ -1398,13 +1461,13 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
         {
             // Postprocessing will reapply class, but not if there is already
             // a custom class (assuming channel cache hit)
-            repeat.event.sender.class_ = IRCUser.Class.unset;
-            repeat.event.target.class_ = IRCUser.Class.unset;
+            repeat.replay.event.sender.class_ = IRCUser.Class.unset;
+            repeat.replay.event.target.class_ = IRCUser.Class.unset;
         }
 
         foreach (postprocessor; instance.plugins)
         {
-            postprocessor.postprocess(repeat.event);
+            postprocessor.postprocess(repeat.replay.event);
         }
 
         if (repeat.isCarrying)
@@ -1429,8 +1492,6 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
     }
 }
 
-
-import kameloso.plugins.core : Replay;
 
 // processReplays
 /++
@@ -1499,6 +1560,9 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
 /++
  +  Registers some process signals to redirect to our own `signalHandler`, so we
  +  can (for instance) catch Ctrl+C and gracefully shut down.
+ +
+ +  On Posix, additionally ignore `SIGPIPE` so that we can catch SSL errors and
+ +  not just immediately terminate.
  +/
 void setupSignals() nothrow @nogc
 {
@@ -1509,9 +1573,11 @@ void setupSignals() nothrow @nogc
 
     version(Posix)
     {
-        import core.sys.posix.signal : SIGHUP, SIGQUIT;
+        import core.sys.posix.signal : SIG_IGN, SIGHUP, SIGPIPE, SIGQUIT;
+
         signal(SIGHUP, &signalHandler);
         signal(SIGQUIT, &signalHandler);
+        signal(SIGPIPE, SIG_IGN);
     }
 }
 
@@ -1557,6 +1623,7 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
+    import std.process : ProcessException;
 
     try
     {
@@ -1584,6 +1651,11 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     catch (DeserialisationException e)
     {
         logger.error("Error parsing configuration file: ", Tint.log, e.msg);
+    }
+    catch (ProcessException e)
+    {
+        logger.errorf("Failed to open %s%s%s in a text editor: %1$s%4$s",
+            Tint.log, instance.settings.configFile, Tint.error, e.msg);
     }
     catch (Exception e)
     {
@@ -1616,7 +1688,7 @@ Next tryConnect(ref Kameloso instance)
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn, instance.settings.endlesslyConnect,
+        connectFiber(instance.conn, instance.connSettings.endlesslyConnect,
             ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.retry;
 
@@ -1626,6 +1698,8 @@ Next tryConnect(ref Kameloso instance)
     foreach (const attempt; connector)
     {
         import core.time : seconds;
+
+        if (*abort) return Next.returnFailure;
 
         with (ConnectionAttempt.State)
         final switch (attempt.state)
@@ -1653,20 +1727,21 @@ Next tryConnect(ref Kameloso instance)
 
             immutable pattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
-                "Connecting to [%s%s%s]:%1$s%4$s%3$s ..." :
-                "Connecting to %s%s%s:%1$s%4$s%3$s ...";
+                "Connecting to [%s%s%s]:%1$s%4$s%3$s %5$s..." :
+                "Connecting to %s%s%s:%1$s%4$s%3$s %5$s...";
+
+            immutable ssl = instance.conn.ssl ? "(SSL) " : string.init;
 
             immutable address = (!resolvedHost.length ||
                 (parser.server.address == resolvedHost) ||
                 (sharedDomains(parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
-            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString);
+            logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString, ssl);
             continue;
 
         case connected:
             logger.log("Connected!");
-            conn.connected = true;
             connector.reset();
             return Next.continue_;
 
@@ -1709,6 +1784,11 @@ Next tryConnect(ref Kameloso instance)
             logger.warning("IPv6 connection failed. Disabling IPv6.");
             continue;
 
+        case sslFailure:
+            logger.error("Failed to connect due to SSL setup/handshake failure: ",
+                Tint.log, attempt.error);
+            return Next.returnFailure;
+
         case error:
             logger.error("Failed to connect: ", attempt.error);
             return Next.returnFailure;
@@ -1740,12 +1820,12 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     import std.concurrency : Generator;
 
     enum defaultResolveAttempts = 15;
-    immutable resolveAttempts = instance.settings.endlesslyConnect ?
+    immutable resolveAttempts = instance.connSettings.endlesslyConnect ?
         int.max : defaultResolveAttempts;
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, instance.settings.ipv6, resolveAttempts, *instance.abort));
+        instance.parser.server.port, instance.connSettings.ipv6, resolveAttempts, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -1902,9 +1982,11 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
     }
     else
     {
-        logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+        logger.logf("Use %s%s --save%s to generate a configuration file.",
             Tint.info, binaryPath.baseName, Tint.log);
     }
+
+    logger.trace("---");
 }
 
 
@@ -1968,7 +2050,7 @@ void setupSettings(ref CoreSettings settings)
 
     switch (platform)
     {
-    case "Cygwin":
+    //case "Cygwin":  // No longer seems to need this
     case "vscode":
         // Whitelist more as we find them.
         settings.flush = true;
@@ -2140,7 +2222,6 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         // May as well check once here, in case something in initPlugins aborted or so.
         if (*instance.abort) break outerloop;
 
-        instance.conn.connected = false;
         instance.conn.reset();
 
         immutable actionAfterResolve = tryResolve(instance,
@@ -2269,7 +2350,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         attempt.firstConnect = false;
     }
     while (!*instance.abort && ((attempt.next == Next.continue_) || (attempt.next == Next.retry) ||
-        ((attempt.next == Next.returnFailure) && instance.settings.reconnectOnFailure)));
+        ((attempt.next == Next.returnFailure) && instance.connSettings.reconnectOnFailure)));
 }
 
 
@@ -2324,6 +2405,7 @@ void printSummary(const ref Kameloso instance)
     import core.time : Duration;
 
     Duration totalTime;
+    long totalBytesReceived;
 
     logger.info("-- Connection summary --");
 
@@ -2338,12 +2420,14 @@ void printSummary(const ref Kameloso instance)
         stop.fracSecs = 0.msecs;
         immutable duration = (stop - start);
         totalTime += duration;
+        totalBytesReceived += entry.bytesReceived;
 
-        writefln("%2d: %s, %d events parsed (%s to %s)",
-            i+1, duration, entry.numEvents, start, stop);
+        writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
+            i+1, duration, entry.numEvents, entry.bytesReceived, start, stop);
     }
 
     logger.info("Total time connected: ", Tint.log, totalTime);
+    logger.infof("Total received: %s%,d%s bytes", Tint.log, totalBytesReceived, Tint.info);
 }
 
 
@@ -2450,6 +2534,22 @@ int initBot(string[] args)
         applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
     }
 
+    import std.algorithm.comparison : among;
+
+    // Copy some stuff over to our Connection
+    instance.conn.certFile = instance.connSettings.certFile;
+    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
+    instance.conn.ssl = instance.connSettings.ssl;
+
+    // Additionally if the port is an SSL-like port, assume SSL,
+    // but only if the user isn't forcing settings
+    if (!instance.conn.ssl && !instance.settings.force &&
+        instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999, 443))
+    {
+        instance.connSettings.ssl = true;  // Is this wise?
+        instance.conn.ssl = true;
+    }
+
     string pre, post;
 
     version(Colours)
@@ -2474,7 +2574,9 @@ int initBot(string[] args)
     import kameloso.printing : printObjects;
 
     // Print the current settings to show what's going on.
-    printObjects(instance.parser.client, instance.bot, instance.parser.server);
+    IRCClient prettyClient = instance.parser.client;
+    prettyClient.realName = replaceTokens(prettyClient.realName);
+    printObjects(prettyClient, instance.bot, instance.parser.server);
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
@@ -2517,20 +2619,25 @@ int initBot(string[] args)
 
     try
     {
+        import std.file : exists;
+
         string[][string] missingEntries;
         string[][string] invalidEntries;
 
         instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
 
-        if (missingEntries.length) complainAboutMissingConfigurationEntries(missingEntries);
-        if (invalidEntries.length) complainAboutInvalidConfigurationEntries(invalidEntries);
-
-        if (missingEntries.length || invalidEntries.length)
+        if (instance.settings.configFile.exists)
         {
-            logger.logf("Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-                Tint.info, Tint.log, instance.settings.configFile);
-            logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
-            logger.trace("---");
+            if (missingEntries.length) complainAboutMissingConfigurationEntries(missingEntries);
+            if (invalidEntries.length) complainAboutInvalidConfigurationEntries(invalidEntries);
+
+            if (missingEntries.length || invalidEntries.length)
+            {
+                logger.logf("Use %s--save%s to update your configuration file. [%1$s%3$s%2$s]",
+                    Tint.info, Tint.log, instance.settings.configFile);
+                logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+                logger.trace("---");
+            }
         }
     }
     catch (ConvException e)
@@ -2557,30 +2664,56 @@ int initBot(string[] args)
 
     if (*instance.abort && instance.conn.connected)
     {
-        // Connected and aborting
+        import std.concurrency : receiveTimeout;
+        import core.time : seconds;
 
-        if (!instance.settings.hideOutgoing)
+        // Connected and aborting
+        // Catch any queued quit calls and use their reasons and quit settings
+
+        bool quiet;
+        string reason;
+
+        immutable received = receiveTimeout((-1).seconds,
+            (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
+            {
+                reason = givenReason;
+                quiet = givenQuiet;
+            },
+        );
+
+        if (!received) reason = instance.bot.quitReason;
+
+        if (!instance.settings.hideOutgoing && !quiet)
         {
+            bool printed;
+
             version(Colours)
             {
-                import kameloso.irccolours : mapEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason
-                    .mapEffects
-                    .replaceTokens(instance));
+                if (!instance.settings.monochrome)
+                {
+                    import kameloso.irccolours : mapEffects;
+
+                    logger.trace("--> QUIT :", reason
+                        .mapEffects
+                        .replaceTokens(instance.parser.client));
+                    printed = true;
+                }
             }
-            else
+
+            if (!printed)
             {
                 import kameloso.irccolours : stripEffects;
-                logger.trace("--> QUIT :", instance.bot.quitReason
+
+                logger.trace("--> QUIT :", reason
                     .stripEffects
-                    .replaceTokens(instance));
+                    .replaceTokens(instance.parser.client));
             }
         }
 
-        instance.conn.sendline("QUIT :" ~ instance.bot.quitReason.replaceTokens(instance));
+        instance.conn.sendline("QUIT :" ~ reason.replaceTokens(instance.parser.client));
     }
     else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
-        !instance.settings.reconnectOnFailure)
+        !instance.connSettings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)",
@@ -2604,7 +2737,7 @@ int initBot(string[] args)
         }
     }
 
-    if (instance.settings.exitSummary)
+    if (instance.settings.exitSummary && instance.connectionHistory.length)
     {
         instance.printSummary();
     }

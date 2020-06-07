@@ -44,7 +44,7 @@ enum KamelosoDefaultStrings
     serverAddress = "irc.freenode.net",
 
     /// The default GEOC/"real name" string.
-    realName = "kameloso IRC bot",
+    realName = "kameloso IRC bot v$version",
 
     /// The default quit reason, when the bot exits.
     quitReason = "kameloso IRC bot v$version @ $source",
@@ -114,12 +114,6 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
-     +  How long a Webtitles title lookup lasts before it is considered to
-     +  have expired, and should be looked up anew.
-     +/
-    titleLookup = 8192,
-
-    /++
      +  The maximum number of queued outgoing lines to buffer. Anything above
      +  this will crash the program with a buffer overrun. It can be arbitrarily big.
      +/
@@ -129,6 +123,13 @@ enum BufferSize
      +  The maximum number of queued priority lines to buffer. These are rare.
      +/
     priorityBuffer = 64,
+
+    /++
+     +  How many bytes to preallocate a buffer for when printing objects to
+     +  screen with the `kameloso.printing` templates. This value times the
+     +  number of objects to print.
+     +/
+    printObjectBufferPerObject = 1024,
 }
 
 /++
@@ -171,6 +172,11 @@ enum Timeout
      +  at all before the connection is considered lost.
      +/
     connectionLost = 600,
+
+    /++
+     +  Timeout for HTTP GET requests.
+     +/
+    httpGET = 10,
 }
 
 
