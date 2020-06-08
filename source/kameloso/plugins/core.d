@@ -359,7 +359,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    package void onEventImpl(const ref IRCEvent origEvent) @system
+    package void onEventImpl(const IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
