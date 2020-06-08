@@ -359,7 +359,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  Params:
      +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    package void onEventImpl(const ref IRCEvent event) @system
+    package void onEventImpl(const ref IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -392,7 +392,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         /++
          +  Process a function.
          +/
-        Next handle(alias fun)(const ref IRCEvent event)
+        Next handle(alias fun)(ref IRCEvent event)
         {
             enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
                 Yes.verbose :
@@ -611,12 +611,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
             }
 
-            IRCEvent mutEvent = event;  // mutable
             bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
 
             // Evaluate each BotCommand UDAs with the current event
             static if (hasUDA!(fun, BotCommand))
             {
+                import lu.string : strippedLeft;
+
+                immutable origContent = event.content.strippedLeft;
+
                 foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                 {
                     import lu.string : contains;
@@ -643,7 +646,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy,
+                    if (!event.prefixPolicyMatches!verbose(commandUDA.policy,
                         state.client, state.settings.prefix))
                     {
                         static if (verbose)
@@ -655,13 +658,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         continue;  // next BotCommand UDA
                     }
 
-                    import lu.string : strippedLeft;
                     import std.algorithm.comparison : equal;
                     import std.typecons : No, Yes;
                     import std.uni : asLowerCase;
 
-                    mutEvent.content = event.content.strippedLeft;
-                    immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
+                    immutable thisCommand = event.content.nom!(Yes.inherit, Yes.decode)(' ');
 
                     if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
                     {
@@ -671,9 +672,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        mutEvent.aux = thisCommand;
+                        event.aux = thisCommand;
                         commandMatch = true;
                         break;  // finish this BotCommand
+                    }
+                    else
+                    {
+                        // Restore content to pre-nom state
+                        event.content = origContent;
                     }
                 }
             }
@@ -700,7 +706,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy,
+                        if (!event.prefixPolicyMatches!verbose(regexUDA.policy,
                             state.client, state.settings.prefix))
                         {
                             static if (verbose)
@@ -716,7 +722,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         {
                             import std.regex : matchFirst;
 
-                            const hits = mutEvent.content.matchFirst(regexUDA.engine);
+                            const hits = event.content.matchFirst(regexUDA.engine);
 
                             if (!hits.empty)
                             {
@@ -726,7 +732,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                                     if (state.settings.flush) stdout.flush();
                                 }
 
-                                mutEvent.aux = hits[0];
+                                event.aux = hits[0];
                                 commandMatch = true;
                                 break;  // finish this BotRegex
                             }
@@ -735,7 +741,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                                 static if (verbose)
                                 {
                                     writefln(`...matching "%s" against expression "%s" failed.`,
-                                        mutEvent.content, regexUDA.expression);
+                                        event.content, regexUDA.expression);
                                 }
                             }
                         }
@@ -813,7 +819,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    immutable result = this.allow(mutEvent, privilegeLevel);
+                    immutable result = this.allow(event, privilegeLevel);
                 }
                 else
                 {
@@ -823,7 +829,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    immutable result = allowImpl(mutEvent, privilegeLevel);
+                    immutable result = allowImpl(event, privilegeLevel);
                 }
 
                 static if (verbose)
@@ -854,13 +860,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.enqueue(mutEvent, privilegeLevel, &fun, fullyQualifiedName!fun);
+                        this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
                         return Next.continue_;  // Next function
                     }
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
-                        this.enqueue(this, mutEvent, privilegeLevel, &fun, fullyQualifiedName!fun);
+                        this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
                         return Next.continue_;  // Next function
                     }
                     else static if (Filter!(isIRCPluginParam, Params).length)
@@ -895,7 +901,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                 is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
             {
-                fun(this, mutEvent);
+                fun(this, event);
             }
             else static if (is(Params : AliasSeq!(typeof(this))) ||
                 (is(Params : AliasSeq!IRCPlugin) && isAwarenessFunction!fun))
@@ -904,7 +910,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             }
             else static if (is(Params : AliasSeq!IRCEvent))
             {
-                fun(mutEvent);
+                fun(event);
             }
             else static if (arity!fun == 0)
             {
@@ -965,7 +971,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         }
 
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
-        void tryCatchHandle(funlist...)(const ref IRCEvent event)
+        void tryCatchHandle(funlist...)(ref IRCEvent event)
         {
             import core.exception : UnicodeException;
             import std.utf : UTFException;
@@ -1017,6 +1023,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
             }
         }
+
+        IRCEvent event = origEvent;  // mutable
 
         tryCatchHandle!setupFuns(event);
         tryCatchHandle!earlyFuns(event);
