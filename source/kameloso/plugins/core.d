@@ -613,13 +613,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
             bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
 
+            static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
+            {
+                // Snapshot content and aux for later restoration
+                immutable origContent = event.content;
+                immutable origAux = event.aux;
+            }
+
             // Evaluate each BotCommand UDAs with the current event
             static if (hasUDA!(fun, BotCommand))
             {
-                import lu.string : strippedLeft;
-
-                immutable origContent = event.content.strippedLeft;
-
                 foreach (immutable commandUDA; getUDAs!(fun, BotCommand))
                 {
                     import lu.string : contains;
@@ -771,6 +774,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     }
 
                     return Next.continue_; // next function
+                }
+
+                scope(exit)
+                {
+                    if (commandMatch)
+                    {
+                        // Restore content and aux as they were definitely altered
+                        event.content = origContent;
+                        event.aux = origAux;
+                    }
                 }
             }
 
