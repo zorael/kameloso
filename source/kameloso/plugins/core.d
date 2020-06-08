@@ -340,6 +340,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  See_Also:
      +      onEventImpl
      +/
+    pragma(inline, true)
     override public void onEvent(const IRCEvent event) @system
     {
         return onEventImpl(event);
