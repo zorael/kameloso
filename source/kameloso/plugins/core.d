@@ -1022,18 +1022,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     /*logger.warningf("tryCatchHandle UTFException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    IRCEvent saneEvent = event;
-                    sanitizeEvent(saneEvent);
-                    handle!fun(saneEvent);
+                    sanitizeEvent(event);
+                    handle!fun(event);
                 }
                 catch (UnicodeException e)
                 {
                     /*logger.warningf("tryCatchHandle UnicodeException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    IRCEvent saneEvent = event;
-                    sanitizeEvent(saneEvent);
-                    handle!fun(saneEvent);
+                    sanitizeEvent(event);
+                    handle!fun(event);
                 }
             }
         }
