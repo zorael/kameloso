@@ -1634,7 +1634,7 @@ version(unittest)
  +
  +  Params:
  +      verbose = Whether or not to output verbose debug information to the local terminal.
- +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
+ +      event = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +      policy = Policy to apply.
  +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      prefix = The prefix as set in the program-wide settings.
@@ -1643,7 +1643,7 @@ version(unittest)
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEvent,
+bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event,
     const PrefixPolicy policy, const IRCClient client, const string prefix)
 {
     import kameloso.common : stripSeparatedPrefix;
@@ -1657,7 +1657,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEv
         writeln("...prefixPolicyMatches! policy:", policy);
     }
 
-    with (mutEvent)
+    with (event)
     with (PrefixPolicy)
     final switch (policy)
     {
