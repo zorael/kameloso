@@ -442,7 +442,8 @@ if (isOutputRange!(Sink, char[]))
 
         plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
         immutable twitchLine = sink.data[11..$].idup;
-        assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`), twitchLine);
+        assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
+            twitchLine);
         sink = typeof(sink).init;
         event.sender.badges = string.init;
     }
