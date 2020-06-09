@@ -361,16 +361,12 @@ if (isOutputRange!(Sink, char[]))
 
         if (count != 0)
         {
-            sink.put(" {");
-            .put(sink, count);
-            sink.put('}');
+            .put(sink, " {", count, '}');
         }
 
         if (altcount != 0)
         {
-            sink.put(" {");
-            .put(sink, altcount);
-            sink.put('}');
+            .put(sink, " {", altcount, '}');
         }
 
         if (num > 0)
@@ -896,17 +892,13 @@ if (isOutputRange!(Sink, char[]))
         if (count != 0)
         {
             sink.colourWith(bright ? Bright.count : Dark.count);
-            sink.put(" {");
-            .put(sink, count);
-            sink.put('}');
+            .put(sink, " {", count, '}');
         }
 
         if (altcount != 0)
         {
             sink.colourWith(bright ? Bright.altcount : Dark.altcount);
-            sink.put(" {");
-            .put(sink, altcount);
-            sink.put('}');
+            .put(sink, " {", altcount, '}');
         }
 
         if (num > 0)
