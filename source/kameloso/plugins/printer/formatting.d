@@ -245,16 +245,7 @@ if (isOutputRange!(Sink, char[]))
                             break;
 
                         default:
-                            sink.put(" [");
-                            if (plugin.printerSettings.abbreviatedBadges)
-                            {
-                                sink.abbreviateBadges(sender.badges);
-                            }
-                            else
-                            {
-                                sink.put(sender.badges);
-                            }
-                            sink.put(']');
+                            .put(sink, " [", sender.badges, ']');
                         }
                     }
                 }
@@ -293,16 +284,7 @@ if (isOutputRange!(Sink, char[]))
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                     plugin.printerSettings.twitchBadges && target.badges.length)
                 {
-                    sink.put(" [");
-                    if (plugin.printerSettings.abbreviatedBadges)
-                    {
-                        sink.abbreviateBadges(target.badges);
-                    }
-                    else
-                    {
-                        sink.put(target.badges);
-                    }
-                    sink.put(']');
+                    .put(sink, " [", target.badges, ']');
                 }
             }
         }
@@ -710,16 +692,8 @@ if (isOutputRange!(Sink, char[]))
                             break;
 
                         default:
-                            .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                            if (plugin.printerSettings.abbreviatedBadges)
-                            {
-                                sink.abbreviateBadges(sender.badges);
-                            }
-                            else
-                            {
-                                sink.put(sender.badges);
-                            }
-                            sink.put(']');
+                            .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                                " [", sender.badges, ']');
                         }
                     }
                 }
@@ -765,16 +739,9 @@ if (isOutputRange!(Sink, char[]))
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                     plugin.printerSettings.twitchBadges && target.badges.length)
                 {
-                    .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                    if (plugin.printerSettings.abbreviatedBadges)
-                    {
-                        sink.abbreviateBadges(target.badges);
-                    }
-                    else
-                    {
-                        sink.put(target.badges);
-                    }
-                    sink.put(']');
+                    .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                        " [", target.badges, ']');
+
                 }
             }
         }
