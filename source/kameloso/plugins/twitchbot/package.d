@@ -63,20 +63,21 @@ import core.thread : Fiber;
     /// Whether or not to use features dependent on the Twitch API.
     bool enableAPIFeatures = true;
 
-    /++
-     +  Whether to use one persistent worker for Twitch queries or to use separate subthreads.
-     +
-     +  It's a trade-off. A single worker thread obviously spawns fewer threads,
-     +  which makes it a better choice on Windows systems where creating such is
-     +  comparatively expensive. On the other hand, it's also slower (likely due to
-     +  concurrency message passing overhead).
-     +/
     version(Windows)
     {
+        /++
+         +  Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+         +
+         +  It's a trade-off. A single worker thread obviously spawns fewer threads,
+         +  which makes it a better choice on Windows systems where creating such is
+         +  comparatively expensive. On the other hand, it's also slower (likely due to
+         +  concurrency message passing overhead).
+         +/
         bool singleWorkerThread = true;
     }
     else
     {
+        /// Ditto
         bool singleWorkerThread = false;
     }
 

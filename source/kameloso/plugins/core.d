@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
 version = PrefixedCommandsFallBackToNickname;
 
 
-/++
+/+
  +  2.079.0 has a bug that breaks plugin processing completely. It's fixed in
  +  patch .1 (2.079.1), but there's no API for knowing the patch number.
  +
@@ -50,13 +50,19 @@ static if (__VERSION__ == 2079L)
 {
     import lu.traits : getSymbolsByUDA;
 
+    ///
     struct UDA_2079 {}
+
+    ///
     struct Foo_2079
     {
         @UDA_2079
         {
+            ///
             int i;
+            ///
             void fun() {}
+            ///
             int n;
         }
     }
