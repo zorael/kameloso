@@ -662,11 +662,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         continue;  // next BotCommand UDA
                     }
 
+                    import lu.string : strippedLeft;
                     import std.algorithm.comparison : equal;
                     import std.typecons : No, Yes;
                     import std.uni : asLowerCase;
 
-                    immutable thisCommand = event.content.nom!(Yes.inherit, Yes.decode)(' ');
+                    immutable thisCommand = event.content
+                        .strippedLeft
+                        .nom!(Yes.inherit, Yes.decode)(' ');
 
                     if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
                     {
