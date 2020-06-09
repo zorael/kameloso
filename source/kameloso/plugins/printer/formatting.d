@@ -441,14 +441,12 @@ if (isOutputRange!(Sink, char[]))
 
     version(TwitchSupport)
     {
-        plugin.printerSettings.abbreviatedBadges = true;
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
         plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
         immutable twitchLine = sink.data[11..$].idup;
-        version(TwitchSupport) assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
-        else assert((twitchLine == `[chan] [#channel] nickname [BMS]: "Harbl snarbl"`), twitchLine);
+        assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`), twitchLine);
         sink = typeof(sink).init;
         event.sender.badges = string.init;
     }
