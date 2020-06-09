@@ -392,18 +392,11 @@ public:
      +/
     private void printfImpl(string pattern, Args...)(const LogLevel logLevel, Args args)
     {
-        static if (__VERSION__ >= 2074)
-        {
-            import std.format : formattedWrite;
+        import std.format : formattedWrite;
 
-            beginLogMsg(logLevel);
-            linebuffer.formattedWrite!pattern(args);
-            finishLogMsg();
-        }
-        else
-        {
-            printfImpl(logLevel, pattern, args);
-        }
+        beginLogMsg(logLevel);
+        linebuffer.formattedWrite!pattern(args);
+        finishLogMsg();
     }
 
 

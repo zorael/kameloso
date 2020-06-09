@@ -273,12 +273,6 @@ if (isOutputRange!(Sink, char[]))
         alias F = TerminalForeground;
     }
 
-    static if (__VERSION__ < 2076L)
-    {
-        // workaround formattedWrite taking sink by value pre 2.076
-        sink.put(string.init);
-    }
-
     import lu.string : stripSuffix;
     import std.format : formattedWrite;
     import std.traits : Unqual;
