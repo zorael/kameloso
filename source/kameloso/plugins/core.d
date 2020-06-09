@@ -358,7 +358,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  etc; where such is applicable.
      +
      +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
+     +      origEvent = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
     package void onEventImpl(const IRCEvent origEvent) @system
     {
