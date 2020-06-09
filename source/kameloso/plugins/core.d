@@ -393,7 +393,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         /++
          +  Process a function.
          +/
-        Next handle(alias fun)(ref IRCEvent event)
+        Next process(alias fun)(ref IRCEvent event)
         {
             enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
                 Yes.verbose :
@@ -988,7 +988,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         }
 
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
-        void tryCatchHandle(funlist...)(ref IRCEvent event)
+        void tryProcess(funlist...)(ref IRCEvent event)
         {
             import core.exception : UnicodeException;
             import std.utf : UTFException;
@@ -997,7 +997,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             {
                 try
                 {
-                    immutable next = handle!fun(event);
+                    immutable next = process!fun(event);
 
                     with (Next)
                     final switch (next)
@@ -1007,7 +1007,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
                     case repeat:
                         // only repeat once so we don't endlessly loop
-                        if (handle!fun(event) == continue_)
+                        if (process!fun(event) == continue_)
                         {
                             continue;
                         }
@@ -1022,30 +1022,30 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
                 catch (UTFException e)
                 {
-                    /*logger.warningf("tryCatchHandle UTFException on %s: %s",
+                    /*logger.warningf("tryProcess UTFException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
                     sanitizeEvent(event);
-                    handle!fun(event);
+                    process!fun(event);
                 }
                 catch (UnicodeException e)
                 {
-                    /*logger.warningf("tryCatchHandle UnicodeException on %s: %s",
+                    /*logger.warningf("tryProcess UnicodeException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
                     sanitizeEvent(event);
-                    handle!fun(event);
+                    process!fun(event);
                 }
             }
         }
 
         IRCEvent event = origEvent;  // mutable
 
-        tryCatchHandle!setupFuns(event);
-        tryCatchHandle!earlyFuns(event);
-        tryCatchHandle!pluginFuns(event);
-        tryCatchHandle!lateFuns(event);
-        tryCatchHandle!cleanupFuns(event);
+        tryProcess!setupFuns(event);
+        tryProcess!earlyFuns(event);
+        tryProcess!pluginFuns(event);
+        tryProcess!lateFuns(event);
+        tryProcess!cleanupFuns(event);
     }
 
 
