@@ -631,28 +631,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         continue;  // next BotCommand UDA
                     }
 
-                    import lu.semver : LuSemVer;
                     import lu.string : strippedLeft;
                     import std.algorithm.comparison : equal;
                     import std.typecons : No, Yes;
                     import std.uni : asLowerCase;
 
-                    static if ((LuSemVer.majorVersion == 0) &&
-                        (LuSemVer.minorVersion == 4) &&
-                        (LuSemVer.patchVersion < 1))
-                    {
-                        // lu 0.4.0 has a bug where the inheriting nom does not take
-                        // the string by auto ref
-                        string thisCommandTemporary = event.content.strippedLeft;
-                        immutable thisCommand = thisCommandTemporary
-                            .nom!(Yes.inherit, Yes.decode)(' ');
-                    }
-                    else
-                    {
-                        immutable thisCommand = event.content
-                            .strippedLeft
-                            .nom!(Yes.inherit, Yes.decode)(' ');
-                    }
+                    immutable thisCommand = event.content
+                        .strippedLeft
+                        .nom!(Yes.inherit, Yes.decode)(' ');
 
                     if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
                     {
