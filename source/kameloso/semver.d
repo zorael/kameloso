@@ -11,8 +11,8 @@ module kameloso.semver;
 enum KamelosoSemVer
 {
     majorVersion = 1,  /// SemVer major version of the program.
-    minorVersion = 8,  /// SemVer minor version of the program.
-    patchVersion = 2,  /// SemVer patch version of the program.
+    minorVersion = 9,  /// SemVer minor version of the program.
+    patchVersion = 0,  /// SemVer patch version of the program.
 }
 
 
