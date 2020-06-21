@@ -280,7 +280,7 @@ unittest
 
 // ircBold
 /++
- +  Returns the passed string wrapped inbetween IRC bold control characters.
+ +  Returns the passed string wrapped in between IRC bold control characters.
  +
  +  Params:
  +      word = String word to make IRC bold.
@@ -307,7 +307,7 @@ unittest
 
 // ircItalics
 /++
- +  Returns the passed string wrapped inbetween IRC italics control characters.
+ +  Returns the passed string wrapped in between IRC italics control characters.
  +
  +  Params:
  +      word = String word to make IRC italics.
@@ -334,7 +334,7 @@ unittest
 
 // ircUnderlined
 /++
- +  Returns the passed string wrapped inbetween IRC underlined control characters.
+ +  Returns the passed string wrapped in between IRC underlined control characters.
  +
  +  Params:
  +      word = String word to make IRC italics.
@@ -551,7 +551,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
 in ((fgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
     " colours with a foreground reset value of 0")
 in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
-    " colours with a backgroud reset value of 0")
+    " colours with a background reset value of 0")
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
@@ -882,7 +882,7 @@ unittest
  +  bold text then, we'll get lines that start off bold and continue as such
  +  until the very end.
  +
- +  Instead we iterate all occcurences of the pased `mircToken`, toggling the
+ +  Instead we iterate all occcurences of the passed `mircToken`, toggling the
  +  effect on and off.
  +
  +  Params:

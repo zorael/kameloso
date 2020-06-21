@@ -43,7 +43,7 @@ public:
 
 // Widths
 /++
- +  Calculates the minimum padding needed to accomodate the strings of all the
+ +  Calculates the minimum padding needed to accommodate the strings of all the
  +  types and names of the members of the passed struct and/or classes, for
  +  formatting into neat columns.
  +

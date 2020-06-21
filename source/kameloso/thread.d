@@ -14,7 +14,7 @@
  +  auto fiber = new CarryingFiber!string(&someDelegate, 32_768);
  +  fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
  +  fiber.call();
- +  fiber.payload = "You can change it inbetween calls to pass information to it";
+ +  fiber.payload = "You can change it in between calls to pass information to it";
  +  fiber.call();
  +
  +  // As such we can make Fibers act like they're taking new arguments each call

@@ -1823,7 +1823,7 @@ unittest
  +      client = The current `dialect.defs.IRCClient`.
  +
  +  Returns:
- +      A modified string with token occurences replaced.
+ +      A modified string with token occurrences replaced.
  +/
 string replaceTokens(const string line, const IRCClient client) @safe pure nothrow
 {
@@ -1871,14 +1871,14 @@ unittest
 // replaceTokens
 /++
  +  Apply some common text replacements. Used on part and quit reasons.
- +  Overload that doens't take an `dialect.defs.IRCClient` and as such can't
+ +  Overload that doesn't take an `dialect.defs.IRCClient` and as such can't
  +  replace `$nickname`.
  +
  +  Params:
  +      line = String to replace tokens in.
  +
  +  Returns:
- +      A modified string with token occurences replaced.
+ +      A modified string with token occurrences replaced.
  +/
 string replaceTokens(const string line) @safe pure nothrow
 {

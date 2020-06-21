@@ -365,7 +365,7 @@ void generateKey(TwitchBotPlugin plugin)
  +  worker start it.
  +
  +  Once the query returns, the response body is checked to see whether or not
- +  an error occured. If it did, an attempt to reset API keys is made and, if
+ +  an error occurred. If it did, an attempt to reset API keys is made and, if
  +  successful, the query is resent and the cycle repeated while taking care not
  +  to inifinitely loop. If not successful, it throws an exception and disables
  +  API features.

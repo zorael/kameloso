@@ -2299,7 +2299,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("An error occured while initialising the %s%s%s " ~
+            logger.warningf("An error occurred while initialising the %s%s%s " ~
                 "plugin's resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
@@ -2333,7 +2333,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("An error occured while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
+            logger.warningf("An error occurred while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file.baseName, e.line, TerminalToken.bell);

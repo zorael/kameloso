@@ -785,7 +785,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
  +  Implements "Follow Age", or the ability to query the server how long you
  +  (or a specified user) have been a follower of the current channel.
  +
- +  Lookups are done asychronously in subthreads.
+ +  Lookups are done asynchronously in subthreads.
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
