@@ -63,6 +63,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
     * [Other files](#other-files)
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
+    * [Except nothing happens](#except-nothing-happens)
   * [Twitch](#twitch)
     * [Example configuration](#example-configuration)
     * [Streamer assistant bot](#streamer-assistant-bot)
@@ -169,10 +170,6 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
-
-> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
-
 ```
       you joined #channel
  kameloso sets mode +o you
@@ -233,6 +230,12 @@ prefix              "!"
 ```
 
 It can technically be any string and not just one character. It may include spaces, like `"please "` (making it `please note`, `please quote`, ...). Prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. Some administrative commands only work when called this way.
+
+### Except nothing happens
+
+Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged onto. For full administrative privileges you will need to be logged onto an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable, and as such will not be able to access features it normally might have enjoyed.
+
+In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
 
 ## Twitch
 
@@ -314,7 +317,7 @@ If SSL flat doesn't work at all, you may simply be missing the necessary librari
 
 Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
-In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use `cmd.exe` and/or the Powershell console instead.
+In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use `cmd.exe`, the Powershell console or a Windows Subsystem for Linux (WSL) terminal instead.
 
 ## Posix
 
