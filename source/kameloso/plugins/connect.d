@@ -1163,7 +1163,24 @@ void register(ConnectService service)
 
         if (bot.pass.length)
         {
-            raw(service.state, "PASS " ~ bot.pass, Yes.quiet);
+            version(TwitchSupport)
+            {
+                //import lu.string : beginsWith;
+                import std.algorithm : endsWith;
+
+                immutable pass = ((bot.pass.length == 30) &&
+                    //!bot.pass.beginsWith("oauth:") &&
+                    service.state.server.address.endsWith(".twitch.tv")) ?
+                        "oauth:" ~ bot.pass :
+                        bot.pass;
+
+                raw(service.state, "PASS " ~ pass, Yes.quiet);
+            }
+            else
+            {
+                raw(service.state, "PASS " ~ bot.pass, Yes.quiet);
+            }
+
             if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
 

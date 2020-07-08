@@ -731,7 +731,10 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    immutable authorizationHeader = "OAuth " ~ plugin.state.bot.pass[6..$];
+    immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
+        plugin.state.bot.pass[6..$] :
+        plugin.state.bot.pass;
+    immutable authorizationHeader = "OAuth " ~ pass;
 
     const response = queryTwitch(plugin, url, authorizationHeader);
 

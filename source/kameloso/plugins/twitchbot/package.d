@@ -1151,12 +1151,16 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
     version(TwitchAPIFeatures)
     {
+        import lu.string : beginsWith;
         import std.concurrency : Tid;
 
         if (!plugin.useAPIFeatures) return;
 
         // Concatenate the Bearer and OAuth headers once.
-        plugin.authorizationBearer = "Bearer " ~ plugin.state.bot.pass[6..$];
+        immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
+            plugin.state.bot.pass[6..$] :
+            plugin.state.bot.pass;
+        plugin.authorizationBearer = "Bearer " ~ pass;
 
         if (plugin.bucket is null)
         {
