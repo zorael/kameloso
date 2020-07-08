@@ -440,8 +440,10 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         !response.str.length || (response.str.beginsWith(`{"err`)))
     {
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new TwitchQueryException("Failed to query Twitch: " ~ response.error,
-            response.str, response.error, response.code);
+        immutable message = response.error.length ?
+            "Failed to query Twitch: " ~ response.error :
+            "Failed to query Twitch";
+        throw new TwitchQueryException(message, response.str, response.error, response.code);
     }
 
     return response;
