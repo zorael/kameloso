@@ -312,12 +312,12 @@ void generateKey(TwitchBotPlugin plugin)
         }
     }
 
-    plugin.state.bot.pass = "oauth:" ~ key;
+    plugin.state.bot.pass = key;
     plugin.state.botUpdated = true;
 
     writeln();
     writefln("%sYour private authorisation key is: %s%s%s",
-        Tint.log, Tint.info, plugin.state.bot.pass, Tint.reset);
+        Tint.log, Tint.info, key, Tint.reset);
     writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
         Tint.info, Tint.reset);
     writeln();
