@@ -584,20 +584,23 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
     switch (event.content)
     {
     case "Improperly formatted auth":
-        import lu.string : beginsWith;
-
-        immutable message = !service.state.bot.pass.length ?
-            "You *need* a pass to join this server." :
-            (!service.state.bot.pass.beginsWith("oauth:") ?
-                `Client pass is malformed; does not start with "oauth:"` :
-                "Client pass is malformed; cannot authenticate. " ~
-                    "Make sure it is entered correctly.");
-
-        logger.error(message);
+        if (!service.state.bot.pass.length)
+        {
+            logger.error("You *need* a pass to join this server.");
+            logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
+                Tint.info, Tint.log);
+        }
+        else
+        {
+            logger.error("Client pass is malformed, cannot authenticate. " ~
+                "Please make sure it is entered correctly.");
+        }
         break;
 
     case "Login authentication failed":
-        logger.error("Wrong pass. Please make sure it is valid.");
+        logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
+        logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
+            Tint.info, Tint.log);
         break;
 
     case "Login unsuccessful":
