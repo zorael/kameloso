@@ -946,14 +946,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import std.encoding : sanitize;
 
-            with (event)
-            {
-                raw = sanitize(raw);
-                channel = sanitize(channel);
-                content = sanitize(content);
-                aux = sanitize(aux);
-                tags = sanitize(tags);
-            }
+            event.raw = sanitize(event.raw);
+            event.channel = sanitize(event.channel);
+            event.content = sanitize(event.content);
+            event.aux = sanitize(event.aux);
+            event.tags = sanitize(event.tags);
         }
 
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
@@ -1641,7 +1638,6 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         writeln("...prefixPolicyMatches! policy:", policy);
     }
 
-    with (event)
     with (PrefixPolicy)
     final switch (policy)
     {
@@ -1653,14 +1649,14 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         return true;
 
     case prefixed:
-        if (prefix.length && content.beginsWith(prefix))
+        if (prefix.length && event.content.beginsWith(prefix))
         {
             static if (verbose)
             {
                 writefln("starts with prefix (%s)", prefix);
             }
 
-            content.nom!(Yes.decode)(prefix);
+            event.content.nom!(Yes.decode)(prefix);
         }
         else
         {
@@ -1686,7 +1682,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         break;
 
     case nickname:
-        if (content.beginsWith('@'))
+        if (event.content.beginsWith('@'))
         {
             static if (verbose)
             {
@@ -1695,20 +1691,21 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
 
             // Using @name to refer to someone is not
             // uncommon; allow for it and strip it away
-            content = content[1..$];
+            event.content = event.content[1..$];
         }
 
-        if (content.beginsWith(client.nickname))
+        if (event.content.beginsWith(client.nickname))
         {
             static if (verbose)
             {
                 writeln("begins with nickname! stripping it");
             }
 
-            content = content.stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
+            event.content = event.content
+                .stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
             // Drop down
         }
-        else if (type == IRCEvent.Type.QUERY)
+        else if (event.type == IRCEvent.Type.QUERY)
         {
             static if (verbose)
             {

@@ -279,13 +279,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
             if (nickname == plugin.state.client.nickname) continue;
 
             IRCEvent fakeEvent;
-
-            with (fakeEvent)
-            {
-                type = IRCEvent.Type.JOIN;
-                sender.nickname = nickname;
-                channel = event.channel;
-            }
+            fakeEvent.type = IRCEvent.Type.JOIN;
+            fakeEvent.sender.nickname = nickname;
+            fakeEvent.channel = event.channel;
 
             // Use a replay to fill in known information about the user by use of Persistence
             auto req = replay(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);

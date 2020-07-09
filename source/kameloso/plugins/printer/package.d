@@ -440,31 +440,30 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    with (plugin.state.server)
+    import lu.conv : Enum;
+    import std.string : capitalize;
+    import std.uni : isLower;
+
+    immutable networkName = plugin.state.server.network[0].isLower ?
+        capitalize(plugin.state.server.network) :
+        plugin.state.server.network;
+
+    string tintreset;
+
+    version(Colours)
     {
-        import lu.conv : Enum;
-        import std.string : capitalize;
-        import std.uni : isLower;
-
-        immutable networkName = network[0].isLower ? capitalize(network) : network;
-
-        string tintreset;
-
-        version(Colours)
+        if (!plugin.state.settings.monochrome)
         {
-            if (!plugin.state.settings.monochrome)
-            {
-                import kameloso.terminal : TerminalReset, colour;
-                enum tintresetColour = TerminalReset.all.colour.idup;
-                tintreset = tintresetColour;
-            }
+            import kameloso.terminal : TerminalReset, colour;
+            enum tintresetColour = TerminalReset.all.colour.idup;
+            tintreset = tintresetColour;
         }
-
-        logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
-            Tint.info, networkName, Tint.log,
-            Tint.info, Enum!(IRCServer.Daemon).toString(daemon),
-            tintreset, daemonstring);
     }
+
+    logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
+        Tint.info, networkName, Tint.log,
+        Tint.info, Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        tintreset, plugin.state.server.daemonstring);
 }
 
 

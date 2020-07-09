@@ -48,7 +48,6 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 
     string line;
 
-    with (service.state)
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -149,7 +148,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             Query:     USERINFO
             Response:  USERINFO fred (Fred Foobar)
          */
-        line = "USERINFO %s (%s)".format(client.nickname, client.realName);
+        line = "USERINFO %s (%s)".format(service.state.client.nickname, service.state.client.realName);
         break;
 
     case CTCP_DCC:

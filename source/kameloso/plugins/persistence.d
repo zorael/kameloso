@@ -449,26 +449,23 @@ void onQuit(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.SELFNICK)
 void onNick(PersistenceService service, const IRCEvent event)
 {
-    with (service.state)
+    if (service.state.settings.preferHostmasks)
     {
-        if (service.state.settings.preferHostmasks)
-        {
-            // The target is its own complete user, with account and everything.
-            // There's no point in copying anything over.
-        }
-        else if (const stored = event.sender.nickname in users)
-        {
-            users[event.target.nickname] = *stored;
-            users[event.target.nickname].nickname = event.target.nickname;
-        }
+        // The target is its own complete user, with account and everything.
+        // There's no point in copying anything over.
+    }
+    else if (const stored = event.sender.nickname in service.state.users)
+    {
+        service.state.users[event.target.nickname] = *stored;
+        service.state.users[event.target.nickname].nickname = event.target.nickname;
+    }
 
-        users.remove(event.sender.nickname);
+    service.state.users.remove(event.sender.nickname);
 
-        if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
-        {
-            service.userClassCurrentChannelCache[event.target.nickname] = *channel;
-            service.userClassCurrentChannelCache.remove(event.sender.nickname);
-        }
+    if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
+    {
+        service.userClassCurrentChannelCache[event.target.nickname] = *channel;
+        service.userClassCurrentChannelCache.remove(event.sender.nickname);
     }
 }
 
@@ -588,14 +585,11 @@ void reloadHostmasksFromDisk(PersistenceService service)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
-    with (service)
-    {
-        JSONStorage hostmasksJSON;
-        hostmasksJSON.load(hostmasksFile);
-        //accountByUser.clear();
-        accountByUser.populateFromJSON(hostmasksJSON);
-        accountByUser.rehash();
-    }
+    JSONStorage hostmasksJSON;
+    hostmasksJSON.load(service.hostmasksFile);
+    //service.accountByUser.clear();
+    service.accountByUser.populateFromJSON(hostmasksJSON);
+    service.accountByUser.rehash();
 }
 
 

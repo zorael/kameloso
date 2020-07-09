@@ -215,16 +215,13 @@ void onEndOfMotd(OnelinersPlugin plugin)
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
-    with (plugin)
-    {
-        JSONStorage channelOnelinerJSON;
-        channelOnelinerJSON.load(onelinerFile);
-        //onelinersByChannel.clear();
-        onelinersByChannel.populateFromJSON(channelOnelinerJSON,
-            plugin.onelinersSettings.caseSensitiveTriggers ?
-            Yes.lowercaseKeys : No.lowercaseKeys);
-        onelinersByChannel.rehash();
-    }
+    JSONStorage channelOnelinerJSON;
+    channelOnelinerJSON.load(plugin.onelinerFile);
+    //plugin.onelinersByChannel.clear();
+    plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON,
+        plugin.onelinersSettings.caseSensitiveTriggers ?
+        Yes.lowercaseKeys : No.lowercaseKeys);
+    plugin.onelinersByChannel.rehash();
 }
 
 

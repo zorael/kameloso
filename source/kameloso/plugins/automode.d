@@ -463,14 +463,11 @@ void onEndOfMotd(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
-    with (plugin)
-    {
-        JSONStorage automodesJSON;
-        automodesJSON.load(automodeFile);
-        //automodes.clear();
-        automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
-        automodes.rehash();
-    }
+    JSONStorage automodesJSON;
+    automodesJSON.load(plugin.automodeFile);
+    //plugin.automodes.clear();
+    plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
+    plugin.automodes.rehash();
 }
 
 

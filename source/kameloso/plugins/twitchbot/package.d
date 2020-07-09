@@ -1138,16 +1138,13 @@ void onEndOfMotd(TwitchBotPlugin plugin)
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
-    with (plugin)
-    {
-        JSONStorage channelBannedPhrasesJSON;
-        channelBannedPhrasesJSON.load(bannedPhrasesFile);
-        bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-        bannedPhrasesByChannel.rehash();
+    JSONStorage channelBannedPhrasesJSON;
+    channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
+    plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
+    plugin.bannedPhrasesByChannel.rehash();
 
-        // Timers use a specialised function
-        plugin.populateTimers(plugin.timersFile);
-    }
+    // Timers use a specialised function
+    plugin.populateTimers(plugin.timersFile);
 
     version(TwitchAPIFeatures)
     {

@@ -304,76 +304,73 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 @(IRCEvent.Type.ERR_NOMOTD)
 void onMotd(PipelinePlugin plugin)
 {
-    with (plugin)
-    {
-        // Save the filename *once* so it persists across nick changes.
-        // If !fifoInWorkingDir then in /tmp or $TMPDIR
-        fifoFilename = state.client.nickname ~ "@" ~ state.server.address;
+    // Save the filename *once* so it persists across nick changes.
+    // If !fifoInWorkingDir then in /tmp or $TMPDIR
+    plugin.fifoFilename = plugin.state.client.nickname ~ "@" ~ plugin.state.server.address;
 
-        if (!pipelineSettings.fifoInWorkingDir)
+    if (!plugin.pipelineSettings.fifoInWorkingDir)
+    {
+        // See notes at the top of module.
+        version(OSX)
         {
-            // See notes at the top of module.
-            version(OSX)
-            {
-                version(OSXTMPDIR)
-                {
-                    enum useTMPDIR = true;
-                }
-                else
-                {
-                    enum useTMPDIR = false;
-                }
-            }
-            else // Implicitly not Windows since Posix-only plugin
+            version(OSXTMPDIR)
             {
                 enum useTMPDIR = true;
             }
-
-            static if (useTMPDIR)
-            {
-                import std.process : environment;
-                immutable tempdir = environment.get("TMPDIR", "/tmp");
-            }
             else
             {
-                enum tempdir = "/tmp";
+                enum useTMPDIR = false;
             }
-
-            import std.path : buildNormalizedPath;
-            fifoFilename = buildNormalizedPath(tempdir, fifoFilename);
         }
-
-        import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
-
-        try
+        else // Implicitly not Windows since Posix-only plugin
         {
-            createFIFO(fifoFilename);
-            fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename,
-                (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
-                (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
-            workerRunning = true;
-        }
-        catch (ReturnValueException e)
-        {
-            logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
-                e.msg, Tint.log, e.command, Tint.warning, e.retval);
-            //version(PrintStacktraces) logger.trace(e.info);
-        }
-        catch (FileExistsException e)
-        {
-            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-                e.msg, Tint.log, e.filename, Tint.warning);
-            //version(PrintStacktraces) logger.trace(e.info);
-        }
-        catch (FileTypeMismatchException e)
-        {
-            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-                e.msg, Tint.log, e.filename, Tint.warning);
-            //version(PrintStacktraces) logger.trace(e.info);
+            enum useTMPDIR = true;
         }
 
-        // Let other Exceptions pass
+        static if (useTMPDIR)
+        {
+            import std.process : environment;
+            immutable tempdir = environment.get("TMPDIR", "/tmp");
+        }
+        else
+        {
+            enum tempdir = "/tmp";
+        }
+
+        import std.path : buildNormalizedPath;
+        plugin.fifoFilename = buildNormalizedPath(tempdir, plugin.fifoFilename);
     }
+
+    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
+
+    try
+    {
+        createFIFO(plugin.fifoFilename);
+        plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
+            (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
+            (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+        plugin.workerRunning = true;
+    }
+    catch (ReturnValueException e)
+    {
+        logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
+            e.msg, Tint.log, e.command, Tint.warning, e.retval);
+        //version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (FileExistsException e)
+    {
+        logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
+            e.msg, Tint.log, e.filename, Tint.warning);
+        //version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (FileTypeMismatchException e)
+    {
+        logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
+            e.msg, Tint.log, e.filename, Tint.warning);
+        //version(PrintStacktraces) logger.trace(e.info);
+    }
+
+    // Let other Exceptions pass
 }
 
 
