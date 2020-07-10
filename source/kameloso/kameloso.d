@@ -57,7 +57,7 @@ version(ProfileGC)
  +
  +  Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-public __gshared bool abort;
+public __gshared bool rawAbort;
 
 
 version(Posix)
@@ -87,7 +87,7 @@ void signalHandler(int sig) nothrow @nogc @system
     import core.stdc.stdio : printf;
 
     printf("...caught signal %d!\n", sig);
-    abort = true;
+    rawAbort = true;
 
     version(Posix)
     {
@@ -2476,7 +2476,7 @@ int initBot(string[] args)
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
     kameloso.common.settings = &instance.settings;
-    instance.abort = &abort;
+    instance.abort = &rawAbort;
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
