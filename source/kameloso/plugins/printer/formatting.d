@@ -1032,7 +1032,8 @@ void highlightEmotes(ref IRCEvent event,
 
     if (!event.emotes.length) return;
 
-    Appender!(char[]) sink;
+    static Appender!(char[]) sink;
+    scope(exit) sink.clear();
     sink.reserve(event.content.length + 60);  // mostly +10
 
     immutable TerminalForeground highlight = brightTerminal ?

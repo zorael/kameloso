@@ -148,7 +148,8 @@ void printObjects(Flag!"all" all = No.all, Things...)
 
     alias widths = Widths!(all, Things);
 
-    Appender!(char[]) outbuffer;
+    static Appender!(char[]) outbuffer;
+    scope(exit) outbuffer.clear();
     outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
     foreach (immutable i, thing; things)
@@ -181,8 +182,6 @@ void printObjects(Flag!"all" all = No.all, Things...)
     }
 
     writeln(outbuffer.data);
-    //outbuffer.clear();  // No need to clear, the appender goes out of scope now
-
     if (settings.flush) stdout.flush();
 }
 
