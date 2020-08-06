@@ -616,7 +616,13 @@ if (isOutputRange!(Sink, char[]))
 
         if (!coloured)
         {
-            sink.colourWith(colourByHash(user.isServer ? user.address : user.nickname));
+            immutable name = user.isServer ?
+                user.address :
+                (user.account.length ?
+                    user.account :
+                    user.nickname);
+
+            sink.colourWith(colourByHash(name));
         }
     }
 
