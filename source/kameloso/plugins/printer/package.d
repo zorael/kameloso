@@ -37,6 +37,8 @@ version(Colours) import kameloso.terminal : TerminalForeground;
  +/
 @Settings struct PrinterSettings
 {
+    import lu.uda : Unserialisable;
+
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
@@ -48,17 +50,20 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 
     version(TwitchSupport)
     {
-        /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
-        bool truecolour = true;
-
-        /// Whether or not to normalise truecolours; make dark brighter and bright darker.
-        bool normaliseTruecolour = true;
-
         /// Whether or not to display Twitch badges next to sender/target names.
         bool twitchBadges = true;
 
-        /// Whether or not emotes should be highlit in colours.
-        bool colourfulEmotes = true;
+        @Unserialisable
+        {
+            /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
+            bool truecolour = true;
+
+            /// Whether or not to normalise truecolours; make dark brighter and bright darker.
+            bool normaliseTruecolour = true;
+
+            /// Whether or not emotes should be highlit in colours.
+            bool colourfulEmotes = true;
+        }
     }
 
     /++
@@ -83,12 +88,6 @@ version(Colours) import kameloso.terminal : TerminalForeground;
     /// Whether or not to be silent and not print error messages in the event output.
     bool silentErrors = false;
 
-    /// Whether or not to have the type (and badge) names be in capital letters.
-    bool uppercaseTypes = false;
-
-    /// Whether or not to print a banner to the terminal at midnights, when day changes.
-    bool daybreaks = true;
-
     /// Whether or not to log events.
     bool logs = false;
 
@@ -104,8 +103,17 @@ version(Colours) import kameloso.terminal : TerminalForeground;
     /// Whether or not to log raw events.
     bool logRaw = false;
 
-    /// Whether or not to buffer writes.
-    bool bufferedWrites = true;
+    @Unserialisable
+    {
+        /// Whether or not to have the type names be in capital letters.
+        bool uppercaseTypes = false;
+
+        /// Whether or not to print a banner to the terminal at midnights, when day changes.
+        bool daybreaks = true;
+
+        /// Whether or not to buffer writes.
+        bool bufferedWrites = true;
+    }
 }
 
 

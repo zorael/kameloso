@@ -31,13 +31,13 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct ConnectSettings
 {
-    import lu.uda : CannotContainComments, Separator;
+    import lu.uda : CannotContainComments, Separator, Unserialisable;
 
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 
     /// Whether to use SASL authentication or not.
-    bool sasl = true;
+    @Unserialisable bool sasl = true;
 
     /// Whether or not to abort and exit if SASL authentication fails.
     bool exitOnSASLFailure = false;
