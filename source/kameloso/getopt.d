@@ -294,10 +294,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         // Set Tint.monochrome manually so setSyntax below is properly (un-)tinted
         Tint.monochrome = settings.monochrome;
 
-        string[][string] missing;
-        string[][string] invalid;
+        // Ignore invalid/missing entries here, report them when initialising plugins
+        string[][string] ignore;
 
-        settings.configFile.readConfigInto(missing, invalid,
+        settings.configFile.readConfigInto(ignore, ignore,
             parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
 
