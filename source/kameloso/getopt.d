@@ -502,18 +502,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             );
         }
 
-        if (configFileResults.helpWanted)
-        {
-            // --help|-h was passed; show the help table and quit
-            // Call once to read settings, then again to update the values in the help listing
-            // It's okay if the first call consumes args, the second is just for the printing
-            cast(void)callGetopt(args, Yes.quiet);
-            printHelp(callGetopt(args, No.quiet),
-                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
-            return Next.returnSuccess;
-        }
-
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
 
@@ -580,6 +568,18 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         bot.replaceMembers("-");
 
         // Handle showstopper arguments (that display something and then exits)
+
+        if (configFileResults.helpWanted)
+        {
+            // --help|-h was passed, show the help table and quit
+            // It's okay to reuse args, it's probably empty save for arg0
+            // and we just want the help listing
+            printHelp(callGetopt(args, No.quiet),
+                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
+                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            return Next.returnSuccess;
+        }
+
         if (shouldWriteConfig || shouldOpenEditor)
         {
             // --save and/or --edit was passed; defer to manageConfigFile
