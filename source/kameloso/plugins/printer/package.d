@@ -158,11 +158,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         {
             if (target != plugin.squelchTarget) return false;
         }
-        else
+        /*else
         {
+            // already in in-contract
             assert(0, "Logic error; tried to update squelchstamp but " ~
                 "no `channel`, no `sender`, no `target`");
-        }
+        }*/
 
         if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)
         {
