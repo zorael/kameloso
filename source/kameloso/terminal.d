@@ -1049,7 +1049,7 @@ unittest
  +
  +  Example:
  +  ---
- +  immutable colouredNick = "kameloso".colourByHash;
+ +  immutable colouredNick = "kameloso".colourByHash(No.bright);
  +  immutable colouredNickBright = "kameloso".colourByHash(Yes.bright);
  +  ---
  +

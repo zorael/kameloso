@@ -35,7 +35,7 @@ import std.typecons : Flag, No, Yes;
  +
  +  if (results.helpWanted)
  +  {
- +      printHelp(results);
+ +      printHelp(results, No.monochrome, No.brightTerminal);
  +  }
  +  ---
  +
@@ -227,7 +227,7 @@ public:
  +  Example:
  +  ---
  +  Kameloso instance;
- +  Next next = instance.handleGetopt(args);
+ +  Next next = instance.handleGetopt(args, customSettings);
  +
  +  if (next == Next.returnSuccess) return 0;
  +  // ...

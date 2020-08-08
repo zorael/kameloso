@@ -617,8 +617,8 @@ if (isOutputRange!(Sink, char[]))
  +
  +  Foo foo, bar;
  +
- +  writeln(formatObjects!(Yes.coloured)(foo));
- +  writeln(formatObjects!(No.coloured)(bar));
+ +  writeln(formatObjects!(No.all, Yes.coloured)(foo));
+ +  writeln(formatObjects!(Yes.all, No.coloured)(bar));
  +  ---
  +
  +  Params:

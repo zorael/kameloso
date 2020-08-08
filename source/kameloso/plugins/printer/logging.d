@@ -391,7 +391,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
  +  Example:
  +  ---
  +  assert(!("~/logs".isDir));
- +  bool locationIsOkay = establishLogLocation("~/logs");
+ +  bool locationIsOkay = plugin.establishLogLocation("~/logs");
  +  assert("~/logs".isDir);
  +  ---
  +

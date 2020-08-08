@@ -58,7 +58,7 @@ struct QueryResponse
  +
  +  Example:
  +  ---
- +  spawn(&persistentQuerier, plugin.bucket, plugin.queryResponseTimeout);
+ +  spawn(&persistentQuerier, plugin.bucket, plugin.queryResponseTimeout, caBundleFile);
  +  ---
  +
  +  Params:
@@ -462,9 +462,9 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +  ---
  +  immutable url = "https://api.twitch.tv/helix/some/api/url";
  +
- +  spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket);
+ +  spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +  const response = waitForQueryResponse(plugin, url, plugin.twitchBotSettings.singleWorkerThread);
+ +  const response = waitForQueryResponse(plugin, url);
  +  // response.str is the response body
  +  ---
  +
@@ -841,7 +841,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +  }
  +
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +  const response = waitForQueryResponse(plugin, url, plugin.twitchBotSettings.singleWorkerThread);
+ +  const response = waitForQueryResponse(plugin, url);
  +  // response.str is the response body
  +  ---
  +
