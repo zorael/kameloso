@@ -289,7 +289,15 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             config.passThrough,
             "c|config", &settings.configFile,
             "monochrome", &settings.monochrome,
+            "version", &shouldShowVersion,
         );
+
+        if (shouldShowVersion)
+        {
+            // --version was passed; show version info and quit
+            printVersionInfo();
+            return Next.returnSuccess;
+        }
 
         // Set Tint.monochrome manually so setSyntax below is properly (un-)tinted
         Tint.monochrome = settings.monochrome;
@@ -301,106 +309,213 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
 
-        immutable setSyntax = "%splugin%s.%1$soption%2$s=%1$ssetting%2$s"
-            .format(Tint.info, Tint.reset);
-
-        // Cannot be const
-        auto results = getopt(args,
-            config.caseSensitive,
-            config.bundling,
-            "n|nickname",   "Nickname",
-                            &parser.client.nickname,
-            "s|server",     "Server address [%s%s%s]"
-                            .format(Tint.info, parser.server.address, Tint.reset),
-                            &parser.server.address,
-            "P|port",       "Server port [%s%d%s]"
-                            .format(Tint.info, parser.server.port, Tint.reset),
-                            &parser.server.port,
-            "6|ipv6",       "Use IPv6 when available [%s%s%s]"
-                            .format(Tint.info, connSettings.ipv6, Tint.reset),
-                            &connSettings.ipv6,
-            "ssl",          "Use SSL connections [%s%s%s]"
-                            .format(Tint.info, connSettings.ssl, Tint.reset),
-                            &connSettings.ssl,
-            "A|account",    "Services account name",
-                            &bot.account,
-            "p|password",   "Services account password",
-                            &bot.password,
-            "pass",         "Registration pass",
-                            &bot.pass,
-            "admins",       "Administrators' services accounts, comma-separated",
-                            &inputAdmins,
-            "H|homeChannels","Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe " ~
-                            Tint.info ~ '#' ~ Tint.reset ~ "s)",
-                            &inputHomeChannels,
-            "homes",        "^",
-                            &inputHomeChannels,
-            "C|guestChannels","Non-home channels to idle in, comma-separated (ditto)",
-                            &inputGuestChannels,
-            "channels",     "^",
-                            &inputGuestChannels,
-            "a|append",     "Append input home channels, guest channels and " ~
-                            "admins instead of overriding",
-                            &shouldAppendToArrays,
-            "settings",     "Show all plugins' settings",
-                            &shouldShowSettings,
-            "show",         "^",
-                            &shouldShowSettings,
-            "bright",       "Adjust colours for bright terminal backgrounds",
-                            &settings.brightTerminal,
-            "brightTerminal", "^",
-                            &settings.brightTerminal,
-            "monochrome",   "Use monochrome output",
-                            &settings.monochrome,
-            "set",          "Manually change a setting (syntax: --set " ~ setSyntax ~ ')',
-                            &customSettings,
-            "c|config",     "Specify a different configuration file [%s%s%s]"
-                            .format(Tint.info, settings.configFile, Tint.reset),
-                            &settings.configFile,
-            "r|resourceDir","Specify a different resource directory [%s%s%s]"
-                            .format(Tint.info, settings.resourceDirectory, Tint.reset),
-                            &settings.resourceDirectory,
-            /*"privateKey",   "Path to private key file, used to authenticate some SSL connections",
-                            &connSettings.privateKeyFile,
-            "cert",         "Path to certificate file, ditto",
-                            &connSettings.certFile,
-            "cacert",       "Path to %scacert.pem%s certificate bundle, or equivalent"
-                            .format(Tint.info, Tint.reset),
-                            &connSettings.caBundleFile,*/
-            "summary",      "Show a connection summary on program exit",
-                            &settings.exitSummary,
-            "force",        "Force connect (skips some sanity checks)",
-                            &settings.force,
-            "flush",        "Flush screen output after each write to it. " ~
-                            "(Use this if the screen only occasionally updates.)",
-                            &settings.flush,
-            "w|save",       "Write configuration to file",
-                            &shouldWriteConfig,
-            "writeconfig",  "^",
-                            &shouldWriteConfig,
-            "edit",         "Open the configuration file in a text editor " ~
-                            "(or the default application used to open " ~ Tint.log ~
-                            "*.conf" ~ Tint.trace ~ " files on your system",
-                            &shouldOpenEditor,
-            "version",      "Show version information",
-                            &shouldShowVersion,
-        );
-
-        if (shouldShowVersion)
+        /++
+         +  Call getopt in a nested function so we can call it both to merely
+         +  parse for settings and to format the help listing.
+         +/
+        auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
-            // --version was passed; show version info and quit
-            printVersionInfo();
-            return Next.returnSuccess;
+            import std.conv : to;
+            import std.random : uniform;
+            import std.range : repeat;
+
+            immutable setSyntax = quiet ? string.init :
+                "%s--set plugin%s.%1$ssetting%2$s=%1$svalue%2$s"
+                .format(Tint.info, Tint.reset);
+
+            immutable nickname = quiet ? string.init :
+                parser.client.nickname.length ? parser.client.nickname : "<random>";
+
+            immutable sslText = quiet ? string.init :
+                connSettings.ssl ? "true" :
+                    settings.force ? "false" : "inferred by port";
+
+            immutable passwordMask = quiet ? string.init :
+                bot.password.length ? '*'.repeat(uniform(6,10)).to!string : string.init;
+
+            immutable passMask = quiet ? string.init :
+                bot.pass.length ? '*'.repeat(uniform(6,10)).to!string : string.init;
+
+            string formatNum(const size_t num)
+            {
+                return (quiet || (num == 0)) ? string.init :
+                    " (%s%d%s)".format(Tint.info, num, Tint.reset);
+            }
+
+            return getopt(theseArgs,
+                config.caseSensitive,
+                config.bundling,
+                "n|nickname",
+                    quiet ? string.init :
+                        "Nickname [%s%s%s]"
+                        .format(Tint.info, nickname, Tint.reset),
+                    &parser.client.nickname,
+                "s|server",
+                    quiet ? string.init :
+                        "Server address [%s%s%s]"
+                        .format(Tint.info, parser.server.address, Tint.reset),
+                    &parser.server.address,
+                "P|port",
+                    quiet ? string.init :
+                        "Server port [%s%d%s]"
+                        .format(Tint.info, parser.server.port, Tint.reset),
+                    &parser.server.port,
+                "6|ipv6",
+                    quiet ? string.init :
+                        "Use IPv6 when available [%s%s%s]"
+                        .format(Tint.info, connSettings.ipv6, Tint.reset),
+                    &connSettings.ipv6,
+                "ssl",
+                    quiet ? string.init :
+                        "Attempt SSL connection [%s%s%s]"
+                        .format(Tint.info, sslText, Tint.reset),
+                    &connSettings.ssl,
+                "A|account",
+                    quiet ? string.init :
+                        "Services account name" ~ (bot.account.length ?
+                            " [%s%s%s]".format(Tint.info, bot.account, Tint.reset) :
+                            string.init),
+                    &bot.account,
+                "p|password",
+                    quiet ? string.init :
+                        "Services account password" ~ (bot.password.length ?
+                            " [%s%s%s]".format(Tint.info, passwordMask, Tint.reset) :
+                            string.init),
+                    &bot.password,
+                "pass",
+                    quiet ? string.init :
+                        "Registration pass" ~ (bot.pass.length ?
+                            " [%s%s%s]".format(Tint.info, passMask, Tint.reset) :
+                            string.init),
+                    &bot.pass,
+                "admins",
+                    quiet ? string.init :
+                        "Administrators' services accounts, comma-separated" ~
+                            formatNum(bot.admins.length),
+                    &inputAdmins,
+                "H|homeChannels",
+                    quiet ? string.init :
+                        "Home channels to operate in, comma-separated " ~
+                            "(escape or enquote any octothorpe " ~
+                            Tint.info ~ '#' ~ Tint.reset ~ "s)" ~
+                            formatNum(bot.homeChannels.length),
+                    &inputHomeChannels,
+                "homes",
+                    quiet ? string.init :
+                        "^",
+                    &inputHomeChannels,
+                "C|guestChannels",
+                    quiet ? string.init :
+                        "Non-home channels to idle in, comma-separated (ditto)" ~
+                            formatNum(bot.guestChannels.length),
+                    &inputGuestChannels,
+                "channels",
+                    quiet ? string.init :
+                        "^",
+                    &inputGuestChannels,
+                "a|append",
+                    quiet ? string.init :
+                        "Append input home channels, guest channels and " ~
+                        "admins instead of overriding",
+                    &shouldAppendToArrays,
+                "settings",
+                    quiet ? string.init :
+                        "Show all plugins' settings",
+                    &shouldShowSettings,
+                "show",
+                    quiet ? string.init :
+                        "^",
+                    &shouldShowSettings,
+               "bright",
+                    quiet ? string.init :
+                        "Adjust colours for bright terminal backgrounds [%s%s%s]"
+                        .format(Tint.info, settings.brightTerminal, Tint.reset),
+                    &settings.brightTerminal,
+                "brightTerminal",
+                    quiet ? string.init :
+                        "^",
+                    &settings.brightTerminal,
+                "monochrome",
+                    quiet ? string.init :
+                        "Use monochrome output [%s%s%s]"
+                        .format(Tint.info, settings.monochrome, Tint.reset),
+                    &settings.monochrome,
+                "set",
+                    quiet ? string.init :
+                        "Manually change a setting (syntax: " ~ setSyntax ~ ')',
+                    &customSettings,
+                "c|config",
+                    quiet ? string.init :
+                        "Specify a different configuration file [%s%s%s]"
+                        .format(Tint.info, settings.configFile, Tint.reset),
+                    &settings.configFile,
+                "r|resourceDir",
+                    quiet ? string.init :
+                        "Specify a different resource directory [%s%s%s]"
+                        .format(Tint.info, settings.resourceDirectory, Tint.reset),
+                    &settings.resourceDirectory,
+                /*"privateKey",
+                    quiet ? string.init :
+                        "Path to private key file, used to authenticate some SSL connections",
+                    &connSettings.privateKeyFile,
+                "cert",
+                    quiet ? string.init :
+                        "Path to certificate file, ditto",
+                    &connSettings.certFile,
+                "cacert",
+                    quiet ? string.init :
+                        "Path to %scacert.pem%s certificate bundle, or equivalent"
+                        .format(Tint.info, Tint.reset),
+                    &connSettings.caBundleFile,*/
+                "summary",
+                    quiet ? string.init :
+                        "Show a connection summary on program exit [%s%s%s]"
+                        .format(Tint.info, settings.exitSummary, Tint.reset),
+                    &settings.exitSummary,
+                "force",
+                    quiet ? string.init :
+                        "Force connect (skips some sanity checks)",
+                    &settings.force,
+                "flush",
+                    quiet ? string.init :
+                        "Flush screen output after each write to it. " ~
+                            "(Use this if the screen only occasionally updates.)",
+                    &settings.flush,
+                "save",
+                    quiet ? string.init :
+                        "Write configuration to file",
+                    &shouldWriteConfig,
+                "w|writeconfig",
+                    quiet ? string.init :
+                        "^",
+                    &shouldWriteConfig,
+                "edit",
+                    quiet ? string.init :
+                        "Open the configuration file in a text editor " ~
+                            "(or the default application used to open " ~ Tint.log ~
+                            "*.conf" ~ Tint.reset ~ " files on your system",
+                    &shouldOpenEditor,
+                "version",
+                    quiet ? string.init :
+                        "Show version information",
+                    &shouldShowVersion,
+            );
         }
-        else if (configFileResults.helpWanted)
+
+        if (configFileResults.helpWanted)
         {
             // --help|-h was passed; show the help table and quit
-            printHelp(results,
+            // Call once to read settings, then again to update the values in the help listing
+            // It's okay if the first call consumes args, the second is just for the printing
+            cast(void)callGetopt(args, Yes.quiet);
+            printHelp(callGetopt(args, No.quiet),
                 (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
                 (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
             return Next.returnSuccess;
         }
+
+        // No need to catch the return value, only used for --help
+        cast(void)callGetopt(args, Yes.quiet);
 
         // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
