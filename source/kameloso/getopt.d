@@ -537,26 +537,25 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             if (inputAdmins.length) bot.admins = inputAdmins;
         }
 
-        // Strip channel whitespace and make lowercase
-        import lu.string : stripped;
-        import std.algorithm.iteration : map, uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
-        import std.uni : toLower;
+        /// Strip channel whitespace and make lowercase
+        static void stripAndLower(ref string[] channels)
+        {
+            import lu.string : stripped;
+            import std.algorithm.iteration : map, uniq;
+            import std.algorithm.sorting : sort;
+            import std.array : array;
+            import std.uni : toLower;
 
-        bot.guestChannels = bot.guestChannels
-            .map!(channelName => channelName.stripped.toLower)
-            .array
-            .sort
-            .uniq
-            .array;
+            channels = channels
+                .map!(channelName => channelName.stripped.toLower)
+                .array
+                .sort
+                .uniq
+                .array;
+        }
 
-        bot.homeChannels = bot.homeChannels
-            .map!(channelName => channelName.stripped.toLower)
-            .array
-            .sort
-            .uniq
-            .array;
+        stripAndLower(bot.homeChannels);
+        stripAndLower(bot.guestChannels);
 
         // Remove duplicate channels (where a home is also featured as a normal channel)
         size_t[] duplicates;
