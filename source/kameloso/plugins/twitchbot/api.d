@@ -668,12 +668,14 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +
  +  Example:
  +  ---
- +  const userJSON = getUserByID(plugin, "22216721");
+ +  const userJSON1 = getUserByID(plugin, "22216721");
+ +  const userJSON2 = getUserByID(plugin, 22216721);
  +  ---
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in string form.
+ +      id = The Twitch account ID to look up. Number in string or explicitly
+ +          string-coercable form (using `std.conv.to`).
  +
  +  Returns:
  +      A `std.json.JSONValue` with information regarding the user in question.
@@ -682,36 +684,7 @@ JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
  +      getUserByLogin
  +      getUserImpl
  +/
-JSONValue getUserByID(TwitchBotPlugin plugin, const string id)
-{
-    return getUserImpl("id", id, plugin.authorizationBearer,
-        plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
-}
-
-
-// getUserByID
-/++
- +  Queries the Twitch servers for information about a user, by id.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by id integer.
- +
- +  Example:
- +  ---
- +  const userJSON = getUserByID(plugin, 22216721);
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in integer form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +
- +  See_Also:
- +      getUserByLogin
- +      getUserImpl
- +/
-JSONValue getUserByID(TwitchBotPlugin plugin, const uint id)
+JSONValue getUserByID(Identifier)(TwitchBotPlugin plugin, const Identifier id)
 {
     return getUserImpl("id", id, plugin.authorizationBearer,
         plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
