@@ -249,28 +249,28 @@ public:
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
-    import kameloso.common : Tint, printVersionInfo;
-    import kameloso.config : applyDefaults, readConfigInto;
-    import std.format : format;
-    import std.getopt : arraySep, config, getopt;
-    import std.stdio : stdout, writeln;
-
-    scope(exit) if (instance.settings.flush) stdout.flush();
-
-    bool shouldWriteConfig;
-    bool shouldOpenEditor;
-    bool shouldShowVersion;
-    bool shouldShowSettings;
-    bool shouldAppendToArrays;
-
-    string[] inputGuestChannels;
-    string[] inputHomeChannels;
-    string[] inputAdmins;
-
-    arraySep = ",";
-
     with (instance)
     {
+        import kameloso.common : Tint, printVersionInfo;
+        import kameloso.config : applyDefaults, readConfigInto;
+        import std.format : format;
+        import std.getopt : arraySep, config, getopt;
+        import std.stdio : stdout, writeln;
+
+        scope(exit) if (instance.settings.flush) stdout.flush();
+
+        bool shouldWriteConfig;
+        bool shouldOpenEditor;
+        bool shouldShowVersion;
+        bool shouldShowSettings;
+        bool shouldAppendToArrays;
+
+        string[] inputGuestChannels;
+        string[] inputHomeChannels;
+        string[] inputAdmins;
+
+        arraySep = ",";
+
         /+
             Call getopt on args once and look for any specified configuration files
             so we know what to read. As such it has to be done before the
