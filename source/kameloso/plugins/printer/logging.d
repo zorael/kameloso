@@ -89,7 +89,7 @@ struct LogLineBuffer
  +  populating arrays of lines to be written in bulk, once in a while.
  +
  +  See_Also:
- +      `commitAllLogs`
+ +      `commitAllLogsImpl`
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 {
@@ -471,7 +471,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +      buffer = `LogLineBuffer` whose lines to commit to disk.
  +
  +  See_Also:
- +      `commitAllLogs`
+ +      `commitAllLogsImpl`
  +/
 void commitLog(ref LogLineBuffer buffer)
 {
