@@ -344,7 +344,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     {
         case JOIN:
         case PART:
-        case USERSTATE:
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // These Twitch events are just noise.
@@ -354,6 +353,10 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
             {
                 goto default;
             }
+
+        case USERSTATE:
+            // Always on Twitch, no need to check plugin.state.server.daemon
+            return;
     }
 
     default:
