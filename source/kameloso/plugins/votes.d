@@ -185,7 +185,7 @@ void onCommandVote(VotesPlugin plugin, const IRCEvent event)
             auto sorted = voteChoices
                 .byKeyValue
                 .array
-                .sort!((a,b) => a.value < b.value);
+                .sort!((a, b) => a.value < b.value);
 
             foreach (const result; sorted)
             {

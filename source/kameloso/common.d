@@ -1426,7 +1426,7 @@ unittest
         dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
         assert((sink.data == "3 days and 35 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate,4, 1)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1)(sink);
         assert((sink.data == "3d 35m"), sink.data);
         sink.clear();
     }

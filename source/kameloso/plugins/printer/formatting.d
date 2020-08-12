@@ -1158,7 +1158,7 @@ if (isOutputRange!(Sink, char[]))
     }
 
     import std.algorithm.sorting : sort;
-    highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
+    highlights[0..numHighlights].sort!((a, b) => a.start < b.start)();
 
     // We need a dstring since we're slicing something that isn't necessarily ASCII
     // Without this highlights become offset a few characters depending on the text

@@ -650,7 +650,7 @@ void initAccountResources(PersistenceService service)
 
         auto after = before
             .array
-            .sort!((a,b) => a.str < b.str)
+            .sort!((a, b) => a.str < b.str)
             .uniq
             .filter!((a) => a.str.length > 0)
             .array;

@@ -331,10 +331,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     settings.force ? "false" : "inferred by port";
 
             immutable passwordMask = quiet ? string.init :
-                bot.password.length ? '*'.repeat(uniform(6,10)).to!string : string.init;
+                bot.password.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
 
             immutable passMask = quiet ? string.init :
-                bot.pass.length ? '*'.repeat(uniform(6,10)).to!string : string.init;
+                bot.pass.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
 
             string formatNum(const size_t num)
             {
