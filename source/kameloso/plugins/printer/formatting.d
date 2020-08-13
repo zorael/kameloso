@@ -1045,47 +1045,41 @@ void highlightEmotes(ref IRCEvent event,
     immutable TerminalForeground highlight = brightTerminal ?
         Bright.highlight : Dark.highlight;
 
+    immutable isEmoteOnly = !colourful && event.tags.contains("emote-only=1");
+
     with (IRCEvent.Type)
     switch (event.type)
     {
     case EMOTE:
     case SELFEMOTE:
-        if (!colourful && event.tags.contains("emote-only=1"))
+        if (isEmoteOnly)
         {
             // Just highlight the whole line, don't worry about resetting to fgBase
             sink.colourWith(highlight);
             sink.put(event.content);
+            break;
         }
-        else
-        {
-            // Emote but mixed text and emotes OR we're doing colourful emotes
-            immutable TerminalForeground emoteFgBase = brightTerminal ?
-                Bright.emote : Dark.emote;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
-                emoteFgBase, colourful, brightTerminal);
-        }
-        break;
 
-    case CHAN:
-    case SELFCHAN:
-    case TWITCH_RITUAL:
-        if (!colourful && event.tags.contains("emote-only=1"))
-        {
-            // Emote only channel message, treat the same as an emote-only emote
-            goto case EMOTE;
-        }
-        else
-        {
-            // Normal content, normal text, normal emotes
-            immutable TerminalForeground contentFgBase = brightTerminal ?
-                Bright.content : Dark.content;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
-                contentFgBase, colourful, brightTerminal);
-        }
+        // Emote but mixed text and emotes OR we're doing colourful emotes
+        immutable TerminalForeground emoteFgBase = brightTerminal ?
+            Bright.emote : Dark.emote;
+        event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+            emoteFgBase, colourful, brightTerminal);
         break;
 
     default:
-        return;
+        if (isEmoteOnly)
+        {
+            // / Emote only channel message, treat the same as an emote-only emote?
+            goto case EMOTE;
+        }
+
+        // Normal content, normal text, normal emotes
+        immutable TerminalForeground contentFgBase = brightTerminal ?
+            Bright.content : Dark.content;
+        event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+            contentFgBase, colourful, brightTerminal);
+        break;
     }
 
     event.content = sink.data.idup;
