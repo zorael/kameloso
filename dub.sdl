@@ -38,6 +38,7 @@ versions \
     "WithQuotesPlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
+    "WithTimerPlugin" \
     "WithVotesPlugin" \
     "WithWebtitlesPlugin"
 
