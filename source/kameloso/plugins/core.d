@@ -636,8 +636,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     import std.typecons : No, Yes;
                     import std.uni : asLowerCase;
 
+                    // If we don't strip left as a separate step, nom won't alter
+                    // event.content by ref (as it will be an rvalue).
+                    event.content = event.content.strippedLeft;
+
                     immutable thisCommand = event.content
-                        .strippedLeft
                         .nom!(Yes.inherit, Yes.decode)(' ');
 
                     if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
