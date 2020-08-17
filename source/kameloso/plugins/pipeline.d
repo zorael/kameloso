@@ -44,6 +44,8 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct PipelineSettings
 {
+    import lu.uda : Unserialisable;
+
     /// Whether or not the Pipeline plugin should do anything at all.
     @Enabler bool enabled = true;
 
@@ -53,6 +55,9 @@ import std.typecons : Flag, No, Yes;
      +  only if version `OSXTMPDIR`.
      +/
     bool fifoInWorkingDir = false;
+
+    /// Custom, full path to use as FIFO filename, specified with --set pipeline.path.
+    @Unserialisable string path;
 }
 
 
