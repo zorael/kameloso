@@ -40,20 +40,39 @@ import std.typecons : Flag, No, Yes;
 void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
-    import lu.string : nom, stripped, strippedLeft;
+    import lu.string : contains, nom, stripped, strippedLeft;
     import std.format : format;
 
     string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
     slice = slice.strippedLeft;
 
+    if (slice.contains(' '))
+    {
+        chan(plugin.state, event.channel, "Counter names must not contain spaces.");
+        return;
+    }
+
     switch (verb)
     {
     case "add":
         if (!slice.length) goto default;
 
+        if ((event.channel in plugin.counters) && (slice in plugin.counters[event.channel]))
+        {
+            chan(plugin.state, event.channel, "A counter with that name already exists.");
+            return;
+        }
+
+        enum pattern = "Counter %s added! Access it with %s.";
+
+        immutable command = plugin.state.settings.prefix ~ slice;
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(slice.ircBold, command.ircBold) :
+            pattern.format(slice, command);
+
         plugin.counters[event.channel][slice] = 0;
-        chan(plugin.state, event.channel, "Counter added, it's at 0");
+        chan(plugin.state, event.channel, message);
         break;
 
     case "remove":
@@ -62,12 +81,18 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         if ((event.channel !in plugin.counters) || (slice !in plugin.counters[event.channel]))
         {
-            chan(plugin.state, event.channel, "No such counter");
+            chan(plugin.state, event.channel, "No such counter enabled.");
             return;
         }
 
+        enum pattern = "Counter %s removed.";
+
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(slice.ircBold) :
+            pattern.format(slice);
+
         plugin.counters[event.channel].remove(slice);
-        chan(plugin.state, event.channel, "Counter removed.");
+        chan(plugin.state, event.channel, message);
         break;
 
     case "clear":
@@ -78,12 +103,18 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         if ((event.channel !in plugin.counters) || (slice !in plugin.counters[event.channel]))
         {
-            chan(plugin.state, event.channel, "No such counter");
+            chan(plugin.state, event.channel, "No such counter enabled.");
             return;
         }
 
+        enum pattern = "Counter %s reset.";
+
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(slice.ircBold) :
+            pattern.format(slice);
+
         plugin.counters[event.channel][slice] = 0;
-        chan(plugin.state, event.channel, "Counter reset.");
+        chan(plugin.state, event.channel, message);
         break;
 
     case "list":
@@ -94,10 +125,10 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             return;
         }
 
-        enum pattern = "Current counters: %s.";
-        enum arrayPattern = "%-%(%s,%)";
+        enum pattern = "Current counters: %s";
+        immutable arrayPattern = "%-(" ~ plugin.state.settings.prefix ~ "%s, %)";
 
-        immutable list = arrayPattern.format(plugin.counters[event.channel]);
+        immutable list = arrayPattern.format(plugin.counters[event.channel].keys);
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(list.ircBold) :
             pattern.format(list);
@@ -143,7 +174,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
     ptrdiff_t signPos;
 
-    foreach (immutable sign; aliasSeqOf!"+-=*")
+    foreach (immutable sign; aliasSeqOf!"+=-*")  // '-' after '=' to support "!word=-5"
     {
         signPos = slice.indexOf(sign);
         if (signPos != -1) break;
@@ -210,7 +241,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
         *count = *count + step;
 
-        immutable countText =  plugin.counters[event.channel][word].text;
+        immutable countText = (*count).text;
         immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(word.ircBold, stepText.ircBold, countText.ircBold) :
@@ -248,23 +279,23 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
         enum pattern = "%s count assigned to %s!";
 
-        *count = newCount;
-
         immutable countText =  newCount.text;
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(word.ircBold, countText.ircBold) :
             pattern.format(word, countText);
 
+        *count = newCount;
         chan(plugin.state, event.channel, message);
         break;
 
     case '*':
         enum pattern = "%s count reset.";
 
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(word.ircBold) :
+            pattern.format(word);
+
         *count = 0;
-
-        immutable message = pattern.format(word);
-
         chan(plugin.state, event.channel, message);
         break;
 
