@@ -309,41 +309,49 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 @(IRCEvent.Type.ERR_NOMOTD)
 void onMotd(PipelinePlugin plugin)
 {
-    // Save the filename *once* so it persists across nick changes.
-    // If !fifoInWorkingDir then in /tmp or $TMPDIR
-    plugin.fifoFilename = plugin.state.client.nickname ~ "@" ~ plugin.state.server.address;
-
-    if (!plugin.pipelineSettings.fifoInWorkingDir)
+    if (plugin.pipelineSettings.path.length)
     {
-        // See notes at the top of module.
-        version(OSX)
+        // Custom filename specified with --set pipeline.path=xyz
+        plugin.fifoFilename = plugin.pipelineSettings.path;
+    }
+    else
+    {
+        // Save the filename *once* so it persists across nick changes.
+        // If !fifoInWorkingDir then in /tmp or $TMPDIR
+        plugin.fifoFilename = plugin.state.client.nickname ~ "@" ~ plugin.state.server.address;
+
+        if (!plugin.pipelineSettings.fifoInWorkingDir)
         {
-            version(OSXTMPDIR)
+            // See notes at the top of module.
+            version(OSX)
+            {
+                version(OSXTMPDIR)
+                {
+                    enum useTMPDIR = true;
+                }
+                else
+                {
+                    enum useTMPDIR = false;
+                }
+            }
+            else // Implicitly not Windows since Posix-only plugin
             {
                 enum useTMPDIR = true;
             }
+
+            static if (useTMPDIR)
+            {
+                import std.process : environment;
+                immutable tempdir = environment.get("TMPDIR", "/tmp");
+            }
             else
             {
-                enum useTMPDIR = false;
+                enum tempdir = "/tmp";
             }
-        }
-        else // Implicitly not Windows since Posix-only plugin
-        {
-            enum useTMPDIR = true;
-        }
 
-        static if (useTMPDIR)
-        {
-            import std.process : environment;
-            immutable tempdir = environment.get("TMPDIR", "/tmp");
+            import std.path : buildNormalizedPath;
+            plugin.fifoFilename = buildNormalizedPath(tempdir, plugin.fifoFilename);
         }
-        else
-        {
-            enum tempdir = "/tmp";
-        }
-
-        import std.path : buildNormalizedPath;
-        plugin.fifoFilename = buildNormalizedPath(tempdir, plugin.fifoFilename);
     }
 
     import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
