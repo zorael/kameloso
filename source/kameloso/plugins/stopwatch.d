@@ -1,12 +1,12 @@
 /++
- +  A simple timer plugin. It offers the ability to start and stop stopwatch-like
- +  timers, to get how much time passed between the creation of a timer and
- +  the cessation of it.
+ +  A simple stopwatch plugin. It offers the ability to start and stop timers,
+ +  to get how much time passed between the creation of a stopwatch and the
+ +  cessation of it.
  +/
-module kameloso.plugins.timer;
+module kameloso.plugins.stopwatch;
 
 version(WithPlugins):
-version(WithTimerPlugin):
+version(WithStopwatchPlugin):
 
 private:
 
@@ -17,28 +17,29 @@ import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
 
-// TimerSettings
+// StopwatchSettings
 /++
- +  All Timer plugin runtime settings aggregated.
+ +  All Stopwatch plugin runtime settings aggregated.
  +/
-@Settings struct TimerSettings
+@Settings struct StopwatchSettings
 {
     /// Whether or not this plugin is enabled.
     @Enabler bool enabled = true;
 }
 
 
-// onCommandTimer
+// onCommandStopwatch
 /++
- +  Manages timers.
+ +  Manages stopwatches.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "timer")
-@Description("Manages timers.", "$command [start|stop|status]")
-void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
+@BotCommand(PrefixPolicy.prefixed, "stopwatch")
+@BotCommand(PrefixPolicy.prefixed, "sw", Yes.hidden)
+@Description("Manages stopwatches.", "$command [start|stop|status]")
+void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : nom, stripped, strippedLeft;
@@ -53,24 +54,24 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
     {
         import core.time : msecs;
 
-        assert((event.channel in plugin.timers),
-            "Tried to access timers from nonexistent channel");
-        assert((id in plugin.timers[event.channel]),
-            "Tried to fetch timer start timestamp for a nonexistent id");
+        assert((event.channel in plugin.stopwatches),
+            "Tried to access stopwatches from nonexistent channel");
+        assert((id in plugin.stopwatches[event.channel]),
+            "Tried to fetch stopwatch start timestamp for a nonexistent id");
 
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
-        immutable diff = now - SysTime.fromUnixTime(plugin.timers[event.channel][id]);
+        immutable diff = now - SysTime.fromUnixTime(plugin.stopwatches[event.channel][id]);
         return diff.toString;
     }
 
     switch (verb)
     {
     case "start":
-        immutable timerAlreadyExists = (event.channel in plugin.timers) &&
-            (event.sender.nickname in plugin.timers[event.channel]);
-        immutable message = "Timer " ~ (timerAlreadyExists ? "restarted." : "started.");
-        plugin.timers[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime;
+        immutable stopwatchAlreadyExists = (event.channel in plugin.stopwatches) &&
+            (event.sender.nickname in plugin.stopwatches[event.channel]);
+        immutable message = "Stopwatch " ~ (stopwatchAlreadyExists ? "restarted." : "started.");
+        plugin.stopwatches[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime;
         chan(plugin.state, event.channel, message);
         break;
 
@@ -82,15 +83,15 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
             slice :
             event.sender.nickname;
 
-        if ((event.channel !in plugin.timers) || (id !in plugin.timers[event.channel]))
+        if ((event.channel !in plugin.stopwatches) || (id !in plugin.stopwatches[event.channel]))
         {
             if (id == event.sender.nickname)
             {
-                chan(plugin.state, event.channel, "You do not have a timer running.");
+                chan(plugin.state, event.channel, "You do not have a stopwatch running.");
             }
             else
             {
-                enum pattern = "There is no such timer running. (%s)";
+                enum pattern = "There is no such stopwatch running. (%s)";
 
                 immutable message = plugin.state.settings.colouredOutgoing ?
                     pattern.format(id.ircColourByHash) :
@@ -107,14 +108,14 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
         {
         case "stop":
         case "end":
-            enum pattern = "Timer stopped after %s.";
+            enum pattern = "Stopwatch stopped after %s.";
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(diff.ircBold) :
                 pattern.format(diff);
 
             chan(plugin.state, event.channel, message);
-            plugin.timers[event.channel].remove(id);
+            plugin.stopwatches[event.channel].remove(id);
             break;
 
         case "status":
@@ -129,19 +130,19 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
             break;
 
         default:
-            assert(0, "Unexpected inner case in nested onCommandTimer switch");
+            assert(0, "Unexpected inner case in nested onCommandStopwatch switch");
         }
         break;
 
     case "clear":
-        enum pattern = "Clearing all timers in channel %s.";
+        enum pattern = "Clearing all stopwatches in channel %s.";
 
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(event.channel.ircBold) :
             pattern.format(event.channel);
 
         chan(plugin.state, event.channel, message);
-        plugin.timers.remove(event.channel);
+        plugin.stopwatches.remove(event.channel);
         break;
 
     default:
@@ -158,17 +159,17 @@ mixin MinimalAuthentication;
 public:
 
 /++
- +  The Timer plugin offers the ability to start timers, and print how much
- +  time elapsed upon stopping them.
+ +  The Stopwatch plugin offers the ability to start stopwatches, and print
+ +  how much time elapsed upon stopping them.
  +/
-final class TimerPlugin : IRCPlugin
+final class StopwatchPlugin : IRCPlugin
 {
 private:
-    /// All Timer plugin settings.
-    TimerSettings timerSettings;
+    /// All Stopwatch plugin settings.
+    StopwatchSettings stopwatchSettings;
 
     /// Vote start timestamps by user by channel.
-    long[string][string] timers;
+    long[string][string] stopwatches;
 
     mixin IRCPluginImpl;
 }

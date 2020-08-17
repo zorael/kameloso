@@ -39,7 +39,7 @@ versions \
     "WithQuotesPlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
-    "WithTimerPlugin" \
+    "WithStopwatchPlugin" \
     "WithVotesPlugin" \
     "WithWebtitlesPlugin"
 
