@@ -76,6 +76,7 @@ version(WithPlugins)
     mixin(tryImportMixin("kameloso.plugins.oneliners", "OnelinersPlugin"));
     mixin(tryImportMixin("kameloso.plugins.votes", "VotesPlugin"));
     mixin(tryImportMixin("kameloso.plugins.timer", "TimerPlugin"));
+    mixin(tryImportMixin("kameloso.plugins.counter", "CounterPlugin"));
 
 
     version(Posix)
@@ -168,6 +169,7 @@ version(WithPlugins)
         OnelinersPlugin,
         VotesPlugin,
         TimerPlugin,
+        CounterPlugin,
         EnabledWebPlugins,  // Automatically expands
         EnabledPosixPlugins,  // Ditto
     );
