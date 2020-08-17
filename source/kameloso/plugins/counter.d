@@ -17,7 +17,7 @@ import std.typecons : Flag, No, Yes;
 
 // CounterSettings
 /++
- +  All Count plugin settings aggregated.
+ +  All Counter plugin settings aggregated.
  +/
 @Settings struct CounterSettings
 {
@@ -36,7 +36,7 @@ import std.typecons : Flag, No, Yes;
 @(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
-@Description("Manages counters.", "$command [add|del|reset|list]")
+@Description("Manages counters.", "$command [add|del|list]")
 void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
@@ -73,6 +73,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         plugin.counters[event.channel][slice] = 0;
         chan(plugin.state, event.channel, message);
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     case "remove":
@@ -93,28 +94,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         plugin.counters[event.channel].remove(slice);
         chan(plugin.state, event.channel, message);
-        break;
-
-    case "clear":
-    case "reset":
-    case "zero":
-    case "init":
-        if (!slice.length) goto default;
-
-        if ((event.channel !in plugin.counters) || (slice !in plugin.counters[event.channel]))
-        {
-            chan(plugin.state, event.channel, "No such counter enabled.");
-            return;
-        }
-
-        enum pattern = "Counter %s reset.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(slice.ircBold) :
-            pattern.format(slice);
-
-        plugin.counters[event.channel][slice] = 0;
-        chan(plugin.state, event.channel, message);
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     case "list":
@@ -137,7 +117,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del|reset|list]"
+        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list]"
             .format(plugin.state.settings.prefix, event.aux));
         break;
     }
@@ -174,7 +154,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
     ptrdiff_t signPos;
 
-    foreach (immutable sign; aliasSeqOf!"+=-*")  // '-' after '=' to support "!word=-5"
+    foreach (immutable sign; aliasSeqOf!"+=-")  // '-' after '=' to support "!word=-5"
     {
         signPos = slice.indexOf(sign);
         if (signPos != -1) break;
@@ -191,7 +171,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     {
         import std.conv : text;
 
-        enum pattern = "Current %s count: %s";
+        enum pattern = "Current %s: %s";
 
         immutable countText =  plugin.counters[event.channel][word].text;
         immutable message = plugin.state.settings.colouredOutgoing ?
@@ -248,6 +228,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             pattern.format(word, stepText, countText);
 
         chan(plugin.state, event.channel, message);
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     case '=':
@@ -286,22 +267,81 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
         *count = newCount;
         chan(plugin.state, event.channel, message);
-        break;
-
-    case '*':
-        enum pattern = "%s count reset.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(word.ircBold) :
-            pattern.format(word);
-
-        *count = 0;
-        chan(plugin.state, event.channel, message);
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     default:
         assert(0, "Hit impossible default case in onCounterWord sign switch");
     }
+}
+
+
+// onEndOfMotd
+/++
+ +  Populate the counters array after we have successfully logged onto the server.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMotd(CounterPlugin plugin)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+    import std.typecons : Flag, No, Yes;
+
+    JSONStorage countersJSON;
+    countersJSON.load(plugin.countersFile);
+    plugin.counters.populateFromJSON(countersJSON, No.lowercaseKeys);
+    plugin.counters.rehash();
+}
+
+
+// saveResourceToDisk
+/++
+ +  Saves the passed resource to disk, but in JSON format.
+ +
+ +  This is used with the associative arrays for counters.
+ +
+ +  Params:
+ +      aa = The JSON-convertible resource to save.
+ +      filename = Filename of the file to write to.
+ +/
+void saveResourceToDisk(const int[string][string] aa, const string filename)
+in (filename.length, "Tried to save resources to an empty filename string")
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    File(filename, "w").writeln(JSONValue(aa).toPrettyString);
+}
+
+
+// initResources
+/++
+ +  Reads and writes the file of persistent counters to disk, ensuring that it's
+ +  there and properly formatted.
+ +/
+void initResources(CounterPlugin plugin)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException;
+    import std.path : baseName;
+
+    JSONStorage countersJSON;
+
+    try
+    {
+        countersJSON.load(plugin.countersFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.common : logger;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(plugin.countersFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
+    countersJSON.save(plugin.countersFile);
 }
 
 
