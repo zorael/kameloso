@@ -1017,6 +1017,74 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandShoutout
+/++
+ +  Emits a shoutout to another streamer.
+ +
+ +  Merely gives a link to their channel and echoes what game they last streamed.
+ +/
+version(TwitchAPIFeatures)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.operator)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "so")
+@BotCommand(PrefixPolicy.prefixed, "shoutout", Yes.hidden)
+@Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
+void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import dialect.common : isValidNickname;
+    import lu.string : beginsWith;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    if (!event.content.length || !event.content.isValidNickname(plugin.state.server))
+    {
+        chan(plugin.state, event.channel, "Usage: %s%s [name of streamer]"
+            .format(plugin.state.settings.prefix, event.aux));
+        return;
+    }
+
+    const userJSON = getUserByLogin(plugin, event.content);
+
+    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+    {
+        chan(plugin.state, event.channel, "No such user (%s)...".format(userJSON["id"].str));
+        return;
+    }
+
+    immutable id = userJSON["id"].str;
+    immutable login = userJSON["login"].str;
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
+
+    void shoutoutQueryDg()
+    {
+        const response = queryTwitch(plugin, url, plugin.authorizationBearer);
+
+        if ((response.code >= 400) || response.error.length ||
+            !response.str.length || (response.str.beginsWith(`{"err`)))
+        {
+            throw new TwitchQueryException("Failed to fetch shoutout user information",
+                response.str, response.error, response.code);
+        }
+
+        const channelsArrayJSON = parseJSON(response.str);
+        const channelJSON = channelsArrayJSON["data"].array[0];
+        immutable broadcasterName = channelJSON["broadcaster_name"].str;
+        immutable gameName = channelJSON["game_name"].str;
+        immutable lastSeenPlayingPattern = gameName.length ?
+            " (last seen playing %s)" : "%s";
+
+        chan(plugin.state, event.channel,
+            ("Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern)
+            .format(broadcasterName, login, gameName));
+    }
+
+    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, 32_768);
+    shoutoutFiber.call();
+}
+
+
 // onAnyMessage
 /++
  +  Performs various actions on incoming messages.
