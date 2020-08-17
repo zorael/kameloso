@@ -43,7 +43,7 @@ import std.typecons : Flag, No, Yes;
 @(PrivilegeLevel.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
-@Description("Manages counters.", "$command [add|del|list]")
+@Description("Manages counters.", "$command [add|del|list] [counter word]")
 void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
@@ -130,7 +130,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list]"
+        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list] [counter word]"
             .format(plugin.state.settings.prefix, event.aux));
         break;
     }
@@ -184,7 +184,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     {
         import std.conv : text;
 
-        enum pattern = "Current %s: %s";
+        enum pattern = "Current %s count: %s";
 
         immutable countText =  plugin.counters[event.channel][word].text;
         immutable message = plugin.state.settings.colouredOutgoing ?
