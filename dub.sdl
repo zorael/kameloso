@@ -29,6 +29,7 @@ versions \
     "WithChanQueriesService" \
     "WithChatbotPlugin" \
     "WithConnectService" \
+    "WithCounterPlugin" \
     "WithHelpPlugin" \
     "WithNotesPlugin" \
     "WithOnelinersPlugin" \
