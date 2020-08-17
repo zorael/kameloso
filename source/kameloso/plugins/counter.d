@@ -195,6 +195,9 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
         return;
     }
 
+    // Limit modifications to whitelist and above
+    if (event.sender.class_ < IRCUser.Class.whitelist) return;
+
     immutable sign = slice[0];
 
     switch (sign)
