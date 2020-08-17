@@ -30,6 +30,7 @@ import std.typecons : Flag, No, Yes;
 /++
  +  Manages runtime counters.
  +/
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.operator)
@@ -118,6 +119,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
  +
  +  If an invalid counter was supplied, the call is silently ignored.
  +/
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
