@@ -100,6 +100,8 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             pattern.format(slice);
 
         plugin.counters[event.channel].remove(slice);
+        if (!plugin.counters[event.channel].length) plugin.counters.remove(event.channel);
+
         chan(plugin.state, event.channel, message);
         saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
