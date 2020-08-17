@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
 @Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
