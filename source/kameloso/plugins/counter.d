@@ -325,5 +325,8 @@ private:
     /// Counter integer by counter word by channel name.
     int[string][string] counters;
 
+    /// Filename of file with persistent counters.
+    @Resource string countersFile = "counters.json";
+
     mixin IRCPluginImpl;
 }
