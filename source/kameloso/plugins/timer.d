@@ -43,6 +43,7 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
     import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : nom, stripped, strippedLeft;
     import std.datetime.systime : Clock, SysTime;
+    import std.format : format;
 
     string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
