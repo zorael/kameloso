@@ -47,16 +47,19 @@ import std.typecons : Flag, No, Yes;
 void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
-    import lu.string : contains, nom, stripped, strippedLeft;
+    import lu.string : nom, stripped, strippedLeft;
+    import std.algorithm.comparison : among;
+    import std.algorithm.searching : canFind;
     import std.format : format;
 
     string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
     slice = slice.strippedLeft;
 
-    if (slice.contains(' '))
+    if (slice.canFind!(c => c.among('+', '-', '=', ' ')))
     {
-        chan(plugin.state, event.channel, "Counter names must not contain spaces.");
+        chan(plugin.state, event.channel,
+            "Counter names must not contain any of the following characters: [+-= ]");
         return;
     }
 
@@ -147,7 +150,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
-    import lu.string : contains, stripped, strippedLeft;
+    import lu.string : stripped, strippedLeft;
     import std.conv : ConvException, text, to;
     import std.format : format;
     import std.meta : aliasSeqOf;
