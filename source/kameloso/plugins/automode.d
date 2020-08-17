@@ -269,6 +269,7 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;
     import std.algorithm.searching : count;
+    import std.format : format;
 
     string line = event.content;  // mutable
 

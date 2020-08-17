@@ -311,6 +311,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     import kameloso.plugins.common : nameOf;
     import dialect.common : toLowerCase;
     import lu.string : SplitResults, splitInto;
+    import std.format : format;
     import std.json : JSONException;
     import std.typecons : No, Yes;
 
