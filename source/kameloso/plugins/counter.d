@@ -56,10 +56,11 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     immutable verb = slice.nom!(Yes.inherit)(' ');
     slice = slice.strippedLeft;
 
-    if (slice.canFind!(c => c.among('+', '-', '=', ' ')))
+    if ((slice == event.aux) || slice.canFind!(c => c.among('+', '-', '=', ' ')))
     {
         chan(plugin.state, event.channel,
-            "Counter names must not contain any of the following characters: [+-= ]");
+            "Counter words must be unique and may not contain any of " ~
+                "the following characters: [+-= ]");
         return;
     }
 
