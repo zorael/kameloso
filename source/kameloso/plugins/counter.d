@@ -1,5 +1,12 @@
 /++
  +  A simple counter plugin.
+ +
+ +  Allows you to define runtime `!word` counters that you can increment,
+ +  decrement or assign specific values to. This can be used to track deaths in
+ +  video games, for instance.
+ +
+ +  Undefined behaviour if a counter command word conflicts with that of another
+ +  command. (Generally both should trigger.)
  +/
 module kameloso.plugins.counter;
 
@@ -128,7 +135,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 /++
  +  Increments, decrements, sets or clears a counter.
  +
- +  If an invalid counter was supplied, the call is silently ignored.
+ +  If an invalid counter word was supplied, the call is silently ignored.
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
@@ -354,7 +361,6 @@ public:
 // CounterPlugin
 /++
  +  The Counter plugin allows for users to define counter commands at runtime.
- +  Calling the command bumps the counter.
  +/
 final class CounterPlugin : IRCPlugin
 {
