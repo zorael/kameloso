@@ -70,7 +70,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
     case "start":
         immutable stopwatchAlreadyExists = (event.channel in plugin.stopwatches) &&
             (event.sender.nickname in plugin.stopwatches[event.channel]);
-        immutable message = "Stopwatch " ~ (stopwatchAlreadyExists ? "restarted." : "started.");
+        immutable message = "Stopwatch " ~ (stopwatchAlreadyExists ? "restarted!" : "started!");
         plugin.stopwatches[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime;
         chan(plugin.state, event.channel, message);
         break;
@@ -120,7 +120,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
 
         case "status":
         case string.init:
-            enum pattern = "Elapsed time: %s.";
+            enum pattern = "Elapsed time: %s";
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(diff.ircBold) :
