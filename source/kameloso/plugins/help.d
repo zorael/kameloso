@@ -65,11 +65,26 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
+    /// Get non-hidden command keys for a plugin.
+    static string[] getUnhiddenCommandKeys(const IRCPlugin thisPlugin)
+    {
+        import std.algorithm.iteration : filter, map;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
+
+        return thisPlugin.commands
+            .byKeyValue
+            .filter!(kv => !kv.value.hidden)
+            .map!(kv => kv.key)
+            .array
+            .sort
+            .array;
+    }
+
     void dg()
     {
         import lu.string : beginsWith, contains, nom;
         import core.thread : Fiber;
-        import std.algorithm.sorting : sort;
         import std.format : format;
         import std.typecons : No, Yes;
 
@@ -92,9 +107,9 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 {
                     if (p.name != specifiedPlugin) continue;
 
-                    if (const description = specifiedCommand in p.commands)
+                    if (const command = specifiedCommand in p.commands)
                     {
-                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, *description);
+                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
                     }
                     else
                     {
@@ -127,9 +142,9 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                     foreach (p; plugins)
                     {
-                        if (const description = specifiedCommand in p.commands)
+                        if (const command = specifiedCommand in p.commands)
                         {
-                            plugin.sendCommandHelp(p, mutEvent, specifiedCommand, *description);
+                            plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
                             return;
                         }
                     }
@@ -156,10 +171,11 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
+                    const keys = getUnhiddenCommandKeys(p);
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
-                        pattern.format(width, p.name, p.commands.keys.sort());
+                        pattern.format(width, p.name.ircBold, keys) :
+                        pattern.format(width, p.name, keys);
 
                     privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     return;
@@ -195,10 +211,11 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                 enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
+                const keys = getUnhiddenCommandKeys(p);
 
                 immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
-                    pattern.format(width, p.name, p.commands.keys.sort());
+                    pattern.format(width, p.name.ircBold, keys) :
+                    pattern.format(width, p.name, keys);
 
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
