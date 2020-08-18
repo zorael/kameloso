@@ -56,18 +56,18 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     immutable verb = slice.nom!(Yes.inherit)(' ');
     slice = slice.strippedLeft;
 
-    if ((slice == event.aux) || slice.canFind!(c => c.among('+', '-', '=', ' ')))
-    {
-        chan(plugin.state, event.channel,
-            "Counter words must be unique and may not contain any of " ~
-                "the following characters: [+-= ]");
-        return;
-    }
-
     switch (verb)
     {
     case "add":
         if (!slice.length) goto default;
+
+        if (slice.canFind!(c => c.among!('+', '-', '=', ' ')))
+        {
+            chan(plugin.state, event.channel,
+                "Counter words must be unique and may not contain any of " ~
+                    "the following characters: [+-= ]");
+            return;
+        }
 
         if ((event.channel in plugin.counters) && (slice in plugin.counters[event.channel]))
         {
@@ -75,16 +75,45 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             return;
         }
 
-        enum pattern = "Counter %s added! Access it with %s.";
+        import kameloso.thread : CarryingFiber, ThreadMessage;
+        import core.thread : Fiber;
+        import std.concurrency : send;
 
-        immutable command = plugin.state.settings.prefix ~ slice;
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(slice.ircBold, command.ircBold) :
-            pattern.format(slice, command);
+        void dg()
+        {
+            auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            const plugins = thisFiber.payload;
 
-        plugin.counters[event.channel][slice] = 0;
-        chan(plugin.state, event.channel, message);
-        saveResourceToDisk(plugin.counters, plugin.countersFile);
+            foreach (p; plugins)
+            {
+                if (slice in p.commands)
+                {
+                    enum pattern = "Counter word %s conflicts with a command of the %s plugin.";
+
+                    immutable message = plugin.state.settings.colouredOutgoing ?
+                        pattern.format(slice.ircBold, p.name.ircBold) :
+                        pattern.format(slice, p.name);
+
+                    chan(plugin.state, event.channel, message);
+                    return;
+                }
+            }
+
+            enum pattern = "Counter %s added! Access it with %s.";
+
+            immutable command = plugin.state.settings.prefix ~ slice;
+            immutable message = plugin.state.settings.colouredOutgoing ?
+                pattern.format(slice.ircBold, command.ircBold) :
+                pattern.format(slice, command);
+
+            plugin.counters[event.channel][slice] = 0;
+            chan(plugin.state, event.channel, message);
+            saveResourceToDisk(plugin.counters, plugin.countersFile);
+        }
+
+        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
+        plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
         break;
 
     case "remove":
