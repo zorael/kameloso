@@ -342,8 +342,14 @@ if (isOutputRange!(Sink, char[]))
 
     sink.put("] [");
 
-    if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
-    else sink.put(typestring.asLowerCase);
+    if (plugin.printerSettings.uppercaseTypes)
+    {
+        sink.put(typestring);
+    }
+    else
+    {
+        sink.put(typestring.asLowerCase);
+    }
 
     sink.put("] ");
 
@@ -869,8 +875,14 @@ if (isOutputRange!(Sink, char[]))
 
     sink.put(" [");
 
-    if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
-    else sink.put(typestring.asLowerCase);
+    if (plugin.printerSettings.uppercaseTypes)
+    {
+        sink.put(typestring);
+    }
+    else
+    {
+        sink.put(typestring.asLowerCase);
+    }
 
     sink.put("] ");
 

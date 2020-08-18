@@ -366,8 +366,14 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case PRIVMSG:
-                if (event.channel.length) goto case CHAN;
-                else goto case QUERY;
+                if (event.channel.length)
+                {
+                    goto case CHAN;
+                }
+                else
+                {
+                    goto case QUERY;
+                }
 
             case RPL_WHOISACCOUNT:
                 import kameloso.constants : Timeout;
