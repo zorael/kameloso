@@ -35,7 +35,7 @@ module kameloso.plugins.core;
 private:
 
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
+import std.typecons : Flag, No, Tuple, Yes;
 
 version = PrefixedCommandsFallBackToNickname;
 
@@ -111,9 +111,9 @@ abstract class IRCPlugin
      +  Returns an array of the descriptions of the commands a plugin offers.
      +
      +  Returns:
-     +      An associative `Description[string]` array.
+     +      An associative `Tuple!(Description, "desc", bool, "hidden")[string]` array.
      +/
-    Description[string] commands() pure nothrow @property const;
+    Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const;
 
     /++
      +  Call a plugin to perform its periodic tasks, iff the time is equal to or
@@ -1389,17 +1389,20 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
+    import std.typecons : Tuple;
+
     // commands
     /++
      +  Collects all `BotCommand` command words and `BotRegex` regex expressions
      +  that this plugin offers at compile time, then at runtime returns them
-     +  alongside their `Description`s as an associative `Description[string]` array.
+     +  alongside their `Description`s and their visibility, as an associative
+     +  array of `Tuple!(Description, bool)`s keyed by command name strings.
      +
      +  Returns:
-     +      Associative array of all `Descriptions`, keyed by
-     +      `BotCommand.word`s and `BotRegex.expression`s.
+     +      Associative array of tuples of all `Descriptions` and whether they
+     +      are hidden, keyed by `BotCommand.word`s and `BotRegex.expression`s.
      +/
-    override public Description[string] commands() pure nothrow @property const
+    override public Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
@@ -1411,19 +1414,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
             alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
             alias funs = Filter!(isSomeFunction, symbols);
+            alias Command = Tuple!(Description, "desc", bool, "hidden");
 
-            Description[string] descriptions;
+            Command[string] commands;
 
             foreach (fun; funs)
             {
                 foreach (immutable uda; AliasSeq!(getUDAs!(fun, BotCommand),
                     getUDAs!(fun, BotRegex)))
                 {
-                    static if (uda.hidden)
-                    {
-                        // Do nothing
-                    }
-                    else static if (hasUDA!(fun, Description))
+                    static if (hasUDA!(fun, Description))
                     {
                         static if (is(typeof(uda) : BotCommand))
                         {
@@ -1435,7 +1435,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         }
 
                         enum desc = getUDAs!(fun, Description)[0];
-                        descriptions[key] = desc;
+                        commands[key] = Command(desc, uda.hidden);
 
                         static if (uda.policy == PrefixPolicy.nickname)
                         {
@@ -1443,13 +1443,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                descriptions[key].syntax = "$nickname: " ~ desc.syntax;
+                                commands[key].desc.syntax = "$nickname: " ~ desc.syntax;
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                descriptions[key].syntax = "$nickname: $command";
+                                commands[key].desc.syntax = "$nickname: $command";
                             }
                         }
                     }
@@ -1466,14 +1466,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
             }
 
-            return descriptions;
+            return commands;
         }();
 
         // This is an associative array literal. We can't make it static immutable
         // because of AAs' runtime-ness. We could make it runtime immutable once
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
-        return isEnabled ? ctCommandsEnumLiteral : (Description[string]).init;
+        return isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
     }
 
 
