@@ -216,11 +216,30 @@ MrOffline joined #channel
  kameloso | [github.com] GitHub - zorael/kameloso: IRC bot
       you | https://youtu.be/ykj3Kpm3O0g
  kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
+
+<context: playing a video game>
+      you | !counter add deaths
+ kameloso | Counter deaths added! Access it with !deaths.
+      you | !deaths+
+ kameloso | deaths +1! Current count: 1
+      you | !deaths+
+ kameloso | deaths +1! Current count: 2
+      you | !deaths
+ kameloso | Current deaths count: 2
+      you | !deaths=0
+ kameloso | deaths count assigned to 0!
+
+      you | !stopwatch start
+ kameloso | Stopwatch started!
+      you | !stopwatch
+ kameloso | Elapsed time: 18 mins 42 secs
+      you | !stopwatch stop
+ kameloso | Stopwatch stopped after 48 minutes 10 secs.
 ```
 
 ### Online help and commands
 
-Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one.
+Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
 The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
