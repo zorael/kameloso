@@ -2404,7 +2404,6 @@ void printEventDebugDetails(const IRCEvent event, const string raw)
  +/
 void printSummary(const ref Kameloso instance)
 {
-    import std.stdio : writefln;
     import core.time : Duration;
 
     Duration totalTime;
@@ -2415,18 +2414,30 @@ void printSummary(const ref Kameloso instance)
     foreach (immutable i, const entry; instance.connectionHistory)
     {
         import std.datetime.systime : SysTime;
+        import std.format : format;
+        import std.stdio : writefln;
         import core.time : hnsecs;
 
+        enum onlyTimePattern = "%02d:%02d:%02d";
+        enum fullDatePattern = "%d-%02d-%02d " ~ onlyTimePattern;
+
         auto start = SysTime.fromUnixTime(entry.startTime);
-        start.fracSecs = 0.hnsecs;
+        immutable startString = fullDatePattern
+            .format(start.year, start.month, start.day, start.hour, start.minute, start.second);
+
         auto stop = SysTime.fromUnixTime(entry.stopTime);
+        immutable stopString = (start.dayOfGregorianCal == stop.dayOfGregorianCal) ?
+            onlyTimePattern.format(stop.hour, stop.minute, stop.second) :
+            fullDatePattern.format(stop.year, stop.month, stop.day, stop.hour, stop.minute, stop.second);
+
+        start.fracSecs = 0.hnsecs;
         stop.fracSecs = 0.hnsecs;
         immutable duration = (stop - start);
         totalTime += duration;
         totalBytesReceived += entry.bytesReceived;
 
         writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
-            i+1, duration, entry.numEvents, entry.bytesReceived, start, stop);
+            i+1, duration, entry.numEvents, entry.bytesReceived, startString, stopString);
     }
 
     logger.info("Total time connected: ", Tint.log, totalTime);
