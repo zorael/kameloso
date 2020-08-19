@@ -1273,7 +1273,6 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                     // More than a week away, just .info
                     enum pattern = "Your Twitch authorisation key will expire on " ~
                         "%s%02d-%02d-%02d";
-
                     logger.infof(pattern, Tint.log, expiresWhen.year,
                         expiresWhen.month, expiresWhen.day);
                 }

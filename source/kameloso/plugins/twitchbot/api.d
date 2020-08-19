@@ -412,7 +412,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     }
 
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
-    const response = waitForQueryResponse(plugin, url,
+    immutable response = waitForQueryResponse(plugin, url,
         plugin.twitchBotSettings.singleWorkerThread);
 
     scope(exit)
@@ -612,7 +612,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
  +      roomID = The string identifier for the channel.
  +
  +  Returns:
- +      A `JSONValue` containing follows, JSON values keyed by the ID string
+ +      A `std.json.JSONValue` containing follows, JSON values keyed by the ID string
  +      of the follower.
  +/
 JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
@@ -634,7 +634,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 
         scope(failure) plugin.useAPIFeatures = false;
 
-        const response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
+        immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
