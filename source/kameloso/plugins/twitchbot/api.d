@@ -527,99 +527,24 @@ void queryTwitchImpl(const string url, const string authToken,
 }
 
 
-// getUserImpl
+// getTwitchEntity
 /++
- +  Synchronously queries the Twitch servers for information about a user,
- +  by name or by Twitch account ID number. Implementation function.
+ +  By following a passed URL, queries Twitch servers for an entity (user or channel).
  +
  +  Params:
- +      field = The field to access via the HTTP URL. Can be either "login" or "id".
- +      identifier = The identifier of type `field` to look up (e.g. an account
- +          name or string of numeric account ID).
- +      authToken = Authorisation token HTTP header to pass.
- +      timeout = How long to let the query run before timing out.
- +      caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+ +      plugin = The current `TwitchBotPlugin`.
+ +      url = The URL to follow.
  +
  +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
+ +      A singular user or channel regardless of how many were asked for in the URL.
+ +      If nothing was found, an empty `std.json.JSONValue.init` is returned.
  +/
-JSONValue getUserImpl(Identifier)(const string field, const Identifier identifier,
-    const string authToken, const uint timeout, const string caBundleFile)
-in (field.among!("login", "id"), "Invalid field supplied; expected " ~
-    "`login` or `id`, got `" ~ field ~ '`')
+JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 {
-    import lu.string : beginsWith;
-    import std.array : Appender;
-    import std.conv : to;
-    import std.exception : assumeUnique;
-    import std.format : format;
-    import std.net.curl : HTTP;
-    import core.time : seconds;
+    import std.json : JSONType, parseJSON;
 
-    immutable url = "https://api.twitch.tv/helix/users?%s=%s"
-        .format(field, identifier.to!string);  // String just passes through
-
-    auto client = HTTP(url);
-    client.operationTimeout = timeout.seconds;
-    client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
-    client.addRequestHeader("Authorization", authToken);
-    if (caBundleFile.length) client.caInfo = caBundleFile;
-
-    Appender!(ubyte[]) sink;
-    sink.reserve(TwitchBotPlugin.queryBufferSize);
-
-    client.onReceive = (ubyte[] data)
-    {
-        sink.put(data);
-        return data.length;
-    };
-
-    string error;
-
-    try
-    {
-        // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
-        /*immutable curlCode =*/ client.perform();//(No.throwOnError);
-    }
-    catch (Exception e)
-    {
-        error = e.msg;
-    }
-
-    immutable code = client.statusLine.code;
-    immutable received = assumeUnique(cast(char[])sink.data);
-
-    if ((code >= 400) || error.length || !received.length || (received.beginsWith(`{"err`)))
-    {
-        // {"status":401,"message":"missing authorization token"}
-        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new TwitchQueryException("Failed to query Twitch: " ~ error,
-            received, error, code);
-    }
-
-    return parseUserFromResponse(received);
-}
-
-
-// parseUserFromResponse
-/++
- +  Given a string response from the Twitch servers when queried for information
- +  on a user, verifies and parses the JSON, returning only that which relates
- +  to the user.
- +
- +  Note: Only deals with the first user, if several were returned.
- +
- +  Params:
- +      jsonString = String response as read from the server, in JSON form.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +/
-JSONValue parseUserFromResponse(const string jsonString)
-{
-    import std.json : JSONType, JSONValue, parseJSON;
-
-    auto json = parseJSON(jsonString);
+    immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
+    auto json = parseJSON(response.str);
 
     if ((json.type != JSONType.object) || ("data" !in json) ||
         (json["data"].type != JSONType.array) || (json["data"].array.length != 1))
@@ -627,73 +552,24 @@ JSONValue parseUserFromResponse(const string jsonString)
         return JSONValue.init;
     }
 
-    return json["data"].array[0];
-}
-
-
-// getUserByLogin
-/++
- +  Queries the Twitch servers for information about a user, by login.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by account string name.
- +
- +  Example:
- +  ---
- +  const userJSON = getUserByLogin(plugin, "zorael");
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      login = The Twitch login/account name to look up.
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +
- +  See_Also:
- +      getUserByID
- +      getUserImpl
- +/
-JSONValue getUserByLogin(TwitchBotPlugin plugin, const string login)
-{
-    return getUserImpl("login", login, plugin.authorizationBearer,
-        plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
-}
-
-
-// getUserByID
-/++
- +  Queries the Twitch servers for information about a user, by id.
- +  Wrapper function; merely calls `getUserImpl`. Overload that sends a query
- +  by id string.
- +
- +  Example:
- +  ---
- +  const userJSON1 = getUserByID(plugin, "22216721");
- +  const userJSON2 = getUserByID(plugin, 22216721);
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The Twitch account ID to look up. Number in string or explicitly
- +          string-coercable form (using `std.conv.to`).
- +
- +  Returns:
- +      A `std.json.JSONValue` with information regarding the user in question.
- +
- +  See_Also:
- +      getUserByLogin
- +      getUserImpl
- +/
-JSONValue getUserByID(Identifier)(TwitchBotPlugin plugin, const Identifier id)
-{
-    return getUserImpl("id", id, plugin.authorizationBearer,
-        plugin.queryResponseTimeout, plugin.state.connSettings.caBundleFile);
+    auto dataJSON = "data" in json;
+    return dataJSON.array[0];
 }
 
 
 // getValidation
 /++
  +  Validates the current access key, retrieving information about it.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +
+ +  Returns:
+ +      A `std.json.JSONValue` with the validation information JSON of the
+ +      current authorisation header/client ID pair.
+ +
+ +  Throws:
+ +      `TwitchQueryException` on failure.
  +/
 JSONValue getValidation(TwitchBotPlugin plugin)
 in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
@@ -711,25 +587,16 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
         plugin.state.bot.pass;
     immutable authorizationHeader = "OAuth " ~ pass;
 
-    const response = queryTwitch(plugin, url, authorizationHeader);
+    immutable response = queryTwitch(plugin, url, authorizationHeader);
+    auto validationJSON = parseJSON(response.str);
 
-    if ((response.code >= 400) || response.error.length ||
-        !response.str.length || (response.str.beginsWith(`{"err`)))
-    {
-        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        throw new TwitchQueryException("Failed to validate Twitch authorisation token",
-            response.str, response.error, response.code);
-    }
-
-    JSONValue validation = parseJSON(response.str);
-
-    if ((validation.type != JSONType.object) || ("client_id" !in validation))
+    if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
         throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
             "token; unknown JSON", response.str, response.error, response.code);
     }
 
-    return validation;
+    return validationJSON;
 }
 
 

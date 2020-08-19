@@ -844,30 +844,20 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
                 if (!idString.length)
                 {
+                    import std.json : JSONType;
+
                     // None on record, look up
-                    immutable url = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+                    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+                    const userJSON = getTwitchEntity(plugin, userURL);
 
-                    scope(failure) plugin.useAPIFeatures = false;
-
-                    const response = queryTwitch(plugin, url, plugin.authorizationBearer);
-
-                    if (!response.str.length)
+                    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
                     {
-                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
+                        chan(plugin.state, event.channel, "No such user: " ~ givenName);
                         return;
                     }
 
-                    // Hit
-                    const user = parseUserFromResponse(cast()response.str);
-
-                    if (user == JSONValue.init)
-                    {
-                        chan(plugin.state, event.channel, "Invalid user: " ~ givenName);
-                        return;
-                    }
-
-                    idString = user["id"].str;
-                    fromDisplayName = user["display_name"].str;
+                    idString = userJSON["id"].str;
+                    fromDisplayName = userJSON["display_name"].str;
                 }
             }
         }
@@ -995,12 +985,16 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 
     void getDisplayNameDg()
     {
-        immutable url = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+        immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+        const userJSON = getTwitchEntity(plugin, userURL);
 
-        const response = queryTwitch(plugin, url, plugin.authorizationBearer);
+        /*if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+        {
+            chan(plugin.state, event.channel, "No such user: " ~ event.aux);
+            return;
+        }*/
 
-        const broadcasterJSON = parseUserFromResponse(response.str);
-        channel.broadcasterDisplayName = broadcasterJSON["display_name"].str;
+        channel.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
     Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
@@ -1045,31 +1039,28 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    const userJSON = getUserByLogin(plugin, event.content);
-
-    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
-    {
-        chan(plugin.state, event.channel, "No such user (%s)...".format(userJSON["id"].str));
-        return;
-    }
-
-    immutable id = userJSON["id"].str;
-    immutable login = userJSON["login"].str;
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
-
     void shoutoutQueryDg()
     {
-        const response = queryTwitch(plugin, url, plugin.authorizationBearer);
+        immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ event.content;
+        const userJSON = getTwitchEntity(plugin, userURL);
 
-        if ((response.code >= 400) || response.error.length ||
-            !response.str.length || (response.str.beginsWith(`{"err`)))
+        if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
-            throw new TwitchQueryException("Failed to fetch shoutout user information",
-                response.str, response.error, response.code);
+            chan(plugin.state, event.channel, "No such user: " ~ event.content);
+            return;
         }
 
-        const channelsArrayJSON = parseJSON(response.str);
-        const channelJSON = channelsArrayJSON["data"].array[0];
+        immutable id = userJSON["id"].str;
+        immutable login = userJSON["login"].str;
+        immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
+        const channelJSON = getTwitchEntity(plugin, channelURL);
+
+        if ((channelJSON.type != JSONType.object) || ("broadcaster_name" !in channelJSON))
+        {
+            chan(plugin.state, event.channel, "Impossible error; user has no channel?");
+            return;
+        }
+
         immutable broadcasterName = channelJSON["broadcaster_name"].str;
         immutable gameName = channelJSON["game_name"].str;
         immutable lastSeenPlayingPattern = gameName.length ?
@@ -1271,9 +1262,9 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 }
                 */
 
-                const validation = getValidation(plugin);
-                plugin.userID = validation["user_id"].str;
-                immutable expiresIn = validation["expires_in"].integer;
+                const validationJSON = getValidation(plugin);
+                plugin.userID = validationJSON["user_id"].str;
+                immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                 immutable now = Clock.currTime;
 
