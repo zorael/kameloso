@@ -655,6 +655,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.common : findURLs;
     import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
+    import std.format : format;
 
     version(WithWebtitlesPlugin)
     {
@@ -725,58 +726,55 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     {
         version(WithWebtitlesPlugin)
         {
-            // Pass to Webtitles if available, otherwise just ignore
-            return passToWebtitles(urls);
-        }
-    }
-    else
-    {
-        import std.format : format;
-
-        static immutable int[3] durations = [ 5, 60, 3600 ];
-        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-        static immutable string[3] messages =
-        [
-            "Stop posting links.",
-            "Really, no links!",
-            "Go cool off.",
-        ];
-
-        auto channel = event.channel in plugin.activeChannels;
-        auto ban = event.sender.nickname in channel.linkBans;
-
-        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-        if (ban)
-        {
-            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-            if (banEndTime > event.time)
-            {
-                ban.timestamp = event.time;
-                if (ban.offense < 2) ++ban.offense;
-            }
-            else
-            {
-                // Force a new ban
-                ban = null;
-            }
+            // Pass to Webtitles if available
+            passToWebtitles(urls);
         }
 
-        if (!ban)
-        {
-            TwitchBotPlugin.Channel.Ban newBan;
-            newBan.timestamp = event.time;
-            channel.linkBans[event.sender.nickname] = newBan;
-            ban = event.sender.nickname in channel.linkBans;
-        }
-
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-            .format(event.sender.nickname, durations[ban.offense]));
-        chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
-            .format(event.sender.nickname, messages[ban.offense]));
         return;
     }
+
+    static immutable int[3] durations = [ 5, 60, 3600 ];
+    static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
+    static immutable string[3] messages =
+    [
+        "Stop posting links.",
+        "Really, no links!",
+        "Go cool off.",
+    ];
+
+    auto channel = event.channel in plugin.activeChannels;
+    auto ban = event.sender.nickname in channel.linkBans;
+
+    immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
+
+    if (ban)
+    {
+        immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
+
+        if (banEndTime > event.time)
+        {
+            ban.timestamp = event.time;
+            if (ban.offense < 2) ++ban.offense;
+        }
+        else
+        {
+            // Force a new ban
+            ban = null;
+        }
+    }
+
+    if (!ban)
+    {
+        TwitchBotPlugin.Channel.Ban newBan;
+        newBan.timestamp = event.time;
+        channel.linkBans[event.sender.nickname] = newBan;
+        ban = event.sender.nickname in channel.linkBans;
+    }
+
+    chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+        .format(event.sender.nickname, durations[ban.offense]));
+    chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
+        .format(event.sender.nickname, messages[ban.offense]));
 }
 
 
