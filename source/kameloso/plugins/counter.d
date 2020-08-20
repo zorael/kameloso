@@ -183,7 +183,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
-    import lu.string : stripped, strippedLeft;
+    import lu.string : stripped, strippedLeft, strippedRight;
     import std.conv : ConvException, text, to;
     import std.format : format;
     import std.meta : aliasSeqOf;
@@ -205,7 +205,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
         if (signPos != -1) break;
     }
 
-    immutable word = (signPos != -1) ? slice[0..signPos] : slice;
+    immutable word = (signPos != -1) ? slice[0..signPos].strippedRight : slice;
 
     auto count = word in *channelCounters;
     if (!count) return;
@@ -284,7 +284,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
         break;
 
     case '=':
-        slice = slice[1..$];
+        slice = slice[1..$].strippedLeft;
 
         if (!slice.length)
         {
