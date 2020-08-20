@@ -249,9 +249,12 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
         }
         else if (slice.length > 1)
         {
+            slice = slice[1..$].strippedLeft;
+            step = (sign == '+') ? 1 : -1;  // implicitly (sign == '-')
+
             try
             {
-                step = slice.strippedLeft.to!int;
+                step = slice.strippedLeft.to!int * step;
             }
             catch (ConvException e)
             {
