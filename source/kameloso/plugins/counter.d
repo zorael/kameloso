@@ -30,6 +30,9 @@ import std.typecons : Flag, No, Yes;
 {
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
+
+    /// Whether or not merely calling !word bumps, or if a '+' has to be appended.
+    bool wordAloneIncrements = false;
 }
 
 
