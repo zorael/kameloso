@@ -193,9 +193,6 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     if ((slice.length < (plugin.state.settings.prefix.length+1)) &&  // !w
         (slice.length < (plugin.state.client.nickname.length+2))) return;  // nickname:w
 
-    auto channelCounters = event.channel in plugin.counters;
-    if (!channelCounters) return;
-
     if (slice.beginsWith(plugin.state.settings.prefix))
     {
         slice = slice[plugin.state.settings.prefix.length..$];
@@ -212,6 +209,9 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     }
 
     if (!slice.length) return;
+
+    auto channelCounters = event.channel in plugin.counters;
+    if (!channelCounters) return;
 
     ptrdiff_t signPos;
 
