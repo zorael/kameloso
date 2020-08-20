@@ -1498,7 +1498,6 @@ void periodically(TwitchBotPlugin plugin, const long now)
         .roll!"days"(1)
         .toUnixTime;
 
-
     version(TwitchAPIFeatures)
     {
         // Clear and re-cache follows once as often as we prune
@@ -1652,20 +1651,11 @@ package:
         /// The Twitch application ID for kameloso.
         enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
 
-        /// Authorisation token for the "Authorization: OAuth <token>".
-        //string authorizationOAuth;
-
         /// Authorisation token for the "Authorization: Bearer <token>".
         string authorizationBearer;
 
         /// Whether or not to use features requiring querying Twitch API.
         bool useAPIFeatures = true;
-
-        /++
-         +  HTTP headers to pass when querying Twitch servers for information.
-         +  `shared` to be able to be shared between threads.
-         +/
-        //shared string[string] headers;
 
         /// The bot's numeric account/ID.
         string userID;
