@@ -64,11 +64,11 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     case "add":
         if (!slice.length) goto default;
 
-        if (slice.canFind!(c => c.among!('+', '-', '=', ' ')))
+        if (slice.canFind!(c => c.among!('+', '-', '=', '?', ' ')))
         {
             chan(plugin.state, event.channel,
                 "Counter words must be unique and may not contain any of " ~
-                    "the following characters: [+-= ]");
+                    "the following characters: [+-=? ]");
             return;
         }
 
@@ -199,7 +199,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
     ptrdiff_t signPos;
 
-    foreach (immutable sign; aliasSeqOf!"+=-")  // '-' after '=' to support "!word=-5"
+    foreach (immutable sign; aliasSeqOf!"+=-?")  // '-' after '=' to support "!word=-5"
     {
         signPos = slice.indexOf(sign);
         if (signPos != -1) break;
