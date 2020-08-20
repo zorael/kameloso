@@ -212,7 +212,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
     slice = (signPos != -1) ? slice[signPos..$] : string.init;
 
-    if (!slice.length)
+    if ((slice == "?") || (!slice.length && !plugin.counterSettings.wordAloneIncrements))
     {
         import std.conv : text;
 
@@ -230,6 +230,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     // Limit modifications to whitelist and above
     if (event.sender.class_ < IRCUser.Class.whitelist) return;
 
+    if (!slice.length) slice = "+";  // implicitly wordAloneIncrements
     immutable sign = slice[0];
 
     switch (sign)
