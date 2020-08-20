@@ -183,19 +183,35 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
-    import lu.string : stripped, strippedLeft, strippedRight;
+    import lu.string : beginsWith, stripped, strippedLeft, strippedRight;
     import std.conv : ConvException, text, to;
     import std.format : format;
     import std.meta : aliasSeqOf;
     import std.string : indexOf;
 
     string slice = event.content.stripped;  // mutable
-    if (slice.length < (plugin.state.settings.prefix.length+1)) return;
+    if ((slice.length < (plugin.state.settings.prefix.length+1)) &&  // !w
+        (slice.length < (plugin.state.client.nickname.length+2))) return;  // nickname:w
 
     auto channelCounters = event.channel in plugin.counters;
     if (!channelCounters) return;
 
-    slice = slice[plugin.state.settings.prefix.length..$];
+    if (slice.beginsWith(plugin.state.settings.prefix))
+    {
+        slice = slice[plugin.state.settings.prefix.length..$];
+    }
+    else if (slice.beginsWith(plugin.state.client.nickname))
+    {
+        import kameloso.common : stripSeparatedPrefix;
+        slice = slice.stripSeparatedPrefix(plugin.state.client.nickname);
+    }
+    else
+    {
+        // Just a random message
+        return;
+    }
+
+    if (!slice.length) return;
 
     ptrdiff_t signPos;
 
