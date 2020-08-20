@@ -38,7 +38,7 @@ import std.typecons : Flag, No, Yes;
 
 // onCommandCounter
 /++
- +  Manages runtime counters.
+ +  Manages runtime counters (adding, removing and listing).
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
@@ -171,9 +171,15 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
 // onCounterWord
 /++
- +  Increments, decrements, sets or clears a counter.
+ +  Allows users to increment, decrement, and set counters.
  +
- +  If an invalid counter word was supplied, the call is silently ignored.
+ +  This function fakes `kameloso.plugin.core.BotCommand`s by listening for
+ +  prefixes (and the bot's nickname), and treating whatever comes after it as
+ +  a command word. If it doesn't match a previously added counter, it is ignored.
+ +
+ +  Currently only users of class `dialect.defs.IRCUser.Class.whitelist` or higher
+ +  may modify counters, but only `dialect.defs.IRCUser.Class.anyone` is needed
+ +  to view the current count. This can trivially be made configurable.
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
@@ -243,7 +249,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
         return;
     }
 
-    // Limit modifications to whitelist and above
+    // Limit modifications to whitelist and above. Insert configuration check here.
     if (event.sender.class_ < IRCUser.Class.whitelist) return;
 
     if (!slice.length) slice = "+";  // implicitly wordAloneIncrements
