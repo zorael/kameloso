@@ -216,7 +216,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     {
         import std.conv : text;
 
-        enum pattern = "Current %s count: %s";
+        enum pattern = "%s count so far: %s";
 
         immutable countText =  plugin.counters[event.channel][word].text;
         immutable message = plugin.state.settings.colouredOutgoing ?
