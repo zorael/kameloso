@@ -234,7 +234,8 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
     slice = (signPos != -1) ? slice[signPos..$] : string.init;
 
-    if ((slice == "?") || (!slice.length && !plugin.counterSettings.wordAloneIncrements))
+    if ((slice.length && (slice[0] == '?')) ||
+        (!slice.length && !plugin.counterSettings.wordAloneIncrements))
     {
         import std.conv : text;
 
