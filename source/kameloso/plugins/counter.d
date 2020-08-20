@@ -294,7 +294,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
         enum pattern = "%s %s! Current count: %s";
 
-        *count = *count + step;
+        *count += step;
 
         immutable countText = (*count).text;
         immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
