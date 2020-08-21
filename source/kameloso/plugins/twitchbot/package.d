@@ -509,9 +509,27 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         now.fracSecs = 0.msecs;
 
         immutable delta = now - SysTime.fromUnixTime(channel.broadcast.start);
+        bool sent;
 
-        chan(plugin.state, event.channel, "%s has been live for %s."
-            .format(streamer, delta));
+        version(TwitchAPIFeatures)
+        {
+            if (channel.broadcast.chattersSeen.length)
+            {
+                enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
+                    "(max at any one time has so far been %d viewers)";
+
+                chan(plugin.state, event.channel, pattern.format(streamer, delta,
+                    channel.broadcast.chattersSeen.length,
+                    channel.broadcast.maxConcurrentChatters));
+                sent = true;
+            }
+        }
+
+        if (!sent)
+        {
+            chan(plugin.state, event.channel, "%s has been live for %s."
+                .format(streamer, delta));
+        }
     }
     else
     {
