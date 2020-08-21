@@ -654,26 +654,26 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 // cacheFollows
 /++
  +  Fetches a list of all follows of the passed channel and caches them in
- +  the channel's entry in `TwitchBotPlugin.activeChannels`.
+ +  the channel's entry in `TwitchBotPlugin.rooms`.
  +
  +  Note: Must be called from inside a `core.thread.Fiber`.
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
- +      roomID = The string identifier for the channel.
+ +      id = The string identifier for the channel.
  +
  +  Returns:
  +      A `std.json.JSONValue` containing follows, JSON values keyed by the ID string
  +      of the follower.
  +/
-JSONValue cacheFollows(TwitchBotPlugin plugin, const string roomID)
+JSONValue cacheFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
 
-    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ roomID;
+    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
 
     JSONValue allFollows;
     string after;

@@ -123,15 +123,15 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (nickname[0] == '@') nickname = nickname[1..$];
 
-    auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to handle permits on an inactive channel");
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to handle permits on nonexistent room");
 
-    channel.linkPermits[nickname] = event.time;
+    room.linkPermits[nickname] = event.time;
 
-    if (nickname in channel.linkBans)
+    if (nickname in room.linkBans)
     {
         // Was or is timed out, remove it just in case
-        channel.linkBans.remove(nickname);
+        room.linkBans.remove(nickname);
         chan(plugin.state, event.channel, "/timeout " ~ nickname ~ " 0");
     }
 
@@ -185,7 +185,7 @@ void onImportant(TwitchBotPlugin plugin)
 
 // onSelfjoin
 /++
- +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
+ +  Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
  +  always a state struct available.
  +
  +  Simply passes on execution to `handleSelfjoin`.
@@ -200,7 +200,7 @@ package void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 
 // handleSelfjoin
 /++
- +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
+ +  Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
  +  always a state struct available.
  +
  +  Creates the timer `core.thread.fiber.Fiber`s that there are definitions for in
@@ -213,26 +213,26 @@ package void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 package void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
-    if (channelName in plugin.activeChannels) return;
+    if (channelName in plugin.rooms) return;
 
-    plugin.activeChannels[channelName] = TwitchBotPlugin.Channel.init;
+    plugin.rooms[channelName] = TwitchBotPlugin.Room.init;
 
     // Apply the timer definitions we have stored
     const timerDefs = channelName in plugin.timerDefsByChannel;
     if (!timerDefs || !timerDefs.length) return;
 
-    auto channel = channelName in plugin.activeChannels;
+    auto room = channelName in plugin.rooms;
 
     foreach (const timerDef; *timerDefs)
     {
-        channel.timers ~= plugin.createTimerFiber(timerDef, channelName);
+        room.timers ~= plugin.createTimerFiber(timerDef, channelName);
     }
 }
 
 
 // onSelfpart
 /++
- +  Removes a channel's corresponding `TwitchBotPlugin.Channel` when we leave it.
+ +  Removes a channel's corresponding `TwitchBotPlugin.Room` when we leave it.
  +
  +  This resets all that channel's transient state.
  +/
@@ -240,7 +240,7 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 @(ChannelPolicy.home)
 void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    plugin.activeChannels.remove(event.channel);
+    plugin.rooms.remove(event.channel);
 }
 
 
@@ -458,12 +458,12 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 {
     if (event.aux == "enable")
     {
-        plugin.activeChannels[event.channel].enabled = true;
+        plugin.rooms[event.channel].enabled = true;
         chan(plugin.state, event.channel, "Bot enabled!");
     }
     else /*if (event.aux == "disable")*/
     {
-        plugin.activeChannels[event.channel].enabled = false;
+        plugin.rooms[event.channel].enabled = false;
         chan(plugin.state, event.channel, "Bot disabled.");
     }
 }
@@ -486,11 +486,11 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Reports how long the streamer has been streaming.")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    const channel = event.channel in plugin.activeChannels;
+    const room = event.channel in plugin.rooms;
 
     version(TwitchAPIFeatures)
     {
-        immutable streamer = channel.broadcasterDisplayName;
+        immutable streamer = room.broadcasterDisplayName;
     }
     else
     {
@@ -498,7 +498,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         immutable streamer = plugin.nameOf(event.channel[1..$]);
     }
 
-    if (channel.broadcast.active)
+    if (room.broadcast.active)
     {
         import core.time : msecs;
         import std.datetime.systime : Clock, SysTime;
@@ -508,19 +508,19 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
 
-        immutable delta = now - SysTime.fromUnixTime(channel.broadcast.start);
+        immutable delta = now - SysTime.fromUnixTime(room.broadcast.start);
         bool sent;
 
         version(TwitchAPIFeatures)
         {
-            if (channel.broadcast.chattersSeen.length)
+            if (room.broadcast.chattersSeen.length)
             {
                 enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
                     "(max at any one time has so far been %d viewers)";
 
                 chan(plugin.state, event.channel, pattern.format(streamer, delta,
-                    channel.broadcast.chattersSeen.length,
-                    channel.broadcast.maxConcurrentChatters));
+                    room.broadcast.chattersSeen.length,
+                    room.broadcast.maxConcurrentChatters));
                 sent = true;
             }
         }
@@ -555,14 +555,14 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the start of a broadcast.")
 void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to start a broadcast on an inactive channel");
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to start a broadcast on a nonexistent room");
 
-    if (channel.broadcast.active)
+    if (room.broadcast.active)
     {
         version(TwitchAPIFeatures)
         {
-            immutable streamer = channel.broadcasterDisplayName;
+            immutable streamer = room.broadcasterDisplayName;
         }
         else
         {
@@ -574,9 +574,9 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    channel.broadcast = typeof(channel.broadcast).init;
-    channel.broadcast.start = event.time;
-    channel.broadcast.active = true;
+    room.broadcast = typeof(room.broadcast).init;
+    room.broadcast.start = event.time;
+    room.broadcast.active = true;
     chan(plugin.state, event.channel, "Broadcast start registered!");
 
     version(TwitchAPIFeatures)
@@ -585,7 +585,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
         void periodicalChattersCheckDg()
         {
-            while (channel.broadcast.active)
+            while (room.broadcast.active)
             {
                 import kameloso.plugins.common.delayawait : delay;
                 import std.json : JSONType;
@@ -597,7 +597,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
                 {
                     immutable viewer = viewerJSON.str;
                     if (viewer == plugin.state.client.nickname) continue;
-                    channel.broadcast.chattersSeen[viewer] = true;
+                    room.broadcast.chattersSeen[viewer] = true;
                 }
 
                 // Don't count the bot nor the broadcaster as a viewer.
@@ -606,9 +606,9 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
                     (chatterCount - 2) :  // sans broadcaster + bot
                     (chatterCount - 1);   // sans only bot
 
-                if (numCurrentViewers > channel.broadcast.maxConcurrentChatters)
+                if (numCurrentViewers > room.broadcast.maxConcurrentChatters)
                 {
-                    channel.broadcast.maxConcurrentChatters = numCurrentViewers;
+                    room.broadcast.maxConcurrentChatters = numCurrentViewers;
                 }
 
                 delay(plugin, plugin.chattersCheckPeriodicity);
@@ -636,10 +636,10 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the stop of a broadcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to stop a broadcast on an inactive channel");
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to stop a broadcast on a nonexistent room");
 
-    if (!channel.broadcast.active)
+    if (!room.broadcast.active)
     {
         if (event.type != IRCEvent.Type.TWITCH_HOSTSTART)
         {
@@ -648,8 +648,8 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    channel.broadcast.active = false;
-    channel.broadcast.stop = event.time;
+    room.broadcast.active = false;
+    room.broadcast.stop = event.time;
 
     chan(plugin.state, event.channel, "Broadcast ended!");
     plugin.reportStopTime(event);
@@ -682,22 +682,22 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     import std.format : format;
     import core.time : msecs;
 
-    auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to report broadcast stop time on an inactive channel");
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to report broadcast stop time on a nonexistent room");
 
-    auto end = SysTime.fromUnixTime(channel.broadcast.stop);
+    auto end = SysTime.fromUnixTime(room.broadcast.stop);
     end.fracSecs = 0.msecs;
-    const delta = end - SysTime.fromUnixTime(channel.broadcast.start);
+    const delta = end - SysTime.fromUnixTime(room.broadcast.start);
 
     version(TwitchAPIFeatures)
     {
         enum pattern = "%s streamed for %s, for %d unique viewers. " ~
             "(max at any one time was %d viewers)";
 
-        immutable streamer = channel.broadcasterDisplayName;
+        immutable streamer = room.broadcasterDisplayName;
         chan(plugin.state, event.channel, pattern.format(streamer, delta,
-            channel.broadcast.chattersSeen.length,
-            channel.broadcast.maxConcurrentChatters));
+            room.broadcast.chattersSeen.length,
+            room.broadcast.maxConcurrentChatters));
     }
     else
     {
@@ -780,14 +780,14 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case blacklist:
     case anyone:
         if (const permitTimestamp = event.sender.nickname in
-            plugin.activeChannels[event.channel].linkPermits)
+            plugin.rooms[event.channel].linkPermits)
         {
             allowed = (event.time - *permitTimestamp) <= 60;
 
             if (allowed && plugin.twitchBotSettings.permitOneLinkOnly)
             {
                 // Reset permit since only one link was permitted
-                plugin.activeChannels[event.channel].linkPermits.remove(event.sender.nickname);
+                plugin.rooms[event.channel].linkPermits.remove(event.sender.nickname);
             }
         }
         break;
@@ -819,10 +819,10 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         "Go cool off.",
     ];
 
-    auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to get bans of an inactive channel");
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to get bans of a nonexistent room");
 
-    auto ban = event.sender.nickname in channel.linkBans;
+    auto ban = event.sender.nickname in room.linkBans;
 
     immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
 
@@ -844,10 +844,10 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!ban)
     {
-        TwitchBotPlugin.Channel.Ban newBan;
+        TwitchBotPlugin.Room.Ban newBan;
         newBan.timestamp = event.time;
-        channel.linkBans[event.sender.nickname] = newBan;
-        ban = event.sender.nickname in channel.linkBans;
+        room.linkBans[event.sender.nickname] = newBan;
+        ban = event.sender.nickname in room.linkBans;
     }
 
     chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
@@ -995,7 +995,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
         import std.json : JSONType;
 
-        auto follows = plugin.activeChannels[event.channel].follows;
+        auto follows = plugin.rooms[event.channel].follows;
 
         if (follows.type == JSONType.null_)
         {
@@ -1004,7 +1004,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
             // done immediately after joining so there should be no time for
             // !followage queries to sneak in.
             // Luckily we're inside a Fiber so we can cache it ourselves.
-            follows = plugin.cacheFollows(plugin.activeChannels[event.channel].roomID);
+            follows = plugin.cacheFollows(plugin.rooms[event.channel].id);
         }
 
         if (const thisFollow = idString in follows)
@@ -1046,16 +1046,16 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
 
-    auto channel = event.channel in plugin.activeChannels;
+    auto room = event.channel in plugin.rooms;
 
-    if (!channel)
+    if (!room)
     {
         // Race...
         plugin.handleSelfjoin(event.channel);
-        channel = event.channel in plugin.activeChannels;
+        room = event.channel in plugin.rooms;
     }
 
-    channel.roomID = event.aux;
+    room.id = event.aux;
 
     if (!plugin.useAPIFeatures) return;
 
@@ -1070,7 +1070,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
             return;
         }*/
 
-        channel.broadcasterDisplayName = userJSON["display_name"].str;
+        room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
     Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
@@ -1079,7 +1079,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
     // Always cache as soon as possible, before we get any !followage requests
     void cacheFollowsDg()
     {
-        channel.follows = plugin.cacheFollows(channel.roomID);
+        room.follows = plugin.cacheFollows(room.id);
     }
 
     Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
@@ -1187,10 +1187,10 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     // Don't do any more than bell on whispers
     if (event.type == IRCEvent.Type.QUERY) return;
 
-    auto channel = event.channel in plugin.activeChannels;
-    assert(channel, "Tried to process `onAnyMessage` on an inactive channel");
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to process `onAnyMessage` on a nonexistent room");
 
-    ++channel.messageCount;
+    ++room.messageCount;
 
     with (IRCUser.Class)
     final switch (event.sender.class_)
@@ -1228,7 +1228,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         static immutable int[3] durations = [ 5, 60, 3600 ];
         static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
 
-        auto ban = event.sender.nickname in channel.phraseBans;
+        auto ban = event.sender.nickname in room.phraseBans;
 
         immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
 
@@ -1250,10 +1250,10 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
         if (!ban)
         {
-            TwitchBotPlugin.Channel.Ban newBan;
+            TwitchBotPlugin.Room.Ban newBan;
             newBan.timestamp = event.time;
-            channel.phraseBans[event.sender.nickname] = newBan;
-            ban = event.sender.nickname in channel.phraseBans;
+            room.phraseBans[event.sender.nickname] = newBan;
+            ban = event.sender.nickname in room.phraseBans;
         }
 
         chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
@@ -1512,9 +1512,9 @@ void periodically(TwitchBotPlugin plugin, const long now)
     }
 
     // Walk through channels, trigger fibers
-    foreach (immutable channelName, channel; plugin.activeChannels)
+    foreach (immutable channelName, room; plugin.rooms)
     {
-        foreach (timer; channel.timers)
+        foreach (timer; room.timers)
         {
             if (!timer || (timer.state != Fiber.State.HOLD))
             {
@@ -1533,7 +1533,7 @@ void periodically(TwitchBotPlugin plugin, const long now)
     if (now < plugin.nextPrune) return;
 
     // Walk through channels, prune stale bans and permits
-    foreach (immutable channelName, channel; plugin.activeChannels)
+    foreach (immutable channelName, room; plugin.rooms)
     {
         static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
         {
@@ -1562,9 +1562,9 @@ void periodically(TwitchBotPlugin plugin, const long now)
             }
         }
 
-        pruneByTimestamp(channel.linkBans, now, 7200);
-        pruneByTimestamp(channel.linkPermits, now, 60);
-        pruneByTimestamp(channel.phraseBans, now, 7200);
+        pruneByTimestamp(room.linkBans, now, 7200);
+        pruneByTimestamp(room.linkPermits, now, 60);
+        pruneByTimestamp(room.phraseBans, now, 7200);
     }
 
     import std.datetime : DateTime;
@@ -1584,10 +1584,10 @@ void periodically(TwitchBotPlugin plugin, const long now)
 
         void dg()
         {
-            foreach (immutable channelName, channel; plugin.activeChannels)
+            foreach (immutable channelName, room; plugin.rooms)
             {
-                if (!channel.enabled) continue;
-                channel.follows = plugin.cacheFollows(channel.roomID);
+                if (!room.enabled) continue;
+                room.follows = plugin.cacheFollows(room.id);
             }
         }
 
@@ -1650,7 +1650,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
-    struct Channel
+    struct Room
     {
         /// Aggregate of a broadcast.
         struct Broadcast
@@ -1716,7 +1716,7 @@ package:
             string broadcasterDisplayName;
 
             /// Broadcaster user/account/room ID (not name).
-            string roomID;
+            string id;
 
             /// A JSON list of the followers of the channel.
             JSONValue follows;
@@ -1727,7 +1727,7 @@ package:
     TwitchBotSettings twitchBotSettings;
 
     /// Array of active bot channels' state.
-    Channel[string] activeChannels;
+    Room[string] rooms;
 
     /// Associative array of banned phrases; phrases array keyed by channel.
     string[][string] bannedPhrasesByChannel;
@@ -1865,9 +1865,9 @@ package:
                 else
                 {
                     // Only pass through if the channel is enabled
-                    if (const channel = event.channel in activeChannels)
+                    if (const room = event.channel in rooms)
                     {
-                        if (channel.enabled) return onEventImpl(event);
+                        if (room.enabled) return onEventImpl(event);
                     }
                     return;
                 }
