@@ -779,15 +779,17 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case unset:
     case blacklist:
     case anyone:
-        if (const permitTimestamp = event.sender.nickname in
-            plugin.rooms[event.channel].linkPermits)
+        auto room = event.channel in plugin.rooms;
+        assert(room, "Tried to parse a link in a nonexistent room");
+
+        if (const permitTimestamp = event.sender.nickname in room.linkPermits)
         {
             allowed = (event.time - *permitTimestamp) <= 60;
 
             if (allowed && plugin.twitchBotSettings.permitOneLinkOnly)
             {
                 // Reset permit since only one link was permitted
-                plugin.rooms[event.channel].linkPermits.remove(event.sender.nickname);
+                room.linkPermits.remove(event.sender.nickname);
             }
         }
         break;
@@ -995,7 +997,10 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
         import std.json : JSONType;
 
-        auto follows = plugin.rooms[event.channel].follows;
+        auto room = event.channel in plugin.rooms;
+        assert(room, "Tried to look up follow age in a nonexistent room");
+
+        auto follows = room.follows;
 
         if (follows.type == JSONType.null_)
         {
@@ -1004,7 +1009,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
             // done immediately after joining so there should be no time for
             // !followage queries to sneak in.
             // Luckily we're inside a Fiber so we can cache it ourselves.
-            follows = plugin.cacheFollows(plugin.rooms[event.channel].id);
+            follows = plugin.cacheFollows(room.id);
         }
 
         if (const thisFollow = idString in follows)
