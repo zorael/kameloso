@@ -8,6 +8,7 @@ branches:
     - /appveyor-.*/
     - /circleci-.*/
     - gh-pages
+    - /dustmite-.*/
 
 d:
   - dmd
