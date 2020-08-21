@@ -1568,6 +1568,28 @@ package:
     /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
+        /// Aggregate of a broadcast.
+        struct Broadcast
+        {
+            /// Whether or not the streamer is currently broadcasting.
+            bool active;
+
+            /// UNIX timestamp of when broadcasting started.
+            long start;
+
+            /// UNIX timestamp of when broadcasting ended.
+            long stop;
+
+            version(TwitchAPIFeatures)
+            {
+                /// Users seen in the channel.
+                bool[string] chattersSeen;
+
+                /// How many users were max seen as in the channel at the same time.
+                size_t maxConcurrentChatters;
+            }
+        }
+
         /// Aggregate of a ban action.
         struct Ban
         {
@@ -1577,6 +1599,9 @@ package:
 
         /// Toggle of whether or not the bot should operate in this channel.
         bool enabled = true;
+
+        /// Struct instance representing the current broadcast.
+        Broadcast broadcast;
 
         /// ID of the currently ongoing vote, if any (otherwise 0).
         int voteInstance;
