@@ -1158,16 +1158,35 @@ void register(ConnectService service)
     {
         version(TwitchSupport)
         {
-            //import lu.string : beginsWith;
+            //import lu.string : beginsWith;  // for !bot.pass.beginsWith("oauth:")
             import std.algorithm : endsWith;
 
-            immutable pass = ((service.state.bot.pass.length == 30) &&
-                //!bot.pass.beginsWith("oauth:") &&
-                service.state.server.address.endsWith(".twitch.tv")) ?
-                    "oauth:" ~ service.state.bot.pass :
-                    service.state.bot.pass;
+            immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
+            immutable pass = ((service.state.bot.pass.length == 30) && serverIsTwitch) ?
+                ("oauth:" ~ service.state.bot.pass) :
+                service.state.bot.pass;
 
             raw(service.state, "PASS " ~ pass, Yes.quiet);
+
+            if (serverIsTwitch)
+            {
+                import std.uni : toLower;
+
+                // Make sure we have an account and it is lowercase
+                // so we can rely on it (on Twitch)
+
+                if (!service.state.bot.account.length)
+                {
+                    service.state.bot.account = service.state.client.nickname.toLower;
+                }
+                else
+                {
+                    service.state.bot.account = service.state.bot.account.toLower;
+                }
+
+                // Just flag as updated, even if nothing changed, to save us a string compare
+                service.state.botUpdated = true;
+            }
         }
         else
         {
