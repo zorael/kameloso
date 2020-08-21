@@ -554,6 +554,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
+    channel.broadcast = typeof(channel.broadcast).init;
     channel.broadcast.start = event.time;
     channel.broadcast.active = true;
     chan(plugin.state, event.channel, "Broadcast start registered!");
