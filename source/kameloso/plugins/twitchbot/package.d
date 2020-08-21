@@ -1575,7 +1575,11 @@ void start(TwitchBotPlugin plugin)
 {
     import std.datetime.systime : Clock;
     plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
-    plugin.useAPIFeatures = plugin.twitchBotSettings.enableAPIFeatures;
+
+    version(TwitchAPIFeatures)
+    {
+        plugin.useAPIFeatures = plugin.twitchBotSettings.enableAPIFeatures;
+    }
 }
 
 
