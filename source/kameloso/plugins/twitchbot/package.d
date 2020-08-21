@@ -1729,6 +1729,11 @@ package:
          +/
         enum queryBufferSize = 4096;
 
+        /++
+         +  When broadcasting, how often to check and enumerate chatters.
+         +/
+        enum chattersCheckPeriodicity = 180;
+
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
 
