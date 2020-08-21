@@ -585,21 +585,26 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
         void periodicalChattersCheckDg()
         {
-            import kameloso.plugins.common.delayawait : delay;
-            import std.json : JSONType;
-
             while (channel.broadcast.active)
             {
+                import kameloso.plugins.common.delayawait : delay;
+                import std.json : JSONType;
+
                 const chattersJSON = getChatters(plugin, event.channel[1..$]);
                 if (chattersJSON.type != JSONType.object) return;
 
                 foreach (immutable viewerJSON; chattersJSON["chatters"]["viewers"].array)
                 {
-                    channel.broadcast.chattersSeen[viewerJSON.str] = true;
+                    immutable viewer = viewerJSON.str;
+                    if (viewer == plugin.state.client.nickname) continue;
+                    channel.broadcast.chattersSeen[viewer] = true;
                 }
 
-                // Assume the broadcaster is in the channel and don't count them as a chatter
-                immutable numCurrentViewers = chattersJSON["chatter_count"].integer - 1;
+                // Don't count the bot nor the broadcaster as a viewer.
+                immutable chatterCount = cast(int)chattersJSON["chatter_count"].integer;
+                immutable int numCurrentViewers = chattersJSON["chatters"]["broadcaster"].array.length ?
+                    (chatterCount - 2) :  // sans broadcaster + bot
+                    (chatterCount - 1);   // sans only bot
 
                 if (numCurrentViewers > channel.broadcast.maxConcurrentChatters)
                 {
@@ -1665,7 +1670,7 @@ package:
                 bool[string] chattersSeen;
 
                 /// How many users were max seen as in the channel at the same time.
-                size_t maxConcurrentChatters;
+                int maxConcurrentChatters;
             }
         }
 
