@@ -557,6 +557,57 @@ JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 }
 
 
+// getChatters
+/++
+ +  Get the JSON representation of everyone currently in a broadcaster's channel.
+ +
+ +  It is not updated in realtime, so it doesn't make sense to call this often.
+ +/
+JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
+{
+    import std.json : JSONType, parseJSON;
+
+    immutable chattersURL = "https://tmi.twitch.tv/group/user/" ~ broadcaster ~ "/chatters";
+
+    immutable response = queryTwitch(plugin, chattersURL, plugin.authorizationBearer);
+    auto json = parseJSON(response.str);
+
+    /*
+    {
+        "_links": {},
+        "chatter_count": 93,
+        "chatters": {
+            "broadcaster": [
+                "streamernick"
+            ],
+            "vips": [],
+            "moderators": [
+                "somemod"
+            ],
+            "staff": [],
+            "admins": [],
+            "global_mods": [],
+            "viewers": [
+                "abc",
+                "def",
+                "ghi"
+            ]
+        }
+    }
+    */
+
+    if ((json.type != JSONType.object) || ("chatters" !in json) ||
+        (json["chatters"].type != JSONType.object))
+    {
+        // Assume the rest is in place
+        return JSONValue.init;
+    }
+
+    // Don't return json["chatters"], as we would lose "chatter_count".
+    return json;
+}
+
+
 // getValidation
 /++
  +  Validates the current access key, retrieving information about it.
