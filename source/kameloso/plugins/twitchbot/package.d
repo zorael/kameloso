@@ -459,12 +459,12 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
     if (event.aux == "enable")
     {
         plugin.activeChannels[event.channel].enabled = true;
-        chan(plugin.state, event.channel, "Streamer bot enabled!");
+        chan(plugin.state, event.channel, "Bot enabled!");
     }
     else /*if (event.aux == "disable")*/
     {
         plugin.activeChannels[event.channel].enabled = false;
-        chan(plugin.state, event.channel, "Streamer bot disabled.");
+        chan(plugin.state, event.channel, "Bot disabled.");
     }
 }
 
