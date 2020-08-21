@@ -124,6 +124,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     if (nickname[0] == '@') nickname = nickname[1..$];
 
     auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to handle permits on an inactive channel");
 
     channel.linkPermits[nickname] = event.time;
 
@@ -537,6 +538,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
     auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to start a broadcast on an inactive channel");
 
     if (channel.broadcast.active)
     {
@@ -612,6 +614,8 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
     auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to stop a broadcast on an inactive channel");
+
     if (!channel.broadcast.active)
     {
         if (event.type != IRCEvent.Type.TWITCH_HOSTSTART)
@@ -656,7 +660,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     import core.time : msecs;
 
     auto channel = event.channel in plugin.activeChannels;
-    if (!channel) return;
+    assert(channel, "Tried to report broadcast stop time on an inactive channel");
 
     auto end = SysTime.fromUnixTime(channel.broadcast.stop);
     end.fracSecs = 0.msecs;
@@ -793,6 +797,8 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     ];
 
     auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to get bans of an inactive channel");
+
     auto ban = event.sender.nickname in channel.linkBans;
 
     immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
@@ -1159,6 +1165,8 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     if (event.type == IRCEvent.Type.QUERY) return;
 
     auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to process `onAnyMessage` on an inactive channel");
+
     ++channel.messageCount;
 
     with (IRCUser.Class)
