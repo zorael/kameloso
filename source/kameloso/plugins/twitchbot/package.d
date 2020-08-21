@@ -1013,7 +1013,6 @@ version(TwitchAPIFeatures)
 @(ChannelPolicy.home)
 void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
 
@@ -1654,9 +1653,6 @@ package:
 
         /// ID of the currently ongoing vote, if any (otherwise 0).
         int voteInstance;
-
-        /// UNIX timestamp of when broadcasting started.
-        long broadcastStart;
 
         /// Phrase ban actions keyed by offending nickname.
         Ban[string] phraseBans;
