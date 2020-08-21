@@ -486,7 +486,6 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
     const channel = event.channel in plugin.activeChannels;
-    immutable broadcastStart = channel.broadcastStart;
 
     version(TwitchAPIFeatures)
     {
@@ -498,7 +497,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         immutable streamer = plugin.nameOf(event.channel[1..$]);
     }
 
-    if (broadcastStart > 0L)
+    if (channel.broadcast.active)
     {
         import core.time : msecs;
         import std.datetime.systime : Clock, SysTime;
@@ -508,7 +507,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
 
-        immutable delta = now - SysTime.fromUnixTime(broadcastStart);
+        immutable delta = now - SysTime.fromUnixTime(channel.broadcast.start);
 
         chan(plugin.state, event.channel, "%s has been live for %s."
             .format(streamer, delta));
@@ -539,7 +538,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
     auto channel = event.channel in plugin.activeChannels;
 
-    if (channel.broadcastStart != 0L)
+    if (channel.broadcast.active)
     {
         version(TwitchAPIFeatures)
         {
@@ -555,8 +554,44 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    channel.broadcastStart = event.time;
+    channel.broadcast.start = event.time;
+    channel.broadcast.active = true;
     chan(plugin.state, event.channel, "Broadcast start registered!");
+
+    version(TwitchAPIFeatures)
+    {
+        import core.thread : Fiber;
+
+        void periodicalChattersCheckDg()
+        {
+            import kameloso.plugins.common.delayawait : delay;
+            import std.json : JSONType;
+
+            while (channel.broadcast.active)
+            {
+                const chattersJSON = getChatters(plugin, event.channel[1..$]);
+                if (chattersJSON.type != JSONType.object) return;
+
+                foreach (immutable viewerJSON; chattersJSON["chatters"]["viewers"].array)
+                {
+                    channel.broadcast.chattersSeen[viewerJSON.str] = true;
+                }
+
+                // Assume the broadcaster is in the channel and don't count them as a chatter
+                immutable numCurrentViewers = chattersJSON["chatter_count"].integer - 1;
+
+                if (numCurrentViewers > channel.broadcast.maxConcurrentChatters)
+                {
+                    channel.broadcast.maxConcurrentChatters = numCurrentViewers;
+                }
+
+                delay(plugin, plugin.chattersCheckPeriodicity);
+            }
+        }
+
+        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, 32_768);
+        chattersCheckFiber.call();
+    }
 }
 
 
@@ -575,12 +610,20 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the stop of a broadcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.activeChannels[event.channel].broadcastStart == 0L)
+    auto channel = event.channel in plugin.activeChannels;
+    if (!channel.broadcast.active)
     {
-        chan(plugin.state, event.channel, "Broadcast was never registered as started...");
+        if (event.type != IRCEvent.Type.TWITCH_HOSTSTART)
+        {
+            chan(plugin.state, event.channel, "Broadcast was never registered as started...");
+        }
         return;
     }
 
+    channel.broadcast.active = false;
+    channel.broadcast.stop = event.time;
+
+    chan(plugin.state, event.channel, "Broadcast ended!");
     plugin.reportStopTime(event);
 }
 
@@ -596,8 +639,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.TWITCH_HOSTSTART)
 void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.activeChannels[event.channel].broadcastStart == 0L) return;
-    plugin.reportStopTime(event);
+    return onCommandStop(plugin, event);
 }
 
 
@@ -613,24 +655,31 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     import core.time : msecs;
 
     auto channel = event.channel in plugin.activeChannels;
+    if (!channel) return;
 
-    auto now = Clock.currTime;
-    now.fracSecs = 0.msecs;
-    const delta = now - SysTime.fromUnixTime(channel.broadcastStart);
-    channel.broadcastStart = 0L;
+    auto end = SysTime.fromUnixTime(channel.broadcast.stop);
+    end.fracSecs = 0.msecs;
+    const delta = end - SysTime.fromUnixTime(channel.broadcast.start);
 
     version(TwitchAPIFeatures)
     {
+        enum pattern = "%s streamed for %s, for %d unique viewers. " ~
+            "(max at any one time was %d viewers)";
+
         immutable streamer = channel.broadcasterDisplayName;
+        chan(plugin.state, event.channel, pattern.format(streamer, delta,
+            channel.broadcast.chattersSeen.length,
+            channel.broadcast.maxConcurrentChatters));
     }
     else
     {
         import kameloso.plugins.common : nameOf;
-        immutable streamer = plugin.nameOf(event.channel[1..$]);
-    }
 
-    chan(plugin.state, event.channel, "Broadcast ended. %s streamed for %s."
-        .format(streamer, delta));
+        enum pattern = "%s streamed for %s.";
+
+        immutable streamer = plugin.nameOf(event.channel[1..$]);
+        chan(plugin.state, event.channel, pattern.format(streamer, delta));
+    }
 }
 
 
