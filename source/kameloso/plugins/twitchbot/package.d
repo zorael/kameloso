@@ -1655,10 +1655,10 @@ final class TwitchBotPlugin : IRCPlugin
 {
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
-    struct Room
+    static struct Room
     {
         /// Aggregate of a broadcast.
-        struct Broadcast
+        static struct Broadcast
         {
             /// Whether or not the streamer is currently broadcasting.
             bool active;
@@ -1680,7 +1680,7 @@ package:
         }
 
         /// Aggregate of a ban action.
-        struct Ban
+        static struct Ban
         {
             long timestamp;  /// When this ban was triggered.
             uint offense;  /// How many consecutive bans have been fired.

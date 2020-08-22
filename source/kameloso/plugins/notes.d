@@ -384,7 +384,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     import std.format : format;
     import std.json : JSONType;
 
-    struct Note
+    static struct Note
     {
         string sender, line;
         SysTime when;

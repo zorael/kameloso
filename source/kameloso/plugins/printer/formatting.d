@@ -1125,7 +1125,7 @@ if (isOutputRange!(Sink, char[]))
     import std.algorithm.iteration : splitter;
     import std.conv : to;
 
-    struct Highlight
+    static struct Highlight
     {
         string id;
         size_t start;

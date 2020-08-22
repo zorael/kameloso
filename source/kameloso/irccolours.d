@@ -567,7 +567,7 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
         }
     }
 
-    struct Segment
+    static struct Segment
     {
         string pre;
         int fg;

@@ -772,7 +772,7 @@ struct Kameloso
     /++
      +  A record of a successful connection.
      +/
-    struct ConnectionHistoryEntry
+    static struct ConnectionHistoryEntry
     {
         /// UNIX time when this connection was established.
         long startTime;

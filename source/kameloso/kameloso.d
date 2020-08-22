@@ -2461,7 +2461,7 @@ public:
 int initBot(string[] args)
 {
     /// Voldemort aggregate of state variables.
-    struct Attempt
+    static struct Attempt
     {
         /// Enum denoting what we should do next loop.
         Next next;
