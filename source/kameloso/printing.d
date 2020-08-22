@@ -295,13 +295,13 @@ if (isOutputRange!(Sink, char[]))
         import lu.uda : Hidden, Unserialisable;
         import std.traits : isAssociativeArray, isType;
 
-        enum shouldNormallyBePrinted =
-            !__traits(isDeprecated, thing.tupleof[i]) &&
+        enum shouldBePrinted = all ||
+            (!__traits(isDeprecated, thing.tupleof[i]) &&
             isSerialisable!member &&
             !isAnnotated!(thing.tupleof[i], Hidden) &&
-            !isAnnotated!(thing.tupleof[i], Unserialisable);
+            !isAnnotated!(thing.tupleof[i], Unserialisable));
 
-        static if (shouldNormallyBePrinted || all)
+        static if (shouldBePrinted)
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
