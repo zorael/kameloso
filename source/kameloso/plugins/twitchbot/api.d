@@ -464,7 +464,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
  +
  +  spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +  const response = waitForQueryResponse(plugin, url);
+ +  immutable response = waitForQueryResponse(plugin, url);
  +  // response.str is the response body
  +  ---
  +
@@ -759,7 +759,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +  }
  +
  +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +  const response = waitForQueryResponse(plugin, url);
+ +  immutable response = waitForQueryResponse(plugin, url);
  +  // response.str is the response body
  +  ---
  +

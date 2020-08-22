@@ -1029,11 +1029,11 @@ unittest
  +  ---
  +  Appender!string sink;
  +
- +  const then = Clock.currTime;
+ +  immutable then = Clock.currTime;
  +  Thread.sleep(1.seconds);
- +  const now = Clock.currTime;
+ +  immutable now = Clock.currTime;
  +
- +  const duration = (now - then);
+ +  immutable duration = (now - then);
  +  immutable inEnglish = duration.timeSinceInto(sink);
  +  ---
  +
@@ -1460,11 +1460,11 @@ unittest
  +
  +  Example:
  +  ---
- +  const then = Clock.currTime;
+ +  immutable then = Clock.currTime;
  +  Thread.sleep(1.seconds);
- +  const now = Clock.currTime;
+ +  immutable now = Clock.currTime;
  +
- +  const duration = (now - then);
+ +  immutable duration = (now - then);
  +  immutable inEnglish = timeSince(duration);
  +  ---
  +

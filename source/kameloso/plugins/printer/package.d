@@ -534,8 +534,8 @@ import std.datetime.systime : SysTime;
  +
  +  Example:
  +  ---
- +  const now = Clock.currTime;
- +  const midnight = getNextMidnight(now);
+ +  immutable now = Clock.currTime;
+ +  immutable midnight = getNextMidnight(now);
  +  writeln("Time until next midnight: ", (midnight - now));
  +  ---
  +

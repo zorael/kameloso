@@ -86,7 +86,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
         import std.random : uniform;
 
         immutable len = quotesForNickname.array.length;
-        const storedQuoteJSON = quotesForNickname.array[uniform(0, len)];
+        immutable storedQuoteJSON = quotesForNickname.array[uniform(0, len)];
 
         return Quote(storedQuoteJSON);
     }

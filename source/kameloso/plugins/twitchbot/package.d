@@ -137,7 +137,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 
     string target = nickname;
 
-    if (auto user = nickname in plugin.state.users)
+    if (const user = nickname in plugin.state.users)
     {
         target = user.displayName;
     }
@@ -590,7 +590,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
                 import kameloso.plugins.common.delayawait : delay;
                 import std.json : JSONType;
 
-                const chattersJSON = getChatters(plugin, event.channel[1..$]);
+                immutable chattersJSON = getChatters(plugin, event.channel[1..$]);
                 if (chattersJSON.type != JSONType.object) return;
 
                 foreach (immutable viewerJSON; chattersJSON["chatters"]["viewers"].array)
@@ -682,12 +682,12 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     import std.format : format;
     import core.time : msecs;
 
-    auto room = event.channel in plugin.rooms;
+    const room = event.channel in plugin.rooms;
     assert(room, "Tried to report broadcast stop time on a nonexistent room");
 
     auto end = SysTime.fromUnixTime(room.broadcast.stop);
     end.fracSecs = 0.msecs;
-    const delta = end - SysTime.fromUnixTime(room.broadcast.start);
+    immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
 
     version(TwitchAPIFeatures)
     {
@@ -927,7 +927,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
                     // None on record, look up
                     immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
-                    const userJSON = getTwitchEntity(plugin, userURL);
+                    immutable userJSON = getTwitchEntity(plugin, userURL);
 
                     if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
                     {
@@ -1067,7 +1067,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
     void getDisplayNameDg()
     {
         immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
-        const userJSON = getTwitchEntity(plugin, userURL);
+        immutable userJSON = getTwitchEntity(plugin, userURL);
 
         /*if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
@@ -1123,7 +1123,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
     void shoutoutQueryDg()
     {
         immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ event.content;
-        const userJSON = getTwitchEntity(plugin, userURL);
+        immutable userJSON = getTwitchEntity(plugin, userURL);
 
         if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
@@ -1134,7 +1134,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
         immutable id = userJSON["id"].str;
         immutable login = userJSON["login"].str;
         immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
-        const channelJSON = getTwitchEntity(plugin, channelURL);
+        immutable channelJSON = getTwitchEntity(plugin, channelURL);
 
         if ((channelJSON.type != JSONType.object) || ("broadcaster_name" !in channelJSON))
         {
@@ -1345,7 +1345,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 }
                 */
 
-                const validationJSON = getValidation(plugin);
+                immutable validationJSON = getValidation(plugin);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
