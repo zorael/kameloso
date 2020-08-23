@@ -49,6 +49,11 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             bot.password = "base64:" ~ encode64(bot.password);
         }
 
+        if (bot.pass.length && !bot.pass.beginsWith("base64:"))
+        {
+            bot.pass = "base64:" ~ encode64(bot.pass);
+        }
+
         sink.serialise(parser.client, bot, parser.server, connSettings, settings);
         sink.put('\n');
 
