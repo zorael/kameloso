@@ -1149,39 +1149,66 @@ void onUnknownCommand(ConnectService service, const IRCEvent event)
  +/
 void register(ConnectService service)
 {
-    import std.algorithm.searching : endsWith;
-
     service.registration = Progress.started;
     raw(service.state, "CAP LS 302", Yes.quiet);
 
+    version(TwitchSupport)
+    {
+        import std.algorithm : endsWith;
+
+        // Cache the check
+        immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
+    }
+
     if (service.state.bot.pass.length)
     {
+        static string decodeIfPrefixedBase64(const string encoded)
+        {
+            import lu.string : beginsWith, decode64;
+            import std.base64 : Base64Exception;
+
+            if (encoded.beginsWith("base64:"))
+            {
+                try
+                {
+                    return decode64(encoded[7..$]);
+                }
+                catch (Base64Exception e)
+                {
+                    // says "base64:" but can't be decoded
+                    // Something's wrong but be conservative about it.
+                    return encoded;
+                }
+            }
+            else
+            {
+                return encoded;
+            }
+        }
+
+        immutable decoded = decodeIfPrefixedBase64(service.state.bot.pass);
+
         version(TwitchSupport)
         {
-            //import lu.string : beginsWith;  // for !bot.pass.beginsWith("oauth:")
-            import std.algorithm : endsWith;
-
-            immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
-            immutable pass = ((service.state.bot.pass.length == 30) && serverIsTwitch) ?
-                ("oauth:" ~ service.state.bot.pass) :
-                service.state.bot.pass;
-
-            raw(service.state, "PASS " ~ pass, Yes.quiet);
+            import lu.string : beginsWith;
 
             if (serverIsTwitch)
             {
-                import std.uni : toLower;
-
-                // Make sure nickname is lowercase so we can rely on it as account name (on Twitch)
-                service.state.client.nickname = service.state.client.nickname.toLower;
-                service.state.botUpdated = true;
+                service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
+            }
+            else
+            {
+                service.state.bot.pass = decoded;
             }
         }
         else
         {
-            raw(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
+            service.state.bot.pass = decoded;
         }
 
+        //service.state.botUpdated = true;  // done below
+
+        raw(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
         if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
     }
 
@@ -1193,9 +1220,10 @@ void register(ConnectService service)
         // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
         // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
 
-        if (service.state.server.address.endsWith(".twitch.tv"))
+        if (serverIsTwitch)
         {
             import kameloso.thread : CarryingFiber;
+            import std.uni : toLower;
 
             void dg()
             {
@@ -1222,6 +1250,10 @@ void register(ConnectService service)
 
             Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
             await(service, fiber, IRCEvent.Type.CAP);
+
+            // Make sure nickname is lowercase so we can rely on it as account name
+            service.state.client.nickname = service.state.client.nickname.toLower;
+            service.state.botUpdated = true;  // update nickname and pass
             return;
         }
     }
