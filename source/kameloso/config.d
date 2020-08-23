@@ -44,12 +44,12 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 
     with (instance)
     {
-        if (bot.password.length && !bot.password.beginsWith("base64:"))
+        if (!instance.settings.force && bot.password.length && !bot.password.beginsWith("base64:"))
         {
             bot.password = "base64:" ~ encode64(bot.password);
         }
 
-        if (bot.pass.length && !bot.pass.beginsWith("base64:"))
+        if (!instance.settings.force && bot.pass.length && !bot.pass.beginsWith("base64:"))
         {
             bot.pass = "base64:" ~ encode64(bot.pass);
         }
