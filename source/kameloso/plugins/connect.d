@@ -1172,19 +1172,8 @@ void register(ConnectService service)
             {
                 import std.uni : toLower;
 
-                // Make sure we have an account and it is lowercase
-                // so we can rely on it (on Twitch)
-
-                if (!service.state.bot.account.length)
-                {
-                    service.state.bot.account = service.state.client.nickname.toLower;
-                }
-                else
-                {
-                    service.state.bot.account = service.state.bot.account.toLower;
-                }
-
-                // Just flag as updated, even if nothing changed, to save us a string compare
+                // Make sure nickname is lowercase so we can rely on it as account name (on Twitch)
+                service.state.client.nickname = service.state.client.nickname.toLower;
                 service.state.botUpdated = true;
             }
         }
