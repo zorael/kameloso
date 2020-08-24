@@ -1399,6 +1399,9 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const IRCEvent event
 
     if (!event.sender.nickname) return;
 
+    // Move the catchUser call here to populate the users array with users in guest channels
+    //plugin.catchUser(event.sender);
+
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
 
@@ -1407,7 +1410,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const IRCEvent event
         channel.users[event.sender.nickname] = true;
     }
 
-    plugin.catchUser(event.sender);
+    plugin.catchUser(event.sender);  // <-- this one
 }
 
 
@@ -1433,6 +1436,9 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const IRCEvent event
 
     if (!event.target.nickname) return;
 
+    // Move the catchUser call here to populate the users array with users in guest channels
+    //plugin.catchUser(event.target);
+
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
 
@@ -1441,7 +1447,7 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const IRCEvent event
         channel.users[event.target.nickname] = true;
     }
 
-    plugin.catchUser(event.target);
+    plugin.catchUser(event.target);   // <-- this one
 }
 
 
