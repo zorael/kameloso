@@ -355,6 +355,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
             }
 
         case USERSTATE:
+        case GLOBALUSERSTATE:
             // Always on Twitch, no need to check plugin.state.server.daemon
             return;
     }
