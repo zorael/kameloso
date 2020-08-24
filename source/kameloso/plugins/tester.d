@@ -554,6 +554,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     }
 
     // ------------ !note
+
     send("note %s test".format(botNickname));
     expect("You cannot leave the bot a message; it would never be replayed.");
 
@@ -732,6 +733,8 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
         enforce(thisFiber.payload.content == line);
     }
 
+    // ------------ s/abc/ABC/
+
     chan(plugin.state, origEvent.channel, "I am a fish");
     sendNoPrefix("s/fish/snek/");
     expect("%s | I am a snek".format(plugin.state.client.nickname));
@@ -775,6 +778,8 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
         awaitReply();
         enforce(thisFiber.payload.content == line);
     }
+
+    // ------------ !seen
 
     send("!seen");
     expect("Usage: !seen [nickname]");
@@ -823,6 +828,8 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
         enforce(thisFiber.payload.content == line);
     }
 
+    // ------------ !counter
+
     send("counter");
     expect("No counters currently active in this channel.");
 
@@ -849,6 +856,8 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     send("counter list");
     expect("Current counters: !blah, !bluh");
+
+    // ------------ ![word]
 
     send("blah");
     expect("blah count so far: 0");
@@ -882,6 +891,8 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     send("blah?");
     expect("blah count so far: 0");
+
+    // ------------ !counter cleanup
 
     send("counter del blah");
     expect("Counter blah removed.");
@@ -930,6 +941,7 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
         enforce(thisFiber.payload.content == line);
     }
 
+    // ------------ !stopwatch
 
     send("stopwatch");
     expect("Usage: !stopwatch [start|stop|status]");
