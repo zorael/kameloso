@@ -508,30 +508,41 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
  +  the account is known. Overload that looks up the passed nickname in
  +  the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
  +
+ +  On Twitch, if no user was find, it additionally tries to look up the passe
+ +  nickname as if it was a display name.
+ +
  +  Params:
  +      plugin = The current `IRCPlugin`, whatever it is.
  +      nickname = The name of a user to look up.
  +
  +  Returns:
- +
+ +      The nickname or account of the passed user, or the passed nickname if
+ +      nothing was found.
  +/
 pragma(inline, true)
-string idOf(IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
+string idOf(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {
-    version(TwitchSupport)
-    {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            return nickname;
-        }
-    }
-
     if (const user = nickname in plugin.state.users)
     {
         return idOf(*user);
     }
     else
     {
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                foreach (immutable thisNickname, const user; plugin.state.users)
+                {
+                    if (user.displayName == nickname)
+                    {
+                        return idOf(user);
+                    }
+                }
+            }
+        }
+
+        // No direct match, pass back what was asked for...
         return nickname;
     }
 }
