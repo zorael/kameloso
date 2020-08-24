@@ -24,6 +24,9 @@ import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 
+pragma(msg, "Compiling tester plugin");
+
+
 // onCommandTest
 /++
  +
@@ -54,173 +57,89 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         return;
     }
 
+    void prelude()
+    {
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+        chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+
+        Fiber.yield();
+        while ((thisFiber.payload.channel != event.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+    }
+
+    void runTest(alias fun)()
+    {
+        await(plugin, IRCEvent.Type.CHAN);
+        scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+
+        scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+        prelude();
+
+        fun(plugin, event, botNickname);
+    }
+
     switch (pluginName)
     {
     case "admin":
-        void adminDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testAdminFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&adminDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAdminFiber);
         fiber.call();
         break;
 
     case "automodes":
-        void automodesDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testAutomodesFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&automodesDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAutomodesFiber);
         fiber.call();
         break;
 
     case "chatbot":
-        void chatbotDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testChatbotFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&chatbotDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testChatbotFiber);
         fiber.call();
         break;
 
     case "notes":
-        void notesDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testNotesFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&notesDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testNotesFiber);
         fiber.call();
         break;
 
     case "oneliners":
-        void onelinersDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testOnelinersFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&onelinersDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testOnelinersFiber);
         fiber.call();
         break;
 
     case "quotes":
-        void quotesDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testQuotesFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&quotesDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testQuotesFiber);
         fiber.call();
         break;
 
     case "sedreplace":
-        void sedReplaceDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testSedReplaceFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&sedReplaceDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSedReplaceFiber);
         fiber.call();
         break;
 
     case "seen":
-        void seenDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testSeenFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&seenDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSeenFiber);
         fiber.call();
         break;
 
     case "counter":
-        void counterDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testCounterFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&counterDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testCounterFiber);
         fiber.call();
         break;
 
     case "stopwatch":
-        void stopwatchDg()
-        {
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
-            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            await(plugin, IRCEvent.Type.CHAN);
-            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
-            return testStopwatchFiber(plugin, event, botNickname);
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&stopwatchDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testStopwatchFiber);
         fiber.call();
         break;
 
     case "all":
         void allDg()
         {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
             await(plugin, IRCEvent.Type.CHAN);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
-            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
             scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
-
-            Fiber.yield();
-            while ((thisFiber.payload.channel != event.channel) ||
-                (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            prelude();
 
             testAdminFiber(plugin, event, botNickname);
             testAutomodesFiber(plugin, event, botNickname);
@@ -270,10 +189,10 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !home
@@ -332,7 +251,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     // ------------ misc
 
     send("cycle #flirrp");
-    enforce(thisFiber.payload.content == "I am not in that channel.");
+    expect("I am not in that channel.");
 
     // ------------ hostmasks
 
@@ -341,24 +260,24 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         "to use hostmasks for authentication.")
     {
         send("hostmask add");
-        enforce(thisFiber.payload.content ==
-            "Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
+        expect("Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
 
         send("hostmask add kameloso HIRF#%%!SNIR@sdasdasd");
-        enforce(thisFiber.payload.content == "Invalid hostmask.");
+        expect("Invalid hostmask.");
 
         send("hostmask add kameloso kameloso^!*@*");
-        enforce(thisFiber.payload.content == "Hostmask list updated.");
+        expect("Hostmask list updated.");
 
         send("hostmask list");
         // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
-        enforce(thisFiber.payload.content.contains(`"kameloso^!*@*":"kameloso"`));
+        enforce(thisFiber.payload.content.contains(`"kameloso^!*@*":"kameloso"`),
+            thisFiber.payload.content, __FILE__, __LINE__);
 
         send("hostmask del kameloso^!*@*");
-        enforce(thisFiber.payload.content == "Hostmask list updated.");
+        expect("Hostmask list updated.");
 
         send("hostmask del kameloso^!*@*");
-        enforce(thisFiber.payload.content == "No such hostmask on file.");
+        expect("No such hostmask on file.");
     }
 
     logger.info("Admin tests passed!");
@@ -387,10 +306,10 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !automode
@@ -423,7 +342,8 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
 
     send("automode list");
     awaitReply();
-    enforce(thisFiber.payload.content.contains(`"kameloso":"v"`));
+    enforce(thisFiber.payload.content.contains(`"kameloso":"v"`),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     send("automode del $¡$¡");
     expect("Invalid nickname.");
@@ -463,10 +383,10 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !say
@@ -504,7 +424,8 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     send("8ball");
     awaitReply();
-    enforce(eightballAnswers[].canFind(thisFiber.payload.content));
+    enforce(eightballAnswers[].canFind(thisFiber.payload.content),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     // ------------ !bash; don't test, it's complicated
 
@@ -547,10 +468,10 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !note
@@ -578,7 +499,8 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     Fiber.yield();
     enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note"
         .format(plugin.state.client.nickname)) &&
-        thisFiber.payload.content.endsWith("ago: test"));
+        thisFiber.payload.content.endsWith("ago: test"),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     logger.info("Notes tests passed!");
 }
@@ -611,10 +533,10 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !oneliner
@@ -669,10 +591,10 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !quote
@@ -694,7 +616,8 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flerrp");
     awaitReply();
-    enforce(thisFiber.payload.content.endsWith("] flerrp | flirrp flarrp flurble"));
+    enforce(thisFiber.payload.content.endsWith("] flerrp | flirrp flarrp flurble"),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     logger.info("Quotes tests passed!");
 }
@@ -727,10 +650,10 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ s/abc/ABC/
@@ -773,10 +696,10 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !seen
@@ -822,10 +745,10 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !counter
@@ -878,10 +801,10 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("blah -1! Current count: 3");
 
     send("blah--");
-    expect("blah -1! Current count: 1");
+    expect("blah -1! Current count: 2");
 
     send("blah-2");
-    expect("blah -2! Current count: -1");
+    expect("blah -2! Current count: 0");
 
     send("blah=10");
     expect("blah count assigned to 10!");
@@ -890,7 +813,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("blah count so far: 10");
 
     send("blah?");
-    expect("blah count so far: 0");
+    expect("blah count so far: 10");
 
     // ------------ !counter cleanup
 
@@ -898,12 +821,12 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("Counter blah removed.");
 
     send("counter del blah");
-    expect("No such counter enabled.");
+    expect("No such counter enabled."); //available.");
 
     send("counter list");
     expect("Current counters: !bluh");
 
-    send("counter del blah");
+    send("counter del bluh");
     expect("Counter bluh removed.");
 
     send("counter list");
@@ -935,15 +858,15 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
-    void expect(const string line)
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce(thisFiber.payload.content == line);
+        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
 
     // ------------ !stopwatch
 
-    send("stopwatch");
+    send("stopwatch harbl");
     expect("Usage: !stopwatch [start|stop|status]");
 
     send("stopwatch");
@@ -960,18 +883,21 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     send("stopwatch");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "));
+    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch status");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "));
+    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch start");
     expect("Stopwatch restarted!");
 
     send("stopwatch stop");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Stopwatch stopped after "));
+    enforce(thisFiber.payload.content.beginsWith("Stopwatch stopped after "),
+        thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch start");
     expect("Stopwatch started!");
