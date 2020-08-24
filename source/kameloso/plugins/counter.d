@@ -125,7 +125,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         if ((event.channel !in plugin.counters) || (slice !in plugin.counters[event.channel]))
         {
-            chan(plugin.state, event.channel, "No such counter enabled.");
+            chan(plugin.state, event.channel, "No such counter available.");
             return;
         }
 
