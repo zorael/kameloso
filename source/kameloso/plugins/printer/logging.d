@@ -379,7 +379,10 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         }
         else
         {
-            // Don't know where to log this event; bail
+            // logServer is probably false and event shouldn't be logged
+            // OR we don't know how to deal with this event type
+            /*import kameloso.printing : printObject;
+            printObject(event);*/
             return;
         }
         break;
