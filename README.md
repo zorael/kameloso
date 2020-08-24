@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.8.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.8.2...master)
+# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.9.0.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.9.0...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -63,6 +63,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
     * [Other files](#other-files)
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
+    * [Except nothing happens](#except-nothing-happens)
   * [Twitch](#twitch)
     * [Example configuration](#example-configuration)
     * [Streamer assistant bot](#streamer-assistant-bot)
@@ -169,10 +170,6 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any restricted functionality it will look them up and compare their accounts with those defined in your `users.json`. You should add your own to the `admins` field in the configuration file for full administrative privileges.
-
-> In the case of hostmasks mode, the previous paragraph still applies but to hostmasks instead of to services accounts. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
-
 ```
       you joined #channel
  kameloso sets mode +o you
@@ -219,11 +216,30 @@ MrOffline joined #channel
  kameloso | [github.com] GitHub - zorael/kameloso: IRC bot
       you | https://youtu.be/ykj3Kpm3O0g
  kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
+
+<context: playing a video game>
+      you | !counter add deaths
+ kameloso | Counter deaths added! Access it with !deaths.
+      you | !deaths+
+ kameloso | deaths +1! Current count: 1
+      you | !deaths+
+ kameloso | deaths +1! Current count: 2
+      you | !deaths
+ kameloso | Current deaths count: 2
+      you | !deaths=0
+ kameloso | deaths count assigned to 0!
+
+      you | !stopwatch start
+ kameloso | Stopwatch started!
+      you | !stopwatch
+ kameloso | Elapsed time: 18 mins 42 secs
+      you | !stopwatch stop
+ kameloso | Stopwatch stopped after 48 minutes 10 secs.
 ```
 
 ### Online help and commands
 
-Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one.
+Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
 The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
@@ -233,6 +249,12 @@ prefix              "!"
 ```
 
 It can technically be any string and not just one character. It may include spaces, like `"please "` (making it `please note`, `please quote`, ...). Prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. Some administrative commands only work when called this way.
+
+### Except nothing happens
+
+Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged onto. For full administrative privileges you will need to be logged onto an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable, and as such will not be able to access features it normally might have enjoyed.
+
+In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
 
 ## Twitch
 
@@ -314,7 +336,7 @@ If SSL flat doesn't work at all, you may simply be missing the necessary librari
 
 Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
-In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use `cmd.exe` and/or the Powershell console instead.
+In Cygwin/mintty terminals, there may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use `cmd.exe`, the Powershell console or a Windows Subsystem for Linux (WSL) terminal instead.
 
 ## Posix
 

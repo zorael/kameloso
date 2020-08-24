@@ -10,8 +10,8 @@ mainSourceFile "source/kameloso/main.d"
 dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>0.4.0"
-dependency "dialect" version="~>0.6.0"
+dependency "lu" version="~>0.4.1"
+dependency "dialect" version="~>0.6.1"
 dependency "arsd-official:dom" version="~>7.2.0"
 
 libs "curl"
@@ -29,6 +29,7 @@ versions \
     "WithChanQueriesService" \
     "WithChatbotPlugin" \
     "WithConnectService" \
+    "WithCounterPlugin" \
     "WithHelpPlugin" \
     "WithNotesPlugin" \
     "WithOnelinersPlugin" \
@@ -38,6 +39,7 @@ versions \
     "WithQuotesPlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
+    "WithStopwatchPlugin" \
     "WithVotesPlugin" \
     "WithWebtitlesPlugin"
 

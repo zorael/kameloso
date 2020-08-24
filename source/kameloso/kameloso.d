@@ -57,7 +57,7 @@ version(ProfileGC)
  +
  +  Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-public __gshared bool abort;
+public __gshared bool rawAbort;
 
 
 version(Posix)
@@ -87,7 +87,7 @@ void signalHandler(int sig) nothrow @nogc @system
     import core.stdc.stdio : printf;
 
     printf("...caught signal %d!\n", sig);
-    abort = true;
+    rawAbort = true;
 
     version(Posix)
     {
@@ -217,7 +217,7 @@ void messageFiber(ref Kameloso instance)
                 {
                     logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
                         "configuration: %1$s%4$s", Tint.log, plugin.name, Tint.error, e.msg);
-                    version(PrintStacktraces) logger.trace(e.toString);
+                    version(PrintStacktraces) logger.trace(e);
                 }
             }
         }
@@ -266,13 +266,11 @@ void messageFiber(ref Kameloso instance)
             string[] lines;
 
             with (IRCEvent.Type)
-            with (event)
-            with (instance)
             switch (event.type)
             {
             case CHAN:
-                prelude = "PRIVMSG %s :".format(channel);
-                lines = content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
+                prelude = "PRIVMSG %s :".format(event.channel);
+                lines = event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
 
             case QUERY:
@@ -280,103 +278,110 @@ void messageFiber(ref Kameloso instance)
                 {
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        if (target.nickname == instance.parser.client.nickname)
+                        if (event.target.nickname == instance.parser.client.nickname)
                         {
                             // "You cannot whisper to yourself." (whisper_invalid_self)
                             return;
                         }
 
                         prelude = "PRIVMSG #%s :/w %s "
-                            .format(instance.parser.client.nickname, target.nickname);
+                            .format(instance.parser.client.nickname, event.target.nickname);
                     }
                 }
 
-                if (!prelude.length) prelude = "PRIVMSG %s :".format(target.nickname);
-                lines = content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
+                if (!prelude.length) prelude = "PRIVMSG %s :".format(event.target.nickname);
+                lines = event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
 
             case EMOTE:
-                immutable emoteTarget = target.nickname.length ? target.nickname : channel;
+                immutable emoteTarget = event.target.nickname.length ?
+                    event.target.nickname : event.channel;
 
                 version(TwitchSupport)
                 {
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
                         prelude = "PRIVMSG %s :/me ".format(emoteTarget);
-                        line = content;
+                        line = event.content;
                     }
                 }
 
                 if (!line.length)
                 {
                     line = "PRIVMSG %s :%cACTION %s%2$c".format(emoteTarget,
-                        cast(char)IRCControlCharacter.ctcp, content);
+                        cast(char)IRCControlCharacter.ctcp, event.content);
                 }
                 break;
 
             case MODE:
-                line = "MODE %s %s %s".format(channel, aux, content);
+                line = "MODE %s %s %s".format(event.channel, event.aux, event.content);
                 break;
 
             case TOPIC:
-                line = "TOPIC %s :%s".format(channel, content);
+                line = "TOPIC %s :%s".format(event.channel, event.content);
                 break;
 
             case INVITE:
-                line = "INVITE %s %s".format(channel, target.nickname);
+                line = "INVITE %s %s".format(event.channel, event.target.nickname);
                 break;
 
             case JOIN:
-                if (aux.length)
+                if (event.aux.length)
                 {
                     // Key, assume only one channel
-                    line = channel ~ ' ' ~ aux;
+                    line = event.channel ~ ' ' ~ event.aux;
                 }
                 else
                 {
                     prelude = "JOIN ";
-                    lines = channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+                    lines = event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
                 }
                 break;
 
             case KICK:
-                immutable reason = content.length ? " :" ~ content : string.init;
-                line = "KICK %s %s%s".format(channel, target.nickname, reason);
+                immutable reason = event.content.length ? " :" ~ event.content : string.init;
+                line = "KICK %s %s%s".format(event.channel, event.target.nickname, reason);
                 break;
 
             case PART:
-                if (content.length)
+                if (event.content.length)
                 {
                     // Reason given, assume only one channel
-                    line = "PART " ~ channel ~ " :" ~
-                        content.replaceTokens(instance.parser.client);
+                    line = "PART " ~ event.channel ~ " :" ~
+                        event.content.replaceTokens(instance.parser.client);
                 }
                 else
                 {
                     prelude = "PART ";
-                    lines = channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+                    lines = event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
                 }
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), content.replaceTokens(instance.parser.client),
-                    ((target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
+                return quitServer(ThreadMessage.Quit(), event.content.replaceTokens(instance.parser.client),
+                    ((event.target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
 
             case NICK:
-                line = "NICK " ~ target.nickname;
+                line = "NICK " ~ event.target.nickname;
                 break;
 
             case PRIVMSG:
-                if (channel.length) goto case CHAN;
-                else goto case QUERY;
+                if (event.channel.length)
+                {
+                    goto case CHAN;
+                }
+                else
+                {
+                    goto case QUERY;
+                }
 
             case RPL_WHOISACCOUNT:
                 import kameloso.constants : Timeout;
                 import std.datetime.systime : Clock;
 
                 immutable now = Clock.currTime.toUnixTime;
-                immutable then = instance.previousWhoisTimestamps.get(target.nickname, 0);
-                immutable hysteresis = (num > 0) ? 1 : Timeout.whoisRetry;
+                immutable then = instance.previousWhoisTimestamps.get(event.target.nickname, 0);
+                immutable hysteresis = (event.num > 0) ? 1 : Timeout.whoisRetry;
 
                 version(TraceWhois)
                 {
@@ -395,8 +400,8 @@ void messageFiber(ref Kameloso instance)
                         if (instance.settings.flush) stdout.flush();
                     }
 
-                    line = "WHOIS " ~ target.nickname;
-                    instance.previousWhoisTimestamps[target.nickname] = now;
+                    line = "WHOIS " ~ event.target.nickname;
+                    instance.previousWhoisTimestamps[event.target.nickname] = now;
                 }
                 else
                 {
@@ -409,7 +414,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case UNSET:
-                line = content;
+                line = event.content;
                 break;
 
             default:
@@ -417,7 +422,7 @@ void messageFiber(ref Kameloso instance)
 
                 // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
                 logger.warning("No outgoing event case for type ",
-                    Enum!(IRCEvent.Type).toString(type));
+                    Enum!(IRCEvent.Type).toString(event.type));
                 break;
             }
 
@@ -843,7 +848,7 @@ Next mainLoop(ref Kameloso instance)
                         logger.warningf("Exception %s.postprocess: %s%s",
                             plugin.name, Tint.log, e.msg);
                         printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.toString);
+                        version(PrintStacktraces) logger.trace(e);
                     }
 
                     checkUpdatesAndPropagate(instance, plugin);
@@ -879,7 +884,7 @@ Next mainLoop(ref Kameloso instance)
                         logger.warningf("Exception %s: %s%s",
                             plugin.name, Tint.log, e.msg);
                         printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.toString);
+                        version(PrintStacktraces) logger.trace(e);
                     }
                     finally
                     {
@@ -959,7 +964,7 @@ Next mainLoop(ref Kameloso instance)
                     Tint.log, e.msg, Tint.warning, e.file, e.line);
 
                 printEventDebugDetails(event, attempt.line);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
             }
         }
 
@@ -972,7 +977,7 @@ Next mainLoop(ref Kameloso instance)
         {
             logger.warningf("Unhandled messenger exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 Tint.log, e.msg, Tint.warning, e.file, e.line);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         if (messenger.state == Fiber.State.HOLD)
@@ -1197,7 +1202,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
                     plugin.name, i, Tint.log, e.msg);
 
                 printEventDebugDetails(event, event.raw);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
             }
         }
     }
@@ -1285,7 +1290,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                     plugin.name, i, Tint.log, e.msg);
 
                 printEventDebugDetails(event, event.raw);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
                 expiredFibers ~= fiber;
             }
         }
@@ -1362,7 +1367,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         {
             logger.warningf("Exception %s.scheduledDelegates[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         toRemove ~= i;  // Always removed a scheduled delegate after processing
@@ -1419,7 +1424,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         {
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         // Always removed a scheduled Fiber after processing
@@ -1694,12 +1699,11 @@ Next tryConnect(ref Kameloso instance)
 
     connector.call();
 
-    with (instance)
     foreach (const attempt; connector)
     {
         import core.time : seconds;
 
-        if (*abort) return Next.returnFailure;
+        if (*instance.abort) return Next.returnFailure;
 
         with (ConnectionAttempt.State)
         final switch (attempt.state)
@@ -1733,8 +1737,8 @@ Next tryConnect(ref Kameloso instance)
             immutable ssl = instance.conn.ssl ? "(SSL) " : string.init;
 
             immutable address = (!resolvedHost.length ||
-                (parser.server.address == resolvedHost) ||
-                (sharedDomains(parser.server.address, resolvedHost) < 2)) ?
+                (instance.parser.server.address == resolvedHost) ||
+                (sharedDomains(instance.parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
             logger.logf(pattern, Tint.info, address, Tint.log, attempt.ip.toPortString, ssl);
@@ -1759,8 +1763,8 @@ Next tryConnect(ref Kameloso instance)
                     Tint.info, incrementedRetryDelay, Tint.log, attempt.retryNum+1);
             }
 
-            interruptibleSleep(incrementedRetryDelay.seconds, *abort);
-            if (*abort) return Next.returnFailure;
+            interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+            if (*instance.abort) return Next.returnFailure;
 
             import std.algorithm.comparison : min;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
@@ -1772,8 +1776,8 @@ Next tryConnect(ref Kameloso instance)
         case delayThenNextIP:
             logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
                 Tint.info, Timeout.retry, Tint.log);
-            interruptibleSleep(Timeout.retry.seconds, *abort);
-            if (*abort) return Next.returnFailure;
+            interruptibleSleep(Timeout.retry.seconds, *instance.abort);
+            if (*instance.abort) return Next.returnFailure;
             continue;
 
         case noMoreIPs:
@@ -1850,7 +1854,6 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         }
     }
 
-    with (instance)
     foreach (const attempt; resolver)
     {
         with (ResolveAttempt.State)
@@ -1863,8 +1866,8 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         case success:
             import lu.string : plurality;
             logger.infof("%s%s resolved into %s%s%2$s %5$s.",
-                parser.server.address, Tint.log, Tint.info, conn.ips.length,
-                conn.ips.length.plurality("IP", "IPs"));
+                instance.parser.server.address, Tint.log, Tint.info, instance.conn.ips.length,
+                instance.conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
 
         case exception:
@@ -1883,7 +1886,7 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
                 // First attempt and a failure; something's wrong, abort
                 logger.logf("Failed to resolve host. Verify that you are connected to " ~
                     "the Internet and that the server address (%s%s%s) is correct.",
-                    Tint.info, parser.server.address, Tint.log);
+                    Tint.info, instance.parser.server.address, Tint.log);
                 return Next.returnFailure;
             }
             else
@@ -2299,12 +2302,12 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("An error occured while initialising the %s%s%s " ~
+            logger.warningf("An error occurred while initialising the %s%s%s " ~
                 "plugin's resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file, e.line, TerminalToken.bell);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
             attempt.retval = 1;
             break outerloop;
         }
@@ -2333,11 +2336,11 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
-            logger.warningf("An error occured while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
+            logger.warningf("An error occurred while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
                 e.file.baseName, e.line, TerminalToken.bell);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
             attempt.retval = 1;
             break outerloop;
         }
@@ -2401,7 +2404,6 @@ void printEventDebugDetails(const IRCEvent event, const string raw)
  +/
 void printSummary(const ref Kameloso instance)
 {
-    import std.stdio : writefln;
     import core.time : Duration;
 
     Duration totalTime;
@@ -2412,18 +2414,30 @@ void printSummary(const ref Kameloso instance)
     foreach (immutable i, const entry; instance.connectionHistory)
     {
         import std.datetime.systime : SysTime;
-        import core.time : msecs;
+        import std.format : format;
+        import std.stdio : writefln;
+        import core.time : hnsecs;
+
+        enum onlyTimePattern = "%02d:%02d:%02d";
+        enum fullDatePattern = "%d-%02d-%02d " ~ onlyTimePattern;
 
         auto start = SysTime.fromUnixTime(entry.startTime);
-        start.fracSecs = 0.msecs;
+        immutable startString = fullDatePattern
+            .format(start.year, start.month, start.day, start.hour, start.minute, start.second);
+
         auto stop = SysTime.fromUnixTime(entry.stopTime);
-        stop.fracSecs = 0.msecs;
+        immutable stopString = (start.dayOfGregorianCal == stop.dayOfGregorianCal) ?
+            onlyTimePattern.format(stop.hour, stop.minute, stop.second) :
+            fullDatePattern.format(stop.year, stop.month, stop.day, stop.hour, stop.minute, stop.second);
+
+        start.fracSecs = 0.hnsecs;
+        stop.fracSecs = 0.hnsecs;
         immutable duration = (stop - start);
         totalTime += duration;
         totalBytesReceived += entry.bytesReceived;
 
         writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
-            i+1, duration, entry.numEvents, entry.bytesReceived, start, stop);
+            i+1, duration, entry.numEvents, entry.bytesReceived, startString, stopString);
     }
 
     logger.info("Total time connected: ", Tint.log, totalTime);
@@ -2447,7 +2461,7 @@ public:
 int initBot(string[] args)
 {
     /// Voldemort aggregate of state variables.
-    struct Attempt
+    static struct Attempt
     {
         /// Enum denoting what we should do next loop.
         Next next;
@@ -2479,7 +2493,7 @@ int initBot(string[] args)
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
     kameloso.common.settings = &instance.settings;
-    instance.abort = &abort;
+    instance.abort = &rawAbort;
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
@@ -2733,7 +2747,7 @@ int initBot(string[] args)
             logger.warningf("Caught Exception when saving settings: " ~
                 "%s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 Tint.log, e.msg, Tint.warning, e.file, e.line);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 

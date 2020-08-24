@@ -74,7 +74,7 @@ void initResources(AutomodePlugin plugin)
     {
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.automodeFile.baseName ~ " may be malformed.");
     }
 
@@ -269,6 +269,7 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;
     import std.algorithm.searching : count;
+    import std.format : format;
 
     string line = event.content;  // mutable
 
@@ -463,14 +464,11 @@ void onEndOfMotd(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
-    with (plugin)
-    {
-        JSONStorage automodesJSON;
-        automodesJSON.load(automodeFile);
-        //automodes.clear();
-        automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
-        automodes.rehash();
-    }
+    JSONStorage automodesJSON;
+    automodesJSON.load(plugin.automodeFile);
+    //plugin.automodes.clear();
+    plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
+    plugin.automodes.rehash();
 }
 
 

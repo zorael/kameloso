@@ -194,226 +194,207 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    with (event)
+    void putSender()
     {
-        void putSender()
+        if (event.sender.isServer)
         {
-            if (sender.isServer)
-            {
-                sink.put(sender.address);
-            }
-            else
-            {
-                bool putDisplayName;
-
-                version(TwitchSupport)
-                {
-                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                        sender.displayName.length)
-                    {
-                        sink.put(sender.displayName);
-                        putDisplayName = true;
-
-                        if ((sender.displayName != sender.nickname) &&
-                            !sender.displayName.asLowerCase.equal(sender.nickname))
-                        {
-                            .put(sink, " <", sender.nickname, '>');
-                        }
-                    }
-                }
-
-                if (!putDisplayName && sender.nickname.length)
-                {
-                    // Can be no-nick special: [PING] *2716423853
-                    sink.put(sender.nickname);
-                }
-
-                version(TwitchSupport)
-                {
-                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                        plugin.printerSettings.twitchBadges && sender.badges.length)
-                    {
-                        with (IRCEvent.Type)
-                        switch (type)
-                        {
-                        case JOIN:
-                        case SELFJOIN:
-                        case PART:
-                        case SELFPART:
-                        case QUERY:
-                        //case SELFQUERY:  // Doesn't seem to happen
-                            break;
-
-                        default:
-                            sink.put(" [");
-                            if (plugin.printerSettings.abbreviatedBadges)
-                            {
-                                sink.abbreviateBadges(sender.badges);
-                            }
-                            else
-                            {
-                                sink.put(sender.badges);
-                            }
-                            sink.put(']');
-                        }
-                    }
-                }
-            }
+            sink.put(event.sender.address);
         }
-
-        void putTarget()
+        else
         {
-            sink.put(" (");
-
             bool putDisplayName;
 
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    target.displayName.length)
+                    event.sender.displayName.length)
                 {
-                    .put(sink, target.displayName, ')');
+                    sink.put(event.sender.displayName);
                     putDisplayName = true;
 
-                    if ((target.displayName != target.nickname) &&
-                        !target.displayName.asLowerCase.equal(target.nickname))
+                    if ((event.sender.displayName != event.sender.nickname) &&
+                        !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                     {
-                        .put(sink, " <", target.nickname, '>');
+                        .put(sink, " <", event.sender.nickname, '>');
                     }
                 }
             }
 
-            if (!putDisplayName)
+            if (!putDisplayName && event.sender.nickname.length)
             {
-                .put(sink, target.nickname, ')');
+                // Can be no-nick special: [PING] *2716423853
+                sink.put(event.sender.nickname);
             }
 
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    plugin.printerSettings.twitchBadges && target.badges.length)
+                    plugin.printerSettings.twitchBadges && event.sender.badges.length)
                 {
-                    sink.put(" [");
-                    if (plugin.printerSettings.abbreviatedBadges)
+                    with (IRCEvent.Type)
+                    switch (event.type)
                     {
-                        sink.abbreviateBadges(target.badges);
+                    case JOIN:
+                    case SELFJOIN:
+                    case PART:
+                    case SELFPART:
+                    case QUERY:
+                    //case SELFQUERY:  // Doesn't seem to happen
+                        break;
+
+                    default:
+                        .put(sink, " [", event.sender.badges, ']');
                     }
-                    else
-                    {
-                        sink.put(target.badges);
-                    }
-                    sink.put(']');
+                }
+            }
+        }
+    }
+
+    void putTarget()
+    {
+        sink.put(" (");
+
+        bool putDisplayName;
+
+        version(TwitchSupport)
+        {
+            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                event.target.displayName.length)
+            {
+                .put(sink, event.target.displayName, ')');
+                putDisplayName = true;
+
+                if ((event.target.displayName != event.target.nickname) &&
+                    !event.target.displayName.asLowerCase.equal(event.target.nickname))
+                {
+                    .put(sink, " <", event.target.nickname, '>');
                 }
             }
         }
 
-        void putContent()
+        if (!putDisplayName)
         {
-            if (sender.isServer || sender.nickname.length)
+            .put(sink, event.target.nickname, ')');
+        }
+
+        version(TwitchSupport)
+        {
+            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
-                immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
-                    (event.type == IRCEvent.Type.SELFEMOTE);
+                .put(sink, " [", event.target.badges, ']');
+            }
+        }
+    }
 
-                if (isEmote)
-                {
-                    sink.put(' ');
-                }
-                else
-                {
-                    sink.put(`: "`);
-                }
+    void putContent()
+    {
+        if (event.sender.isServer || event.sender.nickname.length)
+        {
+            immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
+                (event.type == IRCEvent.Type.SELFEMOTE);
 
-                with (IRCEvent.Type)
-                switch (event.type)
-                {
-                case CHAN:
-                case EMOTE:
-                case TWITCH_SUBGIFT:
-                    if (plugin.state.client.nickname.length &&
-                        content.containsNickname(plugin.state.client.nickname))
-                    {
-                        // Nick was mentioned (certain)
-                        shouldBell = bellOnMention;
-                    }
-                    break;
-
-                default:
-                    break;
-                }
-
-                sink.put(content);
-                if (!isEmote) sink.put('"');
+            if (isEmote)
+            {
+                sink.put(' ');
             }
             else
             {
-                // PING or ERROR likely
-                sink.put(content);  // No need for indenting space
+                sink.put(`: "`);
             }
+
+            with (IRCEvent.Type)
+            switch (event.type)
+            {
+            case CHAN:
+            case EMOTE:
+            case TWITCH_SUBGIFT:
+                if (plugin.state.client.nickname.length &&
+                    event.content.containsNickname(plugin.state.client.nickname))
+                {
+                    // Nick was mentioned (certain)
+                    shouldBell = bellOnMention;
+                }
+                break;
+
+            default:
+                break;
+            }
+
+            sink.put(event.content);
+            if (!isEmote) sink.put('"');
         }
-
-        event.content = stripEffects(event.content);
-
-        sink.put('[');
-
-        (cast(DateTime)SysTime
-            .fromUnixTime(event.time))
-            .timeOfDay
-            .toString(sink);
-
-        sink.put("] [");
-
-        if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
-        else sink.put(typestring.asLowerCase);
-
-        sink.put("] ");
-
-        if (channel.length) .put(sink, '[', channel, "] ");
-
-        putSender();
-
-        if (target.nickname.length) putTarget();
-
-        if (content.length) putContent();
-
-        if (aux.length) .put(sink, " (", aux, ')');
-
-        if (count != 0)
+        else
         {
-            sink.put(" {");
-            .put(sink, count);
-            sink.put('}');
+            // PING or ERROR likely
+            sink.put(event.content);  // No need for indenting space
         }
+    }
 
-        if (altcount != 0)
-        {
-            sink.put(" {");
-            .put(sink, altcount);
-            sink.put('}');
-        }
+    event.content = stripEffects(event.content);
 
-        if (num > 0)
-        {
-            import lu.conv : toAlphaInto;
+    sink.put('[');
 
-            //sink.formattedWrite(" (#%03d)", num);
-            sink.put(" (#");
-            num.toAlphaInto!(3, 3)(sink);
-            sink.put(')');
-        }
+    (cast(DateTime)SysTime
+        .fromUnixTime(event.time))
+        .timeOfDay
+        .toString(sink);
 
-        if (errors.length && !plugin.printerSettings.silentErrors)
-        {
-            .put(sink, " ! ", errors, " !");
-        }
+    sink.put("] [");
 
-        shouldBell = shouldBell || (errors.length && bellOnError &&
-            !plugin.printerSettings.silentErrors);
+    if (plugin.printerSettings.uppercaseTypes)
+    {
+        sink.put(typestring);
+    }
+    else
+    {
+        sink.put(typestring.asLowerCase);
+    }
 
-        if (shouldBell)
-        {
-            import kameloso.terminal : TerminalToken;
-            sink.put(TerminalToken.bell);
-        }
+    sink.put("] ");
+
+    if (event.channel.length) .put(sink, '[', event.channel, "] ");
+
+    putSender();
+
+    if (event.target.nickname.length) putTarget();
+
+    if (event.content.length) putContent();
+
+    if (event.aux.length) .put(sink, " (", event.aux, ')');
+
+    if (event.count != 0)
+    {
+        .put(sink, " {", event.count, '}');
+    }
+
+    if (event.altcount != 0)
+    {
+        .put(sink, " {", event.altcount, '}');
+    }
+
+    if (event.num > 0)
+    {
+        import lu.conv : toAlphaInto;
+
+        //sink.formattedWrite(" (#%03d)", num);
+        sink.put(" (#");
+        event.num.toAlphaInto!(3, 3)(sink);
+        sink.put(')');
+    }
+
+    if (event.errors.length && !plugin.printerSettings.silentErrors)
+    {
+        .put(sink, " ! ", event.errors, " !");
+    }
+
+    shouldBell = shouldBell || (event.errors.length && bellOnError &&
+        !plugin.printerSettings.silentErrors);
+
+    if (shouldBell)
+    {
+        import kameloso.terminal : TerminalToken;
+        sink.put(TerminalToken.bell);
     }
 }
 
@@ -459,14 +440,13 @@ if (isOutputRange!(Sink, char[]))
 
     version(TwitchSupport)
     {
-        plugin.printerSettings.abbreviatedBadges = true;
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
         plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
         immutable twitchLine = sink.data[11..$].idup;
-        version(TwitchSupport) assert((twitchLine == `[chan] [#channel] Nickname [BMS]: "Harbl snarbl"`), twitchLine);
-        else assert((twitchLine == `[chan] [#channel] nickname [BMS]: "Harbl snarbl"`), twitchLine);
+        assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
+            twitchLine);
         sink = typeof(sink).init;
         event.sender.badges = string.init;
     }
@@ -642,7 +622,13 @@ if (isOutputRange!(Sink, char[]))
 
         if (!coloured)
         {
-            sink.colourWith(colourByHash(user.isServer ? user.address : user.nickname));
+            immutable name = user.isServer ?
+                user.address :
+                (user.account.length ?
+                    user.account :
+                    user.nickname);
+
+            sink.colourWith(colourByHash(name));
         }
     }
 
@@ -654,324 +640,308 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    with (event)
+    void putSender()
     {
-        void putSender()
+        colourUserTruecolour(sink, event.sender);
+
+        if (event.sender.isServer)
         {
-            colourUserTruecolour(sink, sender);
-
-            if (sender.isServer)
-            {
-                sink.put(sender.address);
-            }
-            else
-            {
-                bool putDisplayName;
-
-                version(TwitchSupport)
-                {
-                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                        sender.displayName.length)
-                    {
-                        sink.put(sender.displayName);
-                        putDisplayName = true;
-
-                        import std.algorithm.comparison : equal;
-                        import std.uni : asLowerCase;
-
-                        if ((sender.displayName != sender.nickname) &&
-                            !sender.displayName.asLowerCase.equal(sender.nickname))
-                        {
-                            .put!(Yes.colours)(sink, FG.default_, " <");
-                            colourUserTruecolour(sink, event.sender);
-                            .put!(Yes.colours)(sink, sender.nickname, FG.default_, '>');
-                        }
-                    }
-                }
-
-                if (!putDisplayName && sender.nickname.length)
-                {
-                    // Can be no-nick special: [PING] *2716423853
-                    sink.put(sender.nickname);
-                }
-
-                version(TwitchSupport)
-                {
-                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                        plugin.printerSettings.twitchBadges && sender.badges.length)
-                    {
-                        with (IRCEvent.Type)
-                        switch (type)
-                        {
-                        case JOIN:
-                        case SELFJOIN:
-                        case PART:
-                        case SELFPART:
-                            break;
-
-                        default:
-                            .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                            if (plugin.printerSettings.abbreviatedBadges)
-                            {
-                                sink.abbreviateBadges(sender.badges);
-                            }
-                            else
-                            {
-                                sink.put(sender.badges);
-                            }
-                            sink.put(']');
-                        }
-                    }
-                }
-            }
+            sink.put(event.sender.address);
         }
-
-        void putTarget()
+        else
         {
-            // No need to check isServer; target is never server
-            .put!(Yes.colours)(sink, FG.default_, " (");
-            colourUserTruecolour(sink, event.target);
-
             bool putDisplayName;
 
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    target.displayName.length)
+                    event.sender.displayName.length)
                 {
-                    .put!(Yes.colours)(sink, target.displayName, FG.default_, ')');
+                    sink.put(event.sender.displayName);
                     putDisplayName = true;
 
                     import std.algorithm.comparison : equal;
                     import std.uni : asLowerCase;
 
-                    if ((target.displayName != target.nickname) &&
-                        !target.displayName.asLowerCase.equal(target.nickname))
+                    if ((event.sender.displayName != event.sender.nickname) &&
+                        !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                     {
-                        sink.put(" <");
-                        colourUserTruecolour(sink, event.target);
-                        .put!(Yes.colours)(sink, target.nickname, FG.default_, '>');
+                        .put!(Yes.colours)(sink, FG.default_, " <");
+                        colourUserTruecolour(sink, event.sender);
+                        .put!(Yes.colours)(sink, event.sender.nickname, FG.default_, '>');
                     }
                 }
             }
 
-            if (!putDisplayName)
+            if (!putDisplayName && event.sender.nickname.length)
             {
-                .put!(Yes.colours)(sink, target.nickname, FG.default_, ')');
+                // Can be no-nick special: [PING] *2716423853
+                sink.put(event.sender.nickname);
             }
 
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    plugin.printerSettings.twitchBadges && target.badges.length)
+                    plugin.printerSettings.twitchBadges && event.sender.badges.length)
                 {
-                    .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge, " [");
-                    if (plugin.printerSettings.abbreviatedBadges)
+                    with (IRCEvent.Type)
+                    switch (event.type)
                     {
-                        sink.abbreviateBadges(target.badges);
+                    case JOIN:
+                    case SELFJOIN:
+                    case PART:
+                    case SELFPART:
+                        break;
+
+                    default:
+                        .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                            " [", event.sender.badges, ']');
                     }
-                    else
-                    {
-                        sink.put(target.badges);
-                    }
-                    sink.put(']');
+                }
+            }
+        }
+    }
+
+    void putTarget()
+    {
+        // No need to check isServer; target is never server
+        .put!(Yes.colours)(sink, FG.default_, " (");
+        colourUserTruecolour(sink, event.target);
+
+        bool putDisplayName;
+
+        version(TwitchSupport)
+        {
+            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                event.target.displayName.length)
+            {
+                .put!(Yes.colours)(sink, event.target.displayName, FG.default_, ')');
+                putDisplayName = true;
+
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
+                if ((event.target.displayName != event.target.nickname) &&
+                    !event.target.displayName.asLowerCase.equal(event.target.nickname))
+                {
+                    sink.put(" <");
+                    colourUserTruecolour(sink, event.target);
+                    .put!(Yes.colours)(sink, event.target.nickname, FG.default_, '>');
                 }
             }
         }
 
-        void putContent()
+        if (!putDisplayName)
         {
-            immutable FG contentFgBase = bright ? Bright.content : Dark.content;
-            immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
+            .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
+        }
 
-            immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
-                (event.type == IRCEvent.Type.SELFEMOTE)) ? emoteFgBase : contentFgBase;
-            immutable isEmote = (fgBase == emoteFgBase);
-
-            sink.colourWith(fgBase);  // Always grey colon and SASL +, prepare for emote
-
-            if (sender.isServer || sender.nickname.length)
+        version(TwitchSupport)
+        {
+            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
-                if (isEmote)
-                {
-                    sink.put(' ');
-                }
-                else
-                {
-                    sink.put(`: "`);
-                }
+                .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                    " [", event.target.badges, ']');
 
-                if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+            }
+        }
+    }
+
+    void putContent()
+    {
+        immutable FG contentFgBase = bright ? Bright.content : Dark.content;
+        immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
+
+        immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
+            (event.type == IRCEvent.Type.SELFEMOTE)) ? emoteFgBase : contentFgBase;
+        immutable isEmote = (fgBase == emoteFgBase);
+
+        sink.colourWith(fgBase);  // Always grey colon and SASL +, prepare for emote
+
+        if (event.sender.isServer || event.sender.nickname.length)
+        {
+            if (isEmote)
+            {
+                sink.put(' ');
+            }
+            else
+            {
+                sink.put(`: "`);
+            }
+
+            if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+            {
+                // Twitch chat has no colours or effects, only emotes
+                event.content = mapEffects(event.content, fgBase);
+            }
+
+            version(TwitchSupport)
+            {
+                if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    // Twitch chat has no colours or effects, only emotes
-                    content = mapEffects(content, fgBase);
+                    highlightEmotes(event,
+                        (plugin.printerSettings.colourfulEmotes ? Yes.colourful : No.colourful),
+                        (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+                }
+            }
+
+            with (IRCEvent.Type)
+            switch (event.type)
+            {
+            case CHAN:
+            case EMOTE:
+            case TWITCH_SUBGIFT:
+            //case SELFCHAN:
+                import kameloso.terminal : invert;
+
+                /// Nick was mentioned (certain)
+                bool match;
+                string inverted = event.content;
+
+                if (event.content.containsNickname(plugin.state.client.nickname))
+                {
+                    inverted = event.content.invert(plugin.state.client.nickname);
+                    match = true;
                 }
 
                 version(TwitchSupport)
                 {
-                    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+                    // On Twitch, also highlight the display name alias
+                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+                        plugin.state.client.displayName.length &&  // Should always be true but check
+                        (plugin.state.client.nickname != plugin.state.client.displayName) &&
+                        event.content.containsNickname(plugin.state.client.displayName))
                     {
-                        highlightEmotes(event,
-                            (plugin.printerSettings.colourfulEmotes ? Yes.colourful : No.colourful),
-                            (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
-                    }
-                }
-
-                with (IRCEvent.Type)
-                switch (event.type)
-                {
-                case CHAN:
-                case EMOTE:
-                case TWITCH_SUBGIFT:
-                //case SELFCHAN:
-                    import kameloso.terminal : invert;
-
-                    /// Nick was mentioned (certain)
-                    bool match;
-                    string inverted = content;
-
-                    if (content.containsNickname(plugin.state.client.nickname))
-                    {
-                        inverted = content.invert(plugin.state.client.nickname);
+                        inverted = inverted.invert(plugin.state.client.displayName);
                         match = true;
                     }
-
-                    version(TwitchSupport)
-                    {
-                        // On Twitch, also highlight the display name alias
-                        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                            plugin.state.client.displayName.length &&  // Should always be true but check
-                            (plugin.state.client.nickname != plugin.state.client.displayName) &&
-                            content.containsNickname(plugin.state.client.displayName))
-                        {
-                            inverted = inverted.invert(plugin.state.client.displayName);
-                            match = true;
-                        }
-                    }
-
-                    if (!match) goto default;
-
-                    sink.put(inverted);
-                    shouldBell = bellOnMention;
-                    break;
-
-                default:
-                    // Normal non-highlighting channel message
-                    sink.put(content);
-                    break;
                 }
 
-                import kameloso.terminal : TerminalBackground;
+                if (!match) goto default;
 
-                // Reset the background to ward off bad backgrounds bleeding out
-                sink.colourWith(fgBase, TerminalBackground.default_);
-                if (!isEmote) sink.put('"');
+                sink.put(inverted);
+                shouldBell = bellOnMention;
+                break;
+
+            default:
+                // Normal non-highlighting channel message
+                sink.put(event.content);
+                break;
             }
-            else
-            {
-                // PING or ERROR likely
-                sink.put(content);  // No need for indenting space
-            }
-        }
 
-        .put!(Yes.colours)(sink, bright ? Timestamp.bright : Timestamp.dark, '[');
+            import kameloso.terminal : TerminalBackground;
 
-        (cast(DateTime)SysTime
-            .fromUnixTime(event.time))
-            .timeOfDay
-            .toString(sink);
-
-        sink.put(']');
-
-        import lu.string : beginsWith;
-
-        if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
-            (event.type == IRCEvent.Type.TWITCH_ERROR))
-        {
-            sink.colourWith(bright ? Bright.error : Dark.error);
+            // Reset the background to ward off bad backgrounds bleeding out
+            sink.colourWith(fgBase, TerminalBackground.default_);
+            if (!isEmote) sink.put('"');
         }
         else
         {
-            if (bright)
-            {
-                sink.colourWith((type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type);
-            }
-            else
-            {
-                sink.colourWith((type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type);
-            }
+            // PING or ERROR likely
+            sink.put(event.content);  // No need for indenting space
         }
+    }
 
-        import std.uni : asLowerCase;
+    .put!(Yes.colours)(sink, bright ? Timestamp.bright : Timestamp.dark, '[');
 
-        sink.put(" [");
+    (cast(DateTime)SysTime
+        .fromUnixTime(event.time))
+        .timeOfDay
+        .toString(sink);
 
-        if (plugin.printerSettings.uppercaseTypes) sink.put(typestring);
-        else sink.put(typestring.asLowerCase);
+    sink.put(']');
 
-        sink.put("] ");
+    import lu.string : beginsWith;
 
-        if (channel.length)
+    if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
+        (event.type == IRCEvent.Type.TWITCH_ERROR))
+    {
+        sink.colourWith(bright ? Bright.error : Dark.error);
+    }
+    else
+    {
+        if (bright)
         {
-            .put!(Yes.colours)(sink, bright ? Bright.channel : Dark.channel,
-                '[', channel, "] ");
+            sink.colourWith((event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type);
         }
-
-        putSender();
-
-        if (target.nickname.length) putTarget();
-
-        if (content.length) putContent();
-
-        if (aux.length)
+        else
         {
-            .put!(Yes.colours)(sink, bright ? Bright.aux : Dark.aux, " (", aux, ')');
+            sink.colourWith((event.type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type);
         }
+    }
 
-        if (count != 0)
-        {
-            sink.colourWith(bright ? Bright.count : Dark.count);
-            sink.put(" {");
-            .put(sink, count);
-            sink.put('}');
-        }
+    import std.uni : asLowerCase;
 
-        if (altcount != 0)
-        {
-            sink.colourWith(bright ? Bright.altcount : Dark.altcount);
-            sink.put(" {");
-            .put(sink, altcount);
-            sink.put('}');
-        }
+    sink.put(" [");
 
-        if (num > 0)
-        {
-            import lu.conv : toAlphaInto;
+    if (plugin.printerSettings.uppercaseTypes)
+    {
+        sink.put(typestring);
+    }
+    else
+    {
+        sink.put(typestring.asLowerCase);
+    }
 
-            sink.colourWith(bright ? Bright.num : Dark.num);
+    sink.put("] ");
 
-            //sink.formattedWrite(" (#%03d)", num);
-            sink.put(" (#");
-            num.toAlphaInto!(3, 3)(sink);
-            sink.put(')');
-        }
+    if (event.channel.length)
+    {
+        .put!(Yes.colours)(sink, bright ? Bright.channel : Dark.channel,
+            '[', event.channel, "] ");
+    }
 
-        if (errors.length && !plugin.printerSettings.silentErrors)
-        {
-            .put!(Yes.colours)(sink, bright ? Bright.error : Dark.error,
-                " ! ", errors, " !");
-        }
+    putSender();
 
-        sink.colourWith(FG.default_);  // same for bright and dark
+    if (event.target.nickname.length) putTarget();
 
-        shouldBell = shouldBell || (errors.length && bellOnError &&
-            !plugin.printerSettings.silentErrors);
+    if (event.content.length) putContent();
 
-        if (shouldBell)
-        {
-            import kameloso.terminal : TerminalToken;
-            sink.put(TerminalToken.bell);
-        }
+    if (event.aux.length)
+    {
+        .put!(Yes.colours)(sink, bright ? Bright.aux : Dark.aux, " (", event.aux, ')');
+    }
+
+    if (event.count != 0)
+    {
+        sink.colourWith(bright ? Bright.count : Dark.count);
+        .put(sink, " {", event.count, '}');
+    }
+
+    if (event.altcount != 0)
+    {
+        sink.colourWith(bright ? Bright.altcount : Dark.altcount);
+        .put(sink, " {", event.altcount, '}');
+    }
+
+    if (event.num > 0)
+    {
+        import lu.conv : toAlphaInto;
+
+        sink.colourWith(bright ? Bright.num : Dark.num);
+
+        //sink.formattedWrite(" (#%03d)", event.num);
+        sink.put(" (#");
+        event.num.toAlphaInto!(3, 3)(sink);
+        sink.put(')');
+    }
+
+    if (event.errors.length && !plugin.printerSettings.silentErrors)
+    {
+        .put!(Yes.colours)(sink, bright ? Bright.error : Dark.error,
+            " ! ", event.errors, " !");
+    }
+
+    sink.colourWith(FG.default_);  // same for bright and dark
+
+    shouldBell = shouldBell || (event.errors.length && bellOnError &&
+        !plugin.printerSettings.silentErrors);
+
+    if (shouldBell)
+    {
+        import kameloso.terminal : TerminalToken;
+        sink.put(TerminalToken.bell);
     }
 }
 
@@ -1051,254 +1021,6 @@ unittest
 }
 
 
-// abbreviateBadges
-/++
- +  Abbreviates a string of Twitch badges, to summarise all of them instead of
- +  picking the dominant one and just displaying that. Takes an output range.
- +
- +  Most are just summarised by the first letter in the badge (lowercase), but
- +  there would be collisions (subscriber vs sub-gifter, etc), so we make some
- +  exceptions by capitalising some common ones and rewriting others. Leave as
- +  many lowercase characters open as possible for unexpected badges.
- +
- +  It's a bit more confusing this way but it's a solid fact that users often
- +  have more than one badge, and we were singling out just one.
- +
- +  Using an associative array is an alternative approach. It's faster, but uses
- +  the heap. From the documentation:
- +
- +      The following constructs may allocate memory using the garbage collector:
- +          [...]
- +          * Any insertion, removal, or lookups in an associative array
- +
- +  It would look like the following:
- +  ---
- +  version(TwitchSupport)
- +  static immutable char[string] stringBadgeMap;
- +
- +  version(TwitchSupport)
- +  shared static this()
- +  {
- +      stringBadgeMap =
- +      [
- +          "subscriber"    : 'S',
- +          "bits"          : 'C',  // cheer
- +          "sub-gifter"    : 'G',
- +          "premium"       : 'P',  // prime
- +          "turbo"         : 'T',
- +          "moderator"     : 'M',
- +          "partner"       : 'V',  // verified
- +          "vip"           : '^',  // V taken
- +          "broadcaster"   : 'B',
- +          "twitchcon2017" : '7',
- +          "twitchcon2018" : '8',
- +          "twitchconEU2019" : '9',
- +          "twitchconNA2019" : '9',
- +          "staff"         : '*',
- +          "admin"         : '+',
- +      ];
- +  }
- + ---
- +
- +  Use the string switch for now. It's still plenty fast.
- +
- +  The result is a string with the passed badges abbreviated, one character per
- +  badge, separated into minor and major badges. Minor ones are ones that end
- +  with "`_1`", which seem to be contextual to a channel's game theme, like
- +  `overwatch_league_insider_1`, `firewatch_1`, `cuphead_1`, `H1Z1_1`, `eso_1`, ...
- +
- +  Params:
- +      sink = Output range to store the abbreviated values in.
- +      badgestring = Badges from a Twitch `badges=` IRCv3 tag.
- +/
-version(TwitchSupport)
-void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
-if (isOutputRange!(Sink, char[]))
-{
-    import std.algorithm.iteration : splitter;
-    import std.array : Appender;
-
-    Appender!(ubyte[]) minor;
-
-    static if (__traits(hasMember, Sink, "reserve"))
-    {
-        sink.reserve(8);  // reserve extra for minor badges
-    }
-
-    foreach (immutable badgeAndNum; badgestring.splitter(','))
-    {
-        import lu.string : nom;
-
-        string slice = badgeAndNum;
-        immutable badge = slice.nom('/');
-
-        char badgechar;
-
-        switch (badge)
-        {
-        case "subscriber":
-            badgechar = 'S';
-            break;
-
-        case "bits":
-        case "bits-leader":
-            // rewrite to the cheer it is represented as in the normal chat
-            badgechar = 'C';
-            break;
-
-        case "sub-gifter":
-        case "sub-gift-leader":
-            badgechar = 'G';
-            break;
-
-        case "premium":
-            // prime
-            badgechar = 'P';
-            break;
-
-        case "turbo":
-            badgechar = 'T';
-            break;
-
-        case "moderator":
-            badgechar = 'M';
-            break;
-
-        case "partner":
-            // verified
-            badgechar = 'V';
-            break;
-
-        case "vip":
-            // V is taken, no obvious second choice
-            badgechar = '^';
-            break;
-
-        case "broadcaster":
-            badgechar = 'B';
-            break;
-
-        case "twitchcon2017":
-            badgechar = '7';
-            break;
-
-        case "twitchcon2018":
-            badgechar = '8';
-            break;
-
-        case "twitchconEU2019":
-        case "twitchconNA2019":
-            badgechar = '9';
-            break;
-
-        case "twitchconAmsterdam2020":
-            badgechar = '0';
-            break;
-
-        case "staff":
-            badgechar = '*';
-            break;
-
-        case "admin":
-            badgechar = '+';
-            break;
-
-        default:
-            import lu.string : beginsWith;
-            import std.algorithm.searching : endsWith;
-
-            if (badge.beginsWith("bits-"))
-            {
-                // bits-leader
-                // bits-charity
-                badgechar = badge[5];
-                break;
-            }
-            else if (badge.endsWith("_1"))
-            {
-                minor.put(badge[0]);
-                continue;
-            }
-
-            badgechar = badge[0];
-            break;
-        }
-
-        sink.put(badgechar);
-    }
-
-    if (minor.data.length)
-    {
-        sink.put(':');
-        sink.put(minor.data);
-    }
-}
-
-///
-version(TwitchSupport)
-unittest
-{
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-
-    {
-        immutable badges = "subscriber/24,bits/1000";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "SC"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "moderator/1,subscriber/24";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "MS"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "subscriber/72,premium/1,twitchcon2017/1,bits/1000";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "SP7C"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "broadcaster/0";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "B"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "harbl/42,snarbl/99,subscriber/4,bits/10000";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "hsSC"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "subscriber/4,H1Z1_1/1,cuphead_1/1";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "S:Hc"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "H1Z1_1/1";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == ":H"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "bits-charity/1";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "c"), sink.data);
-        sink.clear();
-    }
-    {
-        immutable badges = "bits-leader/1";
-        sink.abbreviateBadges(badges);
-        assert((sink.data == "C"), sink.data);
-        sink.clear();
-    }
-}
-
-
 // highlightEmotes
 /++
  +  Tints emote strings and highlights Twitch emotes in a ref
@@ -1328,53 +1050,48 @@ void highlightEmotes(ref IRCEvent event,
 
     if (!event.emotes.length) return;
 
-    Appender!(char[]) sink;
+    static Appender!(char[]) sink;
+    scope(exit) sink.clear();
     sink.reserve(event.content.length + 60);  // mostly +10
 
     immutable TerminalForeground highlight = brightTerminal ?
         Bright.highlight : Dark.highlight;
+
+    immutable isEmoteOnly = !colourful && event.tags.contains("emote-only=1");
 
     with (IRCEvent.Type)
     switch (event.type)
     {
     case EMOTE:
     case SELFEMOTE:
-        if (!colourful && event.tags.contains("emote-only=1"))
+        if (isEmoteOnly)
         {
             // Just highlight the whole line, don't worry about resetting to fgBase
             sink.colourWith(highlight);
             sink.put(event.content);
+            break;
         }
-        else
-        {
-            // Emote but mixed text and emotes OR we're doing colourful emotes
-            immutable TerminalForeground emoteFgBase = brightTerminal ?
-                Bright.emote : Dark.emote;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
-                emoteFgBase, colourful, brightTerminal);
-        }
-        break;
 
-    case CHAN:
-    case SELFCHAN:
-    case TWITCH_RITUAL:
-        if (!colourful && event.tags.contains("emote-only=1"))
-        {
-            // Emote only channel message, treat the same as an emote-only emote
-            goto case EMOTE;
-        }
-        else
-        {
-            // Normal content, normal text, normal emotes
-            immutable TerminalForeground contentFgBase = brightTerminal ?
-                Bright.content : Dark.content;
-            event.content.highlightEmotesImpl(sink, event.emotes, highlight,
-                contentFgBase, colourful, brightTerminal);
-        }
+        // Emote but mixed text and emotes OR we're doing colourful emotes
+        immutable TerminalForeground emoteFgBase = brightTerminal ?
+            Bright.emote : Dark.emote;
+        event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+            emoteFgBase, colourful, brightTerminal);
         break;
 
     default:
-        return;
+        if (isEmoteOnly)
+        {
+            // / Emote only channel message, treat the same as an emote-only emote?
+            goto case EMOTE;
+        }
+
+        // Normal content, normal text, normal emotes
+        immutable TerminalForeground contentFgBase = brightTerminal ?
+            Bright.content : Dark.content;
+        event.content.highlightEmotesImpl(sink, event.emotes, highlight,
+            contentFgBase, colourful, brightTerminal);
+        break;
     }
 
     event.content = sink.data.idup;
@@ -1408,7 +1125,7 @@ if (isOutputRange!(Sink, char[]))
     import std.algorithm.iteration : splitter;
     import std.conv : to;
 
-    struct Highlight
+    static struct Highlight
     {
         string id;
         size_t start;
@@ -1447,7 +1164,7 @@ if (isOutputRange!(Sink, char[]))
     }
 
     import std.algorithm.sorting : sort;
-    highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
+    highlights[0..numHighlights].sort!((a, b) => a.start < b.start)();
 
     // We need a dstring since we're slicing something that isn't necessarily ASCII
     // Without this highlights become offset a few characters depending on the text

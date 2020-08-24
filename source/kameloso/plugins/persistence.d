@@ -449,26 +449,23 @@ void onQuit(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.SELFNICK)
 void onNick(PersistenceService service, const IRCEvent event)
 {
-    with (service.state)
+    if (service.state.settings.preferHostmasks)
     {
-        if (service.state.settings.preferHostmasks)
-        {
-            // The target is its own complete user, with account and everything.
-            // There's no point in copying anything over.
-        }
-        else if (const stored = event.sender.nickname in users)
-        {
-            users[event.target.nickname] = *stored;
-            users[event.target.nickname].nickname = event.target.nickname;
-        }
+        // The target is its own complete user, with account and everything.
+        // There's no point in copying anything over.
+    }
+    else if (const stored = event.sender.nickname in service.state.users)
+    {
+        service.state.users[event.target.nickname] = *stored;
+        service.state.users[event.target.nickname].nickname = event.target.nickname;
+    }
 
-        users.remove(event.sender.nickname);
+    service.state.users.remove(event.sender.nickname);
 
-        if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
-        {
-            service.userClassCurrentChannelCache[event.target.nickname] = *channel;
-            service.userClassCurrentChannelCache.remove(event.sender.nickname);
-        }
+    if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
+    {
+        service.userClassCurrentChannelCache[event.target.nickname] = *channel;
+        service.userClassCurrentChannelCache.remove(event.sender.nickname);
     }
 }
 
@@ -571,7 +568,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         catch (Exception e)
         {
             logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 }
@@ -588,14 +585,11 @@ void reloadHostmasksFromDisk(PersistenceService service)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
-    with (service)
-    {
-        JSONStorage hostmasksJSON;
-        hostmasksJSON.load(hostmasksFile);
-        //accountByUser.clear();
-        accountByUser.populateFromJSON(hostmasksJSON);
-        accountByUser.rehash();
-    }
+    JSONStorage hostmasksJSON;
+    hostmasksJSON.load(service.hostmasksFile);
+    //service.accountByUser.clear();
+    service.accountByUser.populateFromJSON(hostmasksJSON);
+    service.accountByUser.rehash();
 }
 
 
@@ -642,7 +636,7 @@ void initAccountResources(PersistenceService service)
         import kameloso.common : logger;
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
     }
 
@@ -656,7 +650,7 @@ void initAccountResources(PersistenceService service)
 
         auto after = before
             .array
-            .sort!((a,b) => a.str < b.str)
+            .sort!((a, b) => a.str < b.str)
             .uniq
             .filter!((a) => a.str.length > 0)
             .array;
@@ -697,7 +691,7 @@ void initAccountResources(PersistenceService service)
                 import kameloso.common : logger;
                 import std.path : baseName;
 
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
                 throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
             }
         }
@@ -734,7 +728,7 @@ void initHostmaskResources(PersistenceService service)
         import kameloso.common : logger;
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
     }
 

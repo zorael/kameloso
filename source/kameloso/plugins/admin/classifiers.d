@@ -497,7 +497,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
     {
         import std.algorithm.searching : canFind;
 
-        const accountAsJSON = JSONValue(account);
+        immutable accountAsJSON = JSONValue(account);
 
         if (channel in json[list].object)
         {

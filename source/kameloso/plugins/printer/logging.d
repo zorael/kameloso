@@ -89,7 +89,7 @@ struct LogLineBuffer
  +  populating arrays of lines to be written in bulk, once in a while.
  +
  +  See_Also:
- +      `commitAllLogs`
+ +      `commitAllLogsImpl`
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 {
@@ -282,7 +282,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         catch (Exception e)
         {
             logger.warning("Unhandled exception caught when writing to log: ", e.msg);
-            version(PrintStacktraces) logger.trace(e.toString);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 
@@ -302,8 +302,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     }
 
     with (IRCEvent.Type)
-    with (plugin)
-    with (event)
     switch (event.type)
     {
     case PING:
@@ -319,25 +317,26 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     case CHGHOST:
         // These don't carry a channel; instead have them be logged in all
         // channels this user is in (that the bot is also in)
-        foreach (immutable channelName, const foreachChannel; state.channels)
+        foreach (immutable channelName, const foreachChannel; plugin.state.channels)
         {
-            if (!printerSettings.logAllChannels && !state.bot.homeChannels.canFind(channelName))
+            if (!plugin.printerSettings.logAllChannels &&
+                !plugin.state.bot.homeChannels.canFind(channelName))
             {
                 // Not logging all channels and this is not a home.
                 continue;
             }
 
-            if (sender.nickname in foreachChannel.users)
+            if (event.sender.nickname in foreachChannel.users)
             {
                 // Channel message
                 writeEventToFile(plugin, event, channelName);
             }
         }
 
-        if (sender.nickname.length && sender.nickname in plugin.buffers)
+        if (event.sender.nickname.length && event.sender.nickname in plugin.buffers)
         {
             // There is an open query buffer; write to it too
-            writeEventToFile(plugin, event, sender.nickname);
+            writeEventToFile(plugin, event, event.sender.nickname);
         }
         break;
 
@@ -345,8 +344,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     {
         case JOIN:
         case PART:
-        case USERSTATE:
-            if (state.server.daemon == IRCServer.Daemon.twitch)
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // These Twitch events are just noise.
                 return;
@@ -355,23 +353,28 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
             {
                 goto default;
             }
+
+        case USERSTATE:
+            // Always on Twitch, no need to check plugin.state.server.daemon
+            return;
     }
 
     default:
-        if (channel.length && (sender.nickname.length || type == MODE))
+        if (event.channel.length && (event.sender.nickname.length || (event.type == MODE)))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeEventToFile(plugin, event, channel);
+            writeEventToFile(plugin, event, event.channel);
         }
-        else if (sender.nickname.length)
+        else if (event.sender.nickname.length)
         {
             // Implicitly not a channel; query
-            writeEventToFile(plugin, event, sender.nickname);
+            writeEventToFile(plugin, event, event.sender.nickname);
         }
-        else if (printerSettings.logServer && !sender.nickname.length && sender.address.length)
+        else if (plugin.printerSettings.logServer && !event.sender.nickname.length &&
+            event.sender.address.length)
         {
             // Server
-            writeEventToFile(plugin, event, state.server.address, "server.log", No.extendPath);
+            writeEventToFile(plugin, event, plugin.state.server.address, "server.log", No.extendPath);
         }
         else
         {
@@ -391,7 +394,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
  +  Example:
  +  ---
  +  assert(!("~/logs".isDir));
- +  bool locationIsOkay = establishLogLocation("~/logs");
+ +  bool locationIsOkay = plugin.establishLogLocation("~/logs");
  +  assert("~/logs".isDir);
  +  ---
  +
@@ -471,7 +474,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +      buffer = `LogLineBuffer` whose lines to commit to disk.
  +
  +  See_Also:
- +      `commitAllLogs`
+ +      `commitAllLogsImpl`
  +/
 void commitLog(ref LogLineBuffer buffer)
 {
@@ -514,7 +517,7 @@ void commitLog(ref LogLineBuffer buffer)
     {
         logger.warning("Unhandled exception caught when committing log: ",
             e.msg, cast(char)TerminalToken.bell);
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
     }
 }
 

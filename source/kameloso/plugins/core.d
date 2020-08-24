@@ -35,40 +35,9 @@ module kameloso.plugins.core;
 private:
 
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
+import std.typecons : Flag, No, Tuple, Yes;
 
 version = PrefixedCommandsFallBackToNickname;
-
-
-/++
- +  2.079.0 has a bug that breaks plugin processing completely. It's fixed in
- +  patch .1 (2.079.1), but there's no API for knowing the patch number.
- +
- +  Infer it by testing for the broken behaviour and warn (during compilation).
- +/
-static if (__VERSION__ == 2079L)
-{
-    import lu.traits : getSymbolsByUDA;
-
-    struct UDA_2079 {}
-    struct Foo_2079
-    {
-        @UDA_2079
-        {
-            int i;
-            void fun() {}
-            int n;
-        }
-    }
-
-    static if (getSymbolsByUDA!(Foo_2079, UDA_2079).length != 3)
-    {
-        pragma(msg, "WARNING: You are using a `2.079.0` compiler with a broken " ~
-            "crucial trait in its standard library. The program will not " ~
-            "function normally. Please upgrade to `2.079.1` or later.");
-    }
-}
-
 
 public:
 
@@ -142,9 +111,9 @@ abstract class IRCPlugin
      +  Returns an array of the descriptions of the commands a plugin offers.
      +
      +  Returns:
-     +      An associative `Description[string]` array.
+     +      An associative `Tuple!(Description, "desc", bool, "hidden")[string]` array.
      +/
-    Description[string] commands() pure nothrow @property const;
+    Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const;
 
     /++
      +  Call a plugin to perform its periodic tasks, iff the time is equal to or
@@ -340,6 +309,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  See_Also:
      +      onEventImpl
      +/
+    pragma(inline, true)
     override public void onEvent(const IRCEvent event) @system
     {
         return onEventImpl(event);
@@ -357,9 +327,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +  etc; where such is applicable.
      +
      +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
+     +      origEvent = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    package void onEventImpl(const ref IRCEvent event) @system
+    package void onEventImpl(const IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -392,7 +362,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         /++
          +  Process a function.
          +/
-        Next handle(alias fun)(const ref IRCEvent event)
+        Next process(alias fun)(ref IRCEvent event)
         {
             enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
                 Yes.verbose :
@@ -611,8 +581,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
             }
 
-            IRCEvent mutEvent = event;  // mutable
             bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
+
+            static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
+            {
+                // Snapshot content and aux for later restoration
+                immutable origContent = event.content;
+                immutable origAux = event.aux;
+            }
 
             // Evaluate each BotCommand UDAs with the current event
             static if (hasUDA!(fun, BotCommand))
@@ -643,10 +619,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    // Reset between iterations as we nom the contents
-                    mutEvent = event;
-
-                    if (!mutEvent.prefixPolicyMatches!verbose(commandUDA.policy,
+                    if (!event.prefixPolicyMatches!verbose(commandUDA.policy,
                         state.client, state.settings.prefix))
                     {
                         static if (verbose)
@@ -663,8 +636,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     import std.typecons : No, Yes;
                     import std.uni : asLowerCase;
 
-                    mutEvent.content = mutEvent.content.strippedLeft;
-                    immutable thisCommand = mutEvent.content.nom!(Yes.inherit, Yes.decode)(' ');
+                    // If we don't strip left as a separate step, nom won't alter
+                    // event.content by ref (as it will be an rvalue).
+                    event.content = event.content.strippedLeft;
+
+                    immutable thisCommand = event.content
+                        .nom!(Yes.inherit, Yes.decode)(' ');
 
                     if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
                     {
@@ -674,9 +651,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        mutEvent.aux = thisCommand;
+                        event.aux = thisCommand;
                         commandMatch = true;
                         break;  // finish this BotCommand
+                    }
+                    else
+                    {
+                        // Restore content to pre-nom state
+                        event.content = origContent;
                     }
                 }
             }
@@ -703,10 +685,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        // Reset between iterations; BotCommands may have altered it
-                        mutEvent = event;
-
-                        if (!mutEvent.prefixPolicyMatches!verbose(regexUDA.policy,
+                        if (!event.prefixPolicyMatches!verbose(regexUDA.policy,
                             state.client, state.settings.prefix))
                         {
                             static if (verbose)
@@ -722,7 +701,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         {
                             import std.regex : matchFirst;
 
-                            const hits = mutEvent.content.matchFirst(regexUDA.engine);
+                            const hits = event.content.matchFirst(regexUDA.engine);
 
                             if (!hits.empty)
                             {
@@ -732,7 +711,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                                     if (state.settings.flush) stdout.flush();
                                 }
 
-                                mutEvent.aux = hits[0];
+                                event.aux = hits[0];
                                 commandMatch = true;
                                 break;  // finish this BotRegex
                             }
@@ -741,7 +720,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                                 static if (verbose)
                                 {
                                     writefln(`...matching "%s" against expression "%s" failed.`,
-                                        mutEvent.content, regexUDA.expression);
+                                        event.content, regexUDA.expression);
                                 }
                             }
                         }
@@ -750,7 +729,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             static if (verbose)
                             {
                                 writeln("...BotRegex exception: ", e.msg);
-                                version(PrintStacktraces) writeln(e.toString);
+                                version(PrintStacktraces) writeln(e);
                                 if (state.settings.flush) stdout.flush();
                             }
                             continue;  // next BotRegex
@@ -771,6 +750,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     }
 
                     return Next.continue_; // next function
+                }
+
+                scope(exit)
+                {
+                    if (commandMatch)
+                    {
+                        // Restore content and aux as they were definitely altered
+                        event.content = origContent;
+                        event.aux = origAux;
+                    }
                 }
             }
 
@@ -819,7 +808,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    immutable result = this.allow(mutEvent, privilegeLevel);
+                    immutable result = this.allow(event, privilegeLevel);
                 }
                 else
                 {
@@ -829,7 +818,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    immutable result = allowImpl(mutEvent, privilegeLevel);
+                    immutable result = allowImpl(event, privilegeLevel);
                 }
 
                 static if (verbose)
@@ -860,13 +849,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.enqueue(mutEvent, privilegeLevel, &fun, fullyQualifiedName!fun);
+                        this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
                         return Next.continue_;  // Next function
                     }
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
-                        this.enqueue(this, mutEvent, privilegeLevel, &fun, fullyQualifiedName!fun);
+                        this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
                         return Next.continue_;  // Next function
                     }
                     else static if (Filter!(isIRCPluginParam, Params).length)
@@ -901,7 +890,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                 is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
             {
-                fun(this, mutEvent);
+                fun(this, event);
             }
             else static if (is(Params : AliasSeq!(typeof(this))) ||
                 (is(Params : AliasSeq!IRCPlugin) && isAwarenessFunction!fun))
@@ -910,7 +899,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             }
             else static if (is(Params : AliasSeq!IRCEvent))
             {
-                fun(mutEvent);
+                fun(event);
             }
             else static if (arity!fun == 0)
             {
@@ -960,18 +949,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import std.encoding : sanitize;
 
-            with (event)
-            {
-                raw = sanitize(raw);
-                channel = sanitize(channel);
-                content = sanitize(content);
-                aux = sanitize(aux);
-                tags = sanitize(tags);
-            }
+            event.raw = sanitize(event.raw);
+            event.channel = sanitize(event.channel);
+            event.content = sanitize(event.content);
+            event.aux = sanitize(event.aux);
+            event.tags = sanitize(event.tags);
         }
 
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
-        void tryCatchHandle(funlist...)(const ref IRCEvent event)
+        void tryProcess(funlist...)(ref IRCEvent event)
         {
             import core.exception : UnicodeException;
             import std.utf : UTFException;
@@ -980,7 +966,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             {
                 try
                 {
-                    immutable next = handle!fun(event);
+                    immutable next = process!fun(event);
 
                     with (Next)
                     final switch (next)
@@ -990,7 +976,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
                     case repeat:
                         // only repeat once so we don't endlessly loop
-                        if (handle!fun(event) == continue_)
+                        if (process!fun(event) == continue_)
                         {
                             continue;
                         }
@@ -1005,30 +991,30 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
                 catch (UTFException e)
                 {
-                    /*logger.warningf("tryCatchHandle UTFException on %s: %s",
+                    /*logger.warningf("tryProcess UTFException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    IRCEvent saneEvent = event;
-                    sanitizeEvent(saneEvent);
-                    handle!fun(saneEvent);
+                    sanitizeEvent(event);
+                    process!fun(event);
                 }
                 catch (UnicodeException e)
                 {
-                    /*logger.warningf("tryCatchHandle UnicodeException on %s: %s",
+                    /*logger.warningf("tryProcess UnicodeException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    IRCEvent saneEvent = event;
-                    sanitizeEvent(saneEvent);
-                    handle!fun(saneEvent);
+                    sanitizeEvent(event);
+                    process!fun(event);
                 }
             }
         }
 
-        tryCatchHandle!setupFuns(event);
-        tryCatchHandle!earlyFuns(event);
-        tryCatchHandle!pluginFuns(event);
-        tryCatchHandle!lateFuns(event);
-        tryCatchHandle!cleanupFuns(event);
+        IRCEvent event = origEvent;  // mutable
+
+        tryProcess!setupFuns(event);
+        tryProcess!earlyFuns(event);
+        tryProcess!pluginFuns(event);
+        tryProcess!lateFuns(event);
+        tryProcess!cleanupFuns(event);
     }
 
 
@@ -1403,17 +1389,20 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
+    import std.typecons : Tuple;
+
     // commands
     /++
      +  Collects all `BotCommand` command words and `BotRegex` regex expressions
      +  that this plugin offers at compile time, then at runtime returns them
-     +  alongside their `Description`s as an associative `Description[string]` array.
+     +  alongside their `Description`s and their visibility, as an associative
+     +  array of `Tuple!(Description, bool)`s keyed by command name strings.
      +
      +  Returns:
-     +      Associative array of all `Descriptions`, keyed by
-     +      `BotCommand.word`s and `BotRegex.expression`s.
+     +      Associative array of tuples of all `Descriptions` and whether they
+     +      are hidden, keyed by `BotCommand.word`s and `BotRegex.expression`s.
      +/
-    override public Description[string] commands() pure nothrow @property const
+    override public Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
@@ -1425,19 +1414,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
             alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
             alias funs = Filter!(isSomeFunction, symbols);
+            alias Command = Tuple!(Description, "desc", bool, "hidden");
 
-            Description[string] descriptions;
+            Command[string] commands;
 
             foreach (fun; funs)
             {
                 foreach (immutable uda; AliasSeq!(getUDAs!(fun, BotCommand),
                     getUDAs!(fun, BotRegex)))
                 {
-                    static if (uda.hidden)
-                    {
-                        // Do nothing
-                    }
-                    else static if (hasUDA!(fun, Description))
+                    static if (hasUDA!(fun, Description))
                     {
                         static if (is(typeof(uda) : BotCommand))
                         {
@@ -1449,7 +1435,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         }
 
                         enum desc = getUDAs!(fun, Description)[0];
-                        descriptions[key] = desc;
+                        commands[key] = Command(desc, uda.hidden);
 
                         static if (uda.policy == PrefixPolicy.nickname)
                         {
@@ -1457,13 +1443,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                descriptions[key].syntax = "$nickname: " ~ desc.syntax;
+                                commands[key].desc.syntax = "$nickname: " ~ desc.syntax;
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                descriptions[key].syntax = "$nickname: $command";
+                                commands[key].desc.syntax = "$nickname: $command";
                             }
                         }
                     }
@@ -1480,14 +1466,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
             }
 
-            return descriptions;
+            return commands;
         }();
 
         // This is an associative array literal. We can't make it static immutable
         // because of AAs' runtime-ness. We could make it runtime immutable once
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
-        return isEnabled ? ctCommandsEnumLiteral : (Description[string]).init;
+        return isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
     }
 
 
@@ -1632,7 +1618,7 @@ version(unittest)
  +
  +  Params:
  +      verbose = Whether or not to output verbose debug information to the local terminal.
- +      mutEvent = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
+ +      event = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
  +      policy = Policy to apply.
  +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      prefix = The prefix as set in the program-wide settings.
@@ -1641,7 +1627,7 @@ version(unittest)
  +      `true` if the message is in a context where the event matches the
  +      `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEvent,
+bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event,
     const PrefixPolicy policy, const IRCClient client, const string prefix)
 {
     import kameloso.common : stripSeparatedPrefix;
@@ -1655,7 +1641,6 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEv
         writeln("...prefixPolicyMatches! policy:", policy);
     }
 
-    with (mutEvent)
     with (PrefixPolicy)
     final switch (policy)
     {
@@ -1667,14 +1652,14 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEv
         return true;
 
     case prefixed:
-        if (prefix.length && content.beginsWith(prefix))
+        if (prefix.length && event.content.beginsWith(prefix))
         {
             static if (verbose)
             {
                 writefln("starts with prefix (%s)", prefix);
             }
 
-            content.nom!(Yes.decode)(prefix);
+            event.content.nom!(Yes.decode)(prefix);
         }
         else
         {
@@ -1700,7 +1685,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEv
         break;
 
     case nickname:
-        if (content.beginsWith('@'))
+        if (event.content.beginsWith('@'))
         {
             static if (verbose)
             {
@@ -1709,20 +1694,21 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent mutEv
 
             // Using @name to refer to someone is not
             // uncommon; allow for it and strip it away
-            content = content[1..$];
+            event.content = event.content[1..$];
         }
 
-        if (content.beginsWith(client.nickname))
+        if (event.content.beginsWith(client.nickname))
         {
             static if (verbose)
             {
                 writeln("begins with nickname! stripping it");
             }
 
-            content = content.stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
+            event.content = event.content
+                .stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
             // Drop down
         }
-        else if (type == IRCEvent.Type.QUERY)
+        else if (event.type == IRCEvent.Type.QUERY)
         {
             static if (verbose)
             {

@@ -724,7 +724,7 @@ unittest
 {
     import std.format : format;
 
-    immutable name = "blarbhl".truecolour!(No.normalise)(255,255,255);
+    immutable name = "blarbhl".truecolour!(No.normalise)(255, 255, 255);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
         "blarbhl", cast(char)TerminalToken.format);
@@ -1049,7 +1049,7 @@ unittest
  +
  +  Example:
  +  ---
- +  immutable colouredNick = "kameloso".colourByHash;
+ +  immutable colouredNick = "kameloso".colourByHash(No.bright);
  +  immutable colouredNickBright = "kameloso".colourByHash(Yes.bright);
  +  ---
  +

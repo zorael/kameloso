@@ -97,7 +97,7 @@ struct Line
  +  ---
  +  string line = "This is a line";
  +  string expression = "s/s/z/g";
- +  assert(line.sedReplace(expression) == "Thiz iz a line");
+ +  assert(line.sedReplace(expression, No.relaxSyntax) == "Thiz iz a line");
  +  ---
  +
  +  Params:

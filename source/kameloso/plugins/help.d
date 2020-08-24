@@ -65,11 +65,26 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
+    /// Get non-hidden command keys for a plugin.
+    static string[] getUnhiddenCommandKeys(const IRCPlugin thisPlugin)
+    {
+        import std.algorithm.iteration : filter, map;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
+
+        return thisPlugin.commands
+            .byKeyValue
+            .filter!(kv => !kv.value.hidden)
+            .map!(kv => kv.key)
+            .array
+            .sort
+            .array;
+    }
+
     void dg()
     {
         import lu.string : beginsWith, contains, nom;
         import core.thread : Fiber;
-        import std.algorithm.sorting : sort;
         import std.format : format;
         import std.typecons : No, Yes;
 
@@ -80,12 +95,11 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
         IRCEvent mutEvent = event;  // mutable
         if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
 
-        with (mutEvent)
-        if (content.length)
+        if (mutEvent.content.length)
         {
-            if (content.contains!(Yes.decode)(" "))
+            if (mutEvent.content.contains!(Yes.decode)(" "))
             {
-                string slice = content;
+                string slice = mutEvent.content;
                 immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
                 immutable specifiedCommand = slice;
 
@@ -93,9 +107,9 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 {
                     if (p.name != specifiedPlugin) continue;
 
-                    if (const description = specifiedCommand in p.commands)
+                    if (const command = specifiedCommand in p.commands)
                     {
-                        plugin.sendCommandHelp(p, event, specifiedCommand, *description);
+                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
                     }
                     else
                     {
@@ -105,7 +119,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                             pattern.format(specifiedCommand.ircBold, specifiedPlugin.ircBold) :
                             pattern.format(specifiedCommand, specifiedPlugin);
 
-                        privmsg(plugin.state, channel, sender.nickname, message);
+                        privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     }
 
                     return;
@@ -115,22 +129,22 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                     "No such plugin: " ~ specifiedPlugin.ircBold :
                     "No such plugin: " ~ specifiedPlugin;
 
-                privmsg(plugin.state, channel, sender.nickname, message);
+                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
             else
             {
-                if (content.beginsWith(plugin.state.settings.prefix))
+                if (mutEvent.content.beginsWith(plugin.state.settings.prefix))
                 {
                     // Not a plugin, just a command (probably)
-                    string slice = content;
+                    string slice = mutEvent.content;
                     slice.nom!(Yes.decode)(plugin.state.settings.prefix);
                     immutable specifiedCommand = slice;
 
                     foreach (p; plugins)
                     {
-                        if (const description = specifiedCommand in p.commands)
+                        if (const command = specifiedCommand in p.commands)
                         {
-                            plugin.sendCommandHelp(p, event, specifiedCommand, *description);
+                            plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
                             return;
                         }
                     }
@@ -141,36 +155,37 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                 foreach (p; plugins)
                 {
-                    if (p.name != content)
+                    if (p.name != mutEvent.content)
                     {
                         continue;
                     }
                     else if (!p.commands.length)
                     {
                         immutable message = plugin.state.settings.colouredOutgoing ?
-                            "No commands available for plugin " ~ content.ircBold :
-                            "No commands available for plugin " ~ content;
+                            "No commands available for plugin " ~ mutEvent.content.ircBold :
+                            "No commands available for plugin " ~ mutEvent.content;
 
-                        privmsg(plugin.state, channel, sender.nickname, message);
+                        privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                         return;
                     }
 
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
+                    const keys = getUnhiddenCommandKeys(p);
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
-                        pattern.format(width, p.name, p.commands.keys.sort());
+                        pattern.format(width, p.name.ircBold, keys) :
+                        pattern.format(width, p.name, keys);
 
-                    privmsg(plugin.state, channel, sender.nickname, message);
+                    privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     return;
                 }
 
                 immutable message = plugin.state.settings.colouredOutgoing ?
-                    "No such plugin: " ~ content.ircBold :
-                    "No such plugin: " ~ content;
+                    "No such plugin: " ~ mutEvent.content.ircBold :
+                    "No such plugin: " ~ mutEvent.content;
 
-                privmsg(plugin.state, channel, sender.nickname, message);
+                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
         }
         else
@@ -187,8 +202,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
             immutable banner = plugin.state.settings.colouredOutgoing ?
                 bannerColoured : bannerUncoloured;
-            privmsg(plugin.state, channel, sender.nickname, banner);
-            privmsg(plugin.state, channel, sender.nickname, "Available bot commands per plugin:");
+            privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, banner);
+            privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -196,12 +211,13 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
                 enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
+                const keys = getUnhiddenCommandKeys(p);
 
                 immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(width, p.name.ircBold, p.commands.keys.sort()) :
-                    pattern.format(width, p.name, p.commands.keys.sort());
+                    pattern.format(width, p.name.ircBold, keys) :
+                    pattern.format(width, p.name, keys);
 
-                privmsg(plugin.state, channel, sender.nickname, message);
+                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
 
             enum pattern = "Use %s [%s] [%s] for information about a command.";
@@ -212,7 +228,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
                 colouredLine :
                 "Use help [plugin] [command] for information about a command.";
 
-            privmsg(plugin.state, channel, sender.nickname, message);
+            privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
         }
     }
 

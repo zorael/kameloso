@@ -37,6 +37,8 @@ version(Colours) import kameloso.terminal : TerminalForeground;
  +/
 @Settings struct PrinterSettings
 {
+    import lu.uda : Unserialisable;
+
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
@@ -48,20 +50,20 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 
     version(TwitchSupport)
     {
-        /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
-        bool truecolour = true;
-
-        /// Whether or not to normalise truecolours; make dark brighter and bright darker.
-        bool normaliseTruecolour = true;
-
         /// Whether or not to display Twitch badges next to sender/target names.
         bool twitchBadges = true;
 
-        /// Whether to show Twitch badges abbreviated into single characters or in full.
-        bool abbreviatedBadges = false;
+        @Unserialisable
+        {
+            /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
+            bool truecolour = true;
 
-        /// Whether or not emotes should be highlit in colours.
-        bool colourfulEmotes = true;
+            /// Whether or not to normalise truecolours; make dark brighter and bright darker.
+            bool normaliseTruecolour = true;
+
+            /// Whether or not emotes should be highlit in colours.
+            bool colourfulEmotes = true;
+        }
     }
 
     /++
@@ -86,12 +88,6 @@ version(Colours) import kameloso.terminal : TerminalForeground;
     /// Whether or not to be silent and not print error messages in the event output.
     bool silentErrors = false;
 
-    /// Whether or not to have the type (and badge) names be in capital letters.
-    bool uppercaseTypes = false;
-
-    /// Whether or not to print a banner to the terminal at midnights, when day changes.
-    bool daybreaks = true;
-
     /// Whether or not to log events.
     bool logs = false;
 
@@ -107,8 +103,17 @@ version(Colours) import kameloso.terminal : TerminalForeground;
     /// Whether or not to log raw events.
     bool logRaw = false;
 
-    /// Whether or not to buffer writes.
-    bool bufferedWrites = true;
+    @Unserialisable
+    {
+        /// Whether or not to have the type names be in capital letters.
+        bool uppercaseTypes = false;
+
+        /// Whether or not to print a banner to the terminal at midnights, when day changes.
+        bool daybreaks = true;
+
+        /// Whether or not to buffer writes.
+        bool bufferedWrites = true;
+    }
 }
 
 
@@ -116,20 +121,21 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 /++
  +  Prints an event to the local terminal.
  +
- +  Avoids extra allocation by writing directly to a `std.stdio.LockingTextWriter`.
+ +  Buffer output in an `std.array.Appender`.
+ +
+ +  Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
+ +  (as this is a hotspot).
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
+void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     if (!plugin.printerSettings.printToScreen) return;
 
-    IRCEvent mutEvent = event; // need a mutable copy
-
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
-    mutEvent.clearTargetNicknameIfUs(plugin.state);
+    event.clearTargetNicknameIfUs(plugin.state);
 
     /++
      +  Update the squelchstamp and return whether or not the current event
@@ -152,11 +158,12 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         {
             if (target != plugin.squelchTarget) return false;
         }
-        else
+        /*else
         {
+            // already in in-contract
             assert(0, "Logic error; tried to update squelchstamp but " ~
                 "no `channel`, no `sender`, no `target`");
-        }
+        }*/
 
         if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)
         {
@@ -345,7 +352,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
         // Do it in this order in case bells hide whitespace.
-        mutEvent.content = mutEvent.content
+        event.content = event.content
             .replace(cast(ubyte)7, string.init)
             .strippedRight;
 
@@ -355,7 +362,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         {
             if (!plugin.state.settings.monochrome)
             {
-                plugin.formatMessageColoured(plugin.linebuffer, mutEvent,
+                plugin.formatMessageColoured(plugin.linebuffer, event,
                     (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                     (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
                 put = true;
@@ -364,7 +371,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
         if (!put)
         {
-            plugin.formatMessageMonochrome(plugin.linebuffer, mutEvent,
+            plugin.formatMessageMonochrome(plugin.linebuffer, event,
                 (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
                 (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
         }
@@ -442,31 +449,30 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    with (plugin.state.server)
+    import lu.conv : Enum;
+    import std.string : capitalize;
+    import std.uni : isLower;
+
+    immutable networkName = plugin.state.server.network[0].isLower ?
+        capitalize(plugin.state.server.network) :
+        plugin.state.server.network;
+
+    string tintreset;
+
+    version(Colours)
     {
-        import lu.conv : Enum;
-        import std.string : capitalize;
-        import std.uni : isLower;
-
-        immutable networkName = network[0].isLower ? capitalize(network) : network;
-
-        string tintreset;
-
-        version(Colours)
+        if (!plugin.state.settings.monochrome)
         {
-            if (!plugin.state.settings.monochrome)
-            {
-                import kameloso.terminal : TerminalReset, colour;
-                enum tintresetColour = TerminalReset.all.colour.idup;
-                tintreset = tintresetColour;
-            }
+            import kameloso.terminal : TerminalReset, colour;
+            enum tintresetColour = TerminalReset.all.colour.idup;
+            tintreset = tintresetColour;
         }
-
-        logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
-            Tint.info, networkName, Tint.log,
-            Tint.info, Enum!(IRCServer.Daemon).toString(daemon),
-            tintreset, daemonstring);
     }
+
+    logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
+        Tint.info, networkName, Tint.log,
+        Tint.info, Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        tintreset, plugin.state.server.daemonstring);
 }
 
 
@@ -528,8 +534,8 @@ import std.datetime.systime : SysTime;
  +
  +  Example:
  +  ---
- +  const now = Clock.currTime;
- +  const midnight = getNextMidnight(now);
+ +  immutable now = Clock.currTime;
+ +  immutable midnight = getNextMidnight(now);
  +  writeln("Time until next midnight: ", (midnight - now));
  +  ---
  +

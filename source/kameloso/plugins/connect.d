@@ -31,13 +31,13 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct ConnectSettings
 {
-    import lu.uda : CannotContainComments, Separator;
+    import lu.uda : CannotContainComments, Separator, Unserialisable;
 
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 
     /// Whether to use SASL authentication or not.
-    bool sasl = true;
+    @Unserialisable bool sasl = true;
 
     /// Whether or not to abort and exit if SASL authentication fails.
     bool exitOnSASLFailure = false;
@@ -72,28 +72,26 @@ void onSelfpart(ConnectService service, const IRCEvent event)
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
 
-    with (service.state)
-    {
-        immutable index = bot.guestChannels.countUntil(event.channel);
+    immutable index = service.state.bot.guestChannels.countUntil(event.channel);
 
-        if (index != -1)
+    if (index != -1)
+    {
+        service.state.bot.guestChannels = service.state.bot.guestChannels
+            .remove!(SwapStrategy.unstable)(index);
+        service.state.botUpdated = true;
+    }
+    else
+    {
+        immutable homeIndex = service.state.bot.homeChannels.countUntil(event.channel);
+
+        if (homeIndex != -1)
         {
-            bot.guestChannels = bot.guestChannels.remove!(SwapStrategy.unstable)(index);
-            botUpdated = true;
+            logger.warning("Leaving a home ...");
         }
         else
         {
-            immutable homeIndex = bot.homeChannels.countUntil(event.channel);
-
-            if (homeIndex != -1)
-            {
-                logger.warning("Leaving a home ...");
-            }
-            else
-            {
-                // On Twitch SELFPART may occur on untracked channels
-                //logger.warning("Tried to remove a channel that wasn't there: ", event.channel);
-            }
+            // On Twitch SELFPART may occur on untracked channels
+            //logger.warning("Tried to remove a channel that wasn't there: ", event.channel);
         }
     }
 }
@@ -141,36 +139,33 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
  +/
 void joinChannels(ConnectService service)
 {
-    with (service.state)
+    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
     {
-        if (!bot.homeChannels.length && !bot.guestChannels.length)
-        {
-            logger.warning("No channels, no purpose ...");
-            return;
-        }
-
-        import kameloso.messaging : joinChannel = join;
-        import lu.string : plurality;
-        import std.algorithm.iteration : uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : join;
-        import std.range : walkLength;
-
-        auto homelist = bot.homeChannels.sort.uniq;
-        auto guestlist = bot.guestChannels.sort.uniq;
-        immutable numChans = homelist.walkLength() + guestlist.walkLength();
-
-        logger.logf("Joining %s%d%s %s ...", Tint.info, numChans, Tint.log,
-            numChans.plurality("channel", "channels"));
-
-        // Join in two steps so home channels don't get shoved away by guest channels
-        // FIXME: line should split if it reaches 512 characters
-        if (bot.homeChannels.length) joinChannel(service.state,
-            homelist.join(","), string.init, Yes.quiet);
-
-        if (bot.guestChannels.length) joinChannel(service.state,
-            guestlist.join(","), string.init, Yes.quiet);
+        logger.warning("No channels, no purpose ...");
+        return;
     }
+
+    import kameloso.messaging : joinChannel = join;
+    import lu.string : plurality;
+    import std.algorithm.iteration : uniq;
+    import std.algorithm.sorting : sort;
+    import std.array : join;
+    import std.range : walkLength;
+
+    auto homelist = service.state.bot.homeChannels.sort.uniq;
+    auto guestlist = service.state.bot.guestChannels.sort.uniq;
+    immutable numChans = homelist.walkLength() + guestlist.walkLength();
+
+    logger.logf("Joining %s%d%s %s ...", Tint.info, numChans, Tint.log,
+        numChans.plurality("channel", "channels"));
+
+    // Join in two steps so home channels don't get shoved away by guest channels
+    // FIXME: line should split if it reaches 512 characters
+    if (service.state.bot.homeChannels.length) joinChannel(service.state,
+        homelist.join(","), string.init, Yes.quiet);
+
+    if (service.state.bot.guestChannels.length) joinChannel(service.state,
+        guestlist.join(","), string.init, Yes.quiet);
 }
 
 
@@ -230,120 +225,117 @@ void tryAuth(ConnectService service)
     string serviceNick = "NickServ";
     string verb = "IDENTIFY";
 
-    with (service.state)
+    import lu.string : beginsWith, decode64;
+    immutable password = service.state.bot.password.beginsWith("base64:") ?
+        decode64(service.state.bot.password[7..$]) : service.state.bot.password;
+
+    // Specialcase networks
+    switch (service.state.server.network)
     {
-        import lu.string : beginsWith, decode64;
-        immutable password = bot.password.beginsWith("base64:") ?
-            decode64(bot.password[7..$]) : bot.password;
+    case "DALnet":
+        serviceNick = "NickServ@services.dal.net";
+        break;
 
-        // Specialcase networks
-        switch (server.network)
+    case "GameSurge":
+        serviceNick = "AuthServ@Services.GameSurge.net";
+        break;
+
+    case "EFNet":
+    case "WNet1":
+        // No registration available
+        service.authentication = Progress.finished;
+        return;
+
+    case "QuakeNet":
+        serviceNick = "Q@CServe.quakenet.org";
+        verb = "AUTH";
+        break;
+
+    default:
+        break;
+    }
+
+    service.authentication = Progress.started;
+
+    with (IRCServer.Daemon)
+    switch (service.state.server.daemon)
+    {
+    case rizon:
+    case unreal:
+    case hybrid:
+    case bahamut:
+        // Only accepts password, no auth nickname
+        if (service.state.client.nickname != service.state.client.origNickname)
         {
-        case "DALnet":
-            serviceNick = "NickServ@services.dal.net";
-            break;
+            logger.warningf("Cannot auth when you have changed your nickname. " ~
+                "(%s%s%s != %1$s%4$s%3$s)", Tint.log, service.state.client.nickname,
+                Tint.warning, service.state.client.origNickname);
 
-        case "GameSurge":
-            serviceNick = "AuthServ@Services.GameSurge.net";
-            break;
+            service.authentication = Progress.finished;
+            return;
+        }
 
-        case "EFNet":
-        case "WNet1":
+        query(service.state, serviceNick, "%s %s"
+            .format(verb, password), Yes.quiet);
+
+        if (!service.state.settings.hideOutgoing)
+        {
+            logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
+        }
+        break;
+
+    case snircd:
+    case ircdseven:
+    case u2:
+        // Accepts auth login
+        // GameSurge is AuthServ
+        string account = service.state.bot.account;
+
+        if (!service.state.bot.account.length)
+        {
+            logger.logf("No account specified! Trying %s%s%s ...",
+                Tint.info, service.state.client.origNickname, Tint.log);
+            account = service.state.client.origNickname;
+        }
+
+        query(service.state, serviceNick, "%s %s %s"
+            .format(verb, account, password), Yes.quiet);
+
+        if (!service.state.settings.hideOutgoing)
+        {
+            logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
+        }
+        break;
+
+    case rusnet:
+        // Doesn't want a PRIVMSG
+        raw(service.state, "NICKSERV IDENTIFY " ~ password, Yes.quiet);
+
+        if (!service.state.settings.hideOutgoing)
+        {
+            logger.trace("--> NICKSERV IDENTIFY hunter2");
+        }
+        break;
+
+    version(TwitchSupport)
+    {
+        case twitch:
             // No registration available
             service.authentication = Progress.finished;
             return;
+    }
 
-        case "QuakeNet":
-            serviceNick = "Q@CServe.quakenet.org";
-            verb = "AUTH";
-            break;
+    default:
+        logger.warning("Unsure of what AUTH approach to use.");
+        logger.info("Please report information about what approach succeeded!");
 
-        default:
-            break;
-        }
-
-        service.authentication = Progress.started;
-
-        with (IRCServer.Daemon)
-        switch (server.daemon)
+        if (service.state.bot.account.length)
         {
-        case rizon:
-        case unreal:
-        case hybrid:
-        case bahamut:
-            // Only accepts password, no auth nickname
-            if (client.nickname != client.origNickname)
-            {
-                logger.warningf("Cannot auth when you have changed your nickname. " ~
-                    "(%s%s%s != %1$s%4$s%3$s)", Tint.log, client.nickname,
-                    Tint.warning, client.origNickname);
-
-                service.authentication = Progress.finished;
-                return;
-            }
-
-            query(service.state, serviceNick, "%s %s"
-                .format(verb, password), Yes.quiet);
-
-            if (!service.state.settings.hideOutgoing)
-            {
-                logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
-            }
-            break;
-
-        case snircd:
-        case ircdseven:
-        case u2:
-            // Accepts auth login
-            // GameSurge is AuthServ
-            string account = bot.account;
-
-            if (!bot.account.length)
-            {
-                logger.logf("No account specified! Trying %s%s%s ...",
-                    Tint.info, client.origNickname, Tint.log);
-                account = client.origNickname;
-            }
-
-            query(service.state, serviceNick, "%s %s %s"
-                .format(verb, account, password), Yes.quiet);
-
-            if (!service.state.settings.hideOutgoing)
-            {
-                logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
-            }
-            break;
-
-        case rusnet:
-            // Doesn't want a PRIVMSG
-            raw(service.state, "NICKSERV IDENTIFY " ~ password, Yes.quiet);
-
-            if (!service.state.settings.hideOutgoing)
-            {
-                logger.trace("--> NICKSERV IDENTIFY hunter2");
-            }
-            break;
-
-        version(TwitchSupport)
-        {
-            case twitch:
-                // No registration available
-                service.authentication = Progress.finished;
-                return;
+            goto case ircdseven;
         }
-
-        default:
-            logger.warning("Unsure of what AUTH approach to use.");
-            logger.info("Please report information about what approach succeeded!");
-
-            if (bot.account.length)
-            {
-                goto case ircdseven;
-            }
-            else
-            {
-                goto case bahamut;
-            }
+        else
+        {
+            goto case bahamut;
         }
     }
 
@@ -584,20 +576,23 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
     switch (event.content)
     {
     case "Improperly formatted auth":
-        import lu.string : beginsWith;
-
-        immutable message = !service.state.bot.pass.length ?
-            "You *need* a pass to join this server." :
-            (!service.state.bot.pass.beginsWith("oauth:") ?
-                `Client pass is malformed; does not start with "oauth:"` :
-                "Client pass is malformed; cannot authenticate. " ~
-                    "Make sure it is entered correctly.");
-
-        logger.error(message);
+        if (!service.state.bot.pass.length)
+        {
+            logger.error("You *need* a pass to join this server.");
+            logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
+                Tint.info, Tint.log);
+        }
+        else
+        {
+            logger.error("Client pass is malformed, cannot authenticate. " ~
+                "Please make sure it is entered correctly.");
+        }
         break;
 
     case "Login authentication failed":
-        logger.error("Wrong pass. Please make sure it is valid.");
+        logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
+        logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
+            Tint.info, Tint.log);
         break;
 
     case "Login unsuccessful":
@@ -1154,77 +1149,131 @@ void onUnknownCommand(ConnectService service, const IRCEvent event)
  +/
 void register(ConnectService service)
 {
-    import std.algorithm.searching : endsWith;
+    service.registration = Progress.started;
+    raw(service.state, "CAP LS 302", Yes.quiet);
 
-    with (service.state)
+    version(TwitchSupport)
     {
-        service.registration = Progress.started;
-        raw(service.state, "CAP LS 302", Yes.quiet);
+        import std.algorithm : endsWith;
 
-        if (bot.pass.length)
+        // Cache the check
+        immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
+    }
+
+    if (service.state.bot.pass.length)
+    {
+        static string decodeIfPrefixedBase64(const string encoded)
         {
-            raw(service.state, "PASS " ~ bot.pass, Yes.quiet);
-            if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
+            import lu.string : beginsWith, decode64;
+            import std.base64 : Base64Exception;
+
+            if (encoded.beginsWith("base64:"))
+            {
+                try
+                {
+                    return decode64(encoded[7..$]);
+                }
+                catch (Base64Exception e)
+                {
+                    // says "base64:" but can't be decoded
+                    // Something's wrong but be conservative about it.
+                    return encoded;
+                }
+            }
+            else
+            {
+                return encoded;
+            }
         }
 
-        import core.thread : Fiber;
+        immutable decoded = decodeIfPrefixedBase64(service.state.bot.pass);
 
         version(TwitchSupport)
         {
-            // If we register too early on Twitch servers we won't get a
-            // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
-            // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
+            import lu.string : beginsWith;
 
-            if (server.address.endsWith(".twitch.tv"))
+            if (serverIsTwitch)
             {
-                import kameloso.thread : CarryingFiber;
-
-                void dg()
-                {
-                    while (true)
-                    {
-                        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-                        assert((thisFiber.payload.type == IRCEvent.Type.CAP),
-                            "Twitch nick negotiation delegate triggered on unknown type");
-
-                        if ((thisFiber.payload.aux == "ACK") &&
-                            (thisFiber.payload.content == "twitch.tv/tags"))
-                        {
-                            // tag capabilities negotiated, safe to register
-                            return service.negotiateNick();
-                        }
-
-                        // Wrong kind of CAP event; yield and retry.
-                        Fiber.yield();
-                    }
-                }
-
-                import kameloso.plugins.common.delayawait : await;
-
-                Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
-                await(service, fiber, IRCEvent.Type.CAP);
-                return;
+                service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
+            }
+            else
+            {
+                service.state.bot.pass = decoded;
             }
         }
-
-        // Nick negotiation after CAP END
-        // If CAP is not supported, go ahead and negotiate nick after n seconds
-
-        enum secsToWaitForCAP = 2;
-
-        void dgTimered()
+        else
         {
-            if (service.capabilityNegotiation == Progress.notStarted)
-            {
-                //logger.info("Does the server not support capabilities?");
-                service.negotiateNick();
-            }
+            service.state.bot.pass = decoded;
         }
 
-        import kameloso.plugins.common.delayawait : delay;
-        delay(service, &dgTimered, secsToWaitForCAP);
+        //service.state.botUpdated = true;  // done below
+
+        raw(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
+        if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
     }
+
+    import core.thread : Fiber;
+
+    version(TwitchSupport)
+    {
+        // If we register too early on Twitch servers we won't get a
+        // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
+        // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
+
+        if (serverIsTwitch)
+        {
+            import kameloso.thread : CarryingFiber;
+            import std.uni : toLower;
+
+            void dg()
+            {
+                while (true)
+                {
+                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+                    assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+                    assert((thisFiber.payload.type == IRCEvent.Type.CAP),
+                        "Twitch nick negotiation delegate triggered on unknown type");
+
+                    if ((thisFiber.payload.aux == "ACK") &&
+                        (thisFiber.payload.content == "twitch.tv/tags"))
+                    {
+                        // tag capabilities negotiated, safe to register
+                        return service.negotiateNick();
+                    }
+
+                    // Wrong kind of CAP event; yield and retry.
+                    Fiber.yield();
+                }
+            }
+
+            import kameloso.plugins.common.delayawait : await;
+
+            Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+            await(service, fiber, IRCEvent.Type.CAP);
+
+            // Make sure nickname is lowercase so we can rely on it as account name
+            service.state.client.nickname = service.state.client.nickname.toLower;
+            service.state.botUpdated = true;  // update nickname and pass
+            return;
+        }
+    }
+
+    // Nick negotiation after CAP END
+    // If CAP is not supported, go ahead and negotiate nick after n seconds
+
+    enum secsToWaitForCAP = 2;
+
+    void dgTimered()
+    {
+        if (service.capabilityNegotiation == Progress.notStarted)
+        {
+            //logger.info("Does the server not support capabilities?");
+            service.negotiateNick();
+        }
+    }
+
+    import kameloso.plugins.common.delayawait : delay;
+    delay(service, &dgTimered, secsToWaitForCAP);
 }
 
 

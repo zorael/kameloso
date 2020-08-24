@@ -68,13 +68,13 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     {
         import std.datetime.systime : Clock;
 
-        const channel = channelName in plugin.activeChannels;
+        const room = channelName in plugin.rooms;
 
         /// When this timer Fiber was created.
         immutable creation = Clock.currTime.toUnixTime;
 
         /// The channel message count at last successful trigger.
-        ulong lastMessageCount = channel.messageCount;
+        ulong lastMessageCount = room.messageCount;
 
         /// The timestamp at the last successful trigger.
         long lastTimestamp = creation;
@@ -84,7 +84,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
         version(Web)
         {
-            immutable streamer = channel.broadcasterDisplayName;
+            immutable streamer = room.broadcasterDisplayName;
         }
         else
         {
@@ -101,7 +101,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 if ((now - creation) < timerDef.stagger)
                 {
                     // Reset counters so it starts fresh after stagger
-                    lastMessageCount = channel.messageCount;
+                    lastMessageCount = room.messageCount;
                     lastTimestamp = now;
                     Fiber.yield();
                     continue;
@@ -111,7 +111,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
             // Avoid evaluating current UNIX time after stagger is done
             staggerDone = true;
 
-            if (channel.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
+            if (room.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
             {
                 Fiber.yield();
                 continue;
@@ -125,7 +125,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 continue;
             }
 
-            if (channel.enabled)
+            if (room.enabled)
             {
                 import std.array : replace;
                 import std.conv : text;
@@ -142,7 +142,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
             // If channel is disabled, silently fizzle but keep updating counts
 
-            lastMessageCount = channel.messageCount;
+            lastMessageCount = room.messageCount;
             lastTimestamp = now;
 
             Fiber.yield();
@@ -232,7 +232,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
         plugin.timerDefsByChannel[targetChannel] ~= timerDef;
         plugin.timerDefsToJSON.save(plugin.timersFile);
-        plugin.activeChannels[targetChannel].timers ~=
+        plugin.rooms[targetChannel].timers ~=
             plugin.createTimerFiber(timerDef, targetChannel);
         privmsg(plugin.state, event.channel, event.sender.nickname, "New timer added.");
         break;
@@ -251,7 +251,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
             import std.algorithm.iteration : splitter;
             import std.conv : ConvException, to;
 
-            auto channel = targetChannel in plugin.activeChannels;
+            auto room = targetChannel in plugin.rooms;
 
             if (slice == "*") goto case "clear";
 
@@ -259,17 +259,17 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
             {
                 ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
 
-                if ((i >= 0) && (i < channel.timers.length))
+                if ((i >= 0) && (i < room.timers.length))
                 {
                     import std.algorithm.mutation : SwapStrategy, remove;
                     *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
-                    channel.timers = channel.timers.remove!(SwapStrategy.unstable)(i);
+                    room.timers = room.timers.remove!(SwapStrategy.unstable)(i);
                 }
                 else
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Timer index %s out of range. (max %d)"
-                        .format(slice, channel.timers.length));
+                        .format(slice, room.timers.length));
                     return;
                 }
             }
@@ -281,7 +281,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 return;
             }
 
-            if (!channel.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
+            if (!room.timers.length) plugin.timerDefsByChannel.remove(targetChannel);
             plugin.timerDefsToJSON.save(plugin.timersFile);
             privmsg(plugin.state, event.channel, event.sender.nickname, "Timer removed.");
         }
@@ -350,7 +350,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
         break;
 
     case "clear":
-        plugin.activeChannels[targetChannel].timers.length = 0;
+        plugin.rooms[targetChannel].timers.length = 0;
         plugin.timerDefsByChannel.remove(targetChannel);
         plugin.timerDefsToJSON.save(plugin.timersFile);
         privmsg(plugin.state, event.channel, event.sender.nickname, "All timers cleared.");
@@ -429,24 +429,25 @@ in (filename.length, "Tried to populate timers from an empty filename")
 
     bool errored;
 
-    foreach (immutable channel, const channelTimersJSON; timersJSON.object)
+    foreach (immutable channelName, const channelTimersJSON; timersJSON.object)
     {
         if (channelTimersJSON.type != JSONType.array)
         {
             logger.errorf("Twitch timer file malformed! Invalid channel timers " ~
-                "list type for %s: `%s`", channel, channelTimersJSON.type);
+                "list type for %s: `%s`", channelName, channelTimersJSON.type);
             errored = true;
             continue;
         }
 
-        plugin.timerDefsByChannel[channel] = typeof(plugin.timerDefsByChannel[channel]).init;
+        plugin.timerDefsByChannel[channelName] = typeof(plugin.timerDefsByChannel[channelName]).init;
+        auto timerDefs = channelName in plugin.timerDefsByChannel;
 
         foreach (timerArrayEntry; channelTimersJSON.array)
         {
             if (timerArrayEntry.type != JSONType.object)
             {
                 logger.errorf("Twitch timer file malformed! Invalid timer type " ~
-                    "for %s: `%s`", channel, timerArrayEntry.type);
+                    "for %s: `%s`", channelName, timerArrayEntry.type);
                 errored = true;
                 continue;
             }
@@ -458,7 +459,7 @@ in (filename.length, "Tried to populate timers from an empty filename")
             timer.timeThreshold = timerArrayEntry["timeThreshold"].integer.to!int;
             timer.stagger = timerArrayEntry["stagger"].integer.to!int;
 
-            plugin.timerDefsByChannel[channel] ~= timer;
+            *timerDefs ~= timer;
         }
     }
 

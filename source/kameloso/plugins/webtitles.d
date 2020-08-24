@@ -422,25 +422,22 @@ TitleLookupResults lookupTitle(const string url)
 void reportTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
-    with (request)
+    string line;
+
+    if (request.results.domain.length)
     {
-        string line;
+        import std.format : format;
 
-        if (results.domain.length)
-        {
-            import std.format : format;
-
-            line = colouredOutgoing ?
-                "[%s] %s".format(results.domain.ircBold, results.title) :
-                "[%s] %s".format(results.domain, results.title);
-        }
-        else
-        {
-            line = results.title;
-        }
-
-        chan(state, event.channel, line);
+        line = colouredOutgoing ?
+            "[%s] %s".format(request.results.domain.ircBold, request.results.title) :
+            "[%s] %s".format(request.results.domain, request.results.title);
     }
+    else
+    {
+        line = request.results.title;
+    }
+
+    chan(request.state, request.event.channel, line);
 }
 
 
@@ -455,20 +452,17 @@ void reportTitle(TitleLookupRequest request,
 void reportYouTubeTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
-    with (request)
-    {
-        import kameloso.irccolours : ircColourByHash;
-        import std.format : format;
+    import kameloso.irccolours : ircColourByHash;
+    import std.format : format;
 
-        immutable line = colouredOutgoing ?
-            "[%s] %s (uploaded by %s)"
-                .format("youtube.com".ircBold, results.youtubeTitle,
-                    results.youtubeAuthor.ircColourByHash) :
-            "[youtube.com] %s (uploaded by %s)"
-                .format(results.youtubeTitle, results.youtubeAuthor);
+    immutable line = colouredOutgoing ?
+        "[%s] %s (uploaded by %s)"
+            .format("youtube.com".ircBold, request.results.youtubeTitle,
+                request.results.youtubeAuthor.ircColourByHash) :
+        "[youtube.com] %s (uploaded by %s)"
+            .format(request.results.youtubeTitle, request.results.youtubeAuthor);
 
-        chan(state, event.channel, line);
-    }
+    chan(request.state, request.event.channel, line);
 }
 
 

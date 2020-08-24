@@ -279,13 +279,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
             if (nickname == plugin.state.client.nickname) continue;
 
             IRCEvent fakeEvent;
-
-            with (fakeEvent)
-            {
-                type = IRCEvent.Type.JOIN;
-                sender.nickname = nickname;
-                channel = event.channel;
-            }
+            fakeEvent.type = IRCEvent.Type.JOIN;
+            fakeEvent.sender.nickname = nickname;
+            fakeEvent.channel = event.channel;
 
             // Use a replay to fill in known information about the user by use of Persistence
             auto req = replay(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
@@ -315,6 +311,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     import kameloso.plugins.common : nameOf;
     import dialect.common : toLowerCase;
     import lu.string : SplitResults, splitInto;
+    import std.format : format;
     import std.json : JSONException;
     import std.typecons : No, Yes;
 
@@ -387,7 +384,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     import std.format : format;
     import std.json : JSONType;
 
-    struct Note
+    static struct Note
     {
         string sender, line;
         SysTime when;
@@ -426,7 +423,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
                     catch (Base64Exception e)
                     {
                         noteArray[i].line = "(An error occurred and the note could not be read)";
-                        version(PrintStacktraces) logger.trace(e.toString);
+                        version(PrintStacktraces) logger.trace(e);
                     }
                 }
             }
@@ -589,7 +586,7 @@ void initResources(NotesPlugin plugin)
     {
         import std.path : baseName;
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.notesFile.baseName ~ " may be malformed.");
     }
 

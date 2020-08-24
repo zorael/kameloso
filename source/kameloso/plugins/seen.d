@@ -689,7 +689,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         {
             enum pattern =  "I last saw %s %s ago.";
 
-            const timestamp = SysTime.fromUnixTime(*userTimestamp);
+            immutable timestamp = SysTime.fromUnixTime(*userTimestamp);
             immutable diff = (Clock.currTime - timestamp);
             immutable elapsed = timeSince!(No.abbreviate, 7, 2)(diff);
 
@@ -943,7 +943,7 @@ void initResources(SeenPlugin plugin)
         logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.",
             cast(char)TerminalToken.bell);
 
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
     }
 
     // Let other Exceptions pass.

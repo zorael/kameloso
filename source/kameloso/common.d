@@ -626,7 +626,7 @@ struct Kameloso
             catch (Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.toString);
+                version(PrintStacktraces) logger.trace(e);
             }
 
             destroy(plugin);
@@ -772,7 +772,7 @@ struct Kameloso
     /++
      +  A record of a successful connection.
      +/
-    struct ConnectionHistoryEntry
+    static struct ConnectionHistoryEntry
     {
         /// UNIX time when this connection was established.
         long startTime;
@@ -1029,11 +1029,11 @@ unittest
  +  ---
  +  Appender!string sink;
  +
- +  const then = Clock.currTime;
+ +  immutable then = Clock.currTime;
  +  Thread.sleep(1.seconds);
- +  const now = Clock.currTime;
+ +  immutable now = Clock.currTime;
  +
- +  const duration = (now - then);
+ +  immutable duration = (now - then);
  +  immutable inEnglish = duration.timeSinceInto(sink);
  +  ---
  +
@@ -1426,7 +1426,7 @@ unittest
         dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
         assert((sink.data == "3 days and 35 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate,4, 1)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1)(sink);
         assert((sink.data == "3d 35m"), sink.data);
         sink.clear();
     }
@@ -1460,11 +1460,11 @@ unittest
  +
  +  Example:
  +  ---
- +  const then = Clock.currTime;
+ +  immutable then = Clock.currTime;
  +  Thread.sleep(1.seconds);
- +  const now = Clock.currTime;
+ +  immutable now = Clock.currTime;
  +
- +  const duration = (now - then);
+ +  immutable duration = (now - then);
  +  immutable inEnglish = timeSince(duration);
  +  ---
  +
@@ -1823,7 +1823,7 @@ unittest
  +      client = The current `dialect.defs.IRCClient`.
  +
  +  Returns:
- +      A modified string with token occurences replaced.
+ +      A modified string with token occurrences replaced.
  +/
 string replaceTokens(const string line, const IRCClient client) @safe pure nothrow
 {
@@ -1871,14 +1871,14 @@ unittest
 // replaceTokens
 /++
  +  Apply some common text replacements. Used on part and quit reasons.
- +  Overload that doens't take an `dialect.defs.IRCClient` and as such can't
+ +  Overload that doesn't take an `dialect.defs.IRCClient` and as such can't
  +  replace `$nickname`.
  +
  +  Params:
  +      line = String to replace tokens in.
  +
  +  Returns:
- +      A modified string with token occurences replaced.
+ +      A modified string with token occurrences replaced.
  +/
 string replaceTokens(const string line) @safe pure nothrow
 {

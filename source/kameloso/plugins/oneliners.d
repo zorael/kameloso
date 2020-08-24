@@ -215,16 +215,13 @@ void onEndOfMotd(OnelinersPlugin plugin)
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
-    with (plugin)
-    {
-        JSONStorage channelOnelinerJSON;
-        channelOnelinerJSON.load(onelinerFile);
-        //onelinersByChannel.clear();
-        onelinersByChannel.populateFromJSON(channelOnelinerJSON,
-            plugin.onelinersSettings.caseSensitiveTriggers ?
-            Yes.lowercaseKeys : No.lowercaseKeys);
-        onelinersByChannel.rehash();
-    }
+    JSONStorage channelOnelinerJSON;
+    channelOnelinerJSON.load(plugin.onelinerFile);
+    //plugin.onelinersByChannel.clear();
+    plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON,
+        plugin.onelinersSettings.caseSensitiveTriggers ?
+        Yes.lowercaseKeys : No.lowercaseKeys);
+    plugin.onelinersByChannel.rehash();
 }
 
 
@@ -275,7 +272,7 @@ void initResources(OnelinersPlugin plugin)
     }
     catch (JSONException e)
     {
-        version(PrintStacktraces) logger.trace(e.toString);
+        version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
     }
 

@@ -14,7 +14,7 @@
  +  auto fiber = new CarryingFiber!string(&someDelegate, 32_768);
  +  fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
  +  fiber.call();
- +  fiber.payload = "You can change it inbetween calls to pass information to it";
+ +  fiber.payload = "You can change it in between calls to pass information to it";
  +  fiber.call();
  +
  +  // As such we can make Fibers act like they're taking new arguments each call
@@ -133,41 +133,41 @@ version(Posix)
 struct ThreadMessage
 {
     /// Concurrency message type asking for a to-server `dialect.defs.IRCEvent.Type.PONG` event.
-    struct Pong {}
+    static struct Pong {}
 
     /// Concurrency message type asking to verbosely send a line to the server.
-    struct Sendline {}
+    static struct Sendline {}
 
     /// Concurrency message type asking to quietly send a line to the server.
-    struct Quietline {}
+    static struct Quietline {}
 
     /// Concurrency message type asking to immediately send a message.
-    struct Immediateline {}
+    static struct Immediateline {}
 
     /// Concurrency message type asking to quit the server and the program.
-    struct Quit {}
+    static struct Quit {}
 
     /// Concurrency message type asking for a plugin to shut down cleanly.
-    struct Teardown {}
+    static struct Teardown {}
 
     /// Concurrency message type asking to have plugins' configuration saved.
-    struct Save {}
+    static struct Save {}
 
     /++
      +  Concurrency message asking for a reference to the arrays of
      +  `kameloso.plugins.core.IRCPlugin`s in the current
      +  `dialect.defs.IRCClient`'s plugin array.
      +/
-    struct PeekPlugins {}
+    static struct PeekPlugins {}
 
     /// Concurrency message asking plugins to "reload".
-    struct Reload {}
+    static struct Reload {}
 
     /// Concurrency message asking to disconnect and reconnect to the server.
-    struct Reconnect {}
+    static struct Reconnect {}
 
     /// Concurrency message meant to be sent between plugins.
-    struct BusMessage {}
+    static struct BusMessage {}
 
     /// Concurrency messages for writing text to the terminal.
     enum TerminalOutput
@@ -181,10 +181,10 @@ struct ThreadMessage
     }
 
     /// Concurrency message asking the main thread to print a connection summary.
-    struct WantLiveSummary {}
+    static struct WantLiveSummary {}
 
     /// Concurrency message asking the main thread to set the `abort` flag.
-    struct Abort {}
+    static struct Abort {}
 }
 
 

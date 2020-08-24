@@ -43,7 +43,7 @@ public:
 
 // Widths
 /++
- +  Calculates the minimum padding needed to accomodate the strings of all the
+ +  Calculates the minimum padding needed to accommodate the strings of all the
  +  types and names of the members of the passed struct and/or classes, for
  +  formatting into neat columns.
  +
@@ -148,7 +148,8 @@ void printObjects(Flag!"all" all = No.all, Things...)
 
     alias widths = Widths!(all, Things);
 
-    Appender!(char[]) outbuffer;
+    static Appender!(char[]) outbuffer;
+    scope(exit) outbuffer.clear();
     outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
     foreach (immutable i, thing; things)
@@ -181,8 +182,6 @@ void printObjects(Flag!"all" all = No.all, Things...)
     }
 
     writeln(outbuffer.data);
-    //outbuffer.clear();  // No need to clear, the appender goes out of scope now
-
     if (settings.flush) stdout.flush();
 }
 
@@ -273,12 +272,6 @@ if (isOutputRange!(Sink, char[]))
         alias F = TerminalForeground;
     }
 
-    static if (__VERSION__ < 2076L)
-    {
-        // workaround formattedWrite taking sink by value pre 2.076
-        sink.put(string.init);
-    }
-
     import lu.string : stripSuffix;
     import std.format : formattedWrite;
     import std.traits : Unqual;
@@ -302,13 +295,13 @@ if (isOutputRange!(Sink, char[]))
         import lu.uda : Hidden, Unserialisable;
         import std.traits : isAssociativeArray, isType;
 
-        enum shouldNormallyBePrinted =
-            !__traits(isDeprecated, thing.tupleof[i]) &&
+        enum shouldBePrinted = all ||
+            (!__traits(isDeprecated, thing.tupleof[i]) &&
             isSerialisable!member &&
             !isAnnotated!(thing.tupleof[i], Hidden) &&
-            !isAnnotated!(thing.tupleof[i], Unserialisable);
+            !isAnnotated!(thing.tupleof[i], Unserialisable));
 
-        static if (shouldNormallyBePrinted || all)
+        static if (shouldBePrinted)
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
@@ -624,8 +617,8 @@ if (isOutputRange!(Sink, char[]))
  +
  +  Foo foo, bar;
  +
- +  writeln(formatObjects!(Yes.coloured)(foo));
- +  writeln(formatObjects!(No.coloured)(bar));
+ +  writeln(formatObjects!(No.all, Yes.coloured)(foo));
+ +  writeln(formatObjects!(Yes.all, No.coloured)(bar));
  +  ---
  +
  +  Params:
