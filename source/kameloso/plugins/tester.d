@@ -176,6 +176,36 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         fiber.call();
         break;
 
+    case "counter":
+        void counterDg()
+        {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testCounterFiber(plugin, event, botNickname);
+        }
+
+        Fiber fiber = new CarryingFiber!IRCEvent(&counterDg);
+        fiber.call();
+        break;
+
+    case "stopwatch":
+        void stopwatchDg()
+        {
+            chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
+            scope(exit) chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
+
+            await(plugin, IRCEvent.Type.CHAN);
+            scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
+            return testStopwatchFiber(plugin, event, botNickname);
+        }
+
+        Fiber fiber = new CarryingFiber!IRCEvent(&stopwatchDg);
+        fiber.call();
+        break;
+
     case "all":
         void allDg()
         {
@@ -200,6 +230,8 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             testQuotesFiber(plugin, event, botNickname);
             testSedReplaceFiber(plugin, event, botNickname);
             testSeenFiber(plugin, event, botNickname);
+            testCounterFiber(plugin, event, botNickname);
+            testStopwatchFiber(plugin, event, botNickname);
 
             logger.info("All tests passed!");
         }
@@ -701,6 +733,167 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
     enforce(thisFiber.payload.content == "T-that's me though...");
 
     logger.info("Seen tests passed!");
+}
+
+
+// testCounterFiber
+/++
+ +
+ +/
+void testCounterFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Counter with empty channel in original event")
+{
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+        Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+    }
+
+    void expect(const string line)
+    {
+        enforce(thisFiber.payload.content == line);
+    }
+
+    send("!counter");
+    expect("No counters currently active in this channel.");
+
+    send("!counter list");
+    expect("No counters currently active in this channel.");
+
+    send("!counter last");
+    expect("Usage: !counter [add|del|list] [counter word]");
+
+    send("!counter add");
+    expect("Usage: !counter [add|del|list] [counter word]");
+
+    send("!counter del blah");
+    expect("No such counter enabled.");
+
+    send("!counter add blah");
+    expect("Counter blah added! Access it with !blah.");
+
+    send("!counter add bluh");
+    expect("Counter bluh added! Access it with !bluh.");
+
+    send("!counter add bluh");
+    expect("A counter with that name already exists.");
+
+    send("!counter list");
+    expect("Current counters: !blah, !bluh");
+
+    send("!blah");
+    expect("blah count so far: 0");
+
+    send("!blah+");
+    expect("blah +1! Current count: 1");
+
+    send("!blah++");
+    expect("blah +1! Current count: 2");
+
+    send("!blah+2");
+    expect("blah +2! Current count: 4");
+
+    send("!blah+abc");
+    expect("Not a number: abc");
+
+    send("!blah-");
+    expect("blah -1! Current count: 3");
+
+    send("!blah--");
+    expect("blah -1! Current count: 1");
+
+    send("!blah-2");
+    expect("blah -2! Current count: -1");
+
+    send("!blah=10");
+    expect("blah count assigned to 10!");
+
+    send("!blah");
+    expect("blah count so far: 10");
+
+    send("!blah?");
+    expect("blah count so far: 0");
+
+    send("!counter del blah");
+    expect("Counter blah removed.");
+
+    send("!counter del blah");
+    expect("No such counter enabled.");
+
+    send("!counter list");
+    expect("Current counters: !bluh");
+
+    send("!counter del blah");
+    expect("Counter bluh removed.");
+
+    send("!counter list");
+    expect("No counters currently active in this channel.");
+}
+
+
+// testStopwatchFiber
+/++
+ +
+ +/
+void testStopwatchFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in original event")
+{
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+        Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+    }
+
+    void expect(const string line)
+    {
+        enforce(thisFiber.payload.content == line);
+    }
+
+    send("!stopwatch");
+    expect("Usage: !stopwatch [start|stop|status]");
+
+    send("!stopwatch");
+    expect("You do not have a stopwatch running.");
+
+    send("!stopwatch status");
+    expect("You do not have a stopwatch running.");
+
+    send("!stopwatch status harbl");
+    expect("There is no such stopwatch running. (harbl)");
+
+    send("!stopwatch start");
+    expect("Stopwatch started!");
+
+    send("!stopwatch");
+    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "));
+
+    send("!stopwatch status");
+    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "));
+
+    send("!stopwatch start");
+    expect("Stopwatch restarted!");
+
+    send("!stopwatch stop");
+    enforce(thisFiber.payload.content.beginsWith("Stopwatch stopped after "));
+
+    send("!stopwatch start");
+    expect("Stopwatch started!");
+
+    send("!stopwatch clear");
+    expect("Clearing all stopwatches in channel " ~ origEvent.channel ~ '.');
+
+    send("!stopwatch");
+    expect("You do not have a stopwatch running.");
 }
 
 
