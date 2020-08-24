@@ -306,16 +306,16 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
         //"No such account zorael to remove as %s in %s."
         send(list ~ " del zorael");
-        expect("zorael isn't %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("zorael isn't %s in %s.".format(asWhat, origEvent.channel));
 
         send(list ~ " add zorael");
-        expect("Added zorael as %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("Added zorael as %s in %s.".format(asWhat, origEvent.channel));
 
         send(list ~ " add zorael");
-        expect("zorael was already %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("zorael was already %s in %s.".format(asWhat, origEvent.channel));
 
         send(list ~ " del zorael");
-        expect("Removed zorael as %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("Removed zorael as %s in %s.".format(asWhat, origEvent.channel));
 
         send(list ~ " add");
         expect("No nickname supplied.");
