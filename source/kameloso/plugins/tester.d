@@ -261,27 +261,37 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     // ------------ !home
 
     send("home del #harpsteff");
-    enforce(thisFiber.payload.content == "Channel #harpsteff was not listed as a home.");
+    expect("Channel #harpsteff was not listed as a home.");
 
     send("home add #harpsteff");
-    enforce(thisFiber.payload.content == "Home added.");
+    expect("Home added.");
 
     send("home add #harpsteff");
-    enforce(thisFiber.payload.content == "We are already in that home channel.");
+    expect("We are already in that home channel.");
 
     send("home del #harpsteff");
-    enforce(thisFiber.payload.content == "Home removed.");
+    expect("Home removed.");
 
     send("home del #harpsteff");
-    enforce(thisFiber.payload.content == "Channel #harpsteff was not listed as a home.");
+    expect("Channel #harpsteff was not listed as a home.");
 
     // ------------ lists
 
@@ -296,24 +306,19 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
         //"No such account zorael to remove as %s in %s."
         send(list ~ " del zorael");
-        enforce((thisFiber.payload.content == "zorael isn't %s in %s."
-            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("zorael isn't %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
         send(list ~ " add zorael");
-        enforce((thisFiber.payload.content == "Added zorael as %s in %s."
-            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("Added zorael as %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
         send(list ~ " add zorael");
-        enforce((thisFiber.payload.content == "zorael was already %s in %s."
-            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("zorael was already %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
         send(list ~ " del zorael");
-        enforce((thisFiber.payload.content == "Removed zorael as %s in %s."
-            .format(asWhat, origEvent.channel)), thisFiber.payload.content);
+        expect("Removed zorael as %s in %s.".format(asWhat, origEvent.channel)), thisFiber.payload.content);
 
         send(list ~ " add");
-        enforce((thisFiber.payload.content == "No nickname supplied."),
-            thisFiber.payload.content);
+        expect("No nickname supplied.");
 
         immutable asWhatList =
             (list == "operator") ? "operators" :
@@ -321,8 +326,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             /*(list == "blacklist") ?*/ "blacklisted users";
 
         send(list ~ " list");
-        enforce(thisFiber.payload.content == "There are no %s in %s."
-            .format(asWhatList, origEvent.channel));
+        expect("There are no %s in %s.".format(asWhatList, origEvent.channel));
     }
 
     // ------------ misc
@@ -374,59 +378,64 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     // ------------ !automode
 
     /*send("automode list");
-    enforce(thisFiber.payload.content == "No automodes defined for channel %s."
-        .format(origEvent.channel));*/
+    expect("No automodes defined for channel %s.".format(origEvent.channel));*/
 
     send("automode del");
-    enforce(thisFiber.payload.content ==
-        "Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
+    expect("Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
         .format(plugin.state.settings.prefix));
 
     send("automode");
-    enforce(thisFiber.payload.content ==
-        "Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
+    expect("Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
         .format(plugin.state.settings.prefix));
 
     send("automode add $¡$¡ +o");
-    enforce(thisFiber.payload.content == "Invalid nickname.");
+    expect("Invalid nickname.");
 
     send("automode add kameloso -v");
-    enforce(thisFiber.payload.content == "Can't add a negative automode.");
+    expect("Can't add a negative automode.");
 
     send("automode add kameloso +");
-    enforce(thisFiber.payload.content == "You must supply a valid mode.");
+    expect("You must supply a valid mode.");
 
     send("automode add kameloso +o");
-    enforce(thisFiber.payload.content == "Automode modified! kameloso on %s: +o"
-        .format(origEvent.channel));
+    expect("Automode modified! kameloso on %s: +o".format(origEvent.channel));
 
     send("automode add kameloso +v");
-    enforce(thisFiber.payload.content == "Automode modified! kameloso on %s: +v"
-        .format(origEvent.channel));
+    expect("Automode modified! kameloso on %s: +v".format(origEvent.channel));
 
     send("automode list");
+    awaitReply();
     enforce(thisFiber.payload.content.contains(`"kameloso":"v"`));
 
     send("automode del $¡$¡");
-    enforce(thisFiber.payload.content == "Invalid nickname.");
+    expect("Invalid nickname.");
 
     send("automode del kameloso");
-    enforce(thisFiber.payload.content == "Automode for kameloso cleared.");
+    expect("Automode for kameloso cleared.");
 
     /*send("automode list");
-    enforce(thisFiber.payload.content == "No automodes defined for channel %s."
-        .format(origEvent.channel));*/
+    expect("No automodes defined for channel %s.".format(origEvent.channel));*/
 
     send("automode del flerrp");
-    enforce(thisFiber.payload.content == "Automode for flerrp cleared.");
+    expect("Automode for flerrp cleared.");
 
     logger.info("Automode tests passed!");
 }
@@ -445,15 +454,25 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     // ------------ !say
 
     send("say zoraelblarbhl");
-    enforce(thisFiber.payload.content == "zoraelblarbhl");
+    expect("zoraelblarbhl");
 
     // ------------ !8ball
 
@@ -484,6 +503,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     ];
 
     send("8ball");
+    awaitReply();
     enforce(eightballAnswers[].canFind(thisFiber.payload.content));
 
     // ------------ !bash; don't test, it's complicated
@@ -493,11 +513,11 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     await(plugin, IRCEvent.Type.EMOTE);
 
     send("get on up and DANCE");
-    enforce(thisFiber.payload.content == "dances :D-<");
-    Fiber.yield();
-    enforce(thisFiber.payload.content == "dances :D|-<");
-    Fiber.yield();
-    enforce(thisFiber.payload.content == "dances :D/-<");
+    expect("dances :D-<");
+    //Fiber.yield();
+    expect("dances :D|-<");
+    //Fiber.yield();
+    expect("dances :D/-<");
 
     unawait(plugin, IRCEvent.Type.EMOTE);
 
@@ -518,18 +538,27 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     // ------------ !note
     send("note %s test".format(botNickname));
-    enforce(thisFiber.payload.content ==
-        "You cannot leave the bot a message; it would never be replayed.");
+    expect("You cannot leave the bot a message; it would never be replayed.");
 
     send("note %s test".format(plugin.state.client.nickname));
-    enforce(thisFiber.payload.content == "Note added.");
+    expect("Note added.");
 
     unawait(plugin, IRCEvent.Type.CHAN);
     part(plugin.state, origEvent.channel);
@@ -543,6 +572,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     Fiber.yield();
     while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
     unawait(plugin, IRCEvent.Type.SELFJOIN);
+
     await(plugin, IRCEvent.Type.CHAN);
     Fiber.yield();
     enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note"
@@ -566,46 +596,49 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-        Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
     void sendNoPrefix(const string line)
     {
         chan(plugin.state, origEvent.channel, line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     // ------------ !oneliner
 
     send("commands");
-    enforce(thisFiber.payload.content == "There are no commands available right now.");
+    expect("There are no commands available right now.");
 
     send("oneliner");
-    enforce(thisFiber.payload.content == "Usage: %soneliner [add|del|list] [trigger] [text]"
+    expect("Usage: %soneliner [add|del|list] [trigger] [text]"
         .format(plugin.state.settings.prefix));
 
     send("oneliner add herp derp dirp darp");
-    enforce(thisFiber.payload.content == "Oneliner %sherp added."
-        .format(plugin.state.settings.prefix));
+    expect("Oneliner %sherp added.".format(plugin.state.settings.prefix));
 
     send("oneliner list");
-    enforce(thisFiber.payload.content == "Available commands: %sherp"
-        .format(plugin.state.settings.prefix));
+    expect("Available commands: %sherp".format(plugin.state.settings.prefix));
 
     sendNoPrefix("%sherp".format(plugin.state.settings.prefix));
-    enforce(thisFiber.payload.content == "derp dirp darp");
+    expect("derp dirp darp");
 
     send("oneliner del hirrp");
-    enforce(thisFiber.payload.content == "No such trigger: %shirrp"
-        .format(plugin.state.settings.prefix));
+    expect("No such trigger: %shirrp".format(plugin.state.settings.prefix));
 
     send("oneliner del herp");
-    enforce(thisFiber.payload.content == "Oneliner %sherp removed."
-        .format(plugin.state.settings.prefix));
+    expect("Oneliner %sherp removed.".format(plugin.state.settings.prefix));
 
     logger.info("Oneliners tests passed!");
 }
@@ -626,28 +659,40 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     // ------------ !quote
 
     send("quote");
-    enforce(thisFiber.payload.content ==
-        "Usage: %squote [nickname] [optional text to add a new quote]"
+    expect("Usage: %squote [nickname] [optional text to add a new quote]"
         .format(plugin.state.settings.prefix));
 
     send("quote $¡$¡");
-    enforce(thisFiber.payload.content == `"$¡$¡" is not a valid account or nickname.`);
+    expect(`"$¡$¡" is not a valid account or nickname.`);
 
     send("quote flerrp");
-    //enforce(thisFiber.payload.content == "No quote on record for flerrp.");
+    awaitReply();
+    //expect("No quote on record for flerrp.");
 
     send("quote flerrp flirrp flarrp flurble");
-    //enforce(thisFiber.payload.content == "Quote for flerrp saved (1 on record)");
+    awaitReply();
+    //expect("Quote for flerrp saved (1 on record)");
 
     send("quote flerrp");
+    awaitReply();
     enforce(thisFiber.payload.content.endsWith("] flerrp | flirrp flarrp flurble"));
 
     logger.info("Quotes tests passed!");
@@ -667,39 +712,43 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-        Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
     void sendNoPrefix(const string line)
     {
         chan(plugin.state, origEvent.channel, line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     chan(plugin.state, origEvent.channel, "I am a fish");
     sendNoPrefix("s/fish/snek/");
-    enforce(thisFiber.payload.content == "%s | I am a snek"
-        .format(plugin.state.client.nickname));
+    expect("%s | I am a snek".format(plugin.state.client.nickname));
 
     chan(plugin.state, origEvent.channel, "I am a fish fish");
     sendNoPrefix("s#fish#snek#");
-    enforce(thisFiber.payload.content == "%s | I am a snek fish"
-        .format(plugin.state.client.nickname));
+    expect("%s | I am a snek fish".format(plugin.state.client.nickname));
 
     chan(plugin.state, origEvent.channel, "I am a fish fish");
     sendNoPrefix("s_fish_snek_g");
-    enforce(thisFiber.payload.content == "%s | I am a snek snek"
-        .format(plugin.state.client.nickname));
+    expect("%s | I am a snek snek".format(plugin.state.client.nickname));
 
     logger.info("SedReplace tests passed!");
 }
 
 
-// testSeen
+// testSeenFiber
 /++
  +
  +/
@@ -712,25 +761,35 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
     void send(const string line)
     {
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
         Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
             (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
     }
 
+    void expect(const string line)
+    {
+        awaitReply();
+        enforce(thisFiber.payload.content == line);
+    }
+
     send("!seen");
-    enforce(thisFiber.payload.content == "Usage: !seen [nickname]");
+    expect("Usage: !seen [nickname]");
 
     send("!seen ####");
-    enforce(thisFiber.payload.content == "Invalid user: ####");
+    expect("Invalid user: ####");
 
     send("!seen HarblSnarbl");
-    enforce(thisFiber.payload.content == "I have never seen HarblSnarbl.");
+    expect("I have never seen HarblSnarbl.");
 
     send("!seen " ~ plugin.state.client.nickname);
-    enforce(thisFiber.payload.content == "That's you!");
+    expect("That's you!");
 
     send("!seen " ~ botNickname);
-    enforce(thisFiber.payload.content == "T-that's me though...");
+    expect("T-that's me though...");
 
     logger.info("Seen tests passed!");
 }
