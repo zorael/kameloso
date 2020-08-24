@@ -519,8 +519,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
  +      The nickname or account of the passed user, or the passed nickname if
  +      nothing was found.
  +/
-pragma(inline, true)
-string idOf(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
+string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {
     if (const user = nickname in plugin.state.users)
     {
