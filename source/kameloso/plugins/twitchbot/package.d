@@ -1113,17 +1113,32 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
-    if (!event.content.length || !event.content.isValidNickname(plugin.state.server))
+    if (!event.content.length)
     {
         chan(plugin.state, event.channel, "Usage: %s%s [name of streamer]"
             .format(plugin.state.settings.prefix, event.aux));
         return;
     }
 
+    JSONValue getUserJSON(const string username)
+    {
+        immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ username;
+        return getTwitchEntity(plugin, userURL);
+    }
+
     void shoutoutQueryDg()
     {
-        immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ event.content;
-        immutable userJSON = getTwitchEntity(plugin, userURL);
+        import kameloso.plugins.common : idOf;
+
+        immutable username = idOf(plugin, event.content);
+
+        if (!username.length || !username.isValidNickname(plugin.state.server))
+        {
+            chan(plugin.state, event.channel, "Invalid streamer name.");
+            return;
+        }
+
+        const userJSON = getUserJSON(username);
 
         if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
