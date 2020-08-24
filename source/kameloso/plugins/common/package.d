@@ -492,7 +492,7 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
  +      user = `dialect.defs.IRCUser` to examine.
  +
  +  Returns:
- +
+ +      The nickname or account of the passed user.
  +/
 pragma(inline, true)
 string idOf(const IRCUser user) pure @safe nothrow @nogc
