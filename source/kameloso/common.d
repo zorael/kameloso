@@ -528,7 +528,7 @@ struct Kameloso
 
         foreach (immutable moduleName; PluginModules)
         {
-            mixin("import pluginModule = ", moduleName, ';');
+            mixin("import pluginModule = ", moduleName, ";");
 
             foreach (member; __traits(allMembers, pluginModule))
             {
@@ -540,7 +540,7 @@ struct Kameloso
                     {
                         static if (__traits(compiles, new Class(state)))
                         {
-                            mixin("import ", fullyQualifiedName!pluginModule, " : ", Class.stringof, ';');
+                            mixin("import ", fullyQualifiedName!pluginModule, " : ", Class.stringof, ";");
                             plugins ~= new Class(state);
                         }
                         else
