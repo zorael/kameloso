@@ -10,7 +10,7 @@ version(Web):
 
 private:
 
-import kameloso.plugins.twitchbot : TwitchBotPlugin, handleSelfjoin;
+import kameloso.plugins.twitchbot.base : TwitchBotPlugin, handleSelfjoin;
 
 import kameloso.plugins.core;
 import kameloso.common : logger;

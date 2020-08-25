@@ -5,7 +5,7 @@
  +  It is mandatory if you plan to use any form of plugin. Indeed, the very
  +  definition of an `IRCPlugin` is in here.
  +/
-module kameloso.plugins.common;
+module kameloso.plugins.common.base;
 
 private:
 

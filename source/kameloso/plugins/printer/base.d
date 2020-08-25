@@ -11,7 +11,7 @@
  +  get from the plugin, so you will only want to disable it if you want a
  +  really "headless" environment.
  +/
-module kameloso.plugins.printer;
+module kameloso.plugins.printer.base;
 
 version(WithPlugins):
 version(WithPrinterPlugin):

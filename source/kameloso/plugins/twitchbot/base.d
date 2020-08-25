@@ -11,7 +11,7 @@
  +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
  +/
-module kameloso.plugins.twitchbot;
+module kameloso.plugins.twitchbot.base;
 
 version(WithPlugins):
 version(TwitchSupport):

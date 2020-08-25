@@ -13,7 +13,7 @@ version(WithTwitchBotPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot : TwitchBotPlugin;
+import kameloso.plugins.twitchbot.base : TwitchBotPlugin;
 
 import kameloso.plugins.core;
 import kameloso.messaging;

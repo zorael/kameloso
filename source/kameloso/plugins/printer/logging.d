@@ -13,7 +13,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer;
+import kameloso.plugins.printer.base : PrinterPlugin;
 
 import kameloso.common : Tint, logger;
 import dialect.defs;

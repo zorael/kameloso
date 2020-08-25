@@ -11,7 +11,7 @@
  +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
  +/
-module kameloso.plugins.admin;
+module kameloso.plugins.admin.base;
 
 version(WithPlugins):
 version(WithAdminPlugin):
