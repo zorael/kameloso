@@ -1384,8 +1384,41 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
+        import std.traits : packageName;
+
         mixin("static import thisModule = " ~ module_ ~ ";");
-        return __traits(identifier, thisModule);
+
+        enum moduleNameString = __traits(identifier, thisModule);
+
+        enum cutoutModuleName = ()
+        {
+            static if (moduleNameString == "base")
+            {
+                import std.string : indexOf;
+
+                // Assumes a fqn of "kameloso.plugins.*.base"
+
+                string slice = module_;
+                immutable firstDot = slice.indexOf('.');
+                if (firstDot == -1) return slice;
+
+                slice = slice[firstDot+1..$];
+                immutable secondDot = slice.indexOf('.');
+                if (secondDot == -1) return slice;
+
+                slice = slice[secondDot+1..$];
+                immutable thirdDot = slice.indexOf('.');
+                if (thirdDot == -1) return slice;
+
+                return slice[0..thirdDot];
+            }
+            else
+            {
+                return moduleNameString;
+            }
+        }().idup;
+
+        return cutoutModuleName;
     }
 
 
