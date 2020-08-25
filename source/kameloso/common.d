@@ -526,8 +526,10 @@ struct Kameloso
         // Instantiate all plugin classes found when introspecting the modules
         // listed in the `kameloso.plugins.PluginModules` AliasSeq.
 
-        foreach (pluginModule; PluginModules)
+        foreach (immutable moduleName; PluginModules)
         {
+            mixin("import pluginModule = ", moduleName, ';');
+
             foreach (member; __traits(allMembers, pluginModule))
             {
                 static if (is(__traits(getMember, pluginModule, member) == class))
@@ -538,7 +540,7 @@ struct Kameloso
                     {
                         static if (__traits(compiles, new Class(state)))
                         {
-                            mixin("import ", fullyQualifiedName!pluginModule, " : ", Class.stringof, ";");
+                            mixin("import ", fullyQualifiedName!pluginModule, " : ", Class.stringof, ';');
                             plugins ~= new Class(state);
                         }
                         else
