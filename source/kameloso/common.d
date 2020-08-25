@@ -539,7 +539,6 @@ struct Kameloso
                     {
                         static if (__traits(compiles, new Class(state)))
                         {
-                            mixin("import ", moduleName, " : ", Class.stringof, ";");
                             plugins ~= new Class(state);
                         }
                         else
