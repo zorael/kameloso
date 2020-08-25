@@ -504,11 +504,12 @@ struct Kameloso
         out string[][string] missingEntries,
         out string[][string] invalidEntries) @system
     {
-        import kameloso.plugins : EnabledPlugins;
+        import kameloso.plugins : PluginModules;
         import kameloso.plugins.common : applyCustomSettings;
         import kameloso.plugins.core : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
+        import std.traits : fullyQualifiedName;
 
         teardownPlugins();
 
@@ -522,12 +523,33 @@ struct Kameloso
         state.abort = abort;
         immutable now = Clock.currTime.toUnixTime;
 
-        plugins.reserve(EnabledPlugins.length);
+        // Instantiate all plugin classes found when introspecting the modules
+        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
 
-        // Instantiate all plugin types in `kameloso.plugins.package.EnabledPlugins`
-        foreach (Plugin; EnabledPlugins)
+        foreach (pluginModule; PluginModules)
         {
-            plugins ~= new Plugin(state);
+            foreach (member; __traits(allMembers, pluginModule))
+            {
+                static if (is(__traits(getMember, pluginModule, member) == class))
+                {
+                    alias Class = __traits(getMember, pluginModule, member);
+
+                    static if (is(Class : IRCPlugin))
+                    {
+                        static if (__traits(compiles, new Class(state)))
+                        {
+                            mixin("import ", fullyQualifiedName!pluginModule, " : ", Class.stringof, ";");
+                            plugins ~= new Class(state);
+                        }
+                        else
+                        {
+                            import std.format : format;
+                            static assert(0, "`%s.%s` constructor does not compile"
+                                .format(fullyQualifiedName!pluginModule, Class.stringof));
+                        }
+                    }
+                }
+            }
         }
 
         foreach (plugin; plugins)
