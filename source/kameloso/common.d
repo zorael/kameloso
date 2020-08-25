@@ -509,7 +509,6 @@ struct Kameloso
         import kameloso.plugins.core : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
-        import std.traits : fullyQualifiedName;
 
         teardownPlugins();
 
@@ -540,14 +539,14 @@ struct Kameloso
                     {
                         static if (__traits(compiles, new Class(state)))
                         {
-                            mixin("import ", fullyQualifiedName!pluginModule, " : ", Class.stringof, ";");
+                            mixin("import ", moduleName, " : ", Class.stringof, ";");
                             plugins ~= new Class(state);
                         }
                         else
                         {
                             import std.format : format;
                             static assert(0, "`%s.%s` constructor does not compile"
-                                .format(fullyQualifiedName!pluginModule, Class.stringof));
+                                .format(moduleName, Class.stringof));
                         }
                     }
                 }
