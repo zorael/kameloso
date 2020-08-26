@@ -525,6 +525,8 @@ struct Kameloso
         // Instantiate all plugin classes found when introspecting the modules
         // listed in the `kameloso.plugins.PluginModules` AliasSeq.
 
+        plugins.reserve(PluginModules.length);
+
         foreach (immutable moduleName; PluginModules)
         {
             mixin("import pluginModule = ", moduleName, ";");
