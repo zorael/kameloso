@@ -529,6 +529,9 @@ struct Kameloso
 
         foreach (immutable moduleName; PluginModules)
         {
+            static assert(__traits(compiles, { mixin("import ", moduleName, ";"); }),
+                "Plugin module `" ~ moduleName ~ "` is missing or fails to compile");
+
             mixin("import pluginModule = ", moduleName, ";");
 
             foreach (member; __traits(allMembers, pluginModule))
