@@ -102,6 +102,7 @@ import core.thread : Fiber;
     "$command [target user]")
 void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 {
+    import kameloso.plugins.common : idOf, nameOf;
     import lu.string : stripped;
     import std.format : format;
     import std.uni : toLower;
@@ -112,19 +113,21 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    string nickname = event.content.stripped.toLower;
+    string specified = event.content.stripped.toLower;
 
-    if (!nickname.length)
+    if (!specified.length)
     {
         chan(plugin.state, event.channel, "Usage: %s%s [nickname]"
             .format(plugin.state.settings.prefix, event.aux));
         return;
     }
 
-    if (nickname[0] == '@') nickname = nickname[1..$];
-
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to handle permits on nonexistent room");
+
+    if (specified[0] == '@') specified = specified[1..$];
+    immutable nickname = idOf(plugin, specified);
+    immutable name = nameOf(plugin, nickname);
 
     room.linkPermits[nickname] = event.time;
 
@@ -132,21 +135,14 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     {
         // Was or is timed out, remove it just in case
         room.linkBans.remove(nickname);
-        chan(plugin.state, event.channel, "/timeout " ~ nickname ~ " 0");
-    }
-
-    string target = nickname;
-
-    if (const user = nickname in plugin.state.users)
-    {
-        target = user.displayName;
+        chan(plugin.state, event.channel, "/untimeout " ~ nickname);
     }
 
     immutable pattern = plugin.twitchBotSettings.permitOneLinkOnly ?
         "@%s, you are now allowed to post a link for 60 seconds." :
         "@%s, you are now allowed to post links for 60 seconds.";
 
-    chan(plugin.state, event.channel, pattern.format(target));
+    chan(plugin.state, event.channel, pattern.format(name));
 }
 
 
