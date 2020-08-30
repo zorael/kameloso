@@ -103,9 +103,9 @@ import core.thread : Fiber;
 void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common : idOf, nameOf;
+    import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;
-    import std.uni : toLower;
 
     if (!plugin.twitchBotSettings.filterURLs)
     {
@@ -113,9 +113,10 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    string specified = event.content.stripped.toLower;
+    string slice = event.content.stripped;  // mutable
+    if (slice.length && (slice[0] == '@')) slice = slice[1..$];
 
-    if (!specified.length)
+    if (!slice.length)
     {
         chan(plugin.state, event.channel, "Usage: %s%s [nickname]"
             .format(plugin.state.settings.prefix, event.aux));
@@ -125,8 +126,14 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to handle permits on nonexistent room");
 
-    if (specified[0] == '@') specified = specified[1..$];
-    immutable nickname = idOf(plugin, specified);
+    immutable nickname = idOf(plugin, slice);
+
+    if (!nickname.isValidNickname(plugin.state.server))
+    {
+        chan(plugin.state, event.channel, "Invalid streamer name.");
+        return;
+    }
+
     immutable name = nameOf(plugin, nickname);
 
     room.linkPermits[nickname] = event.time;
