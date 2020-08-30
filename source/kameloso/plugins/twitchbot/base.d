@@ -848,10 +848,8 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         ban = event.sender.nickname in room.linkBans;
     }
 
-    chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
-        .format(event.sender.nickname, durations[ban.offense]));
-    chan!(Yes.priority)(plugin.state, event.channel, "@%s, %s"
-        .format(event.sender.nickname, messages[ban.offense]));
+    chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %ds %s"
+        .format(event.sender.nickname, durations[ban.offense], messages[ban.offense]));
 }
 
 
@@ -1272,7 +1270,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
             ban = event.sender.nickname in room.phraseBans;
         }
 
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %d"
+        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %ds"
             .format(event.sender.nickname, durations[ban.offense]));
         return;
     }
