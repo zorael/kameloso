@@ -537,7 +537,24 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
     }
     else
     {
-        chan(plugin.state, event.channel, streamer ~ " is currently not streaming.");
+        if (room.broadcast.stop)
+        {
+            import std.datetime.systime : SysTime;
+            import std.format : format;
+            import core.time : msecs;
+
+            auto end = SysTime.fromUnixTime(room.broadcast.stop);
+            end.fracSecs = 0.msecs;
+            immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
+
+            chan(plugin.state, event.channel, ("%s is currently not streaming. " ~
+                "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.")
+                .format(streamer, end.year, end.month, end.day, end.hour, end.minute, delta));
+        }
+        else
+        {
+            chan(plugin.state, event.channel, streamer ~ " is currently not streaming.");
+        }
     }
 }
 
