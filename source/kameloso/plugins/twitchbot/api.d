@@ -204,60 +204,10 @@ void generateKey(TwitchBotPlugin plugin)
 
     scope(exit) if (browser !is null) wait(browser);
 
-    try
+    void printManualURL()
     {
-        version(Posix)
-        {
-            import std.process : environment, spawnProcess;
-
-            version(OSX)
-            {
-                enum defaultCommand = "open";
-            }
-            else
-            {
-                // Assume XDG
-                enum defaultCommand = "xdg-open";
-            }
-
-            immutable browserCommand = environment.get("BROWSER", defaultCommand);
-            immutable openBrowser = [ browserCommand, url ];
-            auto devNull = File("/dev/null", "r+");
-            browser = spawnProcess(openBrowser, devNull, devNull, devNull);
-        }
-        else version(Windows)
-        {
-            import std.file : tempDir;
-            import std.format : format;
-            import std.path : buildPath;
-            import std.process : spawnProcess;
-
-            immutable urlBasename = "kameloso-twitch-%s.url"
-                .format(plugin.state.client.nickname);
-            immutable urlFileName = buildPath(tempDir, urlBasename);
-
-            auto urlFile = File(urlFileName, "w");
-
-            urlFile.writeln("[InternetShortcut]");
-            urlFile.writeln("URL=", url);
-            urlFile.flush();
-
-            immutable openBrowser = [ "explorer", urlFileName ];
-            auto nulFile = File("NUL", "r+");
-            browser = spawnProcess(openBrowser, nulFile, nulFile, nulFile);
-        }
-        else
-        {
-            // Jump to the catch
-            throw new ProcessException("Unexpected platform");
-        }
-    }
-    catch (ProcessException e)
-    {
-        // Probably we got some platform wrong and command was not found
         enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
 
-        logger.warning("Error: could not automatically open browser.");
         writeln();
         writeln(Tint.log, "Copy and paste this link manually into your browser, " ~
             "and log in as asked:", Tint.reset);
@@ -268,6 +218,69 @@ void generateKey(TwitchBotPlugin plugin)
         writeln();
         writeln(Tint.info, scissors, Tint.reset);
         writeln();
+    }
+
+    if (plugin.state.settings.force)
+    {
+        logger.warning("Forcing; not automatically opening brower.");
+        printManualURL();
+    }
+    else
+    {
+        try
+        {
+            version(Posix)
+            {
+                import std.process : environment, spawnProcess;
+
+                version(OSX)
+                {
+                    enum defaultCommand = "open";
+                }
+                else
+                {
+                    // Assume XDG
+                    enum defaultCommand = "xdg-open";
+                }
+
+                immutable browserCommand = environment.get("BROWSER", defaultCommand);
+                immutable openBrowser = [ browserCommand, url ];
+                auto devNull = File("/dev/null", "r+");
+                browser = spawnProcess(openBrowser, devNull, devNull, devNull);
+            }
+            else version(Windows)
+            {
+                import std.file : tempDir;
+                import std.format : format;
+                import std.path : buildPath;
+                import std.process : spawnProcess;
+
+                immutable urlBasename = "kameloso-twitch-%s.url"
+                    .format(plugin.state.client.nickname);
+                immutable urlFileName = buildPath(tempDir, urlBasename);
+
+                auto urlFile = File(urlFileName, "w");
+
+                urlFile.writeln("[InternetShortcut]");
+                urlFile.writeln("URL=", url);
+                urlFile.flush();
+
+                immutable openBrowser = [ "explorer", urlFileName ];
+                auto nulFile = File("NUL", "r+");
+                browser = spawnProcess(openBrowser, nulFile, nulFile, nulFile);
+            }
+            else
+            {
+                // Jump to the catch
+                throw new ProcessException("Unexpected platform");
+            }
+        }
+        catch (ProcessException e)
+        {
+            // Probably we got some platform wrong and command was not found
+            logger.warning("Error: could not automatically open browser.");
+            printManualURL();
+        }
     }
 
     string key;
