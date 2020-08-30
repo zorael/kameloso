@@ -2,6 +2,9 @@
  +  A simple stopwatch plugin. It offers the ability to start and stop timers,
  +  to get how much time passed between the creation of a stopwatch and the
  +  cessation of it.
+ +
+ +  See the GitHub wiki for more information about available commands:<br>
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
  +/
 module kameloso.plugins.stopwatch;
 

@@ -9,8 +9,6 @@
  +
  +  It has no commands. It only does post-processing and doesn't handle
  +  `dialect.defs.IRCEvent`s in the normal sense at all.
- +
- +  It is mandatory for plugins to pick up user classes.
  +/
 module kameloso.plugins.persistence;
 

@@ -3,6 +3,9 @@
  +  number of choices is supported, as long as they're more than one.
  +
  +  Cheating by changing nicknames is warded against.
+ +
+ +  See the GitHub wiki for more information about available commands:<br>
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#votes
  +/
 module kameloso.plugins.votes;
 

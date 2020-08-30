@@ -4,9 +4,6 @@
  +
  +  It has no commands and is not aware in the normal sense; it only blindly
  +  responds to requests.
- +
- +  It is optional though some servers may not like it if you do not respond to
- +  some of the queries.
  +/
 module kameloso.plugins.ctcp;
 

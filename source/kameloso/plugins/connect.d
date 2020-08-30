@@ -3,11 +3,8 @@
  +  as well as managing authentication to services. It also manages responding
  +  to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
  +
- +  It has no commands; everything in it is reactionary, with no special
- +  awareness mixed in.
- +
- +  It is fairly mandatory as *something* needs to register us on the server and
- +  log in. Without it, you will simply time out.
+ +  The actual connection logic is in the `lu.net` dependency module:<br>
+ +  - https://github.com/zorael/lu/blob/master/source/lu/net.d
  +/
 module kameloso.plugins.connect;
 

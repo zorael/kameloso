@@ -5,8 +5,8 @@
  +  decrement or assign specific values to. This can be used to track deaths in
  +  video games, for instance.
  +
- +  Undefined behaviour if a counter command word conflicts with that of another
- +  command. (Generally both should trigger.)
+ +  See the GitHub wiki for more information about available commands:<br>
+ +  - https://github.com/zorael/kameloso/wiki/Current-plugins#counter
  +/
 module kameloso.plugins.counter;
 

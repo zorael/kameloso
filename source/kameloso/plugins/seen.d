@@ -18,8 +18,9 @@
  +  with `UDA`s of IRC event *types*. When an event is incoming it will trigger
  +  the function(s) annotated with its type.
  +
- +  Callback `core.thread.fiber.Fiber`s *are* supported. They can be registered to
- +  process on incoming events, or scheduled with a high degree of precision.
+ +  Callback delegates and `core.thread.fiber.Fiber`s *are* supported. They can
+ +  be registered to process on incoming events, or scheduled with a reasonably
+ +  high degree of precision.
  +
  +  See the GitHub wiki for more information about available commands:<br>
  +  - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
@@ -90,19 +91,24 @@ public:
  +      IRCServer server;
  +      IRCBot bot;
  +      CoreSettings settings;
+ +      ConnectionSettings connSettings;
  +      Tid mainThread;
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;
  +      Replay[][string] replays;
  +      Repeat[] repeats;
  +      Fiber[][] awaitingFibers;
- +      ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is an alias in `kameloso.thread`
+ +      void delegate(const IRCEvent)[][] awaitingDelegates;
+ +      ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is a struct in `kameloso.thread`
+ +      ScheduledDelegate[] scheduledDelegates;  // Ditto
  +      long nextPeriodical;
  +      long nextFiberTimestamp;
+ +      void updateScheule();
  +      bool botUpdated;
  +      bool clientUpdated;
  +      bool serverUpdated;
  +      bool settingsUpdated;
+ +      bool* abort;
  +  }
  +  ---
  +
@@ -119,9 +125,12 @@ public:
  +
  +  * `kameloso.plugins.core.IRCPluginState.settings` is a copy of the
  +     "global" `kameloso.common.CoreSettings`, which contains information
- +     about how the bot should output text, whether or not to use IPv6 connections,
- +     whether or not to always save to disk upon program exit, and some other
- +     program-wide settings.
+ +     about how the bot should output text, whether or not to always save to
+ +     disk upon program exit, and some other program-wide settings.
+ +
+ +  * `kameloso.plugins.core.IRCPluginState.connSettings` is like `settings`,
+ +     except for values relating to the connection to the server; whether
+ +     to use IPv6, paths to any certificates, and the such.
  +
  +  * `kameloso.plugins.core.IRCPluginState.mainThread` is the *thread ID* of
  +     the thread running the main loop. We indirectly use it to send strings to
@@ -160,6 +169,10 @@ public:
  +     Fibers in the array of a particular event type will be executed the next
  +     time such an event is incoming. Think of it as Fiber callbacks.
  +
+ +  * `kameloso.plugins.core.IRCPluginState.awaitingDelegates` is literally
+ +     an array of callback delegates, to be triggered when an event of a
+ +     matching type comes along.
+ +
  +  * `kameloso.plugins.core.IRCPluginState.scheduledFibers` is also an array of
  +     `core.thread.fiber.Fiber`s, but not an associative one keyed on event types.
  +     Instead they are tuples of a `core.thread.fiber.Fiber` and a `long`
@@ -167,16 +180,25 @@ public:
  +     Use `kameloso.plugins.common.delayFiber` to enqueue, or
  +     `kameloso.plugins.common.delayFiberMsecs` for greater granularity.
  +
+ +  * `kameloso.plugins.core.IRCPluginState.scheduledDelegates` is likewise an
+ +     array of delegates, to be triggered at a later point in time.
+ +
  +  * `kameloso.plugins.core.IRCPluginState.nextPeriodical` is a UNIX timestamp
  +     of when the `periodical(IRCPlugin)` function should be run next. It is a
  +     way of automating occasional tasks, in our case the saving of the seen
  +     users to disk.
  +
- +  * `kameloso.plugins.core.IRCPluginState.nextFiberTimestamp` is also a
+ +  * `kameloso.plugins.core.IRCPluginState.nextScheduledTimestamp` is also a
  +     UNIX timestamp, here of when the next `kameloso.thread.ScheduledFiber` in
- +     `kameloso.plugins.core.IRCPluginState.scheduledFibers` is due to be
- +     processed. Caching it here means we won't have to go through the array
+ +     `kameloso.plugins.core.IRCPluginState.scheduledFibers` *or* the next
+ +     `kameloso.thread.ScheduledDelegate` in
+ +     `kameloso.plugins.core.IRCPluginState.scheduledDelegates`is due to be
+ +     processed. Caching it here means we won't have to go through the arrays
  +     to find out as often.
+ +
+ +  * `kameloso.plugins.core.IRCPluginState.updateSchedule` merely iterates all
+ +     scheduled fibers and delegates, caching the time at which the next one
+ +     should trigger.
  +
  +  * `kameloso.plugins.core.IRCPluginState.botUpdated` is set when
  +     `kameloso.plugins.core.IRCPluginState.bot` was updated during parsing
@@ -193,6 +215,10 @@ public:
  +  * `kameloso.plugins.core.IRCPluginState.settingsUpdated` is likewise set when
  +     `kameloso.plugins.core.IRCPluginState.settings` was updated during parsing
  +     and/or postprocessing. Ditto.
+ +
+ +  * `kameloso.plugins.core.IRCPluginState.abort` is a pointer to the global
+ +     abort bool. When this is set, it signals the rest of the program that we
+ +     want to terminate cleanly.
  +/
 final class SeenPlugin : IRCPlugin
 {
