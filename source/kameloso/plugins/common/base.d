@@ -510,8 +510,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
  +  the account is known. Overload that looks up the passed nickname in
  +  the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
  +
- +  On Twitch, if no user was find, it additionally tries to look up the passe
- +  nickname as if it was a display name.
+ +  Merely wraps `getUser` with `idOf`.
  +
  +  Params:
  +      plugin = The current `IRCPlugin`, whatever it is.
@@ -523,28 +522,109 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
  +/
 string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {
+    immutable user = getUser(plugin, nickname);
+    return idOf(user);
+}
+
+///
+unittest
+{
+    final class MyPlugin : IRCPlugin
+    {
+        mixin IRCPluginImpl;
+    }
+
+    IRCPluginState state;
+    IRCPlugin plugin = new MyPlugin(state);
+
+    IRCUser newUser;
+    newUser.nickname = "nickname";
+    plugin.state.users["nickname"] = newUser;
+
+    immutable nickname = idOf(plugin, "nickname");
+    assert((nickname == "nickname"), nickname);
+
+    plugin.state.users["nickname"].account = "account";
+    immutable account = idOf(plugin, "nickname");
+    assert((account == "account"), account);
+}
+
+
+// getUser
+/++
+ +  Retrieves an `dialect.defs.IRCUser` from the passed plugin's `users`
+ +  associative array. If none exists, returns a minimally viable `dialect.defs.IRCUser`
+ +  with the passed nickname as its only value.
+ +
+ +  On Twitch, if no user was found, it additionally tries to look up the passed
+ +  nickname as if it was a display name.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`, whatever it is.
+ +      nickname = The name of a user to look up.
+ +
+ +  Returns:
+ +      An `dialect.defs.IRCUser` that matches the passed nickname, from the
+ +      passed plugin's arrays. A minimally viable `dialect.defs.IRCUser` if
+ +      none was found.
+ +/
+IRCUser getUser()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
+{
     if (const user = nickname in plugin.state.users)
     {
-        return idOf(*user);
+        return *user;
     }
-    else
+
+    version(TwitchSupport)
     {
-        version(TwitchSupport)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            foreach (const user; plugin.state.users)
             {
-                foreach (immutable thisNickname, const user; plugin.state.users)
+                if (user.displayName == nickname)
                 {
-                    if (user.displayName == nickname)
-                    {
-                        return idOf(user);
-                    }
+                    return user;
                 }
             }
-        }
 
-        // No direct match, pass back what was asked for...
-        return nickname;
+            // No match, populate a new user and return it
+            IRCUser user;
+            user.nickname = nickname;
+            user.account = nickname;
+            //user.displayName = nickname;
+            return user;
+        }
+    }
+
+    IRCUser user;
+    user.nickname = nickname;
+    return user;
+}
+
+///
+unittest
+{
+    final class MyPlugin : IRCPlugin
+    {
+        mixin IRCPluginImpl;
+    }
+
+    IRCPluginState state;
+    IRCPlugin plugin = new MyPlugin(state);
+
+    IRCUser newUser;
+    newUser.nickname = "nickname";
+    newUser.displayName = "NickName";
+    plugin.state.users["nickname"] = newUser;
+
+    immutable sameUser = getUser(plugin, "nickname");
+    assert(newUser == sameUser);
+
+    version(TwitchSupport)
+    {
+        plugin.state.server.daemon = IRCServer.Daemon.twitch;
+        immutable sameAgain = getUser(plugin, "NickName");
+        assert(newUser == sameAgain);
     }
 }
 
