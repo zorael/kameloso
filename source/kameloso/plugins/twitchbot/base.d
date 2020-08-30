@@ -490,6 +490,7 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
+    assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
 
     version(TwitchAPIFeatures)
     {
