@@ -712,7 +712,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 
     version(TwitchAPIFeatures)
     {
-        enum pattern = "%s streamed for %s, for %d unique viewers. " ~
+        enum pattern = "%s streamed for %s, with %d unique viewers. " ~
             "(max at any one time was %d viewers)";
 
         immutable streamer = room.broadcasterDisplayName;
