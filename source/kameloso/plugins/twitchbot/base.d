@@ -1102,41 +1102,38 @@ version(TwitchAPIFeatures)
 @Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
 void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
 {
+    import kameloso.plugins.common : idOf;
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith;
+    import lu.string : stripped;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
-    if (!event.content.length)
+    string slice = event.content.stripped;  // mutable
+    if (slice.length && (slice[0] == '@')) slice = slice[1..$];
+
+    if (!slice.length)
     {
         chan(plugin.state, event.channel, "Usage: %s%s [name of streamer]"
             .format(plugin.state.settings.prefix, event.aux));
         return;
     }
 
-    JSONValue getUserJSON(const string username)
+    immutable nickname = idOf(plugin, slice);
+
+    if (!nickname.isValidNickname(plugin.state.server))
     {
-        immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ username;
-        return getTwitchEntity(plugin, userURL);
+        chan(plugin.state, event.channel, "Invalid streamer name.");
+        return;
     }
 
     void shoutoutQueryDg()
     {
-        import kameloso.plugins.common : idOf;
-
-        immutable username = idOf(plugin, event.content);
-
-        if (!username.length || !username.isValidNickname(plugin.state.server))
-        {
-            chan(plugin.state, event.channel, "Invalid streamer name.");
-            return;
-        }
-
-        const userJSON = getUserJSON(username);
+        immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ nickname;
+        immutable userJSON = getTwitchEntity(plugin, userURL);
 
         if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
-            chan(plugin.state, event.channel, "No such user: " ~ event.content);
+            chan(plugin.state, event.channel, "No such user: " ~ slice);
             return;
         }
 
