@@ -139,9 +139,8 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 * **Linux/other Posix**: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 * **Windows**: `%APPDATA%\kameloso`
-* **Other unexpected platforms**: fallback to current working directory
 
-Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in an editor, you can open it by passing `--edit`.
+Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can open it by passing `--edit`.
 
 ### Command-line arguments
 
@@ -169,7 +168,7 @@ An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unexpected platforms.
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points).
 
 ## Example use
 
