@@ -369,8 +369,9 @@ private:
  +  `kameloso.plugins.core.PrivilegeLevel.ignore`,
  +  `kameloso.plugins.core.PrivilegeLevel.anyone`,
  +  `kameloso.plugins.core.PrivilegeLevel.registered`,
- +  `kameloso.plugins.core.PrivilegeLevel.whitelist`
- +  `kameloso.plugins.core.PrivilegeLevel.operator`. and
+ +  `kameloso.plugins.core.PrivilegeLevel.whitelist`,
+ +  `kameloso.plugins.core.PrivilegeLevel.operator`,
+ +  `kameloso.plugins.core.PrivilegeLevel.staff` and
  +  `kameloso.plugins.core.PrivilegeLevel.admin`.
  +
  +  * `kameloso.plugins.core.PrivilegeLevel.ignore` will let precisely anyone
@@ -385,11 +386,15 @@ private:
  +  * `kameloso.plugins.core.PrivilegeLevel.operator` will only allow users
  +     in the operator section of the `users.json` resource file. Consider this
  +     to correspond to "moderators" in the channel.<br>
+ +  * `kameloso.plugins.core.PrivilegeLevel.staff` will only allow users
+ +     in the staff section of the `users.json` resource file. Consider this
+ +     to correspond to channel owners.<br>
  +  * `kameloso.plugins.core.PrivilegeLevel.admin` will allow only you and
  +     your other superuser administrators, as defined in the configuration file.
  +
  +  In the case of `kameloso.plugins.core.PrivilegeLevel.whitelist`,
- +  `kameloso.plugins.core.PrivilegeLevel.operator` and
+ +  `kameloso.plugins.core.PrivilegeLevel.operator`,
+ +  `kameloso.plugins.core.PrivilegeLevel.staff` and
  +  `kameloso.plugins.core.PrivilegeLevel.admin` it will look you up and
  +  compare your *services account name* to those known good before doing
  +  anything. In the case of `kameloso.plugins.core.PrivilegeLevel.registered`,
