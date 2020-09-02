@@ -817,6 +817,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
     case whitelist:
     case operator:
+    case staff:
     case admin:
         allowed = true;
         break;
@@ -1239,6 +1240,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
     case whitelist:
     case operator:
+    case staff:
     case admin:
         // Nothing more to do
         return;
