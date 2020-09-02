@@ -2424,10 +2424,16 @@ enum PrivilegeLevel
     operator = 4,
 
     /++
+     +  Only users with a `dialect.defs.IRCClient.Class.staff` classifier may
+     +  trigger the annotated function. These are channel owners.
+     +/
+    staff = 5,
+
+    /++
      +  Only users defined in the configuration file as an administrator may
      +  trigger the annotated function.
      +/
-    admin = 5,
+    admin = 10,
 }
 
 
