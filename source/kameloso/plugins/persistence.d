@@ -532,7 +532,8 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     import lu.conv : Enum;
     import std.range : only;
 
-    foreach (class_; only(IRCUser.Class.operator, IRCUser.Class.whitelist, IRCUser.Class.blacklist))
+    foreach (class_; only(IRCUser.Class.staff, IRCUser.Class.operator,
+        IRCUser.Class.whitelist, IRCUser.Class.blacklist))
     {
         immutable list = Enum!(IRCUser.Class).toString(class_);
         const listFromJSON = list in json;
@@ -609,7 +610,7 @@ void initResources(PersistenceService service)
  +  Reads, completes and saves the user classification JSON file, creating one
  +  if one doesn't exist. Removes any duplicate entries.
  +
- +  This ensures there will be "whitelist", "operator" and "blacklist" arrays in it.
+ +  This ensures there will be "whitelist", "operator", "staff" and "blacklist" arrays in it.
  +
  +  Params:
  +      service = The current `PersistenceService`.
@@ -668,7 +669,7 @@ void initAccountResources(PersistenceService service)
 
     import std.range : only;
 
-    foreach (liststring; only("operator", "whitelist", "blacklist"))
+    foreach (liststring; only("staff", "operator", "whitelist", "blacklist"))
     {
         if (liststring !in json)
         {
@@ -695,8 +696,8 @@ void initAccountResources(PersistenceService service)
         }
     }
 
-    // Force operator and whitelist to appear before blacklist in the .json
-    static immutable order = [ "operator", "whitelist", "blacklist" ];
+    // Force staff, operator and whitelist to appear before blacklist in the .json
+    static immutable order = [ "staff", "operator", "whitelist", "blacklist" ];
     json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
 }
 
