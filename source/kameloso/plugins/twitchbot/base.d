@@ -632,7 +632,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
                     room.broadcast.maxConcurrentChatters = numCurrentViewers;
                 }
 
-                delay(plugin, plugin.chattersCheckPeriodicity);
+                delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
             }
         }
 
