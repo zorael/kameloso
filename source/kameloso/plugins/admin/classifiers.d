@@ -36,8 +36,8 @@ package:
  +      list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import lu.string : nom;
     import std.typecons : Flag, No, Yes;
@@ -84,19 +84,20 @@ in (list.among!("whitelist", "blacklist", "operator"),
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      channel = The channel the list relates to.
- +      list = Which list to list; "whitelist", "operator" or "blacklist".
+ +      list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
  +      event = Optional `dialect.defs.IRCEvent` that instigated the listing.
  +/
 void listList(AdminPlugin plugin, const string channel, const string list,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import lu.json : JSONStorage;
     import std.format : format;
 
     immutable asWhat =
         (list == "operator") ? "operators" :
+        (list == "staff") ? "staff" :
         (list == "whitelist") ? "whitelisted users" :
         /*(list == "blacklist") ?*/ "blacklisted users";
 
@@ -132,14 +133,14 @@ in (list.among!("whitelist", "blacklist", "operator"),
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      rawSpecified = The nickname or account to white-/blacklist.
- +      list = Which of "whitelist", "operator" or "blacklist" to add to.
+ +      list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
  +      channel = Which channel the enlisting relates to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import dialect.common : isValidNickname;
     import lu.string : contains, stripped;
@@ -149,6 +150,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
+        (list == "staff") ? "staff" :
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
@@ -218,7 +220,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
     if (user && user.account.length)
     {
         // user.nickname == specified
-        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+        foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
         {
             if (thisList == list) continue;
             plugin.alterAccountClassifier(No.add, thisList, user.account, channel);
@@ -272,7 +274,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
                 if (const userInList = id in plugin.state.users)
                 {
-                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+                    foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
                     {
                         if (thisList == list) continue;
                         plugin.alterAccountClassifier(No.add, thisList, id, channel);
@@ -289,7 +291,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
                 if (!usersWithThisDisplayName.empty)
                 {
-                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+                    foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
                     {
                         if (thisList == list) continue;
 
@@ -306,7 +308,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
             }
         }
 
-        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+        foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
         {
             if (thisList == list) continue;
             plugin.alterAccountClassifier(No.add, thisList, id, channel);
@@ -348,14 +350,14 @@ in (list.among!("whitelist", "blacklist", "operator"),
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      account = The account to delist as whitelisted/blacklisted or as operator.
- +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
+ +      list = Which of "whitelist", "operator", "staff" or "blacklist" to remove from.
  +      channel = Which channel the enlisting relates to.
  +      event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import std.format : format;
 
@@ -376,6 +378,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
+        (list == "staff") ? "staff" :
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
@@ -481,8 +484,8 @@ enum AlterationResult
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account, const string channel)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage;

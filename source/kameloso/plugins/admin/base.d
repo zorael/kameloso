@@ -1130,6 +1130,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
     case "whitelist":
     case "operator":
+    case "staff":
     case "blacklist":
         import lu.string : SplitResults, splitInto;
 
