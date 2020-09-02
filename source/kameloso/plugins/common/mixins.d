@@ -822,6 +822,13 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
             }
             break;
 
+        case staff:
+            if (repeat.replay.event.sender.class_ >= IRCUser.Class.staff)
+            {
+                goto case ignore;
+            }
+            break;
+
         case operator:
             if (repeat.replay.event.sender.class_ >= IRCUser.Class.operator)
             {
