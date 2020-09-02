@@ -1815,11 +1815,16 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
     if (event.sender.account.length)
     {
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
+        immutable isStaff = (class_ == IRCUser.Class.staff);
         immutable isOperator = (class_ == IRCUser.Class.operator);
         immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
         immutable isAnyone = (class_ == IRCUser.Class.anyone);
 
         if (isAdmin)
+        {
+            return FilterResult.pass;
+        }
+        else if (isStaff && (level <= PrivilegeLevel.staff))
         {
             return FilterResult.pass;
         }
@@ -1856,6 +1861,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
         final switch (level)
         {
         case admin:
+        case staff:
         case operator:
         case whitelist:
         case registered:
