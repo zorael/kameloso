@@ -479,7 +479,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.staff)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "operator")
 @Description("Add or remove an account to/from the operator list of operators/moderators.",
