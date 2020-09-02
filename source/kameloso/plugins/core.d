@@ -1458,6 +1458,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 {
                     static if (hasUDA!(fun, Description))
                     {
+                        enum desc = getUDAs!(fun, Description)[0];
+                        if (desc == Description.init) continue;
+
                         static if (is(typeof(uda) : BotCommand))
                         {
                             enum key = uda.word;
@@ -1467,7 +1470,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             enum key = `r"` ~ uda.expression ~ `"`;
                         }
 
-                        enum desc = getUDAs!(fun, Description)[0];
                         commands[key] = Command(desc, uda.hidden);
 
                         static if (uda.policy == PrefixPolicy.nickname)
