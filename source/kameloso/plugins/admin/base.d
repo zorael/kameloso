@@ -490,6 +490,26 @@ void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandStaff
+/++
+ +  Adds a nickname or account to the list of users who may trigger even lower level
+ +  functions of the bot, without being a full admin. This roughly corresponds to
+ +  channel owners.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "staff")
+@Description("Add or remove an account to/from the staff list.",
+    "$command [add|del] [account or nickname]")
+void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
+{
+    return plugin.manageClassLists(event, "staff");
+}
+
+
 // onCommandBlacklist
 /++
  +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
