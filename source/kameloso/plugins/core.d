@@ -340,7 +340,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
         import std.typecons : Flag, No, Yes;
 
-        if (!isEnabled) return;
+        if (!this.isEnabled) return;
 
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
@@ -1098,7 +1098,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
@@ -1124,7 +1124,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.initResources, typeof(this)))
             {
@@ -1332,7 +1332,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.start, typeof(this)))
             {
@@ -1358,7 +1358,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.teardown, typeof(this)))
             {
@@ -1508,7 +1508,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         // because of AAs' runtime-ness. We could make it runtime immutable once
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
-        return isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
+        return this.isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
     }
 
 
@@ -1560,7 +1560,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.reload, typeof(this)))
             {
