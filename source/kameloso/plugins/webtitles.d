@@ -730,26 +730,21 @@ private:
      +/
     enum lookupBufferSize = 8192;
 
-    mixin IRCPluginImpl;
 
-    // onEvent
+    // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
-        a server check, so this plugin does not trigger on
-        `dialect.defs.IRCEvent`s on Twitch servers.
+        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        a server check, so this plugin does nothing on Twitch servers, in addition
+        to doing nothing when `webtitlesSettings.enabled` is false.
 
-        The function to call if the event *should* be processed is
-        `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-
-        Params:
-            event = Parsed `dialect.defs.IRCEvent` to pass onto
-                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
-                after verifying we should process the event.
+        Returns:
+            `true` if this plugin should react to events; `false` if not.
      +/
     version(TwitchSupport)
-    override public void onEvent(IRCEvent event)
+    override public bool isEnabled() const @property pure nothrow @nogc
     {
-        if (state.server.daemon == IRCServer.Daemon.twitch) return;
-        return onEventImpl(event);
+        return (state.server.daemon != IRCServer.Daemon.twitch) && webtitlesSettings.enabled;
     }
+
+    mixin IRCPluginImpl;
 }
