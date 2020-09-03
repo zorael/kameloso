@@ -567,7 +567,7 @@ private:
      +          after verifying we're not on a Twitch server.
      +/
     version(TwitchSupport)
-    override public void onEvent(const IRCEvent event)
+    override public void onEvent(IRCEvent event)
     {
         if (state.server.daemon == IRCServer.Daemon.twitch)
         {

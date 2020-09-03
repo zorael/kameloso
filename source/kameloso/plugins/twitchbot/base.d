@@ -1884,7 +1884,7 @@ package:
      +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
      +          after verifying we should process the event.
      +/
-    override public void onEvent(const IRCEvent event)
+    override public void onEvent(IRCEvent event)
     {
         if ((state.server.daemon != IRCServer.Daemon.unset) &&
             (state.server.daemon != IRCServer.Daemon.twitch))

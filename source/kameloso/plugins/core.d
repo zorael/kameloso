@@ -64,7 +64,7 @@ abstract class IRCPlugin
     void postprocess(ref IRCEvent) @system;
 
     /// Executed upon new IRC event parsed from the server.
-    void onEvent(const IRCEvent) @system;
+    void onEvent(/*const*/ IRCEvent) @system;
 
     /// Executed when the plugin is requested to initialise its disk resources.
     void initResources() @system;
@@ -310,7 +310,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +      onEventImpl
      +/
     pragma(inline, true)
-    override public void onEvent(const IRCEvent event) @system
+    override public void onEvent(/*const*/ IRCEvent event) @system
     {
         return onEventImpl(event);
     }
