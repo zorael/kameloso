@@ -1871,9 +1871,24 @@ package:
         shared QueryResponse[string] bucket;
     }
 
+
+    // isEnabled
+    /++
+        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        a server check, so this plugin only works on Twitch, in addition
+        to doing nothing when `twitchbotSettings.enabled` is false.
+     +/
+    override public bool isEnabled() const @property pure nothrow @nogc
+    {
+        return ((state.server.daemon == IRCServer.Daemon.twitch) ||
+            (state.server.daemon == IRCServer.Daemon.unset)) &&
+            (twitchBotSettings.enabled || twitchBotSettings.keygen);
+    }
+
     mixin IRCPluginImpl;
 
 
+    // onEvent
     /++
         Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
         plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
@@ -1889,13 +1904,6 @@ package:
      +/
     override public void onEvent(IRCEvent event)
     {
-        if ((state.server.daemon != IRCServer.Daemon.unset) &&
-            (state.server.daemon != IRCServer.Daemon.twitch))
-        {
-            // Daemon unknown or not Twitch
-            return;
-        }
-
         if (this.twitchBotSettings.promoteBroadcasters)
         {
             if (event.sender.nickname.length && event.channel.length &&

@@ -307,27 +307,16 @@ public:
 final class CTCPService : IRCPlugin
 {
 private:
-    mixin IRCPluginImpl;
-
+    // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
-        plugin does nothing on Twitch servers. The function to call is
-        `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-
-        Params:
-            event = Parsed `dialect.defs.IRCEvent` to pass onto
-                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
-                after verifying we're not on a Twitch server.
+        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        a server check, so this plugin does nothing on Twitch servers.
      +/
     version(TwitchSupport)
-    override public void onEvent(IRCEvent event)
+    override public bool isEnabled() const @property pure nothrow @nogc
     {
-        if (state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            // Daemon is known to be Twitch
-            return;
-        }
-
-        return onEventImpl(event);
+        return (state.server.daemon != IRCServer.Daemon.twitch);
     }
+
+    mixin IRCPluginImpl;
 }
