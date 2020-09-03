@@ -1893,7 +1893,7 @@ package:
             return;
         }
 
-        if (event.type == IRCEvent.Type.CHAN)
+        if ((event.type == IRCEvent.Type.CHAN) || (event.type == IRCEvent.Type.SELFCHAN))
         {
             import lu.string : beginsWith;
 
