@@ -482,7 +482,10 @@ private:
     // isEnabled
     /++
         Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
-        a server check, so this plugin does nothing on Twitch servers.
+        a server check, so this service does nothing on Twitch servers.
+
+        Returns:
+            `true` if this service should react to events; `false` if not.
      +/
     version(TwitchSupport)
     override public bool isEnabled() const @property pure nothrow @nogc
