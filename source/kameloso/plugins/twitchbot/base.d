@@ -1918,6 +1918,28 @@ package:
                     return;
                 }
             }
+            /*else if (event.content.beginsWith(this.state.client.nickname))
+            {
+                import kameloso.common : stripSeparatedPrefix;
+
+                immutable tail = event.content
+                    .stripSeparatedPrefix(this.state.client.nickname);
+
+                // Specialcase "nickname: enable"
+                if (tail == "enable")
+                {
+                    // Always pass through
+                    return onEventImpl(event);
+                }
+                else
+                {
+                    // Only pass through if the channel is enabled
+                    if (const room = event.channel in rooms)
+                    {
+                        if (room.enabled) return onEventImpl(event);
+                    }
+                }
+            }*/
             else
             {
                 // Normal non-command channel message
