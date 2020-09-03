@@ -204,6 +204,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             `true` if the plugin is deemed enabled (or cannot be disabled),
             `false` if not.
      +/
+    pragma(inline, true)
     override public bool isEnabled() const @property pure nothrow @nogc
     {
         import lu.traits : getSymbolsByUDA, isAnnotated;
