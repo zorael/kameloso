@@ -343,7 +343,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         Params:
             origEvent = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    package void onEventImpl(const IRCEvent origEvent) @system
+    package void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -366,7 +366,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
         alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
 
-        enum Next
+        enum NextStep
         {
             continue_,
             repeat,
@@ -376,7 +376,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         /++
             Process a function.
          +/
-        Next process(alias fun)(ref IRCEvent event)
+        NextStep process(alias fun)(ref IRCEvent event)
         {
             enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
                 Yes.verbose :
@@ -415,7 +415,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
                     enum pattern = "`%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
-                        "or `IRCEvent.Type.QUERY` instead";
+                        "and/or `IRCEvent.Type.QUERY` instead";
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
@@ -539,7 +539,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             }
 
             // Invalid type, continue with the next function
-            if (!typeMatches) return Next.continue_;
+            if (!typeMatches) return NextStep.continue_;
 
             static if (verbose)
             {
@@ -573,7 +573,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     }
 
                     // channel policy does not match
-                    return Next.continue_;  // next fun
+                    return NextStep.continue_;  // next fun
                 }
             }
             else
@@ -591,7 +591,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 {
                     // Event has a `BotCommand` or a `BotRegex`set up but
                     // `event.content` is empty; cannot possibly be of interest.
-                    return Next.continue_;  // next function
+                    return NextStep.continue_;  // next function
                 }
             }
 
@@ -763,7 +763,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    return Next.continue_; // next function
+                    return NextStep.continue_; // next function
                 }
 
                 scope(exit)
@@ -810,14 +810,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     if (state.settings.flush) stdout.flush();
                 }
 
-                with (FilterResult)
-                final switch (result)
+                /*if (result == FilterResult.pass)
                 {
-                case pass:
                     // Drop down
-                    break;
-
-                case whois:
+                }
+                else*/ if (result == FilterResult.whois)
+                {
                     import kameloso.plugins.common : enqueue;
                     import std.traits : fullyQualifiedName;
 
@@ -833,13 +831,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
                         this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
-                        return Next.continue_;  // Next function
+                        return NextStep.continue_;  // Next function
                     }
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
                         this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
-                        return Next.continue_;  // Next function
+                        return NextStep.continue_;  // Next function
                     }
                     else static if (Filter!(isIRCPluginParam, Params).length)
                     {
@@ -856,10 +854,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         static assert(0, "`%s` has an unsupported function signature: `%s`"
                             .format(fullyQualifiedName!fun, typeof(fun).stringof));
                     }
-
-                case fail:
-                    return Next.continue_;  // Next function
                 }
+                else if (result == FilterResult.fail)
+                {
+                    return NextStep.continue_;  // Next function
+                }
+                /*else
+                {
+                    assert(0);
+                }*/
             }
 
             alias Params = staticMap!(Unqual, Parameters!fun);
@@ -911,13 +914,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 // it's Chainable and there may be more, so keep looking.
                 // Alternatively it's an awareness function, which may be
                 // sharing one or more annotations with another.
-                return Next.continue_;
+                return NextStep.continue_;
             }
             else /*static if (isAnnotated!(fun, Terminating))*/
             {
                 // The triggered function is not Chainable so return and
                 // let the main loop continue with the next plugin.
-                return Next.return_;
+                return NextStep.return_;
             }
         }
 
@@ -951,15 +954,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 {
                     immutable next = process!fun(event);
 
-                    with (Next)
-                    final switch (next)
+                    if (next == NextStep.continue_)
                     {
-                    case continue_:
                         continue;
-
-                    case repeat:
+                    }
+                    else if (next == NextStep.repeat)
+                    {
                         // only repeat once so we don't endlessly loop
-                        if (process!fun(event) == continue_)
+                        if (process!fun(event) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -967,9 +969,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         {
                             return;
                         }
-
-                    case return_:
+                    }
+                    else if (next == NextStep.return_)
+                    {
                         return;
+                    }
+                    else
+                    {
+                        assert(0);
                     }
                 }
                 catch (UTFException e)
@@ -978,7 +985,34 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         __traits(identifier, fun), e.msg);*/
 
                     sanitizeEvent(event);
-                    process!fun(event);
+
+                    // Copy-paste, not much we can do otherwise
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
+                    {
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
                 }
                 catch (UnicodeException e)
                 {
@@ -986,18 +1020,43 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         __traits(identifier, fun), e.msg);*/
 
                     sanitizeEvent(event);
-                    process!fun(event);
+
+                    // Copy-paste, not much we can do otherwise
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
+                    {
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
                 }
             }
         }
 
-        IRCEvent event = origEvent;  // mutable
-
-        tryProcess!setupFuns(event);
-        tryProcess!earlyFuns(event);
-        tryProcess!pluginFuns(event);
-        tryProcess!lateFuns(event);
-        tryProcess!cleanupFuns(event);
+        tryProcess!setupFuns(origEvent);
+        tryProcess!earlyFuns(origEvent);
+        tryProcess!pluginFuns(origEvent);
+        tryProcess!lateFuns(origEvent);
+        tryProcess!cleanupFuns(origEvent);
     }
 
 
