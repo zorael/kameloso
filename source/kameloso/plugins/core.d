@@ -251,17 +251,31 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
+    // allow
+    /++
+        Judges whether an event may be triggered, based on the event itself and
+        the annotated `PrivilegeLevel` of the handler in question. Wrapper function
+        that merely calls `allowImpl`. The point behind it is to make something
+        that can be overridden and still allow it to call the original logic (below).
+
+        Params:
+            event = `dialect.defs.IRCEvent` to allow, or not.
+            privilegeLevel = `PrivilegeLevel` of the handler in question.
+
+        Returns:
+            `true` if the event should be allowed to trigger, `false` if not.
+     +/
+    pragma(inline, true)
+    package FilterResult allow(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
+    {
+        return allowImpl(event, privilegeLevel);
+    }
+
+
     // allowImpl
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated `PrivilegeLevel` of the handler in question.
-
-        Pass the passed arguments to `filterSender`, doing nothing otherwise.
-
-        Sadly we can't keep an `allow` around to override since calling it from
-        inside the same mixin always seems to resolve the original. So instead,
-        only have `allowImpl` and use introspection to determine whether to call
-        that or any custom-defined `allow` in `typeof(this)`.
+        the annotated `PrivilegeLevel` of the handler in question. Implementation function.
 
         Params:
             event = `dialect.defs.IRCEvent` to allow, or not.
@@ -789,42 +803,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     if (state.settings.flush) stdout.flush();
                 }
 
-                static if (__traits(hasMember, this, "allow") && isSomeFunction!(this.allow))
-                {
-                    import lu.traits : TakesParams;
-
-                    static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "Custom `allow` function in `%s` " ~
-                            "has an invalid signature: `%s`";
-                        static assert(0, pattern.format(fullyQualifiedName!(typeof(this)),
-                            typeof(this.allow).stringof));
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...custom allow!");
-                        if (state.settings.flush) stdout.flush();
-                    }
-
-                    immutable result = this.allow(event, privilegeLevel);
-                }
-                else
-                {
-                    static if (verbose)
-                    {
-                        writeln("...built-in allow.");
-                        if (state.settings.flush) stdout.flush();
-                    }
-
-                    immutable result = allowImpl(event, privilegeLevel);
-                }
+                immutable result = this.allow(event, privilegeLevel);
 
                 static if (verbose)
                 {
-                    writeln("...result is ", Enum!FilterResult.toString(result));
+                    writeln("...allow result is ", Enum!FilterResult.toString(result));
                     if (state.settings.flush) stdout.flush();
                 }
 
