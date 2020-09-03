@@ -1896,6 +1896,17 @@ package:
             return;
         }
 
+        if (this.twitchBotSettings.promoteBroadcasters)
+        {
+            if (event.sender.nickname.length && event.channel.length &&
+                (event.sender.nickname == event.channel[1..$]) &&
+                (event.sender.class_ < IRCUser.Class.staff))
+            {
+                // Sender is broadcaster but is not registered as staff
+                event.sender.class_ = IRCUser.Class.staff;
+            }
+        }
+
         if ((event.type == IRCEvent.Type.CHAN) || (event.type == IRCEvent.Type.SELFCHAN))
         {
             import lu.string : beginsWith;
