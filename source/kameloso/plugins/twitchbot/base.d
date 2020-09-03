@@ -1885,8 +1885,6 @@ package:
             (twitchBotSettings.enabled || twitchBotSettings.keygen);
     }
 
-    mixin IRCPluginImpl;
-
 
     // onEvent
     /++
@@ -1974,4 +1972,6 @@ package:
             return onEventImpl(event);
         }
     }
+
+    mixin IRCPluginImpl;
 }
