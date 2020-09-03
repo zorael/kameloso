@@ -1,18 +1,18 @@
 /++
- +  Functions related to IRC colouring and formatting, mapping it to ANSI
- +  terminal such, stripping it, etc.
- +
- +  IRC colours are not in the standard as such, but there is a de-facto standard
- +  based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
- +  `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
- +  background colour number.
- +
- +  Example:
- +  ---
- +  immutable nameInColour = "kameloso".ircColour(IRCColour.red);
- +  immutable nameInHashedColour = "kameloso".ircColouByHash;
- +  immutable nameInBold = "kameloso".ircBold;
- +  ---
+    Functions related to IRC colouring and formatting, mapping it to ANSI
+    terminal such, stripping it, etc.
+
+    IRC colours are not in the standard as such, but there is a de-facto standard
+    based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
+    `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
+    background colour number.
+
+    Example:
+    ---
+    immutable nameInColour = "kameloso".ircColour(IRCColour.red);
+    immutable nameInHashedColour = "kameloso".ircColouByHash;
+    immutable nameInBold = "kameloso".ircBold;
+    ---
  +/
 module kameloso.irccolours;
 
@@ -32,7 +32,7 @@ public:
 @safe:
 
 /++
- +  Official mIRC colour table.
+    Official mIRC colour table.
  +/
 enum IRCColour
 {
@@ -59,14 +59,14 @@ enum IRCColour
 
 // ircColourInto
 /++
- +  Colour-codes the passed string with mIRC colouring, foreground and background.
- +  Takes an output range sink and writes to it instead of allocating a new string.
- +
- +  Params:
- +      line = Line to tint.
- +      sink = Output range sink to fill with the function's output.
- +      fg = Foreground `IRCColour`.
- +      bg = Optional background `IRCColour`.
+    Colour-codes the passed string with mIRC colouring, foreground and background.
+    Takes an output range sink and writes to it instead of allocating a new string.
+
+    Params:
+        line = Line to tint.
+        sink = Output range sink to fill with the function's output.
+        fg = Foreground `IRCColour`.
+        bg = Optional background `IRCColour`.
  +/
 void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour fg,
     const IRCColour bg = IRCColour.unset)
@@ -114,17 +114,17 @@ unittest
 
 // ircColour
 /++
- +  Colour-codes the passed string with mIRC colouring, foreground and background.
- +  Direct overload that leverages the output range version to colour an internal
- +  `std.array.Appender`, and returns the resulting string.
- +
- +  Params:
- +      line = Line to tint.
- +      fg = Foreground `IRCColour`.
- +      bg = Optional background `IRCColour`.
- +
- +  Returns:
- +      The passed line, encased within IRC colour tags.
+    Colour-codes the passed string with mIRC colouring, foreground and background.
+    Direct overload that leverages the output range version to colour an internal
+    `std.array.Appender`, and returns the resulting string.
+
+    Params:
+        line = Line to tint.
+        fg = Foreground `IRCColour`.
+        bg = Optional background `IRCColour`.
+
+    Returns:
+        The passed line, encased within IRC colour tags.
  +/
 string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
@@ -156,16 +156,16 @@ unittest
 
 // ircColour
 /++
- +  Returns a mIRC colour code for the passed foreground and background colour.
- +  Overload that doesn't take a string to tint, only the `IRCColour`s to
- +  produce a colour code from.
- +
- +  Params:
- +      fg = Foreground `IRCColour`.
- +      bg = Optional background `IRCColour`.
- +
- +  Returns:
- +      An opening IRC colour token with the passed colours.
+    Returns a mIRC colour code for the passed foreground and background colour.
+    Overload that doesn't take a string to tint, only the `IRCColour`s to
+    produce a colour code from.
+
+    Params:
+        fg = Foreground `IRCColour`.
+        bg = Optional background `IRCColour`.
+
+    Returns:
+        An opening IRC colour token with the passed colours.
  +/
 string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
@@ -231,14 +231,14 @@ unittest
 
 // ircColourByHash
 /++
- +  Returns the passed string coloured with an IRC colour depending on the hash
- +  of the string, making for good random nick colours in IRC messages.
- +
- +  Params:
- +      word = String to tint.
- +
- +  Returns:
- +      The passed string encased within IRC colour coding.
+    Returns the passed string coloured with an IRC colour depending on the hash
+    of the string, making for good random nick colours in IRC messages.
+
+    Params:
+        word = String to tint.
+
+    Returns:
+        The passed string encased within IRC colour coding.
  +/
 string ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
@@ -280,13 +280,13 @@ unittest
 
 // ircBold
 /++
- +  Returns the passed string wrapped in between IRC bold control characters.
- +
- +  Params:
- +      word = String word to make IRC bold.
- +
- +  Returns:
- +      The passed string, in IRC bold.
+    Returns the passed string wrapped in between IRC bold control characters.
+
+    Params:
+        word = String word to make IRC bold.
+
+    Returns:
+        The passed string, in IRC bold.
  +/
 string ircBold(const string word) pure nothrow
 in (word.length, "Tried to apply IRC bold to a string but no string was given")
@@ -307,13 +307,13 @@ unittest
 
 // ircItalics
 /++
- +  Returns the passed string wrapped in between IRC italics control characters.
- +
- +  Params:
- +      word = String word to make IRC italics.
- +
- +  Returns:
- +      The passed string, in IRC italics.
+    Returns the passed string wrapped in between IRC italics control characters.
+
+    Params:
+        word = String word to make IRC italics.
+
+    Returns:
+        The passed string, in IRC italics.
  +/
 string ircItalics(const string word) pure nothrow
 in (word.length, "Tried to apply IRC italics to a string but no string was given")
@@ -334,13 +334,13 @@ unittest
 
 // ircUnderlined
 /++
- +  Returns the passed string wrapped in between IRC underlined control characters.
- +
- +  Params:
- +      word = String word to make IRC italics.
- +
- +  Returns:
- +      The passed string, in IRC italics.
+    Returns the passed string wrapped in between IRC underlined control characters.
+
+    Params:
+        word = String word to make IRC italics.
+
+    Returns:
+        The passed string, in IRC italics.
  +/
 string ircUnderlined(const string word) pure nothrow
 in (word.length, "Tried to apply IRC underlined to a string but no string was given")
@@ -361,10 +361,10 @@ unittest
 
 // ircReset
 /++
- +  Returns an IRC formatting reset token.
- +
- +  Returns:
- +      An IRC colour/formatting reset token.
+    Returns an IRC formatting reset token.
+
+    Returns:
+        An IRC colour/formatting reset token.
  +/
 char ircReset() @nogc pure nothrow
 {
@@ -374,21 +374,21 @@ char ircReset() @nogc pure nothrow
 
 // mapEffects
 /++
- +  Maps mIRC effect tokens (colour, bold, italics, underlined) to terminal ones.
- +
- +  Example:
- +  ---
- +  string mIRCEffectString = "...";
- +  string TerminalFormatString = mapEffects(mIRCEffectString);
- +  ---
- +
- +  Params:
- +      origLine = String line to map effects of.
- +      fgBase = Foreground base code to reset to after end colour tags.
- +      bgBase = Background base code to reset to after end colour tags.
- +
- +  Returns:
- +      A new string based on `origLine` with mIRC tokens mapped to terminal ones.
+    Maps mIRC effect tokens (colour, bold, italics, underlined) to terminal ones.
+
+    Example:
+    ---
+    string mIRCEffectString = "...";
+    string TerminalFormatString = mapEffects(mIRCEffectString);
+    ---
+
+    Params:
+        origLine = String line to map effects of.
+        fgBase = Foreground base code to reset to after end colour tags.
+        bgBase = Background base code to reset to after end colour tags.
+
+    Returns:
+        A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
 string mapEffects(const string origLine, const uint fgBase = TerminalForeground.default_,
@@ -453,14 +453,14 @@ unittest
 
 // stripEffects
 /++
- +  Removes all form of mIRC formatting (colours, bold, italics, underlined)
- +  from a string.
- +
- +  Params:
- +      line = String to strip effects from.
- +
- +  Returns:
- +      A string devoid of effects.
+    Removes all form of mIRC formatting (colours, bold, italics, underlined)
+    from a string.
+
+    Params:
+        line = String to strip effects from.
+
+    Returns:
+        A string devoid of effects.
  +/
 string stripEffects(const string line) pure nothrow
 {
@@ -504,17 +504,17 @@ unittest
 
 // mapColours
 /++
- +  Maps mIRC effect colour tokens to terminal ones.
- +
- +  Merely calls `mapColoursImpl` with `No.strip`.
- +
- +  Params:
- +      line = String line with IRC colours to translate.
- +      fgReset = Foreground code to reset to after colour-default tokens.
- +      bgReset = Background code to reset to after colour-default tokens.
- +
- +  Returns:
- +      The passed `line`, now with terminal colouring.
+    Maps mIRC effect colour tokens to terminal ones.
+
+    Merely calls `mapColoursImpl` with `No.strip`.
+
+    Params:
+        line = String line with IRC colours to translate.
+        fgReset = Foreground code to reset to after colour-default tokens.
+        bgReset = Background code to reset to after colour-default tokens.
+
+    Returns:
+        The passed `line`, now with terminal colouring.
  +/
 version(Colours)
 string mapColours(const string line,
@@ -529,22 +529,22 @@ string mapColours(const string line,
 
 // mapColoursImpl
 /++
- +  Maps mIRC effect colour tokens to terminal ones, or strip them entirely.
- +  Now with less regex.
- +
- +  Pass `Yes.strip` as `strip` to map colours to nothing, removing colouring.
- +
- +  This function requires version `Colours` to map colours, but doesn't if
- +  just to strip.
- +
- +  Params:
- +      strip = Whether or not to strip colours or to map them.
- +      line = String line with IRC colours to translate.
- +      fgReset = Foreground code to reset to after colour-default tokens.
- +      bgReset = Background code to reset to after colour-default tokens.
- +
- +  Returns:
- +      The passed `line`, now with terminal colouring, or completely without.
+    Maps mIRC effect colour tokens to terminal ones, or strip them entirely.
+    Now with less regex.
+
+    Pass `Yes.strip` as `strip` to map colours to nothing, removing colouring.
+
+    This function requires version `Colours` to map colours, but doesn't if
+    just to strip.
+
+    Params:
+        strip = Whether or not to strip colours or to map them.
+        line = String line with IRC colours to translate.
+        fgReset = Foreground code to reset to after colour-default tokens.
+        bgReset = Background code to reset to after colour-default tokens.
+
+    Returns:
+        The passed `line`, now with terminal colouring, or completely without.
  +/
 private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
     const uint fgReset, const uint bgReset) pure nothrow
@@ -828,15 +828,15 @@ unittest
 
 // stripColours
 /++
- +  Removes IRC colouring from a passed string.
- +
- +  Merely calls `mapColours` with a `Yes.strip` template parameter.
- +
- +  Params:
- +      line = String to strip of IRC colour tags.
- +
- +  Returns:
- +      The passed `line`, now stripped of IRC colours.
+    Removes IRC colouring from a passed string.
+
+    Merely calls `mapColours` with a `Yes.strip` template parameter.
+
+    Params:
+        line = String to strip of IRC colour tags.
+
+    Returns:
+        The passed `line`, now stripped of IRC colours.
  +/
 string stripColours(const string line) pure nothrow
 {
@@ -874,24 +874,24 @@ unittest
 
 // mapEffectsImpl
 /++
- +  Replaces mIRC tokens with terminal effect codes, in an alternating fashion
- +  so as to support repeated effects toggling behaviour. Now with less regex.
- +
- +  It seems to be the case that a token for bold text will trigger bold text up
- +  until the next bold token. If we only naïvely replace all mIRC tokens for
- +  bold text then, we'll get lines that start off bold and continue as such
- +  until the very end.
- +
- +  Instead we iterate all occcurences of the passed `mircToken`, toggling the
- +  effect on and off.
- +
- +  Params:
- +      mircToken = mIRC token for a particular text effect.
- +      TerminalFormatCode = Terminal equivalent of the mircToken effect.
- +      line = The mIRC-formatted string to translate.
- +
- +  Returns:
- +      The passed `line`, now with terminal formatting.
+    Replaces mIRC tokens with terminal effect codes, in an alternating fashion
+    so as to support repeated effects toggling behaviour. Now with less regex.
+
+    It seems to be the case that a token for bold text will trigger bold text up
+    until the next bold token. If we only naïvely replace all mIRC tokens for
+    bold text then, we'll get lines that start off bold and continue as such
+    until the very end.
+
+    Instead we iterate all occcurences of the passed `mircToken`, toggling the
+    effect on and off.
+
+    Params:
+        mircToken = mIRC token for a particular text effect.
+        TerminalFormatCode = Terminal equivalent of the mircToken effect.
+        line = The mIRC-formatted string to translate.
+
+    Returns:
+        The passed `line`, now with terminal formatting.
  +/
 private string mapEffectsImpl(Flag!"strip" strip, int mircToken, int terminalFormatCode)
     (const string line)

@@ -1,5 +1,5 @@
 /++
- +  Package for the Admin plugin modules.
+    Package for the Admin plugin modules.
  +/
 module kameloso.plugins.admin;
 

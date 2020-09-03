@@ -1,9 +1,9 @@
 /++
- +  The CTCP service handles responding to CTCP (client-to-client protocol)
- +  requests behind the scenes.
- +
- +  It has no commands and is not aware in the normal sense; it only blindly
- +  responds to requests.
+    The CTCP service handles responding to CTCP (client-to-client protocol)
+    requests behind the scenes.
+
+    It has no commands and is not aware in the normal sense; it only blindly
+    responds to requests.
  +/
 module kameloso.plugins.ctcp;
 
@@ -20,11 +20,11 @@ import std.typecons : Flag, No, Yes;
 
 // onCTCPs
 /++
- +  Handles `CTCP` requests.
- +
- +  This is a catch-all function handling most `CTCP` requests we support,
- +  instead of having five different functions each dealing with one.
- +  Either design works; both end up with a switch.
+    Handles `CTCP` requests.
+
+    This is a catch-all function handling most `CTCP` requests we support,
+    instead of having five different functions each dealing with one.
+    Either design works; both end up with a switch.
  +/
 //@(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
 @(IRCEvent.Type.CTCP_VERSION)
@@ -231,11 +231,11 @@ unittest
 
 // onCTCPClientinfo
 /++
- +  Sends a list of which `CTCP` events we understand.
- +
- +  This builds a string of the names of all `dialect.defs.IRCEvent.Type`s
- +  that begin with `CTCP_`, at compile-time. As such, as long as we name any
- +  new such types `CTCP_SOMETHING`, this list will always be correct.
+    Sends a list of which `CTCP` events we understand.
+
+    This builds a string of the names of all `dialect.defs.IRCEvent.Type`s
+    that begin with `CTCP_`, at compile-time. As such, as long as we name any
+    new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(CTCPService service, const IRCEvent event)
@@ -296,13 +296,13 @@ public:
 
 // CTCPService
 /++
- +  The `CTCP` service (client-to-client protocol) answers to special queries
- +  sometime made over the IRC protocol. These are generally of metadata about
- +  the client itself and its capabilities.
- +
- +  Information about these were gathered from the following sites:
- +      - https://modern.ircdocs.horse/ctcp.html
- +      - http://www.irchelp.org/protocol/ctcpspec.html
+    The `CTCP` service (client-to-client protocol) answers to special queries
+    sometime made over the IRC protocol. These are generally of metadata about
+    the client itself and its capabilities.
+
+    Information about these were gathered from the following sites:
+        - https://modern.ircdocs.horse/ctcp.html
+        - http://www.irchelp.org/protocol/ctcpspec.html
  +/
 final class CTCPService : IRCPlugin
 {
@@ -310,14 +310,14 @@ private:
     mixin IRCPluginImpl;
 
     /++
-     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does nothing on Twitch servers. The function to call is
-     +  `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-     +
-     +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
-     +          after verifying we're not on a Twitch server.
+        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
+        plugin does nothing on Twitch servers. The function to call is
+        `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
+
+        Params:
+            event = Parsed `dialect.defs.IRCEvent` to pass onto
+                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
+                after verifying we're not on a Twitch server.
      +/
     version(TwitchSupport)
     override public void onEvent(IRCEvent event)

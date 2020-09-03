@@ -1,5 +1,5 @@
 /++
- +  Dummy main module so the main `kameloso.d` gets tested by dub.
+    Dummy main module so the main `kameloso.d` gets tested by dub.
  +/
 module kameloso.main;
 
@@ -56,7 +56,7 @@ version(Windows)
 
 version(unittest)
 /++
- +  Unit-testing main; does nothing.
+    Unit-testing main; does nothing.
  +/
 void main()
 {
@@ -78,15 +78,15 @@ void main()
 }
 else
 /++
- +  Entry point of the program.
- +
- +  Technically it just passes on execution to `kameloso.kameloso.initBot`.
- +
- +  Params:
- +      args = Command-line arguments passed to the program.
- +
- +  Returns:
- +      `0` on success, non-`0` on failure.
+    Entry point of the program.
+
+    Technically it just passes on execution to `kameloso.kameloso.initBot`.
+
+    Params:
+        args = Command-line arguments passed to the program.
+
+    Returns:
+        `0` on success, non-`0` on failure.
  +/
 int main(string[] args)
 {

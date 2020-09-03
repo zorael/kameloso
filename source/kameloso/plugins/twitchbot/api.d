@@ -1,5 +1,5 @@
 /++
- +  Functions for accessing the Twitch API. For internal use.
+    Functions for accessing the Twitch API. For internal use.
  +/
 module kameloso.plugins.twitchbot.api;
 
@@ -26,11 +26,11 @@ package:
 
 // QueryResponse
 /++
- +  Embodies a response from a query to the Twitch servers. A string paired with
- +  a millisecond count of how long the query took.
- +
- +  This is used instead of a `std.typecons.Tuple` because it doesn't apparently
- +  work with `shared`.
+    Embodies a response from a query to the Twitch servers. A string paired with
+    a millisecond count of how long the query took.
+
+    This is used instead of a `std.typecons.Tuple` because it doesn't apparently
+    work with `shared`.
  +/
 struct QueryResponse
 {
@@ -50,22 +50,22 @@ struct QueryResponse
 
 // persistentQuerier
 /++
- +  Persistent worker issuing Twitch API queries based on the concurrency messages
- +  sent to it.
- +
- +  Possibly best used on Windows where threads are comparatively expensive
- +  compared to Posix platforms.
- +
- +  Example:
- +  ---
- +  spawn(&persistentQuerier, plugin.bucket, plugin.queryResponseTimeout, caBundleFile);
- +  ---
- +
- +  Params:
- +      bucket = The shared associative array to put the results in, response
- +          values keyed by URL.
- +      timeout = How long before queries time out.
- +      caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+    Persistent worker issuing Twitch API queries based on the concurrency messages
+    sent to it.
+
+    Possibly best used on Windows where threads are comparatively expensive
+    compared to Posix platforms.
+
+    Example:
+    ---
+    spawn(&persistentQuerier, plugin.bucket, plugin.queryResponseTimeout, caBundleFile);
+    ---
+
+    Params:
+        bucket = The shared associative array to put the results in, response
+            values keyed by URL.
+        timeout = How long before queries time out.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
     const string caBundleFile)
@@ -108,12 +108,12 @@ void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
 
 // generateKey
 /++
- +  Start the captive key generation routine at the earliest possible moment,
- +  which are the CAP events.
- +
- +  We can't do it in `start` since the calls to save and exit would go unheard,
- +  as `start` happens before the main loop starts. It would then immediately
- +  fail to read if too much time has passed, and nothing would be saved.
+    Start the captive key generation routine at the earliest possible moment,
+    which are the CAP events.
+
+    We can't do it in `start` since the calls to save and exit would go unheard,
+    as `start` happens before the main loop starts. It would then immediately
+    fail to read if too much time has passed, and nothing would be saved.
  +/
 void generateKey(TwitchBotPlugin plugin)
 {
@@ -374,33 +374,33 @@ void generateKey(TwitchBotPlugin plugin)
 
 // queryTwitch
 /++
- +  Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
- +  worker start it.
- +
- +  Once the query returns, the response body is checked to see whether or not
- +  an error occurred. If it did, an attempt to reset API keys is made and, if
- +  successful, the query is resent and the cycle repeated while taking care not
- +  to inifinitely loop. If not successful, it throws an exception and disables
- +  API features.
- +
- +  Note: Must be called from inside a `core.thread.Fiber`.
- +
- +  Example:
- +  ---
- +  immutable QueryResponse = queryTwitch(plugin, "https://id.twitch.tv/oauth2/validate", "OAuth 30letteroauthstring");
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      url = The URL to query.
- +      authorisationHeader = Authorisation HTTP header to pass.
- +
- +  Returns:
- +      The `QueryResponse` that was discovered while monitoring the `bucket`
- +      as having been received from the server.
- +
- +  Throws:
- +      `object.Exception` if there were unrecoverable errors.
+    Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
+    worker start it.
+
+    Once the query returns, the response body is checked to see whether or not
+    an error occurred. If it did, an attempt to reset API keys is made and, if
+    successful, the query is resent and the cycle repeated while taking care not
+    to inifinitely loop. If not successful, it throws an exception and disables
+    API features.
+
+    Note: Must be called from inside a `core.thread.Fiber`.
+
+    Example:
+    ---
+    immutable QueryResponse = queryTwitch(plugin, "https://id.twitch.tv/oauth2/validate", "OAuth 30letteroauthstring");
+    ---
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        url = The URL to query.
+        authorisationHeader = Authorisation HTTP header to pass.
+
+    Returns:
+        The `QueryResponse` that was discovered while monitoring the `bucket`
+        as having been received from the server.
+
+    Throws:
+        `object.Exception` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
     const string authorisationHeader)
@@ -465,29 +465,29 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
 // queryTwitchImpl
 /++
- +  Sends a HTTP GET request to the passed URL, and "returns" the response by
- +  adding it to the shared `bucket`.
- +
- +  Callers can as such spawn this function as a new thread and asynchronously
- +  monitor the `bucket` for when the results arrive.
- +
- +  Example:
- +  ---
- +  immutable url = "https://api.twitch.tv/helix/some/api/url";
- +
- +  spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
- +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +  immutable response = waitForQueryResponse(plugin, url);
- +  // response.str is the response body
- +  ---
- +
- +  Params:
- +      url = URL address to look up.
- +      authToken = Authorisation token HTTP header to pass.
- +      timeout = How long to let the query run before timing out.
- +      bucket = The shared associative array to put the results in, response
- +          values keyed by URL.
- +      caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+    Sends a HTTP GET request to the passed URL, and "returns" the response by
+    adding it to the shared `bucket`.
+
+    Callers can as such spawn this function as a new thread and asynchronously
+    monitor the `bucket` for when the results arrive.
+
+    Example:
+    ---
+    immutable url = "https://api.twitch.tv/helix/some/api/url";
+
+    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
+    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    immutable response = waitForQueryResponse(plugin, url);
+    // response.str is the response body
+    ---
+
+    Params:
+        url = URL address to look up.
+        authToken = Authorisation token HTTP header to pass.
+        timeout = How long to let the query run before timing out.
+        bucket = The shared associative array to put the results in, response
+            values keyed by URL.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void queryTwitchImpl(const string url, const string authToken,
     const uint timeout, shared QueryResponse[string] bucket, const string caBundleFile)
@@ -542,15 +542,15 @@ void queryTwitchImpl(const string url, const string authToken,
 
 // getTwitchEntity
 /++
- +  By following a passed URL, queries Twitch servers for an entity (user or channel).
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      url = The URL to follow.
- +
- +  Returns:
- +      A singular user or channel regardless of how many were asked for in the URL.
- +      If nothing was found, an empty `std.json.JSONValue.init` is returned.
+    By following a passed URL, queries Twitch servers for an entity (user or channel).
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        url = The URL to follow.
+
+    Returns:
+        A singular user or channel regardless of how many were asked for in the URL.
+        If nothing was found, an empty `std.json.JSONValue.init` is returned.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 {
@@ -572,9 +572,9 @@ JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 
 // getChatters
 /++
- +  Get the JSON representation of everyone currently in a broadcaster's channel.
- +
- +  It is not updated in realtime, so it doesn't make sense to call this often.
+    Get the JSON representation of everyone currently in a broadcaster's channel.
+
+    It is not updated in realtime, so it doesn't make sense to call this often.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 {
@@ -623,17 +623,17 @@ JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 
 // getValidation
 /++
- +  Validates the current access key, retrieving information about it.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +
- +  Returns:
- +      A `std.json.JSONValue` with the validation information JSON of the
- +      current authorisation header/client ID pair.
- +
- +  Throws:
- +      `TwitchQueryException` on failure.
+    Validates the current access key, retrieving information about it.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+
+    Returns:
+        A `std.json.JSONValue` with the validation information JSON of the
+        current authorisation header/client ID pair.
+
+    Throws:
+        `TwitchQueryException` on failure.
  +/
 JSONValue getValidation(TwitchBotPlugin plugin)
 in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
@@ -666,18 +666,18 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 
 // cacheFollows
 /++
- +  Fetches a list of all follows of the passed channel and caches them in
- +  the channel's entry in `TwitchBotPlugin.rooms`.
- +
- +  Note: Must be called from inside a `core.thread.Fiber`.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      id = The string identifier for the channel.
- +
- +  Returns:
- +      A `std.json.JSONValue` containing follows, JSON values keyed by the ID string
- +      of the follower.
+    Fetches a list of all follows of the passed channel and caches them in
+    the channel's entry in `TwitchBotPlugin.rooms`.
+
+    Note: Must be called from inside a `core.thread.Fiber`.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        id = The string identifier for the channel.
+
+    Returns:
+        A `std.json.JSONValue` containing follows, JSON values keyed by the ID string
+        of the follower.
  +/
 JSONValue cacheFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
@@ -717,16 +717,16 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 
 // averageApproximateQueryTime
 /++
- +  Given a query time measurement, calculate a new approximate query time based on
- +  the weighted averages of the old one and said measurement.
- +
- +  The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
- +  and the new measurement a weight of 1. Additionally the measurement is padded
- +  by `TwitchBotPlugin.approximateQueryMeasurementPadding` to be on the safe side.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      responseMsecs = How many milliseconds the last query took to complete.
+    Given a query time measurement, calculate a new approximate query time based on
+    the weighted averages of the old one and said measurement.
+
+    The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
+    and the new measurement a weight of 1. Additionally the measurement is padded
+    by `TwitchBotPlugin.approximateQueryMeasurementPadding` to be on the safe side.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        responseMsecs = How many milliseconds the last query took to complete.
  +/
 void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
 {
@@ -750,40 +750,40 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 
 // waitForQueryResponse
 /++
- +  Common code to wait for a query response. Merely spins and monitors the shared
- +  `bucket` associative array for when a response has arrived, and then returns it.
- +  Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
- +  was received.
- +
- +  Note: Must be called from inside a `core.thread.Fiber`.
- +
- +  Example:
- +  ---
- +  immutable url = "https://api.twitch.tv/helix/users?login=zorael";
- +
- +  if (plugin.twitchBotSettings.singleWorkerThread)
- +  {
- +      plugin.persistentWorkerTid.send(url, plugin.authorizationBearer);
- +  }
- +  else
- +  {
- +      spawn(&queryTwitchImpl, url, plugin.authorizationBearer,
- +          plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
- +  }
- +
- +  delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
- +  immutable response = waitForQueryResponse(plugin, url);
- +  // response.str is the response body
- +  ---
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      url = The URL that was queried prior to calling this function. Must match.
- +      leaveTimingAlone = Whether or not to adjust the approximate query time.
- +          Enabled by default but can be disabled if the caller wants to do it.
- +
- +  Returns:
- +      A `QueryResponse` as constructed by other parts of the program.
+    Common code to wait for a query response. Merely spins and monitors the shared
+    `bucket` associative array for when a response has arrived, and then returns it.
+    Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
+    was received.
+
+    Note: Must be called from inside a `core.thread.Fiber`.
+
+    Example:
+    ---
+    immutable url = "https://api.twitch.tv/helix/users?login=zorael";
+
+    if (plugin.twitchBotSettings.singleWorkerThread)
+    {
+        plugin.persistentWorkerTid.send(url, plugin.authorizationBearer);
+    }
+    else
+    {
+        spawn(&queryTwitchImpl, url, plugin.authorizationBearer,
+            plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
+    }
+
+    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    immutable response = waitForQueryResponse(plugin, url);
+    // response.str is the response body
+    ---
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        url = The URL that was queried prior to calling this function. Must match.
+        leaveTimingAlone = Whether or not to adjust the approximate query time.
+            Enabled by default but can be disabled if the caller wants to do it.
+
+    Returns:
+        A `QueryResponse` as constructed by other parts of the program.
  +/
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
     const bool leaveTimingAlone = true)
@@ -830,10 +830,10 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
 // TwitchQueryException
 /++
- +  Exception, to be thrown when an API query to the Twitch servers failed,
- +  for whatever reason.
- +
- +  It is a normal `object.Exception` but with attached metadata.
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    for whatever reason.
+
+    It is a normal `object.Exception` but with attached metadata.
  +/
 final class TwitchQueryException : Exception
 {
@@ -848,8 +848,8 @@ final class TwitchQueryException : Exception
     uint code;
 
     /++
-     +  Create a new `TwitchQueryException`, attaching a response body and a
-     +  HTTP return code.
+        Create a new `TwitchQueryException`, attaching a response body and a
+        HTTP return code.
      +/
     this(const string message, const string responseBody, const string error, const uint code,
         const string file = __FILE__, const size_t line = __LINE__,
@@ -862,7 +862,7 @@ final class TwitchQueryException : Exception
     }
 
     /++
-     +  Create a new `TwitchQueryException`, without attaching anything.
+        Create a new `TwitchQueryException`, without attaching anything.
      +/
     this(const string message, const string file = __FILE__, const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

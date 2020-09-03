@@ -1,5 +1,5 @@
 /++
- +  Package for the common plugin modules.
+    Package for the common plugin modules.
  +/
 module kameloso.plugins.common;
 

@@ -1,10 +1,10 @@
 /++
- +  Implementation of Admin plugin functionality that borders on debugging.
- +  For internal use.
- +
- +  The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
- +  as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
- +  functions can be offloaded here to limit module size a bit.
+    Implementation of Admin plugin functionality that borders on debugging.
+    For internal use.
+
+    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
+    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.admin.debugging;
 
@@ -27,18 +27,18 @@ package:
 
 // onAnyEventImpl
 /++
- +  Prints incoming events to the local terminal, in forms depending on
- +  which flags have been set with bot commands.
- +
- +  If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
- +  prints all incoming server strings.
- +
- +  If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
- +  prints all incoming server strings byte by byte.
- +
- +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
- +  prints all incoming events as assert statements, for use in generating source
- +  code `unittest` blocks.
+    Prints incoming events to the local terminal, in forms depending on
+    which flags have been set with bot commands.
+
+    If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
+    prints all incoming server strings.
+
+    If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
+    prints all incoming server strings byte by byte.
+
+    If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
+    prints all incoming events as assert statements, for use in generating source
+    code `unittest` blocks.
  +/
 void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 {
@@ -67,9 +67,9 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandShowUserImpl
 /++
- +  Prints the details of one or more specific, supplied users to the local terminal.
- +
- +  It basically prints the matching `dialect.defs.IRCUser`.
+    Prints the details of one or more specific, supplied users to the local terminal.
+
+    It basically prints the matching `dialect.defs.IRCUser`.
  +/
 void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 {
@@ -96,8 +96,8 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandShowUsersImpl
 /++
- +  Prints out the current `users` array of the `AdminPlugin`'s
- +  `kameloso.plugins.core.IRCPluginState` to the local terminal.
+    Prints out the current `users` array of the `AdminPlugin`'s
+    `kameloso.plugins.core.IRCPluginState` to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
@@ -117,9 +117,9 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
 
 // onCommandSudoImpl
 /++
- +  Sends supplied text to the server, verbatim.
- +
- +  You need basic knowledge of IRC server strings to use this.
+    Sends supplied text to the server, verbatim.
+
+    You need basic knowledge of IRC server strings to use this.
  +/
 void onCommandSudoImpl(AdminPlugin plugin, const IRCEvent event)
 {
@@ -129,9 +129,9 @@ void onCommandSudoImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandPrintRawImpl
 /++
- +  Toggles a flag to print all incoming events *raw*.
- +
- +  This is for debugging purposes.
+    Toggles a flag to print all incoming events *raw*.
+
+    This is for debugging purposes.
  +/
 void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
 {
@@ -149,9 +149,9 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandPrintBytesImpl
 /++
- +  Toggles a flag to print all incoming events *as individual bytes*.
- +
- +  This is for debugging purposes.
+    Toggles a flag to print all incoming events *as individual bytes*.
+
+    This is for debugging purposes.
  +/
 void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 {
@@ -169,9 +169,9 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandStatusImpl
 /++
- +  Dumps information about the current state of the bot to the local terminal.
- +
- +  This can be very spammy.
+    Dumps information about the current state of the bot to the local terminal.
+
+    This can be very spammy.
  +/
 void onCommandStatusImpl(AdminPlugin plugin)
 {
@@ -201,8 +201,8 @@ void onCommandStatusImpl(AdminPlugin plugin)
 
 // onCommandBusImpl
 /++
- +  Sends an internal bus message to other plugins, much like how such can be
- +  sent with the Pipeline plugin.
+    Sends an internal bus message to other plugins, much like how such can be
+    sent with the Pipeline plugin.
  +/
 void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
 {

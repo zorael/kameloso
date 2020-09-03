@@ -1,14 +1,14 @@
 /++
- +  The Persistence service keeps track of all encountered users, gathering as much
- +  information about them as possible, then injects them into
- +  `dialect.defs.IRCEvent`s when information about them is incomplete.
- +
- +  This means that even if a service only refers to a user by nickname, things
- +  like his ident and address will be available to plugins as well, assuming
- +  the Persistence service had seen that previously.
- +
- +  It has no commands. It only does post-processing and doesn't handle
- +  `dialect.defs.IRCEvent`s in the normal sense at all.
+    The Persistence service keeps track of all encountered users, gathering as much
+    information about them as possible, then injects them into
+    `dialect.defs.IRCEvent`s when information about them is incomplete.
+
+    This means that even if a service only refers to a user by nickname, things
+    like his ident and address will be available to plugins as well, assuming
+    the Persistence service had seen that previously.
+
+    It has no commands. It only does post-processing and doesn't handle
+    `dialect.defs.IRCEvent`s in the normal sense at all.
  +/
 module kameloso.plugins.persistence;
 
@@ -23,12 +23,12 @@ import dialect.defs;
 
 // postprocess
 /++
- +  Hijacks a reference to a `dialect.defs.IRCEvent` after parsing and
- +  fleshes out the `dialect.defs.IRCEvent.sender` and/or
- +  `dialect.defs.IRCEvent.target` fields, so that things like account names
- +  that are only sent sometimes carry over.
- +
- +  Merely leverages `postprocessAccounts` and `postprocessHostmasks`.
+    Hijacks a reference to a `dialect.defs.IRCEvent` after parsing and
+    fleshes out the `dialect.defs.IRCEvent.sender` and/or
+    `dialect.defs.IRCEvent.target` fields, so that things like account names
+    that are only sent sometimes carry over.
+
+    Merely leverages `postprocessAccounts` and `postprocessHostmasks`.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
@@ -40,8 +40,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
 // postprocessAccounts
 /++
- +  Postprocesses an `dialect.defs.IRCEvent` from an account perspective, e.g.
- +  where a user may be logged onto services.
+    Postprocesses an `dialect.defs.IRCEvent` from an account perspective, e.g.
+    where a user may be logged onto services.
  +/
 void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 {
@@ -59,9 +59,9 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
         }
 
         /++
-         +  Tries to apply any permanent class for a user in a channel, and if
-         +  none available, tries to set one that seems to apply based on what
-         +  the user looks like.
+            Tries to apply any permanent class for a user in a channel, and if
+            none available, tries to set one that seems to apply based on what
+            the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
             const IRCEvent event, ref IRCUser user)
@@ -226,8 +226,8 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 
 // postprocessHostmasks
 /++
- +  Postprocesses an `dialect.defs.IRCEvent` from a hostmask perspective, e.g.
- +  where no services are available and users are identified by their hostmasks.
+    Postprocesses an `dialect.defs.IRCEvent` from a hostmask perspective, e.g.
+    where no services are available and users are identified by their hostmasks.
  +/
 void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 {
@@ -285,9 +285,9 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
         }
 
         /++
-         +  Tries to apply any permanent class for a user in a channel, and if
-         +  none available, tries to set one that seems to apply based on what
-         +  the user looks like.
+            Tries to apply any permanent class for a user in a channel, and if
+            none available, tries to set one that seems to apply based on what
+            the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
             const IRCEvent event, ref IRCUser user)
@@ -421,11 +421,11 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 
 // onQuit
 /++
- +  Removes a user's `dialect.defs.IRCUser` entry from the `users`
- +  associative array of the current `PersistenceService`'s
- +  `kameloso.plugins.core.IRCPluginState` upon them disconnecting.
- +
- +  Additionally from the nickname-channel cache.
+    Removes a user's `dialect.defs.IRCUser` entry from the `users`
+    associative array of the current `PersistenceService`'s
+    `kameloso.plugins.core.IRCPluginState` upon them disconnecting.
+
+    Additionally from the nickname-channel cache.
  +/
 @(IRCEvent.Type.QUIT)
 void onQuit(PersistenceService service, const IRCEvent event)
@@ -437,11 +437,11 @@ void onQuit(PersistenceService service, const IRCEvent event)
 
 // onNick
 /++
- +  Updates the entry of someone in the `users` associative array of the current
- +  `PersistenceService`'s `kameloso.plugins.core.IRCPluginState` when they
- +  change nickname, to point to the new `dialect.defs.IRCUser`.
- +
- +  Removes the old entry.
+    Updates the entry of someone in the `users` associative array of the current
+    `PersistenceService`'s `kameloso.plugins.core.IRCPluginState` when they
+    change nickname, to point to the new `dialect.defs.IRCUser`.
+
+    Removes the old entry.
  +/
 @(IRCEvent.Type.NICK)
 @(IRCEvent.Type.SELFNICK)
@@ -470,7 +470,7 @@ void onNick(PersistenceService service, const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Reloads classifier definitions from disk.
+    Reloads classifier definitions from disk.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -483,8 +483,8 @@ void onEndOfMotd(PersistenceService service)
 
 // reload
 /++
- +  Reloads the service, rehashing the user array and loading
- +  admin/whitelist/blacklist classifier definitions from disk.
+    Reloads the service, rehashing the user array and loading
+    admin/whitelist/blacklist classifier definitions from disk.
  +/
 void reload(PersistenceService service)
 {
@@ -496,10 +496,10 @@ void reload(PersistenceService service)
 
 // periodically
 /++
- +  Periodically rehashes the user array, allowing for optimised access.
- +
- +  This is normally done as part of user-awareness, but we're not mixing that
- +  in so we have to reinvent it.
+    Periodically rehashes the user array, allowing for optimised access.
+
+    This is normally done as part of user-awareness, but we're not mixing that
+    in so we have to reinvent it.
  +/
 void periodically(PersistenceService service, const long now)
 {
@@ -512,10 +512,10 @@ void periodically(PersistenceService service, const long now)
 
 // reloadAccountClassifiersFromDisk
 /++
- +  Reloads admin/whitelist/blacklist classifier definitions from disk.
- +
- +  Params:
- +      service = The current `PersistenceService`.
+    Reloads admin/whitelist/blacklist classifier definitions from disk.
+
+    Params:
+        service = The current `PersistenceService`.
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
@@ -575,10 +575,10 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
 // reloadHostmasksFromDisk
 /++
- +  Reloads hostmasks definitions from disk.
- +
- +  Params:
- +      service = The current `PersistenceService`.
+    Reloads hostmasks definitions from disk.
+
+    Params:
+        service = The current `PersistenceService`.
  +/
 void reloadHostmasksFromDisk(PersistenceService service)
 {
@@ -594,9 +594,9 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
 // initResources
 /++
- +  Initialises the service's hostmasks and accounts resources.
- +
- +  Merely calls `initAccountResources` and `initHostmaskResources`.
+    Initialises the service's hostmasks and accounts resources.
+
+    Merely calls `initAccountResources` and `initHostmaskResources`.
  +/
 void initResources(PersistenceService service)
 {
@@ -607,16 +607,16 @@ void initResources(PersistenceService service)
 
 // initAccountResources
 /++
- +  Reads, completes and saves the user classification JSON file, creating one
- +  if one doesn't exist. Removes any duplicate entries.
- +
- +  This ensures there will be "whitelist", "operator", "staff" and "blacklist" arrays in it.
- +
- +  Params:
- +      service = The current `PersistenceService`.
- +
- +  Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
- +      failure loading the `user.json` file.
+    Reads, completes and saves the user classification JSON file, creating one
+    if one doesn't exist. Removes any duplicate entries.
+
+    This ensures there will be "whitelist", "operator", "staff" and "blacklist" arrays in it.
+
+    Params:
+        service = The current `PersistenceService`.
+
+    Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
+        failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
 {
@@ -704,11 +704,11 @@ void initAccountResources(PersistenceService service)
 
 // initHostmaskResources
 /++
- +  Reads, completes and saves the hostmasks JSON file, creating one if it
- +  doesn't exist.
- +
- +  Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
- +      failure loading the `user.json` file.
+    Reads, completes and saves the hostmasks JSON file, creating one if it
+    doesn't exist.
+
+    Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
+        failure loading the `user.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
 {
@@ -743,18 +743,18 @@ public:
 
 // PersistenceService
 /++
- +  The Persistence service melds new `dialect.defs.IRCUser`s (from
- +  post-processing new `dialect.defs.IRCEvent`s) with old records of themselves.
- +
- +  Sometimes the only bit of information about a sender (or target) embedded in
- +  an `dialect.defs.IRCEvent` may be his/her nickname, even though the
- +  event before detailed everything, even including their account name. With
- +  this service we aim to complete such `dialect.defs.IRCUser` entries as
- +  the union of everything we know from previous events.
- +
- +  It only needs part of `kameloso.plugins.awareness.UserAwareness` for minimal
- +  bookkeeping, not the full package, so we only copy/paste the relevant bits
- +  to stay slim.
+    The Persistence service melds new `dialect.defs.IRCUser`s (from
+    post-processing new `dialect.defs.IRCEvent`s) with old records of themselves.
+
+    Sometimes the only bit of information about a sender (or target) embedded in
+    an `dialect.defs.IRCEvent` may be his/her nickname, even though the
+    event before detailed everything, even including their account name. With
+    this service we aim to complete such `dialect.defs.IRCUser` entries as
+    the union of everything we know from previous events.
+
+    It only needs part of `kameloso.plugins.awareness.UserAwareness` for minimal
+    bookkeeping, not the full package, so we only copy/paste the relevant bits
+    to stay slim.
  +/
 final class PersistenceService : IRCPlugin
 {
@@ -771,8 +771,8 @@ private:
     IRCUser.Class[string][string] channelUsers;
 
     /++
-     +  User "accounts" by hostmask. Future optimisation may involve making this
-     +  an `IRCUser[string]` associative array instead.
+        User "accounts" by hostmask. Future optimisation may involve making this
+        an `IRCUser[string]` associative array instead.
      +/
     string[string] accountByUser;
 

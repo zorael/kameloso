@@ -1,30 +1,30 @@
 /++
- +  The SedReplace plugin imitates the UNIX `sed` tool, allowing for the
- +  replacement/substitution of text. It does not require the tool itself though,
- +  and will work on Windows too.
- +
- +  ---
- +  $ echo "foo bar baz" | sed "s/bar/qux/"
- +  foo qux baz
- +  ---
- +
- +  It has no bot commands, as everything is done by scanning messages for signs
- +  of `s/this/that/` patterns.
- +
- +  It supports a delimiter of `/`, `|`, `#`, `@`, ` `, `_` and `;`, but more
- +  can be trivially added. See the `DelimiterCharacters` alias.
- +
- +  You can also end it with a `g` to set the global flag, to have more than one
- +  match substituted.
- +
- +  ---
- +  $ echo "foo bar baz" | sed "s/bar/qux/g"
- +  $ echo "foo bar baz" | sed "s|bar|qux|g"
- +  $ echo "foo bar baz" | sed "s#bar#qux#g"
- +  $ echo "foo bar baz" | sed "s@bar@qux@"
- +  $ echo "foo bar baz" | sed "s bar qux "
- +  $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
- +  ---
+    The SedReplace plugin imitates the UNIX `sed` tool, allowing for the
+    replacement/substitution of text. It does not require the tool itself though,
+    and will work on Windows too.
+
+    ---
+    $ echo "foo bar baz" | sed "s/bar/qux/"
+    foo qux baz
+    ---
+
+    It has no bot commands, as everything is done by scanning messages for signs
+    of `s/this/that/` patterns.
+
+    It supports a delimiter of `/`, `|`, `#`, `@`, ` `, `_` and `;`, but more
+    can be trivially added. See the `DelimiterCharacters` alias.
+
+    You can also end it with a `g` to set the global flag, to have more than one
+    match substituted.
+
+    ---
+    $ echo "foo bar baz" | sed "s/bar/qux/g"
+    $ echo "foo bar baz" | sed "s|bar|qux|g"
+    $ echo "foo bar baz" | sed "s#bar#qux#g"
+    $ echo "foo bar baz" | sed "s@bar@qux@"
+    $ echo "foo bar baz" | sed "s bar qux "
+    $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
+    ---
  +/
 module kameloso.plugins.sedreplace;
 
@@ -42,16 +42,16 @@ import std.typecons : Flag, No, Yes;
 
 
 /++
- +  Characters to support as delimiters in the replace expression.
- +
- +  More can be added but if any are removed unittests will need to be updated.
+    Characters to support as delimiters in the replace expression.
+
+    More can be added but if any are removed unittests will need to be updated.
  +/
 alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 
 
 // SedReplaceSettings
 /++
- +  All sed-replace plugin settings, gathered in a struct.
+    All sed-replace plugin settings, gathered in a struct.
  +/
 @Settings struct SedReplaceSettings
 {
@@ -59,15 +59,15 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
     @Enabler bool enabled = true;
 
     /++
-     +  How many lines back a sed-replacement call may reach. If this is 3, then
-     +  the last 3 messages will be taken into account and examined for
-     +  applicability when replacing.
+        How many lines back a sed-replacement call may reach. If this is 3, then
+        the last 3 messages will be taken into account and examined for
+        applicability when replacing.
      +/
     int history = 3;
 
     /++
-     +  Toggles whether or not replacement expressions have to properly end with
-     +  the delimiter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
+        Toggles whether or not replacement expressions have to properly end with
+        the delimiter (`s/abc/ABC/`), or if it may be omitted (`s/abc/ABC`).
      +/
     bool relaxSyntax = true;
 }
@@ -75,7 +75,7 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 
 // Line
 /++
- +  Struct aggregate of a spoken line and the timestamp when it was said.
+    Struct aggregate of a spoken line and the timestamp when it was said.
  +/
 struct Line
 {
@@ -89,24 +89,24 @@ struct Line
 
 // sedReplace
 /++
- +  `sed`-replaces a line with a substitution string.
- +
- +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar/'`.
- +
- +  Example:
- +  ---
- +  string line = "This is a line";
- +  string expression = "s/s/z/g";
- +  assert(line.sedReplace(expression, No.relaxSyntax) == "Thiz iz a line");
- +  ---
- +
- +  Params:
- +      line = Line to apply the `sed`-replace pattern to.
- +      expr = Replacement pattern to apply.
- +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
- +
- +  Returns:
- +      Original line with the changes the replace pattern incurred.
+    `sed`-replaces a line with a substitution string.
+
+    This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar/'`.
+
+    Example:
+    ---
+    string line = "This is a line";
+    string expression = "s/s/z/g";
+    assert(line.sedReplace(expression, No.relaxSyntax) == "Thiz iz a line");
+    ---
+
+    Params:
+        line = Line to apply the `sed`-replace pattern to.
+        expr = Replacement pattern to apply.
+        relaxSyntax = Whether or not to require the expression to end with the delimiter.
+
+    Returns:
+        Original line with the changes the replace pattern incurred.
  +/
 string sedReplace(const string line, const string expr,
     const Flag!"relaxSyntax" relaxSyntax) @safe pure nothrow
@@ -200,19 +200,19 @@ unittest
 
 // sedReplaceImpl
 /++
- +  Private sed-replace implementation.
- +
- +  Works on any given character deliminator. Works with escapes.
- +
- +  Params:
- +      char_ = Deliminator character, usually '/'.
- +      line = Original line to apply the replacement expression to.
- +      expr = Replacement expression to apply.
- +      relaxSyntax = Whether or not to require the expression to end with the delimiter.
- +
- +  Returns:
- +      The passed line with the relevant bits replaced, or as is if the expression
- +      was invalid or didn't apply.
+    Private sed-replace implementation.
+
+    Works on any given character deliminator. Works with escapes.
+
+    Params:
+        char_ = Deliminator character, usually '/'.
+        line = Original line to apply the replacement expression to.
+        expr = Replacement expression to apply.
+        relaxSyntax = Whether or not to require the expression to end with the delimiter.
+
+    Returns:
+        The passed line with the relevant bits replaced, or as is if the expression
+        was invalid or didn't apply.
  +/
 string sedReplaceImpl(char char_)(const string line, const string expr,
     const Flag!"relaxSyntax" relaxSyntax)
@@ -364,8 +364,8 @@ unittest
 
 // onMessage
 /++
- +  Parses a channel message and looks for any sed-replace expressions therein,
- +  to apply on the previous message.
+    Parses a channel message and looks for any sed-replace expressions therein,
+    to apply on the previous message.
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -457,7 +457,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
 // onQuit
 /++
- +  Removes the records of previous messages from a user when they quit.
+    Removes the records of previous messages from a user when they quit.
  +/
 void onQuit(SedReplacePlugin plugin, const IRCEvent event)
 {
@@ -467,9 +467,9 @@ void onQuit(SedReplacePlugin plugin, const IRCEvent event)
 
 // periodically
 /++
- +  Clears the lists of previous messages from users once every hour.
- +
- +  This is to prevent it from becoming huge.
+    Clears the lists of previous messages from users once every hour.
+
+    This is to prevent it from becoming huge.
  +/
 void periodically(SedReplacePlugin plugin, const long now)
 {
@@ -485,9 +485,9 @@ public:
 
 // SedReplacePlugin
 /++
- +  The SedReplace plugin stores a buffer of the last said line of every user,
- +  and if a new message comes in with a sed-replace-like pattern in it, tries
- +  to apply it on the original message as a regex-like replace.
+    The SedReplace plugin stores a buffer of the last said line of every user,
+    and if a new message comes in with a sed-replace-like pattern in it, tries
+    to apply it on the original message as a regex-like replace.
  +/
 final class SedReplacePlugin : IRCPlugin
 {
@@ -502,8 +502,8 @@ private:
     enum hoursBetweenPurges = 1;
 
     /++
-     +  A `Line[string]` 1-buffer of the previous line every user said, with
-     +  with nickname as key.
+        A `Line[string]` 1-buffer of the previous line every user said, with
+        with nickname as key.
      +/
     Line[][string] prevlines;
 

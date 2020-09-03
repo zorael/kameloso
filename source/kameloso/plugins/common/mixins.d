@@ -1,7 +1,7 @@
 /++
- +  The section of `kameloso.plugins.common` that involves mixins.
- +
- +  This was all in one `plugins/common.d` file that just grew too big.
+    The section of `kameloso.plugins.common` that involves mixins.
+
+    This was all in one `plugins/common.d` file that just grew too big.
  +/
 module kameloso.plugins.common.mixins;
 
@@ -19,33 +19,33 @@ public:
 
 // WHOISFiberDelegate
 /++
- +  Functionality for catching WHOIS results and calling passed function aliases
- +  with the resulting account information that was divined from it, in the form
- +  of the actual `dialect.defs.IRCEvent`, the target
- +  `dialect.defs.IRCUser` within it, the user's `account` field, or merely
- +  alone as an arity-0 function.
- +
- +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
- +  the Fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
- +  WHOIS query.
- +
- +  Example:
- +  ---
- +  void onSuccess(const IRCEvent successEvent) { /* ... */ }
- +  void onFailure(const IRCUser failureUser) { /* .. */ }
- +
- +  mixin WHOISFiberDelegate!(onSuccess, onFailure);
- +
- +  enqueueAndWHOIS(specifiedNickname);
- +  ---
- +
- +  Params:
- +      onSuccess = Function alias to call when successfully having received
- +          account information from the server's WHOIS response.
- +      onFailure = Function alias to call when the server didn't respond with
- +          account information, or when the user is offline.
- +      alwaysLookup = Whether or not to always issue a WHOIS query, even if
- +          the requested user's account is already known.
+    Functionality for catching WHOIS results and calling passed function aliases
+    with the resulting account information that was divined from it, in the form
+    of the actual `dialect.defs.IRCEvent`, the target
+    `dialect.defs.IRCUser` within it, the user's `account` field, or merely
+    alone as an arity-0 function.
+
+    The mixed in function to call is named `enqueueAndWHOIS`. It will construct
+    the Fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
+    WHOIS query.
+
+    Example:
+    ---
+    void onSuccess(const IRCEvent successEvent) { /* ... */ }
+    void onFailure(const IRCUser failureUser) { /* .. */ }
+
+    mixin WHOISFiberDelegate!(onSuccess, onFailure);
+
+    enqueueAndWHOIS(specifiedNickname);
+    ---
+
+    Params:
+        onSuccess = Function alias to call when successfully having received
+            account information from the server's WHOIS response.
+        onFailure = Function alias to call when the server didn't respond with
+            account information, or when the user is offline.
+        alwaysLookup = Whether or not to always issue a WHOIS query, even if
+            the requested user's account is already known.
  +/
 mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
@@ -91,14 +91,14 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // _kamelosoCarriedNickname
     /++
-     +  Nickname being looked up, stored outside of any separate function to make
-     +  it available to all of them.
+        Nickname being looked up, stored outside of any separate function to make
+        it available to all of them.
      +/
     string _kamelosoCarriedNickname;
 
 
     /++
-     +  Event types that we may encounter as responses to WHOIS queries.
+        Event types that we may encounter as responses to WHOIS queries.
      +/
     static immutable IRCEvent.Type[6] whoisEventTypes =
     [
@@ -113,7 +113,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // whoisFiberDelegate
     /++
-     +  Reusable mixin that catches WHOIS results.
+        Reusable mixin that catches WHOIS results.
      +/
     void whoisFiberDelegate()
     {
@@ -139,7 +139,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
 
         /++
-         +  Invoke `onSuccess`.
+            Invoke `onSuccess`.
          +/
         void callOnSuccess()
         {
@@ -171,7 +171,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         /++
-         +  Invoke `onFailure`, if it's available.
+            Invoke `onFailure`, if it's available.
          +/
         void callOnFailure()
         {
@@ -271,19 +271,19 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-     +  Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
-     +  and enqueues it into the `kameloso.plugins.core.IRCPluginState.awaitingFibers`
-     +  associative array, then issues a WHOIS query (unless overridden via
-     +  the `issueWhois` parameter).
-     +
-     +  Params:
-     +      nickname = Nickname of the user the enqueueing event relates to.
-     +      issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
-     +      background = Whether or not to issue queries as low-priority background messages.
-     +
-     +  Throws:
-     +      `object.Exception` if a success of failure function was to trigger
-     +      in an impossible scenario, such as on WHOIS results on Twitch.
+        Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
+        and enqueues it into the `kameloso.plugins.core.IRCPluginState.awaitingFibers`
+        associative array, then issues a WHOIS query (unless overridden via
+        the `issueWhois` parameter).
+
+        Params:
+            nickname = Nickname of the user the enqueueing event relates to.
+            issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
+            background = Whether or not to issue queries as low-priority background messages.
+
+        Throws:
+            `object.Exception` if a success of failure function was to trigger
+            in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname,
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
@@ -426,17 +426,17 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
 // MessagingProxy
 /++
- +  Mixin to give shorthands to the functions in `kameloso.messaging`, for
- +  easier use when in a `with (plugin) { /* ... */ }` scope.
- +
- +  This merely makes it possible to use commands like
- +  `raw("PING :irc.freenode.net")` without having to import
- +  `kameloso.messaging` and include the thread ID of the main thread in every
- +  call of the functions.
- +
- +  Params:
- +      debug_ = Whether or not to include debugging output.
- +      module_ = String name of the mixing-in module; generally leave as-is.
+    Mixin to give shorthands to the functions in `kameloso.messaging`, for
+    easier use when in a `with (plugin) { /* ... */ }` scope.
+
+    This merely makes it possible to use commands like
+    `raw("PING :irc.freenode.net")` without having to import
+    `kameloso.messaging` and include the thread ID of the main thread in every
+    call of the functions.
+
+    Params:
+        debug_ = Whether or not to include debugging output.
+        module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
@@ -480,7 +480,7 @@ private:
 
     // chan
     /++
-     +  Sends a channel message.
+        Sends a channel message.
      +/
     void chan(Flag!"priority" priority = No.priority)
         (const string channel, const string content,
@@ -493,7 +493,7 @@ private:
 
     // query
     /++
-     +  Sends a private query message to a user.
+        Sends a private query message to a user.
      +/
     void query(Flag!"priority" priority = No.priority)
         (const string nickname, const string content,
@@ -506,11 +506,11 @@ private:
 
     // privmsg
     /++
-     +  Sends either a channel message or a private query message depending on
-     +  the arguments passed to it.
-     +
-     +  This reflects how channel messages and private messages are both the
-     +  underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
+        Sends either a channel message or a private query message depending on
+        the arguments passed to it.
+
+        This reflects how channel messages and private messages are both the
+        underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string content,
@@ -523,7 +523,7 @@ private:
 
     // emote
     /++
-     +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
+        Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     void emote(Flag!"priority" priority = No.priority)
         (const string emoteTarget, const string content,
@@ -536,9 +536,9 @@ private:
 
     // mode
     /++
-     +  Sets a channel mode.
-     +
-     +  This includes modes that pertain to a user in the context of a channel, like bans.
+        Sets a channel mode.
+
+        This includes modes that pertain to a user in the context of a channel, like bans.
      +/
     void mode(Flag!"priority" priority = No.priority)(const string channel,
         const string modes, const string content = string.init)
@@ -549,7 +549,7 @@ private:
 
     // topic
     /++
-     +  Sets the topic of a channel.
+        Sets the topic of a channel.
      +/
     void topic(Flag!"priority" priority = No.priority)
         (const string channel, const string content,
@@ -562,7 +562,7 @@ private:
 
     // invite
     /++
-     +  Invites a user to a channel.
+        Invites a user to a channel.
      +/
     void invite(Flag!"priority" priority = No.priority)
         (const string channel, const string nickname,
@@ -575,7 +575,7 @@ private:
 
     // join
     /++
-     +  Joins a channel.
+        Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)
         (const string channel, const string key = string.init)
@@ -586,7 +586,7 @@ private:
 
     // kick
     /++
-     +  Kicks a user from a channel.
+        Kicks a user from a channel.
      +/
     void kick(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string reason = string.init,
@@ -599,7 +599,7 @@ private:
 
     // part
     /++
-     +  Leaves a channel.
+        Leaves a channel.
      +/
     void part(Flag!"priority" priority = No.priority)(const string channel,
         const string reason = string.init,
@@ -612,7 +612,7 @@ private:
 
     // quit
     /++
-     +  Disconnects from the server, optionally with a quit reason.
+        Disconnects from the server, optionally with a quit reason.
      +/
     void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
     {
@@ -622,7 +622,7 @@ private:
 
     // whois
     /++
-     +  Queries the server for WHOIS information about a user.
+        Queries the server for WHOIS information about a user.
      +/
     void whois(Flag!"priority" priority = No.priority)(const string nickname,
         const Flag!"force" force = No.force, const Flag!"background" background = No.background,
@@ -634,10 +634,10 @@ private:
 
     // raw
     /++
-     +  Sends text to the server, verbatim.
-     +
-     +  This is used to send messages of types for which there exist no helper
-     +  functions.
+        Sends text to the server, verbatim.
+
+        This is used to send messages of types for which there exist no helper
+        functions.
      +/
     void raw(Flag!"priority" priority = No.priority)(const string line,
         const string caller = __FUNCTION__)
@@ -649,8 +649,8 @@ private:
 
     // immediate
     /++
-     +  Sends raw text to the server, verbatim, bypassing all queues and
-     +  throttling delays.
+        Sends raw text to the server, verbatim, bypassing all queues and
+        throttling delays.
      +/
     void immediate(const string line)
     {
@@ -661,18 +661,18 @@ private:
     import std.meta : AliasSeq;
 
     /+
-     +  Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
-     +  `askToInfo`, `askToWarning`, and `askToError`,
+        Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
+        `askToInfo`, `askToWarning`, and `askToError`,
      +/
     static foreach (immutable verb; AliasSeq!("Writeln", "Trace", "Log",
         "Info", "Warn", "Warning", "Error"))
     {
         /++
-         +  Generated `askToVerb` function. Asks the main thread to output text
-         +  to the local terminal.
-         +
-         +  No need for any annotation; `kameloso.messaging.askToOutputImpl` is
-         +  `@system` and nothing else.
+            Generated `askToVerb` function. Asks the main thread to output text
+            to the local terminal.
+
+            No need for any annotation; `kameloso.messaging.askToOutputImpl` is
+            `@system` and nothing else.
          +/
         mixin("void askTo%s(const string line)
         {
@@ -728,14 +728,14 @@ unittest
 
 // Repeater
 /++
- +  Implements queueing of events to repeat.
- +
- +  This allows us to deal with triggers both in `dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT`
- +  and `dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND` while keeping the code
- +  in one place.
- +
- +  Params:
- +      debug_ = Whether or not to print debug output to the terminal.
+    Implements queueing of events to repeat.
+
+    This allows us to deal with triggers both in `dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT`
+    and `dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND` while keeping the code
+    in one place.
+
+    Params:
+        debug_ = Whether or not to print debug output to the terminal.
  +/
 version(WithPlugins)
 mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
@@ -777,10 +777,10 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
     // explainRepeat
     /++
-     +  Verbosely explains a repeat, including what `PrivilegeLevel` and
-     +  `dialect.defs.IRCUser.Class` were involved.
-     +
-     +  Gated behind version `ExplainRepeat`.
+        Verbosely explains a repeat, including what `PrivilegeLevel` and
+        `dialect.defs.IRCUser.Class` were involved.
+
+        Gated behind version `ExplainRepeat`.
      +/
     version(ExplainRepeat)
     void explainRepeat(const Repeat repeat)
@@ -798,7 +798,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
     // repeaterDelegate
     /++
-     +  Delegate to call from inside a `kameloso.thread.CarryingFiber`.
+        Delegate to call from inside a `kameloso.thread.CarryingFiber`.
      +/
     void repeaterDelegate()
     {
@@ -868,8 +868,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
 
     /++
-     +  Queues the delegate `repeaterDelegate` with the passed `Replay`
-     +  attached to it.
+        Queues the delegate `repeaterDelegate` with the passed `Replay`
+        attached to it.
      +/
     void repeat(Replay replay)
     {

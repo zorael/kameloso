@@ -1,15 +1,15 @@
 /++
- +  The Printer plugin takes incoming `dialect.defs.IRCEvent`s, formats them
- +  into something easily readable and prints them to the screen, optionally with colours.
- +  It also supports logging to disk.
- +
- +  It has no commands; all `dialect.defs.IRCEvent`s will be parsed and
- +  printed, excluding certain types that were deemed too spammy. Print them as
- +  well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
- +
- +  It is not technically necessary, but it is the main form of feedback you
- +  get from the plugin, so you will only want to disable it if you want a
- +  really "headless" environment.
+    The Printer plugin takes incoming `dialect.defs.IRCEvent`s, formats them
+    into something easily readable and prints them to the screen, optionally with colours.
+    It also supports logging to disk.
+
+    It has no commands; all `dialect.defs.IRCEvent`s will be parsed and
+    printed, excluding certain types that were deemed too spammy. Print them as
+    well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
+
+    It is not technically necessary, but it is the main form of feedback you
+    get from the plugin, so you will only want to disable it if you want a
+    really "headless" environment.
  +/
 module kameloso.plugins.printer.base;
 
@@ -33,7 +33,7 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 
 // PrinterSettings
 /++
- +  All Printer plugin options gathered in a struct.
+    All Printer plugin options gathered in a struct.
  +/
 @Settings struct PrinterSettings
 {
@@ -67,9 +67,9 @@ version(Colours) import kameloso.terminal : TerminalForeground;
     }
 
     /++
-     +  Whether or not to show Message of the Day upon connecting.
-     +
-     +  Warning! MOTD generally lists server rules, which might be good to read.
+        Whether or not to show Message of the Day upon connecting.
+
+        Warning! MOTD generally lists server rules, which might be good to read.
      +/
     bool motd = false;
 
@@ -119,12 +119,12 @@ version(Colours) import kameloso.terminal : TerminalForeground;
 
 // onPrintableEvent
 /++
- +  Prints an event to the local terminal.
- +
- +  Buffer output in an `std.array.Appender`.
- +
- +  Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
- +  (as this is a hotspot).
+    Prints an event to the local terminal.
+
+    Buffer output in an `std.array.Appender`.
+
+    Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
+    (as this is a hotspot).
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
@@ -138,8 +138,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     event.clearTargetNicknameIfUs(plugin.state);
 
     /++
-     +  Update the squelchstamp and return whether or not the current event
-     +  should be squelched.
+        Update the squelchstamp and return whether or not the current event
+        should be squelched.
      +/
     static bool updateSquelchstamp(PrinterPlugin plugin, const long time,
         const string channel, const string sender, const string target)
@@ -387,18 +387,18 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
 // onLoggableEvent
 /++
- +  Logs an event to disk.
- +
- +  It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
- +  dictates whether or not non-home events should be logged. Likewise whether
- +  or not raw events should be logged.
- +
- +  Lines will either be saved immediately to disk, opening a `std.stdio.File`
- +  with appending privileges for each event as they occur, or buffered by
- +  populating arrays of lines to be written in bulk, once in a while.
- +
- +  See_Also:
- +      `commitAllLogs`
+    Logs an event to disk.
+
+    It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
+    dictates whether or not non-home events should be logged. Likewise whether
+    or not raw events should be logged.
+
+    Lines will either be saved immediately to disk, opening a `std.stdio.File`
+    with appending privileges for each event as they occur, or buffered by
+    populating arrays of lines to be written in bulk, once in a while.
+
+    See_Also:
+        `commitAllLogs`
  +/
 @(Chainable)
 @(ChannelPolicy.any)
@@ -411,15 +411,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
 // commitAllLogs
 /++
- +  Writes all buffered log lines to disk.
- +
- +  Merely wraps `commitLog` by iterating over all buffers and invoking it.
- +
- +  Params:
- +      plugin = The current `PrinterPlugin`.
- +
- +  See_Also:
- +      `commitLog`
+    Writes all buffered log lines to disk.
+
+    Merely wraps `commitLog` by iterating over all buffers and invoking it.
+
+    Params:
+        plugin = The current `PrinterPlugin`.
+
+    See_Also:
+        `commitLog`
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -432,11 +432,11 @@ void commitAllLogs(PrinterPlugin plugin)
 
 // onISUPPORT
 /++
- +  Prints information about the current server as we gain details of it from an
- +  `dialect.defs.IRCEvent.Type.RPL_ISUPPORT` event.
- +
- +  Set a flag so we only print this information once; (ISUPPORTS can/do stretch
- +  across several events.)
+    Prints information about the current server as we gain details of it from an
+    `dialect.defs.IRCEvent.Type.RPL_ISUPPORT` event.
+
+    Set a flag so we only print this information once; (ISUPPORTS can/do stretch
+    across several events.)
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
@@ -478,15 +478,15 @@ void onISUPPORT(PrinterPlugin plugin)
 
 // datestamp
 /++
- +  Returns a string with the current date.
- +
- +  Example:
- +  ---
- +  writeln("Current date ", datestamp);
- +  ---
- +
- +  Returns:
- +      A string with the current date.
+    Returns a string with the current date.
+
+    Example:
+    ---
+    writeln("Current date ", datestamp);
+    ---
+
+    Returns:
+        A string with the current date.
  +/
 package string datestamp()
 {
@@ -500,8 +500,8 @@ package string datestamp()
 
 // periodically
 /++
- +  Prints the date in `YYYY-MM-DD` format to the screen and to any active log
- +  files upon day change.
+    Prints the date in `YYYY-MM-DD` format to the screen and to any active log
+    files upon day change.
  +/
 void periodically(PrinterPlugin plugin)
 {
@@ -529,22 +529,22 @@ import std.datetime.systime : SysTime;
 
 // getNextMidnight
 /++
- +  Returns a `std.datetime.systime.SysTime` of the following midnight, for use
- +  with setting the periodical timestamp.
- +
- +  Example:
- +  ---
- +  immutable now = Clock.currTime;
- +  immutable midnight = getNextMidnight(now);
- +  writeln("Time until next midnight: ", (midnight - now));
- +  ---
- +
- +  Params:
- +      now = UNIX timestamp of the base date from which to proceed to the next midnight.
- +
- +  Returns:
- +      A `std.datetime.systime.SysTime` of the midnight following the date
- +      passed as argument.
+    Returns a `std.datetime.systime.SysTime` of the following midnight, for use
+    with setting the periodical timestamp.
+
+    Example:
+    ---
+    immutable now = Clock.currTime;
+    immutable midnight = getNextMidnight(now);
+    writeln("Time until next midnight: ", (midnight - now));
+    ---
+
+    Params:
+        now = UNIX timestamp of the base date from which to proceed to the next midnight.
+
+    Returns:
+        A `std.datetime.systime.SysTime` of the midnight following the date
+        passed as argument.
  +/
 SysTime getNextMidnight(const SysTime now)
 {
@@ -604,7 +604,7 @@ unittest
 
 // initialise
 /++
- +  Set the next periodical timestamp to midnight immediately after plugin construction.
+    Set the next periodical timestamp to midnight immediately after plugin construction.
  +/
 void initialise(PrinterPlugin plugin)
 {
@@ -615,7 +615,7 @@ void initialise(PrinterPlugin plugin)
 
 // initResources
 /++
- +  Ensures that there is a log directory.
+    Ensures that there is a log directory.
  +/
 void initResources(PrinterPlugin plugin)
 {
@@ -630,9 +630,9 @@ void initResources(PrinterPlugin plugin)
 
 // teardown
 /++
- +  De-initialises the plugin.
- +
- +  If we're buffering writes, commit all queued lines to disk.
+    De-initialises the plugin.
+
+    If we're buffering writes, commit all queued lines to disk.
  +/
 void teardown(PrinterPlugin plugin)
 {
@@ -648,15 +648,15 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
- +  Receives a passed `kameloso.thread.BusMessage` with the "`printer`" header,
- +  listening for cues to ignore the next events caused by the
- +  `kameloso.plugins.chanqueries.ChanQueriesService` querying current channel
- +  for information on the channels and their users.
- +
- +  Params:
- +      plugin = The current `PrinterPlugin`.
- +      header = String header describing the passed content payload.
- +      content = Message content.
+    Receives a passed `kameloso.thread.BusMessage` with the "`printer`" header,
+    listening for cues to ignore the next events caused by the
+    `kameloso.plugins.chanqueries.ChanQueriesService` querying current channel
+    for information on the channels and their users.
+
+    Params:
+        plugin = The current `PrinterPlugin`.
+        header = String header describing the passed content payload.
+        content = Message content.
  +/
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
@@ -695,12 +695,12 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
 
 // clearTargetNicknameIfUs
 /++
- +  Clears the target nickname if it matches the passed string.
- +
- +  Example:
- +  ---
- +  event.clearTargetNicknameIfUs(plugin.state.client.nickname);
- +  ---
+    Clears the target nickname if it matches the passed string.
+
+    Example:
+    ---
+    event.clearTargetNicknameIfUs(plugin.state.client.nickname);
+    ---
  +/
 void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
 {
@@ -796,7 +796,7 @@ unittest
 
 // start
 /++
- +  Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
  +/
 void start(PrinterPlugin plugin)
 {
@@ -812,12 +812,12 @@ public:
 
 // PrinterPlugin
 /++
- +  The Printer plugin takes all `dialect.defs.IRCEvent`s and prints them to
- +  the local terminal, formatted and optionally in colour. Alternatively to disk
- +  as logs.
- +
- +  This used to be part of the core program, but with UDAs it's easy to split
- +  off into its own plugin.
+    The Printer plugin takes all `dialect.defs.IRCEvent`s and prints them to
+    the local terminal, formatted and optionally in colour. Alternatively to disk
+    as logs.
+
+    This used to be part of the core program, but with UDAs it's easy to split
+    off into its own plugin.
  +/
 final class PrinterPlugin : IRCPlugin
 {
@@ -843,9 +843,9 @@ package:
     bool printedISUPPORT;
 
     /++
-     +  UNIX timestamp of when to expect squelchable list events.
-     +
-     +  Note: repeated list events refresh the timer.
+        UNIX timestamp of when to expect squelchable list events.
+
+        Note: repeated list events refresh the timer.
      +/
     long squelchstamp;
 

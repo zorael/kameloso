@@ -1,9 +1,9 @@
 /++
- +  The is not a plugin by itself but contains code common to all plugins,
- +  without which they will *not* function.
- +
- +  It is mandatory if you plan to use any form of plugin. Indeed, the very
- +  definition of an `IRCPlugin` is in here.
+    The is not a plugin by itself but contains code common to all plugins,
+    without which they will *not* function.
+
+    It is mandatory if you plan to use any form of plugin. Indeed, the very
+    definition of an `IRCPlugin` is in here.
  +/
 module kameloso.plugins.common.base;
 
@@ -28,19 +28,19 @@ public:
 
 // applyCustomSettings
 /++
- +  Changes a setting of a plugin, given both the names of the plugin and the
- +  setting, in string form.
- +
- +  This merely iterates the passed `plugins` and calls their `setSettingByName` methods.
- +
- +  Params:
- +      plugins = Array of all `IRCPlugin`s.
- +      customSettings = Array of custom settings to apply to plugins' own
- +          setting, in the string forms of "`plugin.setting=value`".
- +      copyOfSettings = A copy of the program-wide `kameloso.common.CoreSettings`.
- +
- +  Returns:
- +      `true` if no setting name mismatches occurred, `false` if it did.
+    Changes a setting of a plugin, given both the names of the plugin and the
+    setting, in string form.
+
+    This merely iterates the passed `plugins` and calls their `setSettingByName` methods.
+
+    Params:
+        plugins = Array of all `IRCPlugin`s.
+        customSettings = Array of custom settings to apply to plugins' own
+            setting, in the string forms of "`plugin.setting=value`".
+        copyOfSettings = A copy of the program-wide `kameloso.common.CoreSettings`.
+
+    Returns:
+        `true` if no setting name mismatches occurred, `false` if it did.
  +/
 bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
     CoreSettings copyOfSettings)
@@ -219,10 +219,10 @@ version(unittest)
 
 // IRCPluginSettingsException
 /++
- +  Exception thrown when an IRC plugin failed to have its settings set.
- +
- +  A normal `object.Exception`, which only differs in the sense that we can deduce
- +  what went wrong by its type.
+    Exception thrown when an IRC plugin failed to have its settings set.
+
+    A normal `object.Exception`, which only differs in the sense that we can deduce
+    what went wrong by its type.
  +/
 final class IRCPluginSettingsException : Exception
 {
@@ -237,14 +237,14 @@ final class IRCPluginSettingsException : Exception
 
 // catchUser
 /++
- +  Catch an `dialect.defs.IRCUser`, saving it to the `IRCPlugin`'s
- +  `IRCPluginState.users` array.
- +
- +  If a user already exists, meld the new information into the old one.
- +
- +  Params:
- +      plugin = Current `IRCPlugin`.
- +      newUser = The `dialect.defs.IRCUser` to catch.
+    Catch an `dialect.defs.IRCUser`, saving it to the `IRCPlugin`'s
+    `IRCPluginState.users` array.
+
+    If a user already exists, meld the new information into the old one.
+
+    Params:
+        plugin = Current `IRCPlugin`.
+        newUser = The `dialect.defs.IRCUser` to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 {
@@ -264,19 +264,19 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 
 // enqueue
 /++
- +  Construct and enqueue a function replay in the plugin's queue of such.
- +
- +  The main loop will catch up on it and issue WHOIS queries as necessary, then
- +  replay the event upon receiving the results.
- +
- +  Params:
- +      plugin = Current `IRCPlugin` as a base class.
- +      subPlugin = Subclass `IRCPlugin` to replay the function pointer `fn` with
- +          as first argument.
- +      event = `dialect.defs.IRCEvent` to queue up to replay.
- +      privilegeLevel = Privilege level to match the results from the WHOIS query with.
- +      fn = Function/delegate pointer to call when the results return.
- +      caller = String name of the calling function, or something else that gives context.
+    Construct and enqueue a function replay in the plugin's queue of such.
+
+    The main loop will catch up on it and issue WHOIS queries as necessary, then
+    replay the event upon receiving the results.
+
+    Params:
+        plugin = Current `IRCPlugin` as a base class.
+        subPlugin = Subclass `IRCPlugin` to replay the function pointer `fn` with
+            as first argument.
+        event = `dialect.defs.IRCEvent` to queue up to replay.
+        privilegeLevel = Privilege level to match the results from the WHOIS query with.
+        fn = Function/delegate pointer to call when the results return.
+        caller = String name of the calling function, or something else that gives context.
  +/
 void enqueue(SubPlugin, Fn)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
@@ -322,18 +322,18 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 
 // enqueue
 /++
- +  Construct and enqueue a function replay in the plugin's queue of such.
- +  Overload that does not take an `IRCPlugin` subclass parameter.
- +
- +  The main loop will catch up on it and issue WHOIS queries as necessary, then
- +  replay the event upon receiving the results.
- +
- +  Params:
- +      plugin = Current `IRCPlugin` as a base class.
- +      event = `dialect.defs.IRCEvent` to queue up to replay.
- +      privilegeLevel = Privilege level to match the results from the WHOIS query with.
- +      fn = Function/delegate pointer to call when the results return.
- +      caller = String name of the calling function, or something else that gives context.
+    Construct and enqueue a function replay in the plugin's queue of such.
+    Overload that does not take an `IRCPlugin` subclass parameter.
+
+    The main loop will catch up on it and issue WHOIS queries as necessary, then
+    replay the event upon receiving the results.
+
+    Params:
+        plugin = Current `IRCPlugin` as a base class.
+        event = `dialect.defs.IRCEvent` to queue up to replay.
+        privilegeLevel = Privilege level to match the results from the WHOIS query with.
+        fn = Function/delegate pointer to call when the results return.
+        caller = String name of the calling function, or something else that gives context.
  +/
 void enqueue(Fn)(IRCPlugin plugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
@@ -349,14 +349,14 @@ alias doWhois = enqueue;
 
 // repeat
 /++
- +  Queues a `core.thread.fiber.Fiber` (actually a `kameloso.thread.CarryingFiber`
- +  with a `Repeat` payload) to repeat a passed `kameloso.plugins.common.Replay` from the
- +  context of the main loop after postprocessing the event once more.
- +
- +  Params:
- +      plugin = The current `IRCPlugin`.
- +      dg = Delegate/function pointer to wrap the `core.thread.fiber.Fiber` around.
- +      replay = The `kameloso.plugins.core.Replay` to repeat.
+    Queues a `core.thread.fiber.Fiber` (actually a `kameloso.thread.CarryingFiber`
+    with a `Repeat` payload) to repeat a passed `kameloso.plugins.common.Replay` from the
+    context of the main loop after postprocessing the event once more.
+
+    Params:
+        plugin = The current `IRCPlugin`.
+        dg = Delegate/function pointer to wrap the `core.thread.fiber.Fiber` around.
+        replay = The `kameloso.plugins.core.Replay` to repeat.
  +/
 void repeat(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
 if (isSomeFunction!Dg)
@@ -375,15 +375,15 @@ alias queueToReplay = repeat;
 
 // rehashUsers
 /++
- +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
- +  associative array and the ones in each `dialect.defs.IRCChannel.users` associative arrays.
- +
- +  This optimises lookup and should be done every so often,
- +
- +  Params:
- +      plugin = The current `IRCPlugin`.
- +      channelName = Optional name of the channel to rehash for. If none given
- +          it will rehash the main `IRCPluginState.users` associative array instead.
+    Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
+    associative array and the ones in each `dialect.defs.IRCChannel.users` associative arrays.
+
+    This optimises lookup and should be done every so often,
+
+    Params:
+        plugin = The current `IRCPlugin`.
+        channelName = Optional name of the channel to rehash for. If none given
+            it will rehash the main `IRCPluginState.users` associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 {
@@ -404,16 +404,16 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 
 // nameOf
 /++
- +  Returns either the nickname or the display name of a user, depending on whether the
- +  display name is known or not.
- +
- +  If not version `TwitchSupport` then it always returns the nickname.
- +
- +  Params:
- +      user = `dialect.defs.IRCUser` to examine.
- +
- +  Returns:
- +      The nickname of the user if there is no alias known, else the alias.
+    Returns either the nickname or the display name of a user, depending on whether the
+    display name is known or not.
+
+    If not version `TwitchSupport` then it always returns the nickname.
+
+    Params:
+        user = `dialect.defs.IRCUser` to examine.
+
+    Returns:
+        The nickname of the user if there is no alias known, else the alias.
  +/
 pragma(inline, true)
 string nameOf(const IRCUser user) pure @safe nothrow @nogc
@@ -455,18 +455,18 @@ unittest
 
 // nameOf
 /++
- +  Returns either the nickname or the display name of a user, depending on whether the
- +  display name is known or not. Overload that looks up the passed nickname in
- +  the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
- +
- +  If not version `TwitchSupport` then it always returns the nickname.
- +
- +  Params:
- +      plugin = The current `IRCPlugin`, whatever it is.
- +      nickname = The name of a user to look up.
- +
- +  Returns:
- +      The nickname of the user if there is no alias known, else the alias.
+    Returns either the nickname or the display name of a user, depending on whether the
+    display name is known or not. Overload that looks up the passed nickname in
+    the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
+
+    If not version `TwitchSupport` then it always returns the nickname.
+
+    Params:
+        plugin = The current `IRCPlugin`, whatever it is.
+        nickname = The name of a user to look up.
+
+    Returns:
+        The nickname of the user if there is no alias known, else the alias.
  +/
 string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
 {
@@ -487,14 +487,14 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
 
 // idOf
 /++
- +  Returns either the nickname or the account of a user, depending on whether
- +  the account is known.
- +
- +  Params:
- +      user = `dialect.defs.IRCUser` to examine.
- +
- +  Returns:
- +      The nickname or account of the passed user.
+    Returns either the nickname or the account of a user, depending on whether
+    the account is known.
+
+    Params:
+        user = `dialect.defs.IRCUser` to examine.
+
+    Returns:
+        The nickname or account of the passed user.
  +/
 pragma(inline, true)
 string idOf(const IRCUser user) pure @safe nothrow @nogc
@@ -506,19 +506,19 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
 
 // idOf
 /++
- +  Returns either the nickname or the account of a user, depending on whether
- +  the account is known. Overload that looks up the passed nickname in
- +  the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
- +
- +  Merely wraps `getUser` with `idOf`.
- +
- +  Params:
- +      plugin = The current `IRCPlugin`, whatever it is.
- +      nickname = The name of a user to look up.
- +
- +  Returns:
- +      The nickname or account of the passed user, or the passed nickname if
- +      nothing was found.
+    Returns either the nickname or the account of a user, depending on whether
+    the account is known. Overload that looks up the passed nickname in
+    the passed plugin's `users` associative array of `dialect.defs.IRCUser`s.
+
+    Merely wraps `getUser` with `idOf`.
+
+    Params:
+        plugin = The current `IRCPlugin`, whatever it is.
+        nickname = The name of a user to look up.
+
+    Returns:
+        The nickname or account of the passed user, or the passed nickname if
+        nothing was found.
  +/
 string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {
@@ -552,21 +552,21 @@ unittest
 
 // getUser
 /++
- +  Retrieves an `dialect.defs.IRCUser` from the passed plugin's `users`
- +  associative array. If none exists, returns a minimally viable `dialect.defs.IRCUser`
- +  with the passed nickname as its only value.
- +
- +  On Twitch, if no user was found, it additionally tries to look up the passed
- +  nickname as if it was a display name.
- +
- +  Params:
- +      plugin = The current `IRCPlugin`, whatever it is.
- +      nickname = The name of a user to look up.
- +
- +  Returns:
- +      An `dialect.defs.IRCUser` that matches the passed nickname, from the
- +      passed plugin's arrays. A minimally viable `dialect.defs.IRCUser` if
- +      none was found.
+    Retrieves an `dialect.defs.IRCUser` from the passed plugin's `users`
+    associative array. If none exists, returns a minimally viable `dialect.defs.IRCUser`
+    with the passed nickname as its only value.
+
+    On Twitch, if no user was found, it additionally tries to look up the passed
+    nickname as if it was a display name.
+
+    Params:
+        plugin = The current `IRCPlugin`, whatever it is.
+        nickname = The name of a user to look up.
+
+    Returns:
+        An `dialect.defs.IRCUser` that matches the passed nickname, from the
+        passed plugin's arrays. A minimally viable `dialect.defs.IRCUser` if
+        none was found.
  +/
 IRCUser getUser()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {
@@ -631,11 +631,11 @@ unittest
 
 // EventURLs
 /++
- +  A struct imitating a `std.typecons.Tuple`, used to communicate the
- +  need for a Webtitles lookup.
- +
- +  We shave off a few megabytes of required compilation memory by making it a
- +  struct instead of a tuple.
+    A struct imitating a `std.typecons.Tuple`, used to communicate the
+    need for a Webtitles lookup.
+
+    We shave off a few megabytes of required compilation memory by making it a
+    struct instead of a tuple.
  +/
 version(WithWebtitlesPlugin)
 version(WithTwitchBotPlugin)

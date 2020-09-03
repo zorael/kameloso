@@ -1,10 +1,10 @@
 /++
- +  The Connect service handles logging onto IRC servers after having connected,
- +  as well as managing authentication to services. It also manages responding
- +  to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
- +
- +  The actual connection logic is in the `lu.net` dependency module:<br>
- +  - https://github.com/zorael/lu/blob/master/source/lu/net.d
+    The Connect service handles logging onto IRC servers after having connected,
+    as well as managing authentication to services. It also manages responding
+    to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
+
+    The actual connection logic is in the `lu.net` dependency module:<br>
+    - https://github.com/zorael/lu/blob/master/source/lu/net.d
  +/
 module kameloso.plugins.connect;
 
@@ -24,7 +24,7 @@ import std.typecons : Flag, No, Yes;
 
 // ConnectSettings
 /++
- +  Settings for a `ConnectService`.
+    Settings for a `ConnectService`.
  +/
 @Settings struct ConnectSettings
 {
@@ -57,9 +57,9 @@ enum Progress
 
 // onSelfpart
 /++
- +  Removes a channel from the list of joined channels.
- +
- +  Fires when the bot leaves a channel, one way or another.
+    Removes a channel from the list of joined channels.
+
+    Fires when the bot leaves a channel, one way or another.
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
@@ -96,12 +96,12 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
- +  the current `ConnectService`'s `kameloso.plugins.core.IRCPluginState` upon joining it.
- +
- +  Additionally records our given IDENT identifier. This is likely the first event
- +  after connection that carries us as a user, so we can only catch it as early
- +  as here.
+    Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
+    the current `ConnectService`'s `kameloso.plugins.core.IRCPluginState` upon joining it.
+
+    Additionally records our given IDENT identifier. This is likely the first event
+    after connection that carries us as a user, so we can only catch it as early
+    as here.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -127,12 +127,12 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
 // joinChannels
 /++
- +  Joins all channels listed as home channels *and* guest channels in the arrays in
- +  `kameoso.common.IRCBot` of the current `ConnectService`'s
- +  `kameloso.plugins.core.IRCPluginState`.
- +
- +  Params:
- +      service = The current `ConnectService`.
+    Joins all channels listed as home channels *and* guest channels in the arrays in
+    `kameoso.common.IRCBot` of the current `ConnectService`'s
+    `kameloso.plugins.core.IRCPluginState`.
+
+    Params:
+        service = The current `ConnectService`.
  +/
 void joinChannels(ConnectService service)
 {
@@ -168,14 +168,14 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
- +  Responds to `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` events by sending
- +  the text supplied as content in the `dialect.defs.IRCEvent` to the server.
- +
- +  "Also known as `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` (Unreal/Ultimate)
- +  for use during registration, however it's not used in Unreal (and might not
- +  be used in Ultimate either)."
- +
- +  Encountered at least once, on a private server.
+    Responds to `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` events by sending
+    the text supplied as content in the `dialect.defs.IRCEvent` to the server.
+
+    "Also known as `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` (Unreal/Ultimate)
+    for use during registration, however it's not used in Unreal (and might not
+    be used in Ultimate either)."
+
+    Encountered at least once, on a private server.
  +/
 @(IRCEvent.Type.ERR_NEEDPONG)
 void onToConnectType(ConnectService service, const IRCEvent event)
@@ -188,12 +188,12 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 
 // onPing
 /++
- +  Pongs the server upon `dialect.defs.IRCEvent.Type.PING`.
- +
- +  Ping with the sender as target, and not the necessarily
- +  the server as saved in the `dialect.defs.IRCServer` struct. For
- +  example, `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` generally wants you to
- +  ping a random number or string.
+    Pongs the server upon `dialect.defs.IRCEvent.Type.PING`.
+
+    Ping with the sender as target, and not the necessarily
+    the server as saved in the `dialect.defs.IRCServer` struct. For
+    example, `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` generally wants you to
+    ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
 void onPing(ConnectService service, const IRCEvent event)
@@ -209,13 +209,13 @@ void onPing(ConnectService service, const IRCEvent event)
 
 // tryAuth
 /++
- +  Tries to authenticate with services.
- +
- +  The command to send vary greatly between server daemons (and networks), so
- +  use some heuristics and try the best guess.
- +
- +  Params:
- +      service = The current `ConnectService`.
+    Tries to authenticate with services.
+
+    The command to send vary greatly between server daemons (and networks), so
+    use some heuristics and try the best guess.
+
+    Params:
+        service = The current `ConnectService`.
  +/
 void tryAuth(ConnectService service)
 {
@@ -343,11 +343,11 @@ void tryAuth(ConnectService service)
 
 // delayJoinsAfterFailedAuth
 /++
- +  Creates and schedules a `core.thread.fiber.Fiber` (in a `kameloso.thread.ScheduledFiber`)
- +  that joins channels after having failed to authenticate for n seconds.
- +
- +  Params:
- +      service = The current `ConnectService`.
+    Creates and schedules a `core.thread.fiber.Fiber` (in a `kameloso.thread.ScheduledFiber`)
+    that joins channels after having failed to authenticate for n seconds.
+
+    Params:
+        service = The current `ConnectService`.
  +/
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
@@ -382,11 +382,11 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 
 // onNotRegistered
 /++
- +  Requeues joining channels if we receive an
- +  `dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED` error.
- +
- +  This can happen if the authentication process turns out to be particularly slow.
- +  Recover by schedling to join channels again later.
+    Requeues joining channels if we receive an
+    `dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED` error.
+
+    This can happen if the authentication process turns out to be particularly slow.
+    Recover by schedling to join channels again later.
  +/
 @(IRCEvent.Type.ERR_NOTREGISTERED)
 void onNotRegistered(ConnectService service)
@@ -409,11 +409,11 @@ else
 
 // onEndOfMotd
 /++
- +  Joins channels at the end of the message of the day (`MOTD`), and tries to
- +  authenticate with services if applicable.
- +
- +  Some servers don't have a `MOTD`, so act on
- +  `dialect.defs.IRCEvent.Type.ERR_NOMOTD` as well.
+    Joins channels at the end of the message of the day (`MOTD`), and tries to
+    authenticate with services if applicable.
+
+    Some servers don't have a `MOTD`, so act on
+    `dialect.defs.IRCEvent.Type.ERR_NOMOTD` as well.
  +/
 @ChainableOnTwitch
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -464,12 +464,12 @@ void onEndOfMotd(ConnectService service)
 
 // onEndOfMotdTwitch
 /++
- +  Upon having connected, registered and logged onto the Twitch servers,
- +  disable outgoing colours and warn about having a `.` or `/` prefix.
- +
- +  Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
- +  Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
- +  so we can't use that ourselves.
+    Upon having connected, registered and logged onto the Twitch servers,
+    disable outgoing colours and warn about having a `.` or `/` prefix.
+
+    Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
+    Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
+    so we can't use that ourselves.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -495,10 +495,10 @@ void onEndOfMotdTwitch(ConnectService service)
 
 // onAuthEnd
 /++
- +  Flags authentication as finished and join channels.
- +
- +  Fires when an authentication service sends a message with a known success,
- +  invalid or rejected auth text, signifying completed login.
+    Flags authentication as finished and join channels.
+
+    Fires when an authentication service sends a message with a known success,
+    invalid or rejected auth text, signifying completed login.
  +/
 @(IRCEvent.Type.RPL_LOGGEDIN)
 @(IRCEvent.Type.AUTH_FAILURE)
@@ -520,14 +520,14 @@ void onAuthEnd(ConnectService service)
 
 // onAuthEndNotice
 /++
- +  Flags authentication as finished and join channels.
- +
- +  Some networks/daemons (like RusNet) send the "authentication complete"
- +  message as a `dialect.defs.IRCEvent.Type.NOTICE` from `NickServ`, not a
- +  `dialect.defs.IRCEvent.Type.PRIVMSG`.
- +
- +  Whitelist more nicknames as we discover them. Also English only for now but
- +  can be easily extended.
+    Flags authentication as finished and join channels.
+
+    Some networks/daemons (like RusNet) send the "authentication complete"
+    message as a `dialect.defs.IRCEvent.Type.NOTICE` from `NickServ`, not a
+    `dialect.defs.IRCEvent.Type.PRIVMSG`.
+
+    Whitelist more nicknames as we discover them. Also English only for now but
+    can be easily extended.
  +/
 @ChainableOnTwitch
 @(IRCEvent.Type.NOTICE)
@@ -556,7 +556,7 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
 
 // onTwitchAuthFailure
 /++
- +  On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
+    On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.NOTICE)
@@ -608,9 +608,9 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
 
 // onNickInUse
 /++
- +  Modifies the nickname by appending characters to the end of it.
- +
- +  Flags the client as updated, so as to propagate the change to all other plugins.
+    Modifies the nickname by appending characters to the end of it.
+
+    Flags the client as updated, so as to propagate the change to all other plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
@@ -639,8 +639,8 @@ void onNickInUse(ConnectService service)
 
 // onBadNick
 /++
- +  Aborts a registration attempt and quits if the requested nickname is too
- +  long or contains invalid characters.
+    Aborts a registration attempt and quits if the requested nickname is too
+    long or contains invalid characters.
  +/
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectService service)
@@ -656,9 +656,9 @@ void onBadNick(ConnectService service)
 
 // onBanned
 /++
- +  Quits the program if we're banned.
- +
- +  There's no point in reconnecting.
+    Quits the program if we're banned.
+
+    There's no point in reconnecting.
  +/
 @(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
 void onBanned(ConnectService service)
@@ -670,9 +670,9 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
- +  Quits the program if we supplied a bad `dialect.IRCbot.pass`.
- +
- +  There's no point in reconnecting.
+    Quits the program if we supplied a bad `dialect.IRCbot.pass`.
+
+    There's no point in reconnecting.
  +/
 @(IRCEvent.Type.ERR_PASSWDMISMATCH)
 void onPassMismatch(ConnectService service)
@@ -690,7 +690,7 @@ void onPassMismatch(ConnectService service)
 
 // onInvite
 /++
- +  Upon being invited to a channel, joins it if the settings say we should.
+    Upon being invited to a channel, joins it if the settings say we should.
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
@@ -709,11 +709,11 @@ void onInvite(ConnectService service, const IRCEvent event)
 
 // onCapabilityNegotiation
 /++
- +  Handles server capability exchange.
- +
- +  This is a necessary step to register with some IRC server; the capabilities
- +  have to be requested (`CAP LS`), and the negotiations need to be ended
- +  (`CAP END`).
+    Handles server capability exchange.
+
+    This is a necessary step to register with some IRC server; the capabilities
+    have to be requested (`CAP LS`), and the negotiations need to be ended
+    (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
 void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
@@ -887,8 +887,8 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 
 // onSASLAuthenticate
 /++
- +  Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
- +  key and/or certificate is set in the configuration file, and by PLAIN otherwise.
+    Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
+    key and/or certificate is set in the configuration file, and by PLAIN otherwise.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
@@ -918,19 +918,19 @@ void onSASLAuthenticate(ConnectService service)
 
 // trySASLPlain
 /++
- +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
- +  then sends it to the server, during registration.
- +
- +  A SASL plain authentication token is composed like so:
- +
- +     `base64(account \0 account \0 password)`
- +
- +  ...where `dialect.defs.IRCbot.account` is the services account name and
- +  `dialect.defs.IRCbot.password` is the account password.
- +
- +  Params:
- +      service = The current `ConnectService`.
+    Constructs a SASL plain authentication token from the bot's
+    `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
+    then sends it to the server, during registration.
+
+    A SASL plain authentication token is composed like so:
+
+       `base64(account \0 account \0 password)`
+
+    ...where `dialect.defs.IRCbot.account` is the services account name and
+    `dialect.defs.IRCbot.password` is the account password.
+
+    Params:
+        service = The current `ConnectService`.
  +/
 bool trySASLPlain(ConnectService service)
 {
@@ -965,11 +965,11 @@ bool trySASLPlain(ConnectService service)
 
 // onSASLSuccess
 /++
- +  On SASL authentication success, calls a `CAP END` to finish the
- +  `dialect.defs.IRCEvent.Type.CAP` negotiations.
- +
- +  Flags the client as having finished registering and authing, allowing the
- +  main loop to pick it up and propagate it to all other plugins.
+    On SASL authentication success, calls a `CAP END` to finish the
+    `dialect.defs.IRCEvent.Type.CAP` negotiations.
+
+    Flags the client as having finished registering and authing, allowing the
+    main loop to pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
 void onSASLSuccess(ConnectService service)
@@ -977,17 +977,17 @@ void onSASLSuccess(ConnectService service)
     service.authentication = Progress.finished;
 
     /++
-     +  The END subcommand signals to the server that capability negotiation
-     +  is complete and requests that the server continue with client
-     +  registration. If the client is already registered, this command
-     +  MUST be ignored by the server.
-     +
-     +  Clients that support capabilities but do not wish to enter negotiation
-     +  SHOULD send CAP END upon connection to the server.
-     +
-     +  - http://ircv3.net/specs/core/capability-negotiation-3.1.html
-     +
-     +  Notes: Some servers don't ignore post-registration CAP.
+        The END subcommand signals to the server that capability negotiation
+        is complete and requests that the server continue with client
+        registration. If the client is already registered, this command
+        MUST be ignored by the server.
+
+        Clients that support capabilities but do not wish to enter negotiation
+        SHOULD send CAP END upon connection to the server.
+
+        - http://ircv3.net/specs/core/capability-negotiation-3.1.html
+
+        Notes: Some servers don't ignore post-registration CAP.
      +/
 
     raw(service.state, "CAP END", Yes.quiet);
@@ -998,11 +998,11 @@ void onSASLSuccess(ConnectService service)
 
 // onSASLFailure
 /++
- +  On SASL authentication failure, calls a `CAP END` to finish the
- +  `dialect.defs.IRCEvent.Type.CAP` negotiations and finish registration.
- +
- +  Flags the client as having finished registering, allowing the main loop to
- +  pick it up and propagate it to all other plugins.
+    On SASL authentication failure, calls a `CAP END` to finish the
+    `dialect.defs.IRCEvent.Type.CAP` negotiations and finish registration.
+
+    Flags the client as having finished registering, allowing the main loop to
+    pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure(ConnectService service)
@@ -1034,8 +1034,8 @@ void onSASLFailure(ConnectService service)
 
 // onNoCapabilities
 /++
- +  Ends capability negotiation and negotiates nick if the server doesn't seem
- +  to support capabilities (e.g SwiftIRC).
+    Ends capability negotiation and negotiates nick if the server doesn't seem
+    to support capabilities (e.g SwiftIRC).
  +/
 @(IRCEvent.Type.ERR_NOTREGISTERED)
 void onNoCapabilities(ConnectService service, const IRCEvent event)
@@ -1050,8 +1050,8 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
 
 // onWelcome
 /++
- +  Marks registration as completed upon `dialect.defs.IRCEvent.Type.RPL_WELCOME`
- +  (numeric `001`).
+    Marks registration as completed upon `dialect.defs.IRCEvent.Type.RPL_WELCOME`
+    (numeric `001`).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service, const IRCEvent event)
@@ -1082,9 +1082,9 @@ void onWelcome(ConnectService service, const IRCEvent event)
 
 // onISUPPORT
 /++
- +  Requests a UTF-8 codepage if it seems that the server supports changing such.
- +
- +  Currently only RusNet is known to support codepages.
+    Requests a UTF-8 codepage if it seems that the server supports changing such.
+
+    Currently only RusNet is known to support codepages.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(ConnectService service, const IRCEvent event)
@@ -1100,12 +1100,12 @@ void onISUPPORT(ConnectService service, const IRCEvent event)
 
 // onReconnect
 /++
- +  Disconnects and reconnects to the server.
- +
- +  This is a "benign" disconnect. We need to reconnect preemptively instead of
- +  waiting for the server to disconnect us, as it would otherwise constitute
- +  an error and the program would exit if
- +  `kameloso.common.CoreSettings.endlesslyConnect` isn't set.
+    Disconnects and reconnects to the server.
+
+    This is a "benign" disconnect. We need to reconnect preemptively instead of
+    waiting for the server to disconnect us, as it would otherwise constitute
+    an error and the program would exit if
+    `kameloso.common.CoreSettings.endlesslyConnect` isn't set.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)
@@ -1120,8 +1120,8 @@ void onReconnect(ConnectService service)
 
 // onUnknownCommand
 /++
- +  Warns the user if the server does not seem to support WHOIS queries, suggesting
- +  that they enable hostmasks mode instead.
+    Warns the user if the server does not seem to support WHOIS queries, suggesting
+    that they enable hostmasks mode instead.
  +/
 @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
 void onUnknownCommand(ConnectService service, const IRCEvent event)
@@ -1139,10 +1139,10 @@ void onUnknownCommand(ConnectService service, const IRCEvent event)
 
 // register
 /++
- +  Registers with/logs onto an IRC server.
- +
- +  Params:
- +      service = The current `ConnectService`.
+    Registers with/logs onto an IRC server.
+
+    Params:
+        service = The current `ConnectService`.
  +/
 void register(ConnectService service)
 {
@@ -1276,7 +1276,7 @@ void register(ConnectService service)
 
 // negotiateNick
 /++
- +  Negotiate nickname and user with the server, during registration.
+    Negotiate nickname and user with the server, during registration.
  +/
 void negotiateNick(ConnectService service)
 {
@@ -1323,14 +1323,14 @@ void negotiateNick(ConnectService service)
 
 // start
 /++
- +  Registers with the server.
- +
- +  This initialisation event fires immediately after a successful connect, and
- +  so instead of waiting for something from the server to trigger our
- +  registration procedure (notably `dialect.defs.IRCEvent.Type.NOTICE`s
- +  about our `IDENT` and hostname), we preemptively register.
- +
- +  It seems to work.
+    Registers with the server.
+
+    This initialisation event fires immediately after a successful connect, and
+    so instead of waiting for something from the server to trigger our
+    registration procedure (notably `dialect.defs.IRCEvent.Type.NOTICE`s
+    about our `IDENT` and hostname), we preemptively register.
+
+    It seems to work.
  +/
 void start(ConnectService service)
 {
@@ -1342,15 +1342,15 @@ import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
 /++
- +  Receives a passed `kameloso.thread.BusMessage` with the "`connect`" header,
- +  and calls functions based on the payload message.
- +
- +  This is used to let other plugins trigger re-authentication with services.
- +
- +  Params:
- +      service = The current `ConnectService`.
- +      header = String header describing the passed content payload.
- +      content = Message content.
+    Receives a passed `kameloso.thread.BusMessage` with the "`connect`" header,
+    and calls functions based on the payload message.
+
+    This is used to let other plugins trigger re-authentication with services.
+
+    Params:
+        service = The current `ConnectService`.
+        header = String header describing the passed content payload.
+        content = Message content.
  +/
 void onBusMessage(ConnectService service, const string header, shared Sendable content)
 {
@@ -1375,12 +1375,12 @@ public:
 
 // ConnectService
 /++
- +  The Connect service is a collection of functions and state needed to connect
- +  and stay connected to an IRC server, as well as authenticate with services.
- +
- +  This is mostly a matter of sending `USER` and `NICK` during registration,
- +  but also incorporates logic to authenticate with services, and capability
- +  negotiations.
+    The Connect service is a collection of functions and state needed to connect
+    and stay connected to an IRC server, as well as authenticate with services.
+
+    This is mostly a matter of sending `USER` and `NICK` during registration,
+    but also incorporates logic to authenticate with services, and capability
+    negotiations.
  +/
 final class ConnectService : IRCPlugin
 {
@@ -1389,8 +1389,8 @@ private:
     ConnectSettings connectSettings;
 
     /++
-     +  How many seconds we should wait before we tire of waiting for authentication
-     +  responses and just start joining channels.
+        How many seconds we should wait before we tire of waiting for authentication
+        responses and just start joining channels.
      +/
     enum authenticationGracePeriod = 15;
 

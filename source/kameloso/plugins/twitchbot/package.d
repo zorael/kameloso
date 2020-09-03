@@ -1,5 +1,5 @@
 /++
- +  Package for the TwitchBot plugin modules.
+    Package for the TwitchBot plugin modules.
  +/
 module kameloso.plugins.twitchbot;
 

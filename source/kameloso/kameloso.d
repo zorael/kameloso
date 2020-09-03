@@ -1,5 +1,5 @@
 /++
- +  The main module, housing startup logic and the main event loop.
+    The main module, housing startup logic and the main event loop.
  +/
 module kameloso.kameloso;
 
@@ -21,9 +21,9 @@ version(ProfileGC)
     static if (__VERSION__ >= 2085L)
     {
         /++
-         +  Set some flags to tune the garbage collector and have it print
-         +  profiling information at program exit, iff version `ProfileGC`.
-         +  Enables the precise garbage collector.
+            Set some flags to tune the garbage collector and have it print
+            profiling information at program exit, iff version `ProfileGC`.
+            Enables the precise garbage collector.
          +/
         extern(C)
         public __gshared string[] rt_options =
@@ -35,8 +35,8 @@ version(ProfileGC)
     else
     {
         /++
-         +  Set some flags to tune the garbage collector and have it print
-         +  profiling information at program exit, iff version `ProfileGC`.
+            Set some flags to tune the garbage collector and have it print
+            profiling information at program exit, iff version `ProfileGC`.
          +/
         extern(C)
         public __gshared string[] rt_options =
@@ -49,13 +49,13 @@ version(ProfileGC)
 
 // abort
 /++
- +  Abort flag.
- +
- +  This is set when the program is interrupted (such as via Ctrl+C). Other
- +  parts of the program will be monitoring it, to take the cue and abort when
- +  it is set.
- +
- +  Must be `__gshared` or it doesn't seem to work on Windows.
+    Abort flag.
+
+    This is set when the program is interrupted (such as via Ctrl+C). Other
+    parts of the program will be monitoring it, to take the cue and abort when
+    it is set.
+
+    Must be `__gshared` or it doesn't seem to work on Windows.
  +/
 public __gshared bool rawAbort;
 
@@ -64,8 +64,8 @@ version(Posix)
 {
     // signalRaised
     /++
-     +  The value of the signal, when the process was sent one that meant it
-     +  should abort, This determines the shell exit code to return.
+        The value of the signal, when the process was sent one that meant it
+        should abort, This determines the shell exit code to return.
      +/
     private int signalRaised;
 }
@@ -73,13 +73,13 @@ version(Posix)
 
 // signalHandler
 /++
- +  Called when a signal is raised, usually `SIGINT`.
- +
- +  Sets the `abort` variable to `true` so other parts of the program knows to
- +  gracefully shut down.
- +
- +  Params:
- +      sig = Integer of the signal raised.
+    Called when a signal is raised, usually `SIGINT`.
+
+    Sets the `abort` variable to `true` so other parts of the program knows to
+    gracefully shut down.
+
+    Params:
+        sig = Integer of the signal raised.
  +/
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
@@ -101,14 +101,14 @@ void signalHandler(int sig) nothrow @nogc @system
 
 // messageFiber
 /++
- +  A Generator Fiber function that checks for concurrency messages and performs
- +  action based on what was received.
- +
- +  The return value yielded to the caller tells it whether the received action
- +  means the bot should exit or not.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
+    A Generator Fiber function that checks for concurrency messages and performs
+    action based on what was received.
+
+    The return value yielded to the caller tells it whether the received action
+    means the bot should exit or not.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
  +/
 void messageFiber(ref Kameloso instance)
 {
@@ -191,10 +191,10 @@ void messageFiber(ref Kameloso instance)
         import kameloso.thread : CarryingFiber;
 
         /++
-        +  Attaches a reference to the main array of
-        +  `kameloso.plugins.core.IRCPlugin`s (housing all plugins) to the
-        +  payload member of the supplied `kameloso.thread.CarryingFiber`, then
-        +  invokes it.
+           Attaches a reference to the main array of
+           `kameloso.plugins.core.IRCPlugin`s (housing all plugins) to the
+           payload member of the supplied `kameloso.thread.CarryingFiber`, then
+           invokes it.
         +/
         void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber) scope
         {
@@ -508,8 +508,8 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-         +  Sets the `instance.wantsLiveSummary` flag to true, causing the main
-         +  loop to print a connection summary to the terminal on the next iteration.
+            Sets the `instance.wantsLiveSummary` flag to true, causing the main
+            loop to print a connection summary to the terminal on the next iteration.
          +/
         void flagWantLiveSummary(ThreadMessage.WantLiveSummary) scope
         {
@@ -517,8 +517,8 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-         +  Sets the `instance.abort` flag to true, signaling the rest of the
-         +  program to abort.
+            Sets the `instance.abort` flag to true, signaling the rest of the
+            program to abort.
          +/
         void flagAbort(ThreadMessage.Abort) scope
         {
@@ -578,7 +578,7 @@ void messageFiber(ref Kameloso instance)
 
 // exhaustMessages
 /++
- +  Exhausts the concurrency message mailbox.
+    Exhausts the concurrency message mailbox.
  +/
 void exhaustMessages()
 {
@@ -601,23 +601,23 @@ void exhaustMessages()
 
 // mainLoop
 /++
- +  This loops creates a `std.concurrency.Generator` `core.thread.fiber.Fiber` to loop
- +  over the over `std.socket.Socket`, reading lines and yielding
- +  `lu.net.ListenAttempt`s as it goes.
- +
- +  Full lines are stored in `lu.net.ListenAttempt`s which are
- +  yielded in the `std.concurrency.Generator` to be caught here, consequently
- +  parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +
- +  Returns:
- +      `lu.common.Next.returnFailure` if circumstances mean the bot
- +      should exit with a non-zero exit code,
- +      `lu.common.Next.returnSuccess` if it should exit by returning `0`,
- +      `lu.common.Next.retry` if the bot should reconnect to the server.
- +      `lu.common.Next.continue_` is never returned.
+    This loops creates a `std.concurrency.Generator` `core.thread.fiber.Fiber` to loop
+    over the over `std.socket.Socket`, reading lines and yielding
+    `lu.net.ListenAttempt`s as it goes.
+
+    Full lines are stored in `lu.net.ListenAttempt`s which are
+    yielded in the `std.concurrency.Generator` to be caught here, consequently
+    parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+
+    Returns:
+        `lu.common.Next.returnFailure` if circumstances mean the bot
+        should exit with a non-zero exit code,
+        `lu.common.Next.returnSuccess` if it should exit by returning `0`,
+        `lu.common.Next.retry` if the bot should reconnect to the server.
+        `lu.common.Next.continue_` is never returned.
  +/
 Next mainLoop(ref Kameloso instance)
 {
@@ -1019,14 +1019,14 @@ Next mainLoop(ref Kameloso instance)
 
 // sendLines
 /++
- +  Sends strings to the server from the message buffers.
- +
- +  Broken out of `mainLoop` to make it more legible.
- +
- +  Params:
- +      instance = Reference to the current `Kameloso`.
- +      readWasShortened = Flag bool of whether or not the read timeout was
- +          lowered to allow us to send a message earlier.
+    Sends strings to the server from the message buffers.
+
+    Broken out of `mainLoop` to make it more legible.
+
+    Params:
+        instance = Reference to the current `Kameloso`.
+        readWasShortened = Flag bool of whether or not the read timeout was
+            lowered to allow us to send a message earlier.
  +/
 void sendLines(ref Kameloso instance, ref bool readWasShortened)
 {
@@ -1095,16 +1095,16 @@ import lu.net : ListenAttempt;
 
 // listenAttemptToNext
 /++
- +  Translates the `lu.net.ListenAttempt.state` received from a
- +  `std.concurrency.Generator` into a `lu.common.Next`, while also providing
- +  warnings and error messages.
- +
- +  Params:
- +      instance = Reference to the current `Kameloso`.
- +      attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
- +
- +  Returns:
- +      A `lu.common.Next` describing what action `mainLoop` should take next.
+    Translates the `lu.net.ListenAttempt.state` received from a
+    `std.concurrency.Generator` into a `lu.common.Next`, while also providing
+    warnings and error messages.
+
+    Params:
+        instance = Reference to the current `Kameloso`.
+        attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
+
+    Returns:
+        A `lu.common.Next` describing what action `mainLoop` should take next.
  +/
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
@@ -1161,15 +1161,15 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
 // processAwaitingDelegates
 /++
- +  Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
- +
- +  Does not remove delegates after calling them. They are expected to remove
- +  themvselves after finishing.
- +
- +  Params:
- +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
- +          `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
- +      event = The triggering const `dialect.defs.IRCEvent`.
+    Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
+
+    Does not remove delegates after calling them. They are expected to remove
+    themvselves after finishing.
+
+    Params:
+        plugin = The `kameloso.plugins.core.IRCPlugin` whose
+            `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
+        event = The triggering const `dialect.defs.IRCEvent`.
  +/
 void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
 {
@@ -1178,7 +1178,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
     alias Dg = void delegate(const IRCEvent);
 
     /++
-     +  Handle awaiting delegates of a specified type.
+        Handle awaiting delegates of a specified type.
      +/
     static void processImpl(IRCPlugin plugin, const IRCEvent event, Dg[] dgsForType)
     {
@@ -1223,21 +1223,21 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
 
 // processAwaitingFibers
 /++
- +  Processes the awaiting `core.thread.fiber.Fiber`s of an
- +  `kameloso.plugins.core.IRCPlugin`.
- +
- +  Params:
- +      plugin = The `kameloso.plugins.core.IRCPlugin` whose
- +          `dialect.defs.IRCEvent.Type`-awaiting `core.thread.fiber.Fiber`s to
- +          iterate and process.
- +      event = The triggering `dialect.defs.IRCEvent`.
+    Processes the awaiting `core.thread.fiber.Fiber`s of an
+    `kameloso.plugins.core.IRCPlugin`.
+
+    Params:
+        plugin = The `kameloso.plugins.core.IRCPlugin` whose
+            `dialect.defs.IRCEvent.Type`-awaiting `core.thread.fiber.Fiber`s to
+            iterate and process.
+        event = The triggering `dialect.defs.IRCEvent`.
  +/
 void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
     import core.thread : Fiber;
 
     /++
-     +  Handle awaiting Fibers of a specified type.
+        Handle awaiting Fibers of a specified type.
      +/
     static void processAwaitingFibersImpl(IRCPlugin plugin, const IRCEvent event,
         Fiber[] fibersForType, ref Fiber[] expiredFibers)
@@ -1333,14 +1333,14 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
 // processScheduledDelegates
 /++
- +  Processes the queued `kameloso.thread.ScheduledDelegate`s of an
- +  `kameloso.plugins.core.IRCPlugin`.
- +
- +  Params:
- +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
- +          `kameloso.thread.ScheduledDelegate`s to iterate and process.
- +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledDelegate`'s
- +          timestamp with.
+    Processes the queued `kameloso.thread.ScheduledDelegate`s of an
+    `kameloso.plugins.core.IRCPlugin`.
+
+    Params:
+        plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+            `kameloso.thread.ScheduledDelegate`s to iterate and process.
+        nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledDelegate`'s
+            timestamp with.
  +/
 void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an unset timestamp")
@@ -1385,14 +1385,14 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 
 // processScheduledFibers
 /++
- +  Processes the queued `kameloso.thread.ScheduledFiber`s of an
- +  `kameloso.plugins.core.IRCPlugin`.
- +
- +  Params:
- +      plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
- +          `kameloso.thread.ScheduledFiber`s to iterate and process.
- +      nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledFiber`'s
- +          timestamp with.
+    Processes the queued `kameloso.thread.ScheduledFiber`s of an
+    `kameloso.plugins.core.IRCPlugin`.
+
+    Params:
+        plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+            `kameloso.thread.ScheduledFiber`s to iterate and process.
+        nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledFiber`'s
+            timestamp with.
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
@@ -1443,14 +1443,14 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
 // processRepeats
 /++
- +  Handles the repeat queue, repeating events from the current (main loop)
- +  context, outside of any plugin, after re-postprocessing them.
- +
- +  Note: Exceptions are let past; they are to be caught by the caller.
- +
- +  Params:
- +      plugin = The current `kameloso.plugins.core.IRCPlugin`.
- +      instance = Reference to the current bot instance.
+    Handles the repeat queue, repeating events from the current (main loop)
+    context, outside of any plugin, after re-postprocessing them.
+
+    Note: Exceptions are let past; they are to be caught by the caller.
+
+    Params:
+        plugin = The current `kameloso.plugins.core.IRCPlugin`.
+        instance = Reference to the current bot instance.
  +/
 void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 {
@@ -1500,13 +1500,13 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 
 // processReplays
 /++
- +  Takes a queue of `Replay` objects and issues WHOIS queries for each one,
- +  unless it has already been done recently (within
- +  kameloso.constants.Timeout.whoisRetry seconds).
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      replays = Reference to an associative array of `Replay`s.
+    Takes a queue of `Replay` objects and issues WHOIS queries for each one,
+    unless it has already been done recently (within
+    kameloso.constants.Timeout.whoisRetry seconds).
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+        replays = Reference to an associative array of `Replay`s.
  +/
 void processReplays(ref Kameloso instance, const Replay[][string] replays)
 {
@@ -1563,11 +1563,11 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
 
 // setupSignals
 /++
- +  Registers some process signals to redirect to our own `signalHandler`, so we
- +  can (for instance) catch Ctrl+C and gracefully shut down.
- +
- +  On Posix, additionally ignore `SIGPIPE` so that we can catch SSL errors and
- +  not just immediately terminate.
+    Registers some process signals to redirect to our own `signalHandler`, so we
+    can (for instance) catch Ctrl+C and gracefully shut down.
+
+    On Posix, additionally ignore `SIGPIPE` so that we can catch SSL errors and
+    not just immediately terminate.
  +/
 void setupSignals() nothrow @nogc
 {
@@ -1589,7 +1589,7 @@ void setupSignals() nothrow @nogc
 
 // resetSignals
 /++
- +  Resets signal handlers to the system default.
+    Resets signal handlers to the system default.
  +/
 void resetSignals() nothrow @nogc
 {
@@ -1609,16 +1609,16 @@ void resetSignals() nothrow @nogc
 
 // tryGetopt
 /++
- +  Attempt handling `getopt`, wrapped in try-catch blocks.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      args = The arguments passed to the program.
- +      customSettings = Out reference to the dynamic array of custom settings as
- +          defined with `--set plugin.setting=value` on the command line.
- +
- +  Returns:
- +      `lu.common.Next`.* depending on what action the calling site should take.
+    Attempt handling `getopt`, wrapped in try-catch blocks.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+        args = The arguments passed to the program.
+        customSettings = Out reference to the dynamic array of custom settings as
+            defined with `--set plugin.setting=value` on the command line.
+
+    Returns:
+        `lu.common.Next`.* depending on what action the calling site should take.
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
@@ -1673,17 +1673,17 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
 
 // tryConnect
 /++
- +  Tries to connect to the IPs in `kameloso.common.Kameloso.conn.ips` by
- +  leveraging `lu.net.connectFiber`, reacting on the
- +  `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +
- +  Returns:
- +      `lu.common.Next.continue_` if connection succeeded,
- +      `lu.common.Next.returnFailure` if connection failed and the
- +      program should exit.
+    Tries to connect to the IPs in `kameloso.common.Kameloso.conn.ips` by
+    leveraging `lu.net.connectFiber`, reacting on the
+    `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+
+    Returns:
+        `lu.common.Next.continue_` if connection succeeded,
+        `lu.common.Next.returnFailure` if connection failed and the
+        program should exit.
  +/
 Next tryConnect(ref Kameloso instance)
 {
@@ -1805,17 +1805,17 @@ Next tryConnect(ref Kameloso instance)
 
 // tryResolve
 /++
- +  Tries to resolve the address in `instance.parser.server` to IPs, by
- +  leveraging `lu.net.resolveFiber`, reacting on the
- +  `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      firstConnect = Whether or not this is the first time we're attempting a connection.
- +
- +  Returns:
- +      `lu.common.Next.continue_` if resolution succeeded,
- +      `lu.common.Next.returnFailure` if it failed and the program should exit.
+    Tries to resolve the address in `instance.parser.server` to IPs, by
+    leveraging `lu.net.resolveFiber`, reacting on the
+    `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+        firstConnect = Whether or not this is the first time we're attempting a connection.
+
+    Returns:
+        `lu.common.Next.continue_` if resolution succeeded,
+        `lu.common.Next.returnFailure` if it failed and the program should exit.
  +/
 Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 {
@@ -1909,11 +1909,11 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 
 // complainAboutMissingConfigurationEntries
 /++
- +  Prints some information about missing configuration entries to the local terminal.
- +
- +  Params:
- +      missingEntries = A `string[][string]` associative array of dynamic
- +          `string[]` arrays, keyed by strings. These contain missing settings.
+    Prints some information about missing configuration entries to the local terminal.
+
+    Params:
+        missingEntries = A `string[][string]` associative array of dynamic
+            `string[]` arrays, keyed by strings. These contain missing settings.
  +/
 void complainAboutMissingConfigurationEntries(const string[][string] missingEntries)
 {
@@ -1934,11 +1934,11 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
 
 // complainAboutInvalidConfigurationEntries
 /++
- +  Prints some information about invalid configuration entries to the local terminal.
- +
- +  Params:
- +      invalidEntries = A `string[][string]` associative array of dynamic
- +          `string[]` arrays, keyed by strings. These contain invalid settings.
+    Prints some information about invalid configuration entries to the local terminal.
+
+    Params:
+        invalidEntries = A `string[][string]` associative array of dynamic
+            `string[]` arrays, keyed by strings. These contain invalid settings.
  +/
 void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
 {
@@ -1959,14 +1959,14 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 
 // complainAboutMissingConfiguration
 /++
- +  Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
- +
- +  It assumes such information is missing, and that the check has been done at
- +  the calling site.
- +
- +  Params:
- +      configFile = Full path to the configuration file.
- +      binaryPath = Full path to the current binary.
+    Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
+
+    It assumes such information is missing, and that the check has been done at
+    the calling site.
+
+    Params:
+        configFile = Full path to the configuration file.
+        binaryPath = Full path to the current binary.
  +/
 void complainAboutMissingConfiguration(const string configFile, const string binaryPath)
 {
@@ -1995,12 +1995,12 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
 
 // preInstanceSetup
 /++
- +  Sets up the program (terminal) environment.
- +
- +  Depending on your platform it may set any of thread name, terminal title and
- +  console codepages.
- +
- +  This is called very early during execution.
+    Sets up the program (terminal) environment.
+
+    Depending on your platform it may set any of thread name, terminal title and
+    console codepages.
+
+    This is called very early during execution.
  +/
 void preInstanceSetup()
 {
@@ -2028,12 +2028,12 @@ void preInstanceSetup()
 
 // setupSettings
 /++
- +  Sets up `kameloso.common.settings`, expanding paths and more.
- +
- +  This is called during early execution.
- +
- +  Params:
- +      settings = A reference to the `kameloso.common.CoreSettings` we want to set up.
+    Sets up `kameloso.common.settings`, expanding paths and more.
+
+    This is called during early execution.
+
+    Params:
+        settings = A reference to the `kameloso.common.CoreSettings` we want to set up.
  +/
 void setupSettings(ref CoreSettings settings)
 {
@@ -2067,16 +2067,16 @@ void setupSettings(ref CoreSettings settings)
 
 // verifySettings
 /++
- +  Verifies some settings and returns whether the program should continue
- +  executing (or whether there were errors such that we should exit).
- +
- +  This is called after command-line arguments have been parsed.
- +
- +  Params:
- +      instance = Reference to the current `Kameloso`.
- +
- +  Returns:
- +      `Next.returnFailure` if the program should exit, `Next.continue_` otherwise.
+    Verifies some settings and returns whether the program should continue
+    executing (or whether there were errors such that we should exit).
+
+    This is called after command-line arguments have been parsed.
+
+    Params:
+        instance = Reference to the current `Kameloso`.
+
+    Returns:
+        `Next.returnFailure` if the program should exit, `Next.continue_` otherwise.
  +/
 Next verifySettings(ref Kameloso instance)
 {
@@ -2127,12 +2127,12 @@ Next verifySettings(ref Kameloso instance)
 
 // resolveResourceDirectory
 /++
- +  Resolves resource directories verbosely.
- +
- +  This is called after settings have been verified, before plugins are initialised.
- +
- +  Params:
- +      instance = Reference to the current `Kameloso`.
+    Resolves resource directories verbosely.
+
+    This is called after settings have been verified, before plugins are initialised.
+
+    Params:
+        instance = Reference to the current `Kameloso`.
  +/
 void resolveResourceDirectory(ref Kameloso instance)
 {
@@ -2157,14 +2157,14 @@ void resolveResourceDirectory(ref Kameloso instance)
 
 // startBot
 /++
- +  Main connection logic.
- +
- +  This function *starts* the bot, after it has been sufficiently initialised.
- +  It resolves and connects to servers, then hands off execution to `mainLoop`.
- +
- +  Params:
- +      instance = Reference to the current `Kameloso`.
- +      attempt = Voldemort aggregate of state variables used when connecting.
+    Main connection logic.
+
+    This function *starts* the bot, after it has been sufficiently initialised.
+    It resolves and connects to servers, then hands off execution to `mainLoop`.
+
+    Params:
+        instance = Reference to the current `Kameloso`.
+        attempt = Voldemort aggregate of state variables used when connecting.
  +/
 void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 {
@@ -2359,11 +2359,11 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 
 // printEventDebugDetails
 /++
- +  Print what we know about an event, from an error perspective.
- +
- +  Params:
- +      event = The `dialect.defs.IRCEvent` in question.
- +      raw = The raw string that `event` was parsed from, as read from the IRC server.
+    Print what we know about an event, from an error perspective.
+
+    Params:
+        event = The `dialect.defs.IRCEvent` in question.
+        raw = The raw string that `event` was parsed from, as read from the IRC server.
  +/
 void printEventDebugDetails(const IRCEvent event, const string raw)
 {
@@ -2397,10 +2397,10 @@ void printEventDebugDetails(const IRCEvent event, const string raw)
 
 // printSummary
 /++
- +  Prints a summary of the connection(s) made and events parsed this execution.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
+    Prints a summary of the connection(s) made and events parsed this execution.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
  +/
 void printSummary(const ref Kameloso instance)
 {
@@ -2450,13 +2450,13 @@ public:
 
 // initBot
 /++
- +  Entry point of the program.
- +
- +  Params:
- +      args = Command-line arguments passed to the program.
- +
- +  Returns:
- +      `0` on success, non-`0` on failure.
+    Entry point of the program.
+
+    Params:
+        args = Command-line arguments passed to the program.
+
+    Returns:
+        `0` on success, non-`0` on failure.
  +/
 int initBot(string[] args)
 {
@@ -2467,14 +2467,14 @@ int initBot(string[] args)
         Next next;
 
         /++
-         +  An array for `handleGetopt` to fill by ref with custom settings
-         +  set on the command-line using `--set plugin.setting=value`.
+            An array for `handleGetopt` to fill by ref with custom settings
+            set on the command-line using `--set plugin.setting=value`.
          +/
         string[] customSettings;
 
         /++
-         +  Bool whether this is the first connection attempt or if we have
-         +  connected at least once already.
+            Bool whether this is the first connection attempt or if we have
+            connected at least once already.
          +/
         bool firstConnect = true;
 

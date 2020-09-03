@@ -1,10 +1,10 @@
 /++
- +  Basic command-line argument-handling.
- +
- +  Employs the standard `std.getopt` to read arguments from the command line
- +  to construct and populate instances of the structs needed for the bot to
- +  function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
- +  `kameloso.common.IRCBot` and `kameloso.common.CoreSettings`.
+    Basic command-line argument-handling.
+
+    Employs the standard `std.getopt` to read arguments from the command line
+    to construct and populate instances of the structs needed for the bot to
+    function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
+    `kameloso.common.IRCBot` and `kameloso.common.CoreSettings`.
  +/
 module kameloso.getopt;
 
@@ -21,29 +21,29 @@ import std.typecons : Flag, No, Yes;
 
 // printHelp
 /++
- +  Prints the `getopt` "helpWanted" help table to screen.
- +
- +  Merely leverages `std.getopt.defaultGetoptPrinter` for the printing.
- +
- +  Example:
- +  ---
- +  auto results = args.getopt(
- +      "n|nickname",   "Bot nickname", &nickname,
- +      "s|server",     "Server",       &server,
- +      // ...
- +  );
- +
- +  if (results.helpWanted)
- +  {
- +      printHelp(results, No.monochrome, No.brightTerminal);
- +  }
- +  ---
- +
- +  Params:
- +      results = Results from a `std.getopt.getopt` call, usually with `.helpWanted` true.
- +      monochrome = Whether or not terminal colours should be used.
- +      brightTerminal = Whether or not the terminal has a bright background
- +          and colours should be adjusted to suit.
+    Prints the `getopt` "helpWanted" help table to screen.
+
+    Merely leverages `std.getopt.defaultGetoptPrinter` for the printing.
+
+    Example:
+    ---
+    auto results = args.getopt(
+        "n|nickname",   "Bot nickname", &nickname,
+        "s|server",     "Server",       &server,
+        // ...
+    );
+
+    if (results.helpWanted)
+    {
+        printHelp(results, No.monochrome, No.brightTerminal);
+    }
+    ---
+
+    Params:
+        results = Results from a `std.getopt.getopt` call, usually with `.helpWanted` true.
+        monochrome = Whether or not terminal colours should be used.
+        brightTerminal = Whether or not the terminal has a bright background
+            and colours should be adjusted to suit.
  +/
 void printHelp(GetoptResult results,
     const Flag!"monochrome" monochrome,
@@ -95,19 +95,19 @@ void printHelp(GetoptResult results,
 
 // writeConfig
 /++
- +  Writes configuration to file, verbosely.
- +
- +  The filename is read from `kameloso.common.settings`.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      client = Reference to the current `dialect.defs.IRCClient`.
- +      server = Reference to the current `dialect.defs.IRCServer`.
- +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      customSettings = const string array to all the custom settings set
- +          via `getopt`, to apply to things before saving to disk.
- +      giveInstructions = Whether or not to give instructions to edit the
- +          generated file and supply admins and/or home channels.
+    Writes configuration to file, verbosely.
+
+    The filename is read from `kameloso.common.settings`.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+        client = Reference to the current `dialect.defs.IRCClient`.
+        server = Reference to the current `dialect.defs.IRCServer`.
+        bot = Reference to the current `kameloso.common.IRCBot`.
+        customSettings = const string array to all the custom settings set
+            via `getopt`, to apply to things before saving to disk.
+        giveInstructions = Whether or not to give instructions to edit the
+            generated file and supply admins and/or home channels.
  +/
 void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
     ref IRCBot bot, const string[] customSettings,
@@ -167,15 +167,15 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
 // printSettings
 /++
- +  Prints the core settings and all plugins' settings to screen.
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      customSettings = const string array to all the custom settings set
- +          via `getopt`, to apply to things before saving to disk.
- +      monochrome = Whether or not terminal colours should be used.
- +      brightTerminal = Whether or not the terminal has a bright background
- +          and colours should be adjusted to suit.
+    Prints the core settings and all plugins' settings to screen.
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+        customSettings = const string array to all the custom settings set
+            via `getopt`, to apply to things before saving to disk.
+        monochrome = Whether or not terminal colours should be used.
+        brightTerminal = Whether or not the terminal has a bright background
+            and colours should be adjusted to suit.
  +/
 void printSettings(ref Kameloso instance, const string[] customSettings,
     const Flag!"monochrome" monochrome,
@@ -219,33 +219,33 @@ public:
 
 // handleGetopt
 /++
- +  Read command-line options and apply them over values previously read from
- +  the configuration file.
- +
- +  The priority of options then becomes getopt over config file over hardcoded defaults.
- +
- +  Example:
- +  ---
- +  Kameloso instance;
- +  Next next = instance.handleGetopt(args, customSettings);
- +
- +  if (next == Next.returnSuccess) return 0;
- +  // ...
- +  ---
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`.
- +      args = The `string[]` args the program was called with.
- +      customSettings = Out array of custom settings to apply on top of
- +          the settings read from the configuration file.
- +
- +  Returns:
- +      `lu.common.Next.continue_` or `lu.common.Next.returnSuccess`
- +      depending on whether the arguments chosen mean the program should
- +      proceed or not.
- +
- +  Throws:
- +      `std.getopt.GetOptException` if an unknown flag is passed.
+    Read command-line options and apply them over values previously read from
+    the configuration file.
+
+    The priority of options then becomes getopt over config file over hardcoded defaults.
+
+    Example:
+    ---
+    Kameloso instance;
+    Next next = instance.handleGetopt(args, customSettings);
+
+    if (next == Next.returnSuccess) return 0;
+    // ...
+    ---
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`.
+        args = The `string[]` args the program was called with.
+        customSettings = Out array of custom settings to apply on top of
+            the settings read from the configuration file.
+
+    Returns:
+        `lu.common.Next.continue_` or `lu.common.Next.returnSuccess`
+        depending on whether the arguments chosen mean the program should
+        proceed or not.
+
+    Throws:
+        `std.getopt.GetOptException` if an unknown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
@@ -310,8 +310,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         applyDefaults(parser.client, parser.server, bot);
 
         /++
-         +  Call getopt in a nested function so we can call it both to merely
-         +  parse for settings and to format the help listing.
+            Call getopt in a nested function so we can call it both to merely
+            parse for settings and to format the help listing.
          +/
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
@@ -604,27 +604,27 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
 // manageConfigFile
 /++
- +  Writes and/or edits the configuration file. Broken out into a separate
- +  function to lower the size of `handleGetopt`.
- +
- +  bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
- +
- +  Params:
- +      instance = The current `kameloso.common.Kameloso` instance.
- +      shouldWriteConfig = Writing to the configuration file was requested.
- +      shouldOpenEditor = Opening the configuration file in a text editor was requested.
- +      customSettings = Custom settings supplied at the command line, to be
- +          passed to `writeConfig` when writing to the configuration file.
- +
- +  Throws:
- +      `object.Exception` on unexpected platforms where we did not know how to
- +      open the configuration file in a text editor.
+    Writes and/or edits the configuration file. Broken out into a separate
+    function to lower the size of `handleGetopt`.
+
+    bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
+
+    Params:
+        instance = The current `kameloso.common.Kameloso` instance.
+        shouldWriteConfig = Writing to the configuration file was requested.
+        shouldOpenEditor = Opening the configuration file in a text editor was requested.
+        customSettings = Custom settings supplied at the command line, to be
+            passed to `writeConfig` when writing to the configuration file.
+
+    Throws:
+        `object.Exception` on unexpected platforms where we did not know how to
+        open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
     const bool shouldOpenEditor, ref string[] customSettings) @system
 {
     /++
-     +  Opens up the configuration file in a text editor.
+        Opens up the configuration file in a text editor.
      +/
     void openEditor()
     {

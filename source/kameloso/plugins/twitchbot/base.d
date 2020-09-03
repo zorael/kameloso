@@ -1,15 +1,15 @@
 /++
- +  This is an example Twitch streamer bot. It supports querying uptime or how
- +  long a streamer has been live, banned phrases, timered announcements and
- +  voting.
- +
- +  It can also emit some terminal bells on certain events, to draw attention.
- +
- +  One immediately obvious venue of expansion is expression bans, such as if a
- +  message has too many capital letters, etc. There is no protection from spam yet.
- +
- +  See the GitHub wiki for more information about available commands:<br>
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
+    This is an example Twitch streamer bot. It supports querying uptime or how
+    long a streamer has been live, banned phrases, timered announcements and
+    voting.
+
+    It can also emit some terminal bells on certain events, to draw attention.
+
+    One immediately obvious venue of expansion is expression bans, such as if a
+    message has too many capital letters, etc. There is no protection from spam yet.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
  +/
 module kameloso.plugins.twitchbot.base;
 
@@ -69,12 +69,12 @@ import core.thread : Fiber;
     version(Windows)
     {
         /++
-         +  Whether to use one persistent worker for Twitch queries or to use separate subthreads.
-         +
-         +  It's a trade-off. A single worker thread obviously spawns fewer threads,
-         +  which makes it a better choice on Windows systems where creating such is
-         +  comparatively expensive. On the other hand, it's also slower (likely due to
-         +  concurrency message passing overhead).
+            Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+
+            It's a trade-off. A single worker thread obviously spawns fewer threads,
+            which makes it a better choice on Windows systems where creating such is
+            comparatively expensive. On the other hand, it's also slower (likely due to
+            concurrency message passing overhead).
          +/
         bool singleWorkerThread = true;
     }
@@ -85,8 +85,8 @@ import core.thread : Fiber;
     }
 
     /++
-     +  Whether or not to start a captive session for generating a Twitch
-     +  authorisation key. Should not be permanently set in the configuration file!
+        Whether or not to start a captive session for generating a Twitch
+        authorisation key. Should not be permanently set in the configuration file!
      +/
     @Unserialisable bool keygen = false;
 }
@@ -94,7 +94,7 @@ import core.thread : Fiber;
 
 // onCommandPermit
 /++
- +  Permits a user to post links for a hardcoded 60 seconds.
+    Permits a user to post links for a hardcoded 60 seconds.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -158,8 +158,8 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onImportant
 /++
- +  Bells on any important event, like subscriptions, cheers and raids, if the
- +  `TwitchBotSettings.bellOnImportant` setting is set.
+    Bells on any important event, like subscriptions, cheers and raids, if the
+    `TwitchBotSettings.bellOnImportant` setting is set.
  +/
 @(Chainable)
 @(IRCEvent.Type.TWITCH_SUB)
@@ -191,10 +191,10 @@ void onImportant(TwitchBotPlugin plugin)
 
 // onSelfjoin
 /++
- +  Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
- +  always a state struct available.
- +
- +  Simply passes on execution to `handleSelfjoin`.
+    Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
+    always a state struct available.
+
+    Simply passes on execution to `handleSelfjoin`.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
@@ -206,15 +206,15 @@ package void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 
 // handleSelfjoin
 /++
- +  Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
- +  always a state struct available.
- +
- +  Creates the timer `core.thread.fiber.Fiber`s that there are definitions for in
- +  `TwitchBotPlugin.timerDefsByChannel`.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      channelName = The name of the channel we're supposedly joining.
+    Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
+    always a state struct available.
+
+    Creates the timer `core.thread.fiber.Fiber`s that there are definitions for in
+    `TwitchBotPlugin.timerDefsByChannel`.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        channelName = The name of the channel we're supposedly joining.
  +/
 package void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
@@ -238,9 +238,9 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 
 // onSelfpart
 /++
- +  Removes a channel's corresponding `TwitchBotPlugin.Room` when we leave it.
- +
- +  This resets all that channel's transient state.
+    Removes a channel's corresponding `TwitchBotPlugin.Room` when we leave it.
+
+    This resets all that channel's transient state.
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.home)
@@ -252,9 +252,9 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandPhrase
 /++
- +  Bans, unbans, lists or clears banned phrases for the current channel.
- +
- +  Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
+    Bans, unbans, lists or clears banned phrases for the current channel.
+
+    Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -271,12 +271,12 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
 
 // handlePhraseCommand
 /++
- +  Bans, unbans, lists or clears banned phrases for the specified target channel.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      targetChannel = The channel we're handling phrase bans for.
+    Bans, unbans, lists or clears banned phrases for the specified target channel.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        event = The triggering `dialect.defs.IRCEvent`.
+        targetChannel = The channel we're handling phrase bans for.
  +/
 void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle phrases with an empty target channel string")
@@ -432,9 +432,9 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 
 // onCommandTimer
 /++
- +  Adds, deletes, lists or clears timers for the specified target channel.
- +
- +  Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
+    Adds, deletes, lists or clears timers for the specified target channel.
+
+    Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -451,7 +451,7 @@ void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandEnableDisable
 /++
- +  Toggles whether or not the bot should operate in this channel.
+    Toggles whether or not the bot should operate in this channel.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -477,12 +477,12 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandUptime
 /++
- +  Reports how long the streamer has been streaming.
- +
- +  Technically, how much time has passed since `!start` was issued.
- +
- +  The streamer's name is divined from the `plugin.state.users` associative
- +  array by looking at the entry for the nickname this channel corresponds to.
+    Reports how long the streamer has been streaming.
+
+    Technically, how much time has passed since `!start` was issued.
+
+    The streamer's name is divined from the `plugin.state.users` associative
+    array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -564,12 +564,12 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandStart
 /++
- +  Marks the start of a broadcast, for later uptime queries.
- +
- +  Consecutive calls to `!start` are ignored.
- +
- +  The streamer's name is divined from the `plugin.state.users` associative
- +  array by looking at the entry for the nickname this channel corresponds to.
+    Marks the start of a broadcast, for later uptime queries.
+
+    Consecutive calls to `!start` are ignored.
+
+    The streamer's name is divined from the `plugin.state.users` associative
+    array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -647,10 +647,10 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandStop
 /++
- +  Marks the stop of a broadcast.
- +
- +  The streamer's name is divined from the `plugin.state.users` associative
- +  array by looking at the entry for the nickname this channel corresponds to.
+    Marks the stop of a broadcast.
+
+    The streamer's name is divined from the `plugin.state.users` associative
+    array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -682,10 +682,10 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onAutomaticStop
 /++
- +  Automatically signals a stream stop when a host starts.
- +
- +  This is generally done as the last thing after a stream session, so it makes
- +  sense to automate `onCommandStop`.
+    Automatically signals a stream stop when a host starts.
+
+    This is generally done as the last thing after a stream session, so it makes
+    sense to automate `onCommandStop`.
  +/
 @(ChannelPolicy.home)
 @(IRCEvent.Type.TWITCH_HOSTSTART)
@@ -697,7 +697,7 @@ void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
 
 // reportStopTime
 /++
- +  Reports how long the recently ongoing, now ended broadcast lasted.
+    Reports how long the recently ongoing, now ended broadcast lasted.
  +/
 void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
 in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
@@ -737,15 +737,15 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
 
 // onLink
 /++
- +  Parses a message to see if the message contains one or more URLs.
- +
- +  It uses a simple state machine in `kameloso.common.findURLs`. If the Webtitles
- +  plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
- +  send them to it for lookups and reporting.
- +
- +  Operators, whitelisted and admin users are so far allowed to trigger this, as are
- +  any user who has been given a temporary permit via `onCommandPermit`.
- +  Those without permission will have the message deleted and be served a timeout.
+    Parses a message to see if the message contains one or more URLs.
+
+    It uses a simple state machine in `kameloso.common.findURLs`. If the Webtitles
+    plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
+    send them to it for lookups and reporting.
+
+    Operators, whitelisted and admin users are so far allowed to trigger this, as are
+    any user who has been given a temporary permit via `onCommandPermit`.
+    Those without permission will have the message deleted and be served a timeout.
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
@@ -884,10 +884,10 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onFollowAge
 /++
- +  Implements "Follow Age", or the ability to query the server how long you
- +  (or a specified user) have been a follower of the current channel.
- +
- +  Lookups are done asynchronously in subthreads.
+    Implements "Follow Age", or the ability to query the server how long you
+    (or a specified user) have been a follower of the current channel.
+
+    Lookups are done asynchronously in subthreads.
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
@@ -1063,8 +1063,8 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onRoomState
 /++
- +  Records the room ID of a home channel, and queries the Twitch servers for
- +  the display name of its broadcaster.
+    Records the room ID of a home channel, and queries the Twitch servers for
+    the display name of its broadcaster.
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
@@ -1117,9 +1117,9 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandShoutout
 /++
- +  Emits a shoutout to another streamer.
- +
- +  Merely gives a link to their channel and echoes what game they last streamed.
+    Emits a shoutout to another streamer.
+
+    Merely gives a link to their channel and echoes what game they last streamed.
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
@@ -1194,18 +1194,18 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onAnyMessage
 /++
- +  Performs various actions on incoming messages.
- +
- +  * Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
- +  * Detects and deals with banned phrases.
- +  * Bumps the message counter for the channel, used by timers.
- +
- +  Belling is useful with small audiences, so you don't miss messages.
- +
- +  Note: This is annotated `kameloso.plugins.core.Terminating` and must be
- +  placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
- +  This lets us know the banned phrase wasn't part of a command (as it would
- +  otherwise not reach this point).
+    Performs various actions on incoming messages.
+
+    * Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+    * Detects and deals with banned phrases.
+    * Bumps the message counter for the channel, used by timers.
+
+    Belling is useful with small audiences, so you don't miss messages.
+
+    Note: This is annotated `kameloso.plugins.core.Terminating` and must be
+    placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
+    This lets us know the banned phrase wasn't part of a command (as it would
+    otherwise not reach this point).
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -1306,8 +1306,8 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Populate the banned phrases array after we have successfully
- +  logged onto the server.
+    Populate the banned phrases array after we have successfully
+    logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -1433,12 +1433,12 @@ void onEndOfMotd(TwitchBotPlugin plugin)
 
 // onCAP
 /++
- +  Start the captive key generation routine at the earliest possible moment,
- +  which are the CAP events.
- +
- +  We can't do it in `start` since the calls to save and exit would go unheard,
- +  as `start` happens before the main loop starts. It would then immediately
- +  fail to read if too much time has passed, and nothing would be saved.
+    Start the captive key generation routine at the earliest possible moment,
+    which are the CAP events.
+
+    We can't do it in `start` since the calls to save and exit would go unheard,
+    as `start` happens before the main loop starts. It would then immediately
+    fail to read if too much time has passed, and nothing would be saved.
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CAP)
@@ -1450,7 +1450,7 @@ void onCAP(TwitchBotPlugin plugin)
 
 // reload
 /++
- +  Reloads resources from disk.
+    Reloads resources from disk.
  +/
 void reload(TwitchBotPlugin plugin)
 {
@@ -1472,21 +1472,21 @@ void reload(TwitchBotPlugin plugin)
 
 // saveResourceToDisk
 /++
- +  Saves the passed resource to disk, but in JSON format.
- +
- +  This is used with the associative arrays for banned phrases.
- +
- +  Example:
- +  ---
- +  plugin.bannedPhrasesByChannel["#channel"] ~= "kameloso";
- +  plugin.bannedPhrasesByChannel["#channel"] ~= "hirrsteff";
- +
- +  saveResource(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
- +  ---
- +
- +  Params:
- +      resource = The JSON-convertible resource to save.
- +      filename = Filename of the file to write to.
+    Saves the passed resource to disk, but in JSON format.
+
+    This is used with the associative arrays for banned phrases.
+
+    Example:
+    ---
+    plugin.bannedPhrasesByChannel["#channel"] ~= "kameloso";
+    plugin.bannedPhrasesByChannel["#channel"] ~= "hirrsteff";
+
+    saveResource(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
+    ---
+
+    Params:
+        resource = The JSON-convertible resource to save.
+        filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(Resource)(const Resource resource, const string filename)
 in (filename.length, "Tried to save resources to an empty filename")
@@ -1503,8 +1503,8 @@ in (filename.length, "Tried to save resources to an empty filename")
 
 // initResources
 /++
- +  Reads and writes the file of banned phrases and timers to disk, ensuring
- +  that they're there and properly formatted.
+    Reads and writes the file of banned phrases and timers to disk, ensuring
+    that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
 {
@@ -1547,8 +1547,8 @@ void initResources(TwitchBotPlugin plugin)
 
 // periodically
 /++
- +  Periodically calls timer `core.thread.fiber.Fiber`s with a periodicity of
- +  `TwitchBotPlugin.timerPeriodicity`.
+    Periodically calls timer `core.thread.fiber.Fiber`s with a periodicity of
+    `TwitchBotPlugin.timerPeriodicity`.
  +/
 void periodically(TwitchBotPlugin plugin, const long now)
 {
@@ -1648,8 +1648,8 @@ void periodically(TwitchBotPlugin plugin, const long now)
 
 // start
 /++
- +  Starts the plugin after successful connect, rescheduling the next
- +  `.periodical` to trigger after hardcoded 60 seconds.
+    Starts the plugin after successful connect, rescheduling the next
+    `.periodical` to trigger after hardcoded 60 seconds.
  +/
 void start(TwitchBotPlugin plugin)
 {
@@ -1665,7 +1665,7 @@ void start(TwitchBotPlugin plugin)
 
 // teardown
 /++
- +  De-initialises the plugin. Shuts down any persistent worker threads.
+    De-initialises the plugin. Shuts down any persistent worker threads.
  +/
 version(TwitchAPIFeatures)
 void teardown(TwitchBotPlugin plugin)
@@ -1692,8 +1692,8 @@ public:
 
 // TwitchBotPlugin
 /++
- +  The Twitch Bot plugin is an example Twitch streamer bot. It contains some
- +  basic tools for streamers, and the audience thereof.
+    The Twitch Bot plugin is an example Twitch streamer bot. It contains some
+    basic tools for streamers, and the audience thereof.
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
@@ -1749,10 +1749,10 @@ package:
         long[string] linkPermits;
 
         /++
-         +  A counter of how many messages we have seen in the channel.
-         +
-         +  Used by timers to know when enough activity has passed to warrant
-         +  re-announcing timers.
+            A counter of how many messages we have seen in the channel.
+
+            Used by timers to know when enough activity has passed to warrant
+            re-announcing timers.
          +/
         ulong messageCount;
 
@@ -1794,8 +1794,8 @@ package:
     long nextPrune;
 
     /++
-     +  How often to check whether timers should fire, in seconds. A smaller
-     +  number means better precision.
+        How often to check whether timers should fire, in seconds. A smaller
+        number means better precision.
      +/
     enum timerPeriodicity = 10;
 
@@ -1816,51 +1816,51 @@ package:
         string userID;
 
         /++
-         +  How long a Twitch HTTP query usually takes.
-         +
-         +  It tries its best to self-balance the number based on how long queries
-         +  actually take. Start off conservatively.
+            How long a Twitch HTTP query usually takes.
+
+            It tries its best to self-balance the number based on how long queries
+            actually take. Start off conservatively.
          +/
         long approximateQueryTime = 700;
 
         /++
-         +  The multiplier of how much the query time should temporarily increase
-         +  when it turned out to be a bit short.
+            The multiplier of how much the query time should temporarily increase
+            when it turned out to be a bit short.
          +/
         enum approximateQueryGrowthMultiplier = 1.1;
 
         /++
-         +  The divisor of how much to wait before retrying a query, after the timed waited
-         +  turned out to be a bit short.
+            The divisor of how much to wait before retrying a query, after the timed waited
+            turned out to be a bit short.
          +/
         enum approximateQueryRetryTimeDivisor = 3;
 
         /++
-         +  By how many milliseconds to pad measurements of how long a query took
-         +  to be on the conservative side.
+            By how many milliseconds to pad measurements of how long a query took
+            to be on the conservative side.
          +/
         enum approximateQueryMeasurementPadding = 30;
 
         /++
-         +  The weight to assign the current approximate query time before
-         +  making a weighted average based on a new value. This gives the
-         +  averaging some inertia.
+            The weight to assign the current approximate query time before
+            making a weighted average based on a new value. This gives the
+            averaging some inertia.
          +/
         enum approximateQueryAveragingWeight = 3;
 
         /++
-         +  How many seconds before a Twitch query response times out. Does not
-         +  affect the actual HTTP request, just how long we wait for it to arrive.
+            How many seconds before a Twitch query response times out. Does not
+            affect the actual HTTP request, just how long we wait for it to arrive.
          +/
         enum queryResponseTimeout = 15;
 
         /++
-         +  How big a buffer to preallocate when doing HTTP API queries.
+            How big a buffer to preallocate when doing HTTP API queries.
          +/
         enum queryBufferSize = 4096;
 
         /++
-         +  When broadcasting, how often to check and enumerate chatters.
+            When broadcasting, how often to check and enumerate chatters.
          +/
         enum chattersCheckPeriodicity = 180;
 
@@ -1875,17 +1875,17 @@ package:
 
 
     /++
-     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
-     +  plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
-     +  events to only trigger on active channels (that have its `Channel.enabled`
-     +  set to true).
-     +
-     +  The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-     +
-     +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
-     +          after verifying we should process the event.
+        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
+        plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
+        events to only trigger on active channels (that have its `Channel.enabled`
+        set to true).
+
+        The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
+
+        Params:
+            event = Parsed `dialect.defs.IRCEvent` to pass onto
+                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
+                after verifying we should process the event.
      +/
     override public void onEvent(IRCEvent event)
     {

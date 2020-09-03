@@ -1,11 +1,11 @@
 /++
- +  The Webtitles plugin catches URLs pasted in a channel, follows them and
- +  reports back the title of the web page that was linked to.
- +
- +  It has no bot commands; everything is done by automatically scanning channel
- +  and private query messages for things that look like links.
- +
- +  It requires version `Web` for obvious reasons.
+    The Webtitles plugin catches URLs pasted in a channel, follows them and
+    reports back the title of the web page that was linked to.
+
+    It has no bot commands; everything is done by automatically scanning channel
+    and private query messages for things that look like links.
+
+    It requires version `Web` for obvious reasons.
  +/
 module kameloso.plugins.webtitles;
 
@@ -28,7 +28,7 @@ import std.typecons : Flag, No, Yes;
 
 // WebtitlesSettings
 /++
- +  All Webtitles settings, gathered in a struct.
+    All Webtitles settings, gathered in a struct.
  +/
 @Settings struct WebtitlesSettings
 {
@@ -39,11 +39,11 @@ import std.typecons : Flag, No, Yes;
 
 // TitleLookupResults
 /++
- +  A record of a URL lookup.
- +
- +  This is both used to aggregate information about the lookup, as well as to
- +  add hysteresis to lookups, so we don't look the same one up over and over
- +  if they were pasted over and over.
+    A record of a URL lookup.
+
+    This is both used to aggregate information about the lookup, as well as to
+    add hysteresis to lookups, so we don't look the same one up over and over
+    if they were pasted over and over.
  +/
 struct TitleLookupResults
 {
@@ -66,10 +66,10 @@ struct TitleLookupResults
 
 // TitleLookupRequest
 /++
- +  A record of a URL lookup request.
- +
- +  This is used to aggregate information about a lookup request, making it
- +  easier to pass it in between functions. It serves no greater purpose.
+    A record of a URL lookup request.
+
+    This is used to aggregate information about a lookup request, making it
+    easier to pass it in between functions. It serves no greater purpose.
  +/
 struct TitleLookupRequest
 {
@@ -89,10 +89,10 @@ struct TitleLookupRequest
 
 // onMessage
 /++
- +  Parses a message to see if the message contains one or more URLs.
- +
- +  It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
- +  try to look up every URL returned by it.
+    Parses a message to see if the message contains one or more URLs.
+
+    It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+    try to look up every URL returned by it.
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -115,10 +115,10 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
 // lookupURLs
 /++
- +  Looks up the URLs in the passed `string[]` `urls` by spawning a worker
- +  thread to do all the work.
- +
- +  It accesses the cache of already looked up addresses to speed things up.
+    Looks up the URLs in the passed `string[]` `urls` by spawning a worker
+    thread to do all the work.
+
+    It accesses the cache of already looked up addresses to speed things up.
  +/
 void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 {
@@ -190,19 +190,19 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
 
 // worker
 /++
- +  Looks up and reports the title of a URL.
- +
- +  Additionally reports YouTube titles and authors if settings say to do such.
- +
- +  Worker to be run in its own thread.
- +
- +  Params:
- +      sRequest = Shared `TitleLookupRequest` aggregate with all the state and
- +          context needed to look up a URL and report the results to the local terminal.
- +      cache = Shared cache of previous `TitleLookupRequest`s.
- +      delayMsecs = Milliseconds to delay before doing the lookup, to allow for
- +          parallel lookups without bursting all of them at once.
- +      colouredOutgoing = Whether or not to send coloured output to the server.
+    Looks up and reports the title of a URL.
+
+    Additionally reports YouTube titles and authors if settings say to do such.
+
+    Worker to be run in its own thread.
+
+    Params:
+        sRequest = Shared `TitleLookupRequest` aggregate with all the state and
+            context needed to look up a URL and report the results to the local terminal.
+        cache = Shared cache of previous `TitleLookupRequest`s.
+        delayMsecs = Milliseconds to delay before doing the lookup, to allow for
+            parallel lookups without bursting all of them at once.
+        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
     const ulong delayMsecs, const Flag!"colouredOutgoing" colouredOutgoing)
@@ -347,16 +347,16 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
 // lookupTitle
 /++
- +  Given a URL, tries to look up the web page title of it.
- +
- +  Params:
- +      url = URL string to look up.
- +
- +  Returns:
- +      A finished `TitleLookupResults`.
- +
- +  Throws: `object.Exception` if URL could not be fetched, or if no title could be
- +      divined from it.
+    Given a URL, tries to look up the web page title of it.
+
+    Params:
+        url = URL string to look up.
+
+    Returns:
+        A finished `TitleLookupResults`.
+
+    Throws: `object.Exception` if URL could not be fetched, or if no title could be
+        divined from it.
  +/
 TitleLookupResults lookupTitle(const string url)
 {
@@ -413,11 +413,11 @@ TitleLookupResults lookupTitle(const string url)
 
 // reportTitle
 /++
- +  Echoes the result of a web title lookup to a channel.
- +
- +  Params:
- +      request = A `TitleLookupRequest` containing the results of the lookup.
- +      colouredOutgoing = Whether or not to send coloured output to the server.
+    Echoes the result of a web title lookup to a channel.
+
+    Params:
+        request = A `TitleLookupRequest` containing the results of the lookup.
+        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void reportTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
@@ -443,11 +443,11 @@ void reportTitle(TitleLookupRequest request,
 
 // reportYouTubeTitle
 /++
- +  Echoes the result of a YouTube lookup to a channel.
- +
- +  Params:
- +      request = A `TitleLookupRequest` containing the results of the lookup.
- +      colouredOutgoing = Whether or not to send coloured output to the server.
+    Echoes the result of a YouTube lookup to a channel.
+
+    Params:
+        request = A `TitleLookupRequest` containing the results of the lookup.
+        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void reportYouTubeTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
@@ -468,16 +468,16 @@ void reportYouTubeTitle(TitleLookupRequest request,
 
 // rewriteDirectImgurURL
 /++
- +  Takes a direct imgur link (one that points to an image) and rewrites it to
- +  instead point to the image's page.
- +
- +  Images (`jpg`, `png`, ...) can naturally not have titles, but the normal pages can.
- +
- +  Params:
- +      url = String link to rewrite.
- +
- +  Returns:
- +      A rewritten string if it's a compatible imgur one, else the passed `url`.
+    Takes a direct imgur link (one that points to an image) and rewrites it to
+    instead point to the image's page.
+
+    Images (`jpg`, `png`, ...) can naturally not have titles, but the normal pages can.
+
+    Params:
+        url = String link to rewrite.
+
+    Returns:
+        A rewritten string if it's a compatible imgur one, else the passed `url`.
  +/
 string rewriteDirectImgurURL(const string url) @safe pure
 {
@@ -516,25 +516,25 @@ unittest
 
 // getYouTubeInfo
 /++
- +  Fetches the JSON description of a YouTube video link, allowing us to report
- +  it the page's title without having to actually fetch the video page.
- +
- +  Example:
- +  ---
- +  auto info = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
- +  writeln(info["title"].str);
- +  writeln(info["author"].str);
- +  ---
- +
- +  Params:
- +      url = A YouTube video link string.
- +
- +  Returns:
- +      A `std.json.JSONValue` with fields describing the looked-up video.
- +
- +  Throws:
- +      `core.Exception` if the YouTube ID was invalid and could not be queried.
- +      `std.json.JSONException` if the JSON response could not be parsed.
+    Fetches the JSON description of a YouTube video link, allowing us to report
+    it the page's title without having to actually fetch the video page.
+
+    Example:
+    ---
+    auto info = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
+    writeln(info["title"].str);
+    writeln(info["author"].str);
+    ---
+
+    Params:
+        url = A YouTube video link string.
+
+    Returns:
+        A `std.json.JSONValue` with fields describing the looked-up video.
+
+    Throws:
+        `core.Exception` if the YouTube ID was invalid and could not be queried.
+        `std.json.JSONException` if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
 {
@@ -575,14 +575,14 @@ JSONValue getYouTubeInfo(const string url)
 
 // decodeTitle
 /++
- +  Removes unwanted characters from a title, and decodes HTML entities in it
- +  (like `&mdash;` and `&nbsp;`).
- +
- +  Params:
- +      title = Title string to decode entities and remove tags from.
- +
- +  Returns:
- +      A modified title string, with unwanted bits stripped out.
+    Removes unwanted characters from a title, and decodes HTML entities in it
+    (like `&mdash;` and `&nbsp;`).
+
+    Params:
+        title = Title string to decode entities and remove tags from.
+
+    Returns:
+        A modified title string, with unwanted bits stripped out.
  +/
 string decodeTitle(const string title)
 {
@@ -624,13 +624,13 @@ unittest
 
 // prune
 /++
- +  Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
- +
- +  Params:
- +      cache = Cache of previous `TitleLookupResults`, `shared` so that it can
- +          be reused in further lookup (other threads).
- +      expireSeconds = After how many seconds a cached entry is considered to
- +          have expired and should no longer be used as a valid entry.
+    Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
+
+    Params:
+        cache = Cache of previous `TitleLookupResults`, `shared` so that it can
+            be reused in further lookup (other threads).
+        expireSeconds = After how many seconds a cached entry is considered to
+            have expired and should no longer be used as a valid entry.
  +/
 void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 {
@@ -650,9 +650,9 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 
 // start
 /++
- +  Initialises the shared cache, else it won't retain changes.
- +
- +  Just assign an entry and remove it.
+    Initialises the shared cache, else it won't retain changes.
+
+    Just assign an entry and remove it.
  +/
 void start(WebtitlesPlugin plugin)
 {
@@ -666,16 +666,16 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
- +  Catches bus messages with the "`webtitles`" header requesting URLs to be
- +  looked up and the titles of which reported.
- +
- +  Only relevant on Twitch servers with the Twitch bot plugin when it's filtering
- +  links, so gate it behind version TwitchBotPlugin.
- +
- +  Params:
- +      plugin = The current `WebtitlesPlugin`.
- +      header = String header describing the passed content payload.
- +      content = Message content.
+    Catches bus messages with the "`webtitles`" header requesting URLs to be
+    looked up and the titles of which reported.
+
+    Only relevant on Twitch servers with the Twitch bot plugin when it's filtering
+    links, so gate it behind version TwitchBotPlugin.
+
+    Params:
+        plugin = The current `WebtitlesPlugin`.
+        header = String header describing the passed content payload.
+        content = Message content.
  +/
 version(TwitchBotPlugin)
 void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
@@ -702,9 +702,9 @@ public:
 
 // WebtitlesPlugin
 /++
- +  The Webtitles plugin catches HTTP URL links in messages, connects to
- +  their servers and and streams the web page itself, looking for the web page's
- +  title. This is then reported to the originating channel or personal query.
+    The Webtitles plugin catches HTTP URL links in messages, connects to
+    their servers and and streams the web page itself, looking for the web page's
+    title. This is then reported to the originating channel or personal query.
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
@@ -716,8 +716,8 @@ private:
     shared TitleLookupResults[string] cache;
 
     /++
-     +  How long before a cached title lookup expires and its address has to be
-     +  looked up anew.
+        How long before a cached title lookup expires and its address has to be
+        looked up anew.
      +/
     enum expireSeconds = 600;
 
@@ -725,8 +725,8 @@ private:
     enum delayMsecs = 100;
 
     /++
-     +  How big a buffer to initially allocate when downloading web pages to get
-     +  their titles.
+        How big a buffer to initially allocate when downloading web pages to get
+        their titles.
      +/
     enum lookupBufferSize = 8192;
 
@@ -734,17 +734,17 @@ private:
 
     // onEvent
     /++
-     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
-     +  a server check, so this plugin does not trigger on
-     +  `dialect.defs.IRCEvent`s on Twitch servers.
-     +
-     +  The function to call if the event *should* be processed is
-     +  `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-     +
-     +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
-     +          after verifying we should process the event.
+        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
+        a server check, so this plugin does not trigger on
+        `dialect.defs.IRCEvent`s on Twitch servers.
+
+        The function to call if the event *should* be processed is
+        `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
+
+        Params:
+            event = Parsed `dialect.defs.IRCEvent` to pass onto
+                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
+                after verifying we should process the event.
      +/
     version(TwitchSupport)
     override public void onEvent(IRCEvent event)

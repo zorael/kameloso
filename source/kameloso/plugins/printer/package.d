@@ -1,5 +1,5 @@
 /++
- +  Package for the Printer plugin modules.
+    Package for the Printer plugin modules.
  +/
 module kameloso.plugins.printer;
 

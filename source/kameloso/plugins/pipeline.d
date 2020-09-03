@@ -1,13 +1,13 @@
 /++
- +  The Pipeline plugin opens a Posix named pipe in the current directory, to
- +  which you can pipe text and have it be sent verbatim to the server.
- +
- +  It has no commands; indeed, it doesn't listen to
- +  `dialect.defs.IRCEvent`s at all, only to what is sent to it via the
- +  named FIFO pipe.
- +
- +  This requires version `Posix`, which is true for UNIX-like systems (like
- +  Linux and macOS).
+    The Pipeline plugin opens a Posix named pipe in the current directory, to
+    which you can pipe text and have it be sent verbatim to the server.
+
+    It has no commands; indeed, it doesn't listen to
+    `dialect.defs.IRCEvent`s at all, only to what is sent to it via the
+    named FIFO pipe.
+
+    This requires version `Posix`, which is true for UNIX-like systems (like
+    Linux and macOS).
  +/
 module kameloso.plugins.pipeline;
 
@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
 
 // PipelineSettings
 /++
- +  All settings for a `PipelinePlugin`, aggregated.
+    All settings for a `PipelinePlugin`, aggregated.
  +/
 @Settings struct PipelineSettings
 {
@@ -50,9 +50,9 @@ import std.typecons : Flag, No, Yes;
     @Enabler bool enabled = true;
 
     /++
-     +  Whether or not to place the FIFO in the working directory. If false, it
-     +  will be saved in `/tmp` or wherever `$TMPDIR` points. If macOS, then there
-     +  only if version `OSXTMPDIR`.
+        Whether or not to place the FIFO in the working directory. If false, it
+        will be saved in `/tmp` or wherever `$TMPDIR` points. If macOS, then there
+        only if version `OSXTMPDIR`.
      +/
     bool fifoInWorkingDir = false;
 
@@ -63,19 +63,19 @@ import std.typecons : Flag, No, Yes;
 
 // pipereader
 /++
- +  Reads a FIFO (named pipe) and relays lines received there to the main
- +  thread, to send to the server.
- +
- +  It is to be run in a separate thread.
- +
- +  Params:
- +      newState = The `kameloso.plugins.core.IRCPluginState` of the original
- +          `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
- +          concurrency messages, made `shared` to allow being sent between threads.
- +      filename = String filename of the FIFO to read from.
- +      monochrome = Whether or not output should be in monochrome text.
- +      brightTerminal = Whether or not the terminal has a bright background
- +          and colours should be adjusted to suit.
+    Reads a FIFO (named pipe) and relays lines received there to the main
+    thread, to send to the server.
+
+    It is to be run in a separate thread.
+
+    Params:
+        newState = The `kameloso.plugins.core.IRCPluginState` of the original
+            `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
+            concurrency messages, made `shared` to allow being sent between threads.
+        filename = String filename of the FIFO to read from.
+        monochrome = Whether or not output should be in monochrome text.
+        brightTerminal = Whether or not the terminal has a bright background
+            and colours should be adjusted to suit.
  +/
 void pipereader(shared IRCPluginState newState, const string filename,
     const Flag!"monochrome" monochrome,
@@ -244,20 +244,20 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
 // createFIFO
 /++
- +  Creates a FIFO (named pipe) in the filesystem.
- +
- +  It will be named a passed filename.
- +
- +  Params:
- +      filename = String filename of FIFO to create.
- +
- +  Throws:
- +      `kameloso.common.ReturnValueException` if the FIFO could not be created.
- +      `kameloso.common.FileExistsException` if a FIFO with the same filename
- +      already exists, suggesting concurrent conflicting instances of the program
- +      (or merely a stale FIFO).
- +      `kameloso.common.FileTypeMismatchException` if a file or directory
- +      exists with the same name as the FIFO we want to create.
+    Creates a FIFO (named pipe) in the filesystem.
+
+    It will be named a passed filename.
+
+    Params:
+        filename = String filename of FIFO to create.
+
+    Throws:
+        `kameloso.common.ReturnValueException` if the FIFO could not be created.
+        `kameloso.common.FileExistsException` if a FIFO with the same filename
+        already exists, suggesting concurrent conflicting instances of the program
+        (or merely a stale FIFO).
+        `kameloso.common.FileTypeMismatchException` if a file or directory
+        exists with the same name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
 in (filename.length, "Tried to create a FIFO with an empty filename")
@@ -300,10 +300,10 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 
 // onMotd
 /++
- +  Spawns the pipereader thread.
- +
- +  Snapshots the filename to use, as we base it on the bot's nickname, which
- +  may change during the connection's lifetime.
+    Spawns the pipereader thread.
+
+    Snapshots the filename to use, as we base it on the bot's nickname, which
+    may change during the connection's lifetime.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -389,7 +389,7 @@ void onMotd(PipelinePlugin plugin)
 
 // teardown
 /++
- +  De-initialises the Pipeline plugin. Shuts down the pipereader thread.
+    De-initialises the Pipeline plugin. Shuts down the pipereader thread.
  +/
 void teardown(PipelinePlugin plugin)
 {
@@ -413,15 +413,15 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
- +  Receives a passed `kameloso.thread.BusMessage` with the "`pipeline`" header,
- +  and performs actions based on the payload message.
- +
- +  This is used to let the worker thread signal the main context that it halted.
- +
- +  Params:
- +      plugin = The current `PipelinePlugin`.
- +      header = String header describing the passed content payload.
- +      content = Message content.
+    Receives a passed `kameloso.thread.BusMessage` with the "`pipeline`" header,
+    and performs actions based on the payload message.
+
+    This is used to let the worker thread signal the main context that it halted.
+
+    Params:
+        plugin = The current `PipelinePlugin`.
+        header = String header describing the passed content payload.
+        content = Message content.
  +/
 void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)
 {
@@ -449,8 +449,8 @@ public:
 
 // PipelinePlugin
 /++
- +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to
- +  send to the server, as well as to live-control the bot to a certain degree.
+    The Pipeline plugin reads from a local named pipe (FIFO) for messages to
+    send to the server, as well as to live-control the bot to a certain degree.
  +/
 final class PipelinePlugin : IRCPlugin
 {

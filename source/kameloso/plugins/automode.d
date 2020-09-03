@@ -1,10 +1,10 @@
 /++
- +  The Automode plugin handles automatically setting the modes of users in a
- +  channel. The common use-case is to have someone be automatically set to `+o`
- +  (operator) when joining.
- +
- +  See the GitHub wiki for more information about available commands:<br>
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#automode
+    The Automode plugin handles automatically setting the modes of users in a
+    channel. The common use-case is to have someone be automatically set to `+o`
+    (operator) when joining.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#automode
  +/
 module kameloso.plugins.automode;
 
@@ -24,7 +24,7 @@ import std.typecons : Flag, No, Yes;
 
 // AutomodeSettings
 /++
- +  All Automode settings gathered in a struct.
+    All Automode settings gathered in a struct.
  +/
 @Settings struct AutomodeSettings
 {
@@ -35,12 +35,12 @@ import std.typecons : Flag, No, Yes;
 
 // saveAutomodes
 /++
- +  Saves automode definitions to disk.
- +
- +  Use JSON to get a pretty-printed list, then write it to disk.
- +
- +  Params:
- +      plugin = The current `AutomodePlugin`.
+    Saves automode definitions to disk.
+
+    Use JSON to get a pretty-printed list, then write it to disk.
+
+    Params:
+        plugin = The current `AutomodePlugin`.
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
@@ -57,7 +57,7 @@ void saveAutomodes(AutomodePlugin plugin)
 
 // initResources
 /++
- +  Ensures that there is an automodes file, creating one if there isn't.
+    Ensures that there is an automodes file, creating one if there isn't.
  +/
 void initResources(AutomodePlugin plugin)
 {
@@ -87,15 +87,15 @@ void initResources(AutomodePlugin plugin)
 
 // onAccountInfo
 /++
- +  Potentially applies an automode, depending on the definitions and the user
- +  triggering the function.
- +
- +  Different `dialect.defs.IRCEvent.Type`s have to be handled differently,
- +  as the triggering user may be either the sender or the target.
- +
- +  Additionally none of these events carry a channel, so we'll have to make
- +  manual checks to see if the user is in a home channel we're in. Otherwise
- +  there's nothing for the bot to do.
+    Potentially applies an automode, depending on the definitions and the user
+    triggering the function.
+
+    Different `dialect.defs.IRCEvent.Type`s have to be handled differently,
+    as the triggering user may be either the sender or the target.
+
+    Additionally none of these events carry a channel, so we'll have to make
+    manual checks to see if the user is in a home channel we're in. Otherwise
+    there's nothing for the bot to do.
  +/
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
@@ -151,11 +151,11 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 
 // onJoin
 /++
- +  Applies automodes upon someone joining a home channel.
- +
- +  `applyAutomodes` will cautiously probe whether there are any definitions to
- +  apply, so there's little sense in doing it here as well. Just pass the
- +  arguments and let it look things up.
+    Applies automodes upon someone joining a home channel.
+
+    `applyAutomodes` will cautiously probe whether there are any definitions to
+    apply, so there's little sense in doing it here as well. Just pass the
+    arguments and let it look things up.
  +/
 @(IRCEvent.Type.JOIN)
 @(PrivilegeLevel.anyone)
@@ -171,13 +171,13 @@ void onJoin(AutomodePlugin plugin, const IRCEvent event)
 
 // applyAutomodes
 /++
- +  Applies automodes for a specific user in a specific channel.
- +
- +  Params:
- +      plugin = The current `AutomodePlugin`
- +      channelName = String channel to apply the modes in.
- +      nickname = String nickname of the user to apply modes to.
- +      account = String account of the user, to look up definitions for.
+    Applies automodes for a specific user in a specific channel.
+
+    Params:
+        plugin = The current `AutomodePlugin`
+        channelName = String channel to apply the modes in.
+        nickname = String nickname of the user to apply modes to.
+        account = String account of the user, to look up definitions for.
  +/
 void applyAutomodes(AutomodePlugin plugin, const string channelName,
     const string nickname, const string account)
@@ -255,8 +255,8 @@ unittest
 
 // onCommandAutomode
 /++
- +  Lists current automodes for a user in the current channel, clears them,
- +  or adds new ones depending on the verb passed.
+    Lists current automodes for a user in the current channel, clears them,
+    or adds new ones depending on the verb passed.
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.operator)
@@ -368,15 +368,15 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
 
 // modifyAutomode
 /++
- +  Modifies an automode entry by adding a new one or removing a (potentially)
- +  existing one.
- +
- +  Params:
- +      plugin = The current `AutomodePlugin`.
- +      add = Whether to add or to remove the automode.
- +      nickname = The nickname of the user to add the automode for.
- +      channelName = The channel the automode should play out in.
- +      mode = The mode string, when adding a new automode.
+    Modifies an automode entry by adding a new one or removing a (potentially)
+    existing one.
+
+    Params:
+        plugin = The current `AutomodePlugin`.
+        add = Whether to add or to remove the automode.
+        nickname = The nickname of the user to add the automode for.
+        channelName = The channel the automode should play out in.
+        mode = The mode string, when adding a new automode.
  +/
 void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname,
     const string channelName, const string mode = string.init)
@@ -430,10 +430,10 @@ in ((!add || mode.length), "Tried to add an empty automode")
 
 // onCommandOp
 /++
- +  Triggers a WHOIS of the user invoking it with bot commands.
- +
- +  The `kameloso.plugins.core.PrivilegeLevel.anyone` annotation is to
- +  force the bot to evaluate whether an automode should be applied or not.
+    Triggers a WHOIS of the user invoking it with bot commands.
+
+    The `kameloso.plugins.core.PrivilegeLevel.anyone` annotation is to
+    force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.ignore)
@@ -456,7 +456,7 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Populate automodes array after we have successfully logged onto the server.
+    Populate automodes array after we have successfully logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -474,7 +474,7 @@ void onEndOfMotd(AutomodePlugin plugin)
 
 // onMode
 /++
- +  Applies automodes in a channel upon being given operator privileges.
+    Applies automodes in a channel upon being given operator privileges.
  +/
 @(IRCEvent.Type.MODE)
 @(ChannelPolicy.home)
@@ -516,10 +516,10 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
 
 // pruneChannels
 /++
- +  Prunes empty channels in the automodes definitions associative array.
- +
- +  Params:
- +      automodes = Associative array of automodes to prune.
+    Prunes empty channels in the automodes definitions associative array.
+
+    Params:
+        automodes = Associative array of automodes to prune.
  +/
 void pruneChannels(ref string[string][string] automodes)
 {
@@ -537,10 +537,10 @@ public:
 
 // AutomodePlugin
 /++
- +  The Automode plugin automatically changes modes of users in channels as per
- +  saved definitions.
- +
- +  Definitions are saved in a JSON file.
+    The Automode plugin automatically changes modes of users in channels as per
+    saved definitions.
+
+    Definitions are saved in a JSON file.
  +/
 final class AutomodePlugin : IRCPlugin
 {
@@ -557,14 +557,14 @@ private:
     mixin IRCPluginImpl;
 
     /++
-     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
-     +  a server check, so this plugin does nothing on Twitch servers.
-     +  The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-     +
-     +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
-     +          after verifying we're not on a Twitch server.
+        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
+        a server check, so this plugin does nothing on Twitch servers.
+        The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
+
+        Params:
+            event = Parsed `dialect.defs.IRCEvent` to pass onto
+                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
+                after verifying we're not on a Twitch server.
      +/
     version(TwitchSupport)
     override public void onEvent(IRCEvent event)

@@ -1,10 +1,10 @@
 /++
- +  The Help plugin serves the `help` command, and nothing else at this point.
- +
- +  It is used to query the bot for available commands in a tidy list.
- +
- +  See the GitHub wiki for more information about available commands:
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#help
+    The Help plugin serves the `help` command, and nothing else at this point.
+
+    It is used to query the bot for available commands in a tidy list.
+
+    See the GitHub wiki for more information about available commands:
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#help
  +/
 module kameloso.plugins.help;
 
@@ -22,7 +22,7 @@ import dialect.defs;
 
 // HelpSettings
 /++
- +  Settings for the Help plugin, to toggle it enabled or disabled.
+    Settings for the Help plugin, to toggle it enabled or disabled.
  +/
 @Settings struct HelpSettings
 {
@@ -36,22 +36,22 @@ import dialect.defs;
 
 // onCommandHelp
 /++
- +  Sends a list of all plugins' commands to the requesting user.
- +
- +  Plugins don't know about other plugins; the only thing they know of the
- +  outside world is the thread ID of the main thread `mainThread` (stored in
- +  `kameloso.plugins.core.IRCPluginState`). As such, we can't easily query
- +  each plugin for their `kameloso.plugins.core.BotCommand`-annotated functions.
- +
- +  To work around this we construct a
- +  `kameloso.thread.CarryingFiber!(kameloso.plugins.core.IRCPlugin[])` and send it
- +  to the main thread. It will attach the client-global `plugins` array of
- +  `kameloso.plugins.core.IRCPlugin`s to it, and invoke the Fiber.
- +  The delegate inside will then process the list as if it had taken the array
- +  as an argument.
- +
- +  Once we have the list we format it nicely and send it back to the requester,
- +  which we remember since we saved the original `dialect.defs.IRCEvent`.
+    Sends a list of all plugins' commands to the requesting user.
+
+    Plugins don't know about other plugins; the only thing they know of the
+    outside world is the thread ID of the main thread `mainThread` (stored in
+    `kameloso.plugins.core.IRCPluginState`). As such, we can't easily query
+    each plugin for their `kameloso.plugins.core.BotCommand`-annotated functions.
+
+    To work around this we construct a
+    `kameloso.thread.CarryingFiber!(kameloso.plugins.core.IRCPlugin[])` and send it
+    to the main thread. It will attach the client-global `plugins` array of
+    `kameloso.plugins.core.IRCPlugin`s to it, and invoke the Fiber.
+    The delegate inside will then process the list as if it had taken the array
+    as an argument.
+
+    Once we have the list we format it nicely and send it back to the requester,
+    which we remember since we saved the original `dialect.defs.IRCEvent`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -239,15 +239,15 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 
 // sendCommandHelp
 /++
- +  Sends the help text for a command to the querying channel or user.
- +
- +  Params:
- +      plugin = The current `HelpPlugin`.
- +      otherPlugin = The plugin that hosts the command we're to send the help text for.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      command = String of the command we're to send help text for (sans prefix).
- +      description = The `kameloso.plugins.core.Description` that anotates
- +          the command's function.
+    Sends the help text for a command to the querying channel or user.
+
+    Params:
+        plugin = The current `HelpPlugin`.
+        otherPlugin = The plugin that hosts the command we're to send the help text for.
+        event = The triggering `dialect.defs.IRCEvent`.
+        command = String of the command we're to send help text for (sans prefix).
+        description = The `kameloso.plugins.core.Description` that anotates
+            the command's function.
  +/
 void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
     const IRCEvent event, const string command, const Description description)
@@ -292,11 +292,11 @@ public:
 
 // HelpPlugin
 /++
- +  The Help plugin serves the `help` command.
- +
- +  This was originally part of the Chatbot, but it was deemed important enough
- +  to warrant its own plugin, so that the Chatbot could be disabled while
- +  keeping this around.
+    The Help plugin serves the `help` command.
+
+    This was originally part of the Chatbot, but it was deemed important enough
+    to warrant its own plugin, so that the Chatbot could be disabled while
+    keeping this around.
  +/
 final class HelpPlugin : IRCPlugin
 {

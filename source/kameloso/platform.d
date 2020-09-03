@@ -1,5 +1,5 @@
 /++
- +  Functions that deal with OS- and/or platform-specifics.
+    Functions that deal with OS- and/or platform-specifics.
  +/
 module kameloso.platform;
 
@@ -10,27 +10,27 @@ public:
 
 // currentPlatform
 /++
- +  Returns the string of the name of the current platform, adjusted to include
- +  `cygwin` as an alternative next to `win32` and `win64`, as well as embedded
- +  terminal consoles like in Visual Studio Code.
- +
- +  Example:
- +  ---
- +  switch (currentPlatform)
- +  {
- +  case "Cygwin":
- +  case "vscode":
- +      // Special code for the terminal not being a conventional terminal (such as a pager)...
- +      break;
- +
- +  default:
- +      // Code for normal terminal
- +      break;
- +  }
- +  ---
- +
- +  Returns:
- +      String name of the current platform.
+    Returns the string of the name of the current platform, adjusted to include
+    `cygwin` as an alternative next to `win32` and `win64`, as well as embedded
+    terminal consoles like in Visual Studio Code.
+
+    Example:
+    ---
+    switch (currentPlatform)
+    {
+    case "Cygwin":
+    case "vscode":
+        // Special code for the terminal not being a conventional terminal (such as a pager)...
+        break;
+
+    default:
+        // Code for normal terminal
+        break;
+    }
+    ---
+
+    Returns:
+        String name of the current platform.
  +/
 auto currentPlatform()
 {
@@ -73,18 +73,18 @@ auto currentPlatform()
 
 // configurationBaseDirectory
 /++
- +  Divines the default configuration file base directory, depending on what
- +  platform we're currently running.
- +
- +  On non-macOS Posix it defaults to `$XDG_CONFIG_HOME` and falls back to
- +  `~/.config` if no `$XDG_CONFIG_HOME` environment variable present.
- +
- +  On macOS it defaults to `$HOME/Library/Application Support`.
- +
- +  On Windows it defaults to `%APPDATA%`.
- +
- +  Returns:
- +      A string path to the default configuration file.
+    Divines the default configuration file base directory, depending on what
+    platform we're currently running.
+
+    On non-macOS Posix it defaults to `$XDG_CONFIG_HOME` and falls back to
+    `~/.config` if no `$XDG_CONFIG_HOME` environment variable present.
+
+    On macOS it defaults to `$HOME/Library/Application Support`.
+
+    On Windows it defaults to `%APPDATA%`.
+
+    Returns:
+        A string path to the default configuration file.
  +/
 auto configurationBaseDirectory()
 {
@@ -149,18 +149,18 @@ unittest
 
 // resourceBaseDirectory
 /++
- +  Divines the default resource base directory, depending on what platform
- +  we're currently running.
- +
- +  On non-macOS Posix it defaults to `$XDG_DATA_HOME` and falls back to
- +  `~/.local/share` if no `XDG_DATA_HOME` environment variable present.
- +
- +  On macOS it defaults to `$HOME/Library/Application Support`.
- +
- +  On Windows it defaults to `%APPDATA%`.
- +
- +  Returns:
- +      A string path to the default resource base directory.
+    Divines the default resource base directory, depending on what platform
+    we're currently running.
+
+    On non-macOS Posix it defaults to `$XDG_DATA_HOME` and falls back to
+    `~/.local/share` if no `XDG_DATA_HOME` environment variable present.
+
+    On macOS it defaults to `$HOME/Library/Application Support`.
+
+    On Windows it defaults to `%APPDATA%`.
+
+    Returns:
+        A string path to the default resource base directory.
  +/
 auto resourceBaseDirectory()
 {

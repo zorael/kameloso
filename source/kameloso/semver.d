@@ -1,8 +1,8 @@
 /++
- +  SemVer information about the current release.
- +
- +  Contains only definitions, no code. Helps importing projects tell what
- +  features are available.
+    SemVer information about the current release.
+
+    Contains only definitions, no code. Helps importing projects tell what
+    features are available.
  +/
 module kameloso.semver;
 

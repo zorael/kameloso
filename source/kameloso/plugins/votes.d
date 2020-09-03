@@ -1,11 +1,11 @@
 /++
- +  The Votes plugin offers the ability to hold votes/polls in a channel. Any
- +  number of choices is supported, as long as they're more than one.
- +
- +  Cheating by changing nicknames is warded against.
- +
- +  See the GitHub wiki for more information about available commands:<br>
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#votes
+    The Votes plugin offers the ability to hold votes/polls in a channel. Any
+    number of choices is supported, as long as they're more than one.
+
+    Cheating by changing nicknames is warded against.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#votes
  +/
 module kameloso.plugins.votes;
 
@@ -22,7 +22,7 @@ import std.typecons : Flag, No, Yes;
 
 
 /++
- +  All Votes plugin runtime settings aggregated.
+    All Votes plugin runtime settings aggregated.
  +/
 @Settings struct VotesSettings
 {
@@ -36,9 +36,9 @@ import std.typecons : Flag, No, Yes;
 
 // onCommandVote
 /++
- +  Instigates a vote or stops an ongoing one.
- +
- +  If starting one a duration and two or more voting options have to be passed.
+    Instigates a vote or stops an ongoing one.
+
+    If starting one a duration and two or more voting options have to be passed.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -410,7 +410,7 @@ void onCommandVote(VotesPlugin plugin, const IRCEvent event)
 
 // start
 /++
- +  Verifies that the setting for maximum vote length is sane.
+    Verifies that the setting for maximum vote length is sane.
  +/
 void start(VotesPlugin plugin)
 {
@@ -436,7 +436,7 @@ public:
 
 // VotesPlugin
 /++
- +  The Vote plugin offers the ability to hold votes/polls in a channel.
+    The Vote plugin offers the ability to hold votes/polls in a channel.
  +/
 final class VotesPlugin : IRCPlugin
 {
@@ -445,8 +445,8 @@ private:
     VotesSettings votesSettings;
 
     /++
-     +  An unique identifier for an ongoing channel vote, as set by
-     +  `onCommandVote` and monitored inside its `core.thread.fiber.Fiber`'s closures.
+        An unique identifier for an ongoing channel vote, as set by
+        `onCommandVote` and monitored inside its `core.thread.fiber.Fiber`'s closures.
      +/
     int[string] channelVoteInstances;
 
