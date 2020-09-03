@@ -60,6 +60,9 @@ import core.thread : Fiber;
     /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
     bool permitOneLinkOnly = true;
 
+    /// Whether or not broadcasters are always implicitly class `dialect.defs.IRCUser.Class.staff`.
+    bool promoteBroadcasters = true;
+
     /// Whether or not to use features dependent on the Twitch API.
     bool enableAPIFeatures = true;
 
