@@ -1451,11 +1451,19 @@ void onCAP(TwitchBotPlugin plugin)
  +/
 void reload(TwitchBotPlugin plugin)
 {
+    import lu.json : JSONStorage, populateFromJSON;
+    import std.typecons : Flag, No, Yes;
+
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    //logger.info("Reloading Twitch bot resources from disk.");
+    JSONStorage channelBannedPhrasesJSON;
+    channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
     plugin.bannedPhrasesByChannel = typeof(plugin.bannedPhrasesByChannel).init;
-    plugin.onEndOfMotd();
+    plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
+    plugin.bannedPhrasesByChannel.rehash();
+
+    plugin.timerDefsByChannel = typeof(plugin.timerDefsByChannel).init;
+    plugin.populateTimers(plugin.timersFile);
 }
 
 
