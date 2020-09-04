@@ -5,7 +5,7 @@
 ## Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
-* automatic mode sets (e.g. auto `+o` on join for op)
+* automatic mode sets (e.g. auto `+o` on join)
 * logs
 * fetching and echoing titles of pasted URLs
 * **sed**-replacement of messages (`s/this/that/` substitution)
@@ -21,7 +21,7 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
 
-# TL;DR
+# tl;dr
 
 ```
 -n       --nickname Nickname
@@ -114,9 +114,9 @@ There are several configurations in which the bot may be built.
 * `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
-All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory by raising compilation time, but so far they *only work with **ldc***. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
+All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of raising compilation times, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
-List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
+List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
 ```sh
 $ dub build -c twitch
@@ -128,7 +128,7 @@ $ dub build -c twitch
 
 ## Configuration
 
-The bot needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is fine. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
+The bot needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these accounts you can either specify them on the command line, or generate a configuration file and input them there.
 
 ```sh
 $ ./kameloso --save
@@ -136,11 +136,11 @@ $ ./kameloso --save
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
-* **Linux/other Posix**: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
+* **Linux** and other Posix: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 * **Windows**: `%APPDATA%\kameloso`
 
-Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can open it by passing `--edit`.
+Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can do so by passing `--edit`.
 
 ### Command-line arguments
 
@@ -151,14 +151,14 @@ $ ./kameloso \
     --server irc.freenode.net \
     --nickname "kameloso" \
     --admins "you,friend,thatguy" \
-    --homeChannels "#channel,#elsewhere" \
+    --homeChannels "#mychannel,#elsewhere" \
     --guestChannels "#d,##networking" \
     --save
 
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--save` will regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* setting, so settings that relate to plugins *that are currently not built in* are silently removed.
+Invocations of `--save` with an existing configuration file will regenerate it. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* plugin, so any orphan sections belonging to plugins that are currently not built in will be silently removed.
 
 ### Display settings
 
@@ -243,7 +243,7 @@ MrOffline joined #channel
 
 Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
-The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
+The **prefix** (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
 ```ini
 [Core]
@@ -254,7 +254,7 @@ It can technically be any string and not just one character. It may include spac
 
 ### Except nothing happens
 
-Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged onto. For full administrative privileges you will need to be logged onto an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable, and as such will not be able to access features it normally might have enjoyed.
+Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged in with. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable, and as such will not be able to access features it might normally have enjoyed.
 
 > In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
 
@@ -293,7 +293,7 @@ realName            likewise
 [IRCBot]
 #account
 #password
-pass                oauth:personalauthorisationtoken
+pass                personaloauthauthorisationtoken
 admins              mainaccount
 homeChannels        #mainaccount,#botaccount
 guestChannels       #streamer1,#streamer2,#streamer3
@@ -309,17 +309,17 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Streamer assistant bot
 
-The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled a build configuration that includes the bot plugin. As previously alluded to, configuration file sections will not show up when generating the file if the corresponding plugin is not compiled in.
+The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file with `--save`.
 
 ```sh
 $ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --save
 ```
 
-Assuming a prefix of "`!`", commands to test are:
+Assuming a prefix of `!`, commands to test are:
 
 * `!enable`, `!disable`
-* `!uptime`, `!start`, `!stop`
+* `!start`, `!uptime`, `!stop`
 * `!phrase`
 * `!timer`
 * `!permit`
@@ -327,7 +327,7 @@ Assuming a prefix of "`!`", commands to test are:
 
 ...alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, `!counter`, `!stopwatch`, and other non-Twitch-specific commands.
 
-> Note: dot "`.`" and slash "`/`" prefixes will not work on Twitch, as they conflict with Twitch's own commands.
+> Note: dot `.` and slash `/` prefixes will not work on Twitch, as they conflict with Twitch's own commands.
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
