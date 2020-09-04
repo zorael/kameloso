@@ -16,10 +16,10 @@ install_deps() {
     sudo apt install -y --allow-unauthenticated dmd-compiler dub libcurl4-openssl-dev
 
     #git clone https://github.com/zorael/lu.git
-    git clone https://github.com/zorael/dialect.git
+    #git clone https://github.com/zorael/dialect.git
 
     #dub add-local lu
-    dub add-local dialect
+    #dub add-local dialect
 }
 
 build() {
