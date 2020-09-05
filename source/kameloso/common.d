@@ -1695,7 +1695,7 @@ string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSep = Yes.demandS
     (const string line, const string prefix) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
-    import lu.string : beginsWithOneOf, nom, strippedLeft;
+    import lu.string : nom, strippedLeft;
 
     enum separatingChars = ": !?;";  // In reasonable order of likelihood
 
@@ -1706,9 +1706,12 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 
     static if (demandSep)
     {
+        import std.algorithm.comparison : among;
+        import std.meta : aliasSeqOf;
+
         // Return the whole line, a non-match, if there are no separating characters
-        // (at least one of the chars in separatingChars
-        if (!slice.beginsWithOneOf(separatingChars)) return line;
+        // (at least one of the chars in separatingChars)
+        if (!slice.length || !slice[0].among!(aliasSeqOf!separatingChars)) return line;
         slice = slice[1..$];
     }
 

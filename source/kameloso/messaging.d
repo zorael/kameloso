@@ -290,6 +290,7 @@ void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
+    import lu.string : contains;
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
@@ -299,7 +300,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     if (background) event.altcount = 999;
     event.raw = caller;
 
-    if (emoteTarget.beginsWithOneOf(state.server.chantypes))
+    if (state.server.chantypes.contains(emoteTarget[0]))
     {
         event.channel = emoteTarget;
     }
