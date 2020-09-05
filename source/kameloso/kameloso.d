@@ -776,10 +776,14 @@ Next mainLoop(ref Kameloso instance)
                 catch (UTFException e)
                 {
                     event = instance.parser.toIRCEvent(sanitize(attempt.line));
+                    event.errors ~= (event.errors.length ? ". " : string.init) ~
+                        "UTFException: " ~ e.msg;
                 }
                 catch (UnicodeException e)
                 {
                     event = instance.parser.toIRCEvent(sanitize(attempt.line));
+                    event.errors ~= (event.errors.length ? ". " : string.init) ~
+                        "UnicodeException: " ~ e.msg;
                 }
 
                 if (instance.parser.clientUpdated)
