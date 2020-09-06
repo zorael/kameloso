@@ -53,8 +53,8 @@ struct QueryResponse
     Persistent worker issuing Twitch API queries based on the concurrency messages
     sent to it.
 
-    Possibly best used on Windows where threads are comparatively expensive
-    compared to Posix platforms.
+    Possibly best used on Windows where spawning new threads is comparatively expensive
+    compared to on Posix platforms.
 
     Example:
     ---
@@ -374,14 +374,10 @@ void generateKey(TwitchBotPlugin plugin)
 
 // queryTwitch
 /++
-    Wraps `queryTwitchImpl` by either starting it in a subthread, or having the
-    worker start it.
+    Wraps `queryTwitchImpl` by either starting it in a subthread, or by calling it normally.
 
     Once the query returns, the response body is checked to see whether or not
-    an error occurred. If it did, an attempt to reset API keys is made and, if
-    successful, the query is resent and the cycle repeated while taking care not
-    to inifinitely loop. If not successful, it throws an exception and disables
-    API features.
+    an error occurred. If so, it throws an exception with a descriptive message.
 
     Note: Must be called from inside a `core.thread.Fiber`.
 
@@ -400,7 +396,7 @@ void generateKey(TwitchBotPlugin plugin)
         as having been received from the server.
 
     Throws:
-        `object.Exception` if there were unrecoverable errors.
+        `TwitchQueryException` if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
     const string authorisationHeader)
@@ -489,7 +485,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 // queryTwitchImpl
 /++
     Sends a HTTP GET request to the passed URL, and "returns" the response by
-    adding it to the shared `bucket`.
+    adding it to the shared `bucket` associative array.
 
     Callers can as such spawn this function as a new thread and asynchronously
     monitor the `bucket` for when the results arrive.
@@ -741,7 +737,7 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 // averageApproximateQueryTime
 /++
     Given a query time measurement, calculate a new approximate query time based on
-    the weighted averages of the old one and said measurement.
+    the weighted averages of the old value and said new measurement.
 
     The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
     and the new measurement a weight of 1. Additionally the measurement is padded
@@ -749,7 +745,8 @@ in (Fiber.getThis, "Tried to call `cacheFollows` from outside a Fiber")
 
     Params:
         plugin = The current `TwitchBotPlugin`.
-        responseMsecs = How many milliseconds the last query took to complete.
+        responseMsecs = The new measurement of how many milliseconds the last
+            query took to complete.
  +/
 void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
 {
@@ -773,8 +770,11 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 
 // waitForQueryResponse
 /++
-    Common code to wait for a query response. Merely spins and monitors the shared
-    `bucket` associative array for when a response has arrived, and then returns it.
+    Common code to wait for a query response.
+
+    Merely spins and monitors the shared `bucket` associative array for when a
+    response has arrived, and then returns it.
+
     Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
     was received.
 
@@ -801,7 +801,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 
     Params:
         plugin = The current `TwitchBotPlugin`.
-        url = The URL that was queried prior to calling this function. Must match.
+        url = The URL that was queried prior to calling this function. Must match precisely.
         leaveTimingAlone = Whether or not to adjust the approximate query time.
             Enabled by default but can be disabled if the caller wants to do it.
 

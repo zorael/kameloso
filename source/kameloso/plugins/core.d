@@ -318,7 +318,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         actual dirty work.
 
         Params:
-            event = Parse `dialect.defs.IRCEvent` to pass onto `onEventImpl`.
+            event = Parsed `dialect.defs.IRCEvent` to pass onto `onEventImpl`.
 
         See_Also:
             onEventImpl
