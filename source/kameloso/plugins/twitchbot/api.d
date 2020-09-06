@@ -449,29 +449,37 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if ((response.code >= 400) || response.error.length ||
-        !response.str.length || response.str.beginsWith(`{"err`))
+    if ((response.code >= 400) || response.error.length || !response.str.length)
     {
-        import lu.string : unquoted;
-        import std.format : format;
-
-        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        /*
+        if (response.str.beginsWith(`{"err`))
         {
-            "error": "Unauthorized",
-            "message": "Client ID and OAuth token do not match",
-            "status": 401
+            import lu.string : unquoted;
+            import std.format : format;
+            import std.json : parseJSON;
+
+            // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+            /*
+            {
+                "error": "Unauthorized",
+                "message": "Client ID and OAuth token do not match",
+                "status": 401
+            }
+            */
+            immutable errorJSON = parseJSON(response.str);
+            enum pattern = "Failed to query Twitch! %s %3d: %s";
+
+            immutable message = pattern.format(
+                errorJSON["error"].str.unquoted,
+                errorJSON["status"].integer,
+                errorJSON["message"].str.unquoted);
+
+            throw new TwitchQueryException(message, response.str, response.error, response.code);
         }
-        */
-        immutable errorJSON = parseJSON(response.str);
-        enum pattern = "Failed to query Twitch! %s %3d: %s";
-
-        immutable message = pattern.format(
-            errorJSON["error"].str.unquoted,
-            errorJSON["status"].integer,
-            errorJSON["message"].str.unquoted);
-
-        throw new TwitchQueryException(message, response.str, response.error, response.code);
+        else
+        {
+            throw new TwitchQueryException("Failed to query Twitch!",
+                response.str, response.error, response.code);
+        }
     }
 
     return response;
