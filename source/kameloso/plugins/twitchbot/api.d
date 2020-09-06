@@ -100,10 +100,10 @@ void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
             {
                 halt = true;
             },
-            (Variant v) scope
+            /*(Variant v) scope
             {
                 // It's technically an error but do nothing for now
-            },
+            },*/
         );
     }
 }
