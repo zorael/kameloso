@@ -450,12 +450,27 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     }
 
     if ((response.code >= 400) || response.error.length ||
-        !response.str.length || (response.str.beginsWith(`{"err`)))
+        !response.str.length || response.str.beginsWith(`{"err`))
     {
+        import lu.string : unquoted;
+        import std.format : format;
+
         // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        immutable message = response.error.length ?
-            "Failed to query Twitch: " ~ response.error :
-            "Failed to query Twitch";
+        /*
+        {
+            "error": "Unauthorized",
+            "message": "Client ID and OAuth token do not match",
+            "status": 401
+        }
+        */
+        immutable errorJSON = parseJSON(response.str);
+        enum pattern = "Failed to query Twitch! %s %3d: %s";
+
+        immutable message = pattern.format(
+            errorJSON["error"].str.unquoted,
+            errorJSON["status"].integer,
+            errorJSON["message"].str.unquoted);
+
         throw new TwitchQueryException(message, response.str, response.error, response.code);
     }
 
