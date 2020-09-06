@@ -1384,24 +1384,37 @@ void onEndOfMotd(TwitchBotPlugin plugin)
                 immutable validationJSON = getValidation(plugin);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
-                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
 
-                if ((expiresWhen - now) > 1.weeks)
+                if (expiresIn == 0L)
                 {
-                    // More than a week away, just .info
-                    enum pattern = "Your Twitch authorisation key will expire " ~
-                        "%s%02d-%02d-%02d";
-                    logger.infof(pattern, Tint.log, expiresWhen.year,
-                        expiresWhen.month, expiresWhen.day);
+                    import kameloso.messaging : quit;
+                    import std.typecons : Flag, No, Yes;
+
+                    // Expired.
+                    logger.error("Error: Your Twitch authorisation key has expired.");
+                    quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
                 }
                 else
                 {
-                    // A week or less; warning
-                    enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                        "%s%02d-%02d-%02d %02d:%02d";
-                    logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
-                        expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+
+                    if ((expiresWhen - now) > 1.weeks)
+                    {
+                        // More than a week away, just .info
+                        enum pattern = "Your Twitch authorisation key will expire " ~
+                            "%s%02d-%02d-%02d";
+                        logger.infof(pattern, Tint.log, expiresWhen.year,
+                            expiresWhen.month, expiresWhen.day);
+                    }
+                    else
+                    {
+                        // A week or less; warning
+                        enum pattern = "Warning: Your Twitch authorisation key will expire " ~
+                            "%s%02d-%02d-%02d %02d:%02d";
+                        logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
+                            expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                    }
                 }
             }
             catch (TwitchQueryException e)
