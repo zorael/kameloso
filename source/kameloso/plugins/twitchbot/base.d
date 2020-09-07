@@ -1023,19 +1023,17 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
         auto room = event.channel in plugin.rooms;
         assert(room, "Tried to look up follow age in a nonexistent room");
 
-        auto follows = room.follows;
-
-        if (follows.type == JSONType.null_)
+        if (!room.follows.length)
         {
             // Follows have not yet been cached!
             // This can technically happen, though practically the caching is
             // done immediately after joining so there should be no time for
             // !followage queries to sneak in.
             // Luckily we're inside a Fiber so we can cache it ourselves.
-            follows = plugin.cacheFollows(room.id);
+            room.follows = getFollows(plugin, room.id);
         }
 
-        if (const thisFollow = idString in follows)
+        if (const thisFollow = idString in room.follows)
         {
             return reportFollowAge(*thisFollow);
         }
@@ -1107,7 +1105,7 @@ void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
     // Always cache as soon as possible, before we get any !followage requests
     void cacheFollowsDg()
     {
-        room.follows = plugin.cacheFollows(room.id);
+        room.follows = getFollows(plugin, room.id);
     }
 
     Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
@@ -1649,7 +1647,7 @@ void periodically(TwitchBotPlugin plugin, const long now)
             foreach (immutable channelName, room; plugin.rooms)
             {
                 if (!room.enabled) continue;
-                room.follows = plugin.cacheFollows(room.id);
+                room.follows = getFollows(plugin, room.id);
             }
         }
 
@@ -1781,7 +1779,7 @@ package:
             string id;
 
             /// A JSON list of the followers of the channel.
-            JSONValue follows;
+            JSONValue[string] follows;
         }
     }
 
