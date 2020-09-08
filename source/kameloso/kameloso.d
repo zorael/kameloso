@@ -47,7 +47,7 @@ version(ProfileGC)
 }
 
 
-// abort
+// rawAbort
 /++
     Abort flag.
 
@@ -75,11 +75,11 @@ version(Posix)
 /++
     Called when a signal is raised, usually `SIGINT`.
 
-    Sets the `abort` variable to `true` so other parts of the program knows to
+    Sets the `rawAbort` variable to true so other parts of the program knows to
     gracefully shut down.
 
     Params:
-        sig = Integer of the signal raised.
+        sig = Integer value of the signal raised.
  +/
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
@@ -602,10 +602,9 @@ void exhaustMessages()
 // mainLoop
 /++
     This loops creates a `std.concurrency.Generator` `core.thread.fiber.Fiber` to loop
-    over the over `std.socket.Socket`, reading lines and yielding
-    `lu.net.ListenAttempt`s as it goes.
+    over the connected `std.socket.Socket`.
 
-    Full lines are stored in `lu.net.ListenAttempt`s which are
+    Full lines are stored in `lu.net.ListenAttempt`s, which are
     yielded in the `std.concurrency.Generator` to be caught here, consequently
     parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
 
@@ -1060,8 +1059,9 @@ Next mainLoop(ref Kameloso instance)
 
     Params:
         instance = Reference to the current `Kameloso`.
-        readWasShortened = Flag bool of whether or not the read timeout was
-            lowered to allow us to send a message earlier.
+
+    Returns:
+        How many milliseconds until the next message in the buffers should be sent.
  +/
 double sendLines(ref Kameloso instance)
 {
