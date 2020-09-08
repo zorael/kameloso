@@ -683,6 +683,9 @@ Next mainLoop(ref Kameloso instance)
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
 
+        /// Whether or not blocking was disabled on the socket to force an instant read timeout.
+        bool socketBlockingDisabled;
+
         foreach (plugin; instance.plugins)
         {
             if (!plugin.state.scheduledFibers.length &&
@@ -693,7 +696,8 @@ Next mainLoop(ref Kameloso instance)
                 plugin.processScheduledDelegates(nowInHnsecs);
                 plugin.processScheduledFibers(nowInHnsecs);
                 plugin.state.updateSchedule();  // Something is always removed
-                instance.conn.receiveTimeout = 1;  // Instantly timeout read to check messages
+                instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
+                socketBlockingDisabled = true;
             }
 
             if (!nextGlobalScheduledTimestamp ||
@@ -1026,14 +1030,21 @@ Next mainLoop(ref Kameloso instance)
             }
         }
 
-        if ((timeoutFromMessages < uint.max) || (instance.conn.receiveTimeout == 1))
+        if ((timeoutFromMessages < uint.max) || nextGlobalScheduledTimestamp)
         {
             import std.algorithm.comparison : min;
 
-            immutable untilNextGlobalScheduled =
-                cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000;
+            immutable untilNextGlobalScheduled = nextGlobalScheduledTimestamp ?
+                cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
+                uint.max;
             instance.conn.receiveTimeout =
                 min(DefaultTimeout.receive, timeoutFromMessages, untilNextGlobalScheduled);
+        }
+
+        if (socketBlockingDisabled)
+        {
+            // Restore blocking behaviour.
+            instance.conn.socket.blocking = true;
         }
     }
 
