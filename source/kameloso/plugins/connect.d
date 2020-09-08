@@ -356,7 +356,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 
     enum secsBetweenRegistrationFinishedChecks = 5;
 
-    void dg()
+    void delayedJoinDg()
     {
         if (service.authentication == Progress.notStarted)
         {
@@ -376,7 +376,8 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    delay(service, &dg, service.authenticationGracePeriod);
+    Fiber fiber = new Fiber(&delayedJoinDg, 32_768);
+    delay(service, fiber, service.authenticationGracePeriod);
 }
 
 
