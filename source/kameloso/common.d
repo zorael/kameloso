@@ -597,6 +597,24 @@ struct Kameloso
     }
 
 
+    // initPlugins
+    /++
+        Resets and *minimally* initialises all plugins.
+
+        Merely wraps the other `initPlugins` overload and distinguishes itself
+        from it by not taking the two `string[][string]` out parameters it does.
+
+        Params:
+            customSettings = String array of custom settings to apply to plugins
+                in addition to those read from the configuration file.
+     +/
+    void initPlugins(const string[] customSettings) @system
+    {
+        string[][string] ignore;
+        return initPlugins(customSettings, ignore, ignore);
+    }
+
+
     // initPluginResources
     /++
         Initialises all plugins' resource files.
