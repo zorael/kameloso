@@ -622,7 +622,7 @@ void exhaustMessages()
 Next mainLoop(ref Kameloso instance)
 {
     import kameloso.constants : Timeout;
-    import lu.net : ListenAttempt, listenFiber;
+    import lu.net : DefaultTimeout, ListenAttempt, listenFiber;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
 
@@ -650,8 +650,6 @@ Next mainLoop(ref Kameloso instance)
     // of the last connection. Otherwise the first thing to happen would be
     // that a summary gets printed.
     instance.wantLiveSummary = false;
-
-    bool readWasShortened;
 
     while (next == Next.continue_)
     {
@@ -682,6 +680,9 @@ Next mainLoop(ref Kameloso instance)
             plugin.periodically(nowInUnix);
         }
 
+        /// The timestamp of the next scheduled delegate or fiber across all plugins.
+        long nextGlobalScheduledTimestamp;
+
         foreach (plugin; instance.plugins)
         {
             if (!plugin.state.scheduledFibers.length &&
@@ -693,21 +694,24 @@ Next mainLoop(ref Kameloso instance)
                 plugin.processScheduledFibers(nowInHnsecs);
                 plugin.state.updateSchedule();  // Something is always removed
                 instance.conn.receiveTimeout = 1;  // Instantly timeout read to check messages
-                readWasShortened = true;
             }
-            else
-            {
-                immutable cachedReceiveTimeout = instance.conn.receiveTimeout;
-                immutable timeOfNextReadTimeout = cast(int)((nowInHnsecs/10_000) +
-                    cachedReceiveTimeout);
-                immutable int delta = cast(int)(timeOfNextReadTimeout -
-                    (plugin.state.nextScheduledTimestamp/10_000));
 
-                if ((delta > 0) && (delta < instance.conn.receiveTimeout))
-                {
-                    instance.conn.receiveTimeout = (cachedReceiveTimeout - delta);
-                    readWasShortened = true;
-                }
+            if (!nextGlobalScheduledTimestamp ||
+                (plugin.state.nextScheduledTimestamp < nextGlobalScheduledTimestamp))
+            {
+                nextGlobalScheduledTimestamp = plugin.state.nextScheduledTimestamp;
+            }
+        }
+
+        // Set timeout *before* the receive, else we'll just be applying the delay too late
+        if (nextGlobalScheduledTimestamp)
+        {
+            immutable delayToNextMsecs =
+                cast(uint)((nextGlobalScheduledTimestamp - nowInHnsecs) / 10_000);
+
+            if (delayToNextMsecs < instance.conn.receiveTimeout)
+            {
+                instance.conn.receiveTimeout = delayToNextMsecs;
             }
         }
 
@@ -1004,16 +1008,32 @@ Next mainLoop(ref Kameloso instance)
             bufferHasMessages |= !instance.fastbuffer.empty;
         }
 
+        /// Adjusted receive timeout based on outgoing message buffers.
+        uint timeoutFromMessages = uint.max;
+
         if (bufferHasMessages)
         {
-            sendLines(instance, readWasShortened);
-        }
-        else if (readWasShortened)
-        {
-            static import lu.net;
+            immutable untilNext = sendLines(instance);
 
-            instance.conn.receiveTimeout = lu.net.DefaultTimeout.receive;
-            readWasShortened = false;
+            if ((untilNext > 0.0) && (untilNext < instance.throttle.burst))
+            {
+                immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+
+                if (untilNextMsecs < instance.conn.receiveTimeout)
+                {
+                    timeoutFromMessages = untilNextMsecs;
+                }
+            }
+        }
+
+        if ((timeoutFromMessages < uint.max) || (instance.conn.receiveTimeout == 1))
+        {
+            import std.algorithm.comparison : min;
+
+            immutable untilNextGlobalScheduled =
+                cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000;
+            instance.conn.receiveTimeout =
+                min(DefaultTimeout.receive, timeoutFromMessages, untilNextGlobalScheduled);
         }
     }
 
@@ -1032,65 +1052,46 @@ Next mainLoop(ref Kameloso instance)
         readWasShortened = Flag bool of whether or not the read timeout was
             lowered to allow us to send a message earlier.
  +/
-void sendLines(ref Kameloso instance, ref bool readWasShortened)
+double sendLines(ref Kameloso instance)
 {
-    import core.time : msecs, seconds;
+    static import lu.net;
     import std.socket : SocketOption, SocketOptionLevel;
     import std.typecons : Flag, No, Yes;
-
-    double untilNext;
+    import core.time : msecs, seconds;
 
     version(TwitchSupport)
     {
         if (!instance.priorityBuffer.empty)
         {
-            untilNext = instance.throttleline(instance.priorityBuffer);
+            return instance.throttleline(instance.priorityBuffer);
         }
         else if (!instance.fastbuffer.empty)
         {
-            untilNext = instance.throttleline(instance.fastbuffer, No.dryRun, Yes.sendFaster);
+            return instance.throttleline(instance.fastbuffer, No.dryRun, Yes.sendFaster);
         }
         else if (!instance.outbuffer.empty)
         {
-            untilNext = instance.throttleline(instance.outbuffer);
+            return instance.throttleline(instance.outbuffer);
         }
         else
         {
-            untilNext = instance.throttleline(instance.backgroundBuffer);
+            return instance.throttleline(instance.backgroundBuffer);
         }
     }
     else
     {
         if (!instance.priorityBuffer.empty)
         {
-            untilNext = instance.throttleline(instance.priorityBuffer);
+            return instance.throttleline(instance.priorityBuffer);
         }
         else if (!instance.outbuffer.empty)
         {
-            untilNext = instance.throttleline(instance.outbuffer);
+            return instance.throttleline(instance.outbuffer);
         }
         else
         {
-            untilNext = instance.throttleline(instance.backgroundBuffer);
+            return instance.throttleline(instance.backgroundBuffer);
         }
-    }
-
-    if ((untilNext > 0.0) && (untilNext < instance.throttle.burst))
-    {
-        immutable untilNextMsecs = cast(uint)(untilNext * 1000);
-
-        if (untilNextMsecs < instance.conn.receiveTimeout)
-        {
-            instance.conn.receiveTimeout = untilNextMsecs;
-            readWasShortened = true;
-        }
-    }
-    else if (readWasShortened)
-    {
-        static import lu.net;
-
-        instance.conn.receiveTimeout = lu.net.DefaultTimeout.receive;
-        readWasShortened = false;
     }
 }
 
