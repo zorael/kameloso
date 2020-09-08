@@ -329,7 +329,7 @@ void messageFiber(ref Kameloso instance)
                 if (event.aux.length)
                 {
                     // Key, assume only one channel
-                    line = event.channel ~ ' ' ~ event.aux;
+                    line = "JOIN " ~ event.channel ~ ' ' ~ event.aux;
                 }
                 else
                 {
