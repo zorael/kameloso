@@ -711,6 +711,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
 
     JSONValue[string] allFollows;
+    long total;
     string after;
 
     do
@@ -724,12 +725,14 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
+        if (!total) total = followsJSON["total"].integer;
+
         foreach (thisFollowJSON; followsJSON["data"].array)
         {
             allFollows[thisFollowJSON["from_id"].str] = thisFollowJSON;
         }
 
-        after = cursor ? cursor.str : string.init;
+        after = ((allFollows.length != total) && cursor) ? cursor.str : string.init;
     }
     while (after.length);
 
