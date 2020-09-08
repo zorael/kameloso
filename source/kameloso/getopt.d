@@ -301,10 +301,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         Tint.monochrome = settings.monochrome;
 
         // Ignore invalid/missing entries here, report them when initialising plugins
-        string[][string] ignore;
-
-        settings.configFile.readConfigInto(ignore, ignore,
-            parser.client, bot, parser.server, connSettings, settings);
+        settings.configFile.readConfigInto(parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
 
         /++
