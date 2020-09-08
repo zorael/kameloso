@@ -2222,8 +2222,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             if (*instance.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt
-            string[][string] ignore;
-            instance.initPlugins(attempt.customSettings, ignore, ignore);
+            instance.initPlugins(attempt.customSettings);
 
             // Reset throttling, in case there were queued messages.
             instance.throttle = typeof(instance.throttle).init;

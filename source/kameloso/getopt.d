@@ -140,8 +140,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
-    string[][string] ignore;
-    instance.initPlugins(customSettings, ignore, ignore);
+    instance.initPlugins(customSettings);
 
     // Take the opportunity to set a default quit reason. We can't do this in
     // applyDefaults because it's a perfectly valid use-case not to have a quit
@@ -207,8 +206,7 @@ void printSettings(ref Kameloso instance, const string[] customSettings,
     printObjects!(No.all)(instance.parser.client, instance.bot,
         instance.parser.server, instance.connSettings, instance.settings);
 
-    string[][string] ignore;
-    instance.initPlugins(customSettings, ignore, ignore);
+    instance.initPlugins(customSettings);
 
     foreach (plugin; instance.plugins) plugin.printSettings();
 }
