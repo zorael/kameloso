@@ -377,3 +377,23 @@ if (allSatisfy!(isStruct, T))
         .splitter('\n')
         .deserialise(missingEntries, invalidEntries, things);
 }
+
+
+// readConfigInto
+/++
+    Reads a configuration file and applies the settings therein to passed objects.
+
+    Merely wraps the other `readConfigInto` overload and distinguishes itself
+        from it by not taking the two `string[][string]` out parameters it does.
+
+    Params:
+        configFile = Filename of file to read from.
+        things = Reference variadic list of things to set values of, according
+            to the text in the configuration file.
+ +/
+void readConfigInto(T...)(const string configFile, ref T things)
+if (allSatisfy!(isStruct, T))
+{
+    string[][string] ignore;
+    return configFile.readConfigInto(ignore, ignore, things);
+}
