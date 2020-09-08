@@ -302,7 +302,7 @@ void messageFiber(ref Kameloso instance)
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
                         prelude = "PRIVMSG %s :/me ".format(emoteTarget);
-                        line = event.content;
+                        lines = event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                     }
                 }
 
