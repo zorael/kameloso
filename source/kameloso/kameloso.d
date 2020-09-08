@@ -692,7 +692,7 @@ Next mainLoop(ref Kameloso instance)
                 plugin.processScheduledDelegates(nowInHnsecs);
                 plugin.processScheduledFibers(nowInHnsecs);
                 plugin.state.updateSchedule();  // Something is always removed
-                instance.conn.receiveTimeout = 1;
+                instance.conn.receiveTimeout = 1;  // Instantly timeout read to check messages
                 readWasShortened = true;
             }
             else
