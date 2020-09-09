@@ -48,13 +48,27 @@ import std.typecons : Flag, No, Yes;
 
 version(unittest)
 {
-    import std.concurrency : receiveOnly, thisTid;
+    import lu.conv : Enum;
+    import std.concurrency : receive, receiveOnly, thisTid;
     import std.conv : to;
 }
 
 //version = TraceWhois;
 
 public:
+
+
+// MessageProperty
+/++
+    FIXME
+ +/
+enum MessageProperty : ubyte
+{
+    fast        = 1 << 0,
+    quiet       = 1 << 1,
+    background  = 1 << 2,
+    forced      = 1 << 3,
+}
 
 
 // chan
@@ -82,12 +96,15 @@ in (channelName.length, "Tried to send a channel message but no channel was give
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.CHAN;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channelName;
     event.content = content;
-    if (background) event.altcount = 999;
     event.raw = caller;
+
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
 
     version(TwitchSupport)
     {
@@ -98,42 +115,41 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             if (state.bot.homeChannels.canFind(channelName))
             {
                 // We're in a home channel
-                event.num = 999;
+                properties |= MessageProperty.fast;
             }
             /*else if (auto channel = channelName in state.channels)
             {
                 if ((*channel).ops.canFind(state.client.nickname))
                 {
-                    event.num = 999;
+                    properties |= MessageProperty.fast;
                 }
             }*/
         }
     }
 
-    state.mainThread.send(event);
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-    import std.conv : to;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     chan(state, "#channel", "content", Yes.quiet, Yes.background);
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "content"), content);
-        assert((event.target.class_ == IRCUser.Class.admin),
-            Enum!(IRCUser.Class).toString(event.target.class_));
-        assert((event.altcount == 999), event.altcount.to!string);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "content"), content);
+                assert(properties & MessageProperty.fast);
+            }
+        }
+    );
 }
 
 
@@ -162,33 +178,39 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.QUERY;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.target.nickname = nickname;
     event.content = content;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     query(state, "kameloso", "content");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert((content == "content"), content);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
+                assert((target.nickname == "kameloso"), target.nickname);
+                assert((content == "content"), content);
+                assert((properties == MessageProperty.init));
+            }
+        }
+    );
 }
 
 
@@ -231,39 +253,47 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
     }
     else
     {
-        assert(0, "Tried to send empty `privmsg` with no channel nor target nickname");
+        assert(0);//, "Tried to send empty `privmsg` with no channel nor target nickname");
     }
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     privmsg(state, "#channel", string.init, "content");
 
-    immutable event1 = receiveOnly!IRCEvent;
-    with (event1)
-    {
-        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "content"), content);
-        assert(!target.nickname.length, target.nickname);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "content"), content);
+                assert(!target.nickname.length, target.nickname);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 
     privmsg(state, string.init, "kameloso", "content");
 
-    immutable event2 = receiveOnly!IRCEvent;
-    with (event2)
-    {
-        assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
-        assert(!channel.length, channel);
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert((content == "content"), content);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
+                assert(!channel.length, channel);
+                assert((target.nickname == "kameloso"), target.nickname);
+                assert((content == "content"), content);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -294,11 +324,14 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.EMOTE;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = content;
-    if (background) event.altcount = 999;
     event.raw = caller;
+
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
 
     if (state.server.chantypes.contains(emoteTarget[0]))
     {
@@ -309,40 +342,47 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
         event.target.nickname = emoteTarget;
     }
 
-    state.mainThread.send(event);
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     emote(state, "#channel", "content");
 
-    immutable event1 = receiveOnly!IRCEvent;
-    with (event1)
-    {
-        assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "content"), content);
-        assert(!target.nickname.length, target.nickname);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "content"), content);
+                assert(!target.nickname.length, target.nickname);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 
     emote(state, "kameloso", "content");
 
-    immutable event2 = receiveOnly!IRCEvent;
-    with (event2)
-    {
-        assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
-        assert(!channel.length, channel);
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert((content == "content"), content);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
+                assert(!channel.length, channel);
+                assert((target.nickname == "kameloso"), target.nickname);
+                assert((content == "content"), content);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
-
 
 
 // mode
@@ -373,35 +413,41 @@ in (channel.length, "Tried to set a mode but no channel was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.MODE;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.aux = modes.idup;
     event.content = content;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     mode(state, "#channel", "+o", "content");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "content"), content);
-        assert((aux == "+o"), aux);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "content"), content);
+                assert((aux == "+o"), aux);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -430,33 +476,39 @@ in (channel.length, "Tried to set a topic but no channel was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.TOPIC;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.content = content;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     topic(state, "#channel", "content");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "content"), content);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "content"), content);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -486,33 +538,39 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.INVITE;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.target.nickname = nickname;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     invite(state, "#channel", "kameloso");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((target.nickname == "kameloso"), target.nickname);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((target.nickname == "kameloso"), target.nickname);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -541,32 +599,38 @@ in (channel.length, "Tried to join a channel but no channel was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.JOIN;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.aux = key;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     join(state, "#channel");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -597,35 +661,41 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.KICK;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.target.nickname = nickname;
     event.content = reason;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     kick(state, "#channel", "kameloso", "content");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "content"), content);
-        assert((target.nickname == "kameloso"), target.nickname);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "content"), content);
+                assert((target.nickname == "kameloso"), target.nickname);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -654,33 +724,39 @@ in (channel.length, "Tried to part a channel but no channel was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.PART;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.channel = channel;
     event.content = reason.length ? reason : state.bot.partReason;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     part(state, "#channel", "reason");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
-        assert((channel == "#channel"), channel);
-        assert((content == "reason"), content);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
+                assert((channel == "#channel"), channel);
+                assert((content == "reason"), content);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -711,7 +787,6 @@ void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
 unittest
 {
     import kameloso.thread : ThreadMessage;
-    import lu.conv : Enum;
     import std.concurrency : MessageMismatch;
     import std.typecons : Tuple;
 
@@ -756,12 +831,15 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.target.nickname = nickname;
-    if (force) event.num = 1;
-    if (background) event.altcount = 999;
     event.raw = caller;
+
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+    if (force) properties |= MessageProperty.forced;
 
     version(TraceWhois)
     {
@@ -771,26 +849,28 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
             nickname, caller, (priority ? true : false), force, quiet, background);
     }
 
-    state.mainThread.send(event);
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     whois(state, "kameloso", Yes.force);
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert(num > 0);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
+                assert((target.nickname == "kameloso"), target.nickname);
+                assert(properties & MessageProperty.forced);
+            }
+        }
+    );
 }
 
 
@@ -821,31 +901,37 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const str
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
+    MessageProperty properties;
+
     event.type = IRCEvent.Type.UNSET;
-    if (quiet) event.target.class_ = IRCUser.Class.admin;
     event.content = line;
-    if (background) event.altcount = 999;
     event.raw = caller;
 
-    state.mainThread.send(event);
+    if (quiet) properties |= MessageProperty.quiet;
+    if (background) properties |= MessageProperty.background;
+
+    state.mainThread.send(event, properties);
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
     raw(state, "commands");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
-    {
-        assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
-        assert((content == "commands"), content);
-    }
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            with (event)
+            {
+                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+                assert((content == "commands"), content);
+                assert(properties == MessageProperty.init);
+            }
+        }
+    );
 }
 
 
@@ -879,7 +965,6 @@ void immediate(IRCPluginState state, const string line)
 unittest
 {
     import kameloso.thread : ThreadMessage;
-    import lu.conv : Enum;
     import std.meta : AliasSeq;
 
     IRCPluginState state;
