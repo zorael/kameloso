@@ -361,10 +361,6 @@ void messageFiber(ref Kameloso instance)
                 }
                 break;
 
-            case QUIT:
-                return quitServer(ThreadMessage.Quit(),
-                    event.content.replaceTokens(instance.parser.client), quietFlag);
-
             case NICK:
                 line = "NICK " ~ event.target.nickname;
                 break;
