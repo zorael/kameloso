@@ -60,19 +60,30 @@ public:
 
 // Message
 /++
-    FIXME
+    An `dialect.defs.IRCEvent` with some metadata, to be used when crafting an
+    outgoing message to the server.
  +/
 struct Message
 {
+    /++
+        Properties of a `Message`. Describes how it should be sent.
+     +/
     enum Property : ubyte
     {
-        fast        = 1 << 0,
-        quiet       = 1 << 1,
-        background  = 1 << 2,
-        forced      = 1 << 3,
+        fast        = 1 << 0,  /// Message should be sent faster than normal. (Twitch)
+        quiet       = 1 << 1,  /// Message should be sent without echoing it to the terminal.
+        background  = 1 << 2,  /// Message should be lazily sent in the background.
+        forced      = 1 << 3,  /// Message should bypass some checks.
     }
 
+    /++
+        The `dialect.defs.IRCEvent` that contains the information we want to send to the server.
+     +/
     IRCEvent event;
+
+    /++
+        The properties of this message. More than one may be used, with bitwise-or.
+     +/
     Property properties;
 }
 
