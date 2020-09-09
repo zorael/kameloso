@@ -859,7 +859,7 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
         import std.stdio : writefln;
         writefln("[TraceWhois] messaging.whois caught request to WHOIS \"%s\" " ~
             "from %s (priority:%s force:%s, quiet:%s, background:%s)",
-            nickname, caller, (priority ? true : false), force, quiet, background);
+            nickname, caller, cast(bool)priority, force, quiet, background);
     }
 
     state.mainThread.send(m);
