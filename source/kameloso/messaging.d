@@ -85,6 +85,12 @@ struct Message
         The properties of this message. More than one may be used, with bitwise-or.
      +/
     Property properties;
+
+    /++
+        String name of the function that is sending this message, or something
+        else that gives context.
+     +/
+    string caller;
 }
 
 
