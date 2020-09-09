@@ -58,16 +58,22 @@ version(unittest)
 public:
 
 
-// MessageProperty
+// Message
 /++
     FIXME
  +/
-enum MessageProperty : ubyte
+struct Message
 {
-    fast        = 1 << 0,
-    quiet       = 1 << 1,
-    background  = 1 << 2,
-    forced      = 1 << 3,
+    enum Property : ubyte
+    {
+        fast        = 1 << 0,
+        quiet       = 1 << 1,
+        background  = 1 << 2,
+        forced      = 1 << 3,
+    }
+
+    IRCEvent event;
+    Property properties;
 }
 
 
@@ -95,16 +101,15 @@ in (channelName.length, "Tried to send a channel message but no channel was give
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.CHAN;
-    event.channel = channelName;
-    event.content = content;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.CHAN;
+    m.event.channel = channelName;
+    m.event.content = content;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
     version(TwitchSupport)
     {
@@ -115,19 +120,19 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             if (state.bot.homeChannels.canFind(channelName))
             {
                 // We're in a home channel
-                properties |= MessageProperty.fast;
+                m.properties |= Message.Property.fast;
             }
             /*else if (auto channel = channelName in state.channels)
             {
                 if ((*channel).ops.canFind(state.client.nickname))
                 {
-                    properties |= MessageProperty.fast;
+                    m.properties |= Message.Property.fast;
                 }
             }*/
         }
     }
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -139,14 +144,14 @@ unittest
     chan(state, "#channel", "content", Yes.quiet, Yes.background);
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
-                assert(properties & MessageProperty.fast);
+                assert(properties & Message.Property.fast);
             }
         }
     );
@@ -177,18 +182,17 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.QUERY;
-    event.target.nickname = nickname;
-    event.content = content;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.QUERY;
+    m.event.target.nickname = nickname;
+    m.event.content = content;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -200,14 +204,14 @@ unittest
     query(state, "kameloso", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
                 assert((target.nickname == "kameloso"), target.nickname);
                 assert((content == "content"), content);
-                assert((properties == MessageProperty.init));
+                assert((m.properties == Message.Property.init));
             }
         }
     );
@@ -266,7 +270,7 @@ unittest
     privmsg(state, "#channel", string.init, "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
@@ -274,7 +278,7 @@ unittest
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
                 assert(!target.nickname.length, target.nickname);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -282,7 +286,7 @@ unittest
     privmsg(state, string.init, "kameloso", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
@@ -290,7 +294,7 @@ unittest
                 assert(!channel.length, channel);
                 assert((target.nickname == "kameloso"), target.nickname);
                 assert((content == "content"), content);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -323,26 +327,25 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     import lu.string : contains;
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.EMOTE;
-    event.content = content;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.EMOTE;
+    m.event.content = content;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
     if (state.server.chantypes.contains(emoteTarget[0]))
     {
-        event.channel = emoteTarget;
+        m.event.channel = emoteTarget;
     }
     else
     {
-        event.target.nickname = emoteTarget;
+        m.event.target.nickname = emoteTarget;
     }
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -354,7 +357,7 @@ unittest
     emote(state, "#channel", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
@@ -362,7 +365,7 @@ unittest
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
                 assert(!target.nickname.length, target.nickname);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -370,7 +373,7 @@ unittest
     emote(state, "kameloso", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
@@ -378,7 +381,7 @@ unittest
                 assert(!channel.length, channel);
                 assert((target.nickname == "kameloso"), target.nickname);
                 assert((content == "content"), content);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -412,19 +415,18 @@ in (channel.length, "Tried to set a mode but no channel was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.MODE;
-    event.channel = channel;
-    event.aux = modes.idup;
-    event.content = content;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.MODE;
+    m.event.channel = channel;
+    m.event.aux = modes.idup;
+    m.event.content = content;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -436,7 +438,7 @@ unittest
     mode(state, "#channel", "+o", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
@@ -444,7 +446,7 @@ unittest
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
                 assert((aux == "+o"), aux);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -475,18 +477,17 @@ in (channel.length, "Tried to set a topic but no channel was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.TOPIC;
-    event.channel = channel;
-    event.content = content;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.TOPIC;
+    m.event.channel = channel;
+    m.event.content = content;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -498,14 +499,14 @@ unittest
     topic(state, "#channel", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -537,18 +538,17 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.INVITE;
-    event.channel = channel;
-    event.target.nickname = nickname;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.INVITE;
+    m.event.channel = channel;
+    m.event.target.nickname = nickname;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -560,14 +560,14 @@ unittest
     invite(state, "#channel", "kameloso");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((target.nickname == "kameloso"), target.nickname);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -598,18 +598,17 @@ in (channel.length, "Tried to join a channel but no channel was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.JOIN;
-    event.channel = channel;
-    event.aux = key;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.JOIN;
+    m.event.channel = channel;
+    m.event.aux = key;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -621,13 +620,13 @@ unittest
     join(state, "#channel");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -660,19 +659,18 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.KICK;
-    event.channel = channel;
-    event.target.nickname = nickname;
-    event.content = reason;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.KICK;
+    m.event.channel = channel;
+    m.event.target.nickname = nickname;
+    m.event.content = reason;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -684,7 +682,7 @@ unittest
     kick(state, "#channel", "kameloso", "content");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
@@ -692,7 +690,7 @@ unittest
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
                 assert((target.nickname == "kameloso"), target.nickname);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -723,18 +721,17 @@ in (channel.length, "Tried to part a channel but no channel was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.PART;
-    event.channel = channel;
-    event.content = reason.length ? reason : state.bot.partReason;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.PART;
+    m.event.channel = channel;
+    m.event.content = reason.length ? reason : state.bot.partReason;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -746,14 +743,14 @@ unittest
     part(state, "#channel", "reason");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((content == "reason"), content);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );
@@ -830,16 +827,15 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
-    event.target.nickname = nickname;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
+    m.event.target.nickname = nickname;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
-    if (force) properties |= MessageProperty.forced;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
+    if (force) m.properties |= Message.Property.forced;
 
     version(TraceWhois)
     {
@@ -849,7 +845,7 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
             nickname, caller, (priority ? true : false), force, quiet, background);
     }
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -861,13 +857,13 @@ unittest
     whois(state, "kameloso", Yes.force);
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
                 assert((target.nickname == "kameloso"), target.nickname);
-                assert(properties & MessageProperty.forced);
+                assert(properties & Message.Property.forced);
             }
         }
     );
@@ -900,17 +896,16 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const str
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    MessageProperty properties;
+    Message m;
 
-    event.type = IRCEvent.Type.UNSET;
-    event.content = line;
-    event.raw = caller;
+    m.event.type = IRCEvent.Type.UNSET;
+    m.event.content = line;
+    m.event.raw = caller;
 
-    if (quiet) properties |= MessageProperty.quiet;
-    if (background) properties |= MessageProperty.background;
+    if (quiet) m.properties |= Message.Property.quiet;
+    if (background) m.properties |= Message.Property.background;
 
-    state.mainThread.send(event, properties);
+    state.mainThread.send(m);
 }
 
 ///
@@ -922,13 +917,13 @@ unittest
     raw(state, "commands");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (IRCEvent event, Message.Property properties)
         {
             with (event)
             {
                 assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
                 assert((content == "commands"), content);
-                assert(properties == MessageProperty.init);
+                assert(m.properties == Message.Property.init);
             }
         }
     );

@@ -242,10 +242,10 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        import kameloso.messaging : MessageProperty;
+        import kameloso.messaging : Message;
 
         /// Reverse-formats an event and sends it to the server.
-        void eventToServer(IRCEvent event, MessageProperty properties) scope
+        void eventToServer(Message m) scope
         {
             import lu.string : splitLineAtPosition;
             import std.format : format;
@@ -255,14 +255,16 @@ void messageFiber(ref Kameloso instance)
             version(TwitchSupport)
             {
                 immutable fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
-                    (properties & MessageProperty.fast);
+                    (m.properties & Message.Property.fast);
             }
 
-            immutable background = (properties & MessageProperty.background);
+            immutable background = (m.properties & Message.Property.background);
             immutable quietFlag = (instance.settings.hideOutgoing ||
-                (properties & MessageProperty.quiet)) ? Yes.quiet : No.quiet;
-            immutable force = (properties & MessageProperty.forced);
-            immutable caller = event.raw;
+                (m.properties & Message.Property.quiet)) ? Yes.quiet : No.quiet;
+            immutable force = (m.properties & Message.Property.forced);
+            immutable caller = m.event.raw;
+
+            immutable event = m.event;
 
             string line;
             string prelude;
@@ -470,9 +472,9 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Wrapper around `eventToServer` for shared heap `dialect.defs.IRCEvent`s.
-        void eventPointerToServer(shared(IRCEvent)* event, MessageProperty properties)
+        void eventPointerToServer(shared(Message)* m)
         {
-            return eventToServer(cast()*event, properties);
+            return eventToServer(cast()*m);
         }
 
         /// Proxies the passed message to the `logger`.
