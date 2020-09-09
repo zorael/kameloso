@@ -467,7 +467,7 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Wrapper around `eventToServer` for shared heap `dialect.defs.IRCEvent`s.
-        void eventPointerToServer(shared(Message)* m)
+        void eventPointerToServer(shared(Message)* m) scope
         {
             return eventToServer(cast()*m);
         }
