@@ -123,7 +123,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
     m.event.type = IRCEvent.Type.CHAN;
     m.event.channel = channelName;
     m.event.content = content;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -204,7 +204,7 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
     m.event.type = IRCEvent.Type.QUERY;
     m.event.target.nickname = nickname;
     m.event.content = content;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -348,7 +348,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
 
     m.event.type = IRCEvent.Type.EMOTE;
     m.event.content = content;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -438,7 +438,7 @@ in (channel.length, "Tried to set a mode but no channel was given")
     m.event.channel = channel;
     m.event.aux = modes.idup;
     m.event.content = content;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -499,7 +499,7 @@ in (channel.length, "Tried to set a topic but no channel was given")
     m.event.type = IRCEvent.Type.TOPIC;
     m.event.channel = channel;
     m.event.content = content;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -560,7 +560,7 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
     m.event.type = IRCEvent.Type.INVITE;
     m.event.channel = channel;
     m.event.target.nickname = nickname;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -620,7 +620,7 @@ in (channel.length, "Tried to join a channel but no channel was given")
     m.event.type = IRCEvent.Type.JOIN;
     m.event.channel = channel;
     m.event.aux = key;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -682,7 +682,7 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     m.event.channel = channel;
     m.event.target.nickname = nickname;
     m.event.content = reason;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -743,7 +743,7 @@ in (channel.length, "Tried to part a channel but no channel was given")
     m.event.type = IRCEvent.Type.PART;
     m.event.channel = channel;
     m.event.content = reason.length ? reason : state.bot.partReason;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -848,7 +848,7 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 
     m.event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
     m.event.target.nickname = nickname;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
@@ -917,7 +917,7 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const str
 
     m.event.type = IRCEvent.Type.UNSET;
     m.event.content = line;
-    m.event.raw = caller;
+    m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;

@@ -262,7 +262,6 @@ void messageFiber(ref Kameloso instance)
             immutable quietFlag = (instance.settings.hideOutgoing ||
                 (m.properties & Message.Property.quiet)) ? Yes.quiet : No.quiet;
             immutable force = (m.properties & Message.Property.forced);
-            immutable caller = m.event.raw;
 
             immutable event = m.event;
 
@@ -394,7 +393,7 @@ void messageFiber(ref Kameloso instance)
 
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", event.target.nickname,
-                        caller, cast(bool)quietFlag, background);
+                        m.caller, cast(bool)quietFlag, background);
                 }
 
                 if ((now - then) > hysteresis)
