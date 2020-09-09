@@ -243,15 +243,15 @@ unittest
     mode(state, "#channel", "+ov", "mydude");
 
     receive(
-        (IRCEvent event, MessageProperty properties)
+        (Message m)
         {
-            assert((event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(event.type));
-            assert((event.channel == "#channel"), event.channel);
-            assert((event.aux == "+ov"), event.aux);
-            assert((event.content == "mydude"), event.content);
-            assert(properties == MessageProperty.init);
+            assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
+            assert((m.event.channel == "#channel"), m.event.channel);
+            assert((m.event.aux == "+ov"), m.event.aux);
+            assert((m.event.content == "mydude"), m.event.content);
+            assert(m.properties == Message.Property.init);
 
-            immutable line = "MODE %s %s %s".format(event.channel, event.aux, event.content);
+            immutable line = "MODE %s %s %s".format(m.event.channel, m.event.aux, m.event.content);
             assert((line == "MODE #channel +ov mydude"), line);
         }
     );

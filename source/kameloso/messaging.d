@@ -144,14 +144,14 @@ unittest
     chan(state, "#channel", "content", Yes.quiet, Yes.background);
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
-                assert(properties & Message.Property.fast);
+                assert(m.properties & Message.Property.fast);
             }
         }
     );
@@ -204,9 +204,9 @@ unittest
     query(state, "kameloso", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
                 assert((target.nickname == "kameloso"), target.nickname);
@@ -270,9 +270,9 @@ unittest
     privmsg(state, "#channel", string.init, "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -286,9 +286,9 @@ unittest
     privmsg(state, string.init, "kameloso", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
                 assert(!channel.length, channel);
@@ -357,9 +357,9 @@ unittest
     emote(state, "#channel", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -373,9 +373,9 @@ unittest
     emote(state, "kameloso", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
                 assert(!channel.length, channel);
@@ -438,9 +438,9 @@ unittest
     mode(state, "#channel", "+o", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -499,9 +499,9 @@ unittest
     topic(state, "#channel", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -560,9 +560,9 @@ unittest
     invite(state, "#channel", "kameloso");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -620,9 +620,9 @@ unittest
     join(state, "#channel");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -682,9 +682,9 @@ unittest
     kick(state, "#channel", "kameloso", "content");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -743,9 +743,9 @@ unittest
     part(state, "#channel", "reason");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
@@ -857,13 +857,13 @@ unittest
     whois(state, "kameloso", Yes.force);
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
                 assert((target.nickname == "kameloso"), target.nickname);
-                assert(properties & Message.Property.forced);
+                assert(m.properties & Message.Property.forced);
             }
         }
     );
@@ -917,9 +917,9 @@ unittest
     raw(state, "commands");
 
     receive(
-        (IRCEvent event, Message.Property properties)
+        (Message m)
         {
-            with (event)
+            with (m.event)
             {
                 assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
                 assert((content == "commands"), content);
