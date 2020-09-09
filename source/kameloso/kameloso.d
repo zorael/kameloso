@@ -242,8 +242,10 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
+        import kameloso.messaging : MessageProperty;
+
         /// Reverse-formats an event and sends it to the server.
-        void eventToServer(IRCEvent event) scope
+        void eventToServer(IRCEvent event, MessageProperty properties) scope
         {
             import lu.string : splitLineAtPosition;
             import std.format : format;
@@ -253,12 +255,13 @@ void messageFiber(ref Kameloso instance)
             version(TwitchSupport)
             {
                 immutable fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
-                    (event.num == 999);
+                    (properties & MessageProperty.fast);
             }
 
-            immutable background = (event.altcount == 999);
-            immutable quiet = (instance.settings.hideOutgoing ||
-                (event.target.class_ == IRCUser.Class.admin)) ? Yes.quiet : No.quiet;
+            immutable background = (properties & MessageProperty.background);
+            immutable quietFlag = (instance.settings.hideOutgoing ||
+                (properties & MessageProperty.quiet)) ? Yes.quiet : No.quiet;
+            immutable force = (properties & MessageProperty.forced);
             immutable caller = event.raw;
 
             string line;
@@ -278,11 +281,11 @@ void messageFiber(ref Kameloso instance)
                 {
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        if (event.target.nickname == instance.parser.client.nickname)
+                        /*if (event.target.nickname == instance.parser.client.nickname)
                         {
                             // "You cannot whisper to yourself." (whisper_invalid_self)
                             return;
-                        }
+                        }*/
 
                         prelude = "PRIVMSG #%s :/w %s "
                             .format(instance.parser.client.nickname, event.target.nickname);
@@ -358,8 +361,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                return quitServer(ThreadMessage.Quit(), event.content.replaceTokens(instance.parser.client),
-                    ((event.target.class_ == IRCUser.Class.admin) ? Yes.quiet : No.quiet));
+                return quitServer(ThreadMessage.Quit(),
+                    event.content.replaceTokens(instance.parser.client), quietFlag);
 
             case NICK:
                 line = "NICK " ~ event.target.nickname;
@@ -381,7 +384,7 @@ void messageFiber(ref Kameloso instance)
 
                 immutable now = Clock.currTime.toUnixTime;
                 immutable then = instance.previousWhoisTimestamps.get(event.target.nickname, 0);
-                immutable hysteresis = (event.num > 0) ? 1 : Timeout.whoisRetry;
+                immutable hysteresis = force ? 1 : Timeout.whoisRetry;
 
                 version(TraceWhois)
                 {
@@ -389,7 +392,7 @@ void messageFiber(ref Kameloso instance)
 
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", event.target.nickname,
-                        caller, quiet, background);
+                        caller, cast(bool)quietFlag, background);
                 }
 
                 if ((now - then) > hysteresis)
@@ -433,7 +436,7 @@ void messageFiber(ref Kameloso instance)
                     if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
-                        instance.fastbuffer.put(OutgoingLine(finalLine, quiet));
+                        instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
                         return;
                     }
                 }
@@ -441,9 +444,9 @@ void messageFiber(ref Kameloso instance)
                 if (background)
                 {
                     // Send a line via the low-priority background buffer.
-                    instance.backgroundBuffer.put(OutgoingLine(finalLine, quiet));
+                    instance.backgroundBuffer.put(OutgoingLine(finalLine, quietFlag));
                 }
-                else if (quiet)
+                else if (quietFlag)
                 {
                     quietline(ThreadMessage.Quietline(), finalLine);
                 }
@@ -467,9 +470,9 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Wrapper around `eventToServer` for shared heap `dialect.defs.IRCEvent`s.
-        void eventPointerToServer(shared(IRCEvent)* event)
+        void eventPointerToServer(shared(IRCEvent)* event, MessageProperty properties)
         {
-            return eventToServer(cast()*event);
+            return eventToServer(cast()*event, properties);
         }
 
         /// Proxies the passed message to the `logger`.

@@ -241,15 +241,20 @@ unittest
     state.mainThread = thisTid;
 
     mode(state, "#channel", "+ov", "mydude");
-    immutable event = receiveOnly!IRCEvent;
 
-    assert((event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(event.type));
-    assert((event.channel == "#channel"), event.channel);
-    assert((event.aux == "+ov"), event.aux);
-    assert((event.content == "mydude"), event.content);
+    receive(
+        (IRCEvent event, MessageProperty properties)
+        {
+            assert((event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(event.type));
+            assert((event.channel == "#channel"), event.channel);
+            assert((event.aux == "+ov"), event.aux);
+            assert((event.content == "mydude"), event.content);
+            assert(properties == MessageProperty.init);
 
-    immutable line = "MODE %s %s %s".format(event.channel, event.aux, event.content);
-    assert((line == "MODE #channel +ov mydude"), line);
+            immutable line = "MODE %s %s %s".format(event.channel, event.aux, event.content);
+            assert((line == "MODE #channel +ov mydude"), line);
+        }
+    );
 }
 
 
