@@ -1800,9 +1800,11 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case sslFailure:
+            // This can be tranient?
+            // "Failed to establish SSL connection after successful connect (system lib)"
             logger.error("Failed to connect due to SSL setup/handshake failure: ",
                 Tint.log, attempt.error);
-            return Next.returnFailure;
+            goto case delayThenReconnect;
 
         case error:
             logger.error("Failed to connect: ", attempt.error);
