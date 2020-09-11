@@ -1065,11 +1065,6 @@ Next mainLoop(ref Kameloso instance)
  +/
 double sendLines(ref Kameloso instance)
 {
-    static import lu.net;
-    import std.socket : SocketOption, SocketOptionLevel;
-    import std.typecons : Flag, No, Yes;
-    import core.time : msecs, seconds;
-
     version(TwitchSupport)
     {
         if (!instance.priorityBuffer.empty)
