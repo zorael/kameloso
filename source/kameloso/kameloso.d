@@ -2776,8 +2776,17 @@ int initBot(string[] args)
 
         static if (__VERSION__ >= 2087L)
         {
+            static if (__VERSION__ >= 2094L)
+            {
+                immutable allocated = GC.allocatedInCurrentThread;
+            }
+            else
+            {
+                immutable allocated = stats.allocatedInCurrentThread;
+            }
+
             logger.infof("Allocated in current thread: %s%,d%s bytes",
-                Tint.log, stats.allocatedInCurrentThread, Tint.info);
+                Tint.log, allocated, Tint.info);
         }
 
         logger.infof("Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes",
