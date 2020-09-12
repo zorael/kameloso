@@ -298,16 +298,15 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 }
 
 
-// onMotd
+// onWelcome
 /++
     Spawns the pipereader thread.
 
     Snapshots the filename to use, as we base it on the bot's nickname, which
     may change during the connection's lifetime.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onMotd(PipelinePlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(PipelinePlugin plugin)
 {
     if (plugin.pipelineSettings.path.length)
     {

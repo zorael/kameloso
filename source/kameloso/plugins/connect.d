@@ -398,102 +398,6 @@ void onNotRegistered(ConnectService service)
 }
 
 
-version(TwitchSupport)
-{
-    alias ChainableOnTwitch = Chainable;
-}
-else
-{
-    import std.meta : AliasSeq;
-    alias ChainableOnTwitch = AliasSeq!();
-}
-
-// onEndOfMotd
-/++
-    Joins channels at the end of the message of the day (`MOTD`), and tries to
-    authenticate with services if applicable.
-
-    Some servers don't have a `MOTD`, so act on
-    `dialect.defs.IRCEvent.Type.ERR_NOMOTD` as well.
- +/
-@ChainableOnTwitch
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(ConnectService service)
-{
-    if (service.state.bot.password.length &&
-        (service.authentication == Progress.notStarted) &&
-        (service.state.server.daemon != IRCServer.Daemon.twitch))
-    {
-        service.tryAuth();
-    }
-
-    if (!service.sentAfterConnect)
-    {
-        foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
-        {
-            import lu.string : strippedLeft;
-            import std.array : replace;
-
-            immutable line = unstripped.strippedLeft;
-            if (!line.length) continue;
-
-            immutable processed = line
-                .replace("$nickname", service.state.client.nickname)
-                .replace("$origserver", service.state.server.address)
-                .replace("$server", service.state.server.resolvedAddress);
-
-            raw(service.state, processed);
-        }
-
-        service.sentAfterConnect = true;
-    }
-
-    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
-        !service.state.bot.password.length ||
-        (service.state.server.daemon == IRCServer.Daemon.twitch)))
-    {
-        // tryAuth finished early with an unsuccessful login, else
-        // `service.authentication` would be set much later.
-        // Twitch servers can't auth so join immediately
-        // but don't do anything if we already joined channels.
-        service.joinChannels();
-        service.joinedChannels = true;
-    }
-}
-
-
-// onEndOfMotdTwitch
-/++
-    Upon having connected, registered and logged onto the Twitch servers,
-    disable outgoing colours and warn about having a `.` or `/` prefix.
-
-    Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
-    Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
-    so we can't use that ourselves.
- +/
-version(TwitchSupport)
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-void onEndOfMotdTwitch(ConnectService service)
-{
-    import lu.string : beginsWith;
-
-    if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-    service.state.settings.colouredOutgoing = false;
-    service.state.settingsUpdated = true;
-
-    immutable prefix = service.state.settings.prefix;
-
-    if (prefix.beginsWith(".") || prefix.beginsWith("/"))
-    {
-        logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
-            `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
-            Tint.log, prefix, Tint.warning);
-    }
-}
-
-
 // onAuthEnd
 /++
     Flags authentication as finished and join channels.
@@ -516,6 +420,17 @@ void onAuthEnd(ConnectService service)
         service.joinChannels();
         service.joinedChannels = true;
     }
+}
+
+
+version(TwitchSupport)
+{
+    alias ChainableOnTwitch = Chainable;
+}
+else
+{
+    import std.meta : AliasSeq;
+    alias ChainableOnTwitch = AliasSeq!();
 }
 
 
@@ -1053,6 +968,9 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
 /++
     Marks registration as completed upon `dialect.defs.IRCEvent.Type.RPL_WELCOME`
     (numeric `001`).
+
+    Additionally performs post-connect routines (authenticates if not already done,
+    send-after-connect, joins channels, etc).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service, const IRCEvent event)
@@ -1066,7 +984,73 @@ void onWelcome(ConnectService service, const IRCEvent event)
         service.state.clientUpdated = true;
     }
 
-    version(TwitchSupport) {}
+    if (service.state.bot.password.length &&
+        (service.authentication == Progress.notStarted) &&
+        (service.state.server.daemon != IRCServer.Daemon.twitch))
+    {
+        service.tryAuth();
+    }
+
+    if (!service.sentAfterConnect)
+    {
+        foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
+        {
+            import lu.string : strippedLeft;
+            import std.array : replace;
+
+            immutable line = unstripped.strippedLeft;
+            if (!line.length) continue;
+
+            immutable processed = line
+                .replace("$nickname", service.state.client.nickname)
+                .replace("$origserver", service.state.server.address)
+                .replace("$server", service.state.server.resolvedAddress);
+
+            raw(service.state, processed);
+        }
+
+        service.sentAfterConnect = true;
+    }
+
+    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
+        !service.state.bot.password.length ||
+        (service.state.server.daemon == IRCServer.Daemon.twitch)))
+    {
+        // tryAuth finished early with an unsuccessful login, else
+        // `service.authentication` would be set much later.
+        // Twitch servers can't auth so join immediately
+        // but don't do anything if we already joined channels.
+        service.joinChannels();
+        service.joinedChannels = true;
+    }
+
+    version(TwitchSupport)
+    {
+        import lu.string : beginsWith;
+
+        /+
+            Upon having connected, registered and logged onto the Twitch servers,
+            disable outgoing colours and warn about having a `.` or `/` prefix.
+
+            Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
+            Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
+            so we can't use that ourselves.
+        +/
+
+        if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
+
+        service.state.settings.colouredOutgoing = false;
+        service.state.settingsUpdated = true;
+
+        immutable prefix = service.state.settings.prefix;
+
+        if (prefix.beginsWith(".") || prefix.beginsWith("/"))
+        {
+            logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
+                `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
+                Tint.log, prefix, Tint.warning);
+        }
+    }
     else
     {
         // No Twitch support built in

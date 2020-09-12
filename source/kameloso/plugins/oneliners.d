@@ -204,13 +204,12 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Populate the oneliners array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(OnelinersPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(OnelinersPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;

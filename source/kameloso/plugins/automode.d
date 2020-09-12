@@ -459,13 +459,12 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(AutomodePlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 

@@ -1302,14 +1302,13 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Populate the banned phrases array after we have successfully
     logged onto the server.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(TwitchBotPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
@@ -1341,10 +1340,13 @@ void onEndOfMotd(TwitchBotPlugin plugin)
             plugin.bucket.remove(string.init);
         }
 
-        if (plugin.twitchBotSettings.singleWorkerThread &&
-            (plugin.persistentWorkerTid == Tid.init))
+        if (plugin.twitchBotSettings.singleWorkerThread)
         {
             import std.concurrency : spawn;
+
+            assert((plugin.persistentWorkerTid == Tid.init),
+                "Double-spawn of Twitch single worker thread");
+
             plugin.persistentWorkerTid = spawn(&persistentQuerier,
                 plugin.bucket, plugin.queryResponseTimeout,
                 plugin.state.connSettings.caBundleFile);
@@ -1682,7 +1684,7 @@ void teardown(TwitchBotPlugin plugin)
     if (plugin.twitchBotSettings.singleWorkerThread &&
         (plugin.persistentWorkerTid != Tid.init))
     {
-        // It may not have been started if we're aborting pre-endofmotd.
+        // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
     }
 }

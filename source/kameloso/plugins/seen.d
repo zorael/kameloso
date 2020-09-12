@@ -817,27 +817,16 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     Params:
         filename = Filename of the file to read from.
-        verbosely = Whether or not to print how many seen users were loaded.
 
     Returns:
         `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
  +/
-long[string] loadSeen(const string filename, const Flag!"verbosely" verbosely = Yes.verbosely)
+long[string] loadSeen(const string filename)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
 
     long[string] aa;
-
-    scope(exit)
-    {
-        if (verbosely)
-        {
-            import lu.string : plurality;
-            logger.logf("Currently %s%d%s %s seen.",
-                Tint.info, aa.length, Tint.log, aa.length.plurality("user", "users"));
-        }
-    }
 
     if (!filename.exists || !filename.isFile)
     {
@@ -889,18 +878,32 @@ in (filename.length, "Tried to save seen users to an empty filename")
 }
 
 
+// onWelcome
+/++
+    After we have registered on the server and seen the welcome messages, load
+    our seen users from file.
+ +/
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(SeenPlugin plugin)
+{
+    plugin.seenUsers = loadSeen(plugin.seenFile);
+}
+
+
 // onEndOfMotd
 /++
-    After we have registered on the server and seen the "message of the day"
-    spam, loads our seen users from file.
-
-    There's little point in loading it too early.
+    Reports statistics on how many users are registered as having been seen,
+    on end of MOTD.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(SeenPlugin plugin)
 {
-    plugin.seenUsers = loadSeen(plugin.seenFile);
+    import lu.string : plurality;
+
+    logger.logf("Currently %s%d%s %s seen.",
+        Tint.info, plugin.seenUsers.length, Tint.log,
+        plugin.seenUsers.length.plurality("user", "users"));
 }
 
 
@@ -935,7 +938,7 @@ void periodically(SeenPlugin plugin, const long now)
 void reload(SeenPlugin plugin)
 {
     //logger.info("Reloading seen users from disk.");
-    plugin.seenUsers = loadSeen(plugin.seenFile, No.verbosely);
+    plugin.seenUsers = loadSeen(plugin.seenFile);
 }
 
 

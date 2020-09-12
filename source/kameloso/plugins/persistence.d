@@ -468,13 +468,12 @@ void onNick(PersistenceService service, const IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Reloads classifier definitions from disk.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(PersistenceService service)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(PersistenceService service)
 {
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();

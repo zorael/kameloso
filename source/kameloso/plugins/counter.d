@@ -351,13 +351,12 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Populate the counters array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(CounterPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(CounterPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;

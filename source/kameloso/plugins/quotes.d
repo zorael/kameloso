@@ -453,13 +453,12 @@ void reload(QuotesPlugin plugin)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Initialises the passed `QuotesPlugin`. Loads the quotes from disk.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(QuotesPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(QuotesPlugin plugin)
 {
     plugin.quotes.load(plugin.quotesFile);
 }

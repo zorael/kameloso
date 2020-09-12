@@ -407,14 +407,12 @@ void onEndOfNames(ChanQueriesService service)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
-    After successful connection and MOTD list end, start a delayed channel query
-    on all channels at that time.
+    After successful connection, start a delayed channel query on all channels.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.RPL_NOMOTD)
-void onEndOfMotd(ChanQueriesService service)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
@@ -457,7 +455,7 @@ private:
      +/
     enum secondsBetween = 3;
 
-    /// Seconds after MOTD end before the first round of channel-querying will start.
+    /// Seconds after welcome event before the first round of channel-querying will start.
     enum secondsBeforeInitialQueries = 60;
 
     /++

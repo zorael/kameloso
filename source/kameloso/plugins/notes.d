@@ -555,13 +555,12 @@ in (line.length, "Tried to add an empty note")
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Initialises the Notes plugin. Loads the notes from disk.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(NotesPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(NotesPlugin plugin)
 {
     plugin.notes.load(plugin.notesFile);
 }
