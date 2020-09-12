@@ -1211,7 +1211,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 version(OmniscientAdmin)
 {
     /++
-        The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with  depending
+        The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with depending
         on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;

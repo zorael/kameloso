@@ -840,7 +840,7 @@ void onSASLAuthenticate(ConnectService service)
 
     A SASL plain authentication token is composed like so:
 
-       `base64(account \0 account \0 password)`
+        `base64(account \0 account \0 password)`
 
     ...where `dialect.defs.IRCbot.account` is the services account name and
     `dialect.defs.IRCbot.password` is the account password.

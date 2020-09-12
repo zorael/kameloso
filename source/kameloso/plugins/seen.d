@@ -113,112 +113,112 @@ public:
     ---
 
     * `kameloso.plugins.core.IRCPluginState.client` houses information about
-       the client itself, such as your nickname and other things related to an
-       IRC client.
+        the client itself, such as your nickname and other things related to an
+        IRC client.
 
     * `kameloso.plugins.core.IRCPluginState.server` houses information about
-       the server you're connected to.
+        the server you're connected to.
 
     * `kameloso.plugins.core.IRCPluginState.bot` houses information about
-       things that relate to an IRC bot, like which channels to join, which
-       home channels to operate in, the list of administrator accounts, etc.
+        things that relate to an IRC bot, like which channels to join, which
+        home channels to operate in, the list of administrator accounts, etc.
 
     * `kameloso.plugins.core.IRCPluginState.settings` is a copy of the
-       "global" `kameloso.common.CoreSettings`, which contains information
-       about how the bot should output text, whether or not to always save to
-       disk upon program exit, and some other program-wide settings.
+        "global" `kameloso.common.CoreSettings`, which contains information
+        about how the bot should output text, whether or not to always save to
+        disk upon program exit, and some other program-wide settings.
 
     * `kameloso.plugins.core.IRCPluginState.connSettings` is like `settings`,
-       except for values relating to the connection to the server; whether
-       to use IPv6, paths to any certificates, and the such.
+        except for values relating to the connection to the server; whether
+        to use IPv6, paths to any certificates, and the such.
 
     * `kameloso.plugins.core.IRCPluginState.mainThread` is the *thread ID* of
-       the thread running the main loop. We indirectly use it to send strings to
-       the server by way of concurrency messages, but it is usually not something
-       you will have to deal with directly.
+        the thread running the main loop. We indirectly use it to send strings to
+        the server by way of concurrency messages, but it is usually not something
+        you will have to deal with directly.
 
     * `kameloso.plugins.core.IRCPluginState.users` is an associative array
-       keyed with users' nicknames. The value to that key is an
-       `dialect.defs.IRCUser` representing that user in terms of nickname,
-       address, ident, and services account name. This is a way to keep track of
-       users by more than merely their name. It is however not saved at the end
-       of the program; it is merely state and transient.
+        keyed with users' nicknames. The value to that key is an
+        `dialect.defs.IRCUser` representing that user in terms of nickname,
+        address, ident, and services account name. This is a way to keep track of
+        users by more than merely their name. It is however not saved at the end
+        of the program; it is merely state and transient.
 
     * `kameloso.plugins.core.IRCPluginState.channels` is another associative
-       array, this one with all the known channels keyed by their names. This
-       way we can access detailed information about any given channel, knowing
-       only their name.
+        array, this one with all the known channels keyed by their names. This
+        way we can access detailed information about any given channel, knowing
+        only their name.
 
     * `kameloso.plugins.core.IRCPluginState.replays` is also an
-       associative array into which we place `kameloso.plugins.core.Replay`s.
-       The main loop will pick up on these and call WHOIS on the nickname in the key.
-       A `kameloso.plugins.core.Replay` is otherwise just an
-       `dialect.defs.IRCEvent` to be played back when the WHOIS results
-       return, as well as a function pointer to call with that event. This is
-       all wrapped in a function `kameloso.plugins.common.issueWhois`, with the
-       queue management handled behind the scenes.
+        associative array into which we place `kameloso.plugins.core.Replay`s.
+        The main loop will pick up on these and call WHOIS on the nickname in the key.
+        A `kameloso.plugins.core.Replay` is otherwise just an
+        `dialect.defs.IRCEvent` to be played back when the WHOIS results
+        return, as well as a function pointer to call with that event. This is
+        all wrapped in a function `kameloso.plugins.common.issueWhois`, with the
+        queue management handled behind the scenes.
 
     * `kameloso.plugins.core.IRCPluginState.repeats` is an array of
-       `kameloso.plugins.core.Repeat`s, which is instrumental in repeating
-       events from the context of the main event loop. This allows us to update
-       information in the event, such as details on its sender, before repeating
-       it again. This can only be done outside of plugins.
+        `kameloso.plugins.core.Repeat`s, which is instrumental in repeating
+        events from the context of the main event loop. This allows us to update
+        information in the event, such as details on its sender, before repeating
+        it again. This can only be done outside of plugins.
 
     * `kameloso.plugins.core.IRCPluginState.awaitingFibers` is an associative
-       array of `core.thread.fiber.Fiber`s keyed by `kameloso.ircdefs.IRCEvent.Type`s.
-       Fibers in the array of a particular event type will be executed the next
-       time such an event is incoming. Think of it as Fiber callbacks.
+        array of `core.thread.fiber.Fiber`s keyed by `kameloso.ircdefs.IRCEvent.Type`s.
+        Fibers in the array of a particular event type will be executed the next
+        time such an event is incoming. Think of it as Fiber callbacks.
 
     * `kameloso.plugins.core.IRCPluginState.awaitingDelegates` is literally
-       an array of callback delegates, to be triggered when an event of a
-       matching type comes along.
+        an array of callback delegates, to be triggered when an event of a
+        matching type comes along.
 
     * `kameloso.plugins.core.IRCPluginState.scheduledFibers` is also an array of
-       `core.thread.fiber.Fiber`s, but not an associative one keyed on event types.
-       Instead they are tuples of a `core.thread.fiber.Fiber` and a `long`
-       timestamp of when they should be run.
-       Use `kameloso.plugins.common.delayFiber` to enqueue, or
-       `kameloso.plugins.common.delayFiberMsecs` for greater granularity.
+        `core.thread.fiber.Fiber`s, but not an associative one keyed on event types.
+        Instead they are tuples of a `core.thread.fiber.Fiber` and a `long`
+        timestamp of when they should be run.
+        Use `kameloso.plugins.common.delayFiber` to enqueue, or
+        `kameloso.plugins.common.delayFiberMsecs` for greater granularity.
 
     * `kameloso.plugins.core.IRCPluginState.scheduledDelegates` is likewise an
-       array of delegates, to be triggered at a later point in time.
+        array of delegates, to be triggered at a later point in time.
 
     * `kameloso.plugins.core.IRCPluginState.nextPeriodical` is a UNIX timestamp
-       of when the `periodical(IRCPlugin)` function should be run next. It is a
-       way of automating occasional tasks, in our case the saving of the seen
-       users to disk.
+        of when the `periodical(IRCPlugin)` function should be run next. It is a
+        way of automating occasional tasks, in our case the saving of the seen
+        users to disk.
 
     * `kameloso.plugins.core.IRCPluginState.nextScheduledTimestamp` is also a
-       UNIX timestamp, here of when the next `kameloso.thread.ScheduledFiber` in
-       `kameloso.plugins.core.IRCPluginState.scheduledFibers` *or* the next
-       `kameloso.thread.ScheduledDelegate` in
-       `kameloso.plugins.core.IRCPluginState.scheduledDelegates`is due to be
-       processed. Caching it here means we won't have to go through the arrays
-       to find out as often.
+        UNIX timestamp, here of when the next `kameloso.thread.ScheduledFiber` in
+        `kameloso.plugins.core.IRCPluginState.scheduledFibers` *or* the next
+        `kameloso.thread.ScheduledDelegate` in
+        `kameloso.plugins.core.IRCPluginState.scheduledDelegates` is due to be
+        processed. Caching it here means we won't have to go through the arrays
+        to find out as often.
 
     * `kameloso.plugins.core.IRCPluginState.updateSchedule` merely iterates all
-       scheduled fibers and delegates, caching the time at which the next one
-       should trigger.
+        scheduled fibers and delegates, caching the time at which the next one
+        should trigger.
 
     * `kameloso.plugins.core.IRCPluginState.botUpdated` is set when
-       `kameloso.plugins.core.IRCPluginState.bot` was updated during parsing
-       and/or postprocessing. It is merely for internal use.
+        `kameloso.plugins.core.IRCPluginState.bot` was updated during parsing
+        and/or postprocessing. It is merely for internal use.
 
     * `kameloso.plugins.core.IRCPluginState.clientUpdated` is likewise set when
-       `kameloso.plugins.core.IRCPluginState.client` was updated during parsing
-       and/or postprocessing. Ditto.
+        `kameloso.plugins.core.IRCPluginState.client` was updated during parsing
+        and/or postprocessing. Ditto.
 
     * `kameloso.plugins.core.IRCPluginState.serverUpdated` is likewise set when
-       `kameloso.plugins.core.IRCPluginState.server` was updated during parsing
-       and/or postprocessing. Ditto.
+        `kameloso.plugins.core.IRCPluginState.server` was updated during parsing
+        and/or postprocessing. Ditto.
 
     * `kameloso.plugins.core.IRCPluginState.settingsUpdated` is likewise set when
-       `kameloso.plugins.core.IRCPluginState.settings` was updated during parsing
-       and/or postprocessing. Ditto.
+        `kameloso.plugins.core.IRCPluginState.settings` was updated during parsing
+        and/or postprocessing. Ditto.
 
     * `kameloso.plugins.core.IRCPluginState.abort` is a pointer to the global
-       abort bool. When this is set, it signals the rest of the program that we
-       want to terminate cleanly.
+        abort bool. When this is set, it signals the rest of the program that we
+        want to terminate cleanly.
  +/
 final class SeenPlugin : IRCPlugin
 {
@@ -375,22 +375,22 @@ private:
     `kameloso.plugins.core.PrivilegeLevel.admin`.
 
     * `kameloso.plugins.core.PrivilegeLevel.ignore` will let precisely anyone
-       trigger it, without looking them up.<br>
+        trigger it, without looking them up.<br>
     * `kameloso.plugins.core.PrivilegeLevel.anyone` will let precisely anyone
-       trigger it, but only after having looked them up.<br>
+        trigger it, but only after having looked them up.<br>
     * `kameloso.plugins.core.PrivilegeLevel.registered` will let anyone logged
-       into a services account trigger it.<br>
+        into a services account trigger it.<br>
     * `kameloso.plugins.core.PrivilegeLevel.whitelist` will only allow users
-       in the whitelist section of the `users.json` resource file. Consider this
-       to correspond to "regulars" in the channel.<br>
+        in the whitelist section of the `users.json` resource file. Consider this
+        to correspond to "regulars" in the channel.<br>
     * `kameloso.plugins.core.PrivilegeLevel.operator` will only allow users
-       in the operator section of the `users.json` resource file. Consider this
-       to correspond to "moderators" in the channel.<br>
+        in the operator section of the `users.json` resource file. Consider this
+        to correspond to "moderators" in the channel.<br>
     * `kameloso.plugins.core.PrivilegeLevel.staff` will only allow users
-       in the staff section of the `users.json` resource file. Consider this
-       to correspond to channel owners.<br>
+        in the staff section of the `users.json` resource file. Consider this
+        to correspond to channel owners.<br>
     * `kameloso.plugins.core.PrivilegeLevel.admin` will allow only you and
-       your other superuser administrators, as defined in the configuration file.
+        your other superuser administrators, as defined in the configuration file.
 
     In the case of `kameloso.plugins.core.PrivilegeLevel.whitelist`,
     `kameloso.plugins.core.PrivilegeLevel.operator`,
@@ -582,11 +582,11 @@ void onEndOfList(SeenPlugin plugin)
 
     Prefix policies can be one of:
     * `direct`, where the raw command is expected without any bot prefix at all;
-       the command is simply that string: "`seen`".
+        the command is simply that string: "`seen`".
     * `prefixed`, where the message has to start with the command *prefix* character
-       or string (usually `!` or `.`): "`!seen`".
+        or string (usually `!` or `.`): "`!seen`".
     * `nickname`, where the message has to start with bot's nickname:
-       "`kameloso: seen`" -- except if it's in a `dialect.defs.IRCEvent.Type.QUERY` message.<br>
+        "`kameloso: seen`" -- except if it's in a `dialect.defs.IRCEvent.Type.QUERY` message.<br>
 
     The plugin system will have made certain we only get messages starting with
     "`seen`", since we annotated this function with such a
