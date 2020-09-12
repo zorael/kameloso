@@ -1627,16 +1627,11 @@ void periodically(TwitchBotPlugin plugin, const long now)
         pruneByTimestamp(room.phraseBans, now, 7200);
     }
 
-    import std.datetime : DateTime;
-    import std.datetime.systime : Clock, SysTime;
-
-    immutable currTime = Clock.currTime;
+    import kameloso.common : nextMidnight;
+    import std.datetime.systime : Clock;
 
     // Schedule next prune to next midnight
-    plugin.nextPrune = SysTime(DateTime(currTime.year, currTime.month,
-        currTime.day, 0, 0, 0), currTime.timezone)
-        .roll!"days"(1)
-        .toUnixTime;
+    plugin.nextPrune = Clock.currTime.nextMidnight.toUnixTime;
 
     version(TwitchAPIFeatures)
     {
