@@ -1937,3 +1937,82 @@ string replaceTokens(const string line) @safe pure nothrow
         .replace("$version", cast(string)KamelosoInfo.version_)
         .replace("$source", cast(string)KamelosoInfo.source);
 }
+
+
+import std.datetime.systime : SysTime;
+
+// nextMidnight
+/++
+    Returns a `std.datetime.systime.SysTime` of the following midnight, for use
+    with setting the periodical timestamp.
+
+    Example:
+    ---
+    immutable now = Clock.currTime;
+    immutable midnight = now.nextMidnight;
+    writeln("Time until next midnight: ", (midnight - now));
+    ---
+
+    Params:
+        now = UNIX timestamp of the base date from which to proceed to the next midnight.
+
+    Returns:
+        A `std.datetime.systime.SysTime` of the midnight following the date
+        passed as argument.
+ +/
+SysTime nextMidnight(const SysTime now)
+{
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+
+    /+
+        The difference between rolling and adding is that rolling does not affect
+        larger units. For instance, rolling a SysTime one year's worth of days
+        gets the exact same SysTime.
+     +/
+
+    auto next = SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
+        .roll!"days"(1);
+
+    if (next.day == 1)
+    {
+        next.add!"months"(1);
+
+        if (next.month == 12)
+        {
+            next.add!"years"(1);
+        }
+    }
+
+    return next;
+}
+
+///
+unittest
+{
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+    import std.datetime.timezone : UTC;
+
+    immutable utc = UTC();
+
+    immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), utc);
+    immutable nextDay = christmasEve.nextMidnight;
+    immutable christmasDay = SysTime(DateTime(2018, 12, 25, 0, 0, 0), utc);
+    assert(nextDay.toUnixTime == christmasDay.toUnixTime);
+
+    immutable someDay = SysTime(DateTime(2018, 6, 30, 12, 27, 56), utc);
+    immutable afterSomeDay = someDay.nextMidnight;
+    immutable afterSomeDayToo = SysTime(DateTime(2018, 7, 1, 0, 0, 0), utc);
+    assert(afterSomeDay == afterSomeDayToo);
+
+    immutable newyearsEve = SysTime(DateTime(2018, 12, 31, 0, 0, 0), utc);
+    immutable newyearsDay = newyearsEve.nextMidnight;
+    immutable alsoNewyearsDay = SysTime(DateTime(2019, 1, 1, 0, 0, 0), utc);
+    assert(newyearsDay == alsoNewyearsDay);
+
+    immutable troubleDay = SysTime(DateTime(2018, 6, 30, 19, 14, 51), utc);
+    immutable afterTrouble = troubleDay.nextMidnight;
+    immutable alsoAfterTrouble = SysTime(DateTime(2018, 7, 1, 0, 0, 0), utc);
+    assert(afterTrouble == alsoAfterTrouble);
+}
