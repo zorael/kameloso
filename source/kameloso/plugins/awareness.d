@@ -283,8 +283,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
 
 
-    @safe:
-
+@safe:
 
     // onUserAwarenessQuitMixin
     /++
@@ -675,8 +674,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
 
 
-    @safe:
-
+@safe:
 
     // onChannelAwarenessSelfjoinMixin
     /++
