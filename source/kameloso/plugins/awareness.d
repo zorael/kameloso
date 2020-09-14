@@ -170,41 +170,41 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent e
     // Catch the user here, before replaying anything.
     plugin.catchUser(event.target);
 
-    mixin Repeater;
-
     // See if there are any queued replays to trigger
     auto replaysForNickname = event.target.nickname in plugin.state.replays;
+    if (!replaysForNickname) return;
 
-    if (replaysForNickname)
-    {
-        size_t[] garbageIndexes;
-
-        foreach (immutable i, replay; *replaysForNickname)
-        {
-            import kameloso.constants : Timeout;
-            import std.algorithm.searching : canFind;
-
-            scope(exit) garbageIndexes ~= i;
-
-            if ((event.time - replay.when) > Timeout.whoisRetry)
-            {
-                // Entry is too old, replay timed out. Flag it for removal.
-                continue;
-            }
-
-            repeat(replay);
-        }
-
-        foreach_reverse (immutable i; garbageIndexes)
-        {
-            import std.algorithm.mutation : SwapStrategy, remove;
-            *replaysForNickname = (*replaysForNickname).remove!(SwapStrategy.unstable)(i);
-        }
-    }
-
-    if (replaysForNickname && !replaysForNickname.length)
+    if (!replaysForNickname.length)
     {
         plugin.state.replays.remove(event.target.nickname);
+        return;
+    }
+
+    mixin Repeater;
+
+    size_t[] garbageIndexes;
+    garbageIndexes.reserve(replaysForNickname.length);
+
+    foreach (immutable i, replay; *replaysForNickname)
+    {
+        import kameloso.constants : Timeout;
+        import std.algorithm.searching : canFind;
+
+        scope(exit) garbageIndexes ~= i;
+
+        if ((event.time - replay.when) > Timeout.whoisRetry)
+        {
+            // Entry is too old, replay timed out. Flag it for removal.
+            continue;
+        }
+
+        repeat(replay);
+    }
+
+    foreach_reverse (immutable i; garbageIndexes)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        *replaysForNickname = (*replaysForNickname).remove!(SwapStrategy.unstable)(i);
     }
 }
 
