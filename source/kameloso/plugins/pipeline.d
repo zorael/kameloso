@@ -44,8 +44,10 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct PipelineSettings
 {
+private:
     import lu.uda : Unserialisable;
 
+public:
     /// Whether or not the Pipeline plugin should do anything at all.
     @Enabler bool enabled = true;
 

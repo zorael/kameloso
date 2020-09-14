@@ -37,8 +37,10 @@ import core.thread : Fiber;
 /// All Twitch bot plugin runtime settings.
 @Settings struct TwitchBotSettings
 {
+private:
     import lu.uda : Unserialisable;
 
+public:
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 

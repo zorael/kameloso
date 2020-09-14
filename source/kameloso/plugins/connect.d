@@ -28,8 +28,10 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct ConnectSettings
 {
+private:
     import lu.uda : CannotContainComments, Separator, Unserialisable;
 
+public:
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 

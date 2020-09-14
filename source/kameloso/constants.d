@@ -189,11 +189,13 @@ enum Timeout
 version(Colours)
 struct DefaultColours
 {
+private:
     import kameloso.terminal : TerminalForeground;
     import std.experimental.logger : LogLevel;
 
     alias TF = TerminalForeground;
 
+public:
     /++
         Colours for timestamps, shared between event-printing and logging.
      +/

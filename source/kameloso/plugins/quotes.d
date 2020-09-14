@@ -42,9 +42,10 @@ import std.typecons : Flag, No, Yes;
  +/
 struct Quote
 {
-    import std.conv : to;
-    import std.json : JSONType, JSONValue;
+private:
+    import std.json : JSONValue;
 
+public:
     /// Quote string line.
     string line;
 

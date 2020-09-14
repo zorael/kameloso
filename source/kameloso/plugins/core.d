@@ -78,7 +78,7 @@ abstract class IRCPlugin
      +/
     void deserialiseConfigFrom(const string, out string[][string], out string[][string]);
 
-    import std.array : Appender;
+    private import std.array : Appender;
     /// Executed when gathering things to put in the configuration file.
     bool serialiseConfigInto(ref Appender!string) const;
 
@@ -1935,11 +1935,13 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
  +/
 struct IRCPluginState
 {
+private:
     import kameloso.common : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
+public:
     /++
         The current `dialect.defs.IRCClient`, containing information pertaining
         to the bot in the context of a client connected to an IRC server.
@@ -2611,8 +2613,10 @@ struct BotCommand
  +/
 struct BotRegex
 {
+private:
     import std.regex : Regex, regex;
 
+public:
     /++
         In what way the message is required to start for the annotated function to trigger.
      +/

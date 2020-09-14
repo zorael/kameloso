@@ -97,8 +97,10 @@ CoreSettings* settings;
  +/
 struct CoreSettings
 {
+private:
     import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
 
+public:
     version(Colours)
     {
         bool monochrome = false;  /// Logger monochrome setting.
@@ -159,8 +161,10 @@ struct CoreSettings
  +/
 struct ConnectionSettings
 {
+private:
     import lu.uda : CannotContainComments;
 
+public:
     /// Flag denoting whether or not the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
@@ -191,8 +195,10 @@ struct ConnectionSettings
  +/
 struct IRCBot
 {
+private:
     import lu.uda : CannotContainComments, Hidden, Separator, Quoted, Unserialisable;
 
+public:
     /// Username to use as services account login name.
     string account;
 
@@ -244,21 +250,22 @@ struct IRCBot
  +/
 struct Kameloso
 {
+private:
     import kameloso.common : OutgoingLine;
     import kameloso.constants : BufferSize;
     import kameloso.plugins.core : IRCPlugin;
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import lu.net : Connection;
-
     import std.datetime.systime : SysTime;
+
 
     // Throttle
     /++
         Aggregate of values and state needed to throttle messages without
         polluting namespace too much.
      +/
-    private struct Throttle
+    struct Throttle
     {
         /// Graph constant modifier (inclination, MUST be negative).
         enum k = -1.2;
@@ -282,6 +289,7 @@ struct Kameloso
         @disable this(this);
     }
 
+public:
     /++
         The `lu.net.Connection` housing and wrapping the socket we use to connect
         to, write to and read from the server.

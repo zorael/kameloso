@@ -33,10 +33,12 @@ package:
  +/
 struct LogLineBuffer
 {
+private:
     import std.array : Appender;
     import std.datetime.systime : SysTime;
     import std.path : buildNormalizedPath;
 
+public:
     /// Basename directory this buffer will be saved to.
     string dir;
 

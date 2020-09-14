@@ -41,8 +41,10 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct AdminSettings
 {
+private:
     import lu.uda : Unserialisable;
 
+public:
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
