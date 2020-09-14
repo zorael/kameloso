@@ -1302,13 +1302,17 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onWelcome
+// onEndOfMOTD
 /++
     Populate the banned phrases array after we have successfully
     logged onto the server.
+
+    Has to be done at MOTD, as we only know whether we're on Twitch after
+    RPL_MYINFO or so.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(TwitchBotPlugin plugin)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
