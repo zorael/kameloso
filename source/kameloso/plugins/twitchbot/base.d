@@ -1402,18 +1402,19 @@ void onWelcome(TwitchBotPlugin plugin)
                     if ((expiresWhen - now) > 1.weeks)
                     {
                         // More than a week away, just .info
-                        enum pattern = "Your Twitch authorisation key will expire " ~
-                            "%s%02d-%02d-%02d";
-                        logger.infof(pattern, Tint.log, expiresWhen.year,
-                            expiresWhen.month, expiresWhen.day);
+                        enum pattern = "Your Twitch authorisation key will expire on " ~
+                            "%s%02d-%02d-%02d%s.";
+                        logger.infof!pattern( Tint.log, expiresWhen.year,
+                            expiresWhen.month, expiresWhen.day, Tint.info);
                     }
                     else
                     {
                         // A week or less; warning
                         enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                            "%s%02d-%02d-%02d %02d:%02d";
-                        logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
-                            expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                            "%s%02d-%02d-%02d %02d:%02d%s.";
+                        logger.warningf!pattern( Tint.log, expiresWhen.year,
+                            expiresWhen.month, expiresWhen.day, expiresWhen.hour,
+                            expiresWhen.minute, Tint.warning);
                     }
                 }
             }
