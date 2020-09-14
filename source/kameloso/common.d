@@ -8,6 +8,7 @@ private:
 
 import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient, IRCServer;
+import std.datetime.systime : SysTime;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Tuple, Yes;
 import core.time : Duration, seconds;
@@ -1938,8 +1939,6 @@ string replaceTokens(const string line) @safe pure nothrow
         .replace("$source", cast(string)KamelosoInfo.source);
 }
 
-
-import std.datetime.systime : SysTime;
 
 // nextMidnight
 /++
