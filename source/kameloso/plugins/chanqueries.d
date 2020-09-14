@@ -1,12 +1,12 @@
 /++
- +  The Channel Queries service queries channels for information about them (in
- +  terms of topic and modes) as well as their lists of participants. It does this
- +  shortly after having joined a channel, as a service to all other plugins,
- +  so they don't each have to repeat it themselves.
- +
- +  It is qualified as a service, so while it is not technically mandatory, it
- +  is highly recommended if you plan on mixing in
- +  `kameloso.plugins.awareness.ChannelAwareness` into your plugins.
+    The Channel Queries service queries channels for information about them (in
+    terms of topic and modes) as well as their lists of participants. It does this
+    shortly after having joined a channel, as a service to all other plugins,
+    so they don't each have to repeat it themselves.
+
+    It is qualified as a service, so while it is not technically mandatory, it
+    is highly recommended if you plan on mixing in
+    `kameloso.plugins.awareness.ChannelAwareness` into your plugins.
  +/
 module kameloso.plugins.chanqueries;
 
@@ -25,11 +25,12 @@ import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;
 
+
 version(OmniscientQueries)
 {
     /++
-     +  The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with  depending
-     +  on whether version `OmniscientQueries` is set or not.
+        The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with depending
+        on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -42,11 +43,11 @@ else
 
 // ChannelState
 /++
- +  Different states which tracked channels can be in.
- +
- +  This is to keep track of which channels have been queried, which are
- +  currently queued for being queried, etc. It is checked via bitmask, so a
- +  channel can have several channel states.
+    Different states which tracked channels can be in.
+
+    This is to keep track of which channels have been queried, which are
+    currently queued for being queried, etc. It is checked by bitmask, so a
+    channel can have several channel states.
  +/
 enum ChannelState : ubyte
 {
@@ -59,10 +60,10 @@ enum ChannelState : ubyte
 
 // startChannelQueries
 /++
- +  Queries channels for information about them and their users.
- +
- +  Checks an internal list of channels once every `dialect.defs.IRCEvent.Type.PING`,
- +  and if one we inhabit hasn't been queried, queries it.
+    Queries channels for information about them and their users.
+
+    Checks an internal list of channels once every `dialect.defs.IRCEvent.Type.PING`,
+    and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
 void startChannelQueries(ChanQueriesService service)
@@ -351,8 +352,8 @@ void startChannelQueries(ChanQueriesService service)
 
 // onSelfjoin
 /++
- +  Adds a channel we join to the internal `ChanQueriesService.channels` list of
- +  channel states.
+    Adds a channel we join to the internal `ChanQueriesService.channels` list of
+    channel states.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @omniscientChannelPolicy
@@ -364,8 +365,8 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 
 // onSelfpart
 /++
- +  Removes a channel we part from the internal `ChanQueriesService.channels`
- +  list of channel states.
+    Removes a channel we part from the internal `ChanQueriesService.channels`
+    list of channel states.
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
@@ -378,9 +379,9 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
 
 // onTopic
 /++
- +  Registers that we have seen the topic of a channel.
- +
- +  We do this so we know not to query it later. Mostly cosmetic.
+    Registers that we have seen the topic of a channel.
+
+    We do this so we know not to query it later. Mostly cosmetic.
  +/
 @(IRCEvent.Type.RPL_TOPIC)
 @omniscientChannelPolicy
@@ -392,9 +393,9 @@ void onTopic(ChanQueriesService service, const IRCEvent event)
 
 // onEndOfNames
 /++
- +  After listing names (upon joining a channel), initiate a channel query run
- +  unless one is already running. Additionally don't do it before it has been
- +  done at least once, after login.
+    After listing names (upon joining a channel), initiate a channel query run
+    unless one is already running. Additionally don't do it before it has been
+    done at least once, after login.
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @omniscientChannelPolicy
@@ -407,14 +408,12 @@ void onEndOfNames(ChanQueriesService service)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
- +  After successful connection and MOTD list end, start a delayed channel query
- +  on all channels at that time.
+    After successful connection, start a delayed channel query on all channels.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.RPL_NOMOTD)
-void onEndOfMotd(ChanQueriesService service)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
@@ -445,24 +444,24 @@ public:
 
 // ChanQueriesService
 /++
- +  The Channel Queries service queries channels for information about them (in
- +  terms of topic and modes) as well as its list of participants.
+    The Channel Queries service queries channels for information about them (in
+    terms of topic and modes) as well as its list of participants.
  +/
 final class ChanQueriesService : IRCPlugin
 {
 private:
     /++
-     +  Extra seconds delay between channel mode/user queries. Not delaying may
-     +  cause kicks and disconnects if results are returned quickly.
+        Extra seconds delay between channel mode/user queries. Not delaying may
+        cause kicks and disconnects if results are returned quickly.
      +/
     enum secondsBetween = 3;
 
-    /// Seconds after MOTD end before the first round of channel-querying will start.
+    /// Seconds after welcome event before the first round of channel-querying will start.
     enum secondsBeforeInitialQueries = 60;
 
     /++
-     +  Short associative array of the channels the bot is in and which state(s)
-     +  they are in.
+        Short associative array of the channels the bot is in and which state(s)
+        they are in.
      +/
     ubyte[string] channelStates;
 
@@ -478,27 +477,20 @@ private:
     /// Whether or not to display outgoing queries, as a debugging tool.
     enum hideOutgoingQueries = true;
 
-    mixin IRCPluginImpl;
 
+    // isEnabled
     /++
-     +  Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject
-     +  a server check, so this service does nothing on Twitch servers.
-     +  The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
-     +
-     +  Params:
-     +      event = Parsed `dialect.defs.IRCEvent` to pass onto
-     +          `kameloso.plugins.common.onEventImpl`
-     +          after verifying we're not on a Twitch server.
+        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        a server check, so this service does nothing on Twitch servers.
+
+        Returns:
+            `true` if this service should react to events; `false` if not.
      +/
     version(TwitchSupport)
-    override public void onEvent(const IRCEvent event)
+    override public bool isEnabled() const @property pure nothrow @nogc
     {
-        if (state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            // Daemon known to be Twitch
-            return;
-        }
-
-        return onEventImpl(event);
+        return (state.server.daemon != IRCServer.Daemon.twitch);
     }
+
+    mixin IRCPluginImpl;
 }

@@ -1,7 +1,7 @@
 /++
- +  A collection of constants used throughout the program.
- +
- +  This acts as a compile-time configuration file.
+    A collection of constants used throughout the program.
+
+    This acts as a compile-time configuration file.
  +/
 module kameloso.constants;
 
@@ -14,7 +14,7 @@ public:
 
 
 /++
- +  Meta-information about the program.
+    Meta-information about the program.
  +/
 enum KamelosoInfo
 {
@@ -29,14 +29,14 @@ enum KamelosoInfo
 }
 
 /++
- +  Kameloso defaults, strings version.
+    Kameloso defaults, strings version.
  +/
 enum KamelosoDefaultStrings
 {
     /++
-     +  Default user to use when logging onto a server (the USER command).
-     +  Additionally becomes the bot's IDENT identifier (prepended with a '~'),
-     +  if a separate `identd` server is not being run.
+        Default user to use when logging onto a server (the USER command).
+        Additionally becomes the bot's IDENT identifier (prepended with a '~'),
+        if a separate `identd` server is not being run.
      +/
     user = "kameloso",
 
@@ -57,7 +57,7 @@ enum KamelosoDefaultStrings
 }
 
 /++
- +  Kameloso defaults, integers version.
+    Kameloso defaults, integers version.
  +/
 enum KamelosoDefaultIntegers
 {
@@ -66,30 +66,30 @@ enum KamelosoDefaultIntegers
 }
 
 /++
- +  Kameloso filenames.
+    Kameloso filenames.
  +/
 enum KamelosoFilenames
 {
     /++
-     +  The main configuration file.
+        The main configuration file.
      +/
     configuration = "kameloso.conf",
 
     /++
-     +  The file containing user account classifiers, specifying which accounts
-     +  are whitelisted, operators and/or blacklisted.
+        The file containing user account classifiers, specifying which accounts
+        are whitelisted, operators and/or blacklisted.
      +/
     users = "users.json",
 
     /++
-     +  The file containing user "account" hostmasks, mapping what we still
-     +  consider accounts to hostmasks, on servers that don't employ services.
+        The file containing user "account" hostmasks, mapping what we still
+        consider accounts to hostmasks, on servers that don't employ services.
      +/
     hostmasks = "hostmasks.json",
 }
 
 /++
- +  Connection defaults, integers version.
+    Connection defaults, integers version.
  +/
 enum ConnectionDefaultIntegers
 {
@@ -100,7 +100,7 @@ enum ConnectionDefaultIntegers
 }
 
 /++
- +  Connection defaults, floating point version.
+    Connection defaults, floating point version.
  +/
 enum ConnectionDefaultFloats : double
 {
@@ -109,72 +109,72 @@ enum ConnectionDefaultFloats : double
 }
 
 /++
- +  Buffer sizes in bytes.
+    Buffer sizes in bytes.
  +/
 enum BufferSize
 {
     /++
-     +  The maximum number of queued outgoing lines to buffer. Anything above
-     +  this will crash the program with a buffer overrun. It can be arbitrarily big.
+        The maximum number of queued outgoing lines to buffer. Anything above
+        this will crash the program with a buffer overrun. It can be arbitrarily big.
      +/
     outbuffer = 512,
 
     /++
-     +  The maximum number of queued priority lines to buffer. These are rare.
+        The maximum number of queued priority lines to buffer. These are rare.
      +/
     priorityBuffer = 64,
 
     /++
-     +  How many bytes to preallocate a buffer for when printing objects to
-     +  screen with the `kameloso.printing` templates. This value times the
-     +  number of objects to print.
+        How many bytes to preallocate a buffer for when printing objects to
+        screen with the `kameloso.printing` templates. This value times the
+        number of objects to print.
      +/
     printObjectBufferPerObject = 1024,
 }
 
 /++
- +  Various timeouts in seconds.
+    Various timeouts in seconds.
  +/
 enum Timeout
 {
     /++
-     +  The amount of seconds to wait before retrying after a failed connection attempt.
+        The amount of seconds to wait before retrying after a failed connection attempt.
      +/
     retry = 10,
 
     /++
-     +  How long to wait before allowing to re-issue a WHOIS query for a user.
-     +
-     +  This is merely to stop us from spamming queries for the same person
-     +  without hysteresis.
+        How long to wait before allowing to re-issue a WHOIS query for a user.
+
+        This is merely to stop us from spamming queries for the same person
+        without hysteresis.
      +/
     whoisRetry = 300,
 
     /++
-     +  How long to wait before calling plugins' `periodical` for the first time.
-     +
-     +  Since it is meant for maintenance and cleanup tasks we can hold on a while
-     +  before calling it the first time.
+        How long to wait before calling plugins' `periodical` for the first time.
+
+        Since it is meant for maintenance and cleanup tasks we can hold on a while
+        before calling it the first time.
      +/
     initialPeriodical = 3600,
 
     /++
-     +  How long to wait after encountering an error when reading from the server,
-     +  before trying anew.
-     +
-     +  Not having a small delay could cause it to spam the screen with errors
-     +  as fast as it can.
+        How long to wait after encountering an error when reading from the server,
+        before trying anew.
+
+        Not having a small delay could cause it to spam the screen with errors
+        as fast as it can.
      +/
     readErrorGracePeriod = 1,
 
     /++
-     +  How long to keep trying to read from the sever when not receiving anything
-     +  at all before the connection is considered lost.
+        How long to keep trying to read from the sever when not receiving anything
+        at all before the connection is considered lost.
      +/
     connectionLost = 600,
 
     /++
-     +  Timeout for HTTP GET requests.
+        Timeout for HTTP GET requests.
      +/
     httpGET = 10,
 }
@@ -182,9 +182,9 @@ enum Timeout
 
 // DefaultColours
 /++
- +  Default colours gathered in one struct namespace.
- +
- +  This makes it easier to compile-time customise colours to your liking.
+    Default colours gathered in one struct namespace.
+
+    This makes it easier to compile-time customise colours to your liking.
  +/
 version(Colours)
 struct DefaultColours
@@ -195,7 +195,7 @@ struct DefaultColours
     alias TF = TerminalForeground;
 
     /++
-     +  Colours for timestamps, shared between event-printing and logging.
+        Colours for timestamps, shared between event-printing and logging.
      +/
     enum TimestampColour : TerminalForeground
     {

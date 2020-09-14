@@ -1,49 +1,49 @@
 /++
- +  A collection of enums and functions that relate to a terminal shell.
- +
- +  Much of this module has to do with terminal text colouring and is therefore
- +  version `Colours`.
- +
- +  Example:
- +  ---
- +  Appender!string sink;
- +
- +  // Output range version
- +  sink.put("Hello ");
- +  sink.colourWith(TerminalForeground.red);
- +  sink.put("world!");
- +  sink.colourWith(TerminalForeground.default_);
- +
- +  with (TerminalForeground)
- +  {
- +      // Normal string-returning version
- +      writeln("Hello ", red.colour, "world!", default_.colour);
- +  }
- +
- +  // Also accepts RGB form
- +  sink.put(" Also");
- +  sink.truecolour(128, 128, 255);
- +  sink.put("magic");
- +  sink.colourWith(TerminalForeground.default_);
- +
- +  with (TerminalForeground)
- +  {
- +      writeln("Also ", truecolour(128, 128, 255), "magic", default_.colour);
- +  }
- +
- +  immutable line = "Surrounding text kameloso surrounding text";
- +  immutable kamelosoInverted = line.invert("kameloso");
- +  assert(line != kamelosoInverted);
- +
- +  immutable tintedNickname = "nickname".colourByHash(false);   // "for bright background" false
- +  immutable tintedSubstring = "substring".colourByHash(true);  // "for bright background" true
- +  ---
- +
- +  It is used heavily in the Printer plugin, to format sections of its output
- +  in different colours, but it's generic enough to use anywhere.
- +
- +  The output range versions are cumbersome but necessary to minimise the number
- +  of strings generated.
+    A collection of enums and functions that relate to a terminal shell.
+
+    Much of this module has to do with terminal text colouring and is therefore
+    version `Colours`.
+
+    Example:
+    ---
+    Appender!string sink;
+
+    // Output range version
+    sink.put("Hello ");
+    sink.colourWith(TerminalForeground.red);
+    sink.put("world!");
+    sink.colourWith(TerminalForeground.default_);
+
+    with (TerminalForeground)
+    {
+        // Normal string-returning version
+        writeln("Hello ", red.colour, "world!", default_.colour);
+    }
+
+    // Also accepts RGB form
+    sink.put(" Also");
+    sink.truecolour(128, 128, 255);
+    sink.put("magic");
+    sink.colourWith(TerminalForeground.default_);
+
+    with (TerminalForeground)
+    {
+        writeln("Also ", truecolour(128, 128, 255), "magic", default_.colour);
+    }
+
+    immutable line = "Surrounding text kameloso surrounding text";
+    immutable kamelosoInverted = line.invert("kameloso");
+    assert(line != kamelosoInverted);
+
+    immutable tintedNickname = "nickname".colourByHash(false);   // "for bright background" false
+    immutable tintedSubstring = "substring".colourByHash(true);  // "for bright background" true
+    ---
+
+    It is used heavily in the Printer plugin, to format sections of its output
+    in different colours, but it's generic enough to use anywhere.
+
+    The output range versions are cumbersome but necessary to minimise the number
+    of strings generated.
  +/
 module kameloso.terminal;
 
@@ -87,8 +87,8 @@ version(Windows)
     private __gshared uint originalConsoleMode;
 
     /++
-     +  Sets the console codepage to display UTF-8 characters (åäö, 高所恐怖症, ...)
-     +  and the console mode to display terminal colours.
+        Sets the console codepage to display UTF-8 characters (åäö, 高所恐怖症, ...)
+        and the console mode to display terminal colours.
      +/
     void setConsoleModeAndCodepage() @system
     {
@@ -121,8 +121,8 @@ version(Windows)
     }
 
     /++
-     +  Resets the console codepage and console mode to the values they had at
-     +  program start.
+        Resets the console codepage and console mode to the values they had at
+        program start.
      +/
     extern(C)
     private void resetConsoleModeAndCodepage() @system
@@ -141,15 +141,15 @@ version(Windows)
 
 // setTitle
 /++
- +  Sets the terminal title to a given string. Supposedly.
- +
- +  Example:
- +  ---
- +  setTitle("kameloso IRC bot");
- +  ---
- +
- +  Params:
- +      title = String to set the title to.
+    Sets the terminal title to a given string. Supposedly.
+
+    Example:
+    ---
+    setTitle("kameloso IRC bot");
+    ---
+
+    Params:
+        title = String to set the title to.
  +/
 void setTitle(const string title) @system
 {
@@ -176,8 +176,8 @@ void setTitle(const string title) @system
 version(Colours):
 
 /++
- +  Format codes that work like terminal colouring does, except here for formats
- +  like bold, dim, italics, etc.
+    Format codes that work like terminal colouring does, except here for formats
+    like bold, dim, italics, etc.
  +/
 enum TerminalFormat
 {
@@ -249,15 +249,15 @@ enum TerminalReset
 
 // isAColourCode
 /++
- +  Bool of whether or not a type is a colour code enum.
- +
- +  The `is(T == int)` is unfortunate but it's needed to be able to have statements like:
- +
- +  ---
- +  sink.colourWith(bright ? Bright.error : Dark.error);
- +  ---
- +
- +  ...where `Dark` and `Bright` are two different enums.
+    Bool of whether or not a type is a colour code enum.
+
+    The `is(T == int)` is unfortunate but it's needed to be able to have statements like:
+
+    ---
+    sink.colourWith(bright ? Bright.error : Dark.error);
+    ---
+
+    ...where `Dark` and `Bright` are two different enums.
  +/
 enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
                         is(T : TerminalFormat) || is(T : TerminalReset) ||
@@ -266,23 +266,23 @@ enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground)
 
 // colour
 /++
- +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
- +  `TerminalFormat` and/or a `TerminalReset` and composes them into a single
- +  terminal format code token. Overload that creates an `std.array.Appender`
- +  and fills it with the return value of the output range version of `colour`.
- +
- +  Example:
- +  ---
- +  string blinkOn = colour(TerminalForeground.white, TerminalBackground.yellow, TerminalFormat.blink);
- +  string blinkOff = colour(TerminalForeground.default_, TerminalBackground.default_, TerminalReset.blink);
- +  string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
- +  ---
- +
- +  Params:
- +      codes = Variadic list of terminal format codes.
- +
- +  Returns:
- +      A terminal code sequence of the passed codes.
+    Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
+    `TerminalFormat` and/or a `TerminalReset` and composes them into a single
+    terminal format code token. Overload that creates an `std.array.Appender`
+    and fills it with the return value of the output range version of `colour`.
+
+    Example:
+    ---
+    string blinkOn = colour(TerminalForeground.white, TerminalBackground.yellow, TerminalFormat.blink);
+    string blinkOff = colour(TerminalForeground.default_, TerminalBackground.default_, TerminalReset.blink);
+    string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
+    ---
+
+    Params:
+        codes = Variadic list of terminal format codes.
+
+    Returns:
+        A terminal code sequence of the passed codes.
  +/
 version(Colours)
 string colour(Codes...)(const Codes codes) pure nothrow
@@ -300,22 +300,22 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
 // colourWith
 /++
- +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
- +  `TerminalFormat` and/or a `TerminalReset` and composes them into a format code token.
- +
- +  This is the composing overload that fills its result into an output range.
- +
- +  Example:
- +  ---
- +  Appender!string sink;
- +  sink.colourWith(TerminalForeground.red, TerminalFormat.bold);
- +  sink.put("Foo");
- +  sink.colourWith(TerminalForeground.default_, TerminalReset.bold);
- +  ---
- +
- +  Params:
- +      sink = Output range to write output to.
- +      codes = Variadic list of terminal format codes.
+    Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
+    `TerminalFormat` and/or a `TerminalReset` and composes them into a format code token.
+
+    This is the composing overload that fills its result into an output range.
+
+    Example:
+    ---
+    Appender!string sink;
+    sink.colourWith(TerminalForeground.red, TerminalFormat.bold);
+    sink.put("Foo");
+    sink.colourWith(TerminalForeground.default_, TerminalReset.bold);
+    ---
+
+    Params:
+        sink = Output range to write output to.
+        codes = Variadic list of terminal format codes.
  +/
 version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
@@ -343,20 +343,20 @@ if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, C
 
 // colour
 /++
- +  Convenience function to colour or format a piece of text without an output
- +  buffer to fill into.
- +
- +  Example:
- +  ---
- +  string foo = "Foo Bar".colour(TerminalForeground.bold, TerminalFormat.reverse);
- +  ---
- +
- +  Params:
- +      text = Text to format.
- +      codes = Terminal formatting codes (colour, underscore, bold, ...) to apply.
- +
- +  Returns:
- +      A terminal code sequence of the passed codes, encompassing the passed text.
+    Convenience function to colour or format a piece of text without an output
+    buffer to fill into.
+
+    Example:
+    ---
+    string foo = "Foo Bar".colour(TerminalForeground.bold, TerminalFormat.reverse);
+    ---
+
+    Params:
+        text = Text to format.
+        codes = Terminal formatting codes (colour, underscore, bold, ...) to apply.
+
+    Returns:
+        A terminal code sequence of the passed codes, encompassing the passed text.
  +/
 version(Colours)
 string colour(Codes...)(const string text, const Codes codes) pure nothrow
@@ -376,24 +376,24 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
 // normaliseColoursBright
 /++
- +  Takes a colour and, if it deems it is too bright to see on a light terminal
- +  background, makes it darker.
- +
- +  Example:
- +  ---
- +  int r = 255;
- +  int g = 128;
- +  int b = 100;
- +  normaliseColoursBright(r, g, b);
- +  assert(r != 255);
- +  assert(g != 128);
- +  assert(b != 100);
- +  ---
- +
- +  Params:
- +      r = Reference to a red value.
- +      g = Reference to a green value.
- +      b = Reference to a blue value.
+    Takes a colour and, if it deems it is too bright to see on a light terminal
+    background, makes it darker.
+
+    Example:
+    ---
+    int r = 255;
+    int g = 128;
+    int b = 100;
+    normaliseColoursBright(r, g, b);
+    assert(r != 255);
+    assert(g != 128);
+    assert(b != 100);
+    ---
+
+    Params:
+        r = Reference to a red value.
+        g = Reference to a green value.
+        b = Reference to a blue value.
  +/
 version(Colours)
 void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
@@ -440,24 +440,24 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
 
 // normaliseColours
 /++
- +  Takes a colour and, if it deems it is too dark to see on a black terminal
- +  background, makes it brighter.
- +
- +  Example:
- +  ---
- +  int r = 255;
- +  int g = 128;
- +  int b = 100;
- +  normaliseColours(r, g, b);
- +  assert(r != 255);
- +  assert(g != 128);
- +  assert(b != 100);
- +  ---
- +
- +  Params:
- +      r = Reference to a red value.
- +      g = Reference to a green value.
- +      b = Reference to a blue value.
+    Takes a colour and, if it deems it is too dark to see on a black terminal
+    background, makes it brighter.
+
+    Example:
+    ---
+    int r = 255;
+    int g = 128;
+    int b = 100;
+    normaliseColours(r, g, b);
+    assert(r != 255);
+    assert(g != 128);
+    assert(b != 100);
+    ---
+
+    Params:
+        r = Reference to a red value.
+        g = Reference to a green value.
+        b = Reference to a blue value.
  +/
 version(Colours)
 void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
@@ -615,28 +615,28 @@ unittest
 
 // truecolour
 /++
- +  Produces a terminal colour token for the colour passed, expressed in terms
- +  of red, green and blue.
- +
- +  Example:
- +  ---
- +  Appender!string sink;
- +  int r, g, b;
- +  numFromHex("3C507D", r, g, b);
- +  sink.truecolour(r, g, b);
- +  sink.put("Foo");
- +  sink.colourWith(TerminalReset.all);
- +  writeln(sink);  // "Foo" in #3C507D
- +  ---
- +
- +  Params:
- +      normalise = Whether or not to normalise colours so that they aren't too
+    Produces a terminal colour token for the colour passed, expressed in terms
+    of red, green and blue.
+
+    Example:
+    ---
+    Appender!string sink;
+    int r, g, b;
+    numFromHex("3C507D", r, g, b);
+    sink.truecolour(r, g, b);
+    sink.put("Foo");
+    sink.colourWith(TerminalReset.all);
+    writeln(sink);  // "Foo" in #3C507D
+    ---
+
+    Params:
+        normalise = Whether or not to normalise colours so that they aren't too
             dark or too bright.
- +      sink = Output range to write the final code into.
- +      r = Red value.
- +      g = Green value.
- +      b = Blue value.
- +      bright = Whether the terminal has a bright background or not.
+        sink = Output range to write the final code into.
+        r = Red value.
+        g = Green value.
+        b = Blue value.
+        bright = Whether the terminal has a bright background or not.
  +/
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
@@ -676,29 +676,29 @@ if (isOutputRange!(Sink, char[]))
 
 // truecolour
 /++
- +  Convenience function to colour a piece of text without being passed an
- +  output sink to fill into.
- +
- +  Example:
- +  ---
- +  string foo = "Foo Bar".truecolour(172, 172, 255);
- +
- +  int r, g, b;
- +  numFromHex("003388", r, g, b);
- +  string bar = "Bar Foo".truecolour(r, g, b);
- +  ---
- +
- +  Params:
- +      normalise = Whether or not to normalise colours so that they aren't too
- +          dark or too bright.
- +      word = String to tint.
- +      r = Red value.
- +      g = Green value.
- +      b = Blue value.
- +      bright = Whether the terminal has a bright background or not.
- +
- +  Returns:
- +      The passed string word encompassed by terminal colour tags.
+    Convenience function to colour a piece of text without being passed an
+    output sink to fill into.
+
+    Example:
+    ---
+    string foo = "Foo Bar".truecolour(172, 172, 255);
+
+    int r, g, b;
+    numFromHex("003388", r, g, b);
+    string bar = "Bar Foo".truecolour(r, g, b);
+    ---
+
+    Params:
+        normalise = Whether or not to normalise colours so that they aren't too
+            dark or too bright.
+        word = String to tint.
+        r = Red value.
+        g = Green value.
+        b = Blue value.
+        bright = Whether the terminal has a bright background or not.
+
+    Returns:
+        The passed string word encompassed by terminal colour tags.
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
@@ -735,24 +735,24 @@ unittest
 
 // invert
 /++
- +  Terminal-inverts the colours of a piece of text in a string.
- +
- +  Example:
- +  ---
- +  immutable line = "This is an example!";
- +  writeln(line.invert("example"));  // "example" substring visually inverted
- +  writeln(line.invert!(Yes.caseInsensitive)("EXAMPLE")); // "example" inverted as "EXAMPLE"
- +  ---
- +
- +  Params:
- +      caseSensitive = Whether or not to look for matches case-insensitively,
- +          yet invert with the casing passed.
- +      line = Line to examine and invert a substring of.
- +      toInvert = Substring to invert.
- +
- +  Returns:
- +      Line with the substring in it inverted, if inversion was successful,
- +      else (a duplicate of) the line unchanged.
+    Terminal-inverts the colours of a piece of text in a string.
+
+    Example:
+    ---
+    immutable line = "This is an example!";
+    writeln(line.invert("example"));  // "example" substring visually inverted
+    writeln(line.invert!(Yes.caseInsensitive)("EXAMPLE")); // "example" inverted as "EXAMPLE"
+    ---
+
+    Params:
+        caseSensitive = Whether or not to look for matches case-insensitively,
+            yet invert with the casing passed.
+        line = Line to examine and invert a substring of.
+        toInvert = Substring to invert.
+
+    Returns:
+        Line with the substring in it inverted, if inversion was successful,
+        else (a duplicate of) the line unchanged.
  +/
 version(Colours)
 string invert(Flag!"caseSensitive" caseSensitive = Yes.caseSensitive)
@@ -993,16 +993,16 @@ unittest
 
 // colourByHash
 /++
- +  Hashes the passed string and picks a `TerminalForeground` colour by modulo.
- +  Overload that takes an array of `TerminalForeground`s, to pick between.
- +
- +  Params:
- +      word = String to hash and base colour on.
- +      fgArray = Array of `TerminalForeground`s to pick a colour from.
- +
- +  Returns:
- +      A `TerminalForeground` based on the passed string, picked from the
- +          passed `fgArray` array.
+    Hashes the passed string and picks a `TerminalForeground` colour by modulo.
+    Overload that takes an array of `TerminalForeground`s, to pick between.
+
+    Params:
+        word = String to hash and base colour on.
+        fgArray = Array of `TerminalForeground`s to pick a colour from.
+
+    Returns:
+        A `TerminalForeground` based on the passed string, picked from the
+            passed `fgArray` array.
  +/
 TerminalForeground colourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
 in (word.length, "Tried to colour by hash but no word was given")
@@ -1043,22 +1043,22 @@ unittest
 
 // colourByHash
 /++
- +  Hashes the passed string and picks a `TerminalForeground` colour by modulo.
- +  Overload that picks any colour, taking care not to pick black or white based on
- +  the value of the passed `bright` bool (which signifies a bright terminal background).
- +
- +  Example:
- +  ---
- +  immutable colouredNick = "kameloso".colourByHash(No.bright);
- +  immutable colouredNickBright = "kameloso".colourByHash(Yes.bright);
- +  ---
- +
- +  Params:
- +      word = String to hash and base colour on.
- +      bright = Whether or not the colour should be appropriate for a bright terminal background.
- +
- +  Returns:
- +      A `TerminalForeground` based on the passed string.
+    Hashes the passed string and picks a `TerminalForeground` colour by modulo.
+    Overload that picks any colour, taking care not to pick black or white based on
+    the value of the passed `bright` bool (which signifies a bright terminal background).
+
+    Example:
+    ---
+    immutable colouredNick = "kameloso".colourByHash(No.bright);
+    immutable colouredNickBright = "kameloso".colourByHash(Yes.bright);
+    ---
+
+    Params:
+        word = String to hash and base colour on.
+        bright = Whether or not the colour should be appropriate for a bright terminal background.
+
+    Returns:
+        A `TerminalForeground` based on the passed string.
  +/
 version(Colours)
 TerminalForeground colourByHash(const string word,

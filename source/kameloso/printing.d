@@ -1,12 +1,12 @@
 /++
- +  Functions related to (formatting and) printing structs and classes to the
- +  local terminal, listing each member variable and their contents in an
- +  easy-to-visually-parse way.
- +
- +  Example:
- +
- +  `printObjects(client, bot, settings);`
- +  ---
+    Functions related to (formatting and) printing structs and classes to the
+    local terminal, listing each member variable and their contents in an
+    easy-to-visually-parse way.
+
+    Example:
+
+    `printObjects(client, bot, settings);`
+    ---
 /* Output to screen:
 
 -- IRCClient
@@ -25,11 +25,11 @@
    string address                "irc.freenode.net"(16)
    ushort port                    6667
 */
- +  ---
- +
- +  Distance between types, member names and member values are deduced automatically
- +  based on how long they are (in terms of characters). If it doesn't line up,
- +  its a bug.
+    ---
+
+    Distance between types, member names and member values are deduced automatically
+    based on how long they are (in terms of characters). If it doesn't line up,
+    its a bug.
  +/
 module kameloso.printing;
 
@@ -43,13 +43,13 @@ public:
 
 // Widths
 /++
- +  Calculates the minimum padding needed to accommodate the strings of all the
- +  types and names of the members of the passed struct and/or classes, for
- +  formatting into neat columns.
- +
- +  Params:
- +      all = Whether or not to also include `Unserialisable` members.
- +      Things = Variadic list of aggregates to inspect.
+    Calculates the minimum padding needed to accommodate the strings of all the
+    types and names of the members of the passed struct and/or classes, for
+    formatting into neat columns.
+
+    Params:
+        all = Whether or not to also include `Unserialisable` members.
+        Things = Variadic list of aggregates to inspect.
  +/
 private template Widths(Flag!"all" all, Things...)
 {
@@ -110,31 +110,31 @@ unittest
 
 // printObjects
 /++
- +  Prints out struct objects, with all their printable members with all their
- +  printable values.
- +
- +  This is not only convenient for debugging but also usable to print out
- +  current settings and state, where such is kept in structs.
- +
- +  Example:
- +  ---
- +  struct Foo
- +  {
- +      int foo;
- +      string bar;
- +      float f;
- +      double d;
- +  }
- +
- +  Foo foo, bar;
- +  printObjects(foo, bar);
- +  ---
- +
- +  Params:
- +      all = Whether or not to also display members marked as
- +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
- +      things = Variadic list of struct objects to enumerate.
+    Prints out struct objects, with all their printable members with all their
+    printable values.
+
+    This is not only convenient for debugging but also usable to print out
+    current settings and state, where such is kept in structs.
+
+    Example:
+    ---
+    struct Foo
+    {
+        int foo;
+        string bar;
+        float f;
+        double d;
+    }
+
+    Foo foo, bar;
+    printObjects(foo, bar);
+    ---
+
+    Params:
+        all = Whether or not to also display members marked as
+            `lu.uda.Unserialisable`, usually transitive information that
+            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+        things = Variadic list of struct objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things) @trusted
@@ -190,35 +190,35 @@ alias printObject = printObjects;
 
 // formatObjects
 /++
- +  Formats a struct object, with all its printable members with all their
- +  printable values. Overload that writes to a passed output range sink.
- +
- +  Example:
- +  ---
- +  struct Foo
- +  {
- +      int foo = 42;
- +      string bar = "arr matey";
- +      float f = 3.14f;
- +      double d = 9.99;
- +  }
- +
- +  Foo foo, bar;
- +  Appender!string sink;
- +
- +  sink.formatObjects!(Yes.coloured)(foo);
- +  sink.formatObjects!(No.coloured)(bar);
- +  writeln(sink.data);
- +  ---
- +
- +  Params:
- +      all = Whether or not to also display members marked as
- +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
- +      coloured = Whether to display in colours or not.
- +      sink = Output range to write to.
- +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs or classes to enumerate and format.
+    Formats a struct object, with all its printable members with all their
+    printable values. Overload that writes to a passed output range sink.
+
+    Example:
+    ---
+    struct Foo
+    {
+        int foo = 42;
+        string bar = "arr matey";
+        float f = 3.14f;
+        double d = 9.99;
+    }
+
+    Foo foo, bar;
+    Appender!string sink;
+
+    sink.formatObjects!(Yes.coloured)(foo);
+    sink.formatObjects!(No.coloured)(bar);
+    writeln(sink.data);
+    ---
+
+    Params:
+        all = Whether or not to also display members marked as
+            `lu.uda.Unserialisable`, usually transitive information that
+            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+        coloured = Whether to display in colours or not.
+        sink = Output range to write to.
+        bright = Whether or not to format for a bright terminal background.
+        things = Variadic list of structs or classes to enumerate and format.
  +/
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
@@ -245,20 +245,20 @@ alias formatObject = formatObjects;
 
 // formatObjectsImpl
 /++
- +  Formats a struct object, with all its printable members with all their
- +  printable values. This is an implementation template and should not be
- +  called directly; instead use `printObjects` or `formatObjects`.
- +
- +  Params:
- +      all = Whether or not to also display members marked as
- +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
- +      coloured = Whether to display in colours or not.
- +      sink = Output range to write to.
- +      bright = Whether or not to format for a bright terminal background.
- +      thing = Struct or class to enumerate and format.
- +      typewidth = The width with which to pad type names, to align properly.
- +      namewidth = The width with which to pad variable names, to align properly.
+    Formats a struct object, with all its printable members with all their
+    printable values. This is an implementation template and should not be
+    called directly; instead use `printObjects` or `formatObjects`.
+
+    Params:
+        all = Whether or not to also display members marked as
+            `lu.uda.Unserialisable`, usually transitive information that
+            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+        coloured = Whether to display in colours or not.
+        sink = Output range to write to.
+        bright = Whether or not to format for a bright terminal background.
+        thing = Struct or class to enumerate and format.
+        typewidth = The width with which to pad type names, to align properly.
+        namewidth = The width with which to pad variable names, to align properly.
  +/
 private void formatObjectsImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
@@ -599,38 +599,38 @@ if (isOutputRange!(Sink, char[]))
 
 // formatObjects
 /++
- +  Formats a struct object, with all its printable members with all their
- +  printable values. A `string`-returning overload that doesn't take an input range.
- +
- +  This is useful when you just want the object(s) formatted without having to
- +  pass it a sink.
- +
- +  Example:
- +  ---
- +  struct Foo
- +  {
- +      int foo = 42;
- +      string bar = "arr matey";
- +      float f = 3.14f;
- +      double d = 9.99;
- +  }
- +
- +  Foo foo, bar;
- +
- +  writeln(formatObjects!(No.all, Yes.coloured)(foo));
- +  writeln(formatObjects!(Yes.all, No.coloured)(bar));
- +  ---
- +
- +  Params:
- +      all = Whether or not to also display members marked as
- +          `lu.uda.Unserialisable`, usually transitive information that
- +          doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
- +      coloured = Whether to display in colours or not.
- +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs to enumerate and format.
- +
- +  Returns:
- +      String with the object formatted, as per the passed arguments.
+    Formats a struct object, with all its printable members with all their
+    printable values. A `string`-returning overload that doesn't take an input range.
+
+    This is useful when you just want the object(s) formatted without having to
+    pass it a sink.
+
+    Example:
+    ---
+    struct Foo
+    {
+        int foo = 42;
+        string bar = "arr matey";
+        float f = 3.14f;
+        double d = 9.99;
+    }
+
+    Foo foo, bar;
+
+    writeln(formatObjects!(No.all, Yes.coloured)(foo));
+    writeln(formatObjects!(Yes.all, No.coloured)(bar));
+    ---
+
+    Params:
+        all = Whether or not to also display members marked as
+            `lu.uda.Unserialisable`, usually transitive information that
+            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+        coloured = Whether to display in colours or not.
+        bright = Whether or not to format for a bright terminal background.
+        things = Variadic list of structs to enumerate and format.
+
+    Returns:
+        String with the object formatted, as per the passed arguments.
  +/
 string formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Things...)

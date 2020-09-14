@@ -1,6 +1,6 @@
 /++
- +  Common functions used throughout the program, generic enough to be used in
- +  several places, not fitting into any specific one.
+    Common functions used throughout the program, generic enough to be used in
+    several places, not fitting into any specific one.
  +/
 module kameloso.common;
 
@@ -31,37 +31,37 @@ shared static this()
 
 // logger
 /++
- +  Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
- +  coloured logging.
- +
- +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
- +  and `fatal`. It is not `__gshared`, so instantiate a thread-local
- +  `kameloso.logger.KamelosoLogger` if threading.
- +
- +  Having this here is unfortunate; ideally plugins should not use variables
- +  from other modules, but unsure of any way to fix this other than to have
- +  each plugin keep their own `kameloso.logger.KamelosoLogger`.
+    Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
+    coloured logging.
+
+    The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
+    and `fatal`. It is not `__gshared`, so instantiate a thread-local
+    `kameloso.logger.KamelosoLogger` if threading.
+
+    Having this here is unfortunate; ideally plugins should not use variables
+    from other modules, but unsure of any way to fix this other than to have
+    each plugin keep their own `kameloso.logger.KamelosoLogger`.
  +/
 KamelosoLogger logger;
 
 
 // initLogger
 /++
- +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
- +
- +  It needs to be separately instantiated per thread, and even so there may be
- +  race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
- +  to log to screen from other threads.
- +
- +  Example:
- +  ---
- +  initLogger(No.monochrome, Yes.brightTerminal, Yes.flush);
- +  ---
- +
- +  Params:
- +      monochrome = Whether the terminal is set to monochrome or not.
- +      bright = Whether the terminal has a bright background or not.
- +      flush = Whether or not to flush stdout after finishing writing to it.
+    Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
+
+    It needs to be separately instantiated per thread, and even so there may be
+    race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
+    to log to screen from other threads.
+
+    Example:
+    ---
+    initLogger(No.monochrome, Yes.brightTerminal, Yes.flush);
+    ---
+
+    Params:
+        monochrome = Whether the terminal is set to monochrome or not.
+        bright = Whether the terminal has a bright background or not.
+        flush = Whether or not to flush stdout after finishing writing to it.
  +/
 void initLogger(const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" bright,
@@ -78,21 +78,21 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
- +  A `CoreSettings` struct global, housing certain runtime settings.
- +
- +  This will be accessed from other parts of the program, via
- +  `kameloso.common.settings`, so they know to use monochrome output or not.
- +  It is a problem that needs solving.
+    A `CoreSettings` struct global, housing certain runtime settings.
+
+    This will be accessed from other parts of the program, via
+    `kameloso.common.settings`, so they know to use monochrome output or not.
+    It is a problem that needs solving.
  +/
 CoreSettings* settings;
 
 
 // CoreSettings
 /++
- +  Aggregate struct containing runtime bot setting variables.
- +
- +  Kept inside one struct, they're nicely gathered and easy to pass around.
- +  Some defaults are hardcoded here.
+    Aggregate struct containing runtime bot setting variables.
+
+    Kept inside one struct, they're nicely gathered and easy to pass around.
+    Some defaults are hardcoded here.
  +/
 struct CoreSettings
 {
@@ -126,17 +126,17 @@ struct CoreSettings
     bool exitSummary = false;
 
     /++
-     +  Whether or not to exhaustively WHOIS all participants in home channels,
-     +  and not do a just-in-time lookup when needed.
+        Whether or not to exhaustively WHOIS all participants in home channels,
+        and not do a just-in-time lookup when needed.
      +/
     bool eagerLookups = false;
 
     /++
-     +  Character(s) that prefix a bot chat command.
-     +
-     +  These decide what bot commands will look like; "!" for "!command",
-     +  "~" for "~command", "." for ".command", etc. It can be any string and
-     +  not just one character.
+        Character(s) that prefix a bot chat command.
+
+        These decide what bot commands will look like; "!" for "!command",
+        "~" for "~command", "." for ".command", etc. It can be any string and
+        not just one character.
      +/
     @Quoted string prefix = "!";
 
@@ -154,7 +154,7 @@ struct CoreSettings
 
 // ConnectionSettings
 /++
- +  Aggregate of values used in the connection between the bot and the IRC server.
+    Aggregate of values used in the connection between the bot and the IRC server.
  +/
 struct ConnectionSettings
 {
@@ -185,8 +185,8 @@ struct ConnectionSettings
 
 // IRCBot
 /++
- +  Aggregate of information relevant for an IRC *bot* that goes beyond what is
- +  needed for a mere IRC *client*.
+    Aggregate of information relevant for an IRC *bot* that goes beyond what is
+    needed for a mere IRC *client*.
  +/
 struct IRCBot
 {
@@ -238,8 +238,8 @@ struct IRCBot
 
 // Kameloso
 /++
- +  State needed for the kameloso bot, aggregated in a struct for easier passing
- +  by reference.
+    State needed for the kameloso bot, aggregated in a struct for easier passing
+    by reference.
  +/
 struct Kameloso
 {
@@ -254,8 +254,8 @@ struct Kameloso
 
     // Throttle
     /++
-     +  Aggregate of values and state needed to throttle messages without
-     +  polluting namespace too much.
+        Aggregate of values and state needed to throttle messages without
+        polluting namespace too much.
      +/
     private struct Throttle
     {
@@ -272,8 +272,8 @@ struct Kameloso
         double increment = 1.0;
 
         /++
-         +  Burst limit; how many messages*increment can be sent initially
-         +  before throttling kicks in.
+            Burst limit; how many messages*increment can be sent initially
+            before throttling kicks in.
          +/
         double burst = 3.0;
 
@@ -282,31 +282,31 @@ struct Kameloso
     }
 
     /++
-     +  The `lu.net.Connection` housing and wrapping the socket we use to connect
-     +  to, write to and read from the server.
+        The `lu.net.Connection` housing and wrapping the socket we use to connect
+        to, write to and read from the server.
      +/
     Connection conn;
 
     /++
-     +  A runtime array of all plugins. We iterate these when we have finished
-     +  parsing an `dialect.defs.IRCEvent`, and call the relevant event
-     +  handlers of each.
+        A runtime array of all plugins. We iterate these when we have finished
+        parsing an `dialect.defs.IRCEvent`, and call the relevant event
+        handlers of each.
      +/
     IRCPlugin[] plugins;
 
     /++
-     +  The root copy of the program-wide settings.
+        The root copy of the program-wide settings.
      +/
     CoreSettings settings;
 
     /++
-     +  Settings relating to the connection between the bot and the IRC server.
+        Settings relating to the connection between the bot and the IRC server.
      +/
     ConnectionSettings connSettings;
 
     /++
-     +  When a nickname was last issued a WHOIS query for, for hysteresis
-     +  and rate-limiting.
+        When a nickname was last issued a WHOIS query for, for hysteresis
+        and rate-limiting.
      +/
     long[string] previousWhoisTimestamps;
 
@@ -320,48 +320,48 @@ struct Kameloso
     Throttle throttle;
 
     /++
-     +  When this is set by signal handlers, the program should exit. Other
-     +  parts of the program will be monitoring it.
+        When this is set by signal handlers, the program should exit. Other
+        parts of the program will be monitoring it.
      +/
     bool* abort;
 
     /++
-     +  When this is set, the main loop should print a connection summary upon
-     +  the next iteration. It is transient.
+        When this is set, the main loop should print a connection summary upon
+        the next iteration. It is transient.
      +/
     bool wantLiveSummary;
 
     /++
-     +  Buffer of outgoing message strings.
-     +
-     +  The buffer size is "how many string pointers", now how many bytes. So
-     +  we can comfortably keep it arbitrarily high.
+        Buffer of outgoing message strings.
+
+        The buffer size is "how many string pointers", now how many bytes. So
+        we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
     /++
-     +  Buffer of outgoing background message strings.
-     +
-     +  The buffer size is "how many string pointers", now how many bytes. So
-     +  we can comfortably keep it arbitrarily high.
+        Buffer of outgoing background message strings.
+
+        The buffer size is "how many string pointers", now how many bytes. So
+        we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) backgroundBuffer;
 
     /++
-     +  Buffer of outgoing priority message strings.
-     +
-     +  The buffer size is "how many string pointers", now how many bytes. So
-     +  we can comfortably keep it arbitrarily high.
+        Buffer of outgoing priority message strings.
+
+        The buffer size is "how many string pointers", now how many bytes. So
+        we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
 
     version(TwitchSupport)
     {
         /++
-         +  Buffer of outgoing fast message strings.
-         +
-         +  The buffer size is "how many string pointers", now how many bytes. So
-         +  we can comfortably keep it arbitrarily high.
+            Buffer of outgoing fast message strings.
+
+            The buffer size is "how many string pointers", now how many bytes. So
+            we can comfortably keep it arbitrarily high.
          +/
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
     }
@@ -372,26 +372,26 @@ struct Kameloso
 
     // throttleline
     /++
-     +  Takes one or more lines from the passed buffer and sends them to the server.
-     +
-     +  Sends to the server in a throttled fashion, based on a simple
-     +  `y = k*x + m` graph.
-     +
-     +  This is so we don't get kicked by the server for spamming, if a lot of
-     +  lines are to be sent at once.
-     +
-     +  Params:
-     +      Buffer = Buffer type, generally `lu.container.Buffer`.
-     +      buffer = Buffer instance.
-     +      dryRun = Whether or not to send anything or just do a dry run,
-     +          incrementing the graph by `Throttle.increment`.
-     +      sendFaster = On Twitch, whether or not we should throttle less and
-     +          send messages faster. Useful in some situations when rate-limiting
-     +          is more lax.
-     +
-     +  Returns:
-     +      The time remaining until the next message may be sent, so that we
-     +      can reschedule the next server read timeout to happen earlier.
+        Takes one or more lines from the passed buffer and sends them to the server.
+
+        Sends to the server in a throttled fashion, based on a simple
+        `y = k*x + m` graph.
+
+        This is so we don't get kicked by the server for spamming, if a lot of
+        lines are to be sent at once.
+
+        Params:
+            Buffer = Buffer type, generally `lu.container.Buffer`.
+            buffer = Buffer instance.
+            dryRun = Whether or not to send anything or just do a dry run,
+                incrementing the graph by `Throttle.increment`.
+            sendFaster = On Twitch, whether or not we should throttle less and
+                send messages faster. Useful in some situations when rate-limiting
+                is more lax.
+
+        Returns:
+            The time remaining until the next message may be sent, so that we
+            can reschedule the next server read timeout to happen earlier.
      +/
     double throttleline(Buffer)(ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
@@ -484,27 +484,27 @@ struct Kameloso
 
     // initPlugins
     /++
-     +  Resets and *minimally* initialises all plugins.
-     +
-     +  It only initialises them to the point where they're aware of their
-     +  settings, and not far enough to have loaded any resources.
-     +
-     +  Params:
-     +      customSettings = String array of custom settings to apply to plugins
-     +          in addition to those read from the configuration file.
-     +      missingEntries = Out reference of an associative array of string arrays
-     +          of expected configuration entries that were missing.
-     +      invalidEntries = Out reference of an associative array of string arrays
-     +          of unexpected configuration entries that did not belong.
-     +
-     +  Throws:
-     +      `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
+        Resets and *minimally* initialises all plugins.
+
+        It only initialises them to the point where they're aware of their
+        settings, and not far enough to have loaded any resources.
+
+        Params:
+            customSettings = String array of custom settings to apply to plugins
+                in addition to those read from the configuration file.
+            missingEntries = Out reference of an associative array of string arrays
+                of expected configuration entries that were missing.
+            invalidEntries = Out reference of an associative array of string arrays
+                of unexpected configuration entries that did not belong.
+
+        Throws:
+            `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
      +/
     void initPlugins(const string[] customSettings,
         out string[][string] missingEntries,
         out string[][string] invalidEntries) @system
     {
-        import kameloso.plugins : EnabledPlugins;
+        import kameloso.plugins : PluginModules;
         import kameloso.plugins.common : applyCustomSettings;
         import kameloso.plugins.core : IRCPluginState;
         import std.concurrency : thisTid;
@@ -522,12 +522,39 @@ struct Kameloso
         state.abort = abort;
         immutable now = Clock.currTime.toUnixTime;
 
-        plugins.reserve(EnabledPlugins.length);
+        // Instantiate all plugin classes found when introspecting the modules
+        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
 
-        // Instantiate all plugin types in `kameloso.plugins.package.EnabledPlugins`
-        foreach (Plugin; EnabledPlugins)
+        plugins.reserve(PluginModules.length);
+
+        foreach (immutable moduleName; PluginModules)
         {
-            plugins ~= new Plugin(state);
+            static assert(__traits(compiles, { mixin("import ", moduleName, ";"); }),
+                "Plugin module `" ~ moduleName ~ "` is missing or fails to compile");
+
+            mixin("import pluginModule = ", moduleName, ";");
+
+            foreach (member; __traits(allMembers, pluginModule))
+            {
+                static if (is(__traits(getMember, pluginModule, member) == class))
+                {
+                    alias Class = __traits(getMember, pluginModule, member);
+
+                    static if (is(Class : IRCPlugin))
+                    {
+                        static if (__traits(compiles, new Class(state)))
+                        {
+                            plugins ~= new Class(state);
+                        }
+                        else
+                        {
+                            import std.format : format;
+                            static assert(0, "`%s.%s` constructor does not compile"
+                                .format(moduleName, Class.stringof));
+                        }
+                    }
+                }
+            }
         }
 
         foreach (plugin; plugins)
@@ -570,12 +597,30 @@ struct Kameloso
     }
 
 
+    // initPlugins
+    /++
+        Resets and *minimally* initialises all plugins.
+
+        Merely wraps the other `initPlugins` overload and distinguishes itself
+        from it by not taking the two `string[][string]` out parameters it does.
+
+        Params:
+            customSettings = String array of custom settings to apply to plugins
+                in addition to those read from the configuration file.
+     +/
+    void initPlugins(const string[] customSettings) @system
+    {
+        string[][string] ignore;
+        return initPlugins(customSettings, ignore, ignore);
+    }
+
+
     // initPluginResources
     /++
-     +  Initialises all plugins' resource files.
-     +
-     +  This merely calls `kameloso.plugins.core.IRCPlugin.initResources` on
-     +  each plugin.
+        Initialises all plugins' resource files.
+
+        This merely calls `kameloso.plugins.core.IRCPlugin.initResources` on
+        each plugin.
      +/
     void initPluginResources() @system
     {
@@ -588,10 +633,10 @@ struct Kameloso
 
     // teardownPlugins
     /++
-     +  Tears down all plugins, deinitialising them and having them save their
-     +  settings for a clean shutdown.
-     +
-     +  Think of it as a plugin destructor.
+        Tears down all plugins, deinitialising them and having them save their
+        settings for a clean shutdown.
+
+        Think of it as a plugin destructor.
      +/
     void teardownPlugins() @system
     {
@@ -640,11 +685,11 @@ struct Kameloso
 
     // startPlugins
     /++
-     +  Start all plugins, loading any resources they may want and running
-     +  anything in their module-level `start` function.
-     +
-     +  This has to happen after `initPlugins` or there will not be any plugins
-     +  in the `plugins` array.
+        Start all plugins, loading any resources they may want and running
+        anything in their module-level `start` function.
+
+        This has to happen after `initPlugins` or there will not be any plugins
+        in the `plugins` array.
      +/
     void startPlugins() @system
     {
@@ -685,13 +730,13 @@ struct Kameloso
 
     // propagateClient
     /++
-     +  Takes an `dialect.defs.IRCClient` and passes it out to all plugins.
-     +
-     +  This is called when a change to the client has occurred and we want to
-     +  update all plugins to have a current copy of it.
-     +
-     +  Params:
-     +      client = `dialect.defs.IRCClient` to propagate to all plugins.
+        Takes an `dialect.defs.IRCClient` and passes it out to all plugins.
+
+        This is called when a change to the client has occurred and we want to
+        update all plugins to have a current copy of it.
+
+        Params:
+            client = `dialect.defs.IRCClient` to propagate to all plugins.
      +/
     void propagateClient(IRCClient client) pure nothrow @nogc
     {
@@ -706,13 +751,13 @@ struct Kameloso
 
     // propagateServer
     /++
-     +  Takes an `dialect.defs.IRCServer` and passes it out to all plugins.
-     +
-     +  This is called when a change to the server has occurred and we want to
-     +  update all plugins to have a current copy of it.
-     +
-     +  Params:
-     +      server = `dialect.defs.IRCServer` to propagate to all plugins.
+        Takes an `dialect.defs.IRCServer` and passes it out to all plugins.
+
+        This is called when a change to the server has occurred and we want to
+        update all plugins to have a current copy of it.
+
+        Params:
+            server = `dialect.defs.IRCServer` to propagate to all plugins.
      +/
     void propagateServer(IRCServer server) pure nothrow @nogc
     {
@@ -727,13 +772,13 @@ struct Kameloso
 
     // propagateBot
     /++
-     +  Takes an `kameloso.common.IRCBot` and passes it out to all plugins.
-     +
-     +  This is called when a change to the bot has occurred and we want to
-     +  update all plugins to have a current copy of it.
-     +
-     +  Params:
-     +      bot = `kameloso.common.IRCBot` to propagate to all plugins.
+        Takes an `kameloso.common.IRCBot` and passes it out to all plugins.
+
+        This is called when a change to the bot has occurred and we want to
+        update all plugins to have a current copy of it.
+
+        Params:
+            bot = `kameloso.common.IRCBot` to propagate to all plugins.
      +/
     void propagateBot(IRCBot bot) pure nothrow @nogc
     {
@@ -748,13 +793,13 @@ struct Kameloso
 
     // propagateSettings
     /++
-     +  Takes a `kameloso.common.CoreSettings` and passes it out to all plugins.
-     +
-     +  This is called when a change to the bot has occurred and we want to
-     +  update all plugins to have a current copy of it.
-     +
-     +  Params:
-     +      settings = `kameloso.common.CoreSettings` to propagate to all plugins.
+        Takes a `kameloso.common.CoreSettings` and passes it out to all plugins.
+
+        This is called when a change to the bot has occurred and we want to
+        update all plugins to have a current copy of it.
+
+        Params:
+            settings = `kameloso.common.CoreSettings` to propagate to all plugins.
      +/
     void propagateSettings(CoreSettings settings) nothrow @nogc
     {
@@ -770,7 +815,7 @@ struct Kameloso
 
     // ConnectionHistoryEntry
     /++
-     +  A record of a successful connection.
+        A record of a successful connection.
      +/
     static struct ConnectionHistoryEntry
     {
@@ -799,16 +844,16 @@ version(Colours)
 
 // printVersionInfo
 /++
- +  Prints out the bot banner with the version number and GitHub URL, with the
- +  passed colouring.
- +
- +  Example:
- +  ---
- +  printVersionInfo(TerminalForeground.white);
- +  ---
- +
- +  Params:
- +      colourCode = Terminal foreground colour to display the text in.
+    Prints out the bot banner with the version number and GitHub URL, with the
+    passed colouring.
+
+    Example:
+    ---
+    printVersionInfo(TerminalForeground.white);
+    ---
+
+    Params:
+        colourCode = Terminal foreground colour to display the text in.
  +/
 version(Colours)
 void printVersionInfo(TerminalForeground colourCode) @system
@@ -822,19 +867,19 @@ void printVersionInfo(TerminalForeground colourCode) @system
 
 // printVersionInfo
 /++
- +  Prints out the bot banner with the version number and GitHub URL, optionally
- +  with passed colouring in string format. Overload that does not rely on
- +  `kameloso.terminal.TerminalForeground` being available, yet takes the necessary
- +  parameters to allow the other overload to reuse this one.
- +
- +  Example:
- +  ---
- +  printVersionInfo();
- +  ---
- +
- +  Params:
- +      pre = String to preface the line with, usually a colour code string.
- +      post = String to end the line with, usually a resetting code string.
+    Prints out the bot banner with the version number and GitHub URL, optionally
+    with passed colouring in string format. Overload that does not rely on
+    `kameloso.terminal.TerminalForeground` being available, yet takes the necessary
+    parameters to allow the other overload to reuse this one.
+
+    Example:
+    ---
+    printVersionInfo();
+    ---
+
+    Params:
+        pre = String to preface the line with, usually a colour code string.
+        post = String to end the line with, usually a resetting code string.
  +/
 void printVersionInfo(const string pre = string.init, const string post = string.init) @safe
 {
@@ -852,9 +897,9 @@ void printVersionInfo(const string pre = string.init, const string post = string
 
 // printStacktrace
 /++
- +  Prints the current stacktrace to the terminal.
- +
- +  This is so we can get the stacktrace even outside a thrown Exception.
+    Prints the current stacktrace to the terminal.
+
+    This is so we can get the stacktrace even outside a thrown Exception.
  +/
 version(PrintStacktraces)
 void printStacktrace() @system
@@ -868,8 +913,8 @@ void printStacktrace() @system
 
 // OutgoingLine
 /++
- +  A string to be sent to the IRC server, along with whether or not the message
- +  should be sent quietly or if it should be displayed in the terminal.
+    A string to be sent to the IRC server, along with whether or not the message
+    should be sent quietly or if it should be displayed in the terminal.
  +/
 struct OutgoingLine
 {
@@ -890,28 +935,28 @@ struct OutgoingLine
 
 // findURLs
 /++
- +  Finds URLs in a string, returning an array of them. Does not filter out duplicates.
- +
- +  Replacement for regex matching using much less memory when compiling
- +  (around ~300mb).
- +
- +  To consider: does this need a `dstring`?
- +
- +  Example:
- +  ---
- +  // Replaces the following:
- +  // enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
- +  // static urlRegex = ctRegex!stephenhay;
- +
- +  string[] urls = findURL("blah https://google.com http://facebook.com httpx://wefpokwe");
- +  assert(urls.length == 2);
- +  ---
- +
- +  Params:
- +      line = String line to examine and find URLs in.
- +
- +  Returns:
- +      A `string[]` array of found URLs. These include fragment identifiers.
+    Finds URLs in a string, returning an array of them. Does not filter out duplicates.
+
+    Replacement for regex matching using much less memory when compiling
+    (around ~300mb).
+
+    To consider: does this need a `dstring`?
+
+    Example:
+    ---
+    // Replaces the following:
+    // enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
+    // static urlRegex = ctRegex!stephenhay;
+
+    string[] urls = findURL("blah https://google.com http://facebook.com httpx://wefpokwe");
+    assert(urls.length == 2);
+    ---
+
+    Params:
+        line = String line to examine and find URLs in.
+
+    Returns:
+        A `string[]` array of found URLs. These include fragment identifiers.
  +/
 string[] findURLs(const string line) @safe pure
 {
@@ -1022,34 +1067,34 @@ unittest
 
 // timeSinceInto
 /++
- +  Express how much time has passed in a `core.time.Duration`, in natural
- +  (English) language. Overload that writes the result to thet passed output range `sink`.
- +
- +  Example:
- +  ---
- +  Appender!string sink;
- +
- +  immutable then = Clock.currTime;
- +  Thread.sleep(1.seconds);
- +  immutable now = Clock.currTime;
- +
- +  immutable duration = (now - then);
- +  immutable inEnglish = duration.timeSinceInto(sink);
- +  ---
- +
- +  Params:
- +      abbreviate = Whether or not to abbreviate the output, using `h` instead
- +          of `hours`, `m` instead of `minutes`, etc.
- +      numUnits = Number of units to include in the output text, where such is
- +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
- +          unit "months", and a fake "years" based on it. Passing a `numUnits`
- +          of 7 will express the time difference using all units. Passing one
- +          of 4 will only express it in days, hours, minutes and seconds.
- +          Passing 1 will express it in only seconds.
- +      truncateUnits = Number of units to skip from output, going from least
- +          significant (seconds) to most significant (years).
- +      duration = A period of time.
- +      sink = Output buffer sink to write to.
+    Express how much time has passed in a `core.time.Duration`, in natural
+    (English) language. Overload that writes the result to thet passed output range `sink`.
+
+    Example:
+    ---
+    Appender!string sink;
+
+    immutable then = Clock.currTime;
+    Thread.sleep(1.seconds);
+    immutable now = Clock.currTime;
+
+    immutable duration = (now - then);
+    immutable inEnglish = duration.timeSinceInto(sink);
+    ---
+
+    Params:
+        abbreviate = Whether or not to abbreviate the output, using `h` instead
+            of `hours`, `m` instead of `minutes`, etc.
+        numUnits = Number of units to include in the output text, where such is
+            "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
+            unit "months", and a fake "years" based on it. Passing a `numUnits`
+            of 7 will express the time difference using all units. Passing one
+            of 4 will only express it in days, hours, minutes and seconds.
+            Passing 1 will express it in only seconds.
+        truncateUnits = Number of units to skip from output, going from least
+            significant (seconds) to most significant (years).
+        duration = A period of time.
+        sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
     uint numUnits = 7, uint truncateUnits = 0, Sink)
@@ -1455,34 +1500,34 @@ unittest
 
 // timeSince
 /++
- +  Express how much time has passed in a `core.time.Duration`, in natural
- +  (English) language. Overload that returns the result as a new string.
- +
- +  Example:
- +  ---
- +  immutable then = Clock.currTime;
- +  Thread.sleep(1.seconds);
- +  immutable now = Clock.currTime;
- +
- +  immutable duration = (now - then);
- +  immutable inEnglish = timeSince(duration);
- +  ---
- +
- +  Params:
- +      abbreviate = Whether or not to abbreviate the output, using `h` instead
- +          of `hours`, `m` instead of `minutes`, etc.
- +      numUnits = Number of units to include in the output text, where such is
- +          "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
- +          unit "months", and a fake "years" based on it. Passing a `numUnits`
- +          of 7 will express the time difference using all units. Passing one
- +          of 4 will only express it in days, hours, minutes and seconds.
- +          Passing 1 will express it in only seconds.
- +      truncateUnits = Number of units to skip from output, going from least
- +          significant (seconds) to most significant (years).
- +      duration = A period of time.
- +
- +  Returns:
- +      A string with the passed duration expressed in natural English language.
+    Express how much time has passed in a `core.time.Duration`, in natural
+    (English) language. Overload that returns the result as a new string.
+
+    Example:
+    ---
+    immutable then = Clock.currTime;
+    Thread.sleep(1.seconds);
+    immutable now = Clock.currTime;
+
+    immutable duration = (now - then);
+    immutable inEnglish = timeSince(duration);
+    ---
+
+    Params:
+        abbreviate = Whether or not to abbreviate the output, using `h` instead
+            of `hours`, `m` instead of `minutes`, etc.
+        numUnits = Number of units to include in the output text, where such is
+            "weeks", "days", "hours", "minutes" and "seconds", a fake approximate
+            unit "months", and a fake "years" based on it. Passing a `numUnits`
+            of 7 will express the time difference using all units. Passing one
+            of 4 will only express it in days, hours, minutes and seconds.
+            Passing 1 will express it in only seconds.
+        truncateUnits = Number of units to skip from output, going from least
+            significant (seconds) to most significant (years).
+        duration = A period of time.
+
+    Returns:
+        A string with the passed duration expressed in natural English language.
  +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
     uint numUnits = 7, uint truncateUnits = 0)
@@ -1641,34 +1686,34 @@ unittest
 
 // stripSeparatedPrefix
 /++
- +  Strips a prefix word from a string, optionally also stripping away some
- +  non-word characters (currently ":;?! ").
- +
- +  This is to make a helper for stripping away bot prefixes, where such may be
- +  "kameloso: ".
- +
- +  Example:
- +  ---
- +  string prefixed = "kameloso: sudo MODE +o #channel :user";
- +  string command = prefixed.stripSeparatedPrefix("kameloso");
- +  assert((command == "sudo MODE +o #channel :user"), command);
- +  ---
- +
- +  Params:
- +      demandSep = Makes it a necessity that `line` is followed
- +          by one of the prefix letters ":;?! ". If it isn't, the `line` string
- +          will be returned as is.
- +      line = String line prefixed with `prefix`, potentially including separating characters.
- +      prefix = Prefix to strip.
- +
- +  Returns:
- +      The passed line with the `prefix` sliced away.
+    Strips a prefix word from a string, optionally also stripping away some
+    non-word characters (currently ":;?! ").
+
+    This is to make a helper for stripping away bot prefixes, where such may be
+    "kameloso: ".
+
+    Example:
+    ---
+    string prefixed = "kameloso: sudo MODE +o #channel :user";
+    string command = prefixed.stripSeparatedPrefix("kameloso");
+    assert((command == "sudo MODE +o #channel :user"), command);
+    ---
+
+    Params:
+        demandSep = Makes it a necessity that `line` is followed
+            by one of the prefix letters ":;?! ". If it isn't, the `line` string
+            will be returned as is.
+        line = String line prefixed with `prefix`, potentially including separating characters.
+        prefix = Prefix to strip.
+
+    Returns:
+        The passed line with the `prefix` sliced away.
  +/
 string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
-    import lu.string : beginsWithOneOf, nom, strippedLeft;
+    import lu.string : nom, strippedLeft;
 
     enum separatingChars = ": !?;";  // In reasonable order of likelihood
 
@@ -1679,9 +1724,12 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 
     static if (demandSep)
     {
+        import std.algorithm.comparison : among;
+        import std.meta : aliasSeqOf;
+
         // Return the whole line, a non-match, if there are no separating characters
-        // (at least one of the chars in separatingChars
-        if (!slice.beginsWithOneOf(separatingChars)) return line;
+        // (at least one of the chars in separatingChars)
+        if (!slice.length || !slice[0].among!(aliasSeqOf!separatingChars)) return line;
         slice = slice[1..$];
     }
 
@@ -1714,24 +1762,24 @@ unittest
 
 // Tint
 /++
- +  Provides an easy way to access the `*tint` members of our
- +  `kameloso.logger.KamelosoLogger` instance `logger`.
- +
- +  It still accesses the global `kameloso.common.logger` instance, but is now
- +  independent of `kameloso.common.settings`.
- +
- +  Example:
- +  ---
- +  logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
- +  ---
- +
- +  If `settings.monochrome` is true, `Tint.*` will just return an empty string.
- +  The monochrome-ness can be overridden with `Tint.*(false)`.
+    Provides an easy way to access the `*tint` members of our
+    `kameloso.logger.KamelosoLogger` instance `logger`.
+
+    It still accesses the global `kameloso.common.logger` instance, but is now
+    independent of `kameloso.common.settings`.
+
+    Example:
+    ---
+    logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
+    ---
+
+    If `settings.monochrome` is true, `Tint.*` will just return an empty string.
+    The monochrome-ness can be overridden with `Tint.*(false)`.
  +/
 struct Tint
 {
     /++
-     +  Whether or not output should be coloured at all.
+        Whether or not output should be coloured at all.
      +/
     static bool monochrome;
 
@@ -1739,12 +1787,12 @@ struct Tint
     {
         // opDispatch
         /++
-         +  Provides the string that corresponds to the tint of the
-         +  `std.experimental.logger.core.LogLevel` that was passed in string form
-         +  as the `tint` `opDispatch` template parameter.
-         +
-         +  This saves us the boilerplate of copy/pasting one function for each
-         +  `std.experimental.logger.core.LogLevel`.
+            Provides the string that corresponds to the tint of the
+            `std.experimental.logger.core.LogLevel` that was passed in string form
+            as the `tint` `opDispatch` template parameter.
+
+            This saves us the boilerplate of copy/pasting one function for each
+            `std.experimental.logger.core.LogLevel`.
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
@@ -1768,7 +1816,7 @@ struct Tint
     else
     {
         /++
-         +  Returns an empty string, since we're not versioned `Colours`.
+            Returns an empty string, since we're not versioned `Colours`.
          +/
         pragma(inline, true)
         static string log()
@@ -1816,14 +1864,14 @@ unittest
 
 // replaceTokens
 /++
- +  Apply some common text replacements. Used on part and quit reasons.
- +
- +  Params:
- +      line = String to replace tokens in.
- +      client = The current `dialect.defs.IRCClient`.
- +
- +  Returns:
- +      A modified string with token occurrences replaced.
+    Apply some common text replacements. Used on part and quit reasons.
+
+    Params:
+        line = String to replace tokens in.
+        client = The current `dialect.defs.IRCClient`.
+
+    Returns:
+        A modified string with token occurrences replaced.
  +/
 string replaceTokens(const string line, const IRCClient client) @safe pure nothrow
 {
@@ -1870,15 +1918,15 @@ unittest
 
 // replaceTokens
 /++
- +  Apply some common text replacements. Used on part and quit reasons.
- +  Overload that doesn't take an `dialect.defs.IRCClient` and as such can't
- +  replace `$nickname`.
- +
- +  Params:
- +      line = String to replace tokens in.
- +
- +  Returns:
- +      A modified string with token occurrences replaced.
+    Apply some common text replacements. Used on part and quit reasons.
+    Overload that doesn't take an `dialect.defs.IRCClient` and as such can't
+    replace `$nickname`.
+
+    Params:
+        line = String to replace tokens in.
+
+    Returns:
+        A modified string with token occurrences replaced.
  +/
 string replaceTokens(const string line) @safe pure nothrow
 {
@@ -1888,4 +1936,83 @@ string replaceTokens(const string line) @safe pure nothrow
     return line
         .replace("$version", cast(string)KamelosoInfo.version_)
         .replace("$source", cast(string)KamelosoInfo.source);
+}
+
+
+import std.datetime.systime : SysTime;
+
+// nextMidnight
+/++
+    Returns a `std.datetime.systime.SysTime` of the following midnight, for use
+    with setting the periodical timestamp.
+
+    Example:
+    ---
+    immutable now = Clock.currTime;
+    immutable midnight = now.nextMidnight;
+    writeln("Time until next midnight: ", (midnight - now));
+    ---
+
+    Params:
+        now = UNIX timestamp of the base date from which to proceed to the next midnight.
+
+    Returns:
+        A `std.datetime.systime.SysTime` of the midnight following the date
+        passed as argument.
+ +/
+SysTime nextMidnight(const SysTime now)
+{
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+
+    /+
+        The difference between rolling and adding is that rolling does not affect
+        larger units. For instance, rolling a SysTime one year's worth of days
+        gets the exact same SysTime.
+     +/
+
+    auto next = SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
+        .roll!"days"(1);
+
+    if (next.day == 1)
+    {
+        next.add!"months"(1);
+
+        if (next.month == 12)
+        {
+            next.add!"years"(1);
+        }
+    }
+
+    return next;
+}
+
+///
+unittest
+{
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+    import std.datetime.timezone : UTC;
+
+    immutable utc = UTC();
+
+    immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), utc);
+    immutable nextDay = christmasEve.nextMidnight;
+    immutable christmasDay = SysTime(DateTime(2018, 12, 25, 0, 0, 0), utc);
+    assert(nextDay.toUnixTime == christmasDay.toUnixTime);
+
+    immutable someDay = SysTime(DateTime(2018, 6, 30, 12, 27, 56), utc);
+    immutable afterSomeDay = someDay.nextMidnight;
+    immutable afterSomeDayToo = SysTime(DateTime(2018, 7, 1, 0, 0, 0), utc);
+    assert(afterSomeDay == afterSomeDayToo);
+
+    immutable newyearsEve = SysTime(DateTime(2018, 12, 31, 0, 0, 0), utc);
+    immutable newyearsDay = newyearsEve.nextMidnight;
+    immutable alsoNewyearsDay = SysTime(DateTime(2019, 1, 1, 0, 0, 0), utc);
+    assert(newyearsDay == alsoNewyearsDay);
+
+    immutable troubleDay = SysTime(DateTime(2018, 6, 30, 19, 14, 51), utc);
+    immutable afterTrouble = troubleDay.nextMidnight;
+    immutable alsoAfterTrouble = SysTime(DateTime(2018, 7, 1, 0, 0, 0), utc);
+    assert(afterTrouble == alsoAfterTrouble);
 }

@@ -1,10 +1,10 @@
 /++
- +  Implementation of Printer plugin functionality that concerns logging.
- +  For internal use.
- +
- +  The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
- +  as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
- +  functions can be offloaded here to limit module size a bit.
+    Implementation of Printer plugin functionality that concerns logging.
+    For internal use.
+
+    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
+    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.logging;
 
@@ -13,7 +13,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer;
+import kameloso.plugins.printer.base : PrinterPlugin, datestamp;
 
 import kameloso.common : Tint, logger;
 import dialect.defs;
@@ -24,12 +24,12 @@ package:
 
 // LogLineBuffer
 /++
- +  A struct containing lines to write to a log file when next committing such.
- +
- +  This is only relevant if `PrinterSettings.bufferedWrites` is set.
- +
- +  As a micro-optimisation an `std.array.Appender` is used to store the lines,
- +  instead of a normal `string[]`.
+    A struct containing lines to write to a log file when next committing such.
+
+    This is only relevant if `PrinterSettings.bufferedWrites` is set.
+
+    As a micro-optimisation an `std.array.Appender` is used to store the lines,
+    instead of a normal `string[]`.
  +/
 struct LogLineBuffer
 {
@@ -47,8 +47,8 @@ struct LogLineBuffer
     Appender!(string[]) lines;
 
     /++
-     +  Constructor taking a `std.datetime.sytime.SysTime`, to save as the date
-     +  the buffer was created.
+        Constructor taking a `std.datetime.sytime.SysTime`, to save as the date
+        the buffer was created.
      +/
     this(const string dir, const SysTime now)
     {
@@ -65,8 +65,8 @@ struct LogLineBuffer
     }
 
     /++
-     +  Constructor not taking a `std.datetime.sytime.SysTime`, for use with
-     +  buffers that should not be dated, such as the error log and the raw log.
+        Constructor not taking a `std.datetime.sytime.SysTime`, for use with
+        buffers that should not be dated, such as the error log and the raw log.
      +/
     this(const string dir, const string filename)
     {
@@ -78,18 +78,18 @@ struct LogLineBuffer
 
 // onLoggableEventImpl
 /++
- +  Logs an event to disk.
- +
- +  It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
- +  dictates whether or not non-home events should be logged. Likewise whether
- +  or not raw events should be logged.
- +
- +  Lines will either be saved immediately to disk, opening a `std.stdio.File`
- +  with appending privileges for each event as they occur, or buffered by
- +  populating arrays of lines to be written in bulk, once in a while.
- +
- +  See_Also:
- +      `commitAllLogsImpl`
+    Logs an event to disk.
+
+    It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
+    dictates whether or not non-home events should be logged. Likewise whether
+    or not raw events should be logged.
+
+    Lines will either be saved immediately to disk, opening a `std.stdio.File`
+    with appending privileges for each event as they occur, or buffered by
+    populating arrays of lines to be written in bulk, once in a while.
+
+    See_Also:
+        `commitAllLogsImpl`
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 {
@@ -355,6 +355,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
             }
 
         case USERSTATE:
+        case GLOBALUSERSTATE:
             // Always on Twitch, no need to check plugin.state.server.daemon
             return;
     }
@@ -378,7 +379,10 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         }
         else
         {
-            // Don't know where to log this event; bail
+            // logServer is probably false and event shouldn't be logged
+            // OR we don't know how to deal with this event type
+            /*import kameloso.printing : printObject;
+            printObject(event);*/
             return;
         }
         break;
@@ -388,22 +392,22 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 
 // establishLogLocation
 /++
- +  Verifies that a log directory exists, complaining if it's invalid, creating
- +  it if it doesn't exist.
- +
- +  Example:
- +  ---
- +  assert(!("~/logs".isDir));
- +  bool locationIsOkay = plugin.establishLogLocation("~/logs");
- +  assert("~/logs".isDir);
- +  ---
- +
- +  Params:
- +      plugin = The current `PrinterPlugin`.
- +      logLocation = String of the location directory we want to store logs in.
- +
- +  Returns:
- +      A bool whether or not the log location is valid.
+    Verifies that a log directory exists, complaining if it's invalid, creating
+    it if it doesn't exist.
+
+    Example:
+    ---
+    assert(!("~/logs".isDir));
+    bool locationIsOkay = plugin.establishLogLocation("~/logs");
+    assert("~/logs".isDir);
+    ---
+
+    Params:
+        plugin = The current `PrinterPlugin`.
+        logLocation = String of the location directory we want to store logs in.
+
+    Returns:
+        A bool whether or not the log location is valid.
  +/
 bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 {
@@ -437,15 +441,15 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 
 // commitAllLogsImpl
 /++
- +  Writes all buffered log lines to disk.
- +
- +  Merely wraps `commitLog` by iterating over all buffers and invoking it.
- +
- +  Params:
- +      plugin = The current `PrinterPlugin`.
- +
- +  See_Also:
- +      `commitLog`
+    Writes all buffered log lines to disk.
+
+    Merely wraps `commitLog` by iterating over all buffers and invoking it.
+
+    Params:
+        plugin = The current `PrinterPlugin`.
+
+    See_Also:
+        `commitLog`
  +/
 void commitAllLogsImpl(PrinterPlugin plugin)
 {
@@ -464,17 +468,17 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 
 // commitLog
 /++
- +  Writes a single log buffer to disk.
- +
- +  This is a way of queuing writes so that they can be committed seldomly and
- +  in bulk, supposedly being nicer to the hardware at the cost of the risk of
- +  losing uncommitted lines in a catastrophical crash.
- +
- +  Params:
- +      buffer = `LogLineBuffer` whose lines to commit to disk.
- +
- +  See_Also:
- +      `commitAllLogsImpl`
+    Writes a single log buffer to disk.
+
+    This is a way of queuing writes so that they can be committed seldomly and
+    in bulk, supposedly being nicer to the hardware at the cost of the risk of
+    losing uncommitted lines in a catastrophical crash.
+
+    Params:
+        buffer = `LogLineBuffer` whose lines to commit to disk.
+
+    See_Also:
+        `commitAllLogsImpl`
  +/
 void commitLog(ref LogLineBuffer buffer)
 {
@@ -524,17 +528,17 @@ void commitLog(ref LogLineBuffer buffer)
 
 // escapedPath
 /++
- +  Replaces some characters in a string that don't translate well to paths.
- +
- +  This is platform-specific, as Windows uses backslashes as directory
- +  separators and percentages for environment variables, whereas Posix uses
- +  forward slashes and dollar signs.
- +
- +  Params:
- +      path = A filesystem path in string form.
- +
- +  Returns:
- +      The passed path with some characters replaced.
+    Replaces some characters in a string that don't translate well to paths.
+
+    This is platform-specific, as Windows uses backslashes as directory
+    separators and percentages for environment variables, whereas Posix uses
+    forward slashes and dollar signs.
+
+    Params:
+        path = A filesystem path in string form.
+
+    Returns:
+        The passed path with some characters replaced.
  +/
 auto escapedPath(const string path)
 {

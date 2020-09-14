@@ -1,12 +1,12 @@
 /++
- +  A simple counter plugin.
- +
- +  Allows you to define runtime `!word` counters that you can increment,
- +  decrement or assign specific values to. This can be used to track deaths in
- +  video games, for instance.
- +
- +  Undefined behaviour if a counter command word conflicts with that of another
- +  command. (Generally both should trigger.)
+    A simple counter plugin.
+
+    Allows you to define runtime `!word` counters that you can increment,
+    decrement or assign specific values to. This can be used to track deaths in
+    video games, for instance.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#counter
  +/
 module kameloso.plugins.counter;
 
@@ -24,7 +24,7 @@ import std.typecons : Flag, No, Yes;
 
 // CounterSettings
 /++
- +  All Counter plugin settings aggregated.
+    All Counter plugin settings aggregated.
  +/
 @Settings struct CounterSettings
 {
@@ -38,7 +38,7 @@ import std.typecons : Flag, No, Yes;
 
 // onCommandCounter
 /++
- +  Manages runtime counters (adding, removing and listing).
+    Manages runtime counters (adding, removing and listing).
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
@@ -171,15 +171,15 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
 // onCounterWord
 /++
- +  Allows users to increment, decrement, and set counters.
- +
- +  This function fakes `kameloso.plugin.core.BotCommand`s by listening for
- +  prefixes (and the bot's nickname), and treating whatever comes after it as
- +  a command word. If it doesn't match a previously added counter, it is ignored.
- +
- +  Currently only users of class `dialect.defs.IRCUser.Class.whitelist` or higher
- +  may modify counters, but only `dialect.defs.IRCUser.Class.anyone` is needed
- +  to view the current count. This can trivially be made configurable.
+    Allows users to increment, decrement, and set counters.
+
+    This function fakes `kameloso.plugin.core.BotCommand`s by listening for
+    prefixes (and the bot's nickname), and treating whatever comes after it as
+    a command word. If it doesn't match a previously added counter, it is ignored.
+
+    Currently only users of class `dialect.defs.IRCUser.Class.whitelist` or higher
+    may modify counters, but only `dialect.defs.IRCUser.Class.anyone` is needed
+    to view the current count. This can trivially be made configurable.
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
@@ -351,13 +351,12 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
- +  Populate the counters array after we have successfully logged onto the server.
+    Populate the counters array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(CounterPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(CounterPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
@@ -371,13 +370,13 @@ void onEndOfMotd(CounterPlugin plugin)
 
 // saveResourceToDisk
 /++
- +  Saves the passed resource to disk, but in JSON format.
- +
- +  This is used with the associative arrays for counters.
- +
- +  Params:
- +      aa = The JSON-convertible resource to save.
- +      filename = Filename of the file to write to.
+    Saves the passed resource to disk, but in JSON format.
+
+    This is used with the associative arrays for counters.
+
+    Params:
+        aa = The JSON-convertible resource to save.
+        filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(const int[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
@@ -391,8 +390,8 @@ in (filename.length, "Tried to save resources to an empty filename string")
 
 // initResources
 /++
- +  Reads and writes the file of persistent counters to disk, ensuring that it's
- +  there and properly formatted.
+    Reads and writes the file of persistent counters to disk, ensuring that it's
+    there and properly formatted.
  +/
 void initResources(CounterPlugin plugin)
 {
@@ -428,7 +427,7 @@ public:
 
 // CounterPlugin
 /++
- +  The Counter plugin allows for users to define counter commands at runtime.
+    The Counter plugin allows for users to define counter commands at runtime.
  +/
 final class CounterPlugin : IRCPlugin
 {

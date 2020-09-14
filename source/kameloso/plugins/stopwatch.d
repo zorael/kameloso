@@ -1,7 +1,10 @@
 /++
- +  A simple stopwatch plugin. It offers the ability to start and stop timers,
- +  to get how much time passed between the creation of a stopwatch and the
- +  cessation of it.
+    A simple stopwatch plugin. It offers the ability to start and stop timers,
+    to get how much time passed between the creation of a stopwatch and the
+    cessation of it.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
  +/
 module kameloso.plugins.stopwatch;
 
@@ -19,7 +22,7 @@ import std.typecons : Flag, No, Yes;
 
 // StopwatchSettings
 /++
- +  All Stopwatch plugin runtime settings aggregated.
+    All Stopwatch plugin runtime settings aggregated.
  +/
 @Settings struct StopwatchSettings
 {
@@ -30,7 +33,7 @@ import std.typecons : Flag, No, Yes;
 
 // onCommandStopwatch
 /++
- +  Manages stopwatches.
+    Manages stopwatches.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -159,8 +162,8 @@ mixin MinimalAuthentication;
 public:
 
 /++
- +  The Stopwatch plugin offers the ability to start stopwatches, and print
- +  how much time elapsed upon stopping them.
+    The Stopwatch plugin offers the ability to start stopwatches, and print
+    how much time elapsed upon stopping them.
  +/
 final class StopwatchPlugin : IRCPlugin
 {

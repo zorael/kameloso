@@ -1,8 +1,12 @@
 /++
- +  Various traits that are too kameloso-specific to be in lu.
- +
- +  They generally deal with lengths of struct member names, used to format
- +  output and align columns for `kameloso.printing.printObject`.
+    Various traits that are too kameloso-specific to be in lu.
+
+    They generally deal with lengths of struct member names, used to format
+    output and align columns for `kameloso.printing.printObject`.
+
+    More of our homebrewn traits were deemed too generic to be in kameloso and
+    were moved to `lu.traits` instead:<br>
+    - https://github.com/zorael/lu/blob/master/source/lu/traits.d
  +/
 module kameloso.traits;
 
@@ -17,13 +21,13 @@ public:
 
 // longestMemberNameImpl
 /++
- +  Gets the name of the longest member in one or more struct objects.
- +
- +  This is used for formatting terminal output of objects, so that columns line up.
- +
- +  Params:
- +      all = Flag of whether to display all members, or only those not hidden.
- +      Things = Types to introspect and count member name lengths of.
+    Gets the name of the longest member in one or more struct objects.
+
+    This is used for formatting terminal output of objects, so that columns line up.
+
+    Params:
+        all = Flag of whether to display all members, or only those not hidden.
+        Things = Types to introspect and count member name lengths of.
  +/
 private template longestMemberNameImpl(Flag!"all" all, Things...)
 if ((Things.length > 0) && allSatisfy!(isStruct, Things))
@@ -64,13 +68,13 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 
 // longestMemberName
 /++
- +  Gets the name of the longest configurable member in one or more structs.
- +
- +  This is used for formatting terminal output of configuration files, so that
- +  columns line up.
- +
- +  Params:
- +      Things = Types to introspect and count member name lengths of.
+    Gets the name of the longest configurable member in one or more structs.
+
+    This is used for formatting terminal output of configuration files, so that
+    columns line up.
+
+    Params:
+        Things = Types to introspect and count member name lengths of.
  +/
 alias longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
 
@@ -106,13 +110,13 @@ unittest
 
 // longestUnserialisableMemberName
 /++
- +  Gets the name of the longest member in one or more structs, including
- +  `lu.uda.Unserialisable` ones.
- +
- +  This is used for formatting terminal output of objects, so that columns line up.
- +
- +  Params:
- +      Things = Types to introspect and count member name lengths of.
+    Gets the name of the longest member in one or more structs, including
+    `lu.uda.Unserialisable` ones.
+
+    This is used for formatting terminal output of objects, so that columns line up.
+
+    Params:
+        Things = Types to introspect and count member name lengths of.
  +/
 alias longestUnserialisableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
 
@@ -148,13 +152,13 @@ unittest
 
 // longestMemberTypeNameImpl
 /++
- +  Gets the name of the longest type of a configurable member in one or more structs.
- +
- +  This is used for formatting terminal output of objects, so that columns line up.
- +
- +  Params:
- +      all = Whether to consider all members or only those not hidden or Unserialisable.
- +      Things = Types to introspect and count member type name lengths of.
+    Gets the name of the longest type of a configurable member in one or more structs.
+
+    This is used for formatting terminal output of objects, so that columns line up.
+
+    Params:
+        all = Whether to consider all members or only those not hidden or Unserialisable.
+        Things = Types to introspect and count member type name lengths of.
  +/
 private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
 if ((Things.length > 0) && allSatisfy!(isStruct, Things))
@@ -210,13 +214,13 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 
 // longestMemberTypeName
 /++
- +  Gets the name of the longest type of a member in one or more structs.
- +
- +  This is used for formatting terminal output of configuration files, so that
- +  columns line up.
- +
- +  Params:
- +      Things = Types to introspect and count member type name lengths of.
+    Gets the name of the longest type of a member in one or more structs.
+
+    This is used for formatting terminal output of configuration files, so that
+    columns line up.
+
+    Params:
+        Things = Types to introspect and count member type name lengths of.
  +/
 alias longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
 
@@ -239,13 +243,13 @@ unittest
 
 // longestUnserialisableMemberTypeName
 /++
- +  Gets the name of the longest type of a member in one or more structs.
- +
- +  This is used for formatting terminal output of state objects, so that
- +  columns line up.
- +
- +  Params:
- +      Things = Types to introspect and count member type name lengths of.
+    Gets the name of the longest type of a member in one or more structs.
+
+    This is used for formatting terminal output of state objects, so that
+    columns line up.
+
+    Params:
+        Things = Types to introspect and count member type name lengths of.
  +/
 alias longestUnserialisableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
 

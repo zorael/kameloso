@@ -1,12 +1,12 @@
 /++
- +  The Quotes plugin allows for saving and replaying user quotes.
- +
- +  A user quote can be added by triggering the "`quote`" bot command, by use
- +  of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
- +  A random one can then be replayed by use of the "`!quote [nickname]`" command.
- +
- +  See the GitHub wiki for more information about available commands:<br>
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
+    The Quotes plugin allows for saving and replaying user quotes.
+
+    A user quote can be added by triggering the "`quote`" bot command, by use
+    of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
+    A random one can then be replayed by use of the "`!quote [nickname]`" command.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
  +/
 module kameloso.plugins.quotes;
 
@@ -27,7 +27,7 @@ import std.typecons : Flag, No, Yes;
 
 // QuotesSettings
 /++
- +  All settings for a Quotes plugin, gathered in a struct.
+    All settings for a Quotes plugin, gathered in a struct.
  +/
 @Settings struct QuotesSettings
 {
@@ -38,7 +38,7 @@ import std.typecons : Flag, No, Yes;
 
 // Quote
 /++
- +  Embodies the notion of a quote. A string line paired with a UNIX timestamp.
+    Embodies the notion of a quote. A string line paired with a UNIX timestamp.
  +/
 struct Quote
 {
@@ -62,22 +62,22 @@ struct Quote
 
 // getRandomQuote
 /++
- +  Fetches a quote for the specified nickname from the in-memory JSON array.
- +
- +  Example:
- +  ---
- +  string quote = plugin.getRandomQuote(event.sender.nickame);
- +  if (!quote.length) return;
- +  // ...
- +  ---
- +
- +  Params:
- +      plugin = Current `QuotesPlugin`.
- +      nickname = Nickname of the user to fetch quotes for.
- +
- +  Returns:
- +      A `Quote` containing a random quote string. If no quote is available it
- +      returns an empty `Quote.init` instead.
+    Fetches a quote for the specified nickname from the in-memory JSON array.
+
+    Example:
+    ---
+    string quote = plugin.getRandomQuote(event.sender.nickame);
+    if (!quote.length) return;
+    // ...
+    ---
+
+    Params:
+        plugin = Current `QuotesPlugin`.
+        nickname = Nickname of the user to fetch quotes for.
+
+    Returns:
+        A `Quote` containing a random quote string. If no quote is available it
+        returns an empty `Quote.init` instead.
  +/
 Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
@@ -99,13 +99,13 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 
 // onCommandQuote
 /++
- +  Fetches and repeats a random quote of a supplied nickname.
- +
- +  On Twitch, picks a quote from the stored quotes of the current channel owner.
- +
- +  The quote is read from in-memory JSON storage, and it is sent to the
- +  channel the triggering event occurred in, alternatively in a private message
- +  if the request was sent in one such.
+    Fetches and repeats a random quote of a supplied nickname.
+
+    On Twitch, picks a quote from the stored quotes of the current channel owner.
+
+    The quote is read from in-memory JSON storage, and it is sent to the
+    channel the triggering event occurred in, alternatively in a private message
+    if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -259,15 +259,15 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
 // addQuoteAndReport
 /++
- +  Adds a quote for the specified user and saves the list to disk. Reports
- +  success to the channel in which the command took place, or user directly
- +  if in a query.
- +
- +  Params:
- +      plugin = The current `QuotesPlugin`.
- +      event = The instigating `dialect.defs.IRCEvent`.
- +      id = The specified nickname or (preferably) account.
- +      rawLine = The quote string to add.
+    Adds a quote for the specified user and saves the list to disk. Reports
+    success to the channel in which the command took place, or user directly
+    if in a query.
+
+    Params:
+        plugin = The current `QuotesPlugin`.
+        event = The instigating `dialect.defs.IRCEvent`.
+        id = The specified nickname or (preferably) account.
+        rawLine = The quote string to add.
  +/
 void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
     const string id, const string rawLine)
@@ -322,16 +322,16 @@ in (rawLine.length, "Tried to add an empty quote")
 
 // removeWeeChatHead
 /++
- +  Removes the WeeChat timestamp and nickname from the front of a string.
- +
- +  Params:
- +      line = Full string line as copy/pasted from WeeChat.
- +      nickname = The nickname to remove (along with the timestamp).
- +      prefixes = The available user prefixes on the current server.
- +
- +  Returns:
- +      The original line with the WeeChat timestamp and nickname sliced away,
- +      or as it was passed. No new string is ever allocated.
+    Removes the WeeChat timestamp and nickname from the front of a string.
+
+    Params:
+        line = Full string line as copy/pasted from WeeChat.
+        nickname = The nickname to remove (along with the timestamp).
+        prefixes = The available user prefixes on the current server.
+
+    Returns:
+        The original line with the WeeChat timestamp and nickname sliced away,
+        or as it was passed. No new string is ever allocated.
  +/
 string removeWeeChatHead(const string line, const string nickname,
     const string prefixes) pure @safe @nogc
@@ -444,7 +444,7 @@ unittest
 
 // reload
 /++
- +  Reloads the JSON quotes from disk.
+    Reloads the JSON quotes from disk.
  +/
 void reload(QuotesPlugin plugin)
 {
@@ -453,13 +453,12 @@ void reload(QuotesPlugin plugin)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
- +  Initialises the passed `QuotesPlugin`. Loads the quotes from disk.
+    Initialises the passed `QuotesPlugin`. Loads the quotes from disk.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(QuotesPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(QuotesPlugin plugin)
 {
     plugin.quotes.load(plugin.quotesFile);
 }
@@ -467,7 +466,7 @@ void onEndOfMotd(QuotesPlugin plugin)
 
 // initResources
 /++
- +  Reads and writes the file of quotes to disk, ensuring that it's there.
+    Reads and writes the file of quotes to disk, ensuring that it's there.
  +/
 void initResources(QuotesPlugin plugin)
 {
@@ -500,12 +499,12 @@ public:
 
 // QuotesPlugin
 /++
- +  The Quotes plugin provides the ability to save and replay user quotes.
- +
- +  These are not currently automatically replayed, such as when a user joins,
- +  but can rather be actively queried by use of the `quote` verb.
- +
- +  It was historically part of `kameloso.plugins.chatbot.ChatbotPlugin`.
+    The Quotes plugin provides the ability to save and replay user quotes.
+
+    These are not currently automatically replayed, such as when a user joins,
+    but can rather be actively queried by use of the `quote` verb.
+
+    It was historically part of `kameloso.plugins.chatbot.ChatbotPlugin`.
  +/
 final class QuotesPlugin : IRCPlugin
 {
@@ -514,10 +513,10 @@ private:
     QuotesSettings quotesSettings;
 
     /++
-     +  The in-memory JSON storage of all user quotes.
-     +
-     +  It is in the JSON form of `Quote[][string]`, where the first key is the
-     +  nickname of a user.
+        The in-memory JSON storage of all user quotes.
+
+        It is in the JSON form of `Quote[][string]`, where the first key is the
+        nickname of a user.
      +/
     JSONStorage quotes;
 

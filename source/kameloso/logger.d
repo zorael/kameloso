@@ -1,18 +1,18 @@
 /++
- +  Contains the custom `KamelosoLogger` class, used to print timestamped and
- +  (optionally) coloured logging messages.
- +
- +  Example:
- +  ---
- +  auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal, Yes.flush);
- +
- +  logger.log("This is LogLevel.log");
- +  logger.info("LogLevel.info");
- +  logger.warn(".warn");
- +  logger.error(".error");
- +  logger.trace(".trace");
- +  //logger.fatal("This will crash the program.");
- +  ---
+    Contains the custom `KamelosoLogger` class, used to print timestamped and
+    (optionally) coloured logging messages.
+
+    Example:
+    ---
+    auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal, Yes.flush);
+
+    logger.log("This is LogLevel.log");
+    logger.info("LogLevel.info");
+    logger.warn(".warn");
+    logger.error(".error");
+    logger.trace(".trace");
+    //logger.fatal("This will crash the program.");
+    ---
  +/
 module kameloso.logger;
 
@@ -31,9 +31,9 @@ version = CtTints;
 
 // KamelosoLogger
 /++
- +  Logger class, used to print timestamped and coloured logging messages.
- +
- +  It is thread-local so instantiate more if you're threading.
+    Logger class, used to print timestamped and coloured logging messages.
+
+    It is thread-local so instantiate more if you're threading.
  +/
 final class KamelosoLogger
 {
@@ -65,12 +65,12 @@ public:
     }
 
     /++
-     +  Create a new `KamelosoLogger` with the passed settings.
-     +
-     +  Params:
-     +      monochrome = Whether or not to print colours.
-     +      brightTerminal = Bright terminal setting.
-     +      flush = Whether or not to flush `stdout` after printing.
+        Create a new `KamelosoLogger` with the passed settings.
+
+        Params:
+            monochrome = Whether or not to print colours.
+            brightTerminal = Bright terminal setting.
+            flush = Whether or not to flush `stdout` after printing.
      +/
     this(const Flag!"monochrome" monochrome,
         const Flag!"brightTerminal" brightTerminal,
@@ -85,27 +85,27 @@ public:
 
     // tint
     /++
-     +  Returns the corresponding `kameloso.terminal.TerminalForeground` for the
-     +  supplied `std.experimental.logger.LogLevel`,
-     +  taking into account whether the terminal is said to be bright or not.
-     +
-     +  This is merely a convenient wrapping for `logcoloursBright` and
-     +  `logcoloursDark`.
-     +
-     +  Example:
-     +  ---
-     +  TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
-     +  immutable errtintString = errtint.colour;
-     +  ---
-     +
-     +  Params:
-     +      level = The `std.experimental.logger.LogLevel` of the colour we want to scry.
-     +      bright = Whether the colour should be for a bright terminal
-     +          background or a dark one.
-     +
-     +  Returns:
-     +      A `kameloso.terminal.TerminalForeground` of the right colour. Use with
-     +      `kameloso.terminal.colour` to get a string.
+        Returns the corresponding `kameloso.terminal.TerminalForeground` for the
+        supplied `std.experimental.logger.LogLevel`,
+        taking into account whether the terminal is said to be bright or not.
+
+        This is merely a convenient wrapping for `logcoloursBright` and
+        `logcoloursDark`.
+
+        Example:
+        ---
+        TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
+        immutable errtintString = errtint.colour;
+        ---
+
+        Params:
+            level = The `std.experimental.logger.LogLevel` of the colour we want to scry.
+            bright = Whether the colour should be for a bright terminal
+                background or a dark one.
+
+        Returns:
+            A `kameloso.terminal.TerminalForeground` of the right colour. Use with
+            `kameloso.terminal.colour` to get a string.
      +/
     pragma(inline, true)
     version(Colours)
@@ -140,17 +140,17 @@ public:
 
     // tintImpl
     /++
-     +  Template for returning tints based on the settings of the `this`
-     +  `KamelosoLogger`.
-     +
-     +  This saves us having to pass the brightness setting, and allows for
-     +  making easy aliases for the log level.
-     +
-     +  Params:
-     +      level = Compile-time `std.experimental.logger.LogLevel`.
-     +
-     +  Returns:
-     +      A tint string.
+        Template for returning tints based on the settings of the `this`
+        `KamelosoLogger`.
+
+        This saves us having to pass the brightness setting, and allows for
+        making easy aliases for the log level.
+
+        Params:
+            level = Compile-time `std.experimental.logger.LogLevel`.
+
+        Returns:
+            A tint string.
      +/
     pragma(inline, true)
     version(Colours)
@@ -202,11 +202,11 @@ public:
 
 
     /++
-     +  Outputs the header of a logger message.
-     +
-     +  Params:
-     +      logLevel = The `std.experimental.logger.LogLevel` to treat this
-     +          message as being of.
+        Outputs the header of a logger message.
+
+        Params:
+            logLevel = The `std.experimental.logger.LogLevel` to treat this
+                message as being of.
      +/
     protected void beginLogMsg(const LogLevel logLevel) @safe
     {
@@ -238,10 +238,10 @@ public:
 
 
     /++
-     +  Outputs the tail of a logger message.
-     +
-     +  @trusted to allow us to flush `stdout`. `std.stdio.writeln` seems to
-     +  do this and it's annotated @trusted, so just mimic that.
+        Outputs the tail of a logger message.
+
+        @trusted to allow us to flush `stdout`. `std.stdio.writeln` seems to
+        do this and it's annotated @trusted, so just mimic that.
      +/
     private void finishLogMsg() @trusted
     {
@@ -265,16 +265,16 @@ public:
 
     // printImpl
     /++
-     +  Prints a timestamped log message to screen. Implementation function.
-     +
-     +  Prints the arguments as they are if possible (if they are some variant of
-     +  `char` or `char[]`), and otherwise tries to coerce them by using
-     +  `std.conv.to`.
-     +
-     +  Params:
-     +      logLevel = The `std.experimental.logger.LogLevel` to treat this
-     +          message as being of.
-     +      args = Variadic arguments to compose the output message with.
+        Prints a timestamped log message to screen. Implementation function.
+
+        Prints the arguments as they are if possible (if they are some variant of
+        `char` or `char[]`), and otherwise tries to coerce them by using
+        `std.conv.to`.
+
+        Params:
+            logLevel = The `std.experimental.logger.LogLevel` to treat this
+                message as being of.
+            args = Variadic arguments to compose the output message with.
      +/
     private void printImpl(Args...)(const LogLevel logLevel, Args args)
     {
@@ -350,17 +350,17 @@ public:
 
     // printfImpl
     /++
-     +  Prints a timestamped log message to screen as per the passed runtime pattern,
-     +  in `printf` style. Implementation function.
-     +
-     +  Uses `std.format.formattedWrite` to coerce the passed arguments as
-     +  the format pattern dictates.
-     +
-     +  Params:
-     +      logLevel = The `std.experimental.logger.LogLevel` to treat this
-     +          message as being of.
-     +      pattern = Runtime pattern to format the output with.
-     +      args = Variadic arguments to compose the output message with.
+        Prints a timestamped log message to screen as per the passed runtime pattern,
+        in `printf` style. Implementation function.
+
+        Uses `std.format.formattedWrite` to coerce the passed arguments as
+        the format pattern dictates.
+
+        Params:
+            logLevel = The `std.experimental.logger.LogLevel` to treat this
+                message as being of.
+            pattern = Runtime pattern to format the output with.
+            args = Variadic arguments to compose the output message with.
      +/
     private void printfImpl(Args...)(const LogLevel logLevel, const string pattern, Args args)
     {
@@ -374,21 +374,21 @@ public:
 
     // printfImpl
     /++
-     +  Prints a timestamped log message to screen as per the passed compile-time pattern,
-     +  in `printf` style. Implementation function.
-     +
-     +  Uses `std.format.formattedWrite` to coerce the passed arguments as
-     +  the format pattern dictates.
-     +
-     +  If on D version 2.074 or later, passes the pattern as a compile-time
-     +  parameter to it, to validate that the pattern matches the arguments.
-     +  If earlier it passes execution to the other, runtime-pattern `printfImpl` overload.
-     +
-     +  Params:
-     +      pattern = Compile-time pattern to validate the arguments and format the output with.
-     +      logLevel = The `std.experimental.logger.LogLevel` to treat this
-     +          message as being of.
-     +      args = Variadic arguments to compose the output message with.
+        Prints a timestamped log message to screen as per the passed compile-time pattern,
+        in `printf` style. Implementation function.
+
+        Uses `std.format.formattedWrite` to coerce the passed arguments as
+        the format pattern dictates.
+
+        If on D version 2.074 or later, passes the pattern as a compile-time
+        parameter to it, to validate that the pattern matches the arguments.
+        If earlier it passes execution to the other, runtime-pattern `printfImpl` overload.
+
+        Params:
+            pattern = Compile-time pattern to validate the arguments and format the output with.
+            logLevel = The `std.experimental.logger.LogLevel` to treat this
+                message as being of.
+            args = Variadic arguments to compose the output message with.
      +/
     private void printfImpl(string pattern, Args...)(const LogLevel logLevel, Args args)
     {
@@ -401,7 +401,7 @@ public:
 
 
     /+
-     +  Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
+        Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
      +/
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {

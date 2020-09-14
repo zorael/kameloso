@@ -1,10 +1,10 @@
 /++
- +  Implementation of Admin plugin functionality regarding user classifiers.
- +  For internal use.
- +
- +  The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
- +  as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
- +  functions can be offloaded here to limit module size a bit.
+    Implementation of Admin plugin functionality regarding user classifiers.
+    For internal use.
+
+    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
+    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.admin.classifiers;
 
@@ -13,7 +13,7 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.plugins.admin;
+import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common;
 import kameloso.common : Tint, logger;
@@ -28,16 +28,16 @@ package:
 
 // manageClassLists
 /++
- +  Common code for whitelisting and blacklisting nicknames/accounts.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
+    Common code for whitelisting and blacklisting nicknames/accounts.
+
+    Params:
+        plugin = The current `AdminPlugin`.
+        event = The triggering `dialect.defs.IRCEvent`.
+        list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import lu.string : nom;
     import std.typecons : Flag, No, Yes;
@@ -78,25 +78,26 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
 // listList
 /++
- +  Sends a list of the current users in the whitelist, operator list or the
- +  blacklist to the querying user or channel.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      channel = The channel the list relates to.
- +      list = Which list to list; "whitelist", "operator" or "blacklist".
- +      event = Optional `dialect.defs.IRCEvent` that instigated the listing.
+    Sends a list of the current users in the whitelist, operator list or the
+    blacklist to the querying user or channel.
+
+    Params:
+        plugin = The current `AdminPlugin`.
+        channel = The channel the list relates to.
+        list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
+        event = Optional `dialect.defs.IRCEvent` that instigated the listing.
  +/
 void listList(AdminPlugin plugin, const string channel, const string list,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import lu.json : JSONStorage;
     import std.format : format;
 
     immutable asWhat =
         (list == "operator") ? "operators" :
+        (list == "staff") ? "staff" :
         (list == "whitelist") ? "whitelisted users" :
         /*(list == "blacklist") ?*/ "blacklisted users";
 
@@ -125,21 +126,21 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
 // lookupEnlist
 /++
- +  Adds an account to either the whitelist, operator list or the blacklist.
- +
- +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      rawSpecified = The nickname or account to white-/blacklist.
- +      list = Which of "whitelist", "operator" or "blacklist" to add to.
- +      channel = Which channel the enlisting relates to.
- +      event = Optional instigating `dialect.defs.IRCEvent`.
+    Adds an account to either the whitelist, operator list or the blacklist.
+
+    Passes the `list` parameter to `alterAccountClassifier`, for list selection.
+
+    Params:
+        plugin = The current `AdminPlugin`.
+        rawSpecified = The nickname or account to white-/blacklist.
+        list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
+        channel = Which channel the enlisting relates to.
+        event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import dialect.common : isValidNickname;
     import lu.string : contains, stripped;
@@ -149,6 +150,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
+        (list == "staff") ? "staff" :
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
@@ -218,7 +220,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
     if (user && user.account.length)
     {
         // user.nickname == specified
-        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+        foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
         {
             if (thisList == list) continue;
             plugin.alterAccountClassifier(No.add, thisList, user.account, channel);
@@ -272,7 +274,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
                 if (const userInList = id in plugin.state.users)
                 {
-                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+                    foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
                     {
                         if (thisList == list) continue;
                         plugin.alterAccountClassifier(No.add, thisList, id, channel);
@@ -289,7 +291,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
                 if (!usersWithThisDisplayName.empty)
                 {
-                    foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+                    foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
                     {
                         if (thisList == list) continue;
 
@@ -306,7 +308,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
             }
         }
 
-        foreach (immutable thisList; only("operator", "whitelist", "blacklist"))
+        foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
         {
             if (thisList == list) continue;
             plugin.alterAccountClassifier(No.add, thisList, id, channel);
@@ -341,21 +343,21 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
 // delist
 /++
- +  Removes a nickname from either the whitelist, operator list or the blacklist.
- +
- +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      account = The account to delist as whitelisted/blacklisted or as operator.
- +      list = Which of "whitelist", "operator" or "blacklist" to remove from.
- +      channel = Which channel the enlisting relates to.
- +      event = Optional instigating `dialect.defs.IRCEvent`.
+    Removes a nickname from either the whitelist, operator list or the blacklist.
+
+    Passes the `list` parameter to `alterAccountClassifier`, for list selection.
+
+    Params:
+        plugin = The current `AdminPlugin`.
+        account = The account to delist as whitelisted/blacklisted or as operator.
+        list = Which of "whitelist", "operator", "staff" or "blacklist" to remove from.
+        channel = Which channel the enlisting relates to.
+        event = Optional instigating `dialect.defs.IRCEvent`.
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import std.format : format;
 
@@ -376,6 +378,7 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
+        (list == "staff") ? "staff" :
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
@@ -444,10 +447,10 @@ in (list.among!("whitelist", "blacklist", "operator"),
 
 // AlterationResult
 /++
- +  Enum embodying the results of an account alteration.
- +
- +  Returned by functions to report success or failure, to let them give terminal
- +  or IRC feedback appropriately.
+    Enum embodying the results of an account alteration.
+
+    Returned by functions to report success or failure, to let them give terminal
+    or IRC feedback appropriately.
  +/
 enum AlterationResult
 {
@@ -460,29 +463,29 @@ enum AlterationResult
 
 // alterAccountClassifier
 /++
- +  Adds or removes an account from the file of user classifier definitions,
- +  and reloads all plugins to make them read the updated lists.
- +
- +  Params:
- +      plugin = The current `AdminPlugin`.
- +      add = Whether to add to or remove from lists.
- +      list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
- +      account = Services account name to add or remove.
- +      channel = Channel the account-class applies to.
- +
- +  Returns:
- +      `AlterationResult.alreadyInList` if enlisting (`Yes.add`) and the account
- +      was already in the specified list.
- +      `AlterationResult.noSuchAccount` if delisting (`No.add`) and no such
- +      account could be found in the specified list.
- +      `AlterationResult.noSuchChannel` if delisting (`No.add`) and no such
- +      channel could be found in the specified list.
- +      `AlterationResult.success` if enlisting or delisting succeeded.
+    Adds or removes an account from the file of user classifier definitions,
+    and reloads all plugins to make them read the updated lists.
+
+    Params:
+        plugin = The current `AdminPlugin`.
+        add = Whether to add to or remove from lists.
+        list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
+        account = Services account name to add or remove.
+        channel = Channel the account-class applies to.
+
+    Returns:
+        `AlterationResult.alreadyInList` if enlisting (`Yes.add`) and the account
+        was already in the specified list.
+        `AlterationResult.noSuchAccount` if delisting (`No.add`) and no such
+        account could be found in the specified list.
+        `AlterationResult.noSuchChannel` if delisting (`No.add`) and no such
+        channel could be found in the specified list.
+        `AlterationResult.success` if enlisting or delisting succeeded.
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account, const string channel)
-in (list.among!("whitelist", "blacklist", "operator"),
-    list ~ " is not whitelist, operator nor blacklist")
+in (list.among!("whitelist", "blacklist", "operator", "staff"),
+    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage;

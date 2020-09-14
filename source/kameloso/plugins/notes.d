@@ -1,9 +1,9 @@
 /++
- +  The Notes plugin allows for storing notes to offline users, to be replayed
- +  when they next join the channel.
- +
- +  See the GitHub wiki for more information about available commands:
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#notes
+    The Notes plugin allows for storing notes to offline users, to be replayed
+    when they next join the channel.
+
+    See the GitHub wiki for more information about available commands:
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#notes
  +/
 module kameloso.plugins.notes;
 
@@ -23,7 +23,7 @@ import std.typecons : Flag, No, Yes;
 
 // NotesSettings
 /++
- +  Notes plugin settings.
+    Notes plugin settings.
  +/
 @Settings struct NotesSettings
 {
@@ -34,7 +34,7 @@ import std.typecons : Flag, No, Yes;
 
 // onReplayEvent
 /++
- +  Plays back notes on signs of activity.
+    Plays back notes on signs of activity.
  +/
 @(Chainable)
 @(IRCEvent.Type.JOIN)
@@ -53,15 +53,15 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
 // onWhoReply
 /++
- +  Plays backs notes upon replies of a WHO query.
- +
- +  These carry a sender, so it's possible we know the account without lookups.
- +
- +  Do nothing if `CoreSettings.eagerLookups` is true, as we'd collide with
- +  ChanQueries' queries.
- +
- +  Pass `true` to `playbackNotes` to ensure it does low-priority background
- +  WHOIS queries.
+    Plays backs notes upon replies of a WHO query.
+
+    These carry a sender, so it's possible we know the account without lookups.
+
+    Do nothing if `CoreSettings.eagerLookups` is true, as we'd collide with
+    ChanQueries' queries.
+
+    Pass `true` to `playbackNotes` to ensure it does low-priority background
+    WHOIS queries.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
@@ -77,16 +77,16 @@ void onWhoReply(NotesPlugin plugin, const IRCEvent event)
 
 // playbackNotes
 /++
- +  Sends notes queued for a user to a channel when they join or show activity.
- +  Private notes are also sent, when some exist.
- +
- +  Nothing is sent if no notes are stored.
- +
- +  Params:
- +      plugin = The current `NotesPlugin`.
- +      givenUser = The `dialect.defs.IRCUser` for whom we want to replay notes.
- +      givenChannel = Name of the channel we want the notes related to.
- +      background = Whether or not to issue WHOIS queries as low-priority background messages.
+    Sends notes queued for a user to a channel when they join or show activity.
+    Private notes are also sent, when some exist.
+
+    Nothing is sent if no notes are stored.
+
+    Params:
+        plugin = The current `NotesPlugin`.
+        givenUser = The `dialect.defs.IRCUser` for whom we want to replay notes.
+        givenChannel = Name of the channel we want the notes related to.
+        background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
 void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     const string givenChannel, const Flag!"background" background = No.background)
@@ -246,12 +246,12 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 
 // onNames
 /++
- +  Sends notes to a channel upon joining it.
- +
- +  Do nothing if version `WithChanQueriesService`, as the ChanQueries service
- +  will issue WHO queries on channels shortly after joining. WHO replies carry
- +  more information than NAMES replies do, so we'd just be duplicating effort
- +  for worse results.
+    Sends notes to a channel upon joining it.
+
+    Do nothing if version `WithChanQueriesService`, as the ChanQueries service
+    will issue WHO queries on channels shortly after joining. WHO replies carry
+    more information than NAMES replies do, so we'd just be duplicating effort
+    for worse results.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
@@ -293,11 +293,11 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
 // onCommandAddNote
 /++
- +  Adds a note to the in-memory storage, and saves it to disk.
- +
- +  Messages sent in a channel will become messages for the target user in that
- +  channel. Those sent in a private query will be private notes, sent privately
- +  in the same fashion as channel notes are sent publicly.
+    Adds a note to the in-memory storage, and saves it to disk.
+
+    Messages sent in a channel will become messages for the target user in that
+    channel. Those sent in a private query will be private notes, sent privately
+    in the same fashion as channel notes are sent publicly.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -355,7 +355,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 
 // reload
 /++
- +  Reloads notes from disk.
+    Reloads notes from disk.
  +/
 void reload(NotesPlugin plugin)
 {
@@ -366,16 +366,16 @@ void reload(NotesPlugin plugin)
 
 // getNotes
 /++
- +  Fetches the notes for a specified user, from the in-memory JSON storage.
- +
- +  Params:
- +      plugin = Current `NotesPlugin`.
- +      channel = Channel for which the notes were stored.
- +      id = Nickname or account of user whose notes to fetch.
- +
- +  Returns:
- +      A Voldemort `Note[]` array, where `Note` is a struct containing a note
- +      and metadata thereto.
+    Fetches the notes for a specified user, from the in-memory JSON storage.
+
+    Params:
+        plugin = Current `NotesPlugin`.
+        channel = Channel for which the notes were stored.
+        id = Nickname or account of user whose notes to fetch.
+
+    Returns:
+        A Voldemort `Note[]` array, where `Note` is a struct containing a note
+        and metadata thereto.
  +/
 auto getNotes(NotesPlugin plugin, const string channel, const string id)
 {
@@ -436,13 +436,13 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
 
 // clearNotes
 /++
- +  Clears the note storage of any notes pertaining to the specified user, then
- +  saves it to disk.
- +
- +  Params:
- +      plugin = Current `NotesPlugin`.
- +      id = Nickname or account whose notes to clear.
- +      channel = Channel for which the notes were stored.
+    Clears the note storage of any notes pertaining to the specified user, then
+    saves it to disk.
+
+    Params:
+        plugin = Current `NotesPlugin`.
+        id = Nickname or account whose notes to clear.
+        channel = Channel for which the notes were stored.
  +/
 void clearNotes(NotesPlugin plugin, const string id, const string channel)
 in (id.length, "Tried to clear notes for an empty id")
@@ -470,13 +470,13 @@ in (id.length, "Tried to clear notes for an empty id")
 
 // pruneNotes
 /++
- +  Prunes the notes database of empty channel entries.
- +
- +  Individual nickname entries are not touched as they are assumed to be
- +  cleared and removed after replaying its notes.
- +
- +  Params:
- +      plugin = Current `NotesPlugin`.
+    Prunes the notes database of empty channel entries.
+
+    Individual nickname entries are not touched as they are assumed to be
+    cleared and removed after replaying its notes.
+
+    Params:
+        plugin = Current `NotesPlugin`.
  +/
 void pruneNotes(NotesPlugin plugin)
 {
@@ -500,14 +500,14 @@ void pruneNotes(NotesPlugin plugin)
 
 // addNote
 /++
- +  Creates a note and saves it in the in-memory JSON storage.
- +
- +  Params:
- +      plugin = Current `NotesPlugin`.
- +      id = Identifier (nickname/account) for whom the note is meant.
- +      sender = Originating user who places the note.
- +      channel = Channel for which we should save the note.
- +      line = Note text.
+    Creates a note and saves it in the in-memory JSON storage.
+
+    Params:
+        plugin = Current `NotesPlugin`.
+        id = Identifier (nickname/account) for whom the note is meant.
+        sender = Originating user who places the note.
+        channel = Channel for which we should save the note.
+        line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string id, const string sender,
     const string channel, const string line)
@@ -555,13 +555,12 @@ in (line.length, "Tried to add an empty note")
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
- +  Initialises the Notes plugin. Loads the notes from disk.
+    Initialises the Notes plugin. Loads the notes from disk.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(NotesPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(NotesPlugin plugin)
 {
     plugin.notes.load(plugin.notesFile);
 }
@@ -569,7 +568,7 @@ void onEndOfMotd(NotesPlugin plugin)
 
 // initResources
 /++
- +  Ensures that there is a notes file, creating one if there isn't.
+    Ensures that there is a notes file, creating one if there isn't.
  +/
 void initResources(NotesPlugin plugin)
 {
@@ -603,8 +602,8 @@ public:
 
 // NotesPlugin
 /++
- +  The Notes plugin, which allows people to leave messages to each other,
- +  for offline communication and such.
+    The Notes plugin, which allows people to leave messages to each other,
+    for offline communication and such.
  +/
 final class NotesPlugin : IRCPlugin
 {
@@ -616,10 +615,10 @@ private:
 
     // notes
     /++
-     +  The in-memory JSON storage of all stored notes.
-     +
-     +  It is in the JSON form of `Note[][string][string]`, where the first
-     +  string key is a channel and the second a nickname.
+        The in-memory JSON storage of all stored notes.
+
+        It is in the JSON form of `Note[][string][string]`, where the first
+        string key is a channel and the second a nickname.
      +/
     JSONStorage notes;
 

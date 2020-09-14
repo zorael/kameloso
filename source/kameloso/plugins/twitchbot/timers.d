@@ -1,9 +1,9 @@
 /++
- +  Implementation of Twitch bot timers. For internal use.
- +
- +  The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
- +  as the `kameloso.plugins.twitchbot.TwitchBotPlugin`, but these implementation
- +  functions can be offloaded here to limit module size a bit.
+    Implementation of Twitch bot timers. For internal use.
+
+    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
+    as the `kameloso.plugins.twitchbot.TwitchBotPlugin`, but these implementation
+    functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.twitchbot.timers;
 
@@ -13,7 +13,7 @@ version(WithTwitchBotPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot : TwitchBotPlugin;
+import kameloso.plugins.twitchbot.base : TwitchBotPlugin;
 
 import kameloso.plugins.core;
 import kameloso.messaging;
@@ -27,7 +27,7 @@ package:
 
 // TimerDefinition
 /++
- +  Definitions of a Twitch timer.
+    Definitions of a Twitch timer.
  +/
 struct TimerDefinition
 {
@@ -35,14 +35,14 @@ struct TimerDefinition
     string line;
 
     /++
-     +  How many messages must have been sent since the last announce before we
-     +  will allow another one.
+        How many messages must have been sent since the last announce before we
+        will allow another one.
      +/
     int messageCountThreshold;
 
     /++
-     +  How many seconds must have passed since the last announce before we will
-     +  allow another one.
+        How many seconds must have passed since the last announce before we will
+        allow another one.
      +/
     int timeThreshold;
 
@@ -53,13 +53,13 @@ struct TimerDefinition
 
 // createTimerFiber
 /++
- +  Given a `TimerDefinition` and a string channel name, creates a
- +  `core.thread.fiber.Fiber` that implements the timer.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      timerDef = Definition of the timer to apply.
- +      channelName = String channel to which the timer belongs.
+    Given a `TimerDefinition` and a string channel name, creates a
+    `core.thread.fiber.Fiber` that implements the timer.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        timerDef = Definition of the timer to apply.
+        channelName = String channel to which the timer belongs.
  +/
 Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     const string channelName)
@@ -156,12 +156,12 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
 
 // handleTimerCommand
 /++
- +  Adds, deletes, lists or clears timers for the specified target channel.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      event = The triggering `dialect.defs.IRCEvent`.
- +      targetChannel = The channel we're handling timers for.
+    Adds, deletes, lists or clears timers for the specified target channel.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        event = The triggering `dialect.defs.IRCEvent`.
+        targetChannel = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
@@ -364,10 +364,10 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
 // timerDefsToJSON
 /++
- +  Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
- +  in JSON form, for easier saving to and loading from disk.
- +
- +  Using `std.json.JSONValue` directly fails with an error.
+    Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
+    in JSON form, for easier saving to and loading from disk.
+
+    Using `std.json.JSONValue` directly fails with an error.
  +/
 JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 {
@@ -406,15 +406,15 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // populateTimers
 /++
- +  Populates the `TwitchBotPlugin.timerDefsByChannel` associative array with
- +  the timer definitions in the passed JSON file.
- +
- +  This reads the JSON values from disk and creates the `TimerDefinition`s
- +  appropriately.
- +
- +  Params:
- +      plugin = The current `TwitchBotPlugin`.
- +      filename = Filename of the JSON file to read definitions from.
+    Populates the `TwitchBotPlugin.timerDefsByChannel` associative array with
+    the timer definitions in the passed JSON file.
+
+    This reads the JSON values from disk and creates the `TimerDefinition`s
+    appropriately.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        filename = Filename of the JSON file to read definitions from.
  +/
 void populateTimers(TwitchBotPlugin plugin, const string filename)
 in (filename.length, "Tried to populate timers from an empty filename")

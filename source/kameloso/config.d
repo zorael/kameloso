@@ -1,6 +1,6 @@
 /++
- +  Functionality related to configuration; verifying it, correcting it, and
- +  reading it from/writing it to disk.
+    Functionality related to configuration; verifying it, correcting it, and
+    reading it from/writing it to disk.
  +/
 module kameloso.config;
 
@@ -17,21 +17,21 @@ public:
 
 // writeConfigurationFile
 /++
- +  Write all settings to the configuration filename passed.
- +
- +  It gathers configuration text from all plugins before formatting it into
- +  nice columns, then writes it all in one go.
- +
- +  Example:
- +  ---
- +  Kameloso instance;
- +  instance.writeConfigurationFile(settings.configFile);
- +  ---
- +
- +  Params:
- +      instance = Reference to the current `kameloso.common.Kameloso`,
- +          with all its plugins and settings.
- +      filename = String filename of the file to write to.
+    Write all settings to the configuration filename passed.
+
+    It gathers configuration text from all plugins before formatting it into
+    nice columns, then writes it all in one go.
+
+    Example:
+    ---
+    Kameloso instance;
+    instance.writeConfigurationFile(settings.configFile);
+    ---
+
+    Params:
+        instance = Reference to the current `kameloso.common.Kameloso`,
+            with all its plugins and settings.
+        filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
@@ -75,22 +75,22 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 
 // writeToDisk
 /++
- +  Saves the passed configuration text to disk, with the given filename.
- +
- +  Optionally (and by default) adds the "kameloso" version banner at the head of it.
- +
- +  Example:
- +  ---
- +  Appender!string sink;
- +  sink.serialise(client, server, settings);
- +  immutable configText = sink.data.justifiedEntryValueText;
- +  writeToDisk("kameloso.conf", configText, Yes.addBanner);
- +  ---
- +
- +  Params:
- +      filename = Filename of file to write to.
- +      configurationText = Content to write to file.
- +      banner = Whether or not to add the "*kameloso bot*" banner at the head of the file.
+    Saves the passed configuration text to disk, with the given filename.
+
+    Optionally (and by default) adds the "kameloso" version banner at the head of it.
+
+    Example:
+    ---
+    Appender!string sink;
+    sink.serialise(client, server, settings);
+    immutable configText = sink.data.justifiedEntryValueText;
+    writeToDisk("kameloso.conf", configText, Yes.addBanner);
+    ---
+
+    Params:
+        filename = Filename of file to write to.
+        configurationText = Content to write to file.
+        banner = Whether or not to add the "*kameloso bot*" banner at the head of the file.
  +/
 void writeToDisk(const string filename, const string configurationText,
     Flag!"addBanner" banner = Yes.addBanner)
@@ -123,13 +123,13 @@ void writeToDisk(const string filename, const string configurationText,
 
 // complainAboutIncompleteConfiguration
 /++
- +  Displays an error on how to complete a minimal configuration file.
- +
- +  It assumes that the bot's `kameloso.common.IRCBot.admins` and
- +  `kameloso.common.IRCBot.homeChannels` are both empty.
- +
- +  Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
- +  so place it here.
+    Displays an error on how to complete a minimal configuration file.
+
+    It assumes that the bot's `kameloso.common.IRCBot.admins` and
+    `kameloso.common.IRCBot.homeChannels` are both empty.
+
+    Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
+    so place it here.
  +/
 void complainAboutIncompleteConfiguration()
 {
@@ -143,18 +143,18 @@ void complainAboutIncompleteConfiguration()
 
 // applyDefaults
 /++
- +  Completes a client's, server's and bot's member fields. Empty members are
- +  given values from compile-time defaults.
- +
- +  Nickname, user, GECOS/"real name", server address and server port are
- +  required. If there is no nickname, generate a random one, then just update
- +  the other members to have the same value (if they're empty) OR with values
- +  stored in `kameloso.constants.KamelosoDefaultStrings`.
- +
- +  Params:
- +      client = Reference to the `dialect.defs.IRCClient` to complete.
- +      server = Reference to the `dialect.defs.IRCServer` to complete.
- +      bot = Reference to the `kameloso.common.IRCBot` to complete.
+    Completes a client's, server's and bot's member fields. Empty members are
+    given values from compile-time defaults.
+
+    Nickname, user, GECOS/"real name", server address and server port are
+    required. If there is no nickname, generate a random one, then just update
+    the other members to have the same value (if they're empty) OR with values
+    stored in `kameloso.constants.KamelosoDefaultStrings`.
+
+    Params:
+        client = Reference to the `dialect.defs.IRCClient` to complete.
+        server = Reference to the `dialect.defs.IRCServer` to complete.
+        bot = Reference to the `kameloso.common.IRCBot` to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")
@@ -248,24 +248,24 @@ unittest
 
 // configurationText
 /++
- +  Reads a configuration file into a string.
- +
- +  Example:
- +  ---
- +  string configText = "kameloso.conf".configurationText;
- +  ---
- +
- +  Params:
- +      configFile = Filename of file to read from.
- +
- +  Returns:
- +      The contents of the supplied file.
- +
- +  Throws:
- +      `lu.common.FileTypeMismatchException` if the configuration file is a directory, a
- +      character file or any other non-file type we can't write to.
- +      `lu.serialisation.ConfigurationFileReadFailureException` if the reading and decoding of
- +      the configuration file failed.
+    Reads a configuration file into a string.
+
+    Example:
+    ---
+    string configText = "kameloso.conf".configurationText;
+    ---
+
+    Params:
+        configFile = Filename of file to read from.
+
+    Returns:
+        The contents of the supplied file.
+
+    Throws:
+        `lu.common.FileTypeMismatchException` if the configuration file is a directory, a
+        character file or any other non-file type we can't write to.
+        `lu.serialisation.ConfigurationFileReadFailureException` if the reading and decoding of
+        the configuration file failed.
  +/
 string configurationText(const string configFile)
 {
@@ -301,10 +301,10 @@ string configurationText(const string configFile)
 
 // ConfigurationFileReadFailureException
 /++
- +  Exception, to be thrown when the specified configuration file could not be
- +  read, for whatever reason.
- +
- +  It is a normal `object.Exception` but with an attached filename string.
+    Exception, to be thrown when the specified configuration file could not be
+    read, for whatever reason.
+
+    It is a normal `object.Exception` but with an attached filename string.
  +/
 final class ConfigurationFileReadFailureException : Exception
 {
@@ -313,8 +313,8 @@ final class ConfigurationFileReadFailureException : Exception
     string filename;
 
     /++
-     +  Create a new `ConfigurationFileReadFailureException`, without attaching
-     +  a filename.
+        Create a new `ConfigurationFileReadFailureException`, without attaching
+        a filename.
      +/
     this(const string message, const string file = __FILE__, const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -323,8 +323,8 @@ final class ConfigurationFileReadFailureException : Exception
     }
 
     /++
-     +  Create a new `ConfigurationFileReadFailureException`, attaching a
-     +  filename.
+        Create a new `ConfigurationFileReadFailureException`, attaching a
+        filename.
      +/
     this(const string message, const string filename, const string file = __FILE__,
         const size_t line = __LINE__, Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -340,29 +340,29 @@ private import lu.traits : isStruct;
 
 // readConfigInto
 /++
- +  Reads a configuration file and applies the settings therein to passed objects.
- +
- +  More than one can be supplied, and invalid ones for which there are no
- +  settings will be silently ignored with no errors.
- +
- +  Example:
- +  ---
- +  IRCClient client;
- +  IRCServer server;
- +  string[][string] missingEntries;
- +  string[][string] invalidEntries;
- +
- +  "kameloso.conf".readConfigInto(missingEntries, invalidEntries, client, server);
- +  ---
- +
- +  Params:
- +      configFile = Filename of file to read from.
- +      missingEntries = Out reference of an associative array of string arrays
- +          of expected configuration entries that were missing.
- +      invalidEntries = Out reference of an associative array of string arrays
- +          of unexpected configuration entries that did not belong.
- +      things = Reference variadic list of things to set values of, according
- +          to the text in the configuration file.
+    Reads a configuration file and applies the settings therein to passed objects.
+
+    More than one can be supplied, and invalid ones for which there are no
+    settings will be silently ignored with no errors.
+
+    Example:
+    ---
+    IRCClient client;
+    IRCServer server;
+    string[][string] missingEntries;
+    string[][string] invalidEntries;
+
+    "kameloso.conf".readConfigInto(missingEntries, invalidEntries, client, server);
+    ---
+
+    Params:
+        configFile = Filename of file to read from.
+        missingEntries = Out reference of an associative array of string arrays
+            of expected configuration entries that were missing.
+        invalidEntries = Out reference of an associative array of string arrays
+            of unexpected configuration entries that did not belong.
+        things = Reference variadic list of things to set values of, according
+            to the text in the configuration file.
  +/
 void readConfigInto(T...)(const string configFile,
     out string[][string] missingEntries,
@@ -376,4 +376,24 @@ if (allSatisfy!(isStruct, T))
         .configurationText
         .splitter('\n')
         .deserialise(missingEntries, invalidEntries, things);
+}
+
+
+// readConfigInto
+/++
+    Reads a configuration file and applies the settings therein to passed objects.
+
+    Merely wraps the other `readConfigInto` overload and distinguishes itself
+        from it by not taking the two `string[][string]` out parameters it does.
+
+    Params:
+        configFile = Filename of file to read from.
+        things = Reference variadic list of things to set values of, according
+            to the text in the configuration file.
+ +/
+void readConfigInto(T...)(const string configFile, ref T things)
+if (allSatisfy!(isStruct, T))
+{
+    string[][string] ignore;
+    return configFile.readConfigInto(ignore, ignore, things);
 }

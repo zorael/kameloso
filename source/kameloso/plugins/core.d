@@ -1,34 +1,34 @@
 /++
- +  Contains the definition of an `IRCPlugin` and its ancilliaries, as well as
- +  mixins to fully implement it.
- +
- +  Event handlers can then be module-level functions, annotated with
- +  `dialect.defs.IRCEvent.Type`s.
- +
- +  Example:
- +  ---
- +  import kameloso.plugins.core;
- +  import kameloso.plugins.awareness;
- +
- +  @(IRCEvent.Type.CHAN)
- +  @(ChannelPolicy.home)
- +  @(PrefixPolicy.prefixed)
- +  @BotCommand(PrivilegeLevel.anyone, "foo")
- +  void onFoo(FooPlugin plugin, const IRCEvent event)
- +  {
- +      // ...
- +  }
- +
- +  mixin UserAwareness;
- +  mixin ChannelAwareness;
- +
- +  final class FooPlugin : IRCPlugin
- +  {
- +      // ...
- +
- +      mixin IRCPluginImpl;
- +  }
- +  ---
+    Contains the definition of an `IRCPlugin` and its ancilliaries, as well as
+    mixins to fully implement it.
+
+    Event handlers can then be module-level functions, annotated with
+    `dialect.defs.IRCEvent.Type`s.
+
+    Example:
+    ---
+    import kameloso.plugins.core;
+    import kameloso.plugins.awareness;
+
+    @(IRCEvent.Type.CHAN)
+    @(ChannelPolicy.home)
+    @(PrefixPolicy.prefixed)
+    @BotCommand(PrivilegeLevel.anyone, "foo")
+    void onFoo(FooPlugin plugin, const IRCEvent event)
+    {
+        // ...
+    }
+
+    mixin UserAwareness;
+    mixin ChannelAwareness;
+
+    final class FooPlugin : IRCPlugin
+    {
+        // ...
+
+        mixin IRCPluginImpl;
+    }
+    ---
  +/
 module kameloso.plugins.core;
 
@@ -44,19 +44,19 @@ public:
 
 // IRCPlugin
 /++
- +  Interface that all `IRCPlugin`s must adhere to.
- +
- +  Plugins may implement it manually, or mix in `IRCPluginImpl`.
- +
- +  This is currently shared with all `service`-class "plugins".
+    Interface that all `IRCPlugin`s must adhere to.
+
+    Plugins may implement it manually, or mix in `IRCPluginImpl`.
+
+    This is currently shared with all `service`-class "plugins".
  +/
 abstract class IRCPlugin
 {
     @safe:
 
     /++
-     +  An `IRCPluginState` instance containing variables and arrays that represent
-     +  the current state of the plugin. Should generally be passed by reference.
+        An `IRCPluginState` instance containing variables and arrays that represent
+        the current state of the plugin. Should generally be passed by reference.
      +/
     IRCPluginState state;
 
@@ -64,17 +64,17 @@ abstract class IRCPlugin
     void postprocess(ref IRCEvent) @system;
 
     /// Executed upon new IRC event parsed from the server.
-    void onEvent(const IRCEvent) @system;
+    void onEvent(/*const*/ IRCEvent) @system;
 
     /// Executed when the plugin is requested to initialise its disk resources.
     void initResources() @system;
 
     /++
-     +  Read serialised configuration text into the plugin's settings struct.
-     +
-     +  Stores an associative array of `string[]`s of missing entries in its
-     +  first `out string[][string]` parameter, and the invalid encountered
-     +  entries in the second.
+        Read serialised configuration text into the plugin's settings struct.
+
+        Stores an associative array of `string[]`s of missing entries in its
+        first `out string[][string]` parameter, and the invalid encountered
+        entries in the second.
      +/
     void deserialiseConfigFrom(const string, out string[][string], out string[][string]);
 
@@ -83,10 +83,10 @@ abstract class IRCPlugin
     bool serialiseConfigInto(ref Appender!string) const;
 
     /++
-     +  Executed during start if we want to change a setting by its string name.
-     +
-     +  Returns:
-     +      Boolean of whether the set succeeded or not.
+        Executed during start if we want to change a setting by its string name.
+
+        Returns:
+            Boolean of whether the set succeeded or not.
      +/
     bool setSettingByName(const string, const string);
 
@@ -100,24 +100,24 @@ abstract class IRCPlugin
     void teardown() @system;
 
     /++
-     +  Returns the name of the plugin, sliced off the module name.
-     +
-     +  Returns:
-     +      The string name of the plugin.
+        Returns the name of the plugin, sliced off the module name.
+
+        Returns:
+            The string name of the plugin.
      +/
     string name() @property const pure nothrow @nogc;
 
     /++
-     +  Returns an array of the descriptions of the commands a plugin offers.
-     +
-     +  Returns:
-     +      An associative `Tuple!(Description, "desc", bool, "hidden")[string]` array.
+        Returns an array of the descriptions of the commands a plugin offers.
+
+        Returns:
+            An associative `Tuple!(Description, "desc", bool, "hidden")[string]` array.
      +/
     Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const;
 
     /++
-     +  Call a plugin to perform its periodic tasks, iff the time is equal to or
-     +  exceeding `nextPeriodical`.
+        Call a plugin to perform its periodic tasks, iff the time is equal to or
+        exceeding `nextPeriodical`.
      +/
     void periodically(const long) @system;
 
@@ -135,24 +135,24 @@ abstract class IRCPlugin
 
 // IRCPluginImpl
 /++
- +  Mixin that fully implements an `IRCPlugin`.
- +
- +  Uses compile-time introspection to call module-level functions to extend behaviour.
- +
- +  With UFCS, transparently emulates all such as being member methods of the
- +  mixing-in class.
- +
- +  Example:
- +  ---
- +  final class MyPlugin : IRCPlugin
- +  {
- +      @Settings MyPluginSettings myPluginSettings;
- +
- +      // ...implementation...
- +
- +      mixin IRCPluginImpl;
- +  }
- +  ---
+    Mixin that fully implements an `IRCPlugin`.
+
+    Uses compile-time introspection to call module-level functions to extend behaviour.
+
+    With UFCS, transparently emulates all such as being member methods of the
+    mixing-in class.
+
+    Example:
+    ---
+    final class MyPlugin : IRCPlugin
+    {
+        @Settings MyPluginSettings myPluginSettings;
+
+        // ...implementation...
+
+        mixin IRCPluginImpl;
+    }
+    ---
  +/
 version(WithPlugins)
 mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
@@ -194,15 +194,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // isEnabled
     /++
-     +  Introspects the current plugin, looking for a `Settings`-annotated struct
-     +  member that has a bool annotated with `Enabler`, which denotes it as the
-     +  bool that toggles a plugin on and off.
-     +
-     +  It then returns its value.
-     +
-     +  Returns:
-     +      `true` if the plugin is deemed enabled (or cannot be disabled),
-     +      `false` if not.
+        Introspects the current plugin, looking for a `Settings`-annotated struct
+        member that has a bool annotated with `Enabler`, which denotes it as the
+        bool that toggles a plugin on and off.
+
+        It then returns its value.
+
+        Returns:
+            `true` if the plugin is deemed enabled (or cannot be disabled),
+            `false` if not.
      +/
     override public bool isEnabled() const @property pure nothrow @nogc
     {
@@ -250,24 +250,38 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
+    // allow
+    /++
+        Judges whether an event may be triggered, based on the event itself and
+        the annotated `PrivilegeLevel` of the handler in question. Wrapper function
+        that merely calls `allowImpl`. The point behind it is to make something
+        that can be overridden and still allow it to call the original logic (below).
+
+        Params:
+            event = `dialect.defs.IRCEvent` to allow, or not.
+            privilegeLevel = `PrivilegeLevel` of the handler in question.
+
+        Returns:
+            `true` if the event should be allowed to trigger, `false` if not.
+     +/
+    pragma(inline, true)
+    package FilterResult allow(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
+    {
+        return allowImpl(event, privilegeLevel);
+    }
+
+
     // allowImpl
     /++
-     +  Judges whether an event may be triggered, based on the event itself and
-     +  the annotated `PrivilegeLevel` of the handler in question.
-     +
-     +  Pass the passed arguments to `filterSender`, doing nothing otherwise.
-     +
-     +  Sadly we can't keep an `allow` around to override since calling it from
-     +  inside the same mixin always seems to resolve the original. So instead,
-     +  only have `allowImpl` and use introspection to determine whether to call
-     +  that or any custom-defined `allow` in `typeof(this)`.
-     +
-     +  Params:
-     +      event = `dialect.defs.IRCEvent` to allow, or not.
-     +      privilegeLevel = `PrivilegeLevel` of the handler in question.
-     +
-     +  Returns:
-     +      `true` if the event should be allowed to trigger, `false` if not.
+        Judges whether an event may be triggered, based on the event itself and
+        the annotated `PrivilegeLevel` of the handler in question. Implementation function.
+
+        Params:
+            event = `dialect.defs.IRCEvent` to allow, or not.
+            privilegeLevel = `PrivilegeLevel` of the handler in question.
+
+        Returns:
+            `true` if the event should be allowed to trigger, `false` if not.
      +/
     package FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
@@ -297,20 +311,20 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // onEvent
     /++
-     +  Pass on the supplied `dialect.defs.IRCEvent` to `onEventImpl`.
-     +
-     +  This is made a separate function to allow plugins to override it and
-     +  insert their own code, while still leveraging `onEventImpl` for the
-     +  actual dirty work.
-     +
-     +  Params:
-     +      event = Parse `dialect.defs.IRCEvent` to pass onto `onEventImpl`.
-     +
-     +  See_Also:
-     +      onEventImpl
+        Pass on the supplied `dialect.defs.IRCEvent` to `onEventImpl`.
+
+        This is made a separate function to allow plugins to override it and
+        insert their own code, while still leveraging `onEventImpl` for the
+        actual dirty work.
+
+        Params:
+            event = Parsed `dialect.defs.IRCEvent` to pass onto `onEventImpl`.
+
+        See_Also:
+            onEventImpl
      +/
     pragma(inline, true)
-    override public void onEvent(const IRCEvent event) @system
+    override public void onEvent(/*const*/ IRCEvent event) @system
     {
         return onEventImpl(event);
     }
@@ -318,18 +332,18 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // onEventImpl
     /++
-     +  Pass on the supplied `dialect.defs.IRCEvent` to module-level functions
-     +  annotated with the matching `dialect.defs.IRCEvent.Type`s.
-     +
-     +  It also does checks for `kameloso.plugins.core.ChannelPolicy`,
-     +  `kameloso.plugins.core.PrivilegeLevel`, `kameloso.plugins.core.PrefixPolicy`,
-     +  `kameloso.plugins.core.BotCommand`, `kameloso.plugins.core.BotRegex`
-     +  etc; where such is applicable.
-     +
-     +  Params:
-     +      origEvent = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
+        Pass on the supplied `dialect.defs.IRCEvent` to module-level functions
+        annotated with the matching `dialect.defs.IRCEvent.Type`s.
+
+        It also does checks for `kameloso.plugins.core.ChannelPolicy`,
+        `kameloso.plugins.core.PrivilegeLevel`, `kameloso.plugins.core.PrefixPolicy`,
+        `kameloso.plugins.core.BotCommand`, `kameloso.plugins.core.BotRegex`
+        etc; where such is applicable.
+
+        Params:
+            origEvent = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    package void onEventImpl(const IRCEvent origEvent) @system
+    package void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -340,7 +354,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
         import std.typecons : Flag, No, Yes;
 
-        if (!isEnabled) return;
+        if (!this.isEnabled) return;
 
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
@@ -352,7 +366,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
         alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
 
-        enum Next
+        enum NextStep
         {
             continue_,
             repeat,
@@ -360,9 +374,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         }
 
         /++
-         +  Process a function.
+            Process a function.
          +/
-        Next process(alias fun)(ref IRCEvent event)
+        NextStep process(alias fun)(ref IRCEvent event)
         {
             enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
                 Yes.verbose :
@@ -379,8 +393,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             }
 
             /++
-             +  Whether or not this event matched the type of one or more of
-             +  this function's annotations.
+                Whether or not this event matched the type of one or more of
+                this function's annotations.
              +/
             bool typeMatches;
 
@@ -401,7 +415,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
                     enum pattern = "`%s` is annotated `@(IRCEvent.Type.PRIVMSG)`, " ~
                         "which is not a valid event type. Use `IRCEvent.Type.CHAN` " ~
-                        "or `IRCEvent.Type.QUERY` instead";
+                        "and/or `IRCEvent.Type.QUERY` instead";
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.WHISPER)
@@ -525,7 +539,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             }
 
             // Invalid type, continue with the next function
-            if (!typeMatches) return Next.continue_;
+            if (!typeMatches) return NextStep.continue_;
 
             static if (verbose)
             {
@@ -559,7 +573,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     }
 
                     // channel policy does not match
-                    return Next.continue_;  // next fun
+                    return NextStep.continue_;  // next fun
                 }
             }
             else
@@ -577,7 +591,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 {
                     // Event has a `BotCommand` or a `BotRegex`set up but
                     // `event.content` is empty; cannot possibly be of interest.
-                    return Next.continue_;  // next function
+                    return NextStep.continue_;  // next function
                 }
             }
 
@@ -749,7 +763,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    return Next.continue_; // next function
+                    return NextStep.continue_; // next function
                 }
 
                 scope(exit)
@@ -788,53 +802,20 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     if (state.settings.flush) stdout.flush();
                 }
 
-                static if (__traits(hasMember, this, "allow") && isSomeFunction!(this.allow))
-                {
-                    import lu.traits : TakesParams;
-
-                    static if (!TakesParams!(this.allow, IRCEvent, PrivilegeLevel))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "Custom `allow` function in `%s` " ~
-                            "has an invalid signature: `%s`";
-                        static assert(0, pattern.format(fullyQualifiedName!(typeof(this)),
-                            typeof(this.allow).stringof));
-                    }
-
-                    static if (verbose)
-                    {
-                        writeln("...custom allow!");
-                        if (state.settings.flush) stdout.flush();
-                    }
-
-                    immutable result = this.allow(event, privilegeLevel);
-                }
-                else
-                {
-                    static if (verbose)
-                    {
-                        writeln("...built-in allow.");
-                        if (state.settings.flush) stdout.flush();
-                    }
-
-                    immutable result = allowImpl(event, privilegeLevel);
-                }
+                immutable result = this.allow(event, privilegeLevel);
 
                 static if (verbose)
                 {
-                    writeln("...result is ", Enum!FilterResult.toString(result));
+                    writeln("...allow result is ", Enum!FilterResult.toString(result));
                     if (state.settings.flush) stdout.flush();
                 }
 
-                with (FilterResult)
-                final switch (result)
+                /*if (result == FilterResult.pass)
                 {
-                case pass:
                     // Drop down
-                    break;
-
-                case whois:
+                }
+                else*/ if (result == FilterResult.whois)
+                {
                     import kameloso.plugins.common : enqueue;
                     import std.traits : fullyQualifiedName;
 
@@ -850,13 +831,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
                         this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
-                        return Next.continue_;  // Next function
+                        return NextStep.continue_;  // Next function
                     }
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
                         this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
-                        return Next.continue_;  // Next function
+                        return NextStep.continue_;  // Next function
                     }
                     else static if (Filter!(isIRCPluginParam, Params).length)
                     {
@@ -873,10 +854,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         static assert(0, "`%s` has an unsupported function signature: `%s`"
                             .format(fullyQualifiedName!fun, typeof(fun).stringof));
                     }
-
-                case fail:
-                    return Next.continue_;  // Next function
                 }
+                else if (result == FilterResult.fail)
+                {
+                    return NextStep.continue_;  // Next function
+                }
+                /*else
+                {
+                    assert(0);
+                }*/
             }
 
             alias Params = staticMap!(Unqual, Parameters!fun);
@@ -928,13 +914,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 // it's Chainable and there may be more, so keep looking.
                 // Alternatively it's an awareness function, which may be
                 // sharing one or more annotations with another.
-                return Next.continue_;
+                return NextStep.continue_;
             }
             else /*static if (isAnnotated!(fun, Terminating))*/
             {
                 // The triggered function is not Chainable so return and
                 // let the main loop continue with the next plugin.
-                return Next.return_;
+                return NextStep.return_;
             }
         }
 
@@ -968,15 +954,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 {
                     immutable next = process!fun(event);
 
-                    with (Next)
-                    final switch (next)
+                    if (next == NextStep.continue_)
                     {
-                    case continue_:
                         continue;
-
-                    case repeat:
+                    }
+                    else if (next == NextStep.repeat)
+                    {
                         // only repeat once so we don't endlessly loop
-                        if (process!fun(event) == continue_)
+                        if (process!fun(event) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -984,9 +969,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         {
                             return;
                         }
-
-                    case return_:
+                    }
+                    else if (next == NextStep.return_)
+                    {
                         return;
+                    }
+                    else
+                    {
+                        assert(0);
                     }
                 }
                 catch (UTFException e)
@@ -995,7 +985,34 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         __traits(identifier, fun), e.msg);*/
 
                     sanitizeEvent(event);
-                    process!fun(event);
+
+                    // Copy-paste, not much we can do otherwise
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
+                    {
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
                 }
                 catch (UnicodeException e)
                 {
@@ -1003,34 +1020,59 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         __traits(identifier, fun), e.msg);*/
 
                     sanitizeEvent(event);
-                    process!fun(event);
+
+                    // Copy-paste, not much we can do otherwise
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
+                    {
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
                 }
             }
         }
 
-        IRCEvent event = origEvent;  // mutable
-
-        tryProcess!setupFuns(event);
-        tryProcess!earlyFuns(event);
-        tryProcess!pluginFuns(event);
-        tryProcess!lateFuns(event);
-        tryProcess!cleanupFuns(event);
+        tryProcess!setupFuns(origEvent);
+        tryProcess!earlyFuns(origEvent);
+        tryProcess!pluginFuns(origEvent);
+        tryProcess!lateFuns(origEvent);
+        tryProcess!cleanupFuns(origEvent);
     }
 
 
     // this(IRCPluginState)
     /++
-     +  Basic constructor for a plugin.
-     +
-     +  It passes execution to the module-level `initialise` if it exists.
-     +
-     +  There's no point in checking whether the plugin is enabled or not, as it
-     +  will only be possible to change the setting after having created the
-     +  plugin (and serialised settings into it).
-     +
-     +  Params:
-     +      state = The aggregate of all plugin state variables, making
-     +          this the "original state" of the plugin.
+        Basic constructor for a plugin.
+
+        It passes execution to the module-level `initialise` if it exists.
+
+        There's no point in checking whether the plugin is enabled or not, as it
+        will only be possible to change the setting after having created the
+        plugin (and serialised settings into it).
+
+        Params:
+            state = The aggregate of all plugin state variables, making
+                this the "original state" of the plugin.
      +/
     public this(IRCPluginState state) @system
     {
@@ -1086,11 +1128,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // postprocess
     /++
-     +  Lets a plugin modify an `dialect.defs.IRCEvent` while it's begin
-     +  constructed, before it's finalised and passed on to be handled.
-     +
-     +  Params:
-     +      event = The `dialect.defs.IRCEvent` in flight.
+        Lets a plugin modify an `dialect.defs.IRCEvent` while it's begin
+        constructed, before it's finalised and passed on to be handled.
+
+        Params:
+            event = The `dialect.defs.IRCEvent` in flight.
      +/
     override public void postprocess(ref IRCEvent event) @system
     {
@@ -1098,7 +1140,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
@@ -1116,7 +1158,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // initResources
     /++
-     +  Writes plugin resources to disk, creating them if they don't exist.
+        Writes plugin resources to disk, creating them if they don't exist.
      +/
     override public void initResources() @system
     {
@@ -1124,7 +1166,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.initResources, typeof(this)))
             {
@@ -1142,20 +1184,20 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // deserialiseConfigFrom
     /++
-     +  Loads configuration for this plugin from disk.
-     +
-     +  This does not proxy a call but merely loads configuration from disk for
-     +  all struct variables annotated `Settings`.
-     +
-     +  "Returns" two associative arrays for missing entries and invalid
-     +  entries via its two out parameters.
-     +
-     +  Params:
-     +      configFile = String of the configuration file to read.
-     +      missingEntries = Out reference of an associative array of string arrays
-     +          of expected configuration entries that were missing.
-     +      invalidEntries = Out reference of an associative array of string arrays
-     +          of unexpected configuration entries that did not belong.
+        Loads configuration for this plugin from disk.
+
+        This does not proxy a call but merely loads configuration from disk for
+        all struct variables annotated `Settings`.
+
+        "Returns" two associative arrays for missing entries and invalid
+        entries via its two out parameters.
+
+        Params:
+            configFile = String of the configuration file to read.
+            missingEntries = Out reference of an associative array of string arrays
+                of expected configuration entries that were missing.
+            invalidEntries = Out reference of an associative array of string arrays
+                of unexpected configuration entries that did not belong.
      +/
     override public void deserialiseConfigFrom(const string configFile,
         out string[][string] missingEntries, out string[][string] invalidEntries)
@@ -1194,32 +1236,32 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // setSettingByName
     /++
-     +  Change a plugin's `Settings`-annotated settings struct member by their
-     +  string name.
-     +
-     +  This is used to allow for command-line argument to set any plugin's
-     +  setting by only knowing its name.
-     +
-     +  Example:
-     +  ---
-     +  @Settings struct FooSettings
-     +  {
-     +      int bar;
-     +  }
-     +
-     +  FooSettings settings;
-     +
-     +  setSettingByName("bar", 42);
-     +  assert(settings.bar == 42);
-     +  ---
-     +
-     +  Params:
-     +      setting = String name of the struct member to set.
-     +      value = String value to set it to (after converting it to the
-     +          correct type).
-     +
-     +  Returns:
-     +      `true` if a member was found and set, `false` otherwise.
+        Change a plugin's `Settings`-annotated settings struct member by their
+        string name.
+
+        This is used to allow for command-line argument to set any plugin's
+        setting by only knowing its name.
+
+        Example:
+        ---
+        @Settings struct FooSettings
+        {
+            int bar;
+        }
+
+        FooSettings settings;
+
+        setSettingByName("bar", 42);
+        assert(settings.bar == 42);
+        ---
+
+        Params:
+            setting = String name of the struct member to set.
+            value = String value to set it to (after converting it to the
+                correct type).
+
+        Returns:
+            `true` if a member was found and set, `false` otherwise.
      +/
     override public bool setSettingByName(const string setting, const string value)
     {
@@ -1245,7 +1287,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // printSettings
     /++
-     +  Prints the plugin's `Settings`-annotated settings struct.
+        Prints the plugin's `Settings`-annotated settings struct.
      +/
     override public void printSettings() const
     {
@@ -1271,22 +1313,22 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // serialiseConfigInto
     /++
-     +  Gathers the configuration text the plugin wants to contribute to the
-     +  configuration file.
-     +
-     +  Example:
-     +  ---
-     +  Appender!string sink;
-     +  sink.reserve(128);
-     +  serialiseConfigInto(sink);
-     +  ---
-     +
-     +  Params:
-     +      sink = Reference `std.array.Appender` to fill with plugin-specific
-     +          settings text.
-     +
-     +  Returns:
-     +      true if something was serialised into the passed `sink`; false if not.
+        Gathers the configuration text the plugin wants to contribute to the
+        configuration file.
+
+        Example:
+        ---
+        Appender!string sink;
+        sink.reserve(128);
+        serialiseConfigInto(sink);
+        ---
+
+        Params:
+            sink = Reference `std.array.Appender` to fill with plugin-specific
+                settings text.
+
+        Returns:
+            true if something was serialised into the passed `sink`; false if not.
      +/
     override public bool serialiseConfigInto(ref Appender!string sink) const
     {
@@ -1323,8 +1365,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // start
     /++
-     +  Runs early after-connect routines, immediately after connection has been
-     +  established.
+        Runs early after-connect routines, immediately after connection has been
+        established.
      +/
     override public void start() @system
     {
@@ -1332,7 +1374,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.start, typeof(this)))
             {
@@ -1350,7 +1392,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // teardown
     /++
-     +  De-initialises the plugin.
+        De-initialises the plugin.
      +/
     override public void teardown() @system
     {
@@ -1358,7 +1400,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.teardown, typeof(this)))
             {
@@ -1376,16 +1418,49 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // name
     /++
-     +  Returns the name of the plugin. (Technically it's the name of the module.)
-     +
-     +  Returns:
-     +      The module name of the mixing-in class.
+        Returns the name of the plugin. (Technically it's the name of the module.)
+
+        Returns:
+            The module name of the mixing-in class.
      +/
     pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
+        import std.traits : packageName;
+
         mixin("static import thisModule = " ~ module_ ~ ";");
-        return __traits(identifier, thisModule);
+
+        enum moduleNameString = __traits(identifier, thisModule);
+
+        enum cutoutModuleName = ()
+        {
+            static if (moduleNameString == "base")
+            {
+                import std.string : indexOf;
+
+                // Assumes a fqn of "kameloso.plugins.*.base"
+
+                string slice = module_;
+                immutable firstDot = slice.indexOf('.');
+                if (firstDot == -1) return slice;
+
+                slice = slice[firstDot+1..$];
+                immutable secondDot = slice.indexOf('.');
+                if (secondDot == -1) return slice;
+
+                slice = slice[secondDot+1..$];
+                immutable thirdDot = slice.indexOf('.');
+                if (thirdDot == -1) return slice;
+
+                return slice[0..thirdDot];
+            }
+            else
+            {
+                return moduleNameString;
+            }
+        }().idup;
+
+        return cutoutModuleName;
     }
 
 
@@ -1393,14 +1468,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // commands
     /++
-     +  Collects all `BotCommand` command words and `BotRegex` regex expressions
-     +  that this plugin offers at compile time, then at runtime returns them
-     +  alongside their `Description`s and their visibility, as an associative
-     +  array of `Tuple!(Description, bool)`s keyed by command name strings.
-     +
-     +  Returns:
-     +      Associative array of tuples of all `Descriptions` and whether they
-     +      are hidden, keyed by `BotCommand.word`s and `BotRegex.expression`s.
+        Collects all `BotCommand` command words and `BotRegex` regex expressions
+        that this plugin offers at compile time, then at runtime returns them
+        alongside their `Description`s and their visibility, as an associative
+        array of `Tuple!(Description, bool)`s keyed by command name strings.
+
+        Returns:
+            Associative array of tuples of all `Descriptions` and whether they
+            are hidden, keyed by `BotCommand.word`s and `BotRegex.expression`s.
      +/
     override public Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const
     {
@@ -1425,6 +1500,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 {
                     static if (hasUDA!(fun, Description))
                     {
+                        enum desc = getUDAs!(fun, Description)[0];
+                        if (desc == Description.init) continue;
+
                         static if (is(typeof(uda) : BotCommand))
                         {
                             enum key = uda.word;
@@ -1434,7 +1512,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             enum key = `r"` ~ uda.expression ~ `"`;
                         }
 
-                        enum desc = getUDAs!(fun, Description)[0];
                         commands[key] = Command(desc, uda.hidden);
 
                         static if (uda.policy == PrefixPolicy.nickname)
@@ -1473,18 +1550,18 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         // because of AAs' runtime-ness. We could make it runtime immutable once
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
-        return isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
+        return this.isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
     }
 
 
     // periodically
     /++
-     +  Calls `.periodically` on a plugin if the internal private timestamp says
-     +  the interval since the last call has passed, letting the plugin do
-     +  maintenance tasks.
-     +
-     +  Params:
-     +      now = The current time expressed in UNIX time.
+        Calls `.periodically` on a plugin if the internal private timestamp says
+        the interval since the last call has passed, letting the plugin do
+        maintenance tasks.
+
+        Params:
+            now = The current time expressed in UNIX time.
      +/
     override public void periodically(const long now) @system
     {
@@ -1515,9 +1592,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // reload
     /++
-     +  Reloads the plugin, where such makes sense.
-     +
-     +  What this means is implementation-defined.
+        Reloads the plugin, where such makes sense.
+
+        What this means is implementation-defined.
      +/
     override public void reload() @system
     {
@@ -1525,7 +1602,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             import lu.traits : TakesParams;
 
-            if (!isEnabled) return;
+            if (!this.isEnabled) return;
 
             static if (TakesParams!(.reload, typeof(this)))
             {
@@ -1545,12 +1622,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
     // onBusMessage
     /++
-     +  Proxies a bus message to the plugin, to let it handle it (or not).
-     +
-     +  Params:
-     +      header = String header for plugins to examine and decide if the
-     +          message was meant for them.
-     +      content = Wildcard content, to be cast to concrete types if the header matches.
+        Proxies a bus message to the plugin, to let it handle it (or not).
+
+        Params:
+            header = String header for plugins to examine and decide if the
+                message was meant for them.
+            content = Wildcard content, to be cast to concrete types if the header matches.
      +/
     override public void onBusMessage(const string header, shared Sendable content) @system
     {
@@ -1610,22 +1687,22 @@ version(unittest)
 
 // prefixPolicyMatches
 /++
- +  Evaluates whether or not the message in an event satisfies the `PrefixPolicy`
- +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
- +
- +  If it doesn't match, the `onEvent` routine shall consider the UDA as not
- +  matching and continue with the next one.
- +
- +  Params:
- +      verbose = Whether or not to output verbose debug information to the local terminal.
- +      event = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
- +      policy = Policy to apply.
- +      client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
- +      prefix = The prefix as set in the program-wide settings.
- +
- +  Returns:
- +      `true` if the message is in a context where the event matches the
- +      `policy`, `false` if not.
+    Evaluates whether or not the message in an event satisfies the `PrefixPolicy`
+    specified, as fetched from a `BotCommand` or `BotRegex` UDA.
+
+    If it doesn't match, the `onEvent` routine shall consider the UDA as not
+    matching and continue with the next one.
+
+    Params:
+        verbose = Whether or not to output verbose debug information to the local terminal.
+        event = Reference to the mutable `dialect.defs.IRCEvent` we're considering.
+        policy = Policy to apply.
+        client = `dialect.defs.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+        prefix = The prefix as set in the program-wide settings.
+
+    Returns:
+        `true` if the message is in a context where the event matches the
+        `policy`, `false` if not.
  +/
 bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event,
     const PrefixPolicy policy, const IRCClient client, const string prefix)
@@ -1738,21 +1815,21 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
 
 // filterSender
 /++
- +  Decides if a sender meets a `PrivilegeLevel` and is allowed to trigger an event
- +  handler, or if a WHOIS query is needed to be able to tell.
- +
- +  This requires the Persistence service to be active to work.
- +
- +  Params:
- +      event = `dialect.defs.IRCEvent` to filter.
- +      level = The `PrivilegeLevel` context in which this user should be filtered.
- +      preferHostmasks = Whether to rely on hostmasks for user identification,
- +          or to use services account logins, which need to be issued WHOIS
- +          queries to divine.
- +
- +  Returns:
- +      A `FilterResult` saying the event should `pass`, `fail`, or that more
- +      information about the sender is needed via a WHOIS call.
+    Decides if a sender meets a `PrivilegeLevel` and is allowed to trigger an event
+    handler, or if a WHOIS query is needed to be able to tell.
+
+    This requires the Persistence service to be active to work.
+
+    Params:
+        event = `dialect.defs.IRCEvent` to filter.
+        level = The `PrivilegeLevel` context in which this user should be filtered.
+        preferHostmasks = Whether to rely on hostmasks for user identification,
+            or to use services account logins, which need to be issued WHOIS
+            queries to divine.
+
+    Returns:
+        A `FilterResult` saying the event should `pass`, `fail`, or that more
+        information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
     const Flag!"preferHostmasks" preferHostmasks) @safe
@@ -1780,11 +1857,16 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
     if (event.sender.account.length)
     {
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
+        immutable isStaff = (class_ == IRCUser.Class.staff);
         immutable isOperator = (class_ == IRCUser.Class.operator);
         immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
         immutable isAnyone = (class_ == IRCUser.Class.anyone);
 
         if (isAdmin)
+        {
+            return FilterResult.pass;
+        }
+        else if (isStaff && (level <= PrivilegeLevel.staff))
         {
             return FilterResult.pass;
         }
@@ -1821,6 +1903,7 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
         final switch (level)
         {
         case admin:
+        case staff:
         case operator:
         case whitelist:
         case registered:
@@ -1842,13 +1925,13 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
 
 // IRCPluginState
 /++
- +  An aggregate of all variables that make up the common state of plugins.
- +
- +  This neatly tidies up the amount of top-level variables in each plugin
- +  module. This allows for making more or less all functions top-level
- +  functions, since any state could be passed to it with variables of this type.
- +
- +  Plugin-specific state should be kept inside the `IRCPlugin` itself.
+    An aggregate of all variables that make up the common state of plugins.
+
+    This neatly tidies up the amount of top-level variables in each plugin
+    module. This allows for making more or less all functions top-level
+    functions, since any state could be passed to it with variables of this type.
+
+    Plugin-specific state should be kept inside the `IRCPlugin` itself.
  +/
 struct IRCPluginState
 {
@@ -1858,30 +1941,30 @@ struct IRCPluginState
     import core.thread : Fiber;
 
     /++
-     +  The current `dialect.defs.IRCClient`, containing information pertaining
-     +  to the bot in the context of a client connected to an IRC server.
+        The current `dialect.defs.IRCClient`, containing information pertaining
+        to the bot in the context of a client connected to an IRC server.
      +/
     IRCClient client;
 
     /++
-     +  The current `dialect.defs.IRCServer`, containing information pertaining
-     +  to the bot in the context of an IRC server.
+        The current `dialect.defs.IRCServer`, containing information pertaining
+        to the bot in the context of an IRC server.
      +/
     IRCServer server;
 
     /++
-     +  The current `kameloso.common.IRCBot`, containing information pertaining
-     +  to the bot in the context of an IRC bot.
+        The current `kameloso.common.IRCBot`, containing information pertaining
+        to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
     /++
-     +  The current program-wide `kameloso.common.CoreSettings`.
+        The current program-wide `kameloso.common.CoreSettings`.
      +/
     CoreSettings settings;
 
     /++
-     +  The current program-wide `kameloso.common.ConnectionSettings`.
+        The current program-wide `kameloso.common.ConnectionSettings`.
      +/
     ConnectionSettings connSettings;
 
@@ -1895,11 +1978,11 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued `dialect.defs.IRCEvent`s to replay.
-     +
-     +  The main loop iterates this after processing all on-event functions so
-     +  as to know what nicks the plugin wants a WHOIS for. After the WHOIS
-     +  response returns, the event bundled with the `Replay` will be replayed.
+        Queued `dialect.defs.IRCEvent`s to replay.
+
+        The main loop iterates this after processing all on-event functions so
+        as to know what nicks the plugin wants a WHOIS for. After the WHOIS
+        response returns, the event bundled with the `Replay` will be replayed.
      +/
     Replay[][string] replays;
 
@@ -1907,14 +1990,14 @@ struct IRCPluginState
     Repeat[] repeats;
 
     /++
-     +  The list of awaiting `core.thread.fiber.Fiber`s, keyed by
-     +  `dialect.defs.IRCEvent.Type`.
+        The list of awaiting `core.thread.fiber.Fiber`s, keyed by
+        `dialect.defs.IRCEvent.Type`.
      +/
     Fiber[][] awaitingFibers;
 
     /++
-     +  The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
-     +  `dialect.defs.IRCEvent.Type`.
+        The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
+        `dialect.defs.IRCEvent.Type`.
      +/
     void delegate(const IRCEvent)[][] awaitingDelegates;
 
@@ -1928,15 +2011,15 @@ struct IRCPluginState
     long nextPeriodical;
 
     /++
-     +  The UNIX timestamp of when the next scheduled
-     +  `kameloso.thread.ScheduledFiber` or delegate should be triggered.
+        The UNIX timestamp of when the next scheduled
+        `kameloso.thread.ScheduledFiber` or delegate should be triggered.
      +/
     long nextScheduledTimestamp;
 
     // updateSchedule
     /++
-     +  Updates the saved UNIX timestamp of when the next scheduled
-     +  `core.thread.fiber.Fiber` or delegate should be triggered.
+        Updates the saved UNIX timestamp of when the next scheduled
+        `core.thread.fiber.Fiber` or delegate should be triggered.
      +/
     void updateSchedule() pure nothrow @nogc
     {
@@ -1981,10 +2064,10 @@ struct IRCPluginState
 
 // IRCPluginInitialisationException
 /++
- +  Exception thrown when an IRC plugin failed to initialise itself or its resources.
- +
- +  A normal `object.Exception`, which only differs in the sense that we can deduce
- +  what went wrong by its type.
+    Exception thrown when an IRC plugin failed to initialise itself or its resources.
+
+    A normal `object.Exception`, which only differs in the sense that we can deduce
+    what went wrong by its type.
  +/
 final class IRCPluginInitialisationException : Exception
 {
@@ -1999,9 +2082,9 @@ final class IRCPluginInitialisationException : Exception
 
 // Replay
 /++
- +  A queued event to be replayed upon a WHOIS query response.
- +
- +  It is abstract; all objects must be of a concrete `ReplayImpl` type.
+    A queued event to be replayed upon a WHOIS query response.
+
+    It is abstract; all objects must be of a concrete `ReplayImpl` type.
  +/
 abstract class Replay
 {
@@ -2031,17 +2114,17 @@ abstract class Replay
 
 // ReplayImpl
 /++
- +  Implementation of the notion of a function call with a bundled payload
- +  `dialect.defs.IRCEvent`, to replay a previous event.
- +
- +  It functions like a Command pattern object in that it stores a payload and
- +  a function pointer, which we queue and issue a WHOIS query. When the response
- +  returns we trigger the object and the original `dialect.defs.IRCEvent`
- +  is replayed.
- +
- +  Params:
- +      F = Some function type.
- +      Payload = Optional payload type.
+    Implementation of the notion of a function call with a bundled payload
+    `dialect.defs.IRCEvent`, to replay a previous event.
+
+    It functions like a Command pattern object in that it stores a payload and
+    a function pointer, which we queue and issue a WHOIS query. When the response
+    returns we trigger the object and the original `dialect.defs.IRCEvent`
+    is replayed.
+
+    Params:
+        F = Some function type.
+        Payload = Optional payload type.
  +/
 private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 {
@@ -2056,15 +2139,15 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 
 
         /++
-         +  Create a new `ReplayImpl` with the passed variables.
-         +
-         +  Params:
-         +      payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
-         +      event = `dialect.defs.IRCEvent` to attach to this `ReplayImpl`.
-         +      privilegeLevel = The privilege level required to replay the
-         +          passed function.
-         +      fn = Function pointer to call with the attached payloads when
-         +          the replay is triggered.
+            Create a new `ReplayImpl` with the passed variables.
+
+            Params:
+                payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
+                event = `dialect.defs.IRCEvent` to attach to this `ReplayImpl`.
+                privilegeLevel = The privilege level required to replay the
+                    passed function.
+                fn = Function pointer to call with the attached payloads when
+                    the replay is triggered.
          +/
         this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel,
             F fn, const string caller)
@@ -2081,12 +2164,12 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
     else
     {
         /++
-         +  Create a new `ReplayImpl` with the passed variables.
-         +
-         +  Params:
-         +      payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
-         +      fn = Function pointer to call with the attached payloads when
-         +          the replay is triggered.
+            Create a new `ReplayImpl` with the passed variables.
+
+            Params:
+                payload = Payload of templated type `Payload` to attach to this `ReplayImpl`.
+                fn = Function pointer to call with the attached payloads when
+                    the replay is triggered.
          +/
         this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn, const string caller)
         {
@@ -2102,8 +2185,8 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 
     // trigger
     /++
-     +  Call the passed function/delegate pointer, optionally with the stored
-     +  `dialect.defs.IRCEvent` and/or `Payload`.
+        Call the passed function/delegate pointer, optionally with the stored
+        `dialect.defs.IRCEvent` and/or `Payload`.
      +/
     override void trigger() @system
     {
@@ -2205,12 +2288,12 @@ unittest
 
 // Repeat
 /++
- +  An event to be repeated from the context of the main loop after having
- +  re-postprocessed it.
- +
- +  With this plugins get an ability to postprocess on demand, which is needed
- +  to apply user classes to stored events, such as those saved before issuing
- +  WHOIS queries.
+    An event to be repeated from the context of the main loop after having
+    re-postprocessed it.
+
+    With this plugins get an ability to postprocess on demand, which is needed
+    to apply user classes to stored events, such as those saved before issuing
+    WHOIS queries.
  +/
 struct Repeat
 {
@@ -2228,11 +2311,11 @@ public:
 
     // carryingFiber
     /++
-     +  Returns `fiber` as a `kameloso.thread.CarryingFiber`, blindly assuming
-     +  it can be cast thus.
-     +
-     +  Returns:
-     +      `fiber`, cast as a `kameloso.thread.CarryingFiber`!`Repeat`.
+        Returns `fiber` as a `kameloso.thread.CarryingFiber`, blindly assuming
+        it can be cast thus.
+
+        Returns:
+            `fiber`, cast as a `kameloso.thread.CarryingFiber`!`Repeat`.
      +/
     CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
@@ -2244,11 +2327,11 @@ public:
 
     // isCarrying
     /++
-     +  Returns whether or not `fiber` is actually a
-     +  `kameloso.thread.CarryingFiber`!`Repeat`.
-     +
-     +  Returns:
-     +      `true` if it is of such a subclass, `false` if not.
+        Returns whether or not `fiber` is actually a
+        `kameloso.thread.CarryingFiber`!`Repeat`.
+
+        Returns:
+            `true` if it is of such a subclass, `false` if not.
      +/
     bool isCarrying() const pure @nogc @property
     {
@@ -2277,7 +2360,7 @@ package:
 
 // filterResult
 /++
- +  The tristate results from comparing a username with the admin or whitelist lists.
+    The tristate results from comparing a username with the admin or whitelist lists.
  +/
 enum FilterResult
 {
@@ -2285,8 +2368,8 @@ enum FilterResult
     pass,   /// The user is allowed to trigger this function.
 
     /++
-     +  We don't know enough to say whether the user is allowed to trigger this
-     +  function, so do a WHOIS query and act based on the results.
+        We don't know enough to say whether the user is allowed to trigger this
+        function, so do a WHOIS query and act based on the results.
      +/
     whois,
 }
@@ -2294,30 +2377,30 @@ enum FilterResult
 
 // PrefixPolicy
 /++
- +  In what way the contents of a `dialect.defs.IRCEvent` should start (be "prefixed")
- +  for an annotated function to be allowed to trigger.
+    In what way the contents of a `dialect.defs.IRCEvent` should start (be "prefixed")
+    for an annotated function to be allowed to trigger.
  +/
 enum PrefixPolicy
 {
     /++
-     +  The annotated event handler will not examine the `dialect.defs.IRCEvent.content`
-     +  member at all and will always trigger, as long as all other annotations match.
+        The annotated event handler will not examine the `dialect.defs.IRCEvent.content`
+        member at all and will always trigger, as long as all other annotations match.
      +/
     direct,
 
     /++
-     +  The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
-     +  member starts with the `kameloso.common.CoreSettings.prefix` (e.g. "!").
-     +  All other annotations must also match.
+        The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
+        member starts with the `kameloso.common.CoreSettings.prefix` (e.g. "!").
+        All other annotations must also match.
      +/
     prefixed,
 
     /++
-     +  The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
-     +  member starts with the bot's name, as if addressed to it.
-     +
-     +  In `dialect.defs.IRCEvent.Type.QUERY` events this instead behaves as
-     +  `PrefixPolicy.direct`.
+        The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
+        member starts with the bot's name, as if addressed to it.
+
+        In `dialect.defs.IRCEvent.Type.QUERY` events this instead behaves as
+        `PrefixPolicy.direct`.
      +/
     nickname,
 }
@@ -2325,19 +2408,19 @@ enum PrefixPolicy
 
 // ChannelPolicy
 /++
- +  Whether an annotated function should be allowed to trigger on events in only
- +  home channels or in guest ones as well.
+    Whether an annotated function should be allowed to trigger on events in only
+    home channels or in guest ones as well.
  +/
 enum ChannelPolicy
 {
     /++
-     +  The annotated function will only be allowed to trigger if the event
-     +  happened in a home channel, where applicable. Not all events carry channels.
+        The annotated function will only be allowed to trigger if the event
+        happened in a home channel, where applicable. Not all events carry channels.
      +/
     home,
 
     /++
-     +  The annotated function will be allowed to trigger regardless of channel.
+        The annotated function will be allowed to trigger regardless of channel.
      +/
     any,
 }
@@ -2345,73 +2428,79 @@ enum ChannelPolicy
 
 // PrivilegeLevel
 /++
- +  What level of privilege is needed to trigger an event handler.
- +
- +  In any event handler context, the triggering user has a *level of privilege*.
- +  This decides whether or not they are allowed to trigger the function.
- +  Put simply this is the "barrier of entry" for event handlers.
- +
- +  Privileges are set on a per-channel basis and are stored in the "users.json"
- +  file in the resource directory.
+    What level of privilege is needed to trigger an event handler.
+
+    In any event handler context, the triggering user has a *level of privilege*.
+    This decides whether or not they are allowed to trigger the function.
+    Put simply this is the "barrier of entry" for event handlers.
+
+    Privileges are set on a per-channel basis and are stored in the "users.json"
+    file in the resource directory.
  +/
 enum PrivilegeLevel
 {
     /++
-     +  Override privilege checks, allowing anyone to trigger the annotated function.
+        Override privilege checks, allowing anyone to trigger the annotated function.
      +/
     ignore = 0,
 
     /++
-     +  Anyone not explicitly blacklisted (with a `dialect.defs.IRCClient.Class.blacklist`
-     +  classifier) may trigger the annotated function. As such, to know if they're
-     +  blacklisted, unknown users will first be looked up with a WHOIS query
-     +  before allowing the function to trigger.
+        Anyone not explicitly blacklisted (with a `dialect.defs.IRCClient.Class.blacklist`
+        classifier) may trigger the annotated function. As such, to know if they're
+        blacklisted, unknown users will first be looked up with a WHOIS query
+        before allowing the function to trigger.
      +/
     anyone = 1,
 
     /++
-     +  Anyone logged onto services may trigger the annotated function.
+        Anyone logged onto services may trigger the annotated function.
      +/
     registered = 2,
 
     /++
-     +  Only users with a `dialect.defs.IRCClient.Class.whitelist` classifier
-     +  may trigger the annotated function.
+        Only users with a `dialect.defs.IRCClient.Class.whitelist` classifier
+        may trigger the annotated function.
      +/
     whitelist = 3,
 
     /++
-     +  Only users with a `dialect.defs.IRCClient.Class.operator` classifier
-     +  may trigger the annotated function.
-     +
-     +  Note: this does not mean IRC "+o" operators.
+        Only users with a `dialect.defs.IRCClient.Class.operator` classifier
+        may trigger the annotated function.
+
+        Note: this does not mean IRC "+o" operators.
      +/
     operator = 4,
 
     /++
-     +  Only users defined in the configuration file as an administrator may
-     +  trigger the annotated function.
+        Only users with a `dialect.defs.IRCClient.Class.staff` classifier may
+        trigger the annotated function. These are channel owners.
      +/
-    admin = 5,
+    staff = 5,
+
+    /++
+        Only users defined in the configuration file as an administrator may
+        trigger the annotated function.
+     +/
+    admin = 10,
 }
 
 
 // replay
 /++
- +  Convenience function that returns a `ReplayImpl` of the right type,
- +  *with* a subclass plugin reference attached.
- +
- +  Params:
- +      subPlugin = Subclass `IRCPlugin` to call the function pointer `fn` with
- +          as first argument, when the WHOIS results return.
- +      event = `dialect.defs.IRCEvent` that instigated the WHOIS lookup.
- +      privilegeLevel = The privilege level policy to apply to the WHOIS results.
- +      fn = Function/delegate pointer to call upon receiving the results.
- +      caller = String name of the calling function, or something else that gives context.
- +
- +  Returns:
- +      A `Replay` with template parameters inferred from the arguments
- +      passed to this function.
+    Convenience function that returns a `ReplayImpl` of the right type,
+    *with* a subclass plugin reference attached.
+
+    Params:
+        subPlugin = Subclass `IRCPlugin` to call the function pointer `fn` with
+            as first argument, when the WHOIS results return.
+        event = `dialect.defs.IRCEvent` that instigated the WHOIS lookup.
+        privilegeLevel = The privilege level policy to apply to the WHOIS results.
+        fn = Function/delegate pointer to call upon receiving the results.
+        caller = String name of the calling function, or something else that gives context.
+
+    Returns:
+        A `Replay` with template parameters inferred from the arguments
+        passed to this function.
  +/
 Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__) @safe
@@ -2423,18 +2512,18 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
 
 // replay
 /++
- +  Convenience function that returns a `ReplayImpl` of the right type,
- +  *without* a subclass plugin reference attached.
- +
- +  Params:
- +      event = `dialect.defs.IRCEvent` that instigated the WHOIS lookup.
- +      privilegeLevel = The privilege level policy to apply to the WHOIS results.
- +      fn = Function/delegate pointer to call upon receiving the results.
- +      caller = String name of the calling function, or something else that gives context.
- +
- +  Returns:
- +      A `Replay` with template parameters inferred from the arguments
- +      passed to this function.
+    Convenience function that returns a `ReplayImpl` of the right type,
+    *without* a subclass plugin reference attached.
+
+    Params:
+        event = `dialect.defs.IRCEvent` that instigated the WHOIS lookup.
+        privilegeLevel = The privilege level policy to apply to the WHOIS results.
+        fn = Function/delegate pointer to call upon receiving the results.
+        caller = String name of the calling function, or something else that gives context.
+
+    Returns:
+        A `Replay` with template parameters inferred from the arguments
+        passed to this function.
  +/
 Replay replay(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
     Fn fn, const string caller = __FUNCTION__) @safe
@@ -2445,43 +2534,43 @@ Replay replay(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
 
 // BotCommand
 /++
- +  Defines an IRC bot command, for people to trigger with messages.
- +
- +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
- +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
- +  messages, to prefix the command `word`. (Usually "`!`", making it "`!command`".)
- +
- +  Example:
- +  ---
- +  @(IRCEvent.Type.CHAN)
- +  @(ChannelPolicy.home)
- +  @BotCommand(PrefixPolicy.prefixed, "foo")
- +  @BotCommand(PrefixPolicy.prefixed, "bar")
- +  void onCommandFooOrBar(MyPlugin plugin, const IRCEvent event)
- +  {
- +      // ...
- +  }
- +  ---
+    Defines an IRC bot command, for people to trigger with messages.
+
+    If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
+    and look for `kameloso.common.CoreSettings.prefix` at the beginning of
+    messages, to prefix the command `word`. (Usually "`!`", making it "`!command`".)
+
+    Example:
+    ---
+    @(IRCEvent.Type.CHAN)
+    @(ChannelPolicy.home)
+    @BotCommand(PrefixPolicy.prefixed, "foo")
+    @BotCommand(PrefixPolicy.prefixed, "bar")
+    void onCommandFooOrBar(MyPlugin plugin, const IRCEvent event)
+    {
+        // ...
+    }
+    ---
  +/
 struct BotCommand
 {
     /++
-     +  In what way the message is required to start for the annotated function to trigger.
+        In what way the message is required to start for the annotated function to trigger.
      +/
     PrefixPolicy policy = PrefixPolicy.prefixed;
 
     /++
-     +  The command word, without spaces.
+        The command word, without spaces.
      +/
     string word;
 
     /++
-     +  Whether this is a hidden command or if it should show up in help listings.
+        Whether this is a hidden command or if it should show up in help listings.
      +/
     bool hidden;
 
     /++
-     +  Create a new `BotCommand` with the passed policy, trigger word, and hidden flag.
+        Create a new `BotCommand` with the passed policy, trigger word, and hidden flag.
      +/
     this(const PrefixPolicy policy, const string word, const Flag!"hidden" hidden = No.hidden) pure
     {
@@ -2491,8 +2580,8 @@ struct BotCommand
     }
 
     /++
-     +  Create a new `BotCommand` with a default `PrefixPolicy.prefixed` policy
-     +  and the passed trigger word.
+        Create a new `BotCommand` with a default `PrefixPolicy.prefixed` policy
+        and the passed trigger word.
      +/
     this(const string word) pure
     {
@@ -2503,49 +2592,49 @@ struct BotCommand
 
 // BotRegex
 /++
- +  Defines an IRC bot regular expression, for people to trigger with messages.
- +
- +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.direct`
- +  and try to match the regex on all messages, regardless of how they start.
- +
- +  Example:
- +  ---
- +  @(IRCEvent.Type.CHAN)
- +  @(ChannelPolicy.home)
- +  @BotRegex(PrefixPolicy.direct, r"(?:^|\s)MonkaS(?:$|\s)")
- +  void onSawMonkaS(MyPlugin plugin, const IRCEvent event)
- +  {
- +      // ...
- +  }
- +  ---
- +
+    Defines an IRC bot regular expression, for people to trigger with messages.
+
+    If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.direct`
+    and try to match the regex on all messages, regardless of how they start.
+
+    Example:
+    ---
+    @(IRCEvent.Type.CHAN)
+    @(ChannelPolicy.home)
+    @BotRegex(PrefixPolicy.direct, r"(?:^|\s)MonkaS(?:$|\s)")
+    void onSawMonkaS(MyPlugin plugin, const IRCEvent event)
+    {
+        // ...
+    }
+    ---
+
  +/
 struct BotRegex
 {
     import std.regex : Regex, regex;
 
     /++
-     +  In what way the message is required to start for the annotated function to trigger.
+        In what way the message is required to start for the annotated function to trigger.
      +/
     PrefixPolicy policy = PrefixPolicy.direct;
 
     /++
-     +  Regex engine to match incoming messages with.
+        Regex engine to match incoming messages with.
      +/
     Regex!char engine;
 
     /++
-     +  The regular expression in string form.
+        The regular expression in string form.
      +/
     string expression;
 
     /++
-     +  Whether this is a hidden command or if it should show up in help listings.
+        Whether this is a hidden command or if it should show up in help listings.
      +/
     bool hidden;
 
     /++
-     +  Creates a new `BotRegex` with the passed policy, regex expression and hidden flag.
+        Creates a new `BotRegex` with the passed policy, regex expression and hidden flag.
      +/
     this(const PrefixPolicy policy, const string expression,
         const Flag!"hidden" hidden = No.hidden)
@@ -2560,7 +2649,7 @@ struct BotRegex
     }
 
     /++
-     +  Creates a new `BotRegex` with the passed regex expression.
+        Creates a new `BotRegex` with the passed regex expression.
      +/
     this(const string expression)
     {
@@ -2574,46 +2663,46 @@ struct BotRegex
 
 // Chainable
 /++
- +  Annotation denoting that an event-handling function let other functions in
- +  the same module process after it.
+    Annotation denoting that an event-handling function let other functions in
+    the same module process after it.
  +/
 struct Chainable;
 
 
 // Terminating
 /++
- +  Annotation denoting that an event-handling function is the end of a chain,
- +  letting no other functions in the same module be triggered after it has been.
- +
- +  This is not strictly necessary since anything non-`Chainable` is implicitly
- +  `Terminating`, but it's here to silence warnings and in hopes of the code
- +  becoming more self-documenting.
+    Annotation denoting that an event-handling function is the end of a chain,
+    letting no other functions in the same module be triggered after it has been.
+
+    This is not strictly necessary since anything non-`Chainable` is implicitly
+    `Terminating`, but it's here to silence warnings and in hopes of the code
+    becoming more self-documenting.
  +/
 struct Terminating;
 
 
 // Verbose
 /++
- +  Annotation denoting that we want verbose debug output of the plumbing when
- +  handling events, iterating through the module's event handler functions.
+    Annotation denoting that we want verbose debug output of the plumbing when
+    handling events, iterating through the module's event handler functions.
  +/
 struct Verbose;
 
 
 // Settings
 /++
- +  Annotation denoting that a struct variable is to be as considered as housing
- +  settings for a plugin and should thus be serialised and saved in the configuration file.
+    Annotation denoting that a struct variable is to be as considered as housing
+    settings for a plugin and should thus be serialised and saved in the configuration file.
  +/
 struct Settings;
 
 
 // Description
 /++
- +  Describes an `dialect.defs.IRCEvent`-annotated handler function.
- +
- +  This is used to describe functions triggered by `BotCommand`s, in the help
- +  listing routine in `kameloso.plugins.chatbot`.
+    Describes an `dialect.defs.IRCEvent`-annotated handler function.
+
+    This is used to describe functions triggered by `BotCommand`s, in the help
+    listing routine in `kameloso.plugins.chatbot`.
  +/
 struct Description
 {
@@ -2633,19 +2722,19 @@ struct Description
 
 
 /++
- +  Annotation denoting that a variable is the basename of a resource file or directory.
+    Annotation denoting that a variable is the basename of a resource file or directory.
  +/
 struct Resource;
 
 
 /++
- +  Annotation denoting that a variable is the basename of a configuration
- +  file or directory.
+    Annotation denoting that a variable is the basename of a configuration
+    file or directory.
  +/
 struct Configuration;
 
 
 /++
- +  Annotation denoting that a variable enables and disables a plugin.
+    Annotation denoting that a variable enables and disables a plugin.
  +/
 struct Enabler;

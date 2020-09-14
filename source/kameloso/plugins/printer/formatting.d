@@ -1,10 +1,10 @@
 /++
- +  Implementation of Printer plugin functionality that concerns formatting.
- +  For internal use.
- +
- +  The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
- +  as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
- +  functions can be offloaded here to limit module size a bit.
+    Implementation of Printer plugin functionality that concerns formatting.
+    For internal use.
+
+    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
+    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.formatting;
 
@@ -13,7 +13,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer : PrinterPlugin;
+import kameloso.plugins.printer.base : PrinterPlugin;
 
 import kameloso.plugins.core;
 import kameloso.irccolours;
@@ -32,7 +32,7 @@ version(Colours)
     alias TF = TerminalForeground;
 
     /++
-     +  Default colours for printing events on a dark terminal background.
+        Default colours for printing events on a dark terminal background.
      +/
     enum EventPrintingDark : TerminalForeground
     {
@@ -53,7 +53,7 @@ version(Colours)
     }
 
     /++
-     +  Default colours for printing events on a bright terminal background.
+        Default colours for printing events on a bright terminal background.
      +/
     enum EventPrintingBright : TerminalForeground
     {
@@ -77,13 +77,13 @@ version(Colours)
 
 // put
 /++
- +  Puts a variadic list of values into an output range sink.
- +
- +  Params:
- +      colours = Whether or not to accept terminal colour tokens and use
- +          them to tint the text.
- +      sink = Output range to sink items into.
- +      args = Variadic list of things to put into the output range.
+    Puts a variadic list of values into an output range sink.
+
+    Params:
+        colours = Whether or not to accept terminal colour tokens and use
+            them to tint the text.
+        sink = Output range to sink items into.
+        args = Variadic list of things to put into the output range.
  +/
 void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
@@ -157,18 +157,18 @@ unittest
 
 // formatMessageMonochrome
 /++
- +  Formats an `dialect.defs.IRCEvent` into an output range sink, in monochrome.
- +
- +  It formats the timestamp, the type of the event, the sender or sender alias,
- +  the channel or target, the content body, as well as auxiliary information.
- +
- +  Params:
- +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `dialect.defs.IRCEvent` into.
- +      event = The `dialect.defs.IRCEvent` that is to be formatted.
- +      bellOnMention = Whether or not to emit a terminal bell when the bot's
- +          nickname is mentioned in chat.
- +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
+    Formats an `dialect.defs.IRCEvent` into an output range sink, in monochrome.
+
+    It formats the timestamp, the type of the event, the sender or sender alias,
+    the channel or target, the content body, as well as auxiliary information.
+
+    Params:
+        plugin = Current `PrinterPlugin`.
+        sink = Output range to format the `dialect.defs.IRCEvent` into.
+        event = The `dialect.defs.IRCEvent` that is to be formatted.
+        bellOnMention = Whether or not to emit a terminal bell when the bot's
+            nickname is mentioned in chat.
+        bellOnError = Whether or not to emit a terminal bell when an error occurred.
  +/
 void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
@@ -482,19 +482,19 @@ if (isOutputRange!(Sink, char[]))
 
 // formatMessageColoured
 /++
- +  Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
- +
- +  It formats the timestamp, the type of the event, the sender or the sender's
- +  display name, the channel or target, the content body, as well as auxiliary
- +  information and numbers.
- +
- +  Params:
- +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `dialect.defs.IRCEvent` into.
- +      event = The `dialect.defs.IRCEvent` that is to be formatted.
- +      bellOnMention = Whether or not to emit a terminal bell when the bot's
- +          nickname is mentioned in chat.
- +      bellOnError = Whether or not to emit a terminal bell when an error occurred.
+    Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
+
+    It formats the timestamp, the type of the event, the sender or the sender's
+    display name, the channel or target, the content body, as well as auxiliary
+    information and numbers.
+
+    Params:
+        plugin = Current `PrinterPlugin`.
+        sink = Output range to format the `dialect.defs.IRCEvent` into.
+        event = The `dialect.defs.IRCEvent` that is to be formatted.
+        bellOnMention = Whether or not to emit a terminal bell when the bot's
+            nickname is mentioned in chat.
+        bellOnError = Whether or not to emit a terminal bell when an error occurred.
  +/
 version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
@@ -521,10 +521,10 @@ if (isOutputRange!(Sink, char[]))
     immutable bright = plugin.state.settings.brightTerminal ? Yes.bright : No.bright;
 
     /++
-     +  Outputs a terminal ANSI colour token based on the hash of the passed
-     +  nickname.
-     +
-     +  It gives each user a random yet consistent colour to their name.
+        Outputs a terminal ANSI colour token based on the hash of the passed
+        nickname.
+
+        It gives each user a random yet consistent colour to their name.
      +/
     FG colourByHash(const string nickname)
     {
@@ -587,11 +587,11 @@ if (isOutputRange!(Sink, char[]))
     }
 
     /++
-     +  Outputs a terminal truecolour token based on the #RRGGBB value stored in
-     +  `user.colour`.
-     +
-     +  This is for Twitch servers that assign such values to users' messages.
-     +  By catching it we can honour the setting by tinting users accordingly.
+        Outputs a terminal truecolour token based on the #RRGGBB value stored in
+        `user.colour`.
+
+        This is for Twitch servers that assign such values to users' messages.
+        By catching it we can honour the setting by tinting users accordingly.
      +/
     void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
     if (isOutputRange!(Sink, char[]))
@@ -948,29 +948,29 @@ if (isOutputRange!(Sink, char[]))
 
 // withoutTypePrefix
 /++
- +  Slices away any type prefixes from the string of a
- +  `dialect.defs.IRCEvent.Type`.
- +
- +  Only for shared use in `formatMessageMonochrome` and
- +  `formatMessageColoured`.
- +
- +  Example:
- +  ---
- +  immutable typestring1 = "PRIVMSG".withoutTypePrefix;
- +  assert((typestring1 == "PRIVMSG"), typestring1);  // passed through
- +
- +  immutable typestring2 = "ERR_NOSUCHNICK".withoutTypePrefix;
- +  assert((typestring2 == "NOSUCHNICK"), typestring2);
- +
- +  immutable typestring3 = "RPL_LIST".withoutTypePrefix;
- +  assert((typestring3 == "LIST"), typestring3);
- +  ---
- +
- +  Params:
- +      typestring = The string form of a `dialect.defs.IRCEvent.Type`.
- +
- +  Returns:
- +      A slice of the passed `typestring`, excluding any prefixes if present.
+    Slices away any type prefixes from the string of a
+    `dialect.defs.IRCEvent.Type`.
+
+    Only for shared use in `formatMessageMonochrome` and
+    `formatMessageColoured`.
+
+    Example:
+    ---
+    immutable typestring1 = "PRIVMSG".withoutTypePrefix;
+    assert((typestring1 == "PRIVMSG"), typestring1);  // passed through
+
+    immutable typestring2 = "ERR_NOSUCHNICK".withoutTypePrefix;
+    assert((typestring2 == "NOSUCHNICK"), typestring2);
+
+    immutable typestring3 = "RPL_LIST".withoutTypePrefix;
+    assert((typestring3 == "LIST"), typestring3);
+    ---
+
+    Params:
+        typestring = The string form of a `dialect.defs.IRCEvent.Type`.
+
+    Returns:
+        A slice of the passed `typestring`, excluding any prefixes if present.
  +/
 string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
 {
@@ -1023,16 +1023,16 @@ unittest
 
 // highlightEmotes
 /++
- +  Tints emote strings and highlights Twitch emotes in a ref
- +  `dialect.defs.IRCEvent`'s `content` member.
- +
- +  Wraps `highlightEmotesImpl`.
- +
- +  Params:
- +      event = `dialect.defs.IRCEvent` whose content text to highlight.
- +      colourful = Whether or not emotes should be highlit in colours.
- +      brightTerminal = Whether or not the terminal has a bright background
- +          and colours should be adapted to suit.
+    Tints emote strings and highlights Twitch emotes in a ref
+    `dialect.defs.IRCEvent`'s `content` member.
+
+    Wraps `highlightEmotesImpl`.
+
+    Params:
+        event = `dialect.defs.IRCEvent` whose content text to highlight.
+        colourful = Whether or not emotes should be highlit in colours.
+        brightTerminal = Whether or not the terminal has a bright background
+            and colours should be adapted to suit.
  +/
 version(Colours)
 version(TwitchSupport)
@@ -1100,19 +1100,19 @@ void highlightEmotes(ref IRCEvent event,
 
 // highlightEmotesImpl
 /++
- +  Highlights Twitch emotes in the chat by tinting them a different colour,
- +  saving the results into a passed output range sink.
- +
- +  Params:
- +      line = Content line whose containing emotes should be highlit.
- +      sink = Output range to put the results into.
- +      emotes = The list of emotes and their positions as divined from the
- +          IRCv3 tags of an event.
- +      pre = Terminal foreground tint to colour the emotes with.
- +      post = Terminal foreground tint to reset to after colouring an emote.
- +      colourful = Whether or not emotes should be highlit in colours.
- +      brightTerminal = Whether or not the terminal has a bright background
- +          and colours should be adapted to suit.
+    Highlights Twitch emotes in the chat by tinting them a different colour,
+    saving the results into a passed output range sink.
+
+    Params:
+        line = Content line whose containing emotes should be highlit.
+        sink = Output range to put the results into.
+        emotes = The list of emotes and their positions as divined from the
+            IRCv3 tags of an event.
+        pre = Terminal foreground tint to colour the emotes with.
+        post = Terminal foreground tint to reset to after colouring an emote.
+        colourful = Whether or not emotes should be highlit in colours.
+        brightTerminal = Whether or not the terminal has a bright background
+            and colours should be adapted to suit.
  +/
 version(Colours)
 version(TwitchSupport)
@@ -1312,20 +1312,20 @@ unittest
 
 // containsNickname
 /++
- +  Searches a string for a substring that isn't surrounded by characters that
- +  can be part of a nickname. This can detect a nickname in a string without
- +  getting false positives from similar nicknames.
- +
- +  Uses `std.string.indexOf` internally with hopes of being more resilient to
- +  weird UTF-8.
- +
- +  Params:
- +      haystack = A string to search for the substring nickname.
- +      needle = The nickname substring to find in `haystack`.
- +
- +  Returns:
- +      True if `haystack` contains `needle` in such a way that it is guaranteed
- +      to not be a different nickname.
+    Searches a string for a substring that isn't surrounded by characters that
+    can be part of a nickname. This can detect a nickname in a string without
+    getting false positives from similar nicknames.
+
+    Uses `std.string.indexOf` internally with hopes of being more resilient to
+    weird UTF-8.
+
+    Params:
+        haystack = A string to search for the substring nickname.
+        needle = The nickname substring to find in `haystack`.
+
+    Returns:
+        True if `haystack` contains `needle` in such a way that it is guaranteed
+        to not be a different nickname.
  +/
 bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")

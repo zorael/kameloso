@@ -1,12 +1,12 @@
 /++
- +  The Chatbot plugin is a collection of small, harmless functions like `8ball`
- +  for magic eightball, `bash` for fetching specified or random bash.org quotes,
- +  and `say`/`echo` for simple repeating of text.
- +
- +  It's mostly legacy.
- +
- +  See the GitHub wiki for more information about available commands:
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
+    The Chatbot plugin is a collection of small, harmless functions like `8ball`
+    for magic eightball, `bash` for fetching specified or random bash.org quotes,
+    and `say`/`echo` for simple repeating of text.
+
+    It's mostly legacy.
+
+    See the GitHub wiki for more information about available commands:
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
  +/
 module kameloso.plugins.chatbot;
 
@@ -25,7 +25,7 @@ import std.typecons : Flag, No, Yes;
 
 // ChatbotSettings
 /++
- +  Settings for a chatbot, to toggle its features.
+    Settings for a chatbot, to toggle its features.
  +/
 @Settings struct ChatbotSettings
 {
@@ -42,9 +42,9 @@ import std.typecons : Flag, No, Yes;
 
 // onCommandSay
 /++
- +  Repeats text to the channel the event was sent to.
- +
- +  If it was sent in a query, respond in a private message in kind.
+    Repeats text to the channel the event was sent to.
+
+    If it was sent in a query, respond in a private message in kind.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -71,11 +71,11 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 
 // onCommand8ball
 /++
- +  Implements magic `8ball` (https://en.wikipedia.org/wiki/Magic_8-Ball).
- +
- +  Randomises a response from the internal `eightballAnswers` table and sends
- +  it back to the channel in which the triggering event happened, or in a query
- +  if it was a private message.
+    Implements magic `8ball` (https://en.wikipedia.org/wiki/Magic_8-Ball).
+
+    Randomises a response from the internal `eightballAnswers` table and sends
+    it back to the channel in which the triggering event happened, or in a query
+    if it was a private message.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -123,9 +123,9 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
 // onCommandBash
 /++
- +  Fetch a random or specified `bash.org` quote.
- +
- +  Defers to the `worker` subthread.
+    Fetch a random or specified `bash.org` quote.
+
+    Defers to the `worker` subthread.
  +/
 version(Web)
 @(IRCEvent.Type.CHAN)
@@ -147,17 +147,17 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
 
 // worker
 /++
- +  Looks up a `bash.org` quote and reports it to the appropriate nickname or channel.
- +
- +  Supposed to be run in its own, short-lived thread.
- +
- +  Params:
- +      sState = A `shared` `kameloso.plugins.core.IRCPluginState` containing
- +          necessary information to pass messages to send messages to the main
- +          thread, to send text to the server or display text on the screen.
- +      event = The `dialect.defs.IRCEvent` in flight.
- +      colouredOutgoing = Whether or not to tint messages going to the server
- +          with mIRC colouring.
+    Looks up a `bash.org` quote and reports it to the appropriate nickname or channel.
+
+    Supposed to be run in its own, short-lived thread.
+
+    Params:
+        sState = A `shared` `kameloso.plugins.core.IRCPluginState` containing
+            necessary information to pass messages to send messages to the main
+            thread, to send text to the server or display text on the screen.
+        event = The `dialect.defs.IRCEvent` in flight.
+        colouredOutgoing = Whether or not to tint messages going to the server
+            with mIRC colouring.
  +/
 version(Web)
 void worker(shared IRCPluginState sState, const IRCEvent event,
@@ -252,9 +252,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
 // onDance
 /++
- +  Does the bash.org dance emotes.
- +
- +  - http://bash.org/?4281
+    Does the bash.org dance emotes.
+
+    - http://bash.org/?4281
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -321,8 +321,8 @@ public:
 
 // Chatbot
 /++
- +  The Chatbot plugin provides common chat functionality. Currently this includes magic
- +  8ball, `bash.org` quotes and some other trivial miscellanea.
+    The Chatbot plugin provides common chat functionality. Currently this includes magic
+    8ball, `bash.org` quotes and some other trivial miscellanea.
  +/
 final class ChatbotPlugin : IRCPlugin
 {

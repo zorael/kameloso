@@ -1,12 +1,12 @@
 /++
- +  The Oneliners plugin serves to provide custom commands, like `!vods`, `!youtube`,
- +  and any other static-reply `!command` (provided a prefix of "`!`").
- +
- +  More advanced commands that do more than just repeat the preset lines of text
- +  will have to be written separately.
- +
- +  See the GitHub wiki for more information about available commands:<br>
- +  - https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
+    The Oneliners plugin serves to provide custom commands, like `!vods`, `!youtube`,
+    and any other static-reply `!command` (provided a prefix of "`!`").
+
+    More advanced commands that do more than just repeat the preset lines of text
+    will have to be written separately.
+
+    See the GitHub wiki for more information about available commands:<br>
+    - https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
  +/
 module kameloso.plugins.oneliners;
 
@@ -35,9 +35,9 @@ import dialect.defs;
 
 // onOneliner
 /++
- +  Responds to oneliners.
- +
- +  Responses are stored in `OnelinersPlugin.onelinersByChannel`.
+    Responds to oneliners.
+
+    Responses are stored in `OnelinersPlugin.onelinersByChannel`.
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
@@ -84,7 +84,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 
 // onCommandModifyOneliner
 /++
- +  Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
+    Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -162,9 +162,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 
 // onCommandCommands
 /++
- +  Sends a list of the current oneliners to the channel.
- +
- +  Merely calls `listCommands`.
+    Sends a list of the current oneliners to the channel.
+
+    Merely calls `listCommands`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -180,11 +180,11 @@ void onCommandCommands(OnelinersPlugin plugin, const IRCEvent event)
 
 // listCommands
 /++
- +  Lists the current commands to the passed channel.
- +
- +  Params:
- +      plugin = The current `OnelinersPlugin`.
- +      channelName = Name of the channel to send the list to.
+    Lists the current commands to the passed channel.
+
+    Params:
+        plugin = The current `OnelinersPlugin`.
+        channelName = Name of the channel to send the list to.
  +/
 void listCommands(OnelinersPlugin plugin, const string channelName)
 {
@@ -204,13 +204,12 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
- +  Populate the oneliners array after we have successfully logged onto the server.
+    Populate the oneliners array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(OnelinersPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(OnelinersPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
@@ -227,21 +226,21 @@ void onEndOfMotd(OnelinersPlugin plugin)
 
 // saveResourceToDisk
 /++
- +  Saves the passed resource to disk, but in JSON format.
- +
- +  This is used with the associative arrays for oneliners.
- +
- +  Example:
- +  ---
- +  plugin.oneliners["#channel"]["asdf"] ~= "asdf yourself";
- +  plugin.oneliners["#channel"]["fdsa"] ~= "hirr";
- +
- +  saveResource(plugin.onelinersByChannel, plugin.onelinerFile);
- +  ---
- +
- +  Params:
- +      aa = The JSON-convertible resource to save.
- +      filename = Filename of the file to write to.
+    Saves the passed resource to disk, but in JSON format.
+
+    This is used with the associative arrays for oneliners.
+
+    Example:
+    ---
+    plugin.oneliners["#channel"]["asdf"] ~= "asdf yourself";
+    plugin.oneliners["#channel"]["fdsa"] ~= "hirr";
+
+    saveResource(plugin.onelinersByChannel, plugin.onelinerFile);
+    ---
+
+    Params:
+        aa = The JSON-convertible resource to save.
+        filename = Filename of the file to write to.
  +/
 void saveResourceToDisk(const string[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
@@ -255,8 +254,8 @@ in (filename.length, "Tried to save resources to an empty filename string")
 
 // initResources
 /++
- +  Reads and writes the file of oneliners and administrators to disk, ensuring
- +  that they're there and properly formatted.
+    Reads and writes the file of oneliners and administrators to disk, ensuring
+    that they're there and properly formatted.
  +/
 void initResources(OnelinersPlugin plugin)
 {
@@ -296,8 +295,8 @@ public:
 
 // OnelinersPlugin
 /++
- +  The Oneliners plugin serves to listen to custom commands that can be added,
- +  modified and removed at runtime. Think `!info`.
+    The Oneliners plugin serves to listen to custom commands that can be added,
+    modified and removed at runtime. Think `!info`.
  +/
 final class OnelinersPlugin : IRCPlugin
 {
