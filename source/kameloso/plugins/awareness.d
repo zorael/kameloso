@@ -136,7 +136,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
-        Proxies to 'kameloso.plugins.awareness.onMinimalAuthenticationUnknownCommandWHOIS`.
+        Proxies to `kameloso.plugins.awareness.onMinimalAuthenticationUnknownCommandWHOIS`.
      +/
     @(Awareness.early)
     @(Chainable)
