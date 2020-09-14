@@ -69,6 +69,9 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
         awaitReply();
         enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
     }
@@ -78,7 +81,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=false");
     }
 
-    void enablecolours()
+    void enableColours()
     {
         chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
     }
