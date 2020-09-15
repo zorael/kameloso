@@ -848,6 +848,13 @@ Next mainLoop(ref Kameloso instance)
                     {
                         plugin.postprocess(event);
                     }
+                    catch (NomException e)
+                    {
+                        logger.warningf(`Nom Exception %s.postprocess: tried to nom "%s%s%s" with "%2$s%5$s%4$s"`,
+                            plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
+                        printEventDebugDetails(event, attempt.line);
+                        version(PrintStacktraces) logger.trace(e.info);
+                    }
                     catch (UTFException e)
                     {
                         logger.warningf("UTFException %s.postprocess: %s%s",
@@ -1199,19 +1206,10 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
             {
                 dg(event);
             }
-            catch (IRCParseException e)
-            {
-                logger.warningf("IRC Parse Exception %s.awaitingDelegates[%d]: %s%s",
-                    plugin.name, i, Tint.log, e.msg);
-
-                printEventDebugDetails(e.event, e.event.raw);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
             catch (Exception e)
             {
                 logger.warningf("Exception %s.awaitingDelegates[%d]: %s%s",
                     plugin.name, i, Tint.log, e.msg);
-
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e);
             }
@@ -1286,20 +1284,10 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                     expiredFibers ~= fiber;
                 }
             }
-            catch (IRCParseException e)
-            {
-                logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
-                    plugin.name, i, Tint.log, e.msg);
-
-                printEventDebugDetails(e.event, e.event.raw);
-                version(PrintStacktraces) logger.trace(e.info);
-                expiredFibers ~= fiber;
-            }
             catch (Exception e)
             {
                 logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
                     plugin.name, i, Tint.log, e.msg);
-
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e);
                 expiredFibers ~= fiber;
@@ -1366,14 +1354,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         {
             scheduledDg.dg();
         }
-        catch (IRCParseException e)
-        {
-            logger.warningf("IRC Parse Exception %s.scheduledDelegates[%d]: %s%s",
-                plugin.name, i, Tint.log, e.msg);
-
-            printEventDebugDetails(e.event, e.event.raw);
-            version(PrintStacktraces) logger.trace(e.info);
-        }
         catch (Exception e)
         {
             logger.warningf("Exception %s.scheduledDelegates[%d]: %s%s",
@@ -1423,14 +1403,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 scheduledFiber.fiber.call();
             }
         }
-        catch (IRCParseException e)
-        {
-            logger.warningf("IRC Parse Exception %s.scheduledFibers[%d]: %s%s",
-                plugin.name, i, Tint.log, e.msg);
-
-            printEventDebugDetails(e.event, e.event.raw);
-            version(PrintStacktraces) logger.trace(e.info);
-        }
         catch (Exception e)
         {
             logger.warningf("Exception %s.scheduledFibers[%d]: %s%s",
@@ -1465,6 +1437,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
  +/
 void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 {
+    import lu.string : NomException;
     import core.thread : Fiber;
 
     if (!plugin.state.repeats.length) return;
@@ -1481,9 +1454,34 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
             repeat.replay.event.target.class_ = IRCUser.Class.unset;
         }
 
-        foreach (postprocessor; instance.plugins)
+        try
         {
-            postprocessor.postprocess(repeat.replay.event);
+            foreach (postprocessor; instance.plugins)
+            {
+                postprocessor.postprocess(repeat.replay.event);
+            }
+        }
+        catch (NomException e)
+        {
+            logger.warningf("Nom Exception postprocessing %s.state.repeats[%d]: " ~
+                `tried to nom "%s%s%s" with "%3$s%6$s%5$s"`,
+                plugin.name, i, Tint.log, e.haystack, Tint.warning, e.needle);
+            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (IRCParseException e)
+        {
+            logger.warningf("IRCParseException postprocessing %s.state.repeats[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+            printEventDebugDetails(e.event, e.event.raw);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Exception postprocessing %s.state.repeats[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            version(PrintStacktraces) logger.trace(e);
         }
 
         if (repeat.isCarrying)
@@ -1491,7 +1489,17 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
             repeat.carryingFiber.payload = repeat;
         }
 
-        repeat.fiber.call();
+        try
+        {
+            repeat.fiber.call();
+        }
+        catch (Exception e)
+        {
+            logger.warningf("Exception %s.state.repeats[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
+            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            version(PrintStacktraces) logger.trace(e);
+        }
 
         if (repeat.fiber.state == Fiber.State.TERM)
         {
