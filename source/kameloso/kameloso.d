@@ -885,7 +885,7 @@ Next mainLoop(ref Kameloso instance)
                     }
                     catch (NomException e)
                     {
-                        logger.warningf(`Nom Exception %s: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
+                        logger.warningf(`Nom Exception %s: tried to nom "%s%s%s" with "%2$s%5$s%4$s"`,
                             plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
 
                         printEventDebugDetails(event, attempt.line);
