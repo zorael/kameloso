@@ -1009,7 +1009,7 @@ alias immediateline = immediate;
             the concurrency message to the main thread.
         line = The text body to ask the main thread to display.
  +/
-void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
+private void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
