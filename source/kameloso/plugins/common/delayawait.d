@@ -9,7 +9,7 @@ module kameloso.plugins.common.delayawait;
 
 private:
 
-import kameloso.plugins.core : IRCPlugin;
+import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.plugins.common;
 import dialect.defs;
 import core.thread : Fiber;

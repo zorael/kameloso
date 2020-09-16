@@ -5,7 +5,7 @@ module kameloso.kameloso;
 
 private:
 
-import kameloso.plugins.core : IRCPlugin, Replay;
+import kameloso.plugins.common.core : IRCPlugin, Replay;
 import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
     initLogger, logger, printVersionInfo, replaceTokens;
 import kameloso.printing;
@@ -192,7 +192,7 @@ void messageFiber(ref Kameloso instance)
 
         /++
            Attaches a reference to the main array of
-           `kameloso.plugins.core.IRCPlugin`s (housing all plugins) to the
+           `kameloso.plugins.common.core.IRCPlugin`s (housing all plugins) to the
            payload member of the supplied `kameloso.thread.CarryingFiber`, then
            invokes it.
         +/
@@ -1181,13 +1181,13 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
 // processAwaitingDelegates
 /++
-    Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
+    Processes the awaiting delegates of an `kameloso.plugins.common.core.IRCPlugin`.
 
     Does not remove delegates after calling them. They are expected to remove
     themvselves after finishing if they aren't awaiting any further events.
 
     Params:
-        plugin = The `kameloso.plugins.core.IRCPlugin` whose
+        plugin = The `kameloso.plugins.common.core.IRCPlugin` whose
             `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
         event = The triggering const `dialect.defs.IRCEvent`.
  +/
@@ -1233,10 +1233,10 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
 // processAwaitingFibers
 /++
     Processes the awaiting `core.thread.fiber.Fiber`s of an
-    `kameloso.plugins.core.IRCPlugin`.
+    `kameloso.plugins.common.core.IRCPlugin`.
 
     Params:
-        plugin = The `kameloso.plugins.core.IRCPlugin` whose
+        plugin = The `kameloso.plugins.common.core.IRCPlugin` whose
             `dialect.defs.IRCEvent.Type`-awaiting `core.thread.fiber.Fiber`s to
             iterate and process.
         event = The triggering `dialect.defs.IRCEvent`.
@@ -1333,10 +1333,10 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 // processScheduledDelegates
 /++
     Processes the queued `kameloso.thread.ScheduledDelegate`s of an
-    `kameloso.plugins.core.IRCPlugin`.
+    `kameloso.plugins.common.core.IRCPlugin`.
 
     Params:
-        plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+        plugin = The `kameloso.plugins.common.core.IRCPlugin` whose queued
             `kameloso.thread.ScheduledDelegate`s to iterate and process.
         nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledDelegate`'s
             timestamp with.
@@ -1377,10 +1377,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 // processScheduledFibers
 /++
     Processes the queued `kameloso.thread.ScheduledFiber`s of an
-    `kameloso.plugins.core.IRCPlugin`.
+    `kameloso.plugins.common.core.IRCPlugin`.
 
     Params:
-        plugin = The `kameloso.plugins.core.IRCPlugin` whose queued
+        plugin = The `kameloso.plugins.common.core.IRCPlugin` whose queued
             `kameloso.thread.ScheduledFiber`s to iterate and process.
         nowInHnsecs = Current timestamp to compare the `kameloso.thread.ScheduledFiber`'s
             timestamp with.
@@ -1430,7 +1430,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
     context, outside of any plugin, *after* re-postprocessing them.
 
     Params:
-        plugin = The current `kameloso.plugins.core.IRCPlugin`.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`.
         instance = Reference to the current bot instance.
  +/
 void processRepeats(IRCPlugin plugin, ref Kameloso instance)
@@ -2298,7 +2298,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             assert(0, "`tryConnect` returned `Next.crash`");
         }
 
-        import kameloso.plugins.core : IRCPluginInitialisationException;
+        import kameloso.plugins.common.core : IRCPluginInitialisationException;
         import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a

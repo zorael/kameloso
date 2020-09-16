@@ -21,7 +21,7 @@ private:
 import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common;
 import kameloso.irccolours;
@@ -391,7 +391,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
+    It is set to `kameloso.plugins.common.core.ChannelPolicy.any`, and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 

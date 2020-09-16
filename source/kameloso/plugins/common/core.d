@@ -7,7 +7,7 @@
 
     Example:
     ---
-    import kameloso.plugins.core;
+    import kameloso.plugins.common.core;
     import kameloso.plugins.common.awareness;
 
     @(IRCEvent.Type.CHAN)
@@ -30,7 +30,7 @@
     }
     ---
  +/
-module kameloso.plugins.core;
+module kameloso.plugins.common.core;
 
 private:
 
@@ -333,9 +333,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         Pass on the supplied `dialect.defs.IRCEvent` to module-level functions
         annotated with the matching `dialect.defs.IRCEvent.Type`s.
 
-        It also does checks for `kameloso.plugins.core.ChannelPolicy`,
-        `kameloso.plugins.core.PrivilegeLevel`, `kameloso.plugins.core.PrefixPolicy`,
-        `kameloso.plugins.core.BotCommand`, `kameloso.plugins.core.BotRegex`
+        It also does checks for `kameloso.plugins.common.core.ChannelPolicy`,
+        `kameloso.plugins.common.core.PrivilegeLevel`, `kameloso.plugins.common.core.PrefixPolicy`,
+        `kameloso.plugins.common.core.BotCommand`, `kameloso.plugins.common.core.BotRegex`
         etc; where such is applicable.
 
         Params:
@@ -2353,9 +2353,6 @@ public:
         this.replay = replay;
     }
 }
-
-
-package:
 
 
 // filterResult

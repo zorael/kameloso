@@ -155,7 +155,7 @@ struct ThreadMessage
 
     /++
         Concurrency message asking for a reference to the arrays of
-        `kameloso.plugins.core.IRCPlugin`s in the current
+        `kameloso.plugins.common.core.IRCPlugin`s in the current
         `dialect.defs.IRCClient`'s plugin array.
      +/
     static struct PeekPlugins {}

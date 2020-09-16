@@ -272,7 +272,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     // enqueueAndWHOIS
     /++
         Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
-        and enqueues it into the `kameloso.plugins.core.IRCPluginState.awaitingFibers`
+        and enqueues it into the `kameloso.plugins.common.core.IRCPluginState.awaitingFibers`
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -444,7 +444,7 @@ mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ =
 private:
     static import kameloso.messaging;
     static import kameloso.common;
-    import kameloso.plugins.core : IRCPlugin;
+    import kameloso.plugins.common.core : IRCPlugin;
     import std.typecons : Flag, No, Yes;
 
     /// Symbol needed for the mixin constraints to work.
@@ -684,7 +684,7 @@ private:
 ///
 unittest
 {
-    import kameloso.plugins.core;
+    import kameloso.plugins.common.core;
 
     class MyPlugin : IRCPlugin
     {

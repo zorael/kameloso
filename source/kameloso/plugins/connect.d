@@ -13,7 +13,7 @@ version(WithConnectService):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
@@ -99,7 +99,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 // onSelfjoin
 /++
     Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
-    the current `ConnectService`'s `kameloso.plugins.core.IRCPluginState` upon joining it.
+    the current `ConnectService`'s `kameloso.plugins.common.core.IRCPluginState` upon joining it.
 
     Additionally records our given IDENT identifier. This is likely the first event
     after connection that carries us as a user, so we can only catch it as early
@@ -131,7 +131,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
     `kameoso.common.IRCBot` of the current `ConnectService`'s
-    `kameloso.plugins.core.IRCPluginState`.
+    `kameloso.plugins.common.core.IRCPluginState`.
 
     Params:
         service = The current `ConnectService`.

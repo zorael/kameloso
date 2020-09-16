@@ -9,17 +9,17 @@ module kameloso.plugins.common.base;
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.common : CoreSettings;
 import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
 /+
-    Publicly import `kameloso.plugins.core.IRCPluginState` for compatibility
+    Publicly import `kameloso.plugins.common.core.IRCPluginState` for compatibility
     (since it used to be housed here)
  +/
-public import kameloso.plugins.core : IRCPluginState;
+public import kameloso.plugins.common.core : IRCPluginState;
 
 //version = TwitchWarnings;
 
@@ -356,7 +356,7 @@ alias doWhois = enqueue;
     Params:
         plugin = The current `IRCPlugin`.
         dg = Delegate/function pointer to wrap the `core.thread.fiber.Fiber` around.
-        replay = The `kameloso.plugins.core.Replay` to repeat.
+        replay = The `kameloso.plugins.common.core.Replay` to repeat.
  +/
 void repeat(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
 if (isSomeFunction!Dg)

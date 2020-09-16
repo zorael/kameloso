@@ -15,7 +15,7 @@ private:
 
 import kameloso.plugins.twitchbot.base : TwitchBotPlugin, handleSelfjoin;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;

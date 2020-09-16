@@ -12,7 +12,7 @@ version(WithNotesPlugin):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;

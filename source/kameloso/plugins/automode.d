@@ -13,7 +13,7 @@ version(WithAutomodePlugin):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
@@ -437,7 +437,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 /++
     Triggers a WHOIS of the user invoking it with bot commands.
 
-    The `kameloso.plugins.core.PrivilegeLevel.anyone` annotation is to
+    The `kameloso.plugins.common.core.PrivilegeLevel.anyone` annotation is to
     force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
@@ -562,7 +562,7 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
         to doing nothing when `automodeSettings.enabled` is false.
 

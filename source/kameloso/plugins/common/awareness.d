@@ -6,7 +6,7 @@
 
     Example:
     ---
-    import kameloso.plugins.core;
+    import kameloso.plugins.common.core;
     import kameloso.plugins.common.awareness;
 
     @Settings struct FooSettings { /* ... */ }
@@ -39,7 +39,7 @@ version(WithPlugins):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -91,7 +91,7 @@ enum Awareness
     the `dialect.defs.IRCUser` embedded in the event directly, and that's
     often enough.
 
-    General rule: if a plugin doesn't access `kameloso.plugins.core.IRCPluginState.users`,
+    General rule: if a plugin doesn't access `kameloso.plugins.common.core.IRCPluginState.users`,
     it's probably going to be enough with only `MinimalAuthentication`.
 
     Params:
@@ -149,10 +149,10 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
 // onMinimalAuthenticationAccountInfoTarget
 /++
-    Replays any queued `kameloso.plugins.core.Replay`s awaiting the result
+    Replays any queued `kameloso.plugins.common.core.Replay`s awaiting the result
     of a WHOIS query. Before that, records the user's services account by
-    saving it to the user's `dialect.defs.IRCClient` in the `kameloso.plugins.core.IRCPlugin`'s
-    `kameloso.plugins.core.IRCPluginState.users` associative array.
+    saving it to the user's `dialect.defs.IRCClient` in the `kameloso.plugins.common.core.IRCPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState.users` associative array.
 
     `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
     cover the case where a user without an account triggering `PrivilegeLevel.anyone`-
@@ -210,7 +210,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent e
 
 // onMinimalAuthenticationUnknownCommandWHOIS
 /++
-    Clears all queued `kameloso.plugins.core.Replay`s if the server says
+    Clears all queued `kameloso.plugins.common.core.Replay`s if the server says
     it doesn't support WHOIS at all.
 
     This is the case with Twitch servers.
@@ -387,7 +387,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // _kamelosoNextPingRehashTimestamp
     /++
-        UNIX timestamp of when the `kameloso.plugins.core.IRCPluginState.users` array is next to be
+        UNIX timestamp of when the `kameloso.plugins.common.core.IRCPluginState.users` array is next to be
         rehashed in `onUserAwarenessPingMixin`.
      +/
     long _kamelosoNextPingRehashTimestamp;
@@ -408,8 +408,8 @@ void onUserAwarenessQuit(IRCPlugin plugin, const IRCEvent event)
 // onUserAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    `kameloso.plugins.core.IRCPlugin`'s
-    `kameloso.plugins.core.IRCPluginState.users` array to point to the new nickname.
+    `kameloso.plugins.common.core.IRCPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState.users` array to point to the new nickname.
 
     Removes the old entry after assigning it to the new key.
  +/
@@ -432,7 +432,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const IRCEvent event)
 // onUserAwarenessCatchTarget
 /++
     Catches a user's information and saves it in the plugin's
-    `kameloso.plugins.core.IRCPluginState.users` array of `dialect.defs.IRCUser`s.
+    `kameloso.plugins.common.core.IRCPluginState.users` array of `dialect.defs.IRCUser`s.
 
     `dialect.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
     the `dialect.defs.IRCUser.updated` field that we want to store.
@@ -449,8 +449,8 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const IRCEvent event)
 
 // onUserAwarenessCatchSender
 /++
-    Adds a user to the `kameloso.plugins.core.IRCPlugin`'s
-    `kameloso.plugins.core.IRCPluginState.users` array,
+    Adds a user to the `kameloso.plugins.common.core.IRCPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState.users` array,
     potentially including their services account name.
 
     Servers with the (enabled) capability `extended-join` will include the
@@ -565,8 +565,8 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event)
 
 // onUserAwarenessEndOfList
 /++
-    Rehashes, or optimises, the `kameloso.plugins.core.IRCPlugin`'s
-    `kameloso.plugins.core.IRCPluginState.users`
+    Rehashes, or optimises, the `kameloso.plugins.common.core.IRCPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState.users`
     associative array upon the end of a WHO or a NAMES list.
 
     These replies can list hundreds of users depending on the size of the
@@ -585,7 +585,7 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const IRCEvent event) @system
 
 // onUserAwarenessPingMixin
 /++
-    Rehash the internal `kameloso.plugins.core.IRCPluginState.users` associative array of
+    Rehash the internal `kameloso.plugins.common.core.IRCPluginState.users` associative array of
     `dialect.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
 
     We ride the periodicity of `dialect.defs.IRCEvent.Type.PING` to get
@@ -595,7 +595,7 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const IRCEvent event) @system
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
 
-    This re-implements `kameloso.plugins.core.IRCPlugin.periodically`.
+    This re-implements `kameloso.plugins.common.core.IRCPlugin.periodically`.
  +/
 void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
 {
@@ -865,8 +865,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
 // onChannelAwarenessSelfjoin
 /++
-    Create a new `dialect.defs.IRCChannel` in the the `kameloso.plugins.core.IRCPlugin`'s
-    `kameloso.plugins.core.IRCPluginState.channels` associative array when the bot joins a channel.
+    Create a new `dialect.defs.IRCChannel` in the the `kameloso.plugins.common.core.IRCPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState.channels` associative array when the bot joins a channel.
  +/
 void onChannelAwarenessSelfjoin(IRCPlugin plugin, const IRCEvent event)
 {
@@ -982,7 +982,7 @@ void onChannelAwarenessPart(IRCPlugin plugin, const IRCEvent event)
 // onChannelAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    `kameloso.plugins.core.IRCPluginState.users` associative array to point to the new nickname.
+    `kameloso.plugins.common.core.IRCPluginState.users` associative array to point to the new nickname.
 
     Does *not* add a new entry if one doesn't exits, to counter the fact
     that `dialect.defs.IRCEvent.Type.NICK` events don't belong to a channel,
@@ -1269,7 +1269,7 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     There is a chance of a user leak, if parting users are not broadcast. As
     such we mark when the user was last seen in the
     `dialect.defs.IRCUser.updated` member, which opens up the possibility
-    of pruning the plugin's `kameloso.plugins.core.IRCPluginState.users` array of old entries.
+    of pruning the plugin's `kameloso.plugins.common.core.IRCPluginState.users` array of old entries.
 
     Twitch awareness needs channel awareness, or it is meaningless.
 

@@ -23,7 +23,7 @@ private:
 import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.base : applyCustomSettings;
 import kameloso.plugins.common.awareness;
 import kameloso.common : Tint, logger;
@@ -144,7 +144,7 @@ void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 // onCommandShowUsers
 /++
     Prints out the current `users` array of the `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState` to the local terminal.
+    `kameloso.plugins.common.core.IRCPluginState` to the local terminal.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -206,7 +206,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 /++
     Adds or removes channels to/from the list of currently active home channels, in the
     `kameloso.common.IRCBot.homeChannels` array of the current `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState`.
+    `kameloso.plugins.common.core.IRCPluginState`.
 
     Merely passes on execution to `addHome` and `delHome`.
  +/
@@ -263,7 +263,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 /++
     Adds a channel to the list of currently active home channels, in the
     `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState`.
+    `kameloso.plugins.common.core.IRCPluginState`.
 
     Follows up with a `core.thread.fiber.Fiber` to verify that the channel was actually joined.
 
@@ -410,7 +410,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 /++
     Removes a channel from the list of currently active home channels, from the
     `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState`.
+    `kameloso.plugins.common.core.IRCPluginState`.
  +/
 void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -455,9 +455,9 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
     `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState`.
+    `kameloso.plugins.common.core.IRCPluginState`.
 
-    This is on a `kameloso.plugins.core.PrivilegeLevel.operator` level.
+    This is on a `kameloso.plugins.common.core.PrivilegeLevel.operator` level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -515,9 +515,9 @@ void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated `kameloso.plugins.core.PrivilegeLevel.ignore`.
+    except on actions annotated `kameloso.plugins.common.core.PrivilegeLevel.ignore`.
 
-    This is on a `kameloso.plugins.core.PrivilegeLevel.operator` level.
+    This is on a `kameloso.plugins.common.core.PrivilegeLevel.operator` level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -1213,7 +1213,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 version(OmniscientAdmin)
 {
     /++
-        The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with depending
+        The `kameloso.plugins.common.core.ChannelPolicy` to mix in awareness with depending
         on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;

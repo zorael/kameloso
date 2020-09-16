@@ -15,7 +15,7 @@ version(WithWebtitlesPlugin):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
@@ -733,7 +733,7 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
         to doing nothing when `webtitlesSettings.enabled` is false.
 

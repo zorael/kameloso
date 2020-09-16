@@ -97,7 +97,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 // onCommandShowUsersImpl
 /++
     Prints out the current `users` array of the `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState` to the local terminal.
+    `kameloso.plugins.common.core.IRCPluginState` to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {

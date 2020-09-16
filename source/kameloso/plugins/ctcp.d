@@ -12,7 +12,7 @@ version(WithCTCPService):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -309,7 +309,7 @@ final class CTCPService : IRCPlugin
 private:
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:

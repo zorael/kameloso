@@ -24,7 +24,7 @@ private:
 import kameloso.plugins.twitchbot.api;
 import kameloso.plugins.twitchbot.timers;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -1202,7 +1202,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
 
     Belling is useful with small audiences, so you don't miss messages.
 
-    Note: This is annotated `kameloso.plugins.core.Terminating` and must be
+    Note: This is annotated `kameloso.plugins.common.core.Terminating` and must be
     placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
     This lets us know the banned phrase wasn't part of a command (as it would
     otherwise not reach this point).
@@ -1889,7 +1889,7 @@ package:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this plugin only works on Twitch, in addition
         to doing nothing when `twitchbotSettings.enabled` is false.
 
@@ -1906,16 +1906,16 @@ package:
 
     // onEvent
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
+        Override `kameloso.plugins.common.core.IRCPluginImpl.onEvent` and inject a server check, so this
         plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
         events to only trigger on active channels (that have its `Channel.enabled`
         set to true).
 
-        The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
+        The function to call is `kameloso.plugins.common.core.IRCPluginImpl.onEventImpl`.
 
         Params:
             event = Parsed `dialect.defs.IRCEvent` to pass onto
-                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
+                `kameloso.plugins.common.core.IRCPluginImpl.onEventImpl`
                 after verifying we should process the event.
      +/
     override public void onEvent(IRCEvent event)

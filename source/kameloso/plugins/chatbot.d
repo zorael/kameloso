@@ -15,7 +15,7 @@ version(WithChatbotPlugin):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
@@ -152,7 +152,7 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
     Supposed to be run in its own, short-lived thread.
 
     Params:
-        sState = A `shared` `kameloso.plugins.core.IRCPluginState` containing
+        sState = A `shared` `kameloso.plugins.common.core.IRCPluginState` containing
             necessary information to pass messages to send messages to the main
             thread, to send text to the server or display text on the screen.
         event = The `dialect.defs.IRCEvent` in flight.

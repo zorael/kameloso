@@ -15,7 +15,7 @@ private:
 
 import kameloso.plugins.printer.base : PrinterPlugin;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.irccolours;
 import dialect.defs;
 import std.range.primitives : isOutputRange;

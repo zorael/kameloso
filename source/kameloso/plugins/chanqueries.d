@@ -18,7 +18,7 @@ version(WithChanQueriesService):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.base;
 import kameloso.plugins.common.delayawait;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
@@ -29,7 +29,7 @@ import std.typecons : No, Yes;
 version(OmniscientQueries)
 {
     /++
-        The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with depending
+        The `kameloso.plugins.common.core.ChannelPolicy` to mix in awareness with depending
         on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -481,7 +481,7 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:
