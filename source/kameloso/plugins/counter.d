@@ -5,7 +5,7 @@
     decrement or assign specific values to. This can be used to track deaths in
     video games, for instance.
 
-    See the GitHub wiki for more information about available commands:<br>
+    See the GitHub wiki for more information about available commands:a
     - https://github.com/zorael/kameloso/wiki/Current-plugins#counter
  +/
 module kameloso.plugins.counter;

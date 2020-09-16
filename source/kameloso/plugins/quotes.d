@@ -5,7 +5,7 @@
     of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
     A random one can then be replayed by use of the "`!quote [nickname]`" command.
 
-    See the GitHub wiki for more information about available commands:<br>
+    See the GitHub wiki for more information about available commands:
     - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
  +/
 module kameloso.plugins.quotes;

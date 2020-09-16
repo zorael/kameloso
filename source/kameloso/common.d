@@ -41,7 +41,7 @@ shared static this()
 
     Having this here is unfortunate; ideally plugins should not use variables
     from other modules, but unsure of any way to fix this other than to have
-    each plugin keep their own `kameloso.logger.KamelosoLogger`.
+    each plugin keep their own `kameloso.common.logger` pointer.
  +/
 KamelosoLogger logger;
 
@@ -113,7 +113,7 @@ public:
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
-    /// Flag denoting that usermask should be used instead of accounts to authenticate.
+    /// Flag denoting that usermasks should be used instead of accounts to authenticate users.
     bool preferHostmasks = false;
 
     /// Whether or not to hide outgoing messages, not printing them to screen.
@@ -122,15 +122,15 @@ public:
     /// Whether or not to add colours to outgoing messages.
     bool colouredOutgoing = true;
 
-    /// Flag denoting that we should save to file on exit.
+    /// Flag denoting that we should save configuration changes to file on exit.
     bool saveOnExit = false;
 
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
 
     /++
-        Whether or not to exhaustively WHOIS all participants in home channels,
-        and not do a just-in-time lookup when needed.
+        Whether to eagerly and exhaustively WHOIS all participants in home channels,
+        or to do a just-in-time lookup when needed.
      +/
     bool eagerLookups = false;
 
@@ -211,17 +211,17 @@ public:
         /// Login `PASS`, different from `SASL` and services.
         string pass;
 
-        /// Default reason given when quitting without specifying one.
+        /// Default reason given when quitting and not specifying a reason text.
         string quitReason;
 
-        /// Default reason given when parting a channel without specifying one.
+        /// Default reason given when parting a channel and not specifying a reason text.
         string partReason;
     }
 
     @Separator(",")
     @Separator(" ")
     {
-        /// The nickname services accounts of *administrators*, in a bot-like context.
+        /// The nickname services accounts of administrators, in a bot-like context.
         string[] admins;
 
         /// List of home channels for the bot to operate in.
@@ -262,8 +262,7 @@ private:
 
     // Throttle
     /++
-        Aggregate of values and state needed to throttle messages without
-        polluting namespace too much.
+        Aggregate of values and state needed to throttle outgoing messages.
      +/
     struct Throttle
     {
@@ -291,7 +290,7 @@ private:
 
 public:
     /++
-        The `lu.net.Connection` housing and wrapping the socket we use to connect
+        The `lu.net.Connection` that houses and wraps the socket we use to connect
         to, write to and read from the server.
      +/
     Connection conn;
@@ -314,15 +313,15 @@ public:
     ConnectionSettings connSettings;
 
     /++
-        When a nickname was last issued a WHOIS query for, for hysteresis
-        and rate-limiting.
+        An associative array o fwhen a nickname was last issued a WHOIS query for,
+        UNIX timestamps by nickname key, for hysteresis and rate-limiting.
      +/
     long[string] previousWhoisTimestamps;
 
     /// Parser instance.
     IRCParser parser;
 
-    /// IRC bot values.
+    /// IRC bot values and state.
     IRCBot bot;
 
     /// Values and state needed to throttle sending messages.
@@ -367,7 +366,7 @@ public:
     version(TwitchSupport)
     {
         /++
-            Buffer of outgoing fast message strings.
+            Buffer of outgoing fast message strings, used on Twitch servers.
 
             The buffer size is "how many string pointers", now how many bytes. So
             we can comfortably keep it arbitrarily high.
@@ -608,10 +607,9 @@ public:
 
     // initPlugins
     /++
-        Resets and *minimally* initialises all plugins.
-
-        Merely wraps the other `initPlugins` overload and distinguishes itself
-        from it by not taking the two `string[][string]` out parameters it does.
+        Resets and *minimally* initialises all plugins. Merely wraps the other
+        `initPlugins` overload and distinguishes itself from it by not taking
+        the two `string[][string]` out parameters it does.
 
         Params:
             customSettings = String array of custom settings to apply to plugins
@@ -643,7 +641,7 @@ public:
     // teardownPlugins
     /++
         Tears down all plugins, deinitialising them and having them save their
-        settings for a clean shutdown.
+        settings for a clean shutdown. Calls module-level `teardown` functions.
 
         Think of it as a plugin destructor.
      +/
@@ -694,8 +692,8 @@ public:
 
     // startPlugins
     /++
-        Start all plugins, loading any resources they may want and running
-        anything in their module-level `start` function.
+        Start all plugins, loading any resources they may want and calling any
+        module-level `start` functions.
 
         This has to happen after `initPlugins` or there will not be any plugins
         in the `plugins` array.
@@ -922,7 +920,7 @@ void printStacktrace() @system
 
 // OutgoingLine
 /++
-    A string to be sent to the IRC server, along with whether or not the message
+    A string to be sent to the IRC server, along with whether the message
     should be sent quietly or if it should be displayed in the terminal.
  +/
 struct OutgoingLine
@@ -930,7 +928,7 @@ struct OutgoingLine
     /// String line to send.
     string line;
 
-    /// Whether or not this message should be sent quietly or verbosely.
+    /// Whether this message should be sent quietly or verbosely.
     bool quiet;
 
     /// Constructor.
@@ -1077,7 +1075,7 @@ unittest
 // timeSinceInto
 /++
     Express how much time has passed in a `core.time.Duration`, in natural
-    (English) language. Overload that writes the result to thet passed output range `sink`.
+    (English) language. Overload that writes the result to the passed output range `sink`.
 
     Example:
     ---
@@ -1782,8 +1780,7 @@ unittest
     logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
     ---
 
-    If `settings.monochrome` is true, `Tint.*` will just return an empty string.
-    The monochrome-ness can be overridden with `Tint.*(false)`.
+    If the inner `monochrome` member is true, `Tint.*` will just return an empty string.
  +/
 struct Tint
 {

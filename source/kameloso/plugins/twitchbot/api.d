@@ -382,7 +382,7 @@ void generateKey(TwitchBotPlugin plugin)
     Once the query returns, the response body is checked to see whether or not
     an error occurred. If so, it throws an exception with a descriptive message.
 
-    Note: Must be called from inside a `core.thread.Fiber`.
+    Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Example:
     ---
@@ -691,7 +691,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     Fetches a list of all follows of the passed channel and caches them in
     the channel's entry in `TwitchBotPlugin.rooms`.
 
-    Note: Must be called from inside a `core.thread.Fiber`.
+    Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Params:
         plugin = The current `TwitchBotPlugin`.
@@ -784,7 +784,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
     was received.
 
-    Note: Must be called from inside a `core.thread.Fiber`.
+    Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Example:
     ---

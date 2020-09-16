@@ -4,7 +4,7 @@
     `dialect.defs.IRCEvent`s when information about them is incomplete.
 
     This means that even if a service only refers to a user by nickname, things
-    like his ident and address will be available to plugins as well, assuming
+    like its ident and address will be available to plugins as well, assuming
     the Persistence service had seen that previously.
 
     It has no commands. It only does post-processing and doesn't handle

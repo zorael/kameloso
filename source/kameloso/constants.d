@@ -46,13 +46,13 @@ enum KamelosoDefaultStrings
     /// The default GEOC/"real name" string.
     realName = "kameloso IRC bot v$version",
 
-    /// The default quit reason, when the bot exits.
+    /// The default quit reason, when the bot exits. Supports some string replacements.
     quitReason = "kameloso IRC bot v$version @ $source",
 
     /// The default part reason, when the bot is asked to part a channel.
     partReason = quitReason,
 
-    /// When a nickname is taken, append this to get a new name.
+    /// When a nickname is taken, first append this to get a new name before trying random numbers.
     altNickSign = "^",
 }
 

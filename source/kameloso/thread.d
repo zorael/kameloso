@@ -291,7 +291,7 @@ final class CarryingFiber(T) : Fiber
 {
     /++
         Embedded payload value in this `core.thread.fiber.Fiber`; what distinguishes
-        it from normal ones.
+        it from plain `core.thread.fiber.Fiber`s.
      +/
     T payload;
 

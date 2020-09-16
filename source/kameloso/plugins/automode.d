@@ -3,7 +3,7 @@
     channel. The common use-case is to have someone be automatically set to `+o`
     (operator) when joining.
 
-    See the GitHub wiki for more information about available commands:<br>
+    See the GitHub wiki for more information about available commands:
     - https://github.com/zorael/kameloso/wiki/Current-plugins#automode
  +/
 module kameloso.plugins.automode;

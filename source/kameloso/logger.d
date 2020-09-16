@@ -181,7 +181,7 @@ public:
         /// Provides easy way to get a log tint.
         auto tracetint() const @property { return tintImpl!(LogLevel.trace); }
 
-        /// Convenience alias to `tracetint`.
+        /// Synonymous alias to `tracetint`.
         alias resettint = tracetint;
 
         /// Provides easy way to get a log tint.

@@ -1,6 +1,6 @@
 /++
     The section of `kameloso.plugins.common` that deals with delaying executing
-    of `core.thread.Fiber`s and delegates to a later point in time, and registering
+    of `core.thread.fiber.Fiber`s and delegates to a later point in time, and registering
     such to await a specific type of `dialect.defs.IRCEvent`.
 
     This was all in one `plugins/common.d` file that just grew too big.
@@ -164,7 +164,6 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 // removeDelayedFiber
 /++
     Removes a `core.thread.fiber.Fiber` from being called at any point later.
-
     Overload that implicitly removes `core.thread.fiber.Fiber.getThis`.
 
     Params:
@@ -241,7 +240,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
     Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
     triggering `dialect.defs.IRCEvent` matches the passed
     `dialect.defs.IRCEvent.Type` type.
-
     Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
 
     Params:
@@ -291,7 +289,6 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
     Queues a `core.thread.fiber.Fiber` to be called whenever the next parsed and
     triggering `dialect.defs.IRCEvent` matches any of the passed
     `dialect.defs.IRCEvent.Type` types.
-
     Overload that implicitly queues `core.thread.fiber.Fiber.getThis`.
 
     Params:

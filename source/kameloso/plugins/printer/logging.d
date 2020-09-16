@@ -91,7 +91,7 @@ public:
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        `commitAllLogsImpl`
+        commitAllLogsImpl
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 {
@@ -451,7 +451,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
         plugin = The current `PrinterPlugin`.
 
     See_Also:
-        `commitLog`
+        commitLog
  +/
 void commitAllLogsImpl(PrinterPlugin plugin)
 {
@@ -480,7 +480,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
         buffer = `LogLineBuffer` whose lines to commit to disk.
 
     See_Also:
-        `commitAllLogsImpl`
+        commitAllLogsImpl
  +/
 void commitLog(ref LogLineBuffer buffer)
 {

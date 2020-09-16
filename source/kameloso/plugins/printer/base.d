@@ -400,7 +400,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        `commitAllLogs`
+        commitAllLogs
  +/
 @(Chainable)
 @(ChannelPolicy.any)
@@ -421,7 +421,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         plugin = The current `PrinterPlugin`.
 
     See_Also:
-        `commitLog`
+        commitLog
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)

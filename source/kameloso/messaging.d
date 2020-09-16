@@ -19,7 +19,7 @@
     ---
 
     Having to supply the `kameloso.plugins.core.IRCPluginState` on every call
-    can be avoided for plugins, by mixing in `kameloso.plugins.common.MessagingProxy`
+    can be avoided for plugins, by mixing in `kameloso.plugins.common.mixins.MessagingProxy`
     and placing the messaging function calls inside a `with (plugin)` block.
 
     Example:

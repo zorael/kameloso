@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
     ---
 
     Params:
-        results = Results from a `std.getopt.getopt` call, usually with `.helpWanted` true.
+        results = Results from a `std.getopt.getopt` call.
         monochrome = Whether or not terminal colours should be used.
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adjusted to suit.
@@ -95,7 +95,8 @@ void printHelp(GetoptResult results,
 
 // writeConfig
 /++
-    Writes configuration to file, verbosely.
+    Writes configuration to file, verbosely. Additionally gives some empty
+    settings default values.
 
     The filename is read from `kameloso.common.settings`.
 
@@ -170,7 +171,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     Params:
         instance = Reference to the current `kameloso.common.Kameloso`.
-        customSettings = const string array to all the custom settings set
+        customSettings = Array of all the custom settings set
             via `getopt`, to apply to things before saving to disk.
         monochrome = Whether or not terminal colours should be used.
         brightTerminal = Whether or not the terminal has a bright background
@@ -217,8 +218,8 @@ public:
 
 // handleGetopt
 /++
-    Read command-line options and apply them over values previously read from
-    the configuration file.
+    Reads command-line options and applies them over values previously read from
+    the configuration file, as well as dictates some other behaviour.
 
     The priority of options then becomes getopt over config file over hardcoded defaults.
 
@@ -233,7 +234,7 @@ public:
 
     Params:
         instance = Reference to the current `kameloso.common.Kameloso`.
-        args = The `string[]` args the program was called with.
+        args = The command-line arguments the program was called with.
         customSettings = Out array of custom settings to apply on top of
             the settings read from the configuration file.
 
@@ -602,7 +603,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     Writes and/or edits the configuration file. Broken out into a separate
     function to lower the size of `handleGetopt`.
 
-    bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
+    Takes bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
 
     Params:
         instance = The current `kameloso.common.Kameloso` instance.

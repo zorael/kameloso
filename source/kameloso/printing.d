@@ -132,7 +132,7 @@ unittest
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         things = Variadic list of struct objects to enumerate.
  +/
@@ -213,7 +213,7 @@ alias printObject = printObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
@@ -251,7 +251,7 @@ alias formatObject = formatObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
@@ -623,7 +623,7 @@ if (isOutputRange!(Sink, char[]))
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         coloured = Whether to display in colours or not.
         bright = Whether or not to format for a bright terminal background.

@@ -1,8 +1,8 @@
 /++
-    Functions related to IRC colouring and formatting, mapping it to ANSI
+    Functions related to IRC colouring and formatting; mapping it to ANSI
     terminal such, stripping it, etc.
 
-    IRC colours are not in the standard as such, but there is a de-facto standard
+    IRC colours are not in the standard per se, but there is a de-facto standard
     based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
     `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
     background colour number.
@@ -232,7 +232,7 @@ unittest
 // ircColourByHash
 /++
     Returns the passed string coloured with an IRC colour depending on the hash
-    of the string, making for good random nick colours in IRC messages.
+    of the string, making for good "random" (uniformly distributed) nick colours in IRC messages.
 
     Params:
         word = String to tint.

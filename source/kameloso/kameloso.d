@@ -579,6 +579,8 @@ void messageFiber(ref Kameloso instance)
 // exhaustMessages
 /++
     Exhausts the concurrency message mailbox.
+
+    This is done between connection attempts to get a fresh start.
  +/
 void exhaustMessages()
 {
@@ -1065,7 +1067,7 @@ Next mainLoop(ref Kameloso instance)
     Broken out of `mainLoop` to make it more legible.
 
     Params:
-        instance = Reference to the current `Kameloso`.
+        instance = Reference to the current `kameloso.common.Kameloso`.
 
     Returns:
         How many milliseconds until the next message in the buffers should be sent.
@@ -1113,12 +1115,12 @@ import lu.net : ListenAttempt;
 
 // listenAttemptToNext
 /++
-    Translates the `lu.net.ListenAttempt.state` received from a
+    Translates the `lu.net.ListenAttempt.State` received from a
     `std.concurrency.Generator` into a `lu.common.Next`, while also providing
     warnings and error messages.
 
     Params:
-        instance = Reference to the current `Kameloso`.
+        instance = Reference to the current `kameloso.common.Kameloso`.
         attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
 
     Returns:
@@ -1182,7 +1184,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     Processes the awaiting delegates of an `kameloso.plugins.core.IRCPlugin`.
 
     Does not remove delegates after calling them. They are expected to remove
-    themvselves after finishing.
+    themvselves after finishing if they aren't awaiting any further events.
 
     Params:
         plugin = The `kameloso.plugins.core.IRCPlugin` whose
@@ -1427,9 +1429,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 // processRepeats
 /++
     Handles the repeat queue, repeating events from the current (main loop)
-    context, outside of any plugin, after re-postprocessing them.
-
-    Note: Exceptions are let past; they are to be caught by the caller.
+    context, outside of any plugin, *after* re-postprocessing them.
 
     Params:
         plugin = The current `kameloso.plugins.core.IRCPlugin`.
@@ -1521,7 +1521,7 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 /++
     Takes a queue of `Replay` objects and issues WHOIS queries for each one,
     unless it has already been done recently (within
-    kameloso.constants.Timeout.whoisRetry seconds).
+    `kameloso.constants.Timeout.whoisRetry` seconds).
 
     Params:
         instance = Reference to the current `kameloso.common.Kameloso`.
@@ -1634,7 +1634,7 @@ void resetSignals() nothrow @nogc
         instance = Reference to the current `kameloso.common.Kameloso`.
         args = The arguments passed to the program.
         customSettings = Out reference to the dynamic array of custom settings as
-            defined with `--set plugin.setting=value` on the command line.
+            specified with `--set plugin.setting=value` on the command line.
 
     Returns:
         `lu.common.Next`.* depending on what action the calling site should take.
@@ -1934,7 +1934,8 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 
     Params:
         missingEntries = A `string[][string]` associative array of dynamic
-            `string[]` arrays, keyed by strings. These contain missing settings.
+            `string[]` arrays, keyed by configuration section name strings.
+            These arrays contain missing settings.
  +/
 void complainAboutMissingConfigurationEntries(const string[][string] missingEntries)
 {
@@ -1959,7 +1960,8 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
 
     Params:
         invalidEntries = A `string[][string]` associative array of dynamic
-            `string[]` arrays, keyed by strings. These contain invalid settings.
+            `string[]` arrays, keyed by configuration section name strings.
+            These arrays contain invalid settings.
  +/
 void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
 {
@@ -2094,7 +2096,7 @@ void setupSettings(ref CoreSettings settings)
     This is called after command-line arguments have been parsed.
 
     Params:
-        instance = Reference to the current `Kameloso`.
+        instance = Reference to the current `kameloso.common.Kameloso`.
 
     Returns:
         `Next.returnFailure` if the program should exit, `Next.continue_` otherwise.
@@ -2153,7 +2155,7 @@ Next verifySettings(ref Kameloso instance)
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
-        instance = Reference to the current `Kameloso`.
+        instance = Reference to the current `kameloso.common.Kameloso`.
  +/
 void resolveResourceDirectory(ref Kameloso instance)
 {
@@ -2184,7 +2186,7 @@ void resolveResourceDirectory(ref Kameloso instance)
     It resolves and connects to servers, then hands off execution to `mainLoop`.
 
     Params:
-        instance = Reference to the current `Kameloso`.
+        instance = Reference to the current `kameloso.common.Kameloso`.
         attempt = Voldemort aggregate of state variables used when connecting.
  +/
 void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)

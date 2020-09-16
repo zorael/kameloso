@@ -44,9 +44,7 @@ public:
 
 // IRCPlugin
 /++
-    Interface that all `IRCPlugin`s must adhere to.
-
-    Plugins may implement it manually, or mix in `IRCPluginImpl`.
+    Abstract `IRCPlugin` class.
 
     This is currently shared with all `service`-class "plugins".
  +/
@@ -2117,7 +2115,7 @@ abstract class Replay
 // ReplayImpl
 /++
     Implementation of the notion of a function call with a bundled payload
-    `dialect.defs.IRCEvent`, to replay a previous event.
+    `dialect.defs.IRCEvent`, used to replay a previous event.
 
     It functions like a Command pattern object in that it stores a payload and
     a function pointer, which we queue and issue a WHOIS query. When the response
@@ -2379,7 +2377,7 @@ enum FilterResult
 
 // PrefixPolicy
 /++
-    In what way the contents of a `dialect.defs.IRCEvent` should start (be "prefixed")
+    In what way the contents of a `dialect.defs.IRCEvent` must start (be "prefixed")
     for an annotated function to be allowed to trigger.
  +/
 enum PrefixPolicy
@@ -2667,8 +2665,11 @@ public:
 
 // Chainable
 /++
-    Annotation denoting that an event-handling function let other functions in
+    Annotation denoting that an event-handling function should let other functions in
     the same module process after it.
+
+    See_Also:
+        Terminating
  +/
 struct Chainable;
 
@@ -2681,6 +2682,9 @@ struct Chainable;
     This is not strictly necessary since anything non-`Chainable` is implicitly
     `Terminating`, but it's here to silence warnings and in hopes of the code
     becoming more self-documenting.
+
+    See_Also:
+        Chainable
  +/
 struct Terminating;
 
@@ -2695,8 +2699,9 @@ struct Verbose;
 
 // Settings
 /++
-    Annotation denoting that a struct variable is to be as considered as housing
-    settings for a plugin and should thus be serialised and saved in the configuration file.
+    Annotation denoting that a struct variable or struct type is to be considered
+    as housing settings for a plugin, and should thus be serialised and saved in
+    the configuration file.
  +/
 struct Settings;
 
