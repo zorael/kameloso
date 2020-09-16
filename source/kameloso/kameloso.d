@@ -1221,13 +1221,11 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
     if (plugin.state.awaitingDelegates[event.type].length)
     {
         processImpl(plugin, event, plugin.state.awaitingDelegates[event.type]);
-        //plugin.state.awaitingDelegates[event.type].length = 0;
     }
 
     if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
     {
         processImpl(plugin, event, plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
-        //plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length = 0;
     }
 }
 
