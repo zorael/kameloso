@@ -8,3 +8,4 @@ version(WithPlugins):
 public import kameloso.plugins.common.base;
 public import kameloso.plugins.common.delayawait;
 public import kameloso.plugins.common.mixins;
+public import kameloso.plugins.common.awareness;

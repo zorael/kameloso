@@ -16,7 +16,7 @@ version(WithQuotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : UserAwareness;
+import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;

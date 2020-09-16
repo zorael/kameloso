@@ -25,7 +25,7 @@ import kameloso.plugins.twitchbot.api;
 import kameloso.plugins.twitchbot.timers;
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;

@@ -7,7 +7,7 @@
     Example:
     ---
     import kameloso.plugins.core;
-    import kameloso.plugins.awareness;
+    import kameloso.plugins.common.awareness;
 
     @Settings struct FooSettings { /* ... */ }
 
@@ -33,7 +33,7 @@
     }
     ---
  +/
-module kameloso.plugins.awareness;
+module kameloso.plugins.common.awareness;
 
 version(WithPlugins):
 
@@ -43,7 +43,7 @@ import kameloso.plugins.core;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-package:
+public:
 
 @safe:
 
@@ -101,7 +101,7 @@ enum Awareness
 mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.awareness;
+    private import kameloso.plugins.common.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "MinimalAuthentication");
@@ -120,7 +120,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onMinimalAuthenticationAccountInfoTarget`.
+        Proxies to `kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -129,20 +129,20 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
+        return kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
     }
 
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onMinimalAuthenticationUnknownCommandWHOIS`.
+        Proxies to `kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS`.
      +/
     @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
     void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
+        return kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
     }
 }
 
@@ -259,7 +259,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
-    private import kameloso.plugins.awareness;
+    private import kameloso.plugins.common.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "UserAwareness");
@@ -285,33 +285,33 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessQuitMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessQuit`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessQuit`.
      +/
     @(Awareness.cleanup)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onUserAwarenessQuit(plugin, event);
+        return kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
     }
 
 
     // onUserAwarenessNickMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessNick`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessNick`.
      +/
     @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onUserAwarenessNick(plugin, event);
+        return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
     }
 
 
     // onUserAwarenessCatchTargetMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessCatchTarget`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessCatchTarget`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -321,13 +321,13 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onUserAwarenessCatchTarget(plugin, event);
+        return kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
     }
 
 
     // onUserAwarenessCatchSenderMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessCatchSender`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessCatchSender`.
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -338,13 +338,13 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
+        return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
     }
 
 
     // onUserAwarenessNamesReplyMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessNamesReply`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessNamesReply`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -352,13 +352,13 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onUserAwarenessNamesReply(plugin, event);
+        return kameloso.plugins.common.awareness.onUserAwarenessNamesReply(plugin, event);
     }
 
 
     // onUserAwarenessEndOfListMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessEndOfList`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessEndOfList`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -367,20 +367,20 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
-        return kameloso.plugins.awareness.onUserAwarenessEndOfList(plugin, event);
+        return kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
     }
 
 
     // onUserAwarenessPingMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onUserAwarenessPing`.
+        Proxies to `kameloso.plugins.common.awareness.onUserAwarenessPing`.
      +/
     @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.PING)
     void onUserAwarenessPingMixin(IRCPlugin plugin) @system
     {
-        return kameloso.plugins.awareness.onUserAwarenessPing(plugin,
+        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin,
             _kamelosoNextPingRehashTimestamp);
     }
 
@@ -648,7 +648,7 @@ version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
-    private import kameloso.plugins.awareness;
+    private import kameloso.plugins.common.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "ChannelAwareness");
@@ -678,7 +678,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfjoinMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessSelfjoin`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin`.
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -686,13 +686,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessSelfjoin(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin(plugin, event);
     }
 
 
     // onChannelAwarenessSelfpartMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessSelfpart`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessSelfpart`.
      +/
     @(Awareness.cleanup)
     @(Chainable)
@@ -701,13 +701,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessSelfpart(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessSelfpart(plugin, event);
     }
 
 
     // onChannelAwarenessJoinMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessJoin`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessJoin`.
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -715,13 +715,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessJoin(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessJoin(plugin, event);
     }
 
 
     // onChannelAwarenessPartMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessPart`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessPart`.
      +/
     @(Awareness.late)
     @(Chainable)
@@ -729,39 +729,39 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessPart(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessPart(plugin, event);
     }
 
 
     // onChannelAwarenessNickMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessNick`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessNick`.
      +/
     @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessNick(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessNick(plugin, event);
     }
 
 
     // onChannelAwarenessQuitMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessQuit`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessQuit`.
      +/
     @(Awareness.late)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessQuit(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessQuit(plugin, event);
     }
 
 
     // onChannelAwarenessTopicMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessTopic`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessTopic`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -770,13 +770,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessTopic(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessTopic(plugin, event);
     }
 
 
     // onChannelAwarenessCreationTimeMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessCreationTime`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessCreationTime`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -784,13 +784,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessCreationTime(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessCreationTime(plugin, event);
     }
 
 
     // onChannelAwarenessModeMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessMode`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessMode`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -798,13 +798,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessMode(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessMode(plugin, event);
     }
 
 
     // onChannelAwarenessWhoReplyMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessWhoReply`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessWhoReply`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -812,13 +812,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessWhoReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessWhoReply(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessWhoReply(plugin, event);
     }
 
 
     // onChannelAwarenessNamesReplyMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessNamesReply`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessNamesReply`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -826,13 +826,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessNamesReply(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessNamesReply(plugin, event);
     }
 
 
     // onChannelAwarenessModeListsMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessModeLists`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessModeLists`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -844,13 +844,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessModeLists(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessModeLists(plugin, event);
     }
 
 
     // onChannelAwarenessChannelModeIsMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onChannelAwarenessChannelModeIs`.
+        Proxies to `kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -858,7 +858,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onChannelAwarenessChannelModeIs(plugin, event);
+        return kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs(plugin, event);
     }
 }
 
@@ -1283,7 +1283,7 @@ version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
-    private import kameloso.plugins.awareness;
+    private import kameloso.plugins.common.awareness;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
@@ -1311,7 +1311,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
-        Proxies to `kameloso.plugins.awareness.onTwitchAwarenessSenderCarryingEvent`.
+        Proxies to `kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1340,7 +1340,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onTwitchAwarenessSenderCarryingEvent(plugin, event);
+        return kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent(plugin, event);
     }
 
 
@@ -1368,7 +1368,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onTwitchAwarenessTargetCarryingEventMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        return kameloso.plugins.awareness.onTwitchAwarenessTargetCarryingEvent(plugin, event);
+        return kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent(plugin, event);
     }
 }
 

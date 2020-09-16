@@ -24,8 +24,8 @@ import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
-import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.base : applyCustomSettings;
+import kameloso.plugins.common.awareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;

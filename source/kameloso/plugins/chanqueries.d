@@ -6,7 +6,7 @@
 
     It is qualified as a service, so while it is not technically mandatory, it
     is highly recommended if you plan on mixing in
-    `kameloso.plugins.awareness.ChannelAwareness` into your plugins.
+    `kameloso.plugins.common.awareness.ChannelAwareness` into your plugins.
  +/
 module kameloso.plugins.chanqueries;
 
@@ -19,9 +19,9 @@ version(WithChanQueriesService):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.common;
+import kameloso.plugins.common.base;
 import kameloso.plugins.common.delayawait;
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;
 

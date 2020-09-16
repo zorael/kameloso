@@ -15,7 +15,7 @@ version(WithVotesPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;

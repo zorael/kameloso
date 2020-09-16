@@ -8,7 +8,7 @@
     Example:
     ---
     import kameloso.plugins.core;
-    import kameloso.plugins.awareness;
+    import kameloso.plugins.common.awareness;
 
     @(IRCEvent.Type.CHAN)
     @(ChannelPolicy.home)
@@ -345,7 +345,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.plugins.awareness : Awareness;
+        import kameloso.plugins.common.awareness : Awareness;
         import lu.string : contains, nom;
         import lu.traits : getSymbolsByUDA, isAnnotated;
         import std.meta : Filter, templateNot, templateOr;

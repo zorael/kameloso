@@ -14,7 +14,7 @@ version(WithAutomodePlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;

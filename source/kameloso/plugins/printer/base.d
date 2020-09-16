@@ -22,7 +22,7 @@ import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common;
 import kameloso.irccolours;
 import dialect.defs;

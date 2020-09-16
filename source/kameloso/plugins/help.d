@@ -14,7 +14,7 @@ version(WithHelpPlugin):
 private:
 
 import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;

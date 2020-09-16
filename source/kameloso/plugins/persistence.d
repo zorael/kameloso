@@ -751,7 +751,7 @@ public:
     this service we aim to complete such `dialect.defs.IRCUser` entries as
     the union of everything we know from previous events.
 
-    It only needs part of `kameloso.plugins.awareness.UserAwareness` for minimal
+    It only needs part of `kameloso.plugins.common.awareness.UserAwareness` for minimal
     bookkeeping, not the full package, so we only copy/paste the relevant bits
     to stay slim.
  +/

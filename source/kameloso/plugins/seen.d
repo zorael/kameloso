@@ -37,7 +37,7 @@ version(WithSeenPlugin):
 private import kameloso.plugins.core;
 
 // Awareness mixins, for plumbing.
-private import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 
 // Likewise `dialect.defs`, for the definitions of an IRC event.
 private import dialect.defs;
@@ -1036,7 +1036,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
 
 
 /++
-    `kameloso.plugins.awareness.UserAwareness` is a mixin template; a few functions
+    `kameloso.plugins.common.awareness.UserAwareness` is a mixin template; a few functions
     defined in `kameloso.plugins.common` to deal with common bookkeeping that
     every plugin *that wants to keep track of users* need. If you don't want to
     track which users you have seen (and are visible to you now), you don't need this.
@@ -1045,8 +1045,8 @@ mixin UserAwareness;
 
 
 /++
-    Complementary to `kameloso.plugins.awareness.UserAwareness` is
-    `kameloso.plugins.awareness.ChannelAwareness`, which will add in bookkeeping
+    Complementary to `kameloso.plugins.common.awareness.UserAwareness` is
+    `kameloso.plugins.common.awareness.ChannelAwareness`, which will add in bookkeeping
     about the channels the bot is in, their topics, modes and list of
     participants. Channel awareness requires user awareness, but not the other way around.
 
