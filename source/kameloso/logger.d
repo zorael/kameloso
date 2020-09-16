@@ -44,7 +44,16 @@ private:
     import std.traits : EnumMembers;
     import std.typecons : Flag, No, Yes;
 
-    /// Buffer to compose a line in before printing it to screen.
+    version(Colours)
+    {
+        import kameloso.constants : DefaultColours;
+        import kameloso.terminal : TerminalForeground, TerminalReset, colourWith, colour;
+
+        alias logcoloursBright = DefaultColours.logcoloursBright;
+        alias logcoloursDark = DefaultColours.logcoloursDark;
+    }
+
+    /// Buffer to compose a line in before printing it to screen in one go.
     Appender!(char[]) linebuffer;
 
     /// The initial size to allocate for `linebuffer`. It will grow if needed.
@@ -55,15 +64,6 @@ private:
     bool flush;  /// Whether or not we should flush `stdout` after finishing writing to it.
 
 public:
-    version(Colours)
-    {
-        import kameloso.constants : DefaultColours;
-        import kameloso.terminal : TerminalForeground, TerminalReset, colourWith, colour;
-
-        alias logcoloursBright = DefaultColours.logcoloursBright;
-        alias logcoloursDark = DefaultColours.logcoloursDark;
-    }
-
     /++
         Create a new `KamelosoLogger` with the passed settings.
 
