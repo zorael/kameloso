@@ -30,7 +30,6 @@ module kameloso.thread;
 
 private:
 
-import std.typecons : Tuple;
 import core.thread : Fiber;
 
 public:

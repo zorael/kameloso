@@ -6,10 +6,7 @@ module kameloso.core;
 private:
 
 import kameloso.plugins.common.core : IRCPlugin, Replay;
-import kameloso.common : CoreSettings, Kameloso, OutgoingLine, Tint,
-    initLogger, logger, printVersionInfo, replaceTokens;
-import kameloso.printing;
-import kameloso.thread : ThreadMessage;
+import kameloso.common : CoreSettings, Kameloso, Tint, logger;
 import dialect;
 import lu.common : Next;
 import std.typecons : Flag, No, Yes;
@@ -112,6 +109,8 @@ void signalHandler(int sig) nothrow @nogc @system
  +/
 void messageFiber(ref Kameloso instance)
 {
+    import kameloso.common : OutgoingLine, replaceTokens;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : yield;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -1502,6 +1501,7 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
  +/
 void processReplays(ref Kameloso instance, const Replay[][string] replays)
 {
+    import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
 
@@ -2370,6 +2370,7 @@ void printEventDebugDetails(const IRCEvent event, const string raw)
     }
     else
     {
+        import kameloso.printing : printObject;
         import std.typecons : Flag, No, Yes;
 
         // Offending line included in event, in raw
@@ -2484,6 +2485,7 @@ int initBot(string[] args)
     preInstanceSetup();
 
     static import kameloso.common;
+    import kameloso.common : initLogger;
 
     // Initialise the main Kameloso. Set its abort pointer to the global abort.
     Kameloso instance;
@@ -2576,7 +2578,9 @@ int initBot(string[] args)
         }
     }
 
+    import kameloso.common : replaceTokens, printVersionInfo;
     import std.stdio : writeln;
+
     printVersionInfo(pre, post);
     writeln();
 
@@ -2673,6 +2677,7 @@ int initBot(string[] args)
 
     if (*instance.abort && instance.conn.connected)
     {
+        import kameloso.thread : ThreadMessage;
         import std.concurrency : receiveTimeout;
         import core.time : seconds;
 
