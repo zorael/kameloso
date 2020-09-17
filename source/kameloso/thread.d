@@ -369,3 +369,49 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
         left -= step;
     }
 }
+
+
+// exhaustMessages
+/++
+    Exhausts the concurrency message mailbox.
+
+    This is done between connection attempts to get a fresh start.
+ +/
+void exhaustMessages()
+{
+    import core.time : msecs;
+    import std.concurrency : receiveTimeout;
+    import std.variant : Variant;
+
+    bool notEmpty;
+    static immutable almostInstant = 10.msecs;
+
+    do
+    {
+        notEmpty = receiveTimeout(almostInstant,
+            (Variant v) {}
+        );
+    }
+    while (notEmpty);
+}
+
+///
+unittest
+{
+    import std.concurrency : receiveTimeout, send, thisTid;
+    import std.variant : Variant;
+    import core.time : seconds;
+
+    foreach (immutable i; 0..10)
+    {
+        thisTid.send(i);
+    }
+
+    exhaustMessages();
+
+    immutable receivedSomething = receiveTimeout((-1).seconds,
+        (Variant v) {},
+    );
+
+    assert(!receivedSomething);
+}
