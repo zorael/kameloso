@@ -576,31 +576,6 @@ void messageFiber(ref Kameloso instance)
 }
 
 
-// exhaustMessages
-/++
-    Exhausts the concurrency message mailbox.
-
-    This is done between connection attempts to get a fresh start.
- +/
-void exhaustMessages()
-{
-    import core.time : msecs;
-    import std.concurrency : receiveTimeout;
-    import std.variant : Variant;
-
-    bool notEmpty;
-    static immutable almostInstant = 10.msecs;
-
-    do
-    {
-        notEmpty = receiveTimeout(almostInstant,
-            (Variant v) {}
-        );
-    }
-    while (notEmpty);
-}
-
-
 // mainLoop
 /++
     This loops creates a `std.concurrency.Generator` `core.thread.fiber.Fiber` to loop
@@ -2202,7 +2177,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         if (!attempt.firstConnect)
         {
             import kameloso.constants : Timeout;
-            import kameloso.thread : interruptibleSleep;
+            import kameloso.thread : exhaustMessages, interruptibleSleep;
             import core.time : seconds;
 
             // Carry some values but otherwise restore the pristine client backup
