@@ -173,7 +173,7 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    applyCustomSettings([ plugin ], newSettings, state.settings);
+    cast(void)applyCustomSettings([ plugin ], newSettings, state.settings);
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 
