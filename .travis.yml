@@ -34,7 +34,7 @@ before_deploy:
   - git clone https://github.com/adamdruppe/adrdox.git
   - cd adrdox
   - make
-  - ./doc2 -ip --directory ../kameloso/docs ../kameloso
+  - ./doc2 -ip --header-title="kameloso IRC bot" --directory ../kameloso/docs ../kameloso
   - cd ../kameloso
   - cp -rv .circleci docs/
 
