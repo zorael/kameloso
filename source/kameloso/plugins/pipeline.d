@@ -202,7 +202,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         static immutable instant = (-1).seconds;
         bool halt;
 
-        receiveTimeout(instant,
+        cast(void)receiveTimeout(instant,
             (ThreadMessage.Teardown)
             {
                 halt = true;

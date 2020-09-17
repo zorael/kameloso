@@ -115,7 +115,7 @@ version(Posix)
         import core.thread : Thread;
         import std.string : toStringz;
 
-        pthread_setname_np(Thread.getThis().id, name.toStringz);
+        cast(void)pthread_setname_np(Thread.getThis().id, name.toStringz);
     }
 }
 

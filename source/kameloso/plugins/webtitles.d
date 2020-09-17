@@ -182,7 +182,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
             continue;
         }
 
-        spawn(&worker, cast(shared)request, plugin.cache,
+        cast(void)spawn(&worker, cast(shared)request, plugin.cache,
             (i * plugin.delayMsecs), colouredFlag);
     }
 }
