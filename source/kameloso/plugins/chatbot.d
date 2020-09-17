@@ -5,8 +5,8 @@
 
     It's mostly legacy.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
  +/
 module kameloso.plugins.chatbot;
 

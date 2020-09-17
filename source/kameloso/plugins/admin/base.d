@@ -8,8 +8,8 @@
     and removing homes on-the-fly, whitelisting or de-whitelisting account
     names, adding/removing from the operator list, joining or leaving channels, and such.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#admin
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#admin
  +/
 module kameloso.plugins.admin.base;
 

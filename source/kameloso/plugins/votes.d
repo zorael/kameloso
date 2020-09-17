@@ -4,8 +4,8 @@
 
     Cheating by changing nicknames is warded against.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#votes
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#votes
  +/
 module kameloso.plugins.votes;
 

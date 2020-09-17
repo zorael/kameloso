@@ -3,8 +3,8 @@
     to get how much time passed between the creation of a stopwatch and the
     cessation of it.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
  +/
 module kameloso.plugins.stopwatch;
 

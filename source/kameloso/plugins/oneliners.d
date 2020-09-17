@@ -5,8 +5,8 @@
     More advanced commands that do more than just repeat the preset lines of text
     will have to be written separately.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
  +/
 module kameloso.plugins.oneliners;
 

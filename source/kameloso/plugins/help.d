@@ -3,8 +3,8 @@
 
     It is used to query the bot for available commands in a tidy list.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#help
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#help
  +/
 module kameloso.plugins.help;
 

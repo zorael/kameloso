@@ -22,8 +22,8 @@
     be registered to process on incoming events, or scheduled with a reasonably
     high degree of precision.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#seen
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#seen
  +/
 module kameloso.plugins.seen;
 
