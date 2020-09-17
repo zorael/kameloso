@@ -90,7 +90,7 @@ else
  +/
 int main(string[] args)
 {
-    import kameloso.kameloso : initBot;
+    import kameloso.core : initBot;
 
     return initBot(args);
 }
