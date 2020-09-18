@@ -32,7 +32,7 @@ private:
     /++
         Aggregate of values and state needed to throttle outgoing messages.
      +/
-    struct Throttle
+    static struct Throttle
     {
         /// Graph constant modifier (inclination, MUST be negative).
         enum k = -1.2;
