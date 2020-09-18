@@ -1981,11 +1981,6 @@ SysTime nextMidnight(const SysTime now)
     if (next.day == 1)
     {
         next.add!"months"(1);
-
-        if (next.month == 12)
-        {
-            next.add!"years"(1);
-        }
     }
 
     return next;
