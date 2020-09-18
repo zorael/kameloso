@@ -710,3 +710,58 @@ public:
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
 }
+
+
+// IRCBot
+/++
+    Aggregate of information relevant for an IRC *bot* that goes beyond what is
+    needed for a mere IRC *client*.
+ +/
+struct IRCBot
+{
+private:
+    import lu.uda : CannotContainComments, Hidden, Separator;
+
+public:
+    /// Username to use as services account login name.
+    string account;
+
+    @Hidden
+    @CannotContainComments
+    {
+        /// Password for services account.
+        string password;
+
+        /// Login `PASS`, different from `SASL` and services.
+        string pass;
+
+        /// Default reason given when quitting and not specifying a reason text.
+        string quitReason;
+
+        /// Default reason given when parting a channel and not specifying a reason text.
+        string partReason;
+    }
+
+    @Separator(",")
+    @Separator(" ")
+    {
+        /// The nickname services accounts of administrators, in a bot-like context.
+        string[] admins;
+
+        /// List of home channels for the bot to operate in.
+        @CannotContainComments
+        string[] homeChannels;
+
+        @Hidden
+        deprecated("Use `homeChannels` instead")
+        alias homes = homeChannels;
+
+        /// Currently inhabited non-home guest channels.
+        @CannotContainComments
+        string[] guestChannels;
+
+        @Hidden
+        deprecated("Use `guestChannels` instead")
+        alias channels = guestChannels;
+    }
+}
