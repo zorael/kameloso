@@ -84,8 +84,6 @@ void initLogger(const Flag!"monochrome" monochrome,
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
-    import std.experimental.logger : LogLevel;
-
     logger = new KamelosoLogger(monochrome, bright, flush);
     Tint.monochrome = monochrome;
 }
