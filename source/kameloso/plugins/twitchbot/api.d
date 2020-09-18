@@ -719,8 +719,6 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
         immutable paginatedURL = after.length ?
             (url ~ "&after=" ~ after) : url;
 
-        scope(failure) plugin.useAPIFeatures = false;
-
         immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
