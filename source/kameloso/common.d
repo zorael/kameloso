@@ -2014,4 +2014,14 @@ unittest
     immutable afterTrouble = troubleDay.nextMidnight;
     immutable alsoAfterTrouble = SysTime(DateTime(2018, 7, 1, 0, 0, 0), utc);
     assert(afterTrouble == alsoAfterTrouble);
+
+    immutable novDay = SysTime(DateTime(2019, 11, 30, 12, 34, 56), utc);
+    immutable decDay = novDay.nextMidnight;
+    immutable alsoDecDay = SysTime(DateTime(2019, 12, 1, 0, 0, 0), utc);
+    assert(decDay == alsoDecDay);
+
+    immutable lastMarch = SysTime(DateTime(2005, 3, 31, 23, 59, 59), utc);
+    immutable firstApril = lastMarch.nextMidnight;
+    immutable alsoFirstApril = SysTime(DateTime(2005, 4, 1, 0, 0, 0), utc);
+    assert(firstApril == alsoFirstApril);
 }
