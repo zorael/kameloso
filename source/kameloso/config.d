@@ -7,7 +7,6 @@ module kameloso.config;
 private:
 
 import kameloso.kameloso;
-import kameloso.common : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import std.typecons : Flag, No, Yes;
 
@@ -126,8 +125,8 @@ void writeToDisk(const string filename, const string configurationText,
 /++
     Displays a hint on how to complete a minimal configuration file.
 
-    It assumes that the bot's `kameloso.common.IRCBot.admins` and
-    `kameloso.common.IRCBot.homeChannels` are both empty. (Else it should not have been called.)
+    It assumes that the bot's `kameloso.kameloso.IRCBot.admins` and
+    `kameloso.kameloso.IRCBot.homeChannels` are both empty. (Else it should not have been called.)
 
     Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
     so place it here.
@@ -155,7 +154,7 @@ void complainAboutIncompleteConfiguration()
     Params:
         client = Reference to the `dialect.defs.IRCClient` to complete.
         server = Reference to the `dialect.defs.IRCServer` to complete.
-        bot = Reference to the `kameloso.common.IRCBot` to complete.
+        bot = Reference to the `kameloso.kameloso.IRCBot` to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")

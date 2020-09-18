@@ -20,6 +20,7 @@ public:
 version(unittest)
 shared static this()
 {
+    import kameloso.kameloso : CoreSettings;
     import std.experimental.logger : LogLevel;
 
     // This is technically before settings have been read...
@@ -98,7 +99,7 @@ out (; (logger !is null), "Failed to initialise logger")
     `kameloso.common.settings`, so they know to use monochrome output or not.
     It is a problem that needs solving.
  +/
-CoreSettings* settings;
+kameloso.kameloso.CoreSettings* settings;
 
 
 version(Colours)

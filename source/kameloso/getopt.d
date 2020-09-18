@@ -4,14 +4,13 @@
     Employs the standard `std.getopt` to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
     function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
-    `kameloso.common.IRCBot` and `kameloso.kameloso.CoreSettings`.
+    `kameloso.kameloso.IRCBot` and `kameloso.kameloso.CoreSettings`.
  +/
 module kameloso.getopt;
 
 private:
 
 import kameloso.kameloso;
-import kameloso.common : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -105,7 +104,7 @@ void printHelp(GetoptResult results,
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
         client = Reference to the current `dialect.defs.IRCClient`.
         server = Reference to the current `dialect.defs.IRCServer`.
-        bot = Reference to the current `kameloso.common.IRCBot`.
+        bot = Reference to the current `kameloso.kameloso.IRCBot`.
         customSettings = const string array to all the custom settings set
             via `getopt`, to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the

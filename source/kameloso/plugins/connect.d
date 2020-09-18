@@ -590,7 +590,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad `dialect.IRCbot.pass`.
+    Quits the program if we supplied a bad `kameloso.kameloso.IRCBot.pass`.
 
     There's no point in reconnecting.
  +/
@@ -839,15 +839,15 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
+    `kameloso.kameloso.IRCBot.account` and `kameloso.kameloso.IRCBot.password`,
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where `dialect.defs.IRCbot.account` is the services account name and
-    `dialect.defs.IRCbot.password` is the account password.
+    ...where `kameloso.kameloso.IRCBot.account` is the services account name and
+    `kameloso.kameloso.IRCBot.password` is the account password.
 
     Params:
         service = The current `ConnectService`.
@@ -1094,7 +1094,7 @@ void onISUPPORT(ConnectService service, const IRCEvent event)
     This is a "benign" disconnect. We need to reconnect preemptively instead of
     waiting for the server to disconnect us, as it would otherwise constitute
     an error and the program would exit if
-    `kameloso.common.CoreSettings.endlesslyConnect` isn't set.
+    `kameloso.kameloso.CoreSettings.endlesslyConnect` isn't set.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)

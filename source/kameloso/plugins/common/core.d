@@ -34,6 +34,7 @@ module kameloso.plugins.common.core;
 
 private:
 
+import kameloso.kameloso;
 import dialect.defs;
 import std.typecons : Flag, No, Tuple, Yes;
 
@@ -1934,7 +1935,6 @@ FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
 struct IRCPluginState
 {
 private:
-    import kameloso.common : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -1953,18 +1953,18 @@ public:
     IRCServer server;
 
     /++
-        The current `kameloso.common.IRCBot`, containing information pertaining
+        The current `kameloso.kameloso.IRCBot`, containing information pertaining
         to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
     /++
-        The current program-wide `kameloso.common.CoreSettings`.
+        The current program-wide `kameloso.kameloso.CoreSettings`.
      +/
     CoreSettings settings;
 
     /++
-        The current program-wide `kameloso.common.ConnectionSettings`.
+        The current program-wide `kameloso.kameloso.ConnectionSettings`.
      +/
     ConnectionSettings connSettings;
 
@@ -2387,7 +2387,7 @@ enum PrefixPolicy
 
     /++
         The annotated event handler will only trigger if the `dialect.defs.IRCEvent.content`
-        member starts with the `kameloso.common.CoreSettings.prefix` (e.g. "!").
+        member starts with the `kameloso.kameloso.CoreSettings.prefix` (e.g. "!").
         All other annotations must also match.
      +/
     prefixed,
@@ -2534,7 +2534,7 @@ Replay replay(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
     Defines an IRC bot command, for people to trigger with messages.
 
     If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
-    and look for `kameloso.common.CoreSettings.prefix` at the beginning of
+    and look for `kameloso.kameloso.CoreSettings.prefix` at the beginning of
     messages, to prefix the command `word`. (Usually "`!`", making it "`!command`".)
 
     Example:

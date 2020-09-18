@@ -205,7 +205,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandHome
 /++
     Adds or removes channels to/from the list of currently active home channels, in the
-    `kameloso.common.IRCBot.homeChannels` array of the current `AdminPlugin`'s
+    `kameloso.kameloso.IRCBot.homeChannels` array of the current `AdminPlugin`'s
     `kameloso.plugins.common.core.IRCPluginState`.
 
     Merely passes on execution to `addHome` and `delHome`.

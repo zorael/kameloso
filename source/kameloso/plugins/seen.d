@@ -124,7 +124,7 @@ public:
         home channels to operate in, the list of administrator accounts, etc.
 
     * `kameloso.plugins.common.core.IRCPluginState.settings` is a copy of the
-        "global" `kameloso.common.CoreSettings`, which contains information
+        "global" `kameloso.kameloso.CoreSettings`, which contains information
         about how the bot should output text, whether or not to always save to
         disk upon program exit, and some other program-wide settings.
 
@@ -358,7 +358,7 @@ private:
     The `kameloso.plugins.common.core.ChannelPolicy` annotation dictates whether or not this
     function should be called based on the *channel* the event took place in, if
     applicable. The two policies are `kameloso.plugins.common.core.ChannelPolicy.home`,
-    in which only events in channels in the `kameloso.common.IRCBot.homeChannels`
+    in which only events in channels in the `kameloso.kameloso.IRCBot.homeChannels`
     array will be allowed to trigger this; or `kameloso.plugins.common.core.ChannelPolicy.any`,
     in which case anywhere goes. For events that don't correspond to a channel (such as
     `dialect.defs.IRCEvent.Type.QUERY`) the setting is ignored.

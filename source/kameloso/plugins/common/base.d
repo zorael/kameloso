@@ -9,8 +9,8 @@ module kameloso.plugins.common.base;
 
 private:
 
+import kameloso.kameloso;
 import kameloso.plugins.common.core;
-import kameloso.common : CoreSettings;
 import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
@@ -37,7 +37,7 @@ public:
         plugins = Array of all `IRCPlugin`s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
-        copyOfSettings = A copy of the program-wide `kameloso.common.CoreSettings`.
+        copyOfSettings = A copy of the program-wide `kameloso.kameloso.CoreSettings`.
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.

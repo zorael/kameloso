@@ -18,7 +18,7 @@ public:
 struct Kameloso
 {
 private:
-    import kameloso.common : IRCBot, OutgoingLine, logger;
+    import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
     import kameloso.plugins.common.core : IRCPlugin;
     import dialect.defs : IRCClient, IRCServer;
@@ -547,13 +547,13 @@ public:
 
     // propagateBot
     /++
-        Takes an `kameloso.common.IRCBot` and passes it out to all plugins.
+        Takes an `kameloso.kameloso.IRCBot` and passes it out to all plugins.
 
         This is called when a change to the bot has occurred and we want to
         update all plugins to have a current copy of it.
 
         Params:
-            bot = `kameloso.common.IRCBot` to propagate to all plugins.
+            bot = `kameloso.kameloso.IRCBot` to propagate to all plugins.
      +/
     void propagateBot(IRCBot bot) pure nothrow @nogc
     {
