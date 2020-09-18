@@ -1937,7 +1937,8 @@ string replaceTokens(const string line) @safe pure nothrow
     ---
 
     Params:
-        now = UNIX timestamp of the base date from which to proceed to the next midnight.
+        now = A `std.date.systime.SysTime` of the base date from which to proceed
+            to the next midnight.
 
     Returns:
         A `std.datetime.systime.SysTime` of the midnight following the date
