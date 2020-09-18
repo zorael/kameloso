@@ -6,7 +6,8 @@ module kameloso.config;
 
 private:
 
-import kameloso.common : IRCBot, Kameloso;
+import kameloso.kameloso;
+import kameloso.common : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import std.typecons : Flag, No, Yes;
 
@@ -29,7 +30,7 @@ public:
     ---
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`,
+        instance = Reference to the current `kameloso.kameloso.Kameloso`,
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/

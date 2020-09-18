@@ -4,13 +4,14 @@
     Employs the standard `std.getopt` to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
     function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
-    `kameloso.common.IRCBot` and `kameloso.common.CoreSettings`.
+    `kameloso.common.IRCBot` and `kameloso.kameloso.CoreSettings`.
  +/
 module kameloso.getopt;
 
 private:
 
-import kameloso.common : CoreSettings, IRCBot, Kameloso;
+import kameloso.kameloso;
+import kameloso.common : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -101,7 +102,7 @@ void printHelp(GetoptResult results,
     The filename is read from `kameloso.common.settings`.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         client = Reference to the current `dialect.defs.IRCClient`.
         server = Reference to the current `dialect.defs.IRCServer`.
         bot = Reference to the current `kameloso.common.IRCBot`.
@@ -170,7 +171,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         customSettings = Array of all the custom settings set
             via `getopt`, to apply to things before saving to disk.
         monochrome = Whether or not terminal colours should be used.
@@ -233,7 +234,7 @@ public:
     ---
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         args = The command-line arguments the program was called with.
         customSettings = Out array of custom settings to apply on top of
             the settings read from the configuration file.
@@ -606,7 +607,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     Takes bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
 
     Params:
-        instance = The current `kameloso.common.Kameloso` instance.
+        instance = The current `kameloso.kameloso.Kameloso` instance.
         shouldWriteConfig = Writing to the configuration file was requested.
         shouldOpenEditor = Opening the configuration file in a text editor was requested.
         customSettings = Custom settings supplied at the command line, to be

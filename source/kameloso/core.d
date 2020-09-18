@@ -5,8 +5,9 @@ module kameloso.core;
 
 private:
 
+import kameloso.kameloso;
+import kameloso.common : Tint, logger;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
-import kameloso.common : CoreSettings, Kameloso, Tint, logger;
 import dialect;
 import lu.common : Next;
 import std.typecons : Flag, No, Yes;
@@ -105,7 +106,7 @@ void signalHandler(int sig) nothrow @nogc @system
     means the bot should exit or not.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
  +/
 void messageFiber(ref Kameloso instance)
 {
@@ -585,7 +586,7 @@ void messageFiber(ref Kameloso instance)
     parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
 
     Returns:
         `lu.common.Next.returnFailure` if circumstances mean the bot
@@ -1041,7 +1042,7 @@ Next mainLoop(ref Kameloso instance)
     Broken out of `mainLoop` to make it more legible.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
 
     Returns:
         How many milliseconds until the next message in the buffers should be sent.
@@ -1094,7 +1095,7 @@ import lu.net : ListenAttempt;
     warnings and error messages.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
 
     Returns:
@@ -1496,7 +1497,7 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
     `kameloso.constants.Timeout.whoisRetry` seconds).
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         replays = Reference to an associative array of `Replay`s.
  +/
 void processReplays(ref Kameloso instance, const Replay[][string] replays)
@@ -1604,7 +1605,7 @@ void resetSignals() nothrow @nogc
     Attempt handling `getopt`, wrapped in try-catch blocks.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         args = The arguments passed to the program.
         customSettings = Out reference to the dynamic array of custom settings as
             specified with `--set plugin.setting=value` on the command line.
@@ -1665,12 +1666,12 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
 
 // tryConnect
 /++
-    Tries to connect to the IPs in `kameloso.common.Kameloso.conn.ips` by
+    Tries to connect to the IPs in `kameloso.kameloso.Kameloso.conn.ips` by
     leveraging `lu.net.connectFiber`, reacting on the
     `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
 
     Returns:
         `lu.common.Next.continue_` if connection succeeded,
@@ -1804,7 +1805,7 @@ Next tryConnect(ref Kameloso instance)
     `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         firstConnect = Whether or not this is the first time we're attempting a connection.
 
     Returns:
@@ -2029,7 +2030,7 @@ void preInstanceSetup()
     This is called during early execution.
 
     Params:
-        settings = A reference to the `kameloso.common.CoreSettings` we want to set up.
+        settings = A reference to the `kameloso.kameloso.CoreSettings` we want to set up.
  +/
 void setupSettings(ref CoreSettings settings)
 {
@@ -2069,7 +2070,7 @@ void setupSettings(ref CoreSettings settings)
     This is called after command-line arguments have been parsed.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
 
     Returns:
         `Next.returnFailure` if the program should exit, `Next.continue_` otherwise.
@@ -2128,7 +2129,7 @@ Next verifySettings(ref Kameloso instance)
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
  +/
 void resolveResourceDirectory(ref Kameloso instance)
 {
@@ -2159,7 +2160,7 @@ void resolveResourceDirectory(ref Kameloso instance)
     It resolves and connects to servers, then hands off execution to `mainLoop`.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         attempt = Voldemort aggregate of state variables used when connecting.
  +/
 void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
@@ -2396,7 +2397,7 @@ void printEventDebugDetails(const IRCEvent event, const string raw)
     Prints a summary of the connection(s) made and events parsed this execution.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
  +/
 void printSummary(const ref Kameloso instance)
 {
