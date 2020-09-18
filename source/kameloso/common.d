@@ -196,7 +196,7 @@ public:
 struct IRCBot
 {
 private:
-    import lu.uda : CannotContainComments, Hidden, Separator, Quoted, Unserialisable;
+    import lu.uda : CannotContainComments, Hidden, Separator;
 
 public:
     /// Username to use as services account login name.
@@ -1452,7 +1452,6 @@ unittest
         assert((sink.data == "0s"), sink.data);
         sink.clear();
     }
-
     {
         immutable dur = 3_141_519_265.msecs;
         dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
@@ -1462,7 +1461,6 @@ unittest
         assert((sink.data == "36d 8h 38m"), sink.data);
         sink.clear();
     }
-
     {
         immutable dur = 3599.seconds;
         dur.timeSinceInto!(No.abbreviate, 2, 1)(sink);
@@ -1472,7 +1470,6 @@ unittest
         assert((sink.data == "59m"), sink.data);
         sink.clear();
     }
-
     {
         immutable dur = 3.days + 35.minutes;
         dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
@@ -1482,7 +1479,6 @@ unittest
         assert((sink.data == "3d 35m"), sink.data);
         sink.clear();
     }
-
     {
         immutable dur = 57.weeks + 1.days + 2.hours + 3.minutes + 4.seconds;
         dur.timeSinceInto!(No.abbreviate, 7, 4)(sink);
@@ -1492,7 +1488,6 @@ unittest
         assert((sink.data == "1y 1m 1w"), sink.data);
         sink.clear();
     }
-
     {
         immutable dur = 4.seconds;
         dur.timeSinceInto!(No.abbreviate, 7, 4)(sink);
@@ -1560,7 +1555,6 @@ unittest
         assert((since == "9 days, 3 hours and 16 minutes"), since);
         assert((abbrev == "9d 3h 16m"), abbrev);
     }
-
     {
         immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
         immutable since = dur.timeSince!(No.abbreviate, 5, 1);
@@ -1568,7 +1562,6 @@ unittest
         assert((since == "1 week, 2 days, 3 hours and 16 minutes"), since);
         assert((abbrev == "1w 2d 3h 16m"), abbrev);
     }
-
     {
         immutable dur = 789_383.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 1);
@@ -1576,7 +1569,6 @@ unittest
         assert((since == "789383 seconds"), since);
         assert((abbrev == "789383s"), abbrev);
     }
-
     {
         immutable dur = 789_383.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 2, 0);
@@ -1584,7 +1576,6 @@ unittest
         assert((since == "13156 minutes and 23 seconds"), since);
         assert((abbrev == "13156m 23s"), abbrev);
     }
-
     {
         immutable dur = 3_620.seconds;  // 1 hour and 20 secs
         immutable since = dur.timeSince!(No.abbreviate, 7, 1);
@@ -1592,7 +1583,6 @@ unittest
         assert((since == "1 hour"), since);
         assert((abbrev == "1h"), abbrev);
     }
-
     {
         immutable dur = 30.seconds;  // 30 secs
         immutable since = dur.timeSince;
@@ -1600,7 +1590,6 @@ unittest
         assert((since == "30 seconds"), since);
         assert((abbrev == "30s"), abbrev);
     }
-
     {
         immutable dur = 1.seconds;
         immutable since = dur.timeSince;
@@ -1608,7 +1597,6 @@ unittest
         assert((since == "1 second"), since);
         assert((abbrev == "1s"), abbrev);
     }
-
     {
         immutable dur = 1.days + 1.minutes + 1.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 7, 0);
@@ -1616,7 +1604,6 @@ unittest
         assert((since == "1 day, 1 minute and 1 second"), since);
         assert((abbrev == "1d 1m 1s"), abbrev);
     }
-
     {
         immutable dur = 3.weeks + 6.days + 10.hours;
         immutable since = dur.timeSince!(No.abbreviate);
@@ -1624,7 +1611,6 @@ unittest
         assert((since == "3 weeks, 6 days and 10 hours"), since);
         assert((abbrev == "3w 6d 10h"), abbrev);
     }
-
     {
         immutable dur = 377.days + 11.hours;
         immutable since = dur.timeSince!(No.abbreviate, 6);
@@ -1632,7 +1618,6 @@ unittest
         assert((since == "12 months, 2 weeks, 3 days and 11 hours"), since);
         assert((abbrev == "12m 2w 3d 11h"), abbrev);
     }
-
     {
         immutable dur = 395.days + 11.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 7, 1);
@@ -1640,7 +1625,6 @@ unittest
         assert((since == "1 year, 1 month and 5 days"), since);
         assert((abbrev == "1y 1m 5d"), abbrev);
     }
-
     {
         immutable dur = 1.weeks + 9.days;
         immutable since = dur.timeSince!(No.abbreviate, 5);
@@ -1648,7 +1632,6 @@ unittest
         assert((since == "2 weeks and 2 days"), since);
         assert((abbrev == "2w 2d"), abbrev);
     }
-
     {
         immutable dur = 30.days + 1.weeks;
         immutable since = dur.timeSince!(No.abbreviate, 5);
@@ -1656,7 +1639,6 @@ unittest
         assert((since == "5 weeks and 2 days"), since);
         assert((abbrev == "5w 2d"), abbrev);
     }
-
     {
         immutable dur = 30.days + 1.weeks + 1.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 4, 0);
@@ -1664,7 +1646,6 @@ unittest
         assert((since == "37 days and 1 second"), since);
         assert((abbrev == "37d 1s"), abbrev);
     }
-
     {
         immutable dur = 267.weeks + 4.days + 9.hours + 15.minutes + 1.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 7, 0);
@@ -1672,7 +1653,6 @@ unittest
         assert((since == "5 years, 2 months, 1 week, 6 days, 9 hours, 15 minutes and 1 second"), since);
         assert((abbrev == "5y 2m 1w 6d 9h 15m 1s"), abbrev);
     }
-
     {
         immutable dur = 360.days + 350.days;
         immutable since = dur.timeSince!(No.abbreviate, 7, 6);
@@ -1680,7 +1660,6 @@ unittest
         assert((since == "1 year"), since);
         assert((abbrev == "1y"), abbrev);
     }
-
     {
         immutable dur = 267.weeks + 4.days + 9.hours + 15.minutes + 1.seconds;
         immutable since = dur.timeSince!(No.abbreviate, 7, 3);
