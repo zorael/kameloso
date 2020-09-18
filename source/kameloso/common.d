@@ -34,14 +34,13 @@ shared static this()
 
 /*public*/ static import kameloso.kameloso;
 
-deprecated("Import `kameloso.kameloso.Kameloso` directly instead")
-alias Kameloso = kameloso.kameloso.Kameloso;
-
-deprecated("Import `kameloso.kameloso.CoreSettings` directly instead")
-alias CoreSettings = kameloso.kameloso.CoreSettings;
-
-deprecated("Import `kameloso.kameloso.ConnetionSettings` directly instead")
-alias ConnectionSettings = kameloso.kameloso.ConnectionSettings;
+deprecated("Import from `kameloso.kameloso` directly instead")
+{
+    alias Kameloso = kameloso.kameloso.Kameloso;
+    alias CoreSettings = kameloso.kameloso.CoreSettings;
+    alias ConnectionSettings = kameloso.kameloso.ConnectionSettings;
+    alias IRCBot = kameloso.kameloso.IRCBot;
+}
 
 
 // logger
