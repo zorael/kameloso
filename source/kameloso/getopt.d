@@ -396,18 +396,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                             Tint.info ~ '#' ~ Tint.reset ~ "s)" ~
                             formatNum(bot.homeChannels.length),
                     &inputHomeChannels,
-                "homes",
-                    quiet ? string.init :
-                        "^",
-                    &inputHomeChannels,
                 "C|guestChannels",
                     quiet ? string.init :
                         "Non-home channels to idle in, comma-separated (ditto)" ~
                             formatNum(bot.guestChannels.length),
-                    &inputGuestChannels,
-                "channels",
-                    quiet ? string.init :
-                        "^",
                     &inputGuestChannels,
                 "a|append",
                     quiet ? string.init :
@@ -418,18 +410,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     quiet ? string.init :
                         "Show all plugins' settings",
                     &shouldShowSettings,
-                "show",
-                    quiet ? string.init :
-                        "^",
-                    &shouldShowSettings,
                "bright",
                     quiet ? string.init :
                         "Adjust colours for bright terminal backgrounds [%s%s%s]"
                         .format(Tint.info, settings.brightTerminal, Tint.reset),
-                    &settings.brightTerminal,
-                "brightTerminal",
-                    quiet ? string.init :
-                        "^",
                     &settings.brightTerminal,
                 "monochrome",
                     quiet ? string.init :
@@ -477,13 +461,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                         "Flush screen output after each write to it. " ~
                             "(Use this if the screen only occasionally updates.)",
                     &settings.flush,
-                "save",
+                "w|save",
                     quiet ? string.init :
                         "Write configuration to file",
-                    &shouldWriteConfig,
-                "w|writeconfig",
-                    quiet ? string.init :
-                        "^",
                     &shouldWriteConfig,
                 "edit",
                     quiet ? string.init :
