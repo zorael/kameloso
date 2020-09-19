@@ -575,6 +575,7 @@ void queryTwitchImpl(const string url, const string authToken,
         If nothing was found, an empty `std.json.JSONValue.init` is returned.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
 
@@ -599,6 +600,7 @@ JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
     It is not updated in realtime, so it doesn't make sense to call this often.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
+in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
 
