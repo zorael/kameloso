@@ -37,6 +37,8 @@ private:
         /// Graph constant modifier (inclination, MUST be negative).
         enum k = -1.2;
 
+        static assert((k < 0), "Throttle graph constant must be negative");
+
         /// Origo of x-axis (last sent message).
         SysTime t0;
 
