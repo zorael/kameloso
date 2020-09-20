@@ -61,7 +61,6 @@ private:
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;   /// Whether or not to use colours for a bright background.
-    bool flush;  /// Whether or not we should flush `stdout` after finishing writing to it.
 
 public:
     /++
@@ -70,16 +69,13 @@ public:
         Params:
             monochrome = Whether or not to print colours.
             brightTerminal = Bright terminal setting.
-            flush = Whether or not to flush `stdout` after printing.
      +/
     this(const Flag!"monochrome" monochrome,
-        const Flag!"brightTerminal" brightTerminal,
-        const Flag!"flush" flush) @safe
+        const Flag!"brightTerminal" brightTerminal) @safe
     {
         linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
-        this.flush = flush;
     }
 
 
@@ -239,13 +235,10 @@ public:
 
     /++
         Outputs the tail of a logger message.
-
-        @trusted to allow us to flush `stdout`. `std.stdio.writeln` seems to
-        do this and it's annotated @trusted, so just mimic that.
      +/
-    private void finishLogMsg() @trusted
+    private void finishLogMsg() @safe
     {
-        import std.stdio : stdout, writeln;
+        import std.stdio : writeln;
 
         version(Colours)
         {
@@ -258,8 +251,6 @@ public:
 
         writeln(linebuffer.data);
         linebuffer.clear();
-
-        if (flush) stdout.flush();
     }
 
 
