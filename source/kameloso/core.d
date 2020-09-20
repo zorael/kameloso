@@ -2481,20 +2481,19 @@ int initBot(string[] args)
         int retval;
     }
 
-    // Set up the terminal environment.
-    preInstanceSetup();
-
     static import kameloso.common;
     import kameloso.common : initLogger;
 
-    // Initialise the main Kameloso. Set its abort pointer to the global abort.
+    // Set up the Kameloso instance.
     Kameloso instance;
+    postInstanceSetup(instance);
+
     kameloso.common.settings = &instance.settings;
     instance.abort = &rawAbort;
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
-    setupSettings(instance.settings);
+    expandPaths(instance.settings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
