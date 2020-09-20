@@ -2539,6 +2539,24 @@ int initBot(string[] args)
         assert(0, "`tryGetopt` returned `Next.crash`");
     }
 
+    try
+    {
+        import kameloso.terminal : ensureAppropriateBuffering;
+        ensureAppropriateBuffering(instance.settings.flush);
+    }
+    catch (ErrnoException e)
+    {
+        import std.stdio : writefln;
+        writefln("Failed to set stdout buffer mode/size! errno:%d", errno);
+        return 1;
+    }
+    catch (Exception)
+    {
+        import std.stdio : writeln;
+        writeln("Failed to set stdout buffer mode/size!");
+        return 1;
+    }
+
     import kameloso.config : applyDefaults;
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
