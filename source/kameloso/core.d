@@ -2545,8 +2545,8 @@ int initBot(string[] args)
     }
     catch (ErrnoException e)
     {
-        import std.stdio : writefln;
-        writefln("Failed to set stdout buffer mode/size! errno:%d", errno);
+        import std.stdio : writeln;
+        writeln("Failed to set stdout buffer mode/size! errno:", errno);
         return 1;
     }
     catch (Exception)
