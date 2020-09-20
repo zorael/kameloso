@@ -4,7 +4,7 @@
 
     Example:
     ---
-    auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal, Yes.flush);
+    auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal);
 
     logger.log("This is LogLevel.log");
     logger.info("LogLevel.info");
@@ -468,7 +468,7 @@ unittest
         }
     }
 
-    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, Yes.flush);
+    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal);
 
     log_.logf!"log: %s"("log");
     log_.infof!"log: %s"("info");
@@ -479,7 +479,7 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal, Yes.flush);
+        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -488,7 +488,7 @@ unittest
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
 
-        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal, Yes.flush);
+        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal);
 
         log_.log("log: log");
         log_.info("log: info");
