@@ -137,14 +137,12 @@ unittest
         things = Variadic list of struct objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
-    (auto ref Things things) @trusted
+    (auto ref Things things)
 {
     import kameloso.common : settings;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
-    import std.stdio : stdout, writeln;
-
-    // writeln trusts `stdout.flush()` so we will too.
+    import std.stdio : writeln;
 
     alias widths = Widths!(all, Things);
 
