@@ -2037,19 +2037,19 @@ void postInstanceSetup(ref Kameloso instance)
 }
 
 
-// setupSettings
+// expandPaths
 /++
-    Sets up `kameloso.common.settings`, expanding paths and more.
+    Sets up `kameloso.common.settings`, expanding paths.
 
     This is called during early execution.
 
     Params:
         settings = A reference to the `kameloso.kameloso.CoreSettings` we want to set up.
  +/
-void setupSettings(ref CoreSettings settings)
+void expandPaths(ref CoreSettings settings)
 {
     import kameloso.constants : KamelosoFilenames;
-    import kameloso.platform : configurationBaseDirectory, currentPlatform, resourceBaseDirectory;
+    import kameloso.platform : configurationBaseDirectory, resourceBaseDirectory;
     import std.path : buildNormalizedPath;
 
     // Default values
@@ -2057,22 +2057,7 @@ void setupSettings(ref CoreSettings settings)
         "kameloso", KamelosoFilenames.configuration);
     settings.resourceDirectory = buildNormalizedPath(resourceBaseDirectory, "kameloso");
 
-    // Some environments require us to flush standard out after writing to it,
-    // or else nothing will appear on screen (until it gets automatically flushed
-    // at an indeterminate point in the future).
-    immutable platform = currentPlatform;
 
-    switch (platform)
-    {
-    //case "Cygwin":  // No longer seems to need this
-    case "vscode":
-        // Whitelist more as we find them.
-        settings.flush = true;
-        break;
-
-    default:
-        break;
-    }
 }
 
 
