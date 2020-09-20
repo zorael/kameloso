@@ -130,8 +130,12 @@ enum BufferSize
         number of objects to print.
      +/
     printObjectBufferPerObject = 1024,
-}
 
+    /++
+        How many bytes to allocate for the stdout buffer, when we need to do so explicitly.
+     +/
+    vbufStdout = 16_384,
+}
 /++
     Various timeouts in seconds.
  +/
