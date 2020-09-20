@@ -728,7 +728,14 @@ unittest
  +/
 void start(PrinterPlugin plugin)
 {
+    import kameloso.terminal : isTTY;
+
     plugin.linebuffer.reserve(plugin.linebufferInitialSize);
+
+    if (!plugin.state.settings.force && !isTTY)
+    {
+        plugin.bell = string.init;
+    }
 }
 
 
@@ -749,7 +756,9 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    private import std.array : Appender;
+private:
+    import kameloso.terminal : TerminalToken;
+    import std.array : Appender;
 
 package:
     /// All Printer plugin options gathered.
@@ -785,6 +794,12 @@ package:
 
     /// Where to save logs.
     @Resource string logDirectory = "logs";
+
+    /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
+    private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+
+    /// Effective bell after `core.sys.posix.unistd.isatty` checks.
+    string bell = bellString;
 
     mixin IRCPluginImpl;
 }

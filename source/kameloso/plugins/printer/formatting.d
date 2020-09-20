@@ -394,7 +394,7 @@ if (isOutputRange!(Sink, char[]))
     if (shouldBell)
     {
         import kameloso.terminal : TerminalToken;
-        sink.put(TerminalToken.bell);
+        sink.put(plugin.bell);
     }
 }
 
@@ -941,7 +941,7 @@ if (isOutputRange!(Sink, char[]))
     if (shouldBell)
     {
         import kameloso.terminal : TerminalToken;
-        sink.put(TerminalToken.bell);
+        sink.put(plugin.bell);
     }
 }
 
