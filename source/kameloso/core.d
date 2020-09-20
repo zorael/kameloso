@@ -1990,7 +1990,7 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
 }
 
 
-// preInstanceSetup
+// postInstanceSetup
 /++
     Sets up the program (terminal) environment.
 
@@ -1998,21 +1998,35 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
     console codepages.
 
     This is called very early during execution.
- +/
-void preInstanceSetup()
-{
-    version(Posix)
-    {
-        import kameloso.thread : setThreadName;
-        setThreadName("kameloso");
-    }
 
+    Params:
+        instance = Reference to the current `kameloso.kameloso.Kameloso` instance.
+ +/
+void postInstanceSetup(ref Kameloso instance)
+{
     version(Windows)
     {
         import kameloso.terminal : setConsoleModeAndCodepage;
 
         // Set up the console to display text and colours properly.
         setConsoleModeAndCodepage();
+    }
+
+    version(Posix)
+    {
+        import kameloso.terminal : isTTY;
+        import kameloso.thread : setThreadName;
+        import core.sys.posix.unistd : STDOUT_FILENO, isatty;
+
+        setThreadName("kameloso");
+
+        if (!instance.settings.force && !isTTY)
+        {
+            // Don't set terminal title etc below
+            // Non-TTYs (eg. pagers) can't show colours
+            instance.settings.monochrome = true;
+            return;
+        }
     }
 
     import kameloso.constants : KamelosoInfo;
