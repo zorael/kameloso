@@ -2483,6 +2483,8 @@ int initBot(string[] args)
 
     static import kameloso.common;
     import kameloso.common : initLogger;
+    import std.exception : ErrnoException;
+    import core.stdc.errno : errno;
 
     // Set up the Kameloso instance.
     Kameloso instance;
@@ -2506,9 +2508,12 @@ int initBot(string[] args)
 
     scope(failure)
     {
-        import kameloso.terminal : TerminalToken;
+        import kameloso.terminal : TerminalToken, isTTY;
 
-        logger.error("We just crashed!", cast(char)TerminalToken.bell);
+        enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+        immutable maybeBell = (isTTY || instance.settings.force) ? bellString : string.init;
+
+        logger.error("We just crashed!", maybeBell);
         *instance.abort = true;
         resetSignals();
     }
