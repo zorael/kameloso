@@ -139,6 +139,76 @@ version(Windows)
 }
 
 
+// isTTY
+/++
+    Determines whether or not the program is being run in a terminal (virtual TTY).
+
+    Returns:
+        true if the current environment appears to be a terminal; false if not (e.g. pager).
+ +/
+bool isTTY()
+{
+    version(Posix)
+    {
+        import core.sys.posix.unistd : STDOUT_FILENO, isatty;
+        return (isatty(STDOUT_FILENO) == 0);
+    }
+    else version(Windows)
+    {
+        import core.sys.windows.winbase : FILE_TYPE_PIPE, GetFileType, GetStdHandle, STD_OUTPUT_HANDLE;
+        immutable handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        return (GetFileType(handle) != FILE_TYPE_PIPE);
+    }
+    else
+    {
+        static assert(0, "Unknown platform");
+    }
+}
+
+
+// ensureAppropriateBuffering
+/++
+    Ensures select non-TTY environments (like Cygwin) are line-buffered.
+    Allows for overriding behaviour and forcing the change in buffer mode.
+
+    Params:
+        override_ = Whether or not to override checks and always set line buffering.
+ +/
+void ensureAppropriateBuffering(const bool override_ = false) @system
+{
+    import kameloso.platform : currentPlatform;
+
+    if (isTTY) return;
+
+    // Some environments require us to flush standard out after writing to it,
+    // or else nothing will appear on screen (until it gets automatically flushed
+    // at an indeterminate point in the future).
+    // Automate this by setting standard out to be line-buffered.
+
+    static void setLineBufferingMode()
+    {
+        import kameloso.constants : BufferSize;
+        import std.stdio : stdout;
+        import core.stdc.stdio : _IOLBF;
+
+        stdout.setvbuf(BufferSize.vbufStdout, _IOLBF);  // FIXME
+    }
+
+    if (override_) return setLineBufferingMode();
+
+    switch (currentPlatform)
+    {
+    case "Cygwin":  // No longer seems to need this?
+    case "vscode":
+        return setLineBufferingMode();
+
+    default:
+        // Non-whitelisted non-TTY; just leave as-is.
+        break;
+    }
+}
+
+
 // setTitle
 /++
     Sets the terminal title to a given string. Supposedly.
