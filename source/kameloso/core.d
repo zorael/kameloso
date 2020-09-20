@@ -2500,8 +2500,7 @@ int initBot(string[] args)
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
     initLogger((instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-        (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
-        (instance.settings.flush ? Yes.flush : No.flush));
+        (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();

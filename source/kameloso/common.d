@@ -24,7 +24,7 @@ shared static this()
     import std.experimental.logger : LogLevel;
 
     // This is technically before settings have been read...
-    logger = new KamelosoLogger(No.monochrome, No.brightTerminal, Yes.flush);
+    logger = new KamelosoLogger(No.monochrome, No.brightTerminal);
 
     // settings needs instantiating now.
     settings = new CoreSettings;
@@ -70,21 +70,19 @@ KamelosoLogger logger;
 
     Example:
     ---
-    initLogger(No.monochrome, Yes.brightTerminal, Yes.flush);
+    initLogger(No.monochrome, Yes.brightTerminal);
     ---
 
     Params:
         monochrome = Whether the terminal is set to monochrome or not.
         bright = Whether the terminal has a bright background or not.
-        flush = Whether or not to flush stdout after finishing writing to it.
  +/
 void initLogger(const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" bright,
-    const Flag!"flush" flush)
+    const Flag!"brightTerminal" bright)
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
-    logger = new KamelosoLogger(monochrome, bright, flush);
+    logger = new KamelosoLogger(monochrome, bright);
     Tint.monochrome = monochrome;
 }
 
