@@ -371,7 +371,6 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
     writeln();
-    stdout.flush();
 }
 
 

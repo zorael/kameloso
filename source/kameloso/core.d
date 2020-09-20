@@ -385,7 +385,7 @@ void messageFiber(ref Kameloso instance)
 
                 version(TraceWhois)
                 {
-                    import std.stdio : stdout, writef, writefln, writeln;
+                    import std.stdio : writef, writefln, writeln;
 
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", event.target.nickname,
@@ -397,7 +397,6 @@ void messageFiber(ref Kameloso instance)
                     version(TraceWhois)
                     {
                         writeln(" ...and actually issuing.");
-                        if (instance.settings.flush) stdout.flush();
                     }
 
                     line = "WHOIS " ~ event.target.nickname;
@@ -408,7 +407,6 @@ void messageFiber(ref Kameloso instance)
                     version(TraceWhois)
                     {
                         writefln(" ...but already issued %d seconds ago.", (now - then));
-                        if (instance.settings.flush) stdout.flush();
                     }
                 }
                 break;
@@ -479,10 +477,8 @@ void messageFiber(ref Kameloso instance)
             final switch (logLevel)
             {
             case writeln:
-                import std.stdio : writeln, stdout;
-
+                import std.stdio : writeln;
                 writeln(message);
-                if (instance.settings.flush) stdout.flush();
                 break;
 
             case trace:
@@ -1520,7 +1516,7 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
 
         version(TraceWhois)
         {
-            import std.stdio : stdout, writef, writefln, writeln;
+            import std.stdio : writef, writefln, writeln;
             import std.algorithm.iteration : map;
 
             auto callerNames = replaysForNickname.map!(replay => replay.caller);
@@ -1536,7 +1532,6 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
             version(TraceWhois)
             {
                 writeln(" ...and actually issuing.");
-                if (instance.settings.flush) stdout.flush();
             }
 
             instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, hideOutgoing));
@@ -1547,7 +1542,6 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
             version(TraceWhois)
             {
                 writefln(" ...but already issued %d seconds ago.", (now - then));
-                if (instance.settings.flush) stdout.flush();
             }
         }
     }

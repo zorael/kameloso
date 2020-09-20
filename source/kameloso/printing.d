@@ -182,7 +182,6 @@ void printObjects(Flag!"all" all = No.all, Things...)
     }
 
     writeln(outbuffer.data);
-    if (settings.flush) stdout.flush();
 }
 
 alias printObject = printObjects;

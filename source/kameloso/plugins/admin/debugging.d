@@ -42,13 +42,12 @@ package:
  +/
 void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.stdio : stdout, write, writefln, writeln;
+    import std.stdio : write, writefln, writeln;
 
     if (plugin.adminSettings.printRaw)
     {
         if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
-        if (plugin.state.settings.flush) stdout.flush();
     }
 
     if (plugin.adminSettings.printBytes)
@@ -59,8 +58,6 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
         {
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
-
-        if (plugin.state.settings.flush) stdout.flush();
     }
 }
 
@@ -102,7 +99,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
-    import std.stdio : stdout, writeln;
+    import std.stdio : writeln;
 
     foreach (immutable name, const user; plugin.state.users)
     {
@@ -111,7 +108,6 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
     }
 
     writeln(plugin.state.users.length, " users.");
-    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -176,7 +172,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 void onCommandStatusImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObjects;
-    import std.stdio : stdout, writeln;
+    import std.stdio : writeln;
 
     logger.log("Current state:");
     printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
@@ -209,7 +205,7 @@ void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
     import kameloso.thread : ThreadMessage, busMessage;
     import lu.string : contains, nom;
     import std.concurrency : send;
-    import std.stdio : stdout, writeln;
+    import std.stdio : writeln;
 
     if (!event.content.length) return;
 
@@ -218,7 +214,6 @@ void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
         logger.info("Sending bus message.");
         writeln("Header: ", event.content);
         writeln("Content: (empty)");
-        if (plugin.state.settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
     }
@@ -230,7 +225,6 @@ void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
         logger.info("Sending bus message.");
         writeln("Header: ", header);
         writeln("Content: ", slice);
-        if (plugin.state.settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(),
             header, busMessage(slice));

@@ -349,7 +349,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     default:
         import lu.string : strippedRight;
         import std.array : replace;
-        import std.stdio : stdout, writeln;
+        import std.stdio : writeln;
 
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
@@ -380,8 +380,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         writeln(plugin.linebuffer.data);
         plugin.linebuffer.clear();
-
-        if (plugin.state.settings.flush) stdout.flush();
         break;
     }
 }

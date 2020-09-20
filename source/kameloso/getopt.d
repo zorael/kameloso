@@ -254,9 +254,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         import kameloso.config : applyDefaults, readConfigInto;
         import std.format : format;
         import std.getopt : arraySep, config, getopt;
-        import std.stdio : stdout, writeln;
-
-        scope(exit) if (instance.settings.flush) stdout.flush();
+        import std.stdio : writeln;
 
         bool shouldWriteConfig;
         bool shouldOpenEditor;
