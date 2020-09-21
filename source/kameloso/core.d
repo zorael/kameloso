@@ -1997,6 +1997,8 @@ void complainAboutMissingConfiguration(const string configFile, const string bin
  +/
 void postInstanceSetup(ref Kameloso instance)
 {
+    import kameloso.terminal : isTTY;
+
     version(Windows)
     {
         import kameloso.terminal : setConsoleModeAndCodepage;
@@ -2007,25 +2009,23 @@ void postInstanceSetup(ref Kameloso instance)
 
     version(Posix)
     {
-        import kameloso.terminal : isTTY;
         import kameloso.thread : setThreadName;
-
         setThreadName("kameloso");
-
-        if (!isTTY)
-        {
-            // Don't set terminal title etc below
-            // Non-TTYs (eg. pagers) can't show colours
-            instance.settings.monochrome = true;
-            return;
-        }
     }
 
-    import kameloso.constants : KamelosoInfo;
-    import kameloso.terminal : setTitle;
+    if (isTTY)
+    {
+        import kameloso.constants : KamelosoInfo;
+        import kameloso.terminal : setTitle;
 
-    enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
-    setTitle(terminalTitle);
+        enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
+        setTitle(terminalTitle);
+    }
+    else
+    {
+        // Non-TTYs (eg. pagers) can't show colours
+        instance.settings.monochrome = true;
+    }
 }
 
 
