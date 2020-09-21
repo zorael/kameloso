@@ -262,7 +262,6 @@ void messageFiber(ref Kameloso instance)
             immutable quietFlag = (instance.settings.hideOutgoing ||
                 (m.properties & Message.Property.quiet)) ? Yes.quiet : No.quiet;
             immutable force = (m.properties & Message.Property.forced);
-
             immutable event = m.event;
 
             string line;
