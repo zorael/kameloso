@@ -55,41 +55,28 @@ version(Windows)
 
 
 version(unittest)
-/++
-    Unit-testing main; does nothing.
- +/
-void main()
 {
-    import kameloso.common : logger;
-
-    version(Windows)
-    {
-        import kameloso.terminal : setConsoleModeAndCodepage;
-
-        // Set up the console to display text and colours properly.
-        // It will only affect the below "All tests passed" line however...
-        setConsoleModeAndCodepage();
-    }
-
-    // Compiled with -b unittest, so run the tests and exit.
-    // Logger is initialised in a module constructor, don't re-init here.
-    logger.info("All tests passed successfully!");
+    /++
+        Unit-testing main; does nothing.
+     +/
+    void main() {}
 }
 else
-/++
-    Entry point of the program.
-
-    Technically it just passes on execution to `kameloso.kameloso.initBot`.
-
-    Params:
-        args = Command-line arguments passed to the program.
-
-    Returns:
-        `0` on success, non-`0` on failure.
- +/
-int main(string[] args)
 {
-    import kameloso.core : initBot;
+    /++
+        Entry point of the program.
 
-    return initBot(args);
+        Technically it just passes on execution to `kameloso.kameloso.initBot`.
+
+        Params:
+            args = Command-line arguments passed to the program.
+
+        Returns:
+            `0` on success, non-`0` on failure.
+     +/
+    int main(string[] args)
+    {
+        import kameloso.core : initBot;
+        return initBot(args);
+    }
 }
