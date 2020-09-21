@@ -20,7 +20,8 @@ public:
     {
     case "Cygwin":
     case "vscode":
-        // Special code for the terminal not being a conventional terminal (such as a pager)...
+        // Special code for the terminal not being a conventional terminal
+        // (instead acting like a pager)
         break;
 
     default:
