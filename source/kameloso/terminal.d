@@ -146,7 +146,7 @@ version(Windows)
     Returns:
         true if the current environment appears to be a terminal; false if not (e.g. pager).
  +/
-bool isTTY()
+auto isTTY()
 {
     version(Posix)
     {
@@ -156,7 +156,7 @@ bool isTTY()
     else version(Windows)
     {
         import core.sys.windows.winbase : FILE_TYPE_PIPE, GetFileType, GetStdHandle, STD_OUTPUT_HANDLE;
-        immutable handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
         return (GetFileType(handle) != FILE_TYPE_PIPE);
     }
     else
