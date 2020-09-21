@@ -2010,7 +2010,6 @@ void postInstanceSetup(ref Kameloso instance)
     {
         import kameloso.terminal : isTTY;
         import kameloso.thread : setThreadName;
-        import core.sys.posix.unistd : STDOUT_FILENO, isatty;
 
         setThreadName("kameloso");
 
@@ -2555,13 +2554,12 @@ int initBot(string[] args)
         if (!instance.settings.force) return 1;
     }
 
-    import kameloso.config : applyDefaults;
-
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
     // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
     // Skip if --force was passed.
     if (!instance.settings.force)
     {
+        import kameloso.config : applyDefaults;
         applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
     }
 
@@ -2599,12 +2597,11 @@ int initBot(string[] args)
     }
 
     import kameloso.common : replaceTokens, printVersionInfo;
+    import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
     printVersionInfo(pre, post);
     writeln();
-
-    import kameloso.printing : printObjects;
 
     // Print the current settings to show what's going on.
     IRCClient prettyClient = instance.parser.client;
