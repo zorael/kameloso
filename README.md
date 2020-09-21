@@ -122,7 +122,7 @@ List configurations with `dub build --print-configs`. You can specify which to c
 $ dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` list in `dub.sdl`. Simply delete the lines that correspond to the plugin(s) you want to omit.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` list in `dub.sdl`. Simply delete the lines that correspond to the plugin(s) you want to omit. Mind that disabling any of the plugins named `Service` may yield undefined behaviour.
 
 # How to use
 
@@ -250,7 +250,7 @@ The **prefix** (here `!`) is configurable; refer to your generated configuration
 prefix              "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. Some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. Some administrative commands only work when called this way.
 
 ### Except nothing happens
 
@@ -262,13 +262,13 @@ Before allowing *anyone* to trigger any restricted functionality, it will query 
 
 To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`.
 
-You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). These authorisation tokens are unique to your user, *paired* with an application. As such, you need a new one for each and every program you want to access Twitch with, this one being no exception.
+You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). These authorisation tokens are unique to your user paired with an application. As such, you need a new one for each and every program you want to access Twitch with.
 
 Run the bot with `--set twitchbot.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/api.d`](source/kameloso/plugins/twitchbot/api.d).
 
-After entering your login and password and clicking **Authorize**, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your `kameloso.conf` configuration file.
+After entering your login and password and clicking **Authorize**, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
 
 If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
 
@@ -280,7 +280,7 @@ https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr
 
 Most of the bot's features will work on Twitch. The **Automode** plugin is an exception (as modes are not really applicable on Twitch), and it will auto-disable itself appropriately.
 
-That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. You can also only join channels for which a corresponding Twitch user account exists.
+That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised, and when they are they come in delayed batches. You can also only join channels for which a corresponding Twitch user account exists.
 
 ### Example configuration
 
