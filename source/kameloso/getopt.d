@@ -408,7 +408,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     quiet ? string.init :
                         "Show all plugins' settings",
                     &shouldShowSettings,
-               "bright",
+                "bright",
                     quiet ? string.init :
                         "Adjust colours for bright terminal backgrounds [%s%s%s]"
                         .format(Tint.info, settings.brightTerminal, Tint.reset),

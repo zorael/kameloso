@@ -1675,6 +1675,7 @@ void start(TwitchBotPlugin plugin)
 
     if (!isTTY)
     {
+        // Not a TTY so replace our bell string with an empty one
         plugin.bell = string.init;
     }
 
