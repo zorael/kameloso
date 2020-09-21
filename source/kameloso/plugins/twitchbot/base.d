@@ -1673,7 +1673,7 @@ void start(TwitchBotPlugin plugin)
 
     plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
 
-    if (!plugin.state.settings.force && !isTTY)
+    if (!isTTY)
     {
         plugin.bell = string.init;
     }

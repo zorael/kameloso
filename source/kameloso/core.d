@@ -2012,7 +2012,7 @@ void postInstanceSetup(ref Kameloso instance)
 
         setThreadName("kameloso");
 
-        if (!instance.settings.force && !isTTY)
+        if (!isTTY)
         {
             // Don't set terminal title etc below
             // Non-TTYs (eg. pagers) can't show colours
@@ -2162,7 +2162,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
     IRCClient backupClient = instance.parser.client;
 
     enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-    immutable bell = (instance.settings.force || isTTY) ? bellString : string.init;
+    immutable bell = isTTY ? bellString : string.init;
 
     outerloop:
     do
@@ -2513,7 +2513,7 @@ int initBot(string[] args)
         import kameloso.terminal : TerminalToken, isTTY;
 
         enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-        immutable maybeBell = (isTTY || instance.settings.force) ? bellString : string.init;
+        immutable maybeBell = isTTY ? bellString : string.init;
 
         logger.error("We just crashed!", maybeBell);
         *instance.abort = true;

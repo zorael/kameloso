@@ -975,7 +975,7 @@ void initResources(SeenPlugin plugin)
         import std.path : baseName;
 
         enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-        immutable bell = (plugin.state.settings.force || isTTY) ? bellString : string.init;
+        immutable bell = isTTY ? bellString : string.init;
 
         logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.", bell);
         version(PrintStacktraces) logger.trace(e);

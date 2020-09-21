@@ -730,7 +730,7 @@ void start(PrinterPlugin plugin)
 
     plugin.linebuffer.reserve(plugin.linebufferInitialSize);
 
-    if (!plugin.state.settings.force && !isTTY)
+    if (!isTTY)
     {
         plugin.bell = string.init;
     }
