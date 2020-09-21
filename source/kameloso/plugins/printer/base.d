@@ -796,7 +796,7 @@ package:
     /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after `core.sys.posix.unistd.isatty` checks.
+    /// Effective bell after `kameloso.terminal.isTTY` checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;

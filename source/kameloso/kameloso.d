@@ -676,7 +676,7 @@ public:
         string resourceDirectory;  /// Path to resource directory.
         string configDirectory;  /// Path to configuration directory.
         bool force;  /// Whether or not to force connecting, skipping some sanity checks.
-        bool flush;  /// Whether or not to flush stdout after writing to it.
+        bool flush;  /// Whether or not to explicitly set stdout to flush after writing a linebreak to it.
     }
 }
 

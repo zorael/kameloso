@@ -2446,6 +2446,9 @@ public:
 /++
     Entry point of the program.
 
+    This function is very long, but mostly because it's tricky to split up into
+    free functions and have them convey "parent function should exit".
+
     Params:
         args = Command-line arguments passed to the program.
 
@@ -2488,8 +2491,11 @@ int initBot(string[] args)
     Kameloso instance;
     postInstanceSetup(instance);
 
+    // Set pointers.
     kameloso.common.settings = &instance.settings;
     instance.abort = &rawAbort;
+
+    // Declare Attempt instance.
     Attempt attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
@@ -2539,6 +2545,8 @@ int initBot(string[] args)
     try
     {
         import kameloso.terminal : ensureAppropriateBuffering;
+
+        // Ensure stdout is buffered by line on Cygwin and vscode.
         ensureAppropriateBuffering(instance.settings.flush);
     }
     catch (ErrnoException e)
