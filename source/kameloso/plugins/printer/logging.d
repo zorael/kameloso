@@ -463,7 +463,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(buffer);
+        commitLog(plugin, buffer);
     }
 }
 
@@ -477,12 +477,13 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
+        plugin = The current `PrinterPlugin`.
         buffer = `LogLineBuffer` whose lines to commit to disk.
 
     See_Also:
         commitAllLogsImpl
  +/
-void commitLog(ref LogLineBuffer buffer)
+void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.terminal : TerminalToken;
     import std.exception : ErrnoException;
@@ -509,20 +510,17 @@ void commitLog(ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        logger.warning("File exception caught when committing log: ",
-            e.msg, cast(char)TerminalToken.bell);
+        logger.warning("File exception caught when committing log: ", e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
     {
-        logger.warning("Exception caught when committing log: ",
-            e.msg, cast(char)TerminalToken.bell);
+        logger.warning("Exception caught when committing log: ", e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        logger.warning("Unhandled exception caught when committing log: ",
-            e.msg, cast(char)TerminalToken.bell);
+        logger.warning("Unhandled exception caught when committing log: ", e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

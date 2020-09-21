@@ -186,7 +186,7 @@ void onImportant(TwitchBotPlugin plugin)
 
     if (!plugin.twitchBotSettings.bellOnImportant) return;
 
-    write(cast(char)TerminalToken.bell);
+    write(plugin.bell);
     stdout.flush();
 }
 
@@ -1220,7 +1220,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
 
-        write(cast(char)TerminalToken.bell);
+        write(plugin.bell);
         stdout.flush();
     }
 
@@ -1668,8 +1668,15 @@ void periodically(TwitchBotPlugin plugin, const long now)
  +/
 void start(TwitchBotPlugin plugin)
 {
+    import kameloso.terminal : isTTY;
     import std.datetime.systime : Clock;
+
     plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
+
+    if (!plugin.state.settings.force && !isTTY)
+    {
+        plugin.bell = string.init;
+    }
 
     version(TwitchAPIFeatures)
     {
@@ -1712,6 +1719,9 @@ public:
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
+private:
+    import kameloso.terminal : TerminalToken;
+
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
     static struct Room
@@ -1813,6 +1823,12 @@ package:
         number means better precision.
      +/
     enum timerPeriodicity = 10;
+
+    /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
+    private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+
+    /// Effective bell after `kameloso.terminal.isTTY` checks.
+    string bell = bellString;
 
     version(TwitchAPIFeatures)
     {

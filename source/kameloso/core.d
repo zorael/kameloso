@@ -2158,8 +2158,13 @@ void resolveResourceDirectory(ref Kameloso instance)
  +/
 void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
 {
+    import kameloso.terminal : TerminalToken, isTTY;
+
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
+
+    enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+    immutable bell = (instance.settings.force || isTTY) ? bellString : string.init;
 
     outerloop:
     do
@@ -2281,9 +2286,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%3$s " ~
-                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
-                e.file.baseName, e.line, TerminalToken.bell);
+                e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = 1;
             break outerloop;
@@ -2293,9 +2298,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             import kameloso.terminal : TerminalToken;
             logger.warningf("An error occurred while initialising the %s%s%s " ~
                 "plugin's resources: %1$s%4$s%3$s " ~
-                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
-                e.file, e.line, TerminalToken.bell);
+                e.file, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = 1;
             break outerloop;
@@ -2315,9 +2320,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to start up: %1$s%4$s%3$s " ~
-                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
-                e.file.baseName, e.line, TerminalToken.bell);
+                e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = 1;
             break outerloop;
@@ -2326,9 +2331,9 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("An error occurred while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
-                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$c",
+                "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
-                e.file.baseName, e.line, TerminalToken.bell);
+                e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = 1;
             break outerloop;

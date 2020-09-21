@@ -971,12 +971,13 @@ void initResources(SeenPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.terminal : TerminalToken;
+        import kameloso.terminal : TerminalToken, isTTY;
         import std.path : baseName;
 
-        logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.",
-            cast(char)TerminalToken.bell);
+        enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+        immutable bell = (plugin.state.settings.force || isTTY) ? bellString : string.init;
 
+        logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.", bell);
         version(PrintStacktraces) logger.trace(e);
     }
 
