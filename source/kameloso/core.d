@@ -2513,9 +2513,9 @@ int initBot(string[] args)
         import kameloso.terminal : TerminalToken, isTTY;
 
         enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-        immutable maybeBell = isTTY ? bellString : string.init;
+        immutable bell = isTTY ? bellString : string.init;
 
-        logger.error("We just crashed!", maybeBell);
+        logger.error("We just crashed!", bell);
         *instance.abort = true;
         resetSignals();
     }
