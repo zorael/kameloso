@@ -2541,13 +2541,13 @@ int initBot(string[] args)
     {
         import std.stdio : writeln;
         writeln("Failed to set stdout buffer mode/size! errno:", errno);
-        return 1;
+        if (!instance.settings.force) return 1;
     }
     catch (Exception)
     {
         import std.stdio : writeln;
         writeln("Failed to set stdout buffer mode/size!");
-        return 1;
+        if (!instance.settings.force) return 1;
     }
 
     import kameloso.config : applyDefaults;
