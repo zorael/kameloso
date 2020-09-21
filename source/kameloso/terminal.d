@@ -139,30 +139,34 @@ version(Windows)
 }
 
 
-// isTTY
-/++
-    Determines whether or not the program is being run in a terminal (virtual TTY).
-
-    Returns:
-        true if the current environment appears to be a terminal; false if not (e.g. pager).
- +/
-auto isTTY()
+version(Posix)
 {
-    version(Posix)
+    // isTTY
+    /++
+        Determines whether or not the program is being run in a terminal (virtual TTY).
+
+        Returns:
+            true if the current environment appears to be a terminal; false if not (e.g. pager).
+     +/
+    bool isTTY() //@safe
     {
         import core.sys.posix.unistd : STDOUT_FILENO, isatty;
         return (isatty(STDOUT_FILENO) == 0);
     }
-    else version(Windows)
+}
+else version(Windows)
+{
+    /// Ditto
+    bool isTTY() @system
     {
         import core.sys.windows.winbase : FILE_TYPE_PIPE, GetFileType, GetStdHandle, STD_OUTPUT_HANDLE;
         auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
         return (GetFileType(handle) != FILE_TYPE_PIPE);
     }
-    else
-    {
-        static assert(0, "Unknown platform");
-    }
+}
+else
+{
+    static assert(0, "Unknown platform");
 }
 
 
