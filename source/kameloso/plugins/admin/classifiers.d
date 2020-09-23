@@ -548,3 +548,75 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     plugin.state.mainThread.send(ThreadMessage.Reload());
     return AlterationResult.success;
 }
+
+
+// modifyHostmaskDefinition
+/++
+    Adds or removes hostmasks used to identify users on servers that don't employ services.
+
+    Params:
+        plugin = The current `AdminPlugin`.
+        add = Whether to add or to remove the hostmask.
+        account = Account the hostmask will equate to.
+        mask = String "nickname!ident@address.tld" hostmask.
+        event = Instigating `dialect.defs.IRCEvent`.
+ +/
+void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
+    const string account, const string mask, const IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage;
+    import lu.json : JSONStorage, populateFromJSON;
+    import lu.string : contains;
+    import std.concurrency : send;
+    import std.json : JSONValue;
+
+    JSONStorage json;
+    json.reset();
+    json.load(plugin.hostmasksFile);
+
+    string[string] aa;
+    aa.populateFromJSON(json);
+
+    bool didSomething;
+
+    if (add)
+    {
+        import dialect.common : isValidHostmask;
+
+        if (!mask.isValidHostmask(plugin.state.server))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Invalid hostmask.");
+            return;
+        }
+
+        aa[mask] = account;
+        didSomething = true;
+        json.reset();
+        json = JSONValue(aa);
+    }
+    else
+    {
+        // Allow for removing an invalid mask
+
+        if (mask in aa)
+        {
+            aa.remove(mask);
+            didSomething = true;
+        }
+
+        json.reset();
+        json = JSONValue(aa);
+    }
+
+    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
+
+    immutable message = didSomething ?
+        "Hostmask list updated." :
+        "No such hostmask on file.";
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+    // Force persistence to reload the file with the new changes
+    plugin.state.mainThread.send(ThreadMessage.Reload());
+}
