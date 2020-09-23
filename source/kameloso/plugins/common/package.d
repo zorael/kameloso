@@ -3,8 +3,6 @@
  +/
 module kameloso.plugins.common;
 
-version(WithPlugins):
-
 public import kameloso.plugins.common.core;
 public import kameloso.plugins.common.base;
 public import kameloso.plugins.common.delayawait;
