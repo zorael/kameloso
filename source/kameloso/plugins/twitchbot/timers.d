@@ -57,7 +57,7 @@ struct TimerDefinition
     `core.thread.fiber.Fiber` that implements the timer.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
@@ -159,7 +159,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     Adds, deletes, lists or clears timers for the specified target channel.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         event = The triggering `dialect.defs.IRCEvent`.
         targetChannel = The channel we're handling timers for.
  +/
@@ -364,7 +364,8 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
 // timerDefsToJSON
 /++
-    Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
+    Expresses the `FiberDefinition` associative array
+    (`kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel`)
     in JSON form, for easier saving to and loading from disk.
 
     Using `std.json.JSONValue` directly fails with an error.
@@ -406,14 +407,14 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // populateTimers
 /++
-    Populates the `TwitchBotPlugin.timerDefsByChannel` associative array with
-    the timer definitions in the passed JSON file.
+    Populates the `kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel`
+    associative array with the timer definitions in the passed JSON file.
 
     This reads the JSON values from disk and creates the `TimerDefinition`s
     appropriately.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         filename = Filename of the JSON file to read definitions from.
  +/
 void populateTimers(TwitchBotPlugin plugin, const string filename)

@@ -205,8 +205,11 @@ public:
      +/
     enum TimestampColour : TerminalForeground
     {
-        dark = TF.default_,   /// For dark terminal backgrounds. Was `TerminalForeground.white_`.
-        bright = TF.default_, /// For bright terminal backgrounds. Was `TerminalForeground.black_`.
+        /// For dark terminal backgrounds. Was `kameloso.terminal.TerminalForeground.white_`.
+        dark = TF.default_,
+
+        /// For bright terminal backgrounds. Was `kameloso.terminal.TerminalForeground.black_`.
+        bright = TF.default_,
     }
 
     /// Logger colours to use with a dark terminal background.

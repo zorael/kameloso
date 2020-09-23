@@ -48,7 +48,7 @@ public:
     formatting into neat columns.
 
     Params:
-        all = Whether or not to also include `Unserialisable` members.
+        all = Whether or not to also include `lu.uda.Unserialisable` members.
         Things = Variadic list of aggregates to inspect.
  +/
 private template Widths(Flag!"all" all, Things...)

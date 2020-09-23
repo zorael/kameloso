@@ -37,9 +37,16 @@ shared static this()
 
 deprecated("Import from `kameloso.kameloso` directly instead")
 {
+    /// Deprecated alias to `kameloso.kameloso.Kameloso`.
     alias Kameloso = kameloso.kameloso.Kameloso;
+
+    /// Deprecated alias to `kameloso.kameloso.CoreSettings`.
     alias CoreSettings = kameloso.kameloso.CoreSettings;
+
+    /// Deprecated alias to `kameloso.kameloso.ConnectionSettings`.
     alias ConnectionSettings = kameloso.kameloso.ConnectionSettings;
+
+    /// Deprecated alias to `kameloso.kameloso.IRCBot`.
     alias IRCBot = kameloso.kameloso.IRCBot;
 }
 
@@ -89,7 +96,7 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
-    A `CoreSettings` struct global, housing certain runtime settings.
+    A `kameloso.kameloso.CoreSettings` struct global, housing certain runtime settings.
 
     This will be accessed from other parts of the program, via
     `kameloso.common.settings`, so they know to use monochrome output or not.

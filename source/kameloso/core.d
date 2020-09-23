@@ -2064,7 +2064,7 @@ void expandPaths(ref CoreSettings settings)
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
 
     Returns:
-        `Next.returnFailure` if the program should exit, `Next.continue_` otherwise.
+        `lu.common.Next.returnFailure` if the program should exit, `lu.common.Next.continue_` otherwise.
  +/
 Next verifySettings(ref Kameloso instance)
 {

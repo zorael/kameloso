@@ -3,7 +3,7 @@
     without which they will *not* function.
 
     It is mandatory if you plan to use any form of plugin. Indeed, the very
-    definition of an `IRCPlugin` is in here.
+    definition of an `kameloso.plugins.common.core.IRCPlugin` is in here.
  +/
 module kameloso.plugins.common.base;
 
@@ -34,13 +34,16 @@ public:
     This merely iterates the passed `plugins` and calls their `setSettingByName` methods.
 
     Params:
-        plugins = Array of all `IRCPlugin`s.
+        plugins = Array of all `kameloso.plugins.common.core.IRCPlugin`s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
         copyOfSettings = A copy of the program-wide `kameloso.kameloso.CoreSettings`.
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
+
+    See_Also:
+        lu.objmanip.setSettingByName
  +/
 bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
     CoreSettings copyOfSettings)
@@ -236,13 +239,13 @@ final class IRCPluginSettingsException : Exception
 
 // catchUser
 /++
-    Catch an `dialect.defs.IRCUser`, saving it to the `IRCPlugin`'s
-    `IRCPluginState.users` array.
+    Catch an `dialect.defs.IRCUser`, saving it to the `kameloso.plugins.common.core.IRCPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState.users` array.
 
     If a user already exists, meld the new information into the old one.
 
     Params:
-        plugin = Current `IRCPlugin`.
+        plugin = Current `kameloso.plugins.common.core.IRCPlugin`.
         newUser = The `dialect.defs.IRCUser` to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
@@ -269,9 +272,9 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
     replay the event upon receiving the results.
 
     Params:
-        plugin = Current `IRCPlugin` as a base class.
-        subPlugin = Subclass `IRCPlugin` to replay the function pointer `fn` with
-            as first argument.
+        plugin = Current `kameloso.plugins.common.core.IRCPlugin` as a base class.
+        subPlugin = Subclass `kameloso.plugins.common.core.IRCPlugin` to replay the
+            function pointer `fn` with as first argument.
         event = `dialect.defs.IRCEvent` to queue up to replay.
         privilegeLevel = Privilege level to match the results from the WHOIS query with.
         fn = Function/delegate pointer to call when the results return.
@@ -322,13 +325,13 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 // enqueue
 /++
     Construct and enqueue a function replay in the plugin's queue of such.
-    Overload that does not take an `IRCPlugin` subclass parameter.
+    Overload that does not take an `kameloso.plugins.common.core.IRCPlugin` subclass parameter.
 
     The main loop will catch up on it and issue WHOIS queries as necessary, then
     replay the event upon receiving the results.
 
     Params:
-        plugin = Current `IRCPlugin` as a base class.
+        plugin = Current `kameloso.plugins.common.core.IRCPlugin` as a base class.
         event = `dialect.defs.IRCEvent` to queue up to replay.
         privilegeLevel = Privilege level to match the results from the WHOIS query with.
         fn = Function/delegate pointer to call when the results return.
@@ -353,7 +356,7 @@ alias doWhois = enqueue;
     context of the main loop after postprocessing the event once more.
 
     Params:
-        plugin = The current `IRCPlugin`.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`.
         dg = Delegate/function pointer to wrap the `core.thread.fiber.Fiber` around.
         replay = The `kameloso.plugins.common.core.Replay` to repeat.
  +/
@@ -374,15 +377,16 @@ alias queueToReplay = repeat;
 
 // rehashUsers
 /++
-    Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
+    Rehashes a plugin's users, both the ones in the `kameloso.plugins.common.core.IRCPluginState.users`
     associative array and the ones in each `dialect.defs.IRCChannel.users` associative arrays.
 
     This optimises lookup and should be done every so often,
 
     Params:
-        plugin = The current `IRCPlugin`.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`.
         channelName = Optional name of the channel to rehash for. If none given
-            it will rehash the main `IRCPluginState.users` associative array instead.
+            it will rehash the main `kameloso.plugins.common.core.IRCPluginState.users`
+            associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 {
@@ -461,7 +465,7 @@ unittest
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        plugin = The current `IRCPlugin`, whatever it is.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`, whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -512,12 +516,15 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
     Merely wraps `getUser` with `idOf`.
 
     Params:
-        plugin = The current `IRCPlugin`, whatever it is.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`, whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
         The nickname or account of the passed user, or the passed nickname if
         nothing was found.
+
+    See_Also:
+        getUser
  +/
 string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {
@@ -559,7 +566,7 @@ unittest
     nickname as if it was a display name.
 
     Params:
-        plugin = The current `IRCPlugin`, whatever it is.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`, whatever it is.
         nickname = The name of a user to look up.
 
     Returns:

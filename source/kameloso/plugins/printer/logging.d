@@ -26,7 +26,7 @@ package:
 /++
     A struct containing lines to write to a log file when next committing such.
 
-    This is only relevant if `PrinterSettings.bufferedWrites` is set.
+    This is only relevant if `kameloso.plugins.printer.base.PrinterSettings.bufferedWrites` is set.
 
     As a micro-optimisation an `std.array.Appender` is used to store the lines,
     instead of a normal `string[]`.
@@ -405,7 +405,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     ---
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
         logLocation = String of the location directory we want to store logs in.
 
     Returns:
@@ -448,7 +448,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
     Merely wraps `commitLog` by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
 
     See_Also:
         commitLog
@@ -477,7 +477,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
         buffer = `LogLineBuffer` whose lines to commit to disk.
 
     See_Also:

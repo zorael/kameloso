@@ -771,7 +771,7 @@ private:
 
     /++
         User "accounts" by hostmask. Future optimisation may involve making this
-        an `IRCUser[string]` associative array instead.
+        an `dialect.defs.IRCUser[string]` associative array instead.
      +/
     string[string] accountByUser;
 

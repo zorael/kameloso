@@ -155,8 +155,9 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     `kameloso.plugins.common.core.IRCPluginState.users` associative array.
 
     `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
-    cover the case where a user without an account triggering `PrivilegeLevel.anyone`-
-    or `PrivilegeLevel.ignored`-level commands.
+    cover the case where a user without an account triggering
+    `kameloso.plugins.common.core.PrivilegeLevel.anyone`- or
+    `kameloso.plugins.common.core.PrivilegeLevel.ignored`-level commands.
 
     This function was part of `UserAwareness` but triggering queued replays
     is too common to conflate with it.
@@ -252,7 +253,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent
     where applicable, annotated appropriately.
 
     Params:
-        channelPolicy = What `ChannelPolicy` to apply to enwrapped event handlers.
+        channelPolicy = What `kameloso.plugins.common.core.ChannelPolicy` to
+            apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
@@ -387,8 +389,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // _kamelosoNextPingRehashTimestamp
     /++
-        UNIX timestamp of when the `kameloso.plugins.common.core.IRCPluginState.users` array is next to be
-        rehashed in `onUserAwarenessPingMixin`.
+        UNIX timestamp of when the `kameloso.plugins.common.core.IRCPluginState.users`
+        array is next to be rehashed in `onUserAwarenessPingMixin`.
      +/
     long _kamelosoNextPingRehashTimestamp;
 }
@@ -640,7 +642,8 @@ void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
     already (and avoid range errors).
 
     Params:
-        channelPolicy = What `ChannelPolicy` to apply to enwrapped event handlers.
+        channelPolicy = What `kameloso.plugins.common.core.ChannelPolicy`
+            to apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
@@ -866,7 +869,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 // onChannelAwarenessSelfjoin
 /++
     Create a new `dialect.defs.IRCChannel` in the the `kameloso.plugins.common.core.IRCPlugin`'s
-    `kameloso.plugins.common.core.IRCPluginState.channels` associative array when the bot joins a channel.
+    `kameloso.plugins.common.core.IRCPluginState.channels` associative array
+    when the bot joins a channel.
  +/
 void onChannelAwarenessSelfjoin(IRCPlugin plugin, const IRCEvent event)
 {
@@ -982,12 +986,14 @@ void onChannelAwarenessPart(IRCPlugin plugin, const IRCEvent event)
 // onChannelAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    `kameloso.plugins.common.core.IRCPluginState.users` associative array to point to the new nickname.
+    `kameloso.plugins.common.core.IRCPluginState.users` associative array to
+    point to the new nickname.
 
     Does *not* add a new entry if one doesn't exits, to counter the fact
     that `dialect.defs.IRCEvent.Type.NICK` events don't belong to a channel,
-    and as such can't be regulated with `ChannelPolicy` annotations. This way
-    the user will only be moved if it was already added elsewhere. Else we'll leak users.
+    and as such can't be regulated with `kameloso.plugins.common.core.ChannelPolicy`
+    annotations. This way the user will only be moved if it was already added elsewhere.
+    Else we'll leak users.
 
     Removes the old entry after assigning it to the new key.
  +/
@@ -1274,7 +1280,8 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     Twitch awareness needs channel awareness, or it is meaningless.
 
     Params:
-        channelPolicy = What `ChannelPolicy` to apply to enwrapped event handlers.
+        channelPolicy = What `kameloso.plugins.common.core.ChannelPolicy`
+            to apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/

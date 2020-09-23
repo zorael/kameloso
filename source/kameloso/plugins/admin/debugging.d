@@ -30,15 +30,11 @@ package:
     Prints incoming events to the local terminal, in forms depending on
     which flags have been set with bot commands.
 
-    If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
-    prints all incoming server strings.
+    If `kameloso.plugins.admin.base.AdminPlugin.printRaw` is set by way of
+    invoking `onCommandPrintRaw`, prints all incoming server strings.
 
-    If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
-    prints all incoming server strings byte by byte.
-
-    If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
-    prints all incoming events as assert statements, for use in generating source
-    code `unittest` blocks.
+    If `kameloso.plugins.admin.base.AdminPlugin.printBytes` is set by way of
+    invoking `onCommandPrintBytes`, prints all incoming server strings byte by byte.
  +/
 void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 {
@@ -93,7 +89,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandShowUsersImpl
 /++
-    Prints out the current `users` array of the `AdminPlugin`'s
+    Prints out the current `users` array of the `kameloso.plugins.admin.base.AdminPlugin`'s
     `kameloso.plugins.common.core.IRCPluginState` to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)

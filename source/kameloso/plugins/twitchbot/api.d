@@ -389,7 +389,7 @@ void generateKey(TwitchBotPlugin plugin)
     ---
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
 
@@ -496,7 +496,8 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     ---
     immutable url = "https://api.twitch.tv/helix/some/api/url";
 
-    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
+    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer,
+        plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
@@ -566,7 +567,7 @@ void queryTwitchImpl(const string url, const string authToken,
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         url = The URL to follow.
 
     Returns:
@@ -649,7 +650,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     Validates the current access key, retrieving information about it.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
 
     Returns:
         A `std.json.JSONValue` with the validation information JSON of the
@@ -690,12 +691,12 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 // getFollows
 /++
     Fetches a list of all follows of the passed channel and caches them in
-    the channel's entry in `TwitchBotPlugin.rooms`.
+    the channel's entry in `kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms`.
 
     Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         id = The string identifier for the channel.
 
     Returns:
@@ -744,12 +745,14 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     Given a query time measurement, calculate a new approximate query time based on
     the weighted averages of the old value and said new measurement.
 
-    The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
+    The old value is given a weight of
+    `kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryAveragingWeight`
     and the new measurement a weight of 1. Additionally the measurement is padded
-    by `TwitchBotPlugin.approximateQueryMeasurementPadding` to be on the safe side.
+    by `kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding`
+    to be on the safe side.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
@@ -780,8 +783,9 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Merely spins and monitors the shared `bucket` associative array for when a
     response has arrived, and then returns it.
 
-    Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
-    was received.
+    Times out after a hardcoded
+    `kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout`
+    if nothing was received.
 
     Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
@@ -805,7 +809,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     ---
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         url = The URL that was queried prior to calling this function. Must match precisely.
         leaveTimingAlone = Whether or not to adjust the approximate query time.
             Enabled by default but can be disabled if the caller wants to do it.

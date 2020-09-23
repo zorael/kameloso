@@ -777,7 +777,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
     // explainRepeat
     /++
-        Verbosely explains a repeat, including what `PrivilegeLevel` and
+        Verbosely explains a repeat, including what
+        `kameloso.plugins.common.core.PrivilegeLevel` and
         `dialect.defs.IRCUser.Class` were involved.
 
         Gated behind version `ExplainRepeat`.
@@ -868,8 +869,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
 
     /++
-        Queues the delegate `repeaterDelegate` with the passed `Replay`
-        attached to it.
+        Queues the delegate `repeaterDelegate` with the passed
+        `kameloso.plugins.common.core.Replay` attached to it.
      +/
     void repeat(Replay replay)
     {

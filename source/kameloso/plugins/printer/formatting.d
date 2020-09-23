@@ -3,7 +3,7 @@
     For internal use.
 
     The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
-    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    as the `kameloso.plugins.printer.base.PrinterPlugin`, but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.formatting;
@@ -163,7 +163,7 @@ unittest
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current `PrinterPlugin`.
+        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
         sink = Output range to format the `dialect.defs.IRCEvent` into.
         event = The `dialect.defs.IRCEvent` that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -489,7 +489,7 @@ if (isOutputRange!(Sink, char[]))
     information and numbers.
 
     Params:
-        plugin = Current `PrinterPlugin`.
+        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
         sink = Output range to format the `dialect.defs.IRCEvent` into.
         event = The `dialect.defs.IRCEvent` that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
