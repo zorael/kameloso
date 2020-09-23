@@ -5,6 +5,8 @@
  +/
 module kameloso.plugins.common.mixins;
 
+version(WithPlugins):
+
 private:
 
 import kameloso.plugins.common;

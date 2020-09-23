@@ -7,6 +7,8 @@
  +/
 module kameloso.plugins.common.delayawait;
 
+version(WithPlugins):
+
 private:
 
 import kameloso.plugins.common.core : IRCPlugin;

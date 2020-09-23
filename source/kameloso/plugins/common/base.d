@@ -533,6 +533,7 @@ string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @n
 }
 
 ///
+version(WithPlugins)
 unittest
 {
     final class MyPlugin : IRCPlugin
@@ -608,6 +609,7 @@ IRCUser getUser()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*
 }
 
 ///
+version(WithPlugins)
 unittest
 {
     final class MyPlugin : IRCPlugin
