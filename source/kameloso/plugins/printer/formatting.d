@@ -215,7 +215,7 @@ if (isOutputRange!(Sink, char[]))
                     if ((event.sender.displayName != event.sender.nickname) &&
                         !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                     {
-                        .put(sink, " <", event.sender.nickname, '>');
+                        .put(sink, " (", event.sender.nickname, ')');
                     }
                 }
             }
@@ -252,7 +252,7 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        sink.put(" (");
+        sink.put(" -> ");
 
         bool putDisplayName;
 
@@ -261,20 +261,20 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 event.target.displayName.length)
             {
-                .put(sink, event.target.displayName, ')');
+                sink.put(event.target.displayName);
                 putDisplayName = true;
 
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
-                    .put(sink, " <", event.target.nickname, '>');
+                    .put(sink, " (", event.target.nickname, ')');
                 }
             }
         }
 
         if (!putDisplayName)
         {
-            .put(sink, event.target.nickname, ')');
+            sink.put(event.target.displayName);
         }
 
         version(TwitchSupport)
@@ -666,9 +666,9 @@ if (isOutputRange!(Sink, char[]))
                     if ((event.sender.displayName != event.sender.nickname) &&
                         !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                     {
-                        .put!(Yes.colours)(sink, FG.default_, " <");
+                        .put!(Yes.colours)(sink, FG.default_, " (");
                         colourUserTruecolour(sink, event.sender);
-                        .put!(Yes.colours)(sink, event.sender.nickname, FG.default_, '>');
+                        .put!(Yes.colours)(sink, event.sender.nickname, FG.default_, ')');
                     }
                 }
             }
@@ -705,7 +705,7 @@ if (isOutputRange!(Sink, char[]))
     void putTarget()
     {
         // No need to check isServer; target is never server
-        .put!(Yes.colours)(sink, FG.default_, " (");
+        .put!(Yes.colours)(sink, FG.default_, " -> ");
         colourUserTruecolour(sink, event.target);
 
         bool putDisplayName;
@@ -715,7 +715,7 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 event.target.displayName.length)
             {
-                .put!(Yes.colours)(sink, event.target.displayName, FG.default_, ')');
+                sink.put(event.target.displayName);
                 putDisplayName = true;
 
                 import std.algorithm.comparison : equal;
@@ -724,16 +724,16 @@ if (isOutputRange!(Sink, char[]))
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
-                    sink.put(" <");
+                    sink.put(" (");
                     colourUserTruecolour(sink, event.target);
-                    .put!(Yes.colours)(sink, event.target.nickname, FG.default_, '>');
+                    .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
                 }
             }
         }
 
         if (!putDisplayName)
         {
-            .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
+            sink.put(event.target.nickname);
         }
 
         version(TwitchSupport)
