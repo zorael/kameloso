@@ -1125,9 +1125,8 @@ string replaceTokens(const string line, const IRCClient client) @safe pure nothr
     import std.array : replace;
 
     return line
-        .replace("$nickname", client.nickname)
-        .replace("$version", cast(string)KamelosoInfo.version_)
-        .replace("$source", cast(string)KamelosoInfo.source);
+        .replaceTokens
+        .replace("$nickname", client.nickname);
 }
 
 ///
