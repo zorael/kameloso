@@ -1197,7 +1197,7 @@ string replaceTokens(const string line) @safe pure nothrow
     ---
 
     Params:
-        now = A `std.date.systime.SysTime` of the base date from which to proceed
+        now = A `std.datetime.systime.SysTime` of the base date from which to proceed
             to the next midnight.
 
     Returns:

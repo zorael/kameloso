@@ -173,7 +173,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 /++
     Allows users to increment, decrement, and set counters.
 
-    This function fakes `kameloso.plugin.core.BotCommand`s by listening for
+    This function fakes `kameloso.plugins.core.BotCommand`s by listening for
     prefixes (and the bot's nickname), and treating whatever comes after it as
     a command word. If it doesn't match a previously added counter, it is ignored.
 
