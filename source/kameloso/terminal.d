@@ -145,13 +145,16 @@ version(Posix)
     /++
         Determines whether or not the program is being run in a terminal (virtual TTY).
 
+        "isatty() returns 1 if fd is an open file descriptor referring to a
+        terminal; otherwise 0 is returned, and errno is set to indicate the error."
+
         Returns:
             true if the current environment appears to be a terminal; false if not (e.g. pager).
      +/
     bool isTTY() //@safe
     {
         import core.sys.posix.unistd : STDOUT_FILENO, isatty;
-        return (isatty(STDOUT_FILENO) == 0);
+        return (isatty(STDOUT_FILENO) == 1);
     }
 }
 else version(Windows)
