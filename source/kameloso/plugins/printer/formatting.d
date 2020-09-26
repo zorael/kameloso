@@ -274,7 +274,7 @@ if (isOutputRange!(Sink, char[]))
 
         if (!putDisplayName)
         {
-            sink.put(event.target.displayName);
+            sink.put(event.target.nickname);
         }
 
         version(TwitchSupport)
