@@ -52,11 +52,19 @@ public:
 abstract class IRCPlugin
 {
 @safe:
+
+private:
+    import kameloso.thread : Sendable;
+    import std.array : Appender;
+
+public:
+    // CommandMetadata
     /++
         Metadata about a `BotCommand`- and/or `BotRegex`-annotated event handler.
      +/
     static struct CommandMetadata
     {
+        // desc
         /++
             Description about what the command does, along with optional syntax.
 
@@ -65,6 +73,8 @@ abstract class IRCPlugin
          +/
         Description desc;
 
+
+        // hidden
         /++
             Whether or not the command should be hidden from view (but still
             possible to trigger).
@@ -72,21 +82,37 @@ abstract class IRCPlugin
         bool hidden;
     }
 
+
+    // state
     /++
         An `IRCPluginState` instance containing variables and arrays that represent
         the current state of the plugin. Should generally be passed by reference.
      +/
     IRCPluginState state;
 
-    /// Executed to let plugins modify an event mid-parse.
+
+    // postprocess
+    /++
+        Executed to let plugins modify an event mid-parse.
+     +/
     void postprocess(ref IRCEvent) @system;
 
-    /// Executed upon new IRC event parsed from the server.
+
+    // onEvent
+    /++
+        Executed upon new IRC event parsed from the server.
+     +/
     void onEvent(/*const*/ IRCEvent) @system;
 
-    /// Executed when the plugin is requested to initialise its disk resources.
+
+    // initResources
+    /++
+        Executed when the plugin is requested to initialise its disk resources.
+     +/
     void initResources() @system;
 
+
+    // deserialiseConfigFrom
     /++
         Read serialised configuration text into the plugin's settings struct.
 
@@ -96,10 +122,15 @@ abstract class IRCPlugin
      +/
     void deserialiseConfigFrom(const string, out string[][string], out string[][string]);
 
-    private import std.array : Appender;
-    /// Executed when gathering things to put in the configuration file.
+
+    // serialiseConfigInto
+    /++
+        Executed when gathering things to put in the configuration file.
+     +/
     bool serialiseConfigInto(ref Appender!string) const;
 
+
+    // setSettingByName
     /++
         Executed during start if we want to change a setting by its string name.
 
@@ -108,15 +139,29 @@ abstract class IRCPlugin
      +/
     bool setSettingByName(const string, const string);
 
-    /// Executed when connection has been established.
+
+    // start
+    /++
+        Executed when connection has been established.
+     +/
     void start() @system;
 
-    /// Executed when we want a plugin to print its Settings struct.
+
+    // printSettings
+    /++
+        Executed when we want a plugin to print its Settings struct.
+     +/
     void printSettings() @system const;
 
-    /// Executed during shutdown or plugin restart.
+
+    // teardown
+    /++
+        Executed during shutdown of a connection session.
+     +/
     void teardown() @system;
 
+
+    // name
     /++
         Returns the name of the plugin, sliced off the module name.
 
@@ -125,6 +170,8 @@ abstract class IRCPlugin
      +/
     string name() @property const pure nothrow @nogc;
 
+
+    // commands
     /++
         Returns an array of the descriptions of the commands a plugin offers.
 
@@ -133,14 +180,28 @@ abstract class IRCPlugin
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
-    /// Reloads the plugin, where such is applicable.
+
+    // reload
+    /++
+        Reloads the plugin, where such is applicable.
+     +/
     void reload() @system;
 
-    import kameloso.thread : Sendable;
-    /// Executed when a bus message arrives from another plugin.
+
+    // onBusMessage
+    /++
+        Executed when a bus message arrives from another plugin.
+     +/
     void onBusMessage(const string, shared Sendable content) @system;
 
-    /// Returns whether or not the plugin is enabled in its configuration section.
+
+    // isEnabled
+    /++
+        Returns whether or not the plugin is enabled in its configuration section.
+
+        Returns:
+            true if the plugin should listen to events, false if not.
+     +/
     bool isEnabled() const @property pure nothrow @nogc;
 }
 
