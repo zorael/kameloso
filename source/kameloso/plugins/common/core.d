@@ -1366,7 +1366,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
-    import std.array : Appender;
+    private import std.array : Appender;
 
     // serialiseConfigInto
     /++
@@ -1636,7 +1636,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
-    import kameloso.thread : Sendable;
+    private import kameloso.thread : Sendable;
 
     // onBusMessage
     /++
