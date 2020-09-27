@@ -729,233 +729,8 @@ Next mainLoop(ref Kameloso instance)
                 assert(0, "`listenAttemptToNext` returned `Next.crash`");
             }
 
-            IRCEvent event;
-
-            scope(failure)
-            {
-                // Something asserted
-                logger.error("scopeguard tripped.");
-                printEventDebugDetails(event, attempt.line);
-            }
-
-            import lu.string : NomException;
-            import core.exception : UnicodeException;
-            import std.utf : UTFException;
-
-            try
-            {
-                // Sanitise and try again once on UTF/Unicode exceptions
-                import std.datetime.systime : Clock;
-                import std.encoding : sanitize;
-
-                try
-                {
-                    event = instance.parser.toIRCEvent(attempt.line);
-                }
-                catch (UTFException e)
-                {
-                    event = instance.parser.toIRCEvent(sanitize(attempt.line));
-                    event.errors ~= (event.errors.length ? ". " : string.init) ~
-                        "UTFException: " ~ e.msg;
-                }
-                catch (UnicodeException e)
-                {
-                    event = instance.parser.toIRCEvent(sanitize(attempt.line));
-                    event.errors ~= (event.errors.length ? ". " : string.init) ~
-                        "UnicodeException: " ~ e.msg;
-                }
-
-                if (instance.parser.clientUpdated)
-                {
-                    // Parsing changed the client; propagate
-                    instance.parser.clientUpdated = false;
-                    instance.propagateClient(instance.parser.client);
-                }
-
-                if (instance.parser.serverUpdated)
-                {
-                    // Parsing changed the server; propagate
-                    instance.parser.serverUpdated = false;
-                    instance.propagateServer(instance.parser.server);
-                }
-
-                static void checkUpdatesAndPropagate(ref Kameloso instance, IRCPlugin plugin)
-                {
-                    if (plugin.state.botUpdated)
-                    {
-                        // Something changed the bot; propagate
-                        plugin.state.botUpdated = false;
-                        instance.propagateBot(plugin.state.bot);
-                    }
-
-                    if (plugin.state.clientUpdated)
-                    {
-                        // Something changed the client; propagate
-                        plugin.state.clientUpdated = false;
-                        instance.propagateClient(plugin.state.client);
-                    }
-
-                    if (plugin.state.serverUpdated)
-                    {
-                        // Something changed the server; propagate
-                        plugin.state.serverUpdated = false;
-                        instance.propagateServer(plugin.state.server);
-                    }
-
-                    if (plugin.state.settingsUpdated)
-                    {
-                        // Something changed the settings; propagate
-                        plugin.state.settingsUpdated = false;
-                        instance.propagateSettings(plugin.state.settings);
-                    }
-                }
-
-                // Successful parse; record as such
-                ++historyEntry.numEvents;
-                event.time = nowInUnix;
-
-                foreach (plugin; instance.plugins)
-                {
-                    try
-                    {
-                        plugin.postprocess(event);
-                    }
-                    catch (NomException e)
-                    {
-                        logger.warningf(`Nom Exception %s.postprocess: tried to nom "%s%s%s" with "%2$s%5$s%4$s"`,
-                            plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
-                        printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.info);
-                    }
-                    catch (UTFException e)
-                    {
-                        logger.warningf("UTFException %s.postprocess: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        version(PrintStacktraces) logger.trace(e.info);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warningf("Exception %s.postprocess: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e);
-                    }
-
-                    checkUpdatesAndPropagate(instance, plugin);
-                }
-
-                // Let each plugin process the event
-                foreach (plugin; instance.plugins)
-                {
-                    try
-                    {
-                        plugin.onEvent(event);
-                        processRepeats(plugin, instance);
-                        processReplays(instance, plugin.state.replays);
-                        processAwaitingDelegates(plugin, event);
-                        processAwaitingFibers(plugin, event);
-                    }
-                    catch (NomException e)
-                    {
-                        logger.warningf(`Nom Exception %s: tried to nom "%s%s%s" with "%2$s%5$s%4$s"`,
-                            plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
-
-                        printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e.info);
-                    }
-                    catch (UTFException e)
-                    {
-                        logger.warningf("UTFException %s: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        version(PrintStacktraces) logger.trace(e.info);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warningf("Exception %s: %s%s",
-                            plugin.name, Tint.log, e.msg);
-                        printEventDebugDetails(event, attempt.line);
-                        version(PrintStacktraces) logger.trace(e);
-                    }
-                    finally
-                    {
-                        checkUpdatesAndPropagate(instance, plugin);
-                    }
-                }
-
-                with (IRCEvent.Type)
-                switch (event.type)
-                {
-                case SELFCHAN:
-                case SELFEMOTE:
-                case SELFQUERY:
-                    // Treat self-events as if we sent them ourselves, to properly
-                    // rate-limit the account itself. This stops Twitch from
-                    // giving spam warnings. We can easily tell whether it's a channel
-                    // we're the broadcaster in, but no such luck with whether
-                    // we're a moderator. For now, just assume we're moderator
-                    // in all our home channels.
-
-                    import std.typecons : Flag, No, Yes;
-
-                    version(TwitchSupport)
-                    {
-                        import std.algorithm.searching : canFind;
-
-                        // Send faster in home channels. Assume we're a mod and won't be throttled.
-                        // (There's no easy way to tell from here.)
-                        if (event.channel.length && instance.bot.homeChannels.canFind(event.channel))
-                        {
-                            instance.throttleline(instance.fastbuffer, Yes.dryRun, Yes.sendFaster);
-                        }
-                        else
-                        {
-                            instance.throttleline(instance.outbuffer, Yes.dryRun);
-                        }
-                    }
-                    else
-                    {
-                        instance.throttleline(instance.outbuffer, Yes.dryRun);
-                    }
-                    break;
-
-                default:
-                    break;
-                }
-            }
-            catch (IRCParseException e)
-            {
-                logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                    Tint.log, e.msg, Tint.warning, e.file, e.line);
-
-                printEventDebugDetails(event, attempt.line);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (NomException e)
-            {
-                logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
-                    Tint.log, e.haystack, Tint.warning, e.needle);
-
-                printEventDebugDetails(event, attempt.line);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (UTFException e)
-            {
-                logger.warning("UTFException: ", Tint.log, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (UnicodeException e)
-            {
-                logger.warning("UnicodeException: ", Tint.log, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (Exception e)
-            {
-                logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
-                    Tint.log, e.msg, Tint.warning, e.file, e.line);
-
-                printEventDebugDetails(event, attempt.line);
-                version(PrintStacktraces) logger.trace(e);
-            }
+            instance.processLineFromServer(attempt.line, nowInUnix);
+            ++historyEntry.numEvents;
         }
 
         // Check concurrency messages to see if we should exit, else repeat
@@ -1145,6 +920,243 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
         instance.conn.connected = false;
         return Next.returnFailure;
+    }
+}
+
+
+// processLineFromServer
+/++
+    Processes a line read from the server, constructing an `dialect.defs.IRCEvent`
+    and dispatches it to all plugins.
+
+    Params:
+        instance = The current `kameloso.kameloso.Kameloso` instance.
+        raw = A raw line as read from the server.
+        nowInUnix = Current timestamp in UNIX time.
+ +/
+void processLineFromServer(ref Kameloso instance, const string raw, const long nowInUnix)
+{
+    import lu.string : NomException;
+    import core.exception : UnicodeException;
+    import std.utf : UTFException;
+
+    IRCEvent event;
+
+    scope(failure)
+    {
+        // Something asserted
+        logger.error("scopeguard tripped.");
+        printEventDebugDetails(event, raw);
+    }
+
+    try
+    {
+        // Sanitise and try again once on UTF/Unicode exceptions
+        import std.datetime.systime : Clock;
+        import std.encoding : sanitize;
+
+        try
+        {
+            event = instance.parser.toIRCEvent(raw);
+        }
+        catch (UTFException e)
+        {
+            event = instance.parser.toIRCEvent(sanitize(raw));
+            event.errors ~= (event.errors.length ? ". " : string.init) ~
+                "UTFException: " ~ e.msg;
+        }
+        catch (UnicodeException e)
+        {
+            event = instance.parser.toIRCEvent(sanitize(raw));
+            event.errors ~= (event.errors.length ? ". " : string.init) ~
+                "UnicodeException: " ~ e.msg;
+        }
+
+        if (instance.parser.clientUpdated)
+        {
+            // Parsing changed the client; propagate
+            instance.parser.clientUpdated = false;
+            instance.propagateClient(instance.parser.client);
+        }
+
+        if (instance.parser.serverUpdated)
+        {
+            // Parsing changed the server; propagate
+            instance.parser.serverUpdated = false;
+            instance.propagateServer(instance.parser.server);
+        }
+
+        static void checkUpdatesAndPropagate(ref Kameloso instance, IRCPlugin plugin)
+        {
+            if (plugin.state.botUpdated)
+            {
+                // Something changed the bot; propagate
+                plugin.state.botUpdated = false;
+                instance.propagateBot(plugin.state.bot);
+            }
+
+            if (plugin.state.clientUpdated)
+            {
+                // Something changed the client; propagate
+                plugin.state.clientUpdated = false;
+                instance.propagateClient(plugin.state.client);
+            }
+
+            if (plugin.state.serverUpdated)
+            {
+                // Something changed the server; propagate
+                plugin.state.serverUpdated = false;
+                instance.propagateServer(plugin.state.server);
+            }
+
+            if (plugin.state.settingsUpdated)
+            {
+                // Something changed the settings; propagate
+                plugin.state.settingsUpdated = false;
+                instance.propagateSettings(plugin.state.settings);
+            }
+        }
+
+        // Save timestamp in the event itself.
+        event.time = nowInUnix;
+
+        foreach (plugin; instance.plugins)
+        {
+            try
+            {
+                plugin.postprocess(event);
+            }
+            catch (NomException e)
+            {
+                logger.warningf(`Nom Exception %s.postprocess: tried to nom "%s%s%s" with "%2$s%5$s%4$s"`,
+                    plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
+                printEventDebugDetails(event, raw);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (UTFException e)
+            {
+                logger.warningf("UTFException %s.postprocess: %s%s",
+                    plugin.name, Tint.log, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (Exception e)
+            {
+                logger.warningf("Exception %s.postprocess: %s%s",
+                    plugin.name, Tint.log, e.msg);
+                printEventDebugDetails(event, raw);
+                version(PrintStacktraces) logger.trace(e);
+            }
+
+            checkUpdatesAndPropagate(instance, plugin);
+        }
+
+        // Let each plugin process the event
+        foreach (plugin; instance.plugins)
+        {
+            try
+            {
+                plugin.onEvent(event);
+                processRepeats(plugin, instance);
+                processReplays(instance, plugin.state.replays);
+                processAwaitingDelegates(plugin, event);
+                processAwaitingFibers(plugin, event);
+            }
+            catch (NomException e)
+            {
+                logger.warningf(`Nom Exception %s: tried to nom "%s%s%s" with "%2$s%5$s%4$s"`,
+                    plugin.name, Tint.log, e.haystack, Tint.warning, e.needle);
+                printEventDebugDetails(event, raw);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (UTFException e)
+            {
+                logger.warningf("UTFException %s: %s%s",
+                    plugin.name, Tint.log, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            catch (Exception e)
+            {
+                logger.warningf("Exception %s: %s%s",
+                    plugin.name, Tint.log, e.msg);
+                printEventDebugDetails(event, raw);
+                version(PrintStacktraces) logger.trace(e);
+            }
+            finally
+            {
+                checkUpdatesAndPropagate(instance, plugin);
+            }
+        }
+
+        with (IRCEvent.Type)
+        switch (event.type)
+        {
+        case SELFCHAN:
+        case SELFEMOTE:
+        case SELFQUERY:
+            // Treat self-events as if we sent them ourselves, to properly
+            // rate-limit the account itself. This stops Twitch from
+            // giving spam warnings. We can easily tell whether it's a channel
+            // we're the broadcaster in, but no such luck with whether
+            // we're a moderator. For now, just assume we're moderator
+            // in all our home channels.
+
+            import std.typecons : Flag, No, Yes;
+
+            version(TwitchSupport)
+            {
+                import std.algorithm.searching : canFind;
+
+                // Send faster in home channels. Assume we're a mod and won't be throttled.
+                // (There's no easy way to tell from here.)
+                if (event.channel.length && instance.bot.homeChannels.canFind(event.channel))
+                {
+                    instance.throttleline(instance.fastbuffer, Yes.dryRun, Yes.sendFaster);
+                }
+                else
+                {
+                    instance.throttleline(instance.outbuffer, Yes.dryRun);
+                }
+            }
+            else
+            {
+                instance.throttleline(instance.outbuffer, Yes.dryRun);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+    catch (IRCParseException e)
+    {
+        logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+            Tint.log, e.msg, Tint.warning, e.file, e.line);
+        printEventDebugDetails(event, raw);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (NomException e)
+    {
+        logger.warningf(`Nom Exception: tried to nom "%s%s%s" with "%1$s%4$s%3$s"`,
+            Tint.log, e.haystack, Tint.warning, e.needle);
+        printEventDebugDetails(event, raw);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (UTFException e)
+    {
+        logger.warning("UTFException: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (UnicodeException e)
+    {
+        logger.warning("UnicodeException: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (Exception e)
+    {
+        logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+            Tint.log, e.msg, Tint.warning, e.file, e.line);
+        printEventDebugDetails(event, raw);
+        version(PrintStacktraces) logger.trace(e);
     }
 }
 
