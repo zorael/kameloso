@@ -259,7 +259,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
     else
     {
-        package enum hasIRCPluginImpl = true;
+        private enum hasIRCPluginImpl = true;
     }
 
     @safe:
@@ -338,7 +338,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    package FilterResult allow(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
+    private FilterResult allow(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
         return allowImpl(event, privilegeLevel);
     }
@@ -356,7 +356,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
      +/
-    package FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
+    private FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
         import std.typecons : Flag, No, Yes;
 
@@ -416,7 +416,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         Params:
             origEvent = Parsed `dialect.defs.IRCEvent` to dispatch to event handlers.
      +/
-    package void onEventImpl(/*const*/ IRCEvent origEvent) @system
+    private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
