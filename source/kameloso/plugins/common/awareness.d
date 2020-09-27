@@ -596,8 +596,6 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const IRCEvent event) @system
 
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
-
-    This re-implements `kameloso.plugins.common.core.IRCPlugin.periodically`.
  +/
 void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
 {

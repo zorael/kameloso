@@ -1186,8 +1186,7 @@ string replaceTokens(const string line) @safe pure nothrow
 
 // nextMidnight
 /++
-    Returns a `std.datetime.systime.SysTime` of the following midnight, for use
-    with setting the periodical timestamp.
+    Returns a `std.datetime.systime.SysTime` of the following midnight.
 
     Example:
     ---
