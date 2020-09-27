@@ -94,7 +94,7 @@ struct TitleLookupRequest
     It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
     try to look up every URL returned by it.
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)

@@ -39,7 +39,7 @@ import dialect.defs;
 
     Responses are stored in `OnelinersPlugin.onelinersByChannel`.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)

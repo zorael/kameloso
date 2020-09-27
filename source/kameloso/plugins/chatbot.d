@@ -256,7 +256,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
     - http://bash.org/?4281
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)

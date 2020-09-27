@@ -414,7 +414,7 @@ private:
     This particular function doesn't care at all, so it is
     `kameloso.plugins.common.core.PrivilegeLevel.ignore`.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
@@ -492,7 +492,7 @@ void onQuit(SeenPlugin plugin, const IRCEvent event)
     already been observed at least once, which should always be the case (provided
     `dialect.defs.IRCEvent.Type.RPL_NAMREPLY` lists on join).
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.NICK)
 @(PrivilegeLevel.ignore)
 void onNick(SeenPlugin plugin, const IRCEvent event)

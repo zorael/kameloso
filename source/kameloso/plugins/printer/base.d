@@ -128,7 +128,7 @@ public:
     Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
@@ -400,7 +400,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     See_Also:
         commitAllLogs
  +/
-@(Chainable)
+@Chainable
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)

@@ -36,7 +36,7 @@ import std.typecons : Flag, No, Yes;
 /++
     Plays back notes on signs of activity.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.EMOTE)

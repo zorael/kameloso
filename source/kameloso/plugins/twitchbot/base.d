@@ -163,7 +163,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     Bells on any important event, like subscriptions, cheers and raids, if the
     `TwitchBotSettings.bellOnImportant` setting is set.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.TWITCH_SUB)
 @(IRCEvent.Type.TWITCH_SUBGIFT)
 @(IRCEvent.Type.TWITCH_CHEER)
@@ -749,7 +749,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     any user who has been given a temporary permit via `onCommandPermit`.
     Those without permission will have the message deleted and be served a timeout.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
@@ -1207,7 +1207,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
     This lets us know the banned phrase wasn't part of a command (as it would
     otherwise not reach this point).
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
@@ -1312,7 +1312,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     Has to be done at MOTD, as we only know whether we're on Twitch after
     RPL_MYINFO or so.
  +/
-@(Chainable)  // so onEndOfMOTDPeriodicalSetup fires
+@Chainable  // so onEndOfMOTDPeriodicalSetup fires
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMOTD(TwitchBotPlugin plugin)
