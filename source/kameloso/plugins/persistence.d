@@ -470,13 +470,33 @@ void onNick(PersistenceService service, const IRCEvent event)
 
 // onWelcome
 /++
-    Reloads classifier definitions from disk.
+    Reloads classifier definitions from disk. Additionally rehashes the user array,
+    allowing for optimised access.
+
+    This is normally done as part of user awareness, but we're not mixing that
+    in so we have to reinvent it.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PersistenceService service)
 {
+    import kameloso.plugins.common.delayawait : delay;
+    import std.typecons : Flag, No, Yes;
+    import core.thread : Fiber;
+
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();
+
+    void periodicallyDg()
+    {
+        while (true)
+        {
+            service.state.users.rehash();
+            delay(service, service.timeBetweenRehashes, No.msecs, Yes.yield);
+        }
+    }
+
+    Fiber rehashFiber = new Fiber(&periodicallyDg, 32_768);
+    delay(service, rehashFiber, service.timeBetweenRehashes);
 }
 
 
@@ -490,22 +510,6 @@ void reload(PersistenceService service)
     service.state.users.rehash();
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();
-}
-
-
-// periodically
-/++
-    Periodically rehashes the user array, allowing for optimised access.
-
-    This is normally done as part of user-awareness, but we're not mixing that
-    in so we have to reinvent it.
- +/
-void periodically(PersistenceService service, const long now)
-{
-    enum hoursBetweenRehashes = 3;
-
-    service.state.users.rehash();
-    service.state.nextPeriodical = now + (hoursBetweenRehashes * 3600);
 }
 
 
@@ -759,6 +763,9 @@ final class PersistenceService : IRCPlugin
 {
 private:
     import kameloso.constants : KamelosoFilenames;
+
+    /// How often to rehash associative arrays, optimising access.
+    enum long timeBetweenRehashes = 3 * 3600;
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;

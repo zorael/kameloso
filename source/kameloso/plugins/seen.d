@@ -264,6 +264,13 @@ private:  // Module-level private.
     @Resource string seenFile = "seen.json";
 
 
+    // timeBetweenSaves
+    /++
+        The amount of seconds after which seen users should be saved to disk.
+     +/
+    enum timeBetweenSaves = 3600;
+
+
     // IRCPluginImpl
     /++
         This mixes in functions that fully implement an
@@ -881,12 +888,32 @@ in (filename.length, "Tried to save seen users to an empty filename")
 // onWelcome
 /++
     After we have registered on the server and seen the welcome messages, load
-    our seen users from file.
+    our seen users from file. Additionally sets up a Fiber that periodically
+    saves seen users to disk once every `SeenPlugin.timeBetweenSaves` seconds.
+
+    This is to make sure that as little data as possible is lost in the event
+    of an unexpected shutdown.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(SeenPlugin plugin)
 {
+    import kameloso.plugins.common.delayawait : delay;
+    import core.thread : Fiber;
+
     plugin.seenUsers = loadSeen(plugin.seenFile);
+
+    void saveDg()
+    {
+        while (true)
+        {
+            plugin.updateAllObservedUsers();
+            plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
+            delay(plugin, plugin.timeBetweenSaves, No.msecs, Yes.yield);
+        }
+    }
+
+    Fiber saveFiber = new Fiber(&saveDg, 32_768);
+    delay(plugin, saveFiber, plugin.timeBetweenSaves);
 }
 
 
@@ -904,30 +931,6 @@ void onEndOfMotd(SeenPlugin plugin)
     logger.logf("Currently %s%d%s %s seen.",
         Tint.info, plugin.seenUsers.length, Tint.log,
         plugin.seenUsers.length.plurality("user", "users"));
-}
-
-
-// periodically
-/++
-    Saves seen users to disk once every `hoursBetweenSaves` hours.
-
-    This is to make sure that as little data as possible is lost in the event
-    of an unexpected shutdown.
-
-    `periodically` is a function that is automatically called whenever the
-    current UNIX timestamp matches or exceeds the value of `plugin.state.nextPeriodical`.
- +/
-void periodically(SeenPlugin plugin, const long now)
-{
-    enum hoursBetweenSaves = 3;
-
-    plugin.state.nextPeriodical = now + (hoursBetweenSaves * 3600);
-
-    if (plugin.isEnabled)
-    {
-        plugin.updateAllObservedUsers();
-        plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
-    }
 }
 
 

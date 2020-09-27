@@ -498,31 +498,52 @@ package string datestamp()
 }
 
 
-// periodically
+// onWelcome
 /++
-    Prints the date in `YYYY-MM-DD` format to the screen and to any active log
-    files upon day change.
+    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
+    to any active log files upon day change.
  +/
-void periodically(PrinterPlugin plugin)
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(PrinterPlugin plugin)
 {
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
+    import kameloso.plugins.common.delayawait : delay;
+    import core.thread : Fiber;
 
-    // Schedule the next run for the following midnight.
-    plugin.state.nextPeriodical = Clock.currTime.nextMidnight.toUnixTime;
-
-    if (!plugin.isEnabled) return;
-
-    if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+    static long untilNextMidnight()
     {
-        logger.info(datestamp);
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime;
+        immutable nowInUnix = now.toUnixTime;
+        immutable nextMidnight = now.nextMidnight.toUnixTime;
+
+        return (nextMidnight - nowInUnix);
     }
 
-    if (plugin.printerSettings.logs)
+    void daybreakDg()
     {
-        plugin.commitAllLogs();
-        plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+        while (true)
+        {
+            if (plugin.isEnabled)
+            {
+                if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+                {
+                    logger.info(datestamp);
+                }
+
+                if (plugin.printerSettings.logs)
+                {
+                    plugin.commitAllLogs();
+                    plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+                }
+            }
+
+            delay(plugin, untilNextMidnight, No.msecs, Yes.yield);
+        }
     }
+
+    Fiber daybreakFiber = new Fiber(&daybreakDg, 32_768);
+    delay(plugin, daybreakFiber, untilNextMidnight);
 }
 
 

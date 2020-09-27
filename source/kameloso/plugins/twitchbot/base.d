@@ -1312,6 +1312,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     Has to be done at MOTD, as we only know whether we're on Twitch after
     RPL_MYINFO or so.
  +/
+@(Chainable)  // so onEndOfMOTDPeriodicalSetup fires
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMOTD(TwitchBotPlugin plugin)
@@ -1565,99 +1566,117 @@ void initResources(TwitchBotPlugin plugin)
 }
 
 
-// periodically
+// onEndOfMOTDPeriodicalSetup
 /++
-    Periodically calls timer `core.thread.fiber.Fiber`s with a periodicity of
-    `TwitchBotPlugin.timerPeriodicity`.
+    Sets up a Fiber to periodically call timer `core.thread.fiber.Fiber`s with a
+    periodicity of `TwitchBotPlugin.timerPeriodicity`.
+
+    Cannot be done on `dialect.defs.IRCEvent.Type.RPL_WELCOME` as the server
+    daemon isn't known by then.
  +/
-void periodically(TwitchBotPlugin plugin, const long now)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMOTDPeriodicalSetup(TwitchBotPlugin plugin)
 {
-    if ((plugin.state.server.daemon != IRCServer.Daemon.unset) &&
-        (plugin.state.server.daemon != IRCServer.Daemon.twitch))
-    {
-        // Known to not be a Twitch server
-        plugin.state.nextPeriodical = now + 315_569_260L;
-        return;
-    }
+    import kameloso.plugins.common.delayawait : delay;
+    import core.thread : Fiber;
 
-    // Walk through channels, trigger fibers
-    foreach (immutable channelName, room; plugin.rooms)
+    void periodicDg()
     {
-        foreach (timer; room.timers)
+        import kameloso.common : nextMidnight;
+        import std.datetime.systime : Clock;
+
+        // Schedule next prune to next midnight
+        long nextPrune = Clock.currTime.nextMidnight.toUnixTime;
+
+        top:
+        while (true)
         {
-            if (!timer || (timer.state != Fiber.State.HOLD))
-            {
-                logger.error("Dead or busy timer Fiber in channel ", channelName);
-                continue;
-            }
-
-            timer.call();
-        }
-    }
-
-    // Schedule next
-    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
-
-    // Early abort if we shouldn't clean up
-    if (now < plugin.nextPrune) return;
-
-    // Walk through channels, prune stale bans and permits
-    foreach (immutable channelName, room; plugin.rooms)
-    {
-        static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
-        {
-            string[] garbage;
-
-            foreach (immutable key, const entry; aa)
-            {
-                static if (is(typeof(entry) : long))
-                {
-                    immutable maxEndTime = entry + gracePeriod;
-                }
-                else
-                {
-                    immutable maxEndTime = entry.timestamp + gracePeriod;
-                }
-
-                if (now > maxEndTime)
-                {
-                    garbage ~= key;
-                }
-            }
-
-            foreach (immutable key; garbage)
-            {
-                aa.remove(key);
-            }
-        }
-
-        pruneByTimestamp(room.linkBans, now, 7200);
-        pruneByTimestamp(room.linkPermits, now, 60);
-        pruneByTimestamp(room.phraseBans, now, 7200);
-    }
-
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
-
-    // Schedule next prune to next midnight
-    plugin.nextPrune = Clock.currTime.nextMidnight.toUnixTime;
-
-    version(TwitchAPIFeatures)
-    {
-        // Clear and re-cache follows once as often as we prune
-
-        void dg()
-        {
+            // Walk through channels, trigger fibers
             foreach (immutable channelName, room; plugin.rooms)
             {
-                if (!room.enabled) continue;
-                room.follows = getFollows(plugin, room.id);
+                foreach (timer; room.timers)
+                {
+                    if (!timer || (timer.state != Fiber.State.HOLD))
+                    {
+                        logger.error("Dead or busy timer Fiber in channel ", channelName);
+                        continue;
+                    }
+
+                    timer.call();
+                }
+            }
+
+            immutable now = Clock.currTime;
+            immutable nowInUnix = now.toUnixTime;
+
+            // Early yield if we shouldn't clean up
+            if (nowInUnix < nextPrune)
+            {
+                delay(plugin, plugin.timerPeriodicity, No.msecs, Yes.yield);
+                continue top;
+            }
+            else
+            {
+                nextPrune = now.nextMidnight.toUnixTime;
+            }
+
+            // Walk through channels, prune stale bans and permits
+            foreach (immutable channelName, room; plugin.rooms)
+            {
+                static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
+                {
+                    string[] garbage;
+
+                    foreach (immutable key, const entry; aa)
+                    {
+                        static if (is(typeof(entry) : long))
+                        {
+                            immutable maxEndTime = entry + gracePeriod;
+                        }
+                        else
+                        {
+                            immutable maxEndTime = entry.timestamp + gracePeriod;
+                        }
+
+                        if (now > maxEndTime)
+                        {
+                            garbage ~= key;
+                        }
+                    }
+
+                    foreach (immutable key; garbage)
+                    {
+                        aa.remove(key);
+                    }
+                }
+
+                pruneByTimestamp(room.linkBans, nowInUnix, 7200);
+                pruneByTimestamp(room.linkPermits, nowInUnix, 60);
+                pruneByTimestamp(room.phraseBans, nowInUnix, 7200);
+            }
+
+            version(TwitchAPIFeatures)
+            {
+                // Clear and re-cache follows once as often as we prune
+
+                void cacheFollowsAnewDg()
+                {
+                    foreach (immutable channelName, room; plugin.rooms)
+                    {
+                        if (!room.enabled) continue;
+                        room.follows = getFollows(plugin, room.id);
+                    }
+                }
+
+                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg, 32_768);
+                cacheFollowsAnewFiber.call();
             }
         }
-
-        Fiber cacheFollowsFiber = new Fiber(&dg, 32_768);
-        cacheFollowsFiber.call();
     }
+
+    Fiber periodicFiber = new Fiber(&periodicDg, 32_768);
+    delay(plugin, periodicFiber, plugin.timerPeriodicity);
 }
 
 
@@ -1815,9 +1834,6 @@ package:
 
     /// Filename of file with timer definitions.
     @Resource string timersFile = "twitchtimers.json";
-
-    /// When to next clear expired permits and bans.
-    long nextPrune;
 
     /++
         How often to check whether timers should fire, in seconds. A smaller
