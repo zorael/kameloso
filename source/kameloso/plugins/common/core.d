@@ -36,7 +36,7 @@ private:
 
 import kameloso.kameloso;
 import dialect.defs;
-import std.typecons : Flag, No, Tuple, Yes;
+import std.typecons : Flag, No, Yes;
 
 version = PrefixedCommandsFallBackToNickname;
 
@@ -51,7 +51,26 @@ public:
  +/
 abstract class IRCPlugin
 {
-    @safe:
+@safe:
+    /++
+        Metadata about a `BotCommand`- and/or `BotRegex`-annotated event handler.
+     +/
+    static struct CommandMetadata
+    {
+        /++
+            Description about what the command does, along with optional syntax.
+
+            See_Also:
+                Description
+         +/
+        Description desc;
+
+        /++
+            Whether or not the command should be hidden from view (but still
+            possible to trigger).
+         +/
+        bool hidden;
+    }
 
     /++
         An `IRCPluginState` instance containing variables and arrays that represent
@@ -110,9 +129,9 @@ abstract class IRCPlugin
         Returns an array of the descriptions of the commands a plugin offers.
 
         Returns:
-            An associative `Tuple!(Description, "desc", bool, "hidden")[string]` array.
+            An associative `CommandMetadata[string]` array.
      +/
-    Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const;
+    CommandMetadata[string] commands() pure nothrow @property const;
 
     /// Reloads the plugin, where such is applicable.
     void reload() @system;
@@ -1441,20 +1460,18 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
-    import std.typecons : Tuple;
-
     // commands
     /++
         Collects all `BotCommand` command words and `BotRegex` regex expressions
         that this plugin offers at compile time, then at runtime returns them
         alongside their `Description`s and their visibility, as an associative
-        array of `Tuple!(Description, bool)`s keyed by command name strings.
+        array of `IRCPlugin.CommandMetadata`s keyed by command name strings.
 
         Returns:
             Associative array of tuples of all `Descriptions` and whether they
             are hidden, keyed by `BotCommand.word`s and `BotRegex.expression`s.
      +/
-    override public Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const
+    override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
@@ -1466,9 +1483,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
             alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
             alias funs = Filter!(isSomeFunction, symbols);
-            alias Command = Tuple!(Description, "desc", bool, "hidden");
 
-            Command[string] commands;
+            IRCPlugin.CommandMetadata[string] commands;
 
             foreach (fun; funs)
             {
@@ -1489,7 +1505,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                             enum key = `r"` ~ uda.expression ~ `"`;
                         }
 
-                        commands[key] = Command(desc, uda.hidden);
+                        commands[key] = IRCPlugin.CommandMetadata(desc, uda.hidden);
 
                         static if (uda.policy == PrefixPolicy.nickname)
                         {
