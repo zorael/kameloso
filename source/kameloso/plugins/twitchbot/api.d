@@ -225,7 +225,7 @@ void generateKey(TwitchBotPlugin plugin)
 
     if (plugin.state.settings.force)
     {
-        logger.warning("Forcing; not automatically opening brower.");
+        logger.warning("Forcing; not automatically opening browser.");
         printManualURL();
     }
     else

@@ -1161,7 +1161,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     Processes the awaiting delegates of an `kameloso.plugins.common.core.IRCPlugin`.
 
     Does not remove delegates after calling them. They are expected to remove
-    themvselves after finishing if they aren't awaiting any further events.
+    themselves after finishing if they aren't awaiting any further events.
 
     Params:
         plugin = The `kameloso.plugins.common.core.IRCPlugin` whose
@@ -1782,7 +1782,7 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case sslFailure:
-            // This can be tranient?
+            // This can be transient?
             // "Failed to establish SSL connection after successful connect (system lib)"
             logger.error("Failed to connect due to SSL setup/handshake failure: ",
                 Tint.log, attempt.error);

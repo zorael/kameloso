@@ -343,7 +343,7 @@ private import lu.traits : isStruct;
     Reads a configuration file and applies the settings therein to passed objects.
 
     More than one object can be supplied; invalid ones for which there are no
-    settings in the configration file will be silently ignored with no errors.
+    settings in the configuration file will be silently ignored with no errors.
     Orphan settings in the configuration file for which no appropriate
     object was passed will be saved to `invalidEntries`.
 
