@@ -974,7 +974,7 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
     (numeric `001`).
 
     Additionally performs post-connect routines (authenticates if not already done,
-    send-after-connect, joins channels, etc).
+    and send-after-connect).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service, const IRCEvent event)
@@ -1015,10 +1015,25 @@ void onWelcome(ConnectService service, const IRCEvent event)
 
         service.sentAfterConnect = true;
     }
+}
 
-    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
+
+// onEndOfMotd
+/++
+    Joins channels and prints some Twitch warnings on end of MOTD.
+
+    Do this then instead of on `IRCEvent.Type.RPL_WELCOME` for better timing,
+    and to avoid having the message drown in MOTD.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOFMotd(ConnectService service)
+{
+    if (service.joinedChannels) return;
+
+    if ((service.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
-        (service.state.server.daemon == IRCServer.Daemon.twitch)))
+        (service.state.server.daemon == IRCServer.Daemon.twitch))
     {
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
