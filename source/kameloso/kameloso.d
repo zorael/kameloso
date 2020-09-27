@@ -286,7 +286,6 @@ public:
         import kameloso.plugins.common : applyCustomSettings;
         import kameloso.plugins.common.core : IRCPluginState;
         import std.concurrency : thisTid;
-        import std.datetime.systime : Clock;
 
         teardownPlugins();
 
@@ -298,7 +297,6 @@ public:
         state.settings = settings;
         state.connSettings = connSettings;
         state.abort = abort;
-        immutable now = Clock.currTime.toUnixTime;
 
         // Instantiate all plugin classes found when introspecting the modules
         // listed in the `kameloso.plugins.PluginModules` AliasSeq.
