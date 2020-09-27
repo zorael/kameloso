@@ -498,16 +498,28 @@ package string datestamp()
 }
 
 
-// onWelcome
+// start
 /++
+    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
     Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
     to any active log files upon day change.
+
+    Do this in `.start` to have the Printer plugin always be minimially initialised,
+    since hot-disabling/-enabling it is kind of a valid use-case.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(PrinterPlugin plugin)
+void start(PrinterPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.terminal : isTTY;
     import core.thread : Fiber;
+
+    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
+
+    if (!isTTY)
+    {
+        // Not a TTY so replace our bell string with an empty one
+        plugin.bell = string.init;
+    }
 
     static long untilNextMidnight()
     {
@@ -724,24 +736,6 @@ unittest
         event.target.nickname = notUs;
         event.clearTargetNicknameIfUs(state);
         assert((event.target.nickname == notUs), event.target.nickname);
-    }
-}
-
-
-// start
-/++
-    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
- +/
-void start(PrinterPlugin plugin)
-{
-    import kameloso.terminal : isTTY;
-
-    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
-
-    if (!isTTY)
-    {
-        // Not a TTY so replace our bell string with an empty one
-        plugin.bell = string.init;
     }
 }
 
