@@ -1680,15 +1680,13 @@ void onMyInfo(TwitchBotPlugin plugin)
 
 // start
 /++
-    Starts the plugin after successful connect, rescheduling the next
-    `.periodical` to trigger after hardcoded 60 seconds.
+    Disables the bell if we're not running inside a terminal. Snapshots
+    `TwitchBotSettings.enableAPIFeatures` into `TwitchBotPlugin` so it can be
+    disabled without modifying settings.
  +/
 void start(TwitchBotPlugin plugin)
 {
     import kameloso.terminal : isTTY;
-    import std.datetime.systime : Clock;
-
-    plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
 
     if (!isTTY)
     {

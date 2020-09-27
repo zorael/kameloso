@@ -101,7 +101,6 @@ public:
         void delegate(const IRCEvent)[][] awaitingDelegates;
         ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is a struct in `kameloso.thread`
         ScheduledDelegate[] scheduledDelegates;  // Ditto
-        long nextPeriodical;
         long nextFiberTimestamp;
         void updateScheule();
         bool botUpdated;
@@ -182,11 +181,6 @@ public:
 
     * `kameloso.plugins.common.core.IRCPluginState.scheduledDelegates` is likewise an
         array of delegates, to be triggered at a later point in time.
-
-    * `kameloso.plugins.common.core.IRCPluginState.nextPeriodical` is a UNIX timestamp
-        of when the `periodical(IRCPlugin)` function should be run next. It is a
-        way of automating occasional tasks, in our case the saving of the seen
-        users to disk.
 
     * `kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp` is also a
         UNIX timestamp, here of when the next `kameloso.thread.ScheduledFiber` in

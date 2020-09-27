@@ -547,19 +547,6 @@ void onWelcome(PrinterPlugin plugin)
 }
 
 
-// initialise
-/++
-    Set the next periodical timestamp to midnight immediately after plugin construction.
- +/
-void initialise(PrinterPlugin plugin)
-{
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
-
-    plugin.state.nextPeriodical = Clock.currTime.nextMidnight.toUnixTime;
-}
-
-
 // initResources
 /++
     Ensures that there is a log directory.
