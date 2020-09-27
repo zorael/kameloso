@@ -107,7 +107,7 @@ public:
     "$command [target user]")
 void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : idOf, nameOf;
+    import kameloso.plugins.common.base : idOf, nameOf;
     import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;
@@ -503,7 +503,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
     }
     else
     {
-        import kameloso.plugins.common : nameOf;
+        import kameloso.plugins.common.base : nameOf;
         immutable streamer = plugin.nameOf(event.channel[1..$]);
     }
 
@@ -592,7 +592,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         }
         else
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
             immutable streamer = plugin.nameOf(event.channel[1..$]);
         }
 
@@ -727,7 +727,7 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     }
     else
     {
-        import kameloso.plugins.common : nameOf;
+        import kameloso.plugins.common.base : nameOf;
 
         enum pattern = "%s streamed for %s.";
 
@@ -768,7 +768,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
         void passToWebtitles(string[] urls)
         {
-            import kameloso.plugins.common : EventURLs;
+            import kameloso.plugins.common.base : EventURLs;
             import kameloso.thread : ThreadMessage, busMessage;
             import std.concurrency : send;
 
@@ -1131,7 +1131,7 @@ version(TwitchAPIFeatures)
 @Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
 void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : idOf;
+    import kameloso.plugins.common.base : idOf;
     import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;

@@ -136,7 +136,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
 
             if ((slice == event.channel[1..$]) ||
                 (slice == plugin.nameOf(event.channel[1..$])))
@@ -187,7 +187,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         void onSuccess(const IRCUser replyUser)
         {
-            import kameloso.plugins.common : idOf;
+            import kameloso.plugins.common.base : idOf;
 
             immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 

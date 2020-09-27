@@ -120,7 +120,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     {
         void onSuccess(const IRCUser user)
         {
-            import kameloso.plugins.common : idOf, nameOf;
+            import kameloso.plugins.common.base : idOf, nameOf;
 
             immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
 
@@ -308,7 +308,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common : nameOf;
+    import kameloso.plugins.common.base : nameOf;
     import dialect.common : toLowerCase;
     import lu.string : SplitResults, splitInto;
     import std.format : format;

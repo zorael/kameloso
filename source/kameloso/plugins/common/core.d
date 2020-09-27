@@ -795,7 +795,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
                 else*/ if (result == FilterResult.whois)
                 {
-                    import kameloso.plugins.common : enqueue;
+                    import kameloso.plugins.common.base : enqueue;
                     import std.traits : fullyQualifiedName;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);

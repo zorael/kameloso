@@ -2658,7 +2658,7 @@ int initBot(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Initialise plugins outside the loop once, for the error messages
-    import kameloso.plugins.common : IRCPluginSettingsException;
+    import kameloso.plugins.common.base : IRCPluginSettingsException;
     import std.conv : ConvException;
 
     try

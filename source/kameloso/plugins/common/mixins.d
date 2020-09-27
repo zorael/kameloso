@@ -876,7 +876,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
      +/
     void repeat(Replay replay)
     {
-        import kameloso.plugins.common : repeat;
+        import kameloso.plugins.common.base : repeat;
         context.repeat(&repeaterDelegate, replay);
     }
 

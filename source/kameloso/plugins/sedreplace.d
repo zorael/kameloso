@@ -465,7 +465,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(SedReplacePlugin plugin)
 {
-    import kameloso.plugins.common : delay;
+    import kameloso.plugins.common.delayawait : delay;
     import core.thread : Fiber;
 
     void prevlineClearDg()

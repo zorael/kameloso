@@ -684,7 +684,7 @@ void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable c
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    import kameloso.plugins.common : EventURLs;
+    import kameloso.plugins.common.base : EventURLs;
     import kameloso.thread : BusMessage;
 
     auto message = cast(BusMessage!EventURLs)content;
