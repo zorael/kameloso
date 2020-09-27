@@ -1312,7 +1312,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     Has to be done at MOTD, as we only know whether we're on Twitch after
     RPL_MYINFO or so.
  +/
-@Chainable  // so onEndOfMOTDPeriodicalSetup fires
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMOTD(TwitchBotPlugin plugin)
@@ -1566,7 +1565,7 @@ void initResources(TwitchBotPlugin plugin)
 }
 
 
-// onEndOfMOTDPeriodicalSetup
+// onMyInfo
 /++
     Sets up a Fiber to periodically call timer `core.thread.fiber.Fiber`s with a
     periodicity of `TwitchBotPlugin.timerPeriodicity`.
@@ -1574,9 +1573,8 @@ void initResources(TwitchBotPlugin plugin)
     Cannot be done on `dialect.defs.IRCEvent.Type.RPL_WELCOME` as the server
     daemon isn't known by then.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMOTDPeriodicalSetup(TwitchBotPlugin plugin)
+@(IRCEvent.Type.RPL_MYINFO)
+void onMyInfo(TwitchBotPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import core.thread : Fiber;
