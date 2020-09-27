@@ -354,15 +354,6 @@ public:
             {
                 theseInvalidEntries.meldInto(invalidEntries);
             }
-
-            if (plugin.state.nextPeriodical == 0)
-            {
-                import kameloso.constants : Timeout;
-
-                // Schedule first periodical in `Timeout.initialPeriodical` for
-                // plugins that don't set a timestamp themselves in `initialise`
-                plugin.state.nextPeriodical = now + Timeout.initialPeriodical;
-            }
         }
 
         immutable allCustomSuccess = plugins.applyCustomSettings(customSettings, settings);
