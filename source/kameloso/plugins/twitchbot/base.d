@@ -909,7 +909,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
-    void dg()
+    void followageDg()
     {
         string slice = event.content.stripped;  // mutable
         immutable nameSpecified = (slice.length > 0);
@@ -1056,8 +1056,8 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
         }
     }
 
-    Fiber fiber = new Fiber(&dg, 32_768);
-    fiber.call();
+    Fiber followageFiber = new Fiber(&followageDg, 32_768);
+    followageFiber.call();
 }
 
 
