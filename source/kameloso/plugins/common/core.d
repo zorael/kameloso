@@ -114,12 +114,6 @@ abstract class IRCPlugin
      +/
     Tuple!(Description, "desc", bool, "hidden")[string] commands() pure nothrow @property const;
 
-    /++
-        Call a plugin to perform its periodic tasks, iff the time is equal to or
-        exceeding `nextPeriodical`.
-     +/
-    void periodically(const long) @system;
-
     /// Reloads the plugin, where such is applicable.
     void reload() @system;
 
@@ -801,7 +795,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
                 else*/ if (result == FilterResult.whois)
                 {
-                    import kameloso.plugins.common : enqueue;
+                    import kameloso.plugins.common.base : enqueue;
                     import std.traits : fullyQualifiedName;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);
@@ -1537,42 +1531,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     }
 
 
-    // periodically
-    /++
-        Calls `.periodically` on a plugin if the internal private timestamp says
-        the interval since the last call has passed, letting the plugin do
-        maintenance tasks.
-
-        Params:
-            now = The current time expressed in UNIX time.
-     +/
-    override public void periodically(const long now) @system
-    {
-        static if (__traits(compiles, .periodically))
-        {
-            if (now >= state.nextPeriodical)
-            {
-                import lu.traits : TakesParams;
-
-                static if (TakesParams!(.periodically, typeof(this)))
-                {
-                    .periodically(this);
-                }
-                else static if (TakesParams!(.periodically, typeof(this), long))
-                {
-                    .periodically(this, now);
-                }
-                else
-                {
-                    import std.format : format;
-                    static assert(0, "`%s.periodically` has an unsupported function signature: `%s`"
-                        .format(module_, typeof(.periodically).stringof));
-                }
-            }
-        }
-    }
-
-
     // reload
     /++
         Reloads the plugin, where such makes sense.
@@ -1990,9 +1948,6 @@ public:
 
     /// The list of scheduled delegate, UNIX time tuples.
     ScheduledDelegate[] scheduledDelegates;
-
-    /// The next (UNIX time) timestamp at which to call `periodically`.
-    long nextPeriodical;
 
     /++
         The UNIX timestamp of when the next scheduled

@@ -380,8 +380,8 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber fiber = new Fiber(&delayedJoinDg, 32_768);
-    delay(service, fiber, service.authenticationGracePeriod);
+    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, 32_768);
+    delay(service, delayedJoinFiber, service.authenticationGracePeriod);
 }
 
 

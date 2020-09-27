@@ -643,13 +643,7 @@ Next mainLoop(ref Kameloso instance)
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
         immutable nowInHnsecs = Clock.currStdTime;
-
         historyEntry.stopTime = nowInUnix;
-
-        foreach (plugin; instance.plugins)
-        {
-            plugin.periodically(nowInUnix);
-        }
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
@@ -2664,7 +2658,7 @@ int initBot(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Initialise plugins outside the loop once, for the error messages
-    import kameloso.plugins.common : IRCPluginSettingsException;
+    import kameloso.plugins.common.base : IRCPluginSettingsException;
     import std.conv : ConvException;
 
     try

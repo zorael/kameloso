@@ -408,13 +408,12 @@ void onEndOfNames(ChanQueriesService service)
 }
 
 
-// onEndOfMOTD
+// onMyInfo
 /++
     After successful connection, start a delayed channel query on all channels.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMOTD(ChanQueriesService service)
+@(IRCEvent.Type.RPL_MYINFO)
+void onMyInfo(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;

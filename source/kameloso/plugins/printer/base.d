@@ -128,7 +128,7 @@ public:
     Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
@@ -400,7 +400,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     See_Also:
         commitAllLogs
  +/
-@(Chainable)
+@Chainable
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
@@ -498,44 +498,64 @@ package string datestamp()
 }
 
 
-// periodically
+// start
 /++
-    Prints the date in `YYYY-MM-DD` format to the screen and to any active log
-    files upon day change.
+    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
+    to any active log files upon day change.
+
+    Do this in `.start` to have the Printer plugin always be minimially initialised,
+    since hot-disabling/-enabling it is kind of a valid use-case.
  +/
-void periodically(PrinterPlugin plugin)
+void start(PrinterPlugin plugin)
 {
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.terminal : isTTY;
+    import core.thread : Fiber;
 
-    // Schedule the next run for the following midnight.
-    plugin.state.nextPeriodical = Clock.currTime.nextMidnight.toUnixTime;
+    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
 
-    if (!plugin.isEnabled) return;
-
-    if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+    if (!isTTY)
     {
-        logger.info(datestamp);
+        // Not a TTY so replace our bell string with an empty one
+        plugin.bell = string.init;
     }
 
-    if (plugin.printerSettings.logs)
+    static long untilNextMidnight()
     {
-        plugin.commitAllLogs();
-        plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime;
+        immutable nowInUnix = now.toUnixTime;
+        immutable nextMidnight = now.nextMidnight.toUnixTime;
+
+        return (nextMidnight - nowInUnix);
     }
-}
 
+    void daybreakDg()
+    {
+        while (true)
+        {
+            if (plugin.isEnabled)
+            {
+                if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+                {
+                    logger.info(datestamp);
+                }
 
-// initialise
-/++
-    Set the next periodical timestamp to midnight immediately after plugin construction.
- +/
-void initialise(PrinterPlugin plugin)
-{
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
+                if (plugin.printerSettings.logs)
+                {
+                    plugin.commitAllLogs();
+                    plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+                }
+            }
 
-    plugin.state.nextPeriodical = Clock.currTime.nextMidnight.toUnixTime;
+            delay(plugin, untilNextMidnight, No.msecs, Yes.yield);
+        }
+    }
+
+    Fiber daybreakFiber = new Fiber(&daybreakDg, 32_768);
+    delay(plugin, daybreakFiber, untilNextMidnight);
 }
 
 
@@ -716,24 +736,6 @@ unittest
         event.target.nickname = notUs;
         event.clearTargetNicknameIfUs(state);
         assert((event.target.nickname == notUs), event.target.nickname);
-    }
-}
-
-
-// start
-/++
-    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
- +/
-void start(PrinterPlugin plugin)
-{
-    import kameloso.terminal : isTTY;
-
-    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
-
-    if (!isTTY)
-    {
-        // Not a TTY so replace our bell string with an empty one
-        plugin.bell = string.init;
     }
 }
 

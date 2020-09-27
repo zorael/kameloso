@@ -39,7 +39,7 @@ import dialect.defs;
 
     Responses are stored in `OnelinersPlugin.onelinersByChannel`.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
@@ -64,7 +64,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 
         if (const response = key in *channelOneliners)
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;

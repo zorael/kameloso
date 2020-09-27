@@ -94,7 +94,7 @@ struct TitleLookupRequest
     It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
     try to look up every URL returned by it.
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
@@ -684,7 +684,7 @@ void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable c
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    import kameloso.plugins.common : EventURLs;
+    import kameloso.plugins.common.base : EventURLs;
     import kameloso.thread : BusMessage;
 
     auto message = cast(BusMessage!EventURLs)content;

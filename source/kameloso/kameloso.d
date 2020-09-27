@@ -283,10 +283,9 @@ public:
         out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common : applyCustomSettings;
+        import kameloso.plugins.common.base : applyCustomSettings;
         import kameloso.plugins.common.core : IRCPluginState;
         import std.concurrency : thisTid;
-        import std.datetime.systime : Clock;
 
         teardownPlugins();
 
@@ -298,7 +297,6 @@ public:
         state.settings = settings;
         state.connSettings = connSettings;
         state.abort = abort;
-        immutable now = Clock.currTime.toUnixTime;
 
         // Instantiate all plugin classes found when introspecting the modules
         // listed in the `kameloso.plugins.PluginModules` AliasSeq.
@@ -354,22 +352,13 @@ public:
             {
                 theseInvalidEntries.meldInto(invalidEntries);
             }
-
-            if (plugin.state.nextPeriodical == 0)
-            {
-                import kameloso.constants : Timeout;
-
-                // Schedule first periodical in `Timeout.initialPeriodical` for
-                // plugins that don't set a timestamp themselves in `initialise`
-                plugin.state.nextPeriodical = now + Timeout.initialPeriodical;
-            }
         }
 
         immutable allCustomSuccess = plugins.applyCustomSettings(customSettings, settings);
 
         if (!allCustomSuccess)
         {
-            import kameloso.plugins.common : IRCPluginSettingsException;
+            import kameloso.plugins.common.base : IRCPluginSettingsException;
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
     }

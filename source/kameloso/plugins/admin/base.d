@@ -87,7 +87,7 @@ public:
     code `unittest` blocks.
  +/
 debug
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)

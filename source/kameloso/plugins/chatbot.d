@@ -256,7 +256,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
     - http://bash.org/?4281
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
@@ -295,7 +295,7 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
     // Should dance. Stagger it a bit with a second in between.
     enum secondsBetweenDances = 1;
 
-    void dg()
+    void danceDg()
     {
         import kameloso.plugins.common.delayawait : delay;
         import kameloso.messaging : emote;
@@ -309,8 +309,8 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
         emote(plugin.state, event.channel, "dances :D/-<");
     }
 
-    Fiber fiber = new Fiber(&dg, 32_768);
-    fiber.call();
+    Fiber danceFiber = new Fiber(&danceDg, 32_768);
+    danceFiber.call();
 }
 
 

@@ -155,14 +155,6 @@ enum Timeout
     whoisRetry = 300,
 
     /++
-        How long to wait before calling plugins' `periodical` for the first time.
-
-        Since it is meant for maintenance and cleanup tasks we can hold on a while
-        before calling it the first time.
-     +/
-    initialPeriodical = 3600,
-
-    /++
         How long to wait after encountering an error when reading from the server,
         before trying anew.
 
