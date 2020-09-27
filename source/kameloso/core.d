@@ -622,7 +622,7 @@ Next mainLoop(ref Kameloso instance)
     // that a summary gets printed.
     instance.wantLiveSummary = false;
 
-    while (next == Next.continue_)
+    do
     {
         import core.thread : Fiber;
 
@@ -800,6 +800,7 @@ Next mainLoop(ref Kameloso instance)
             instance.conn.socket.blocking = true;
         }
     }
+    while (next == Next.continue_);
 
     return next;
 }
