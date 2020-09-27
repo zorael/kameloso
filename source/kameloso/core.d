@@ -643,13 +643,7 @@ Next mainLoop(ref Kameloso instance)
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
         immutable nowInHnsecs = Clock.currStdTime;
-
         historyEntry.stopTime = nowInUnix;
-
-        foreach (plugin; instance.plugins)
-        {
-            plugin.periodically(nowInUnix);
-        }
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
