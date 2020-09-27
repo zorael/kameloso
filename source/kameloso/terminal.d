@@ -169,7 +169,11 @@ else version(Windows)
 }
 else
 {
-    static assert(0, "Unknown platform");
+    /// Ditto
+    bool isTTY() //@safe
+    {
+        return true;
+    }
 }
 
 
