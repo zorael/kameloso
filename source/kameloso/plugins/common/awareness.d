@@ -1322,6 +1322,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(Chainable)
     @(IRCEvent.Type.CHAN)
     @(IRCEvent.Type.JOIN)
+    @(IRCEvent.Type.SELFJOIN)
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.EMOTE)
     @(IRCEvent.Type.TWITCH_SUB)
