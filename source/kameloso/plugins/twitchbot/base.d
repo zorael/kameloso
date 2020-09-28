@@ -498,70 +498,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
 
-    version(TwitchAPIFeatures)
-    {
-        immutable streamer = room.broadcasterDisplayName;
-    }
-    else
-    {
-        import kameloso.plugins.common.base : nameOf;
-        immutable streamer = plugin.nameOf(event.channel[1..$]);
-    }
-
-    if (room.broadcast.active)
-    {
-        import core.time : msecs;
-        import std.datetime.systime : Clock, SysTime;
-        import std.format : format;
-
-        // Remove fractional seconds from the current timestamp
-        auto now = Clock.currTime;
-        now.fracSecs = 0.msecs;
-
-        immutable delta = now - SysTime.fromUnixTime(room.broadcast.start);
-        bool sent;
-
-        version(TwitchAPIFeatures)
-        {
-            if (room.broadcast.chattersSeen.length)
-            {
-                enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
-                    "(max at any one time has so far been %d viewers)";
-
-                chan(plugin.state, event.channel, pattern.format(streamer, delta,
-                    room.broadcast.chattersSeen.length,
-                    room.broadcast.maxConcurrentChatters));
-                sent = true;
-            }
-        }
-
-        if (!sent)
-        {
-            chan(plugin.state, event.channel, "%s has been live for %s."
-                .format(streamer, delta));
-        }
-    }
-    else
-    {
-        if (room.broadcast.stop)
-        {
-            import std.datetime.systime : SysTime;
-            import std.format : format;
-            import core.time : msecs;
-
-            auto end = SysTime.fromUnixTime(room.broadcast.stop);
-            end.fracSecs = 0.msecs;
-            immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
-
-            chan(plugin.state, event.channel, ("%s is currently not streaming. " ~
-                "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.")
-                .format(streamer, end.year, end.month, end.day, end.hour, end.minute, delta));
-        }
-        else
-        {
-            chan(plugin.state, event.channel, streamer ~ " is currently not streaming.");
-        }
-    }
+    reportStreamTime(plugin, *room);
 }
 
 
@@ -679,7 +616,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     room.broadcast.stop = event.time;
 
     chan(plugin.state, event.channel, "Broadcast ended!");
-    plugin.reportStopTime(event);
+    reportStreamTime(plugin, *room, Yes.justNowEnded);
 }
 
 
@@ -698,42 +635,116 @@ void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// reportStopTime
+// reportStreamTime
 /++
-    Reports how long the recently ongoing, now ended broadcast lasted.
+    Reports how long a broadcast has currently been ongoing, up until now lasted,
+    or previously lasted.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        room = The `TwitchBotPlugin.Room` of the channel.
+        justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
-in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
+void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
+    const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
+    import kameloso.common : timeSince;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
 
-    const room = event.channel in plugin.rooms;
-    assert(room, "Tried to report broadcast stop time on a nonexistent room");
-
-    auto end = SysTime.fromUnixTime(room.broadcast.stop);
-    end.fracSecs = 0.msecs;
-    immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
-
     version(TwitchAPIFeatures)
     {
-        enum pattern = "%s streamed for %s, with %d unique viewers. " ~
-            "(max at any one time was %d viewers)";
-
         immutable streamer = room.broadcasterDisplayName;
-        chan(plugin.state, event.channel, pattern.format(streamer, delta,
-            room.broadcast.chattersSeen.length,
-            room.broadcast.maxConcurrentChatters));
     }
     else
     {
         import kameloso.plugins.common.base : nameOf;
+        immutable streamer = plugin.nameOf(room.name[1..$]);
+    }
 
-        enum pattern = "%s streamed for %s.";
+    if (room.broadcast.active)
+    {
+        assert(!justNowEnded, "Tried to report ended stream time on an active stream");
 
-        immutable streamer = plugin.nameOf(event.channel[1..$]);
-        chan(plugin.state, event.channel, pattern.format(streamer, delta));
+        // Remove fractional seconds from the current timestamp
+        auto now = Clock.currTime;
+        now.fracSecs = 0.msecs;
+        immutable delta = now - SysTime.fromUnixTime(room.broadcast.start);
+        immutable timestring = timeSince(delta);
+        bool sent;
+
+        version(TwitchAPIFeatures)
+        {
+            if (room.broadcast.chattersSeen.length)
+            {
+                enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
+                    "(max at any one time has so far been %d viewers)";
+
+                chan(plugin.state, room.name, pattern.format(streamer, timestring,
+                    room.broadcast.chattersSeen.length,
+                    room.broadcast.maxConcurrentChatters));
+                sent = true;
+            }
+        }
+
+        if (!sent)
+        {
+            chan(plugin.state, room.name, "%s has been live for %s."
+                .format(streamer, timestring));
+        }
+    }
+    else
+    {
+        if (room.broadcast.stop)
+        {
+            // There was at least one stream this session (we have a stop timestamp)
+            auto end = SysTime.fromUnixTime(room.broadcast.stop);
+            end.fracSecs = 0.msecs;
+            immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
+            immutable timestring = timeSince(delta);
+
+            if (justNowEnded)
+            {
+                bool sent;
+
+                version(TwitchAPIFeatures)
+                {
+                    if (room.broadcast.chattersSeen.length)
+                    {
+                        enum pattern = "%s streamed for %s, with %d unique viewers. " ~
+                            "(max at any one time was %d viewers)";
+
+                        chan(plugin.state, room.name, pattern.format(streamer, timestring,
+                            room.broadcast.chattersSeen.length,
+                            room.broadcast.maxConcurrentChatters));
+                        sent = true;
+                    }
+                }
+
+                if (!sent)
+                {
+                    enum pattern = "%s streamed for %s.";
+                    chan(plugin.state, room.name, pattern.format(streamer, timestring));
+                }
+            }
+            else
+            {
+                enum pattern = "%s is currently not streaming. " ~
+                    "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.";
+
+                chan(plugin.state, room.name, pattern.format(streamer,
+                    end.year, end.month, end.day, end.hour, end.minute, timestring));
+            }
+        }
+        else
+        {
+            assert(!justNowEnded, "Tried to report stream time of a just ended stream " ~
+                "but no stop time had been recorded");
+
+            // No streams this session
+            chan(plugin.state, room.name, streamer ~ " is currently not streaming.");
+        }
     }
 }
 
