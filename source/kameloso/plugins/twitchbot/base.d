@@ -230,6 +230,7 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
     if (!timerDefs || !timerDefs.length) return;
 
     auto room = channelName in plugin.rooms;
+    room.name = channelName;
 
     foreach (const timerDef; *timerDefs)
     {
