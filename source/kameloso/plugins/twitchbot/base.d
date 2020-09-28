@@ -1774,6 +1774,9 @@ package:
         /// Toggle of whether or not the bot should operate in this channel.
         bool enabled = true;
 
+        /// Name of the channel.
+        string name;
+
         /// Struct instance representing the current broadcast.
         Broadcast broadcast;
 
