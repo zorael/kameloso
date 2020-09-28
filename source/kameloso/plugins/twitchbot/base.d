@@ -539,7 +539,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     room.broadcast = typeof(room.broadcast).init;
-    room.broadcast.start = event.time;
+    room.broadcast.startTime = event.time;
     room.broadcast.active = true;
     chan(plugin.state, event.channel, "Broadcast start registered!");
 
@@ -613,7 +613,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     room.broadcast.active = false;
-    room.broadcast.stop = event.time;
+    room.broadcast.stopTime = event.time;
 
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
@@ -670,7 +670,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
         // Remove fractional seconds from the current timestamp
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
-        immutable delta = now - SysTime.fromUnixTime(room.broadcast.start);
+        immutable delta = now - SysTime.fromUnixTime(room.broadcast.startTime);
         immutable timestring = timeSince(delta);
         bool sent;
 
@@ -696,12 +696,12 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
     }
     else
     {
-        if (room.broadcast.stop)
+        if (room.broadcast.stopTime)
         {
             // There was at least one stream this session (we have a stop timestamp)
-            auto end = SysTime.fromUnixTime(room.broadcast.stop);
+            auto end = SysTime.fromUnixTime(room.broadcast.stopTime);
             end.fracSecs = 0.msecs;
-            immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
+            immutable delta = end - SysTime.fromUnixTime(room.broadcast.startTime);
             immutable timestring = timeSince(delta);
 
             if (justNowEnded)
@@ -1761,10 +1761,10 @@ package:
             bool active;
 
             /// UNIX timestamp of when broadcasting started.
-            long start;
+            long startTime;
 
             /// UNIX timestamp of when broadcasting ended.
-            long stop;
+            long stopTime;
 
             version(TwitchAPIFeatures)
             {
