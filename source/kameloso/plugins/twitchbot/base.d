@@ -223,14 +223,13 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.rooms) return;
 
-    plugin.rooms[channelName] = TwitchBotPlugin.Room.init;
+    plugin.rooms[channelName] = TwitchBotPlugin.Room(channelName);
 
     // Apply the timer definitions we have stored
     const timerDefs = channelName in plugin.timerDefsByChannel;
     if (!timerDefs || !timerDefs.length) return;
 
     auto room = channelName in plugin.rooms;
-    room.name = channelName;
 
     foreach (const timerDef; *timerDefs)
     {
@@ -1781,6 +1780,12 @@ package:
         {
             long timestamp;  /// When this ban was triggered.
             uint offense;  /// How many consecutive bans have been fired.
+        }
+
+        /// Constructor taking a string (channel) name.
+        this(const string name) @safe pure nothrow @nogc
+        {
+            this.name = name;
         }
 
         /// Toggle of whether or not the bot should operate in this channel.
