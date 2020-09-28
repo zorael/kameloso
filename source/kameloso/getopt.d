@@ -274,18 +274,15 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             `readConfigInto`  call. Then call getopt on the rest.
             Include "c|config" in the normal getopt to have it automatically
             included in the --help text.
-
-            .dup the args array so we preserve --monochrome for later.
          +/
 
-        // Can be const
+        // Results can be const
         auto argsDup = args.dup;
         const configFileResults = getopt(argsDup,
             config.caseSensitive,
             config.bundling,
             config.passThrough,
             "c|config", &settings.configFile,
-            "monochrome", &settings.monochrome,
             "version", &shouldShowVersion,
         );
 
@@ -296,12 +293,28 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             return Next.returnSuccess;
         }
 
-        // Set Tint.monochrome manually so setSyntax below is properly (un-)tinted
-        Tint.monochrome = settings.monochrome;
+        import kameloso.terminal : isTTY;
 
         // Ignore invalid/missing entries here, report them when initialising plugins
         settings.configFile.readConfigInto(parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
+
+        if (!isTTY)
+        {
+            // Non-TTYs (eg. pagers) can't show colours
+            instance.settings.monochrome = true;
+        }
+
+        // Get `--monochrome` again; let it overwrite what isTTY and readConfigInto set it to
+        cast(void)getopt(argsDup,
+            config.caseSensitive,
+            config.bundling,
+            config.passThrough,
+            "monochrome", &settings.monochrome
+        );
+
+        // Set Tint.monochrome manually so callGetopt results below is properly (un-)tinted
+        Tint.monochrome = settings.monochrome;
 
         /++
             Call getopt in a nested function so we can call it both to merely
