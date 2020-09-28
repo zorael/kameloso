@@ -252,9 +252,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     {
         import kameloso.common : Tint, printVersionInfo;
         import kameloso.config : applyDefaults, readConfigInto;
-        import std.format : format;
         import std.getopt : arraySep, config, getopt;
-        import std.stdio : writeln;
 
         bool shouldWriteConfig;
         bool shouldOpenEditor;
@@ -323,6 +321,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
             import std.conv : to;
+            import std.format : format;
             import std.random : uniform;
             import std.range : repeat;
 
@@ -568,6 +567,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
         if (shouldWriteConfig || shouldOpenEditor)
         {
+            import std.stdio : writeln;
+
             // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
             writeln();  // pad slightly, for cosmetics
