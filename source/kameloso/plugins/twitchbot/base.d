@@ -200,7 +200,7 @@ void onImportant(TwitchBotPlugin plugin)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
-package void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
+void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
 }
