@@ -7,5 +7,8 @@ module kameloso.plugins.core;
 
 public import kameloso.plugins.common.core;
 
-deprecated("Directly import from `kameloso.plugins.common.core` instead")
-alias IRCPlugin = kameloso.plugins.common.core.IRCPlugin;
+deprecated("Import from `kameloso.plugins.common.core` directly instead")
+{
+    /// Deprecated alias to `kameloso.plugins.common.core.IRCPlugin`.
+    alias IRCPlugin = kameloso.plugins.common.core.IRCPlugin;
+}
