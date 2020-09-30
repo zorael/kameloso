@@ -808,6 +808,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         }
     }
 
+    TwitchBotPlugin.Room* room;
     bool allowed;
 
     with (IRCUser.Class)
@@ -816,8 +817,14 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case unset:
     case blacklist:
     case anyone:
-        auto room = event.channel in plugin.rooms;
-        assert(room, "Tried to parse a link in a nonexistent room");
+        room = event.channel in plugin.rooms;
+
+        if (!room)
+        {
+            // Race...
+            plugin.handleSelfjoin(event.channel);
+            room = event.channel in plugin.rooms;
+        }
 
         if (const permitTimestamp = event.sender.nickname in room.linkPermits)
         {
@@ -859,8 +866,17 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         "Go cool off.",
     ];
 
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to get bans of a nonexistent room");
+    /*if (!room)
+    {
+        room = event.channel in plugin.rooms;
+
+        if (!room)
+        {
+            // Race...
+            plugin.handleSelfjoin(event.channel);
+            room = event.channel in plugin.rooms;
+        }
+    }*/
 
     auto ban = event.sender.nickname in room.linkBans;
 
@@ -1239,7 +1255,13 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     if (event.type == IRCEvent.Type.QUERY) return;
 
     auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to process `onAnyMessage` on a nonexistent room");
+
+    if (!room)
+    {
+        // Race...
+        plugin.handleSelfjoin(event.channel);
+        room = event.channel in plugin.rooms;
+    }
 
     ++room.messageCount;
 
