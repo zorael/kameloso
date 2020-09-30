@@ -3,10 +3,10 @@
     as well as managing authentication to services. It also manages responding
     to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
 
-    The actual connection logic is in the `lu.net` dependency module.
+    The actual connection logic is in the `kameloso.net` dependency module.
 
     See_Also:
-        https://github.com/zorael/lu/blob/master/source/lu/net.d
+        kameloso.net
  +/
 module kameloso.plugins.connect;
 

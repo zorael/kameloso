@@ -20,11 +20,11 @@ struct Kameloso
 private:
     import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
+    import kameloso.net : Connection;
     import kameloso.plugins.common.core : IRCPlugin;
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
-    import lu.net : Connection;
     import std.datetime.systime : SysTime;
 
 
@@ -60,7 +60,7 @@ private:
 
 public:
     /++
-        The `lu.net.Connection` that houses and wraps the socket we use to connect
+        The `kameloso.net.Connection` that houses and wraps the socket we use to connect
         to, write to and read from the server.
      +/
     Connection conn;

@@ -576,7 +576,7 @@ void messageFiber(ref Kameloso instance)
     This loops creates a `std.concurrency.Generator` `core.thread.fiber.Fiber` to loop
     over the connected `std.socket.Socket`.
 
-    Full lines are stored in `lu.net.ListenAttempt`s, which are
+    Full lines are stored in `kameloso.net.ListenAttempt`s, which are
     yielded in the `std.concurrency.Generator` to be caught here, consequently
     parsed into `dialect.defs.IRCEvent`s, and then dispatched to all plugins.
 
@@ -593,7 +593,7 @@ void messageFiber(ref Kameloso instance)
 Next mainLoop(ref Kameloso instance)
 {
     import kameloso.constants : Timeout;
-    import lu.net : DefaultTimeout, ListenAttempt, listenFiber;
+    import kameloso.net : DefaultTimeout, ListenAttempt, listenFiber;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
 
@@ -851,17 +851,17 @@ double sendLines(ref Kameloso instance)
 }
 
 
-import lu.net : ListenAttempt;
+import kameloso.net : ListenAttempt;
 
 // listenAttemptToNext
 /++
-    Translates the `lu.net.ListenAttempt.State` received from a
+    Translates the `kameloso.net.ListenAttempt.State` received from a
     `std.concurrency.Generator` into a `lu.common.Next`, while also providing
     warnings and error messages.
 
     Params:
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
-        attempt = The `lu.net.ListenAttempt` to map the `.state` value of.
+        attempt = The `kameloso.net.ListenAttempt` to map the `.state` value of.
 
     Returns:
         A `lu.common.Next` describing what action `mainLoop` should take next.
@@ -1667,8 +1667,8 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
 // tryConnect
 /++
     Tries to connect to the IPs in `kameloso.kameloso.Kameloso.conn.ips` by
-    leveraging `lu.net.connectFiber`, reacting on the
-    `lu.net.ConnectAttempt`s it yields to provide feedback to the user.
+    leveraging `kameloso.net.connectFiber`, reacting on the
+    `kameloso.net.ConnectAttempt`s it yields to provide feedback to the user.
 
     Params:
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
@@ -1682,7 +1682,7 @@ Next tryConnect(ref Kameloso instance)
 {
     import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
     import kameloso.thread : interruptibleSleep;
-    import lu.net : ConnectionAttempt, connectFiber;
+    import kameloso.net : ConnectionAttempt, connectFiber;
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
@@ -1801,8 +1801,8 @@ Next tryConnect(ref Kameloso instance)
 // tryResolve
 /++
     Tries to resolve the address in `instance.parser.server` to IPs, by
-    leveraging `lu.net.resolveFiber`, reacting on the
-    `lu.net.ResolveAttempt`s it yields to provide feedback to the user.
+    leveraging `kameloso.net.resolveFiber`, reacting on the
+    `kameloso.net.ResolveAttempt`s it yields to provide feedback to the user.
 
     Params:
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
@@ -1815,7 +1815,7 @@ Next tryConnect(ref Kameloso instance)
 Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 {
     import kameloso.constants : Timeout;
-    import lu.net : ResolveAttempt, resolveFiber;
+    import kameloso.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
 
     enum defaultResolveAttempts = 15;
