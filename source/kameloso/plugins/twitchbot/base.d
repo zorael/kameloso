@@ -1794,6 +1794,9 @@ package:
 
                 /// How many users were max seen as in the channel at the same time.
                 int maxConcurrentChatters;
+
+                /// How many users visited the channel during the last stream.
+                size_t numViewersLastStream;
             }
         }
 
