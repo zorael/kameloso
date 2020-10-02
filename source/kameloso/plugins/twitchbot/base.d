@@ -613,6 +613,8 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 
     room.broadcast.active = false;
     room.broadcast.stopTime = event.time;
+    room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
+    room.broadcast.chattersSeen = typeof(room.broadcast.chattersSeen).init;
 
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
@@ -709,13 +711,13 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
 
                 version(TwitchAPIFeatures)
                 {
-                    if (room.broadcast.chattersSeen.length)
+                    if (room.broadcast.numViewersLastStream)
                     {
                         enum pattern = "%s streamed for %s, with %d unique viewers. " ~
                             "(max at any one time was %d viewers)";
 
                         chan(plugin.state, room.name, pattern.format(streamer, timestring,
-                            room.broadcast.chattersSeen.length,
+                            room.broadcast.numViewersLastStream,
                             room.broadcast.maxConcurrentChatters));
                         sent = true;
                     }
