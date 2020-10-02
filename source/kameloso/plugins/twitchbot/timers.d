@@ -257,7 +257,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
             try
             {
-                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
+                immutable i = slice.stripped.to!ptrdiff_t - 1;
 
                 if ((i >= 0) && (i < room.timers.length))
                 {

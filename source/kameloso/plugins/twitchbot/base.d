@@ -227,13 +227,15 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 
     // Apply the timer definitions we have stored
     const timerDefs = channelName in plugin.timerDefsByChannel;
-    if (!timerDefs || !timerDefs.length) return;
 
-    auto room = channelName in plugin.rooms;
-
-    foreach (const timerDef; *timerDefs)
+    if (timerDefs && timerDefs.length)
     {
-        room.timers ~= plugin.createTimerFiber(timerDef, channelName);
+        auto room = channelName in plugin.rooms;
+
+        foreach (const timerDef; *timerDefs)
+        {
+            room.timers ~= plugin.createTimerFiber(timerDef, channelName);
+        }
     }
 }
 

@@ -13,13 +13,12 @@ version(TwitchAPIFeatures):
 
 private:
 
-import kameloso.plugins.twitchbot.base : TwitchBotPlugin, handleSelfjoin;
+import kameloso.plugins.twitchbot.base : TwitchBotPlugin;
 
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.algorithm.comparison : among;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
