@@ -18,11 +18,12 @@ public:
  +/
 enum KamelosoInfo
 {
-    version_ = "%d.%d.%d%s"
+    version_ = "%d.%d.%d%s%s"
         .format(
             KamelosoSemVer.majorVersion,
             KamelosoSemVer.minorVersion,
             KamelosoSemVer.patchVersion,
+            KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease),  /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
