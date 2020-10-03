@@ -364,8 +364,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         {
             if (state.server.daemon == IRCServer.Daemon.twitch)
             {
-                if ((privilegeLevel == PrivilegeLevel.anyone) ||
-                    (privilegeLevel == PrivilegeLevel.registered))
+                if (((privilegeLevel == PrivilegeLevel.anyone) ||
+                    (privilegeLevel == PrivilegeLevel.registered)) &&
+                    (event.sender.class_ != IRCUser.Class.blacklist))
                 {
                     // We can't WHOIS on Twitch, and PrivilegeLevel.anyone is just
                     // PrivilegeLevel.ignore with an extra WHOIS for good measure.
