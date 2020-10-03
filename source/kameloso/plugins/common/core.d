@@ -378,8 +378,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
 
         // PrivilegeLevel.ignore always passes, even for Class.blacklist.
         return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(event, privilegeLevel,
-            (state.settings.preferHostmasks ? Yes.preferHostmasks : No.preferHostmasks));
+            filterSender(event, privilegeLevel, state.settings.preferHostmasks);
     }
 
 
@@ -1851,7 +1850,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
-    const Flag!"preferHostmasks" preferHostmasks) @safe
+    const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
