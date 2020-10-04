@@ -1041,8 +1041,16 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                 printEventDebugDetails(event, raw);
                 version(PrintStacktraces) logger.trace(e);
             }
-
-            checkUpdatesAndPropagate(instance, plugin);
+            finally
+            {
+                if (plugin.state.botUpdated ||
+                    plugin.state.clientUpdated ||
+                    plugin.state.serverUpdated ||
+                    plugin.state.settingsUpdated)
+                {
+                    checkUpdatesAndPropagate(instance, plugin);
+                }
+            }
         }
 
         // Let each plugin process the event
@@ -1078,7 +1086,13 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
             finally
             {
-                checkUpdatesAndPropagate(instance, plugin);
+                if (plugin.state.botUpdated ||
+                    plugin.state.clientUpdated ||
+                    plugin.state.serverUpdated ||
+                    plugin.state.settingsUpdated)
+                {
+                    checkUpdatesAndPropagate(instance, plugin);
+                }
             }
         }
 
