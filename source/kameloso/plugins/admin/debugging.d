@@ -132,7 +132,7 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
     immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold :
+        "Printing all: " ~ plugin.adminSettings.printRaw.ircBold :
         "Printing all: " ~ plugin.adminSettings.printRaw.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
@@ -152,7 +152,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
     immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold :
+        "Printing bytes: " ~ plugin.adminSettings.printBytes.ircBold :
         "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);

@@ -284,7 +284,6 @@ in (rawLine.length, "Tried to add an empty quote")
 
     try
     {
-        import std.conv : text;
         import std.datetime.systime : Clock;
         import std.format : format;
 
@@ -307,7 +306,7 @@ in (rawLine.length, "Tried to add an empty quote")
 
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(id.ircColourByHash.ircBold,
-                plugin.quotes[id].array.length.text.ircBold) :
+                plugin.quotes[id].array.length.ircBold) :
             pattern.format(id, plugin.quotes[id].array.length);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);

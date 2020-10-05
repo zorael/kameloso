@@ -150,12 +150,10 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                 }
                 else
                 {
-                    import std.conv : text;
-
                     enum pattern = "%s%s! You have %s notes.";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircBold, noteArray.length.text.ircBold) :
+                        pattern.format(atSign, senderName.ircBold, noteArray.length.ircBold) :
                         pattern.format(atSign, senderName, noteArray.length);
 
                     privmsg(plugin.state, channel, user.nickname, message);
