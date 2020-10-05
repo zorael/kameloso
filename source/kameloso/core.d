@@ -1182,7 +1182,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             `dialect.defs.IRCEvent.Type`-awaiting delegates to iterate and process.
         event = The triggering const `dialect.defs.IRCEvent`.
  +/
-void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
+void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 {
     import core.thread : Fiber;
 
@@ -1191,7 +1191,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
     /++
         Handle awaiting delegates of a specified type.
      +/
-    static void processImpl(IRCPlugin plugin, const IRCEvent event, Dg[] dgsForType)
+    static void processImpl(IRCPlugin plugin, const ref IRCEvent event, Dg[] dgsForType)
     {
         foreach (immutable i, dg; dgsForType)
         {
@@ -1232,14 +1232,14 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
             iterate and process.
         event = The triggering `dialect.defs.IRCEvent`.
  +/
-void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
+void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 {
     import core.thread : Fiber;
 
     /++
         Handle awaiting Fibers of a specified type.
      +/
-    static void processAwaitingFibersImpl(IRCPlugin plugin, const IRCEvent event,
+    static void processAwaitingFibersImpl(IRCPlugin plugin, const ref IRCEvent event,
         Fiber[] fibersForType, ref Fiber[] expiredFibers)
     {
         foreach (immutable i, fiber; fibersForType)
@@ -2374,7 +2374,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         event = The `dialect.defs.IRCEvent` in question.
         raw = The raw string that `event` was parsed from, as read from the IRC server.
  +/
-void printEventDebugDetails(const IRCEvent event, const string raw)
+void printEventDebugDetails(const ref IRCEvent event, const string raw)
 {
     if (!raw.length) return;
 

@@ -371,7 +371,7 @@ unittest
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onMessage(SedReplacePlugin plugin, const IRCEvent event)
+void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, stripped;
 
@@ -486,7 +486,7 @@ void onWelcome(SedReplacePlugin plugin)
 /++
     Removes the records of previous messages from a user when they quit.
  +/
-void onQuit(SedReplacePlugin plugin, const IRCEvent event)
+void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     plugin.prevlines.remove(event.sender.nickname);
 }

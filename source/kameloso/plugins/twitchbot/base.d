@@ -105,7 +105,7 @@ public:
 @BotCommand(PrefixPolicy.prefixed, "permit")
 @Description("Permits a specified user to post links for a brief period of time.",
     "$command [target user]")
-void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandPermit(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.base : idOf, nameOf;
     import dialect.common : isValidNickname;
@@ -201,7 +201,7 @@ void onImportant(TwitchBotPlugin plugin)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
-void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
+void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
 }
@@ -249,7 +249,7 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.home)
-void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
+void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     plugin.rooms.remove(event.channel);
 }
@@ -268,7 +268,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
     "$command [ban|unban|list|clear]")
-void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandPhrase(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return handlePhraseCommand(plugin, event, event.channel);
 }
@@ -283,7 +283,7 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
         event = The triggering `dialect.defs.IRCEvent`.
         targetChannel = The channel we're handling phrase bans for.
  +/
-void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+void handlePhraseCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle phrases with an empty target channel string")
 {
     import lu.string : contains, nom;
@@ -448,7 +448,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
     "$command [add|del|list|clear]")
-void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return handleTimerCommand(plugin, event, event.channel);
 }
@@ -465,7 +465,7 @@ void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "enable")
 @BotCommand(PrefixPolicy.prefixed, "disable")
 @Description("Toggles the Twitch bot in the current channel.")
-void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandEnableDisable(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (event.aux == "enable")
     {
@@ -495,7 +495,7 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "uptime")
 @Description("Reports how long the streamer has been streaming.")
-void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
@@ -519,7 +519,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "start")
 @Description("Marks the start of a broadcast.")
-void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandStart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to start a broadcast on a nonexistent room");
@@ -600,7 +600,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stop")
 @Description("Marks the stop of a broadcast.")
-void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to stop a broadcast on a nonexistent room");
@@ -633,7 +633,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(ChannelPolicy.home)
 @(IRCEvent.Type.TWITCH_HOSTSTART)
-void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
+void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
 }
@@ -769,7 +769,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onLink(TwitchBotPlugin plugin, const IRCEvent event)
+void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
     import lu.string : beginsWith;
@@ -932,7 +932,7 @@ version(TwitchAPIFeatures)
 @Description("Queries the server for how long you have been a follower of the " ~
     "current channel. Optionally takes a nickname parameter, to query for someone else.",
     "$command [optional nickname]")
-void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
+void onFollowAge(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.conv : to;
@@ -1101,7 +1101,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
 @(ChannelPolicy.home)
-void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
+void onRoomState(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
@@ -1161,7 +1161,7 @@ version(TwitchAPIFeatures)
 @BotCommand(PrefixPolicy.prefixed, "shoutout")
 @BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
 @Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
-void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.base : idOf;
     import dialect.common : isValidNickname;
@@ -1245,7 +1245,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
+void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.twitchBotSettings.bellOnMessage)
     {

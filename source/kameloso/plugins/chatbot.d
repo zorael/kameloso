@@ -55,7 +55,7 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "säg", Yes.hidden)
 @BotCommand(PrefixPolicy.prefixed, "echo", Yes.hidden)
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
-void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
+void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
 
@@ -85,7 +85,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "8ball")
 @BotCommand(PrefixPolicy.prefixed, "eightball")
 @Description("Implements 8ball. Randomises a vague yes/no response.")
-void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
+void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
     import std.random : uniform;
@@ -135,7 +135,7 @@ version(Web)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "bash")
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
-void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
+void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.concurrency : spawn;
 
@@ -160,7 +160,7 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
             with mIRC colouring.
  +/
 version(Web)
-void worker(shared IRCPluginState sState, const IRCEvent event,
+void worker(shared IRCPluginState sState, const ref IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
@@ -261,7 +261,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onDance(ChatbotPlugin plugin, const IRCEvent event)
+void onDance(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;

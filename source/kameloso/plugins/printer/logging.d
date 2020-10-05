@@ -93,7 +93,7 @@ public:
     See_Also:
         commitAllLogsImpl
  +/
-void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
+void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
     import std.typecons : Flag, No, Yes;
@@ -101,7 +101,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
-    static void writeEventToFile(PrinterPlugin plugin, const IRCEvent event,
+    static void writeEventToFile(PrinterPlugin plugin, const ref IRCEvent event,
         const string key, const string givenPath = string.init,
         Flag!"extendPath" extendPath = Yes.extendPath, Flag!"raw" raw = No.raw)
     {

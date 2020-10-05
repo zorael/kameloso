@@ -47,7 +47,7 @@ import std.typecons : Flag, No, Yes;
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
-void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
+void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
     import lu.string : nom, stripped, strippedLeft;
@@ -186,7 +186,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onCounterWord(CounterPlugin plugin, const IRCEvent event)
+void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
     import lu.string : beginsWith, stripped, strippedLeft, strippedRight;

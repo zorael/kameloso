@@ -115,7 +115,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 @BotCommand(PrefixPolicy.prefixed, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname, " ~
     "or adds a new one.", "$command [nickname] [text if adding new quote]")
-void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
+void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
     import lu.string : nom, stripped, strippedLeft;
@@ -270,7 +270,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
-void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
+void addQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
     const string id, const string rawLine)
 in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")

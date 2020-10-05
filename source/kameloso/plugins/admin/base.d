@@ -90,7 +90,7 @@ debug
 @Chainable
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
+void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
 {
     return onAnyEventImpl(plugin, event);
 }
@@ -111,7 +111,7 @@ debug
 @BotCommand(PrefixPolicy.nickname, "user")
 @Description("[debug] Prints out information about one or more specific users " ~
     "to the local terminal.", "$command [nickname] [nickname] ...")
-void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
+void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 {
     return onCommandShowUserImpl(plugin, event);
 }
@@ -132,7 +132,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.nickname, "save")
 @BotCommand(PrefixPolicy.nickname, "writeconfig", Yes.hidden)
 @Description("Saves current configuration to disk.")
-void onCommandSave(AdminPlugin plugin, const IRCEvent event)
+void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
 
@@ -175,7 +175,7 @@ debug
 @BotCommand(PrefixPolicy.nickname, "sudo")
 @Description("[debug] Sends supplied text to the server, verbatim.",
     "$command [raw string]")
-void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
+void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 {
     return onCommandSudoImpl(plugin, event);
 }
@@ -196,7 +196,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.nickname, "quit")
 @Description("Send a QUIT event to the server and exits the program.",
     "$command [optional quit reason]")
-void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
+void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 {
     quit(plugin.state, event.content);
 }
@@ -218,7 +218,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "home")
 @Description("Adds or removes a channel to/from the list of home channels.",
     "$command [add|del|list] [channel]")
-void onCommandHome(AdminPlugin plugin, const IRCEvent event)
+void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, strippedRight;
     import std.format : format;
@@ -272,7 +272,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
         event = The triggering `dialect.defs.IRCEvent`.
         rawChannel = The channel to be added, potentially in unstripped, cased form.
  +/
-void addHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
+void addHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
@@ -412,7 +412,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
     `kameloso.plugins.common.core.IRCPluginState`.
  +/
-void delHome(AdminPlugin plugin, const IRCEvent event, const string rawChannel)
+void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
 {
     import lu.string : stripped;
@@ -467,7 +467,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 @BotCommand(PrefixPolicy.prefixed, "whitelist")
 @Description("Add or remove an account to/from the whitelist of users who may trigger the bot.",
     "$command [add|del] [account or nickname]")
-void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
+void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 {
     return plugin.manageClassLists(event, "whitelist");
 }
@@ -486,7 +486,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "operator")
 @Description("Add or remove an account to/from the operator list of operators/moderators.",
     "$command [add|del] [account or nickname]")
-void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
+void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 {
     return plugin.manageClassLists(event, "operator");
 }
@@ -506,7 +506,7 @@ void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "staff")
 @Description("Add or remove an account to/from the staff list.",
     "$command [add|del] [account or nickname]")
-void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
+void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 {
     return plugin.manageClassLists(event, "staff");
 }
@@ -527,7 +527,7 @@ void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "blacklist")
 @Description("Add or remove an account to/from the blacklist of people who may " ~
     "explicitly not trigger the bot.", "$command [add|del] [account or nickname]")
-void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
+void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
 {
     return plugin.manageClassLists(event, "blacklist");
 }
@@ -592,7 +592,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printraw")
 @Description("[debug] Toggles a flag to print all incoming events raw.")
-void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
+void onCommandPrintRaw(AdminPlugin plugin, const ref IRCEvent event)
 {
     return onCommandPrintRawImpl(plugin, event);
 }
@@ -612,7 +612,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printbytes")
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
-void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
+void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 {
     return onCommandPrintBytesImpl(plugin, event);
 }
@@ -629,7 +629,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "join")
 @Description("Joins a guest channel.", "$command [channel]")
-void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
+void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : splitInto;
 
@@ -660,7 +660,7 @@ void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "part")
 @Description("Parts a guest channel.", "$command [channel]")
-void onCommandPart(AdminPlugin plugin, const IRCEvent event)
+void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : splitInto;
 
@@ -691,7 +691,7 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "set")
 @Description("Changes a plugin's settings.", "$command [plugin.setting=value]")
-void onSetCommand(AdminPlugin plugin, const IRCEvent event)
+void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
@@ -807,7 +807,7 @@ void onCommandSummary(AdminPlugin plugin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "cycle")
 @Description("Cycles (parts and immediately rejoins) a channel.")
-void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
+void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom;
 
@@ -883,7 +883,7 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
 @BotCommand(PrefixPolicy.prefixed, "hostmask", Yes.hidden)
 @Description("Modifies a hostmask definition, for use on servers without services accounts.",
     "$command [add|del|list] [account] [hostmask if adding]")
-void onCommandMask(AdminPlugin plugin, const IRCEvent event)
+void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.format : format;
@@ -939,7 +939,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
         plugin = The current `AdminPlugin`.
         event = The instigating `dialect.defs.IRCEvent`.
  +/
-void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
+void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -978,7 +978,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "bus")
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
-void onCommandBus(AdminPlugin plugin, const IRCEvent event)
+void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 {
     return onCommandBusImpl(plugin, event);
 }

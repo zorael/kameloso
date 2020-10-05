@@ -9,7 +9,7 @@ import dialect.defs;
 @(IRCEvent.Type.CHAN)                        // This function should automatically trigger on channel messages
 @(PrivilegeLevel.ignore)                     // ...sent by anyone...
 @BotCommand(PrefixPolicy.prefixed, "hello")  // ...saying "!hello"
-void onCommandHello(HelloPlugin plugin, const IRCEvent event)
+void onCommandHello(HelloPlugin plugin, const ref IRCEvent event)
 {
     chan(plugin.state, event.channel, "Hello World!");
 }

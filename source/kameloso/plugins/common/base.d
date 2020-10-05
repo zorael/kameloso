@@ -280,7 +280,7 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
         fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(SubPlugin, Fn)(IRCPlugin plugin, SubPlugin subPlugin, const IRCEvent event,
+void enqueue(SubPlugin, Fn)(IRCPlugin plugin, SubPlugin subPlugin, const ref IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
 in ((fn !is null), "Tried to `enqueue` with a null function pointer")
@@ -339,7 +339,7 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
         fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(Fn)(IRCPlugin plugin, const IRCEvent event,
+void enqueue(Fn)(IRCPlugin plugin, const ref IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
 {
     return enqueue(plugin, null, event, privilegeLevel, fn, caller);

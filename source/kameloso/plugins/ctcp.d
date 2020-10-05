@@ -36,7 +36,7 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.CTCP_DCC)
 @(IRCEvent.Type.CTCP_AVATAR)
 @(IRCEvent.Type.CTCP_LAG)
-void onCTCPs(CTCPService service, const IRCEvent event)
+void onCTCPs(CTCPService service, const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
     import std.format : format;
@@ -238,7 +238,7 @@ unittest
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
-void onCTCPClientinfo(CTCPService service, const IRCEvent event)
+void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 {
     import dialect.common : IRCControlCharacter;
     import std.format : format;

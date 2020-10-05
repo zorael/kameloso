@@ -35,7 +35,7 @@ package:
         event = The triggering `dialect.defs.IRCEvent`.
         list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
-void manageClassLists(AdminPlugin plugin, const IRCEvent event, const string list)
+void manageClassLists(AdminPlugin plugin, const ref IRCEvent event, const string list)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -562,7 +562,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         event = Instigating `dialect.defs.IRCEvent`.
  +/
 void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
-    const string account, const string mask, const IRCEvent event)
+    const string account, const string mask, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage, populateFromJSON;

@@ -44,7 +44,7 @@ import dialect.defs;
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
+void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, contains, nom;
 
@@ -92,7 +92,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
 @Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
-void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
+void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : contains, nom;
     import std.format : format;
@@ -172,7 +172,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "commands")
 @Description("Lists all available oneliners.")
-void onCommandCommands(OnelinersPlugin plugin, const IRCEvent event)
+void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     return plugin.listCommands(event.channel);
 }

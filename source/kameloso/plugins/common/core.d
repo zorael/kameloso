@@ -14,7 +14,7 @@
     @(ChannelPolicy.home)
     @(PrefixPolicy.prefixed)
     @BotCommand(PrivilegeLevel.anyone, "foo")
-    void onFoo(FooPlugin plugin, const IRCEvent event)
+    void onFoo(FooPlugin plugin, const ref IRCEvent event)
     {
         // ...
     }
@@ -1850,7 +1850,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         A `FilterResult` saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
  +/
-FilterResult filterSender(const IRCEvent event, const PrivilegeLevel level,
+FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
@@ -2519,7 +2519,7 @@ enum PrivilegeLevel
         A `Replay` with template parameters inferred from the arguments
         passed to this function.
  +/
-Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
+Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
     const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__) @safe
 {
     return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event,
@@ -2542,7 +2542,7 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const IRCEvent event,
         A `Replay` with template parameters inferred from the arguments
         passed to this function.
  +/
-Replay replay(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
+Replay replay(Fn)(const ref IRCEvent event, const PrivilegeLevel privilegeLevel,
     Fn fn, const string caller = __FUNCTION__) @safe
 {
     return new ReplayImpl!Fn(event, privilegeLevel, fn, caller);
@@ -2563,7 +2563,7 @@ Replay replay(Fn)(const IRCEvent event, const PrivilegeLevel privilegeLevel,
     @(ChannelPolicy.home)
     @BotCommand(PrefixPolicy.prefixed, "foo")
     @BotCommand(PrefixPolicy.prefixed, "bar")
-    void onCommandFooOrBar(MyPlugin plugin, const IRCEvent event)
+    void onCommandFooOrBar(MyPlugin plugin, const ref IRCEvent event)
     {
         // ...
     }
@@ -2619,7 +2619,7 @@ struct BotCommand
     @(IRCEvent.Type.CHAN)
     @(ChannelPolicy.home)
     @BotRegex(PrefixPolicy.direct, r"(?:^|\s)MonkaS(?:$|\s)")
-    void onSawMonkaS(MyPlugin plugin, const IRCEvent event)
+    void onSawMonkaS(MyPlugin plugin, const ref IRCEvent event)
     {
         // ...
     }

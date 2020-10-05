@@ -102,7 +102,7 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
 @(PrivilegeLevel.ignore)
-void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
+void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
     if (event.sender.nickname == plugin.state.client.nickname) return;
@@ -160,7 +160,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.JOIN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onJoin(AutomodePlugin plugin, const IRCEvent event)
+void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
     {
@@ -269,7 +269,7 @@ unittest
 @BotCommand(PrefixPolicy.prefixed, "automode")
 @Description("Adds, lists or removes automode definitions for the current channel.",
     "$command [add|list|clear] [account/nickname] [mode]")
-void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
+void onCommandAutomode(AutomodePlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;
@@ -445,7 +445,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "op")
 @Description("Forces the bot to attempt to apply automodes.")
-void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
+void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
     {
@@ -482,7 +482,7 @@ void onMyInfo(AutomodePlugin plugin)
  +/
 @(IRCEvent.Type.MODE)
 @(ChannelPolicy.home)
-void onMode(AutomodePlugin plugin, const IRCEvent event)
+void onMode(AutomodePlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 

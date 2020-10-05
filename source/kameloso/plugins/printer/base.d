@@ -403,7 +403,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 @Chainable
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
-void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
+void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
     return onLoggableEventImpl(plugin, event);
 }

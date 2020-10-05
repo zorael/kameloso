@@ -64,7 +64,7 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
             the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const IRCEvent event, ref IRCUser user)
+            const ref IRCEvent event, ref IRCUser user)
         {
             bool set;
 
@@ -290,7 +290,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const IRCEvent event, ref IRCUser user)
+            const ref IRCEvent event, ref IRCUser user)
         {
             if (user.class_ == IRCUser.Class.admin)
             {
@@ -428,7 +428,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
     Additionally from the nickname-channel cache.
  +/
 @(IRCEvent.Type.QUIT)
-void onQuit(PersistenceService service, const IRCEvent event)
+void onQuit(PersistenceService service, const ref IRCEvent event)
 {
     service.state.users.remove(event.sender.nickname);
     service.userClassCurrentChannelCache.remove(event.sender.nickname);
@@ -445,7 +445,7 @@ void onQuit(PersistenceService service, const IRCEvent event)
  +/
 @(IRCEvent.Type.NICK)
 @(IRCEvent.Type.SELFNICK)
-void onNick(PersistenceService service, const IRCEvent event)
+void onNick(PersistenceService service, const ref IRCEvent event)
 {
     if (service.state.settings.preferHostmasks)
     {

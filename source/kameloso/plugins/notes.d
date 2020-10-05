@@ -43,7 +43,7 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
+void onReplayEvent(NotesPlugin plugin, const ref IRCEvent event)
 {
     if (event.channel !in plugin.notes) return;
 
@@ -65,7 +65,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
-void onWhoReply(NotesPlugin plugin, const IRCEvent event)
+void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
 
@@ -253,7 +253,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
-void onNames(NotesPlugin plugin, const IRCEvent event)
+void onNames(NotesPlugin plugin, const ref IRCEvent event)
 {
     version(WithChanQueriesService)
     {
@@ -304,7 +304,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "note")
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
-void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
+void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.base : nameOf;
     import dialect.common : toLowerCase;

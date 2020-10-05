@@ -163,7 +163,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         event = The triggering `dialect.defs.IRCEvent`.
         targetChannel = The channel we're handling timers for.
  +/
-void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+void handleTimerCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
     import lu.string : SplitResults, contains, nom, splitInto;

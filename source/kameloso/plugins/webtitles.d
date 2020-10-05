@@ -99,7 +99,7 @@ struct TitleLookupRequest
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
+void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
     import lu.string : beginsWith;
@@ -120,7 +120,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
     It accesses the cache of already looked up addresses to speed things up.
  +/
-void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
+void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 {
     import kameloso.common : Tint, logger;
     import lu.string : beginsWith, contains, nom;

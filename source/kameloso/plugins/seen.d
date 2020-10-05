@@ -437,7 +437,7 @@ private:
 @(IRCEvent.Type.TWITCH_TIMEOUT)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onSomeAction(SeenPlugin plugin, const IRCEvent event)
+void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 {
     /+
         Updates the user's timestamp to the current time.
@@ -468,7 +468,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.QUIT)
 @(PrivilegeLevel.ignore)
-void onQuit(SeenPlugin plugin, const IRCEvent event)
+void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.nickname in plugin.seenUsers)
     {
@@ -495,7 +495,7 @@ void onQuit(SeenPlugin plugin, const IRCEvent event)
 @Chainable
 @(IRCEvent.Type.NICK)
 @(PrivilegeLevel.ignore)
-void onNick(SeenPlugin plugin, const IRCEvent event)
+void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.nickname in plugin.seenUsers)
     {
@@ -517,7 +517,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
-void onWHOReply(SeenPlugin plugin, const IRCEvent event)
+void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     // Update the user's entry
     plugin.updateUser(event.target.nickname, event.time);
@@ -536,7 +536,7 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
-void onNamesReply(SeenPlugin plugin, const IRCEvent event)
+void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
 
@@ -631,7 +631,7 @@ void onEndOfList(SeenPlugin plugin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
-void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
+void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : timeSince;
     import dialect.common : isValidNickname;
