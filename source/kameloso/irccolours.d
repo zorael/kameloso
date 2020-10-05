@@ -280,82 +280,128 @@ unittest
 
 // ircBold
 /++
-    Returns the passed string wrapped in between IRC bold control characters.
+    Returns the passed something wrapped in between IRC bold control characters.
 
     Params:
-        word = String word to make IRC bold.
+        something = Something `std.conv.text`-convertible to enwrap in bold.
 
     Returns:
-        The passed string, in IRC bold.
+        The passed something, as a string, in IRC bold.
  +/
-string ircBold(const string word) pure nothrow
-in (word.length, "Tried to apply IRC bold to a string but no string was given")
+string ircBold(T)(T something) //pure nothrow
 {
-    return IRCControlCharacter.bold ~ word ~ IRCControlCharacter.bold;
+    import std.conv : text;
+    return text(cast(char)IRCControlCharacter.bold, something, cast(char)IRCControlCharacter.bold);
 }
 
 ///
 unittest
 {
+    import std.conv : text;
+
     alias I = IRCControlCharacter;
 
-    immutable line = "kameloso: " ~ ircBold("kameloso");
-    immutable expected = "kameloso: " ~ I.bold ~ "kameloso" ~ I.bold;
-    assert((line == expected), line);
+    {
+        immutable line = "kameloso: " ~ ircBold("kameloso");
+        immutable expected = "kameloso: " ~ I.bold ~ "kameloso" ~ I.bold;
+        assert((line == expected), line);
+    }
+    {
+        immutable number = 1234;
+        immutable line = number.ircBold;
+        immutable expected = I.bold ~ number.text ~ I.bold;
+        assert((line == expected), line);
+    }
+    {
+        immutable b = true;
+        immutable line = b.ircBold;
+        immutable expected = I.bold ~ "true" ~ I.bold;
+        assert((line == expected), line);
+    }
 }
 
 
 // ircItalics
 /++
-    Returns the passed string wrapped in between IRC italics control characters.
+    Returns the passed something wrapped in between IRC italics control characters.
 
     Params:
-        word = String word to make IRC italics.
+        something = Something `std.conv.text`-convertible to enwrap in italics.
 
     Returns:
-        The passed string, in IRC italics.
+        The passed something, as a string, in IRC italics.
  +/
-string ircItalics(const string word) pure nothrow
-in (word.length, "Tried to apply IRC italics to a string but no string was given")
+string ircItalics(T)(T something) //pure nothrow
 {
-    return IRCControlCharacter.italics ~ word ~ IRCControlCharacter.italics;
+    import std.conv : text;
+    return text(cast(char)IRCControlCharacter.italics, something, cast(char)IRCControlCharacter.italics);
 }
 
 ///
 unittest
 {
+    import std.conv : text;
     alias I = IRCControlCharacter;
 
-    immutable line = "kameloso: " ~ ircItalics("kameloso");
-    immutable expected = "kameloso: " ~ I.italics ~ "kameloso" ~ I.italics;
-    assert((line == expected), line);
+    {
+        immutable line = "kameloso: " ~ ircItalics("kameloso");
+        immutable expected = "kameloso: " ~ I.italics ~ "kameloso" ~ I.italics;
+        assert((line == expected), line);
+    }
+    {
+        immutable number = 1234;
+        immutable line = number.ircItalics;
+        immutable expected = I.italics ~ number.text ~ I.italics;
+        assert((line == expected), line);
+    }
+    {
+        immutable b = true;
+        immutable line = b.ircItalics;
+        immutable expected = I.italics ~ "true" ~ I.italics;
+        assert((line == expected), line);
+    }
 }
 
 
 // ircUnderlined
 /++
-    Returns the passed string wrapped in between IRC underlined control characters.
+    Returns the passed something wrapped in between IRC underlined control characters.
 
     Params:
-        word = String word to make IRC italics.
+        something = Something `std.conv.text`-convertible to enwrap in underlined.
 
     Returns:
-        The passed string, in IRC italics.
+        The passed something, as a string, in IRC underlined.
  +/
-string ircUnderlined(const string word) pure nothrow
-in (word.length, "Tried to apply IRC underlined to a string but no string was given")
+string ircUnderlined(T)(T something) //pure nothrow
 {
-    return IRCControlCharacter.underlined ~ word ~ IRCControlCharacter.underlined;
+    import std.conv : text;
+    return text(cast(char)IRCControlCharacter.underlined, something, cast(char)IRCControlCharacter.underlined);
 }
 
 ///
 unittest
 {
+    import std.conv : text;
     alias I = IRCControlCharacter;
 
-    immutable line = "kameloso: " ~ ircUnderlined("kameloso");
-    immutable expected = "kameloso: " ~ I.underlined ~ "kameloso" ~ I.underlined;
-    assert((line == expected), line);
+    {
+        immutable line = "kameloso: " ~ ircUnderlined("kameloso");
+        immutable expected = "kameloso: " ~ I.underlined ~ "kameloso" ~ I.underlined;
+        assert((line == expected), line);
+    }
+    {
+        immutable number = 1234;
+        immutable line = number.ircUnderlined;
+        immutable expected = I.underlined ~ number.text ~ I.underlined;
+        assert((line == expected), line);
+    }
+    {
+        immutable b = true;
+        immutable line = b.ircUnderlined;
+        immutable expected = I.underlined ~ "true" ~ I.underlined;
+        assert((line == expected), line);
+    }
 }
 
 
