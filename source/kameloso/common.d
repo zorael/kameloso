@@ -758,6 +758,15 @@ unittest
         assert((sink.data == "4s"), sink.data);
         sink.clear();
     }
+    {
+        immutable dur = 2.hours + 28.minutes + 19.seconds;
+        dur.timeSinceInto!(No.abbreviate, 7, 1)(sink);
+        assert((sink.data == "2 hours and 28 minutes"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 7, 1)(sink);
+        assert((sink.data == "2h 28m"), sink.data);
+        sink.clear();
+    }
 }
 
 
