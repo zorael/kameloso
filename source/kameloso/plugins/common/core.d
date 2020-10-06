@@ -944,7 +944,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 fun(this, event);
             }
             else static if (is(Params : AliasSeq!(typeof(this))) ||
-                (is(Params : AliasSeq!IRCPlugin) && isAwarenessFunction!fun))
+                is(Params : AliasSeq!IRCPlugin))
             {
                 fun(this);
             }
