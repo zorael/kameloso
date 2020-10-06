@@ -1008,12 +1008,28 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         static void sanitizeEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
+            import std.range : only;
 
             event.raw = sanitize(event.raw);
             event.channel = sanitize(event.channel);
             event.content = sanitize(event.content);
             event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
+
+            foreach (user; only(&event.sender, &event.target))
+            {
+                user.nickname = sanitize(user.nickname);
+                user.ident = sanitize(user.ident);
+                user.address = sanitize(user.address);
+                user.account = sanitize(user.account);
+
+                version(TwitchSupport)
+                {
+                    user.displayName = sanitize(user.displayName);
+                    user.badges = sanitize(user.badges);
+                    user.colour = sanitize(user.colour);
+                }
+            }
         }
 
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
