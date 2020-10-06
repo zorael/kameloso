@@ -2197,17 +2197,17 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 
         assert((fn !is null), "null fn in `" ~ typeof(this).stringof ~ '`');
 
-        static if (TakesParams!(fn, AliasSeq!IRCEvent))
-        {
-            fn(event);
-        }
-        else static if (TakesParams!(fn, AliasSeq!(Payload, IRCEvent)))
+        static if (TakesParams!(fn, AliasSeq!(Payload, IRCEvent)))
         {
             fn(payload, event);
         }
         else static if (TakesParams!(fn, AliasSeq!Payload))
         {
             fn(payload);
+        }
+        else static if (TakesParams!(fn, AliasSeq!IRCEvent))
+        {
+            fn(event);
         }
         else static if (arity!fn == 0)
         {
