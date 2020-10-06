@@ -2005,6 +2005,9 @@ public:
      +/
     Replay[][string] replays;
 
+    /// Whether or not `replays` has elements (i.e. is not empty).
+    bool hasReplays;
+
     /// This plugin's array of `Repeat`s to let the main loop play back.
     Repeat[] repeats;
 
