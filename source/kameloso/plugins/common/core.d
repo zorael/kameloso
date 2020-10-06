@@ -1035,9 +1035,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
         void tryProcess(funlist...)(ref IRCEvent event)
         {
-            import core.exception : UnicodeException;
-            import std.utf : UTFException;
-
             foreach (fun; funlist)
             {
                 try
@@ -1069,45 +1066,19 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                         assert(0);
                     }
                 }
-                catch (UTFException e)
+                catch (Exception e)
                 {
-                    /*logger.warningf("tryProcess UTFException on %s: %s",
+                    import core.exception : UnicodeException;
+                    import std.utf : UTFException;
+
+                    /*logger.warningf("tryProcess some exception on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    sanitizeEvent(event);
+                    immutable isRecoverableException =
+                        (cast(UTFException)e !is null) ||
+                        (cast(UnicodeException)e !is null);
 
-                    // Copy-paste, not much we can do otherwise
-                    immutable next = process!fun(event);
-
-                    if (next == NextStep.continue_)
-                    {
-                        continue;
-                    }
-                    else if (next == NextStep.repeat)
-                    {
-                        // only repeat once so we don't endlessly loop
-                        if (process!fun(event) == NextStep.continue_)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-                    else if (next == NextStep.return_)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        assert(0);
-                    }
-                }
-                catch (UnicodeException e)
-                {
-                    /*logger.warningf("tryProcess UnicodeException on %s: %s",
-                        __traits(identifier, fun), e.msg);*/
+                    if (!isRecoverableException) throw e;
 
                     sanitizeEvent(event);
 
