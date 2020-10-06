@@ -12,7 +12,7 @@ x:ddoxTool "scod"
 
 dependency "lu" version="~>0.5.0"
 dependency "dialect" version="~>0.8.0"
-dependency "arsd-official:dom" version="~>8.4.0"
+dependency "arsd-official:dom" version="~>8.5.0"
 dependency "requests" version="~>1.1.5"
 
 libs "curl"
