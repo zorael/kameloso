@@ -923,6 +923,24 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                 is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
             {
+                static if (!is(Parameters!fun[1] == const))
+                {
+                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                    alias SC = ParameterStorageClass;
+                    alias paramClasses = ParameterStorageClassTuple!fun;
+
+                    static if ((paramClasses[1] & SC.ref_) ||
+                        (paramClasses[1] & SC.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+
                 fun(this, event);
             }
             else static if (is(Params : AliasSeq!(typeof(this))) ||
@@ -932,6 +950,24 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             }
             else static if (is(Params : AliasSeq!IRCEvent))
             {
+                static if (!is(Parameters!fun[0] == const))
+                {
+                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                    alias SC = ParameterStorageClass;
+                    alias paramClasses = ParameterStorageClassTuple!fun;
+
+                    static if ((paramClasses[0] & SC.ref_) ||
+                        (paramClasses[0] & SC.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+
                 fun(event);
             }
             else static if (arity!fun == 0)
