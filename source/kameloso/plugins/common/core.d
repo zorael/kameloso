@@ -879,7 +879,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     import std.traits : fullyQualifiedName;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);
-                    enum isIRCPluginParam(T) = is(T == IRCPlugin);
 
                     static if (verbose)
                     {
@@ -896,15 +895,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                     {
                         this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
                         return NextStep.continue_;  // Next function
-                    }
-                    else static if (Filter!(isIRCPluginParam, Params).length)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` takes a superclass `IRCPlugin` " ~
-                            "parameter instead of a subclass `%s`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun,
-                            typeof(this).stringof));
                     }
                     else
                     {
@@ -947,15 +937,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
             else static if (arity!fun == 0)
             {
                 fun();
-            }
-            else static if (Filter!(isIRCPluginParam, Params).length)
-            {
-                import std.format : format;
-
-                enum pattern = "`%s` takes a superclass `IRCPlugin` " ~
-                    "parameter instead of a subclass `%s`";
-                static assert(0, pattern.format(fullyQualifiedName!fun,
-                    typeof(this).stringof));
             }
             else
             {
