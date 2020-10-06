@@ -174,6 +174,8 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent e
     auto replaysForNickname = event.target.nickname in plugin.state.replays;
     if (!replaysForNickname) return;
 
+    scope(exit) plugin.state.hasReplays = (plugin.state.replays.length > 0);
+
     if (!replaysForNickname.length)
     {
         plugin.state.replays.remove(event.target.nickname);
@@ -238,6 +240,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent
     }
 
     plugin.state.replays.clear();
+    plugin.state.hasReplays = false;
 }
 
 

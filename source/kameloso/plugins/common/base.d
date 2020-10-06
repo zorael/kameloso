@@ -319,6 +319,8 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
         plugin.state.replays[user.nickname] ~=
             replay(subPlugin, event, privilegeLevel, fn, caller);
     }
+
+    plugin.state.hasReplays = true;
 }
 
 

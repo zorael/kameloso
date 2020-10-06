@@ -96,6 +96,7 @@ public:
         IRCUser[string] users;
         IRCChannel[string] channels;
         Replay[][string] replays;
+        bool hasReplays;
         Repeat[] repeats;
         Fiber[][] awaitingFibers;
         void delegate(const IRCEvent)[][] awaitingDelegates;
@@ -156,6 +157,11 @@ public:
         return, as well as a function pointer to call with that event. This is
         all wrapped in a function `kameloso.plugins.common.issueWhois`, with the
         queue management handled behind the scenes.
+
+    * `kameloso.plugins.common.core.IRCPluginState.hasReplays` is merely a bool
+        of whether or not there currently are any `kameloso.plugins.common.core.Replay`s
+        in `kameloso.plugins.common.core.IRCPluginState.replays`, cached to avoid
+        associative array length lookups.
 
     * `kameloso.plugins.common.core.IRCPluginState.repeats` is an array of
         `kameloso.plugins.common.core.Repeat`s, which is instrumental in repeating

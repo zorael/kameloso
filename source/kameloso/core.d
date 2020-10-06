@@ -1059,8 +1059,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             try
             {
                 plugin.onEvent(event);
-                processRepeats(plugin, instance);
-                processReplays(instance, plugin.state.replays);
+                if (plugin.state.repeats.length) processRepeats(instance, plugin);
+                if (plugin.state.hasReplays) processReplays(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
             }
@@ -1421,15 +1421,13 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
     context, outside of any plugin, *after* re-postprocessing them.
 
     Params:
-        plugin = The current `kameloso.plugins.common.core.IRCPlugin`.
         instance = Reference to the current bot instance.
+        plugin = The current `kameloso.plugins.common.core.IRCPlugin`.
  +/
-void processRepeats(IRCPlugin plugin, ref Kameloso instance)
+void processRepeats(ref Kameloso instance, IRCPlugin plugin)
 {
     import lu.string : NomException;
     import core.thread : Fiber;
-
-    if (!plugin.state.repeats.length) return;
 
     size_t[] spentRepeats;
 
@@ -1514,15 +1512,13 @@ void processRepeats(IRCPlugin plugin, ref Kameloso instance)
 
     Params:
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
-        replays = Reference to an associative array of `Replay`s.
+        plugin = The relevant `kameloso.plugins.common.core.IRCPlugin`.
  +/
-void processReplays(ref Kameloso instance, const Replay[][string] replays)
+void processReplays(ref Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
-
-    if (!replays.length) return;
 
     // Walk through replays and call WHOIS on those that haven't been
     // WHOISed in the last Timeout.whoisRetry seconds
@@ -1530,7 +1526,7 @@ void processReplays(ref Kameloso instance, const Replay[][string] replays)
     immutable now = Clock.currTime.toUnixTime;
     immutable hideOutgoing = instance.settings.hideOutgoing ? Yes.quiet : No.quiet;
 
-    foreach (immutable nickname, const replaysForNickname; replays)
+    foreach (immutable nickname, const replaysForNickname; plugin.state.replays)
     {
         assert(nickname.length, "Empty nickname in replay queue");
 
