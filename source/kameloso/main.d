@@ -8,12 +8,14 @@ public:
 /+
     Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
 
+    https://issues.dlang.org/show_bug.cgi?id=18026
+
     It may have been fixed in versions in the future at time of writing, so
-    limit it to 2.086 and earlier. Update this condition as compilers are released.
+    limit it to 2.094 and earlier. Update this condition as compilers are released.
 
     Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
  +/
-static if (__VERSION__ <= 2093L)
+static if (__VERSION__ <= 2094L)
 {
     debug
     {
@@ -33,6 +35,8 @@ static if (__VERSION__ <= 2093L)
 
 /*
     Warn about bug #20562: [dmd] Memory allocation failed (ERROR: This is a compiler bug)
+
+    https://issues.dlang.org/show_bug.cgi?id=20562
 
     It only affects Windows with DMD 2.089.0 or later, on build modes other than
     `singleFile`. Constrain with an upper major version as the issue is fixed.
