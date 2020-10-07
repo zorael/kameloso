@@ -341,22 +341,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEven
 }
 
 
-// awaitEvent
-/++
-    Compatibility alias of `await`.
- +/
-deprecated("Use `await` instead")
-alias awaitEvent = await;
-
-
-// awaitEvents
-/++
-    Compatibility alias of `await`.
- +/
-deprecated("Use `await` instead")
-alias awaitEvents = await;
-
-
 // unawaitImpl
 /++
     Dequeues something from being called whenever the next parsed and
@@ -507,19 +491,3 @@ void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.
 {
     return unawaitImpl(dg, plugin.state.awaitingDelegates, type);
 }
-
-
-// unlistFiberAwaitingEvent
-/++
-    Compatibility alias of `unawait`.
- +/
-deprecated("Use `unawait` instead")
-alias unlistFiberAwaitingEvent = unawait;
-
-
-// unawait
-/++
-    Compatibility alias of `unawait`.
- +/
-deprecated("Use `unawait` instead")
-alias unlistFiberAwaitingEvents = unawait;

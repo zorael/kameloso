@@ -15,15 +15,6 @@ import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
-
-public static import kameloso.plugins.common.core;
-
-deprecated("Import from `kameloso.plugins.common.core` directly instead")
-{
-    /// Deprecated alias to `kameloso.plugins.common.core.IRCPluginState`.
-    alias IRCPluginState = kameloso.plugins.common.core.IRCPluginState;
-}
-
 public:
 
 
@@ -347,11 +338,6 @@ void enqueue(Fn)(IRCPlugin plugin, const ref IRCEvent event,
 }
 
 
-/// Compatibility alias to `enqueue`.
-deprecated("Use `enqueue` instead")
-alias doWhois = enqueue;
-
-
 // repeat
 /++
     Queues a `core.thread.fiber.Fiber` (actually a `kameloso.thread.CarryingFiber`
@@ -371,11 +357,6 @@ in ((replay.event != IRCEvent.init), "Tried to queue a repeat of an init `Replay
     import kameloso.thread : CarryingFiber;
     plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, 32_768), replay);
 }
-
-
-/// Compatibility alias of `repeat`.
-deprecated("Use `repeat` instead")
-alias queueToReplay = repeat;
 
 
 // rehashUsers

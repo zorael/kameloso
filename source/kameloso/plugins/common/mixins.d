@@ -877,8 +877,4 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         import kameloso.plugins.common.base : repeat;
         context.repeat(&repeaterDelegate, replay);
     }
-
-    /// Compatibility alias of `repeat`.
-    deprecated("Use `repeat` instead")
-    alias queueToReplay = repeat;
 }

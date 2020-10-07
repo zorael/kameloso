@@ -743,16 +743,8 @@ public:
         @CannotContainComments
         string[] homeChannels;
 
-        @Hidden
-        deprecated("Use `homeChannels` instead")
-        alias homes = homeChannels;
-
         /// Currently inhabited non-home guest channels.
         @CannotContainComments
         string[] guestChannels;
-
-        @Hidden
-        deprecated("Use `guestChannels` instead")
-        alias channels = guestChannels;
     }
 }

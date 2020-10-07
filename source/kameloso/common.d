@@ -31,26 +31,6 @@ shared static this()
 }
 
 
-// Remove these when appropriate.
-
-/*public*/ static import kameloso.kameloso;
-
-deprecated("Import from `kameloso.kameloso` directly instead")
-{
-    /// Deprecated alias to `kameloso.kameloso.Kameloso`.
-    alias Kameloso = kameloso.kameloso.Kameloso;
-
-    /// Deprecated alias to `kameloso.kameloso.CoreSettings`.
-    alias CoreSettings = kameloso.kameloso.CoreSettings;
-
-    /// Deprecated alias to `kameloso.kameloso.ConnectionSettings`.
-    alias ConnectionSettings = kameloso.kameloso.ConnectionSettings;
-
-    /// Deprecated alias to `kameloso.kameloso.IRCBot`.
-    alias IRCBot = kameloso.kameloso.IRCBot;
-}
-
-
 // logger
 /++
     Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
