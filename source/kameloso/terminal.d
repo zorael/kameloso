@@ -341,8 +341,8 @@ enum TerminalReset
     ...where `Dark` and `Bright` are two different enums.
  +/
 enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
-                        is(T : TerminalFormat) || is(T : TerminalReset) ||
-                        is(T == int);
+                        is(T : TerminalFormat) || is(T : TerminalReset);/* ||
+                        is(T == int);*/
 
 
 // colour

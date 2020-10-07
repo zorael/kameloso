@@ -582,7 +582,7 @@ if (isOutputRange!(Sink, char[]))
         else
         {
             // Don't differentiate between sender and target? Consistency?
-            return bright ? Bright.sender : Dark.sender;
+            return FG(bright ? Bright.sender : Dark.sender);
         }
     }
 
@@ -694,7 +694,8 @@ if (isOutputRange!(Sink, char[]))
                         break;
 
                     default:
-                        .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                        .put!(Yes.colours)(sink,
+                            TerminalForeground(bright ? Bright.badge : Dark.badge),
                             " [", event.sender.badges, ']');
                     }
                 }
@@ -741,7 +742,8 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
-                .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                .put!(Yes.colours)(sink,
+                    TerminalForeground(bright ? Bright.badge : Dark.badge),
                     " [", event.target.badges, ']');
 
             }
@@ -843,7 +845,7 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    .put!(Yes.colours)(sink, bright ? Timestamp.bright : Timestamp.dark, '[');
+    .put!(Yes.colours)(sink, TerminalForeground(bright ? Timestamp.bright : Timestamp.dark), '[');
 
     (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -857,7 +859,7 @@ if (isOutputRange!(Sink, char[]))
     if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
         (event.type == IRCEvent.Type.TWITCH_ERROR))
     {
-        sink.colourWith(bright ? Bright.error : Dark.error);
+        sink.colourWith(TerminalForeground(bright ? Bright.error : Dark.error));
     }
     else
     {
@@ -888,7 +890,8 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.channel.length)
     {
-        .put!(Yes.colours)(sink, bright ? Bright.channel : Dark.channel,
+        .put!(Yes.colours)(sink,
+            TerminalForeground(bright ? Bright.channel : Dark.channel),
             '[', event.channel, "] ");
     }
 
@@ -900,18 +903,20 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.aux.length)
     {
-        .put!(Yes.colours)(sink, bright ? Bright.aux : Dark.aux, " (", event.aux, ')');
+        .put!(Yes.colours)(sink,
+            TerminalForeground(bright ? Bright.aux : Dark.aux),
+            " (", event.aux, ')');
     }
 
     if (event.count != 0)
     {
-        sink.colourWith(bright ? Bright.count : Dark.count);
+        sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
         .put(sink, " {", event.count, '}');
     }
 
     if (event.altcount != 0)
     {
-        sink.colourWith(bright ? Bright.altcount : Dark.altcount);
+        sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
         .put(sink, " {", event.altcount, '}');
     }
 
@@ -919,7 +924,7 @@ if (isOutputRange!(Sink, char[]))
     {
         import lu.conv : toAlphaInto;
 
-        sink.colourWith(bright ? Bright.num : Dark.num);
+        sink.colourWith(TerminalForeground(bright ? Bright.num : Dark.num));
 
         //sink.formattedWrite(" (#%03d)", event.num);
         sink.put(" (#");
@@ -929,7 +934,8 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.errors.length && !plugin.printerSettings.silentErrors)
     {
-        .put!(Yes.colours)(sink, bright ? Bright.error : Dark.error,
+        .put!(Yes.colours)(sink,
+            TerminalForeground(bright ? Bright.error : Dark.error),
             " ! ", event.errors, " !");
     }
 
