@@ -38,8 +38,6 @@ import kameloso.kameloso;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-version = PrefixedCommandsFallBackToNickname;
-
 public:
 
 

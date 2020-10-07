@@ -20,21 +20,18 @@ libs "curl"
 sourcePaths "source"
 importPaths "source"
 
+/**
+    Plugins; add or remove a letter to the strings to disable that plugin.
+    (Or remove the line entirely.)
+ */
 versions \
-    "Colours" \
-    "Web" \
-    "WithPlugins" \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
-    "WithCTCPService" \
-    "WithChanQueriesService" \
     "WithChatbotPlugin" \
-    "WithConnectService" \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
     "WithNotesPlugin" \
     "WithOnelinersPlugin" \
-    "WithPersistenceService" \
     "WithPipelinePlugin" \
     "WithPrinterPlugin" \
     "WithQuotesPlugin" \
@@ -43,6 +40,46 @@ versions \
     "WithStopwatchPlugin" \
     "WithVotesPlugin" \
     "WithWebtitlesPlugin"
+
+/**
+    Services; needed for everything to work right.
+
+    Undefined behaviour when disabled.
+ */
+versions \
+    "WithCTCPService" \
+    "WithChanQueriesService" \
+    "WithConnectService" \
+    "WithPersistenceService"
+
+/**
+    Default but optional features.
+ */
+versions \
+    "WithPlugins" \
+    "Colours" \
+    "PrefixedCommandsFallBackToNickname" \
+    "SanitizeAndRetryOnUnicodeException" \
+    "TwitchAPIFeatures" \
+    "CtTints"
+
+/**
+    Non-default features.
+
+    May be enabled in some configurations.
+ */
+/* versions \
+    "TwitchSupport" \
+    "WithTwitchBotPlugin" \
+    "OmniscientAdmin" \
+    "PrintStacktraces" \
+    "ExplainRepeat" \
+    "TwitchWarnings" \
+    "OSXTMPDIR" \
+    "OmniscientQueries" \
+    "TraceWhois" \
+    "ProfileGC"
+*/
 
 configuration "application" {
     targetType "executable"

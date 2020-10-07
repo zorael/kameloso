@@ -82,7 +82,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         /// Whether or not stagger has passed, so we don't evaluate it every single time.
         bool staggerDone;
 
-        version(Web)
+        version(TwitchAPIFeatures)
         {
             immutable streamer = room.broadcasterDisplayName;
         }

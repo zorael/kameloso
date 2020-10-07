@@ -52,8 +52,6 @@ version(unittest)
     import std.conv : to;
 }
 
-//version = TraceWhois;
-
 public:
 
 

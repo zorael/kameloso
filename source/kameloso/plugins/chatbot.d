@@ -32,11 +32,8 @@ import std.typecons : Flag, No, Yes;
     /// Whether or not the Chatbot plugin should react to events at all.
     @Enabler bool enabled = true;
 
-    version(Web)
-    {
-        /// Enables fetching of `bash.org` quotes.
-        bool bashQuotes = true;
-    }
+    /// Enables fetching of `bash.org` quotes.
+    bool bashQuotes = true;
 }
 
 
@@ -127,7 +124,6 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 
     Defers to the `worker` subthread.
  +/
-version(Web)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
@@ -159,7 +155,6 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
  +/
-version(Web)
 void worker(shared IRCPluginState sState, const ref IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {

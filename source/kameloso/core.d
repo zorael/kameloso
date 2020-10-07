@@ -12,8 +12,6 @@ import dialect;
 import lu.common : Next;
 import std.typecons : Flag, No, Yes;
 
-//version = TraceWhois;
-
 version(ProfileGC)
 {
     static if (__VERSION__ >= 2085L)

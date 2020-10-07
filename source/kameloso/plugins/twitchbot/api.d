@@ -6,9 +6,6 @@ module kameloso.plugins.twitchbot.api;
 version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
-
-version(Web) version = TwitchAPIFeatures;
-
 version(TwitchAPIFeatures):
 
 private:

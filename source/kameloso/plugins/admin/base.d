@@ -16,8 +16,6 @@ module kameloso.plugins.admin.base;
 version(WithPlugins):
 version(WithAdminPlugin):
 
-//version = OmniscientAdmin;
-
 private:
 
 import kameloso.plugins.admin.classifiers;

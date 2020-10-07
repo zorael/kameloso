@@ -13,9 +13,6 @@ module kameloso.plugins.chanqueries;
 version(WithPlugins):
 version(WithChanQueriesService):
 
-// Whether or not to do channel queries for non-home channels.
-//version = OmniscientQueries;
-
 private:
 
 import kameloso.plugins.common.core;

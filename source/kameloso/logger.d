@@ -22,12 +22,6 @@ import std.range.primitives : isOutputRange;
 
 public:
 
-/+
-    Build tint colours at compile time, saving the need to compute them during
-    runtime. It's a trade-off.
- +/
-version = CtTints;
-
 
 // KamelosoLogger
 /++
