@@ -10,7 +10,7 @@ version(TwitchAPIFeatures):
 
 private:
 
-import kameloso.plugins.twitchbot.base : TwitchBotPlugin;
+import kameloso.plugins.twitchbot.base;
 
 import kameloso.plugins.common.core;
 import kameloso.common : logger;

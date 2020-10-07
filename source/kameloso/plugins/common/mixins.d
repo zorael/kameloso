@@ -9,7 +9,6 @@ version(WithPlugins):
 
 private:
 
-import kameloso.plugins.common;
 import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
@@ -53,6 +52,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 {
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
+    import std.typecons : Flag, No, Yes;
 
     mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
 
@@ -443,7 +443,6 @@ mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ =
 {
 private:
     static import kameloso.messaging;
-    static import kameloso.common;
     import kameloso.plugins.common.core : IRCPlugin;
     import std.typecons : Flag, No, Yes;
 
@@ -684,7 +683,7 @@ private:
 ///
 unittest
 {
-    import kameloso.plugins.common.core;
+    import kameloso.plugins.common.core : IRCPlugin, IRCPluginImpl, IRCPluginState;
 
     class MyPlugin : IRCPlugin
     {
@@ -740,6 +739,8 @@ unittest
 version(WithPlugins)
 mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
+    import kameloso.plugins.common.core : Repeat, Replay;
+    import dialect.defs : IRCUser;
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
     import std.traits : isSomeFunction;

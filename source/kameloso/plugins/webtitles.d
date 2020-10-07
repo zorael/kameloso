@@ -16,11 +16,8 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.irccolours : ircBold;
 import kameloso.messaging;
-import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.concurrency;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
@@ -123,6 +120,7 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 {
     import kameloso.common : Tint, logger;
     import lu.string : beginsWith, contains, nom;
+    import std.concurrency : spawn;
 
     bool[string] uniques;
 
@@ -425,6 +423,7 @@ void reportTitle(TitleLookupRequest request,
 
     if (request.results.domain.length)
     {
+        import kameloso.irccolours : ircBold;
         import std.format : format;
 
         line = colouredOutgoing ?
@@ -451,7 +450,7 @@ void reportTitle(TitleLookupRequest request,
 void reportYouTubeTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
-    import kameloso.irccolours : ircColourByHash;
+    import kameloso.irccolours : ircColourByHash, ircBold;
     import std.format : format;
 
     immutable line = colouredOutgoing ?

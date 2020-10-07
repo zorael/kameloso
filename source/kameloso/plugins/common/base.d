@@ -9,7 +9,7 @@ module kameloso.plugins.common.base;
 
 private:
 
-import kameloso.kameloso;
+import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
 import dialect.defs;
 import std.traits : isSomeFunction;

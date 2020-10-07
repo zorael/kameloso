@@ -23,7 +23,6 @@ import kameloso.plugins.printer.logging;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common;
 import kameloso.irccolours;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -469,6 +468,8 @@ void onISUPPORT(PrinterPlugin plugin)
         }
     }
 
+    import kameloso.common : Tint, logger;
+
     logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
         Tint.info, networkName, Tint.log,
         Tint.info, Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
@@ -523,13 +524,14 @@ void start(PrinterPlugin plugin)
 
     static long untilNextMidnight()
     {
+        import kameloso.common : nextMidnight;
         import std.datetime.systime : Clock;
 
         immutable now = Clock.currTime;
         immutable nowInUnix = now.toUnixTime;
-        immutable nextMidnight = now.nextMidnight.toUnixTime;
+        immutable nextMidnightTimestamp = now.nextMidnight.toUnixTime;
 
-        return (nextMidnight - nowInUnix);
+        return (nextMidnightTimestamp - nowInUnix);
     }
 
     void daybreakDg()
@@ -540,6 +542,7 @@ void start(PrinterPlugin plugin)
             {
                 if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
                 {
+                    import kameloso.common : logger;
                     logger.info(datestamp);
                 }
 
@@ -633,6 +636,8 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         break;
 
     default:
+        import kameloso.common : logger;
+
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }

@@ -13,7 +13,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer.base : PrinterPlugin;
+import kameloso.plugins.printer.base;
 
 import kameloso.plugins.common.core;
 import kameloso.irccolours;

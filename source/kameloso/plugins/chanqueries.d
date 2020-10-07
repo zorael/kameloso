@@ -16,7 +16,6 @@ version(WithChanQueriesService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.base;
 import kameloso.plugins.common.delayawait;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;

@@ -22,8 +22,6 @@ import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.concurrency;
-import std.stdio : File;
 import std.typecons : Flag, No, Yes;
 
 
@@ -84,7 +82,10 @@ void pipereader(shared IRCPluginState newState, const string filename,
     const Flag!"brightTerminal" brightTerminal)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
+    import std.concurrency : OwnerTerminated, receiveTimeout, send, spawn;
     import std.file : FileException, exists, remove;
+    import std.stdio : File;
+    import std.variant : Variant;
 
     version(Posix)
     {
@@ -359,6 +360,8 @@ void onWelcome(PipelinePlugin plugin)
 
     try
     {
+        import std.concurrency : spawn;
+
         createFIFO(plugin.fifoFilename);
         plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
             (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
@@ -394,8 +397,9 @@ void onWelcome(PipelinePlugin plugin)
  +/
 void teardown(PipelinePlugin plugin)
 {
+    import std.concurrency : send;
     import std.file : exists, isDir;
-    import std.concurrency : Tid;
+    import std.stdio : File;
 
     if (!plugin.workerRunning) return;
 
@@ -456,6 +460,8 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
+    import std.concurrency : Tid;
+
     /// All Pipeline settings gathered.
     PipelineSettings pipelineSettings;
 

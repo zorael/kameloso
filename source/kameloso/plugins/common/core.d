@@ -34,7 +34,6 @@ module kameloso.plugins.common.core;
 
 private:
 
-import kameloso.kameloso;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -229,6 +228,8 @@ version(WithPlugins)
 mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
+    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, PrivilegeLevel;
+    private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
@@ -356,6 +357,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
      +/
     private FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
     {
+        import kameloso.plugins.common.core : filterSender;
         import std.typecons : Flag, No, Yes;
 
         version(TwitchSupport)
@@ -449,6 +451,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
          +/
         NextStep process(alias fun)(ref IRCEvent event)
         {
+            import kameloso.plugins.common.core : BotCommand, BotRegex,
+                ChannelPolicy, Verbose, prefixPolicyMatches;
+
             enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
                 Yes.verbose :
                 No.verbose;
@@ -978,6 +983,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 static assert(0, "`%s` has an unsupported function signature: `%s`"
                     .format(fullyQualifiedName!fun, typeof(fun).stringof));
             }
+
+            import kameloso.plugins.common.core : Chainable, Terminating;
 
             static if (isAnnotated!(fun, Chainable) ||
                 (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
@@ -1550,6 +1557,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
     {
         enum ctCommandsEnumLiteral =
         {
+            import kameloso.plugins.common.core : BotCommand, BotRegex, Description;
             import lu.traits : getSymbolsByUDA, isAnnotated;
             import std.meta : AliasSeq, Filter;
             import std.traits : getUDAs, hasUDA, isSomeFunction;
@@ -1968,6 +1976,7 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
 struct IRCPluginState
 {
 private:
+    import kameloso.kameloso : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;

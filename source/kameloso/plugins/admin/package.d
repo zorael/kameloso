@@ -15,4 +15,4 @@ public:
 
 import kameloso.plugins.admin.base;
 import kameloso.plugins.admin.classifiers;
-import kameloso.plugins.admin.debugging;
+debug import kameloso.plugins.admin.debugging;

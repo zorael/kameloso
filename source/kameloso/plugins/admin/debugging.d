@@ -14,7 +14,7 @@ debug:
 
 private:
 
-import kameloso.plugins.admin : AdminPlugin;
+import kameloso.plugins.admin.base : AdminPlugin;
 
 import kameloso.common : logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour;//, ircColourByHash;

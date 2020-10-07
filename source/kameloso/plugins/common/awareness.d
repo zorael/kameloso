@@ -102,6 +102,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
+    private import kameloso.plugins.common.core : Chainable;
+    private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "MinimalAuthentication");
@@ -265,6 +267,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
+    private import kameloso.plugins.common.core : Chainable;
+    private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "UserAwareness");
@@ -653,6 +657,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
+    private import kameloso.plugins.common.core : Chainable;
+    private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "ChannelAwareness");
@@ -1292,6 +1298,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
+    private import kameloso.plugins.common.core : Chainable;
+    private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
     mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
