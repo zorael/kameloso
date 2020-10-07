@@ -225,8 +225,7 @@ public:
     ---
  +/
 version(WithPlugins)
-mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
-    string module_ = __MODULE__)
+mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.core : FilterResult, IRCPluginState, PrivilegeLevel;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
@@ -1880,8 +1879,8 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
     version(WithPersistenceService) {}
     else
     {
-        pragma(msg, "WARNING: The Persistence service is disabled. " ~
-            "Event triggers may or may not work. You get to keep the shards.");
+        pragma(msg, "Warning: The Persistence service is disabled. " ~
+            "Event triggers may or may not work. You get to keep the pieces.");
     }
 
     immutable class_ = event.sender.class_;

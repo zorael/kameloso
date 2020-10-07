@@ -27,7 +27,7 @@ import std.typecons : Flag, No, Yes;
 
 /+
     For storage location of the FIFO it makes sense to default to /tmp;
-    Posix however defines a variable $TMPDIR, which should take precedence.
+    Posix defines a variable $TMPDIR, which should take precedence.
     However, this supposedly makes the file really difficult to access on macOS
     where it translates to some really long, programmatically generated path.
     macOS naturally does support /tmp though. So shrug and version it to

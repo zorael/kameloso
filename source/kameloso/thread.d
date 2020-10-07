@@ -90,7 +90,6 @@ struct ScheduledDelegate
 }
 
 
-
 version(Posix)
 {
     private import core.sys.posix.pthread : pthread_t;

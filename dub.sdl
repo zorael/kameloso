@@ -44,7 +44,7 @@ versions \
 /**
     Services; needed for everything to work right.
 
-    Undefined behaviour when disabled.
+    Program exhibits undefined behaviour (read: breaks) when any of these are disabled.
  */
 versions \
     "WithCTCPService" \

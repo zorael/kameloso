@@ -476,7 +476,6 @@ public:
 
                     if (ssl)
                     {
-
                         openssl.SSL_write(sslInstance, cast(void*)&piece[0], cast(int)end);
                         openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
                     }

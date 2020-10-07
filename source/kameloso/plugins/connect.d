@@ -3,7 +3,7 @@
     as well as managing authentication to services. It also manages responding
     to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
 
-    The actual connection logic is in the `kameloso.net` dependency module.
+    The actual connection logic is in the `kameloso.net` module.
 
     See_Also:
         kameloso.net
