@@ -12,7 +12,6 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common.core : IRCPlugin;
-import kameloso.plugins.common;
 import dialect.defs;
 import core.thread : Fiber;
 import std.traits : isSomeFunction;

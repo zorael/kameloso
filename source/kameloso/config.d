@@ -6,7 +6,7 @@ module kameloso.config;
 
 private:
 
-import kameloso.kameloso;
+import kameloso.kameloso : Kameloso, IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import std.typecons : Flag, No, Yes;
 

@@ -5,10 +5,10 @@ module kameloso.core;
 
 private:
 
-import kameloso.kameloso;
+import kameloso.kameloso : Kameloso, CoreSettings;
 import kameloso.common : Tint, logger;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
-import dialect;
+import dialect.defs;
 import lu.common : Next;
 import std.typecons : Flag, No, Yes;
 
@@ -309,6 +309,7 @@ void messageFiber(ref Kameloso instance)
 
                 if (!prelude.length)
                 {
+                    import dialect.common : IRCControlCharacter;
                     line = "PRIVMSG %s :%cACTION %s%2$c".format(emoteTarget,
                         cast(char)IRCControlCharacter.ctcp, event.content);
                 }
@@ -929,6 +930,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
  +/
 void processLineFromServer(ref Kameloso instance, const string raw, const long nowInUnix)
 {
+    import dialect.common : IRCParseException;
     import lu.string : NomException;
     import core.exception : UnicodeException;
     import std.utf : UTFException;
@@ -1424,6 +1426,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
  +/
 void processRepeats(ref Kameloso instance, IRCPlugin plugin)
 {
+    import dialect.common : IRCParseException;
     import lu.string : NomException;
     import core.thread : Fiber;
 
@@ -2085,6 +2088,8 @@ Next verifySettings(ref Kameloso instance)
 {
     if (!instance.settings.force)
     {
+        import dialect.common : isValidNickname;
+
         IRCServer conservativeServer;
         conservativeServer.maxNickLength = 25;  // Twitch max, should be enough
 

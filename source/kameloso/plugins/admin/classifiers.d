@@ -15,7 +15,7 @@ private:
 
 import kameloso.plugins.admin.base;
 
-import kameloso.plugins.common;
+import kameloso.plugins.common.base : nameOf;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;

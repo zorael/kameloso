@@ -67,10 +67,6 @@
  +/
 module kameloso.net;
 
-private:
-
-import requests.ssl_adapter;
-
 public:
 
 @safe:
@@ -129,6 +125,7 @@ enum DefaultTimeout
 struct Connection
 {
 private:
+    import requests.ssl_adapter : SSL, SSL_CTX, openssl;
     import std.socket : Address, Socket, SocketOption;
 
     /// Real IPv4 and IPv6 sockets to connect through.
@@ -654,6 +651,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
         if (conn.ssl)
         {
+            import requests.ssl_adapter : openssl;
             attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
                 cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
         }
@@ -908,6 +906,8 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
                     if (conn.ssl)
                     {
+                        import requests.ssl_adapter : openssl;
+
                         immutable code = openssl.SSL_connect(conn.sslInstance);
 
                         if (code != 1)

@@ -10,7 +10,7 @@ module kameloso.getopt;
 
 private:
 
-import kameloso.kameloso;
+import kameloso.kameloso : Kameloso, IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
