@@ -1005,6 +1005,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
         alias pluginFuns = Filter!(isNormalPluginFunction, funs);
 
         /// Sanitise and try again once on UTF/Unicode exceptions
+        version(SanitizeAndRetryOnUnicodeException)
         static void sanitizeEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
@@ -1070,46 +1071,54 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_,
                 }
                 catch (Exception e)
                 {
-                    import core.exception : UnicodeException;
-                    import std.utf : UTFException;
-
                     /*logger.warningf("tryProcess some exception on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    immutable isRecoverableException =
-                        (cast(UTFException)e !is null) ||
-                        (cast(UnicodeException)e !is null);
-
-                    if (!isRecoverableException) throw e;
-
-                    sanitizeEvent(event);
-
-                    // Copy-paste, not much we can do otherwise
-                    immutable next = process!fun(event);
-
-                    if (next == NextStep.continue_)
+                    version(SanitizeAndRetryOnUnicodeException)
                     {
-                        continue;
-                    }
-                    else if (next == NextStep.repeat)
-                    {
-                        // only repeat once so we don't endlessly loop
-                        if (process!fun(event) == NextStep.continue_)
+                        import core.exception : UnicodeException;
+                        import std.utf : UTFException;
+
+                        immutable isRecoverableException =
+                            (cast(UTFException)e !is null) ||
+                            (cast(UnicodeException)e !is null);
+
+                        if (!isRecoverableException) throw e;
+
+                        sanitizeEvent(event);
+
+                        // Copy-paste, not much we can do otherwise
+                        immutable next = process!fun(event);
+
+                        if (next == NextStep.continue_)
                         {
                             continue;
                         }
-                        else
+                        else if (next == NextStep.repeat)
+                        {
+                            // only repeat once so we don't endlessly loop
+                            if (process!fun(event) == NextStep.continue_)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                return;
+                            }
+                        }
+                        else if (next == NextStep.return_)
                         {
                             return;
                         }
-                    }
-                    else if (next == NextStep.return_)
-                    {
-                        return;
+                        else
+                        {
+                            assert(0);
+                        }
                     }
                     else
                     {
-                        assert(0);
+                        // noop, just rethrow
+                        throw e;
                     }
                 }
             }
