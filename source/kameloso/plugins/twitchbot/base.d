@@ -614,8 +614,12 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 
     room.broadcast.active = false;
     room.broadcast.stopTime = event.time;
-    room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
-    room.broadcast.chattersSeen = typeof(room.broadcast.chattersSeen).init;
+
+    version(TwitchAPIFeatures)
+    {
+        room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
+        room.broadcast.chattersSeen = typeof(room.broadcast.chattersSeen).init;
+    }
 
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
