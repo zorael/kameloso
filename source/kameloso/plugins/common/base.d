@@ -15,13 +15,14 @@ import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
-/+
-    Publicly import `kameloso.plugins.common.core.IRCPluginState` for compatibility
-    (since it used to be housed here)
- +/
-public import kameloso.plugins.common.core : IRCPluginState;
 
-//version = TwitchWarnings;
+public static import kameloso.plugins.common.core;
+
+deprecated("Import from `kameloso.plugins.common.core` directly instead")
+{
+    /// Deprecated alias to `kameloso.plugins.common.core.IRCPluginState`.
+    alias IRCPluginState = kameloso.plugins.common.core.IRCPluginState;
+}
 
 public:
 
