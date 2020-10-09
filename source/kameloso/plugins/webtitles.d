@@ -371,6 +371,8 @@ TitleLookupResults lookupTitle(const string url)
     client.addRequestHeader("Accept", "text/html");
 
     Document doc = new Document;
+    doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+
     Appender!(ubyte[]) sink;
     sink.reserve(WebtitlesPlugin.lookupBufferSize);
 
