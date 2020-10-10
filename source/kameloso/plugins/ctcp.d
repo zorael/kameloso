@@ -199,15 +199,11 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
     }
     else
     {
-        import dialect.common : IRCControlCharacter;
+        import dialect.common : I = IRCControlCharacter;
 
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-
-        with (IRCControlCharacter)
-        {
-            raw(service.state, ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), Yes.quiet);
-        }
+        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), No.quiet);
     }
 }
 
