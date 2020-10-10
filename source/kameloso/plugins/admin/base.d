@@ -689,7 +689,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "set")
 @Description("Changes a plugin's settings.", "$command [plugin.setting=value]")
-void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
+void onSetCommand(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;

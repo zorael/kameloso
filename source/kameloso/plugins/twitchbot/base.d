@@ -517,7 +517,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "start")
 @Description("Marks the start of a broadcast.")
-void onCommandStart(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to start a broadcast on a nonexistent room");
@@ -934,7 +934,7 @@ version(TwitchAPIFeatures)
 @Description("Queries the server for how long you have been a follower of the " ~
     "current channel. Optionally takes a nickname parameter, to query for someone else.",
     "$command [optional nickname]")
-void onFollowAge(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.conv : to;
@@ -1103,7 +1103,7 @@ void onFollowAge(TwitchBotPlugin plugin, const ref IRCEvent event)
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
 @(ChannelPolicy.home)
-void onRoomState(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
