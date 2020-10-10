@@ -3,8 +3,10 @@
     as well as managing authentication to services. It also manages responding
     to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
 
-    The actual connection logic is in the `lu.net` dependency module:<br>
-    - https://github.com/zorael/lu/blob/master/source/lu/net.d
+    The actual connection logic is in the `kameloso.net` module.
+
+    See_Also:
+        kameloso.net
  +/
 module kameloso.plugins.connect;
 
@@ -13,7 +15,7 @@ version(WithConnectService):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
@@ -28,8 +30,10 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct ConnectSettings
 {
+private:
     import lu.uda : CannotContainComments, Separator, Unserialisable;
 
+public:
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 
@@ -64,7 +68,7 @@ enum Progress
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
 @(ChannelPolicy.any)
-void onSelfpart(ConnectService service, const IRCEvent event)
+void onSelfpart(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
@@ -97,7 +101,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 // onSelfjoin
 /++
     Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
-    the current `ConnectService`'s `kameloso.plugins.core.IRCPluginState` upon joining it.
+    the current `ConnectService`'s `kameloso.plugins.common.core.IRCPluginState` upon joining it.
 
     Additionally records our given IDENT identifier. This is likely the first event
     after connection that carries us as a user, so we can only catch it as early
@@ -105,7 +109,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
-void onSelfjoin(ConnectService service, const IRCEvent event)
+void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -129,7 +133,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
     `kameoso.common.IRCBot` of the current `ConnectService`'s
-    `kameloso.plugins.core.IRCPluginState`.
+    `kameloso.plugins.common.core.IRCPluginState`.
 
     Params:
         service = The current `ConnectService`.
@@ -178,7 +182,7 @@ void joinChannels(ConnectService service)
     Encountered at least once, on a private server.
  +/
 @(IRCEvent.Type.ERR_NEEDPONG)
-void onToConnectType(ConnectService service, const IRCEvent event)
+void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
     if (service.serverPinged) return;
 
@@ -196,7 +200,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
     ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
-void onPing(ConnectService service, const IRCEvent event)
+void onPing(ConnectService service, const ref IRCEvent event)
 {
     import std.concurrency : prioritySend;
 
@@ -376,8 +380,8 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber fiber = new Fiber(&delayedJoinDg, 32_768);
-    delay(service, fiber, service.authenticationGracePeriod);
+    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, 32_768);
+    delay(service, delayedJoinFiber, service.authenticationGracePeriod);
 }
 
 
@@ -447,7 +451,7 @@ else
  +/
 @ChainableOnTwitch
 @(IRCEvent.Type.NOTICE)
-void onAuthEndNotice(ConnectService service, const IRCEvent event)
+void onAuthEndNotice(ConnectService service, const ref IRCEvent event)
 {
     version(TwitchSupport)
     {
@@ -476,7 +480,7 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.NOTICE)
-void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
+void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
@@ -586,7 +590,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad `dialect.IRCbot.pass`.
+    Quits the program if we supplied a bad `kameloso.kameloso.IRCBot.pass`.
 
     There's no point in reconnecting.
  +/
@@ -610,7 +614,7 @@ void onPassMismatch(ConnectService service)
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
-void onInvite(ConnectService service, const IRCEvent event)
+void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
@@ -632,7 +636,7 @@ void onInvite(ConnectService service, const IRCEvent event)
     (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
-void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
+void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : strippedRight;
 
@@ -835,15 +839,15 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    `kameloso.common.IRCbot.account` and `dialect.defs.IRCbot.password`,
+    `kameloso.kameloso.IRCBot.account` and `kameloso.kameloso.IRCBot.password`,
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where `dialect.defs.IRCbot.account` is the services account name and
-    `dialect.defs.IRCbot.password` is the account password.
+    ...where `kameloso.kameloso.IRCBot.account` is the services account name and
+    `kameloso.kameloso.IRCBot.password` is the account password.
 
     Params:
         service = The current `ConnectService`.
@@ -954,7 +958,7 @@ void onSASLFailure(ConnectService service)
     to support capabilities (e.g SwiftIRC).
  +/
 @(IRCEvent.Type.ERR_NOTREGISTERED)
-void onNoCapabilities(ConnectService service, const IRCEvent event)
+void onNoCapabilities(ConnectService service, const ref IRCEvent event)
 {
     if (event.aux == "CAP")
     {
@@ -970,10 +974,10 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
     (numeric `001`).
 
     Additionally performs post-connect routines (authenticates if not already done,
-    send-after-connect, joins channels, etc).
+    and send-after-connect).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(ConnectService service, const IRCEvent event)
+void onWelcome(ConnectService service, const ref IRCEvent event)
 {
     service.registration = Progress.finished;
     service.nickNegotiation = Progress.finished;
@@ -1011,10 +1015,25 @@ void onWelcome(ConnectService service, const IRCEvent event)
 
         service.sentAfterConnect = true;
     }
+}
 
-    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
+
+// onEndOfMotd
+/++
+    Joins channels and prints some Twitch warnings on end of MOTD.
+
+    Do this then instead of on `IRCEvent.Type.RPL_WELCOME` for better timing,
+    and to avoid having the message drown in MOTD.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOFMotd(ConnectService service)
+{
+    if (service.joinedChannels) return;
+
+    if ((service.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
-        (service.state.server.daemon == IRCServer.Daemon.twitch)))
+        (service.state.server.daemon == IRCServer.Daemon.twitch))
     {
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
@@ -1072,7 +1091,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
     Currently only RusNet is known to support codepages.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
-void onISUPPORT(ConnectService service, const IRCEvent event)
+void onISUPPORT(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : contains;
 
@@ -1090,7 +1109,7 @@ void onISUPPORT(ConnectService service, const IRCEvent event)
     This is a "benign" disconnect. We need to reconnect preemptively instead of
     waiting for the server to disconnect us, as it would otherwise constitute
     an error and the program would exit if
-    `kameloso.common.CoreSettings.endlesslyConnect` isn't set.
+    `kameloso.kameloso.CoreSettings.endlesslyConnect` isn't set.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)
@@ -1109,7 +1128,7 @@ void onReconnect(ConnectService service)
     that they enable hostmasks mode instead.
  +/
 @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
-void onUnknownCommand(ConnectService service, const IRCEvent event)
+void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
     if (service.serverSupportsWHOIS && (event.aux == "WHOIS"))
     {

@@ -30,7 +30,6 @@ module kameloso.thread;
 
 private:
 
-import std.typecons : Tuple;
 import core.thread : Fiber;
 
 public:
@@ -91,7 +90,6 @@ struct ScheduledDelegate
 }
 
 
-
 version(Posix)
 {
     private import core.sys.posix.pthread : pthread_t;
@@ -116,7 +114,7 @@ version(Posix)
         import core.thread : Thread;
         import std.string : toStringz;
 
-        pthread_setname_np(Thread.getThis().id, name.toStringz);
+        cast(void)pthread_setname_np(Thread.getThis().id, name.toStringz);
     }
 }
 
@@ -155,7 +153,7 @@ struct ThreadMessage
 
     /++
         Concurrency message asking for a reference to the arrays of
-        `kameloso.plugins.core.IRCPlugin`s in the current
+        `kameloso.plugins.common.core.IRCPlugin`s in the current
         `dialect.defs.IRCClient`'s plugin array.
      +/
     static struct PeekPlugins {}
@@ -291,7 +289,7 @@ final class CarryingFiber(T) : Fiber
 {
     /++
         Embedded payload value in this `core.thread.fiber.Fiber`; what distinguishes
-        it from normal ones.
+        it from plain `core.thread.fiber.Fiber`s.
      +/
     T payload;
 
@@ -368,4 +366,50 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
         Thread.sleep(nextStep);
         left -= step;
     }
+}
+
+
+// exhaustMessages
+/++
+    Exhausts the concurrency message mailbox.
+
+    This is done between connection attempts to get a fresh start.
+ +/
+void exhaustMessages()
+{
+    import core.time : msecs;
+    import std.concurrency : receiveTimeout;
+    import std.variant : Variant;
+
+    bool notEmpty;
+    static immutable almostInstant = 10.msecs;
+
+    do
+    {
+        notEmpty = receiveTimeout(almostInstant,
+            (Variant v) {}
+        );
+    }
+    while (notEmpty);
+}
+
+///
+unittest
+{
+    import std.concurrency : receiveTimeout, send, thisTid;
+    import std.variant : Variant;
+    import core.time : seconds;
+
+    foreach (immutable i; 0..10)
+    {
+        thisTid.send(i);
+    }
+
+    exhaustMessages();
+
+    immutable receivedSomething = receiveTimeout((-1).seconds,
+        (Variant v) {},
+    );
+
+    assert(!receivedSomething);
 }

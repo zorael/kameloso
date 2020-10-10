@@ -14,7 +14,7 @@ debug:
 
 private:
 
-import kameloso.plugins.admin : AdminPlugin;
+import kameloso.plugins.admin.base : AdminPlugin;
 
 import kameloso.common : logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour;//, ircColourByHash;
@@ -30,25 +30,20 @@ package:
     Prints incoming events to the local terminal, in forms depending on
     which flags have been set with bot commands.
 
-    If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
-    prints all incoming server strings.
+    If `kameloso.plugins.admin.base.AdminPlugin.printRaw` is set by way of
+    invoking `onCommandPrintRaw`, prints all incoming server strings.
 
-    If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
-    prints all incoming server strings byte by byte.
-
-    If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
-    prints all incoming events as assert statements, for use in generating source
-    code `unittest` blocks.
+    If `kameloso.plugins.admin.base.AdminPlugin.printBytes` is set by way of
+    invoking `onCommandPrintBytes`, prints all incoming server strings byte by byte.
  +/
-void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
+void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import std.stdio : stdout, write, writefln, writeln;
+    import std.stdio : write, writefln, writeln;
 
     if (plugin.adminSettings.printRaw)
     {
         if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
-        if (plugin.state.settings.flush) stdout.flush();
     }
 
     if (plugin.adminSettings.printBytes)
@@ -59,8 +54,6 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
         {
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
-
-        if (plugin.state.settings.flush) stdout.flush();
     }
 }
 
@@ -71,7 +64,7 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 
     It basically prints the matching `dialect.defs.IRCUser`.
  +/
-void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
+void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.printing : printObject;
     import std.algorithm.iteration : splitter;
@@ -96,13 +89,13 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandShowUsersImpl
 /++
-    Prints out the current `users` array of the `AdminPlugin`'s
-    `kameloso.plugins.core.IRCPluginState` to the local terminal.
+    Prints out the current `users` array of the `kameloso.plugins.admin.base.AdminPlugin`'s
+    `kameloso.plugins.common.core.IRCPluginState` to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
-    import std.stdio : stdout, writeln;
+    import std.stdio : writeln;
 
     foreach (immutable name, const user; plugin.state.users)
     {
@@ -111,7 +104,6 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
     }
 
     writeln(plugin.state.users.length, " users.");
-    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -121,7 +113,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
 
     You need basic knowledge of IRC server strings to use this.
  +/
-void onCommandSudoImpl(AdminPlugin plugin, const IRCEvent event)
+void onCommandSudoImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     raw(plugin.state, event.content);
 }
@@ -133,14 +125,14 @@ void onCommandSudoImpl(AdminPlugin plugin, const IRCEvent event)
 
     This is for debugging purposes.
  +/
-void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
+void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
     immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold :
+        "Printing all: " ~ plugin.adminSettings.printRaw.ircBold :
         "Printing all: " ~ plugin.adminSettings.printRaw.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
@@ -153,14 +145,14 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
 
     This is for debugging purposes.
  +/
-void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
+void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
     immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold :
+        "Printing bytes: " ~ plugin.adminSettings.printBytes.ircBold :
         "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
@@ -176,7 +168,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 void onCommandStatusImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObjects;
-    import std.stdio : stdout, writeln;
+    import std.stdio : writeln;
 
     logger.log("Current state:");
     printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
@@ -204,12 +196,12 @@ void onCommandStatusImpl(AdminPlugin plugin)
     Sends an internal bus message to other plugins, much like how such can be
     sent with the Pipeline plugin.
  +/
-void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
+void onCommandBusImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, busMessage;
     import lu.string : contains, nom;
     import std.concurrency : send;
-    import std.stdio : stdout, writeln;
+    import std.stdio : writeln;
 
     if (!event.content.length) return;
 
@@ -218,7 +210,6 @@ void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
         logger.info("Sending bus message.");
         writeln("Header: ", event.content);
         writeln("Content: (empty)");
-        if (plugin.state.settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
     }
@@ -230,7 +221,6 @@ void onCommandBusImpl(AdminPlugin plugin, const IRCEvent event)
         logger.info("Sending bus message.");
         writeln("Header: ", header);
         writeln("Content: ", slice);
-        if (plugin.state.settings.flush) stdout.flush();
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(),
             header, busMessage(slice));

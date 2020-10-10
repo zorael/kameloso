@@ -5,14 +5,13 @@
  +/
 module kameloso.plugins.common.mixins;
 
+version(WithPlugins):
+
 private:
 
-import kameloso.plugins.common;
 import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
-
-//version = ExplainRepeat;
 
 public:
 
@@ -31,7 +30,7 @@ public:
 
     Example:
     ---
-    void onSuccess(const IRCEvent successEvent) { /* ... */ }
+    void onSuccess(const ref IRCEvent successEvent) { /* ... */ }
     void onFailure(const IRCUser failureUser) { /* .. */ }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
@@ -53,6 +52,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 {
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
+    import std.typecons : Flag, No, Yes;
 
     mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
 
@@ -84,7 +84,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     static if (!alwaysLookup && !__traits(compiles, .hasUserAwareness))
     {
-        pragma(msg, "Warning: " ~ __FUNCTION__ ~ " mixes in `WHOISFiberDelegate` " ~
+        pragma(msg, "Warning: `" ~ __FUNCTION__ ~ "` mixes in `WHOISFiberDelegate` " ~
             "but its parent module does not mix in `UserAwareness`");
     }
 
@@ -272,7 +272,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     // enqueueAndWHOIS
     /++
         Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
-        and enqueues it into the `kameloso.plugins.core.IRCPluginState.awaitingFibers`
+        and enqueues it into the `kameloso.plugins.common.core.IRCPluginState.awaitingFibers`
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -443,8 +443,7 @@ mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ =
 {
 private:
     static import kameloso.messaging;
-    static import kameloso.common;
-    import kameloso.plugins.core : IRCPlugin;
+    import kameloso.plugins.common.core : IRCPlugin;
     import std.typecons : Flag, No, Yes;
 
     /// Symbol needed for the mixin constraints to work.
@@ -684,7 +683,7 @@ private:
 ///
 unittest
 {
-    import kameloso.plugins.core;
+    import kameloso.plugins.common.core : IRCPlugin, IRCPluginImpl, IRCPluginState;
 
     class MyPlugin : IRCPlugin
     {
@@ -740,6 +739,8 @@ unittest
 version(WithPlugins)
 mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
+    import kameloso.plugins.common.core : Repeat, Replay;
+    import dialect.defs : IRCUser;
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
     import std.traits : isSomeFunction;
@@ -777,7 +778,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
     // explainRepeat
     /++
-        Verbosely explains a repeat, including what `PrivilegeLevel` and
+        Verbosely explains a repeat, including what
+        `kameloso.plugins.common.core.PrivilegeLevel` and
         `dialect.defs.IRCUser.Class` were involved.
 
         Gated behind version `ExplainRepeat`.
@@ -868,16 +870,12 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
 
     /++
-        Queues the delegate `repeaterDelegate` with the passed `Replay`
-        attached to it.
+        Queues the delegate `repeaterDelegate` with the passed
+        `kameloso.plugins.common.core.Replay` attached to it.
      +/
     void repeat(Replay replay)
     {
-        import kameloso.plugins.common : repeat;
+        import kameloso.plugins.common.base : repeat;
         context.repeat(&repeaterDelegate, replay);
     }
-
-    /// Compatibility alias of `repeat`.
-    deprecated("Use `repeat` instead")
-    alias queueToReplay = repeat;
 }

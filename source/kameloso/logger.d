@@ -4,7 +4,7 @@
 
     Example:
     ---
-    auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal, Yes.flush);
+    auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal);
 
     logger.log("This is LogLevel.log");
     logger.info("LogLevel.info");
@@ -22,12 +22,6 @@ import std.range.primitives : isOutputRange;
 
 public:
 
-/+
-    Build tint colours at compile time, saving the need to compute them during
-    runtime. It's a trade-off.
- +/
-version = CtTints;
-
 
 // KamelosoLogger
 /++
@@ -44,17 +38,6 @@ private:
     import std.traits : EnumMembers;
     import std.typecons : Flag, No, Yes;
 
-    /// Buffer to compose a line in before printing it to screen.
-    Appender!(char[]) linebuffer;
-
-    /// The initial size to allocate for `linebuffer`. It will grow if needed.
-    enum linebufferInitialSize = 4096;
-
-    bool monochrome;  /// Whether to use colours or not in logger output.
-    bool brightTerminal;   /// Whether or not to use colours for a bright background.
-    bool flush;  /// Whether or not we should flush `stdout` after finishing writing to it.
-
-public:
     version(Colours)
     {
         import kameloso.constants : DefaultColours;
@@ -64,22 +47,29 @@ public:
         alias logcoloursDark = DefaultColours.logcoloursDark;
     }
 
+    /// Buffer to compose a line in before printing it to screen in one go.
+    Appender!(char[]) linebuffer;
+
+    /// The initial size to allocate for `linebuffer`. It will grow if needed.
+    enum linebufferInitialSize = 4096;
+
+    bool monochrome;  /// Whether to use colours or not in logger output.
+    bool brightTerminal;   /// Whether or not to use colours for a bright background.
+
+public:
     /++
         Create a new `KamelosoLogger` with the passed settings.
 
         Params:
             monochrome = Whether or not to print colours.
             brightTerminal = Bright terminal setting.
-            flush = Whether or not to flush `stdout` after printing.
      +/
     this(const Flag!"monochrome" monochrome,
-        const Flag!"brightTerminal" brightTerminal,
-        const Flag!"flush" flush) @safe
+        const Flag!"brightTerminal" brightTerminal) @safe
     {
         linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
-        this.flush = flush;
     }
 
 
@@ -181,7 +171,7 @@ public:
         /// Provides easy way to get a log tint.
         auto tracetint() const @property { return tintImpl!(LogLevel.trace); }
 
-        /// Convenience alias to `tracetint`.
+        /// Synonymous alias to `tracetint`.
         alias resettint = tracetint;
 
         /// Provides easy way to get a log tint.
@@ -239,13 +229,10 @@ public:
 
     /++
         Outputs the tail of a logger message.
-
-        @trusted to allow us to flush `stdout`. `std.stdio.writeln` seems to
-        do this and it's annotated @trusted, so just mimic that.
      +/
-    private void finishLogMsg() @trusted
+    private void finishLogMsg() @safe
     {
-        import std.stdio : stdout, writeln;
+        import std.stdio : writeln;
 
         version(Colours)
         {
@@ -258,8 +245,6 @@ public:
 
         writeln(linebuffer.data);
         linebuffer.clear();
-
-        if (flush) stdout.flush();
     }
 
 
@@ -477,7 +462,7 @@ unittest
         }
     }
 
-    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, Yes.flush);
+    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal);
 
     log_.logf!"log: %s"("log");
     log_.infof!"log: %s"("info");
@@ -488,7 +473,7 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal, Yes.flush);
+        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -497,7 +482,7 @@ unittest
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
 
-        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal, Yes.flush);
+        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal);
 
         log_.log("log: log");
         log_.info("log: info");

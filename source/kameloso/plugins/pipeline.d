@@ -17,19 +17,17 @@ version(WithPipelinePlugin):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.concurrency;
-import std.stdio : File;
 import std.typecons : Flag, No, Yes;
 
 
 /+
     For storage location of the FIFO it makes sense to default to /tmp;
-    Posix however defines a variable $TMPDIR, which should take precedence.
+    Posix defines a variable $TMPDIR, which should take precedence.
     However, this supposedly makes the file really difficult to access on macOS
     where it translates to some really long, programmatically generated path.
     macOS naturally does support /tmp though. So shrug and version it to
@@ -44,8 +42,10 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct PipelineSettings
 {
+private:
     import lu.uda : Unserialisable;
 
+public:
     /// Whether or not the Pipeline plugin should do anything at all.
     @Enabler bool enabled = true;
 
@@ -69,7 +69,7 @@ import std.typecons : Flag, No, Yes;
     It is to be run in a separate thread.
 
     Params:
-        newState = The `kameloso.plugins.core.IRCPluginState` of the original
+        newState = The `kameloso.plugins.common.core.IRCPluginState` of the original
             `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
             concurrency messages, made `shared` to allow being sent between threads.
         filename = String filename of the FIFO to read from.
@@ -82,7 +82,10 @@ void pipereader(shared IRCPluginState newState, const string filename,
     const Flag!"brightTerminal" brightTerminal)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
+    import std.concurrency : OwnerTerminated, receiveTimeout, send, spawn;
     import std.file : FileException, exists, remove;
+    import std.stdio : File;
+    import std.variant : Variant;
 
     version(Posix)
     {
@@ -200,7 +203,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         static immutable instant = (-1).seconds;
         bool halt;
 
-        receiveTimeout(instant,
+        cast(void)receiveTimeout(instant,
             (ThreadMessage.Teardown)
             {
                 halt = true;
@@ -357,6 +360,8 @@ void onWelcome(PipelinePlugin plugin)
 
     try
     {
+        import std.concurrency : spawn;
+
         createFIFO(plugin.fifoFilename);
         plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
             (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
@@ -392,8 +397,9 @@ void onWelcome(PipelinePlugin plugin)
  +/
 void teardown(PipelinePlugin plugin)
 {
+    import std.concurrency : send;
     import std.file : exists, isDir;
-    import std.concurrency : Tid;
+    import std.stdio : File;
 
     if (!plugin.workerRunning) return;
 
@@ -454,6 +460,8 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
+    import std.concurrency : Tid;
+
     /// All Pipeline settings gathered.
     PipelineSettings pipelineSettings;
 

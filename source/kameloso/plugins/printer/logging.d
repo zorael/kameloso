@@ -13,7 +13,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer.base : PrinterPlugin, datestamp;
+import kameloso.plugins.printer.base;
 
 import kameloso.common : Tint, logger;
 import dialect.defs;
@@ -26,17 +26,19 @@ package:
 /++
     A struct containing lines to write to a log file when next committing such.
 
-    This is only relevant if `PrinterSettings.bufferedWrites` is set.
+    This is only relevant if `kameloso.plugins.printer.base.PrinterSettings.bufferedWrites` is set.
 
     As a micro-optimisation an `std.array.Appender` is used to store the lines,
     instead of a normal `string[]`.
  +/
 struct LogLineBuffer
 {
+private:
     import std.array : Appender;
     import std.datetime.systime : SysTime;
     import std.path : buildNormalizedPath;
 
+public:
     /// Basename directory this buffer will be saved to.
     string dir;
 
@@ -80,7 +82,7 @@ struct LogLineBuffer
 /++
     Logs an event to disk.
 
-    It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
+    It is set to `kameloso.plugins.common.core.ChannelPolicy.any`, and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 
@@ -89,9 +91,9 @@ struct LogLineBuffer
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        `commitAllLogsImpl`
+        commitAllLogsImpl
  +/
-void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
+void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
     import std.typecons : Flag, No, Yes;
@@ -99,7 +101,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
-    static void writeEventToFile(PrinterPlugin plugin, const IRCEvent event,
+    static void writeEventToFile(PrinterPlugin plugin, const ref IRCEvent event,
         const string key, const string givenPath = string.init,
         Flag!"extendPath" extendPath = Yes.extendPath, Flag!"raw" raw = No.raw)
     {
@@ -403,7 +405,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     ---
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
         logLocation = String of the location directory we want to store logs in.
 
     Returns:
@@ -446,10 +448,10 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
     Merely wraps `commitLog` by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
 
     See_Also:
-        `commitLog`
+        commitLog
  +/
 void commitAllLogsImpl(PrinterPlugin plugin)
 {
@@ -461,7 +463,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(buffer);
+        commitLog(plugin, buffer);
     }
 }
 
@@ -475,12 +477,13 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
+        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
         buffer = `LogLineBuffer` whose lines to commit to disk.
 
     See_Also:
-        `commitAllLogsImpl`
+        commitAllLogsImpl
  +/
-void commitLog(ref LogLineBuffer buffer)
+void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.terminal : TerminalToken;
     import std.exception : ErrnoException;
@@ -507,20 +510,17 @@ void commitLog(ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        logger.warning("File exception caught when committing log: ",
-            e.msg, cast(char)TerminalToken.bell);
+        logger.warning("File exception caught when committing log: ", e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
     {
-        logger.warning("Exception caught when committing log: ",
-            e.msg, cast(char)TerminalToken.bell);
+        logger.warning("Exception caught when committing log: ", e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        logger.warning("Unhandled exception caught when committing log: ",
-            e.msg, cast(char)TerminalToken.bell);
+        logger.warning("Unhandled exception caught when committing log: ", e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

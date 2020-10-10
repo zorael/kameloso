@@ -6,20 +6,16 @@ module kameloso.plugins.twitchbot.api;
 version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
-
-version(Web) version = TwitchAPIFeatures;
-
 version(TwitchAPIFeatures):
 
 private:
 
-import kameloso.plugins.twitchbot.base : TwitchBotPlugin, handleSelfjoin;
+import kameloso.plugins.twitchbot.base;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.algorithm.comparison : among;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -225,7 +221,7 @@ void generateKey(TwitchBotPlugin plugin)
 
     if (plugin.state.settings.force)
     {
-        logger.warning("Forcing; not automatically opening brower.");
+        logger.warning("Forcing; not automatically opening browser.");
         printManualURL();
     }
     else
@@ -371,7 +367,6 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.reset);
     writeln();
-    stdout.flush();
 }
 
 
@@ -382,7 +377,7 @@ void generateKey(TwitchBotPlugin plugin)
     Once the query returns, the response body is checked to see whether or not
     an error occurred. If so, it throws an exception with a descriptive message.
 
-    Note: Must be called from inside a `core.thread.Fiber`.
+    Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Example:
     ---
@@ -390,7 +385,7 @@ void generateKey(TwitchBotPlugin plugin)
     ---
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
 
@@ -497,7 +492,8 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     ---
     immutable url = "https://api.twitch.tv/helix/some/api/url";
 
-    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
+    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer,
+        plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
     delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
@@ -567,7 +563,7 @@ void queryTwitchImpl(const string url, const string authToken,
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         url = The URL to follow.
 
     Returns:
@@ -575,6 +571,7 @@ void queryTwitchImpl(const string url, const string authToken,
         If nothing was found, an empty `std.json.JSONValue.init` is returned.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
 
@@ -599,6 +596,7 @@ JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
     It is not updated in realtime, so it doesn't make sense to call this often.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
+in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
 
@@ -648,7 +646,7 @@ JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
     Validates the current access key, retrieving information about it.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
 
     Returns:
         A `std.json.JSONValue` with the validation information JSON of the
@@ -689,12 +687,12 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 // getFollows
 /++
     Fetches a list of all follows of the passed channel and caches them in
-    the channel's entry in `TwitchBotPlugin.rooms`.
+    the channel's entry in `kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms`.
 
-    Note: Must be called from inside a `core.thread.Fiber`.
+    Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         id = The string identifier for the channel.
 
     Returns:
@@ -718,8 +716,6 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     {
         immutable paginatedURL = after.length ?
             (url ~ "&after=" ~ after) : url;
-
-        scope(failure) plugin.useAPIFeatures = false;
 
         immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);
@@ -745,12 +741,14 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     Given a query time measurement, calculate a new approximate query time based on
     the weighted averages of the old value and said new measurement.
 
-    The old value is given a weight of `TwitchBotPlugin.approximateQueryAveragingWeight`
+    The old value is given a weight of
+    `kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryAveragingWeight`
     and the new measurement a weight of 1. Additionally the measurement is padded
-    by `TwitchBotPlugin.approximateQueryMeasurementPadding` to be on the safe side.
+    by `kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding`
+    to be on the safe side.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
@@ -781,10 +779,11 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Merely spins and monitors the shared `bucket` associative array for when a
     response has arrived, and then returns it.
 
-    Times out after a hardcoded `TwitchBotPlugin.queryResponseTimeout` if nothing
-    was received.
+    Times out after a hardcoded
+    `kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout`
+    if nothing was received.
 
-    Note: Must be called from inside a `core.thread.Fiber`.
+    Note: Must be called from inside a `core.thread.fiber.Fiber`.
 
     Example:
     ---
@@ -806,7 +805,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     ---
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         url = The URL that was queried prior to calling this function. Must match precisely.
         leaveTimingAlone = Whether or not to adjust the approximate query time.
             Enabled by default but can be disabled if the caller wants to do it.

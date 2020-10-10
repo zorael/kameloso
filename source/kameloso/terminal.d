@@ -101,8 +101,8 @@ version(Windows)
         originalCP = GetConsoleCP();
         originalOutputCP = GetConsoleOutputCP();
 
-        SetConsoleCP(CP_UTF8);
-        SetConsoleOutputCP(CP_UTF8);
+        cast(void)SetConsoleCP(CP_UTF8);
+        cast(void)SetConsoleOutputCP(CP_UTF8);
 
         auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
@@ -112,7 +112,7 @@ version(Windows)
         if (getModeRetval != 0)
         {
             // The console is a real terminal, not a pager (or Cygwin mintty)
-            SetConsoleMode(stdoutHandle, originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            cast(void)SetConsoleMode(stdoutHandle, originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         }
 
         // atexit handlers are also called when exiting via exit() etc.;
@@ -132,9 +132,90 @@ version(Windows)
         auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
 
-        SetConsoleCP(originalCP);
-        SetConsoleOutputCP(originalOutputCP);
-        SetConsoleMode(stdoutHandle, originalConsoleMode);
+        cast(void)SetConsoleCP(originalCP);
+        cast(void)SetConsoleOutputCP(originalOutputCP);
+        cast(void)SetConsoleMode(stdoutHandle, originalConsoleMode);
+    }
+}
+
+
+version(Posix)
+{
+    // isTTY
+    /++
+        Determines whether or not the program is being run in a terminal (virtual TTY).
+
+        "isatty() returns 1 if fd is an open file descriptor referring to a
+        terminal; otherwise 0 is returned, and errno is set to indicate the error."
+
+        Returns:
+            true if the current environment appears to be a terminal; false if not (e.g. pager).
+     +/
+    bool isTTY() //@safe
+    {
+        import core.sys.posix.unistd : STDOUT_FILENO, isatty;
+        return (isatty(STDOUT_FILENO) == 1);
+    }
+}
+else version(Windows)
+{
+    /// Ditto
+    bool isTTY() @system
+    {
+        import core.sys.windows.winbase : FILE_TYPE_PIPE, GetFileType, GetStdHandle, STD_OUTPUT_HANDLE;
+        auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        return (GetFileType(handle) != FILE_TYPE_PIPE);
+    }
+}
+else
+{
+    /// Ditto
+    bool isTTY() //@safe
+    {
+        return true;
+    }
+}
+
+
+// ensureAppropriateBuffering
+/++
+    Ensures select non-TTY environments (like Cygwin) are line-buffered.
+    Allows for overriding behaviour and forcing the change in buffer mode.
+
+    Params:
+        override_ = Whether or not to override checks and always set line buffering.
+ +/
+void ensureAppropriateBuffering(const bool override_ = false) @system
+{
+    import kameloso.platform : currentPlatform;
+
+    if (isTTY) return;
+
+    // Some environments require us to flush standard out after writing to it,
+    // or else nothing will appear on screen (until it gets automatically flushed
+    // at an indeterminate point in the future).
+    // Automate this by setting standard out to be line-buffered.
+
+    static void setLineBufferingMode()
+    {
+        import kameloso.constants : BufferSize;
+        import std.stdio : stdout;
+        import core.stdc.stdio : _IOLBF;
+
+        stdout.setvbuf(BufferSize.vbufStdout, _IOLBF);  // FIXME
+    }
+
+    if (override_) return setLineBufferingMode();
+
+    switch (currentPlatform)
+    {
+    case "Cygwin":  // No longer seems to need this?
+    case "vscode":
+        return setLineBufferingMode();
+
+    default:
+        // Non-whitelisted non-TTY; just leave as-is.
+        break;
     }
 }
 
@@ -260,8 +341,8 @@ enum TerminalReset
     ...where `Dark` and `Bright` are two different enums.
  +/
 enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
-                        is(T : TerminalFormat) || is(T : TerminalReset) ||
-                        is(T == int);
+                        is(T : TerminalFormat) || is(T : TerminalReset);/* ||
+                        is(T == int);*/
 
 
 // colour

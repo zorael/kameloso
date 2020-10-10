@@ -4,13 +4,13 @@
     Employs the standard `std.getopt` to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
     function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
-    `kameloso.common.IRCBot` and `kameloso.common.CoreSettings`.
+    `kameloso.kameloso.IRCBot` and `kameloso.kameloso.CoreSettings`.
  +/
 module kameloso.getopt;
 
 private:
 
-import kameloso.common : CoreSettings, IRCBot, Kameloso;
+import kameloso.kameloso : Kameloso, IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
     ---
 
     Params:
-        results = Results from a `std.getopt.getopt` call, usually with `.helpWanted` true.
+        results = Results from a `std.getopt.getopt` call.
         monochrome = Whether or not terminal colours should be used.
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adjusted to suit.
@@ -95,15 +95,16 @@ void printHelp(GetoptResult results,
 
 // writeConfig
 /++
-    Writes configuration to file, verbosely.
+    Writes configuration to file, verbosely. Additionally gives some empty
+    settings default values.
 
     The filename is read from `kameloso.common.settings`.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
         client = Reference to the current `dialect.defs.IRCClient`.
         server = Reference to the current `dialect.defs.IRCServer`.
-        bot = Reference to the current `kameloso.common.IRCBot`.
+        bot = Reference to the current `kameloso.kameloso.IRCBot`.
         customSettings = const string array to all the custom settings set
             via `getopt`, to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
@@ -169,8 +170,8 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
-        customSettings = const string array to all the custom settings set
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
+        customSettings = Array of all the custom settings set
             via `getopt`, to apply to things before saving to disk.
         monochrome = Whether or not terminal colours should be used.
         brightTerminal = Whether or not the terminal has a bright background
@@ -217,8 +218,8 @@ public:
 
 // handleGetopt
 /++
-    Read command-line options and apply them over values previously read from
-    the configuration file.
+    Reads command-line options and applies them over values previously read from
+    the configuration file, as well as dictates some other behaviour.
 
     The priority of options then becomes getopt over config file over hardcoded defaults.
 
@@ -232,8 +233,8 @@ public:
     ---
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`.
-        args = The `string[]` args the program was called with.
+        instance = Reference to the current `kameloso.kameloso.Kameloso`.
+        args = The command-line arguments the program was called with.
         customSettings = Out array of custom settings to apply on top of
             the settings read from the configuration file.
 
@@ -251,11 +252,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     {
         import kameloso.common : Tint, printVersionInfo;
         import kameloso.config : applyDefaults, readConfigInto;
-        import std.format : format;
         import std.getopt : arraySep, config, getopt;
-        import std.stdio : stdout, writeln;
-
-        scope(exit) if (instance.settings.flush) stdout.flush();
 
         bool shouldWriteConfig;
         bool shouldOpenEditor;
@@ -275,18 +272,15 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             `readConfigInto`  call. Then call getopt on the rest.
             Include "c|config" in the normal getopt to have it automatically
             included in the --help text.
-
-            .dup the args array so we preserve --monochrome for later.
          +/
 
-        // Can be const
+        // Results can be const
         auto argsDup = args.dup;
         const configFileResults = getopt(argsDup,
             config.caseSensitive,
             config.bundling,
             config.passThrough,
             "c|config", &settings.configFile,
-            "monochrome", &settings.monochrome,
             "version", &shouldShowVersion,
         );
 
@@ -297,12 +291,28 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             return Next.returnSuccess;
         }
 
-        // Set Tint.monochrome manually so setSyntax below is properly (un-)tinted
-        Tint.monochrome = settings.monochrome;
+        import kameloso.terminal : isTTY;
 
         // Ignore invalid/missing entries here, report them when initialising plugins
         settings.configFile.readConfigInto(parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
+
+        if (!isTTY)
+        {
+            // Non-TTYs (eg. pagers) can't show colours
+            instance.settings.monochrome = true;
+        }
+
+        // Get `--monochrome` again; let it overwrite what isTTY and readConfigInto set it to
+        cast(void)getopt(argsDup,
+            config.caseSensitive,
+            config.bundling,
+            config.passThrough,
+            "monochrome", &settings.monochrome
+        );
+
+        // Set Tint.monochrome manually so callGetopt results below is properly (un-)tinted
+        Tint.monochrome = settings.monochrome;
 
         /++
             Call getopt in a nested function so we can call it both to merely
@@ -310,7 +320,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
          +/
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
-            import std.conv : to;
+            import std.conv : text, to;
+            import std.format : format;
             import std.random : uniform;
             import std.range : repeat;
 
@@ -390,45 +401,29 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &inputAdmins,
                 "H|homeChannels",
                     quiet ? string.init :
-                        "Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe " ~
-                            Tint.info ~ '#' ~ Tint.reset ~ "s)" ~
-                            formatNum(bot.homeChannels.length),
-                    &inputHomeChannels,
-                "homes",
-                    quiet ? string.init :
-                        "^",
+                        text("Home channels to operate in, comma-separated " ~
+                            "(escape or enquote any octothorpe ",
+                            Tint.info, '#', Tint.reset, "s)",
+                            formatNum(bot.homeChannels.length)),
                     &inputHomeChannels,
                 "C|guestChannels",
                     quiet ? string.init :
                         "Non-home channels to idle in, comma-separated (ditto)" ~
                             formatNum(bot.guestChannels.length),
                     &inputGuestChannels,
-                "channels",
-                    quiet ? string.init :
-                        "^",
-                    &inputGuestChannels,
                 "a|append",
                     quiet ? string.init :
                         "Append input home channels, guest channels and " ~
-                        "admins instead of overriding",
+                            "admins instead of overriding",
                     &shouldAppendToArrays,
                 "settings",
                     quiet ? string.init :
                         "Show all plugins' settings",
                     &shouldShowSettings,
-                "show",
-                    quiet ? string.init :
-                        "^",
-                    &shouldShowSettings,
-               "bright",
+                "bright",
                     quiet ? string.init :
                         "Adjust colours for bright terminal backgrounds [%s%s%s]"
                         .format(Tint.info, settings.brightTerminal, Tint.reset),
-                    &settings.brightTerminal,
-                "brightTerminal",
-                    quiet ? string.init :
-                        "^",
                     &settings.brightTerminal,
                 "monochrome",
                     quiet ? string.init :
@@ -437,7 +432,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &settings.monochrome,
                 "set",
                     quiet ? string.init :
-                        "Manually change a setting (syntax: " ~ setSyntax ~ ')',
+                        text("Manually change a setting (syntax: ", setSyntax, ')'),
                     &customSettings,
                 "c|config",
                     quiet ? string.init :
@@ -476,19 +471,15 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                         "Flush screen output after each write to it. " ~
                             "(Use this if the screen only occasionally updates.)",
                     &settings.flush,
-                "save",
+                "w|save",
                     quiet ? string.init :
                         "Write configuration to file",
                     &shouldWriteConfig,
-                "w|writeconfig",
-                    quiet ? string.init :
-                        "^",
-                    &shouldWriteConfig,
                 "edit",
                     quiet ? string.init :
-                        "Open the configuration file in a text editor " ~
-                            "(or the default application used to open " ~ Tint.log ~
-                            "*.conf" ~ Tint.reset ~ " files on your system",
+                        text("Open the configuration file in a text editor " ~
+                            "(or the default application used to open ", Tint.log,
+                            "*.conf", Tint.reset, " files on your system"),
                     &shouldOpenEditor,
                 "version",
                     quiet ? string.init :
@@ -503,8 +494,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
         initLogger((settings.monochrome ? Yes.monochrome : No.monochrome),
-            (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
-            (settings.flush ? Yes.flush : No.flush));
+            (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
@@ -577,6 +567,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
         if (shouldWriteConfig || shouldOpenEditor)
         {
+            import std.stdio : writeln;
+
             // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
             writeln();  // pad slightly, for cosmetics
@@ -602,10 +594,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     Writes and/or edits the configuration file. Broken out into a separate
     function to lower the size of `handleGetopt`.
 
-    bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
+    Takes bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
 
     Params:
-        instance = The current `kameloso.common.Kameloso` instance.
+        instance = The current `kameloso.kameloso.Kameloso` instance.
         shouldWriteConfig = Writing to the configuration file was requested.
         shouldOpenEditor = Opening the configuration file in a text editor was requested.
         customSettings = Custom settings supplied at the command line, to be

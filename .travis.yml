@@ -1,7 +1,7 @@
 language: d
 
 sudo: required
-dist: bionic
+dist: focal
 
 branches:
   except:
@@ -30,12 +30,8 @@ script:
 
 before_deploy:
   #- time dub build --compiler=${DC} --nodeps --force -b ddox
-  - cd ..
-  - git clone https://github.com/adamdruppe/adrdox.git
-  - cd adrdox
-  - make
-  - ./doc2 -ip --directory ../kameloso/docs ../kameloso
-  - cd ../kameloso
+  - dub fetch adrdox
+  - dub run adrdox -- -ip --header-title="kameloso IRC bot" --directory docs source
   - cp -rv .circleci docs/
 
 deploy:

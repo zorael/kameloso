@@ -3,7 +3,7 @@
     For internal use.
 
     The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
-    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    as the `kameloso.plugins.printer.base.PrinterPlugin`, but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.formatting;
@@ -13,9 +13,9 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer.base : PrinterPlugin;
+import kameloso.plugins.printer.base;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.irccolours;
 import dialect.defs;
 import std.range.primitives : isOutputRange;
@@ -163,7 +163,7 @@ unittest
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current `PrinterPlugin`.
+        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
         sink = Output range to format the `dialect.defs.IRCEvent` into.
         event = The `dialect.defs.IRCEvent` that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -215,7 +215,7 @@ if (isOutputRange!(Sink, char[]))
                     if ((event.sender.displayName != event.sender.nickname) &&
                         !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                     {
-                        .put(sink, " <", event.sender.nickname, '>');
+                        .put(sink, " (", event.sender.nickname, ')');
                     }
                 }
             }
@@ -252,7 +252,7 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        sink.put(" (");
+        sink.put(" -> ");
 
         bool putDisplayName;
 
@@ -261,20 +261,20 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 event.target.displayName.length)
             {
-                .put(sink, event.target.displayName, ')');
+                sink.put(event.target.displayName);
                 putDisplayName = true;
 
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
-                    .put(sink, " <", event.target.nickname, '>');
+                    .put(sink, " (", event.target.nickname, ')');
                 }
             }
         }
 
         if (!putDisplayName)
         {
-            .put(sink, event.target.nickname, ')');
+            sink.put(event.target.nickname);
         }
 
         version(TwitchSupport)
@@ -394,7 +394,7 @@ if (isOutputRange!(Sink, char[]))
     if (shouldBell)
     {
         import kameloso.terminal : TerminalToken;
-        sink.put(TerminalToken.bell);
+        sink.put(plugin.bell);
     }
 }
 
@@ -489,7 +489,7 @@ if (isOutputRange!(Sink, char[]))
     information and numbers.
 
     Params:
-        plugin = Current `PrinterPlugin`.
+        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
         sink = Output range to format the `dialect.defs.IRCEvent` into.
         event = The `dialect.defs.IRCEvent` that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -582,7 +582,7 @@ if (isOutputRange!(Sink, char[]))
         else
         {
             // Don't differentiate between sender and target? Consistency?
-            return bright ? Bright.sender : Dark.sender;
+            return FG(bright ? Bright.sender : Dark.sender);
         }
     }
 
@@ -666,9 +666,9 @@ if (isOutputRange!(Sink, char[]))
                     if ((event.sender.displayName != event.sender.nickname) &&
                         !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                     {
-                        .put!(Yes.colours)(sink, FG.default_, " <");
+                        .put!(Yes.colours)(sink, FG.default_, " (");
                         colourUserTruecolour(sink, event.sender);
-                        .put!(Yes.colours)(sink, event.sender.nickname, FG.default_, '>');
+                        .put!(Yes.colours)(sink, event.sender.nickname, FG.default_, ')');
                     }
                 }
             }
@@ -694,7 +694,8 @@ if (isOutputRange!(Sink, char[]))
                         break;
 
                     default:
-                        .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                        .put!(Yes.colours)(sink,
+                            TerminalForeground(bright ? Bright.badge : Dark.badge),
                             " [", event.sender.badges, ']');
                     }
                 }
@@ -705,7 +706,7 @@ if (isOutputRange!(Sink, char[]))
     void putTarget()
     {
         // No need to check isServer; target is never server
-        .put!(Yes.colours)(sink, FG.default_, " (");
+        .put!(Yes.colours)(sink, FG.default_, " -> ");
         colourUserTruecolour(sink, event.target);
 
         bool putDisplayName;
@@ -715,7 +716,7 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 event.target.displayName.length)
             {
-                .put!(Yes.colours)(sink, event.target.displayName, FG.default_, ')');
+                sink.put(event.target.displayName);
                 putDisplayName = true;
 
                 import std.algorithm.comparison : equal;
@@ -724,16 +725,16 @@ if (isOutputRange!(Sink, char[]))
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
-                    sink.put(" <");
+                    sink.put(" (");
                     colourUserTruecolour(sink, event.target);
-                    .put!(Yes.colours)(sink, event.target.nickname, FG.default_, '>');
+                    .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
                 }
             }
         }
 
         if (!putDisplayName)
         {
-            .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
+            sink.put(event.target.nickname);
         }
 
         version(TwitchSupport)
@@ -741,7 +742,8 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
-                .put!(Yes.colours)(sink, bright ? Bright.badge : Dark.badge,
+                .put!(Yes.colours)(sink,
+                    TerminalForeground(bright ? Bright.badge : Dark.badge),
                     " [", event.target.badges, ']');
 
             }
@@ -843,7 +845,7 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    .put!(Yes.colours)(sink, bright ? Timestamp.bright : Timestamp.dark, '[');
+    .put!(Yes.colours)(sink, TerminalForeground(bright ? Timestamp.bright : Timestamp.dark), '[');
 
     (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -857,7 +859,7 @@ if (isOutputRange!(Sink, char[]))
     if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
         (event.type == IRCEvent.Type.TWITCH_ERROR))
     {
-        sink.colourWith(bright ? Bright.error : Dark.error);
+        sink.colourWith(TerminalForeground(bright ? Bright.error : Dark.error));
     }
     else
     {
@@ -888,7 +890,8 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.channel.length)
     {
-        .put!(Yes.colours)(sink, bright ? Bright.channel : Dark.channel,
+        .put!(Yes.colours)(sink,
+            TerminalForeground(bright ? Bright.channel : Dark.channel),
             '[', event.channel, "] ");
     }
 
@@ -900,18 +903,20 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.aux.length)
     {
-        .put!(Yes.colours)(sink, bright ? Bright.aux : Dark.aux, " (", event.aux, ')');
+        .put!(Yes.colours)(sink,
+            TerminalForeground(bright ? Bright.aux : Dark.aux),
+            " (", event.aux, ')');
     }
 
     if (event.count != 0)
     {
-        sink.colourWith(bright ? Bright.count : Dark.count);
+        sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
         .put(sink, " {", event.count, '}');
     }
 
     if (event.altcount != 0)
     {
-        sink.colourWith(bright ? Bright.altcount : Dark.altcount);
+        sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
         .put(sink, " {", event.altcount, '}');
     }
 
@@ -919,7 +924,7 @@ if (isOutputRange!(Sink, char[]))
     {
         import lu.conv : toAlphaInto;
 
-        sink.colourWith(bright ? Bright.num : Dark.num);
+        sink.colourWith(TerminalForeground(bright ? Bright.num : Dark.num));
 
         //sink.formattedWrite(" (#%03d)", event.num);
         sink.put(" (#");
@@ -929,7 +934,8 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.errors.length && !plugin.printerSettings.silentErrors)
     {
-        .put!(Yes.colours)(sink, bright ? Bright.error : Dark.error,
+        .put!(Yes.colours)(sink,
+            TerminalForeground(bright ? Bright.error : Dark.error),
             " ! ", event.errors, " !");
     }
 
@@ -941,7 +947,7 @@ if (isOutputRange!(Sink, char[]))
     if (shouldBell)
     {
         import kameloso.terminal : TerminalToken;
-        sink.put(TerminalToken.bell);
+        sink.put(plugin.bell);
     }
 }
 

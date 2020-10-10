@@ -5,8 +5,8 @@
 
     It's mostly legacy.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
  +/
 module kameloso.plugins.chatbot;
 
@@ -15,8 +15,8 @@ version(WithChatbotPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import dialect.defs;
@@ -32,11 +32,8 @@ import std.typecons : Flag, No, Yes;
     /// Whether or not the Chatbot plugin should react to events at all.
     @Enabler bool enabled = true;
 
-    version(Web)
-    {
-        /// Enables fetching of `bash.org` quotes.
-        bool bashQuotes = true;
-    }
+    /// Enables fetching of `bash.org` quotes.
+    bool bashQuotes = true;
 }
 
 
@@ -55,7 +52,7 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "säg", Yes.hidden)
 @BotCommand(PrefixPolicy.prefixed, "echo", Yes.hidden)
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
-void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
+void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
 
@@ -85,7 +82,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "8ball")
 @BotCommand(PrefixPolicy.prefixed, "eightball")
 @Description("Implements 8ball. Randomises a vague yes/no response.")
-void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
+void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
     import std.random : uniform;
@@ -127,7 +124,6 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
     Defers to the `worker` subthread.
  +/
-version(Web)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
@@ -135,7 +131,7 @@ version(Web)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "bash")
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
-void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
+void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.concurrency : spawn;
 
@@ -152,15 +148,14 @@ void onCommandBash(ChatbotPlugin plugin, const IRCEvent event)
     Supposed to be run in its own, short-lived thread.
 
     Params:
-        sState = A `shared` `kameloso.plugins.core.IRCPluginState` containing
+        sState = A `shared` `kameloso.plugins.common.core.IRCPluginState` containing
             necessary information to pass messages to send messages to the main
             thread, to send text to the server or display text on the screen.
         event = The `dialect.defs.IRCEvent` in flight.
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
  +/
-version(Web)
-void worker(shared IRCPluginState sState, const IRCEvent event,
+void worker(shared IRCPluginState sState, const ref IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
@@ -256,12 +251,12 @@ void worker(shared IRCPluginState sState, const IRCEvent event,
 
     - http://bash.org/?4281
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onDance(ChatbotPlugin plugin, const IRCEvent event)
+void onDance(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
@@ -295,7 +290,7 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
     // Should dance. Stagger it a bit with a second in between.
     enum secondsBetweenDances = 1;
 
-    void dg()
+    void danceDg()
     {
         import kameloso.plugins.common.delayawait : delay;
         import kameloso.messaging : emote;
@@ -309,8 +304,8 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
         emote(plugin.state, event.channel, "dances :D/-<");
     }
 
-    Fiber fiber = new Fiber(&dg, 32_768);
-    fiber.call();
+    Fiber danceFiber = new Fiber(&danceDg, 32_768);
+    danceFiber.call();
 }
 
 

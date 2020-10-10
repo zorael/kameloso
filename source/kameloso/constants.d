@@ -18,11 +18,12 @@ public:
  +/
 enum KamelosoInfo
 {
-    version_ = "%d.%d.%d%s"
+    version_ = "%d.%d.%d%s%s"
         .format(
             KamelosoSemVer.majorVersion,
             KamelosoSemVer.minorVersion,
             KamelosoSemVer.patchVersion,
+            KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease),  /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
@@ -46,13 +47,13 @@ enum KamelosoDefaultStrings
     /// The default GEOC/"real name" string.
     realName = "kameloso IRC bot v$version",
 
-    /// The default quit reason, when the bot exits.
+    /// The default quit reason, when the bot exits. Supports some string replacements.
     quitReason = "kameloso IRC bot v$version @ $source",
 
     /// The default part reason, when the bot is asked to part a channel.
     partReason = quitReason,
 
-    /// When a nickname is taken, append this to get a new name.
+    /// When a nickname is taken, first append this to get a new name before trying random numbers.
     altNickSign = "^",
 }
 
@@ -130,8 +131,12 @@ enum BufferSize
         number of objects to print.
      +/
     printObjectBufferPerObject = 1024,
-}
 
+    /++
+        How many bytes to allocate for the stdout buffer, when we need to do so explicitly.
+     +/
+    vbufStdout = 16_384,
+}
 /++
     Various timeouts in seconds.
  +/
@@ -149,14 +154,6 @@ enum Timeout
         without hysteresis.
      +/
     whoisRetry = 300,
-
-    /++
-        How long to wait before calling plugins' `periodical` for the first time.
-
-        Since it is meant for maintenance and cleanup tasks we can hold on a while
-        before calling it the first time.
-     +/
-    initialPeriodical = 3600,
 
     /++
         How long to wait after encountering an error when reading from the server,
@@ -189,18 +186,23 @@ enum Timeout
 version(Colours)
 struct DefaultColours
 {
+private:
     import kameloso.terminal : TerminalForeground;
     import std.experimental.logger : LogLevel;
 
     alias TF = TerminalForeground;
 
+public:
     /++
         Colours for timestamps, shared between event-printing and logging.
      +/
     enum TimestampColour : TerminalForeground
     {
-        dark = TF.default_,   /// For dark terminal backgrounds. Was `TerminalForeground.white_`.
-        bright = TF.default_, /// For bright terminal backgrounds. Was `TerminalForeground.black_`.
+        /// For dark terminal backgrounds. Was `kameloso.terminal.TerminalForeground.white_`.
+        dark = TF.default_,
+
+        /// For bright terminal backgrounds. Was `kameloso.terminal.TerminalForeground.black_`.
+        bright = TF.default_,
     }
 
     /// Logger colours to use with a dark terminal background.

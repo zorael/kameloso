@@ -20,7 +20,8 @@ public:
     {
     case "Cygwin":
     case "vscode":
-        // Special code for the terminal not being a conventional terminal (such as a pager)...
+        // Special code for the terminal not being a conventional terminal
+        // (instead acting like a pager)
         break;
 
     default:
@@ -42,14 +43,14 @@ auto currentPlatform()
 
     version(Windows)
     {
-        import std.process : execute;
-
         immutable term = environment.get("TERM", string.init);
 
         if (term.length)
         {
             try
             {
+                import std.process : execute;
+
                 // Get the uname and strip the newline
                 immutable uname = execute([ "uname", "-o" ]).output;
                 return uname.length ? uname[0..$-1] : osName;

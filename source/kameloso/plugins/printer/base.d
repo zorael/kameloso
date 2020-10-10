@@ -21,9 +21,8 @@ private:
 import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.irccolours;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -37,8 +36,10 @@ version(Colours) import kameloso.terminal : TerminalForeground;
  +/
 @Settings struct PrinterSettings
 {
+private:
     import lu.uda : Unserialisable;
 
+public:
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
 
@@ -126,7 +127,7 @@ version(Colours) import kameloso.terminal : TerminalForeground;
     Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
@@ -347,7 +348,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     default:
         import lu.string : strippedRight;
         import std.array : replace;
-        import std.stdio : stdout, writeln;
+        import std.stdio : writeln;
 
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
@@ -378,8 +379,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         writeln(plugin.linebuffer.data);
         plugin.linebuffer.clear();
-
-        if (plugin.state.settings.flush) stdout.flush();
         break;
     }
 }
@@ -389,7 +388,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to `kameloso.plugins.core.ChannelPolicy.any`, and configuration
+    It is set to `kameloso.plugins.common.core.ChannelPolicy.any`, and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 
@@ -398,12 +397,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        `commitAllLogs`
+        commitAllLogs
  +/
-@(Chainable)
+@Chainable
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
-void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
+void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
     return onLoggableEventImpl(plugin, event);
 }
@@ -419,7 +418,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         plugin = The current `PrinterPlugin`.
 
     See_Also:
-        `commitLog`
+        commitLog
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -469,6 +468,8 @@ void onISUPPORT(PrinterPlugin plugin)
         }
     }
 
+    import kameloso.common : Tint, logger;
+
     logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
         Tint.info, networkName, Tint.log,
         Tint.info, Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
@@ -498,44 +499,66 @@ package string datestamp()
 }
 
 
-// periodically
+// start
 /++
-    Prints the date in `YYYY-MM-DD` format to the screen and to any active log
-    files upon day change.
+    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
+    to any active log files upon day change.
+
+    Do this in `.start` to have the Printer plugin always be minimially initialised,
+    since hot-disabling/-enabling it is kind of a valid use-case.
  +/
-void periodically(PrinterPlugin plugin)
+void start(PrinterPlugin plugin)
 {
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.terminal : isTTY;
+    import core.thread : Fiber;
 
-    // Schedule the next run for the following midnight.
-    plugin.state.nextPeriodical = Clock.currTime.nextMidnight.toUnixTime;
+    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
 
-    if (!plugin.isEnabled) return;
-
-    if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+    if (!isTTY)
     {
-        logger.info(datestamp);
+        // Not a TTY so replace our bell string with an empty one
+        plugin.bell = string.init;
     }
 
-    if (plugin.printerSettings.logs)
+    static long untilNextMidnight()
     {
-        plugin.commitAllLogs();
-        plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+        import kameloso.common : nextMidnight;
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime;
+        immutable nowInUnix = now.toUnixTime;
+        immutable nextMidnightTimestamp = now.nextMidnight.toUnixTime;
+
+        return (nextMidnightTimestamp - nowInUnix);
     }
-}
 
+    void daybreakDg()
+    {
+        while (true)
+        {
+            if (plugin.isEnabled)
+            {
+                if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+                {
+                    import kameloso.common : logger;
+                    logger.info(datestamp);
+                }
 
-// initialise
-/++
-    Set the next periodical timestamp to midnight immediately after plugin construction.
- +/
-void initialise(PrinterPlugin plugin)
-{
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
+                if (plugin.printerSettings.logs)
+                {
+                    plugin.commitAllLogs();
+                    plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+                }
+            }
 
-    plugin.state.nextPeriodical = Clock.currTime.nextMidnight.toUnixTime;
+            delay(plugin, untilNextMidnight, No.msecs, Yes.yield);
+        }
+    }
+
+    Fiber daybreakFiber = new Fiber(&daybreakDg, 32_768);
+    delay(plugin, daybreakFiber, untilNextMidnight);
 }
 
 
@@ -613,6 +636,8 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         break;
 
     default:
+        import kameloso.common : logger;
+
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }
@@ -720,16 +745,6 @@ unittest
 }
 
 
-// start
-/++
-    Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
- +/
-void start(PrinterPlugin plugin)
-{
-    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
-}
-
-
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
 
@@ -747,7 +762,9 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    private import std.array : Appender;
+private:
+    import kameloso.terminal : TerminalToken;
+    import std.array : Appender;
 
 package:
     /// All Printer plugin options gathered.
@@ -783,6 +800,12 @@ package:
 
     /// Where to save logs.
     @Resource string logDirectory = "logs";
+
+    /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
+    private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+
+    /// Effective bell after `kameloso.terminal.isTTY` checks.
+    string bell = bellString;
 
     mixin IRCPluginImpl;
 }

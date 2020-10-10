@@ -2,8 +2,8 @@
     The Notes plugin allows for storing notes to offline users, to be replayed
     when they next join the channel.
 
-    See the GitHub wiki for more information about available commands:
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#notes
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#notes
  +/
 module kameloso.plugins.notes;
 
@@ -12,8 +12,8 @@ version(WithNotesPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
@@ -36,14 +36,14 @@ import std.typecons : Flag, No, Yes;
 /++
     Plays back notes on signs of activity.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.EMOTE)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
+void onReplayEvent(NotesPlugin plugin, const ref IRCEvent event)
 {
     if (event.channel !in plugin.notes) return;
 
@@ -57,15 +57,15 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
     These carry a sender, so it's possible we know the account without lookups.
 
-    Do nothing if `CoreSettings.eagerLookups` is true, as we'd collide with
-    ChanQueries' queries.
+    Do nothing if `kameloso.kameloso.CoreSettings.eagerLookups` is true,
+    as we'd collide with ChanQueries' queries.
 
     Pass `true` to `playbackNotes` to ensure it does low-priority background
     WHOIS queries.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
-void onWhoReply(NotesPlugin plugin, const IRCEvent event)
+void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
 
@@ -120,7 +120,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     {
         void onSuccess(const IRCUser user)
         {
-            import kameloso.plugins.common : idOf, nameOf;
+            import kameloso.plugins.common.base : idOf, nameOf;
 
             immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
 
@@ -137,7 +137,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                 {
                     const note = noteArray[0];
                     immutable timestamp = (currTime - note.when)
-                        .timeSince!(No.abbreviate, 7, 2);
+                        .timeSince!(No.abbreviate, 7, 1);
 
                     enum pattern = "%s%s! %s left note %s ago: %s";
 
@@ -150,12 +150,10 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                 }
                 else
                 {
-                    import std.conv : text;
-
                     enum pattern = "%s%s! You have %s notes.";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircBold, noteArray.length.text.ircBold) :
+                        pattern.format(atSign, senderName.ircBold, noteArray.length.ircBold) :
                         pattern.format(atSign, senderName, noteArray.length);
 
                     privmsg(plugin.state, channel, user.nickname, message);
@@ -163,7 +161,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     foreach (const note; noteArray)
                     {
                         immutable timestamp = (currTime - note.when)
-                            .timeSince!(Yes.abbreviate, 7, 2);
+                            .timeSince!(Yes.abbreviate, 7, 1);
 
                         enum entryPattern = "%s %s ago: %s";
 
@@ -255,7 +253,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
-void onNames(NotesPlugin plugin, const IRCEvent event)
+void onNames(NotesPlugin plugin, const ref IRCEvent event)
 {
     version(WithChanQueriesService)
     {
@@ -306,9 +304,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "note")
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
-void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
+void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common : nameOf;
+    import kameloso.plugins.common.base : nameOf;
     import dialect.common : toLowerCase;
     import lu.string : SplitResults, splitInto;
     import std.format : format;

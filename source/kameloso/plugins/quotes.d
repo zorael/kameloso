@@ -5,8 +5,8 @@
     of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
     A random one can then be replayed by use of the "`!quote [nickname]`" command.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
  +/
 module kameloso.plugins.quotes;
 
@@ -15,8 +15,8 @@ version(WithQuotesPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : UserAwareness;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
@@ -42,9 +42,10 @@ import std.typecons : Flag, No, Yes;
  +/
 struct Quote
 {
-    import std.conv : to;
-    import std.json : JSONType, JSONValue;
+private:
+    import std.json : JSONValue;
 
+public:
     /// Quote string line.
     string line;
 
@@ -114,7 +115,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 @BotCommand(PrefixPolicy.prefixed, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname, " ~
     "or adds a new one.", "$command [nickname] [text if adding new quote]")
-void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
+void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
     import lu.string : nom, stripped, strippedLeft;
@@ -135,7 +136,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
 
             if ((slice == event.channel[1..$]) ||
                 (slice == plugin.nameOf(event.channel[1..$])))
@@ -186,7 +187,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         void onSuccess(const IRCUser replyUser)
         {
-            import kameloso.plugins.common : idOf;
+            import kameloso.plugins.common.base : idOf;
 
             immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
 
@@ -269,7 +270,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
-void addQuoteAndReport(QuotesPlugin plugin, const IRCEvent event,
+void addQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
     const string id, const string rawLine)
 in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")
@@ -283,7 +284,6 @@ in (rawLine.length, "Tried to add an empty quote")
 
     try
     {
-        import std.conv : text;
         import std.datetime.systime : Clock;
         import std.format : format;
 
@@ -306,7 +306,7 @@ in (rawLine.length, "Tried to add an empty quote")
 
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(id.ircColourByHash.ircBold,
-                plugin.quotes[id].array.length.text.ircBold) :
+                plugin.quotes[id].array.length.ircBold) :
             pattern.format(id, plugin.quotes[id].array.length);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);

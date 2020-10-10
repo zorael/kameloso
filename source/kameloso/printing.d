@@ -48,7 +48,7 @@ public:
     formatting into neat columns.
 
     Params:
-        all = Whether or not to also include `Unserialisable` members.
+        all = Whether or not to also include `lu.uda.Unserialisable` members.
         Things = Variadic list of aggregates to inspect.
  +/
 private template Widths(Flag!"all" all, Things...)
@@ -132,19 +132,17 @@ unittest
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         things = Variadic list of struct objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
-    (auto ref Things things) @trusted
+    (auto ref Things things)
 {
     import kameloso.common : settings;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
-    import std.stdio : stdout, writeln;
-
-    // writeln trusts `stdout.flush()` so we will too.
+    import std.stdio : writeln;
 
     alias widths = Widths!(all, Things);
 
@@ -182,7 +180,6 @@ void printObjects(Flag!"all" all = No.all, Things...)
     }
 
     writeln(outbuffer.data);
-    if (settings.flush) stdout.flush();
 }
 
 alias printObject = printObjects;
@@ -213,7 +210,7 @@ alias printObject = printObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
@@ -251,7 +248,7 @@ alias formatObject = formatObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
@@ -623,7 +620,7 @@ if (isOutputRange!(Sink, char[]))
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`, usually transitive information that
+            `lu.uda.Unserialisable`; usually transitive information that
             doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
         coloured = Whether to display in colours or not.
         bright = Whether or not to format for a bright terminal background.

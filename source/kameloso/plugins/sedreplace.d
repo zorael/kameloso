@@ -33,8 +33,8 @@ version(WithSedReplacePlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import std.meta : AliasSeq;
@@ -367,11 +367,11 @@ unittest
     Parses a channel message and looks for any sed-replace expressions therein,
     to apply on the previous message.
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onMessage(SedReplacePlugin plugin, const IRCEvent event)
+void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, stripped;
 
@@ -455,26 +455,40 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 }
 
 
+// onWelcome
+/++
+    Sets up a Fiber to periodically clear the lists of previous messages from
+    users once every `SedReplacePlugin.timeBetweenPurges` seconds.
+
+    This is to prevent the lists from becoming huge over time.
+ +/
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(SedReplacePlugin plugin)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import core.thread : Fiber;
+
+    void prevlineClearDg()
+    {
+        while (true)
+        {
+            plugin.prevlines = typeof(plugin.prevlines).init;
+            delay(plugin, plugin.timeBetweenPurges, No.msecs, Yes.yield);
+        }
+    }
+
+    Fiber prevlineClearFiber = new Fiber(&prevlineClearDg, 32_768);
+    delay(plugin, prevlineClearFiber, plugin.timeBetweenPurges);
+}
+
+
 // onQuit
 /++
     Removes the records of previous messages from a user when they quit.
  +/
-void onQuit(SedReplacePlugin plugin, const IRCEvent event)
+void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     plugin.prevlines.remove(event.sender.nickname);
-}
-
-
-// periodically
-/++
-    Clears the lists of previous messages from users once every hour.
-
-    This is to prevent it from becoming huge.
- +/
-void periodically(SedReplacePlugin plugin, const long now)
-{
-    plugin.prevlines = typeof(plugin.prevlines).init;
-    plugin.state.nextPeriodical = now + (plugin.hoursBetweenPurges * 3600);
 }
 
 
@@ -499,7 +513,7 @@ private:
     enum replaceTimeoutSeconds = 3600;
 
     /// How often to purge the `prevlines` list of messages.
-    enum hoursBetweenPurges = 1;
+    enum timeBetweenPurges = 3600;
 
     /++
         A `Line[string]` 1-buffer of the previous line every user said, with

@@ -8,8 +8,8 @@
     One immediately obvious venue of expansion is expression bans, such as if a
     message has too many capital letters, etc. There is no protection from spam yet.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
  +/
 module kameloso.plugins.twitchbot.base;
 
@@ -17,15 +17,13 @@ version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 
-version(Web) version = TwitchAPIFeatures;
-
 private:
 
 import kameloso.plugins.twitchbot.api;
 import kameloso.plugins.twitchbot.timers;
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -37,8 +35,10 @@ import core.thread : Fiber;
 /// All Twitch bot plugin runtime settings.
 @Settings struct TwitchBotSettings
 {
+private:
     import lu.uda : Unserialisable;
 
+public:
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
@@ -103,9 +103,9 @@ import core.thread : Fiber;
 @BotCommand(PrefixPolicy.prefixed, "permit")
 @Description("Permits a specified user to post links for a brief period of time.",
     "$command [target user]")
-void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandPermit(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common : idOf, nameOf;
+    import kameloso.plugins.common.base : idOf, nameOf;
     import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;
@@ -161,13 +161,11 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
     Bells on any important event, like subscriptions, cheers and raids, if the
     `TwitchBotSettings.bellOnImportant` setting is set.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.TWITCH_SUB)
 @(IRCEvent.Type.TWITCH_SUBGIFT)
 @(IRCEvent.Type.TWITCH_CHEER)
 @(IRCEvent.Type.TWITCH_REWARDGIFT)
-@(IRCEvent.Type.TWITCH_RAID)
-@(IRCEvent.Type.TWITCH_UNRAID)
 @(IRCEvent.Type.TWITCH_GIFTCHAIN)
 @(IRCEvent.Type.TWITCH_BULKGIFT)
 @(IRCEvent.Type.TWITCH_SUBUPGRADE)
@@ -175,6 +173,9 @@ void onCommandPermit(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.TWITCH_BITSBADGETIER)
 @(IRCEvent.Type.TWITCH_RITUAL)
 @(IRCEvent.Type.TWITCH_EXTENDSUB)
+@(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+@(IRCEvent.Type.TWITCH_PAYFORWARD)
+@(IRCEvent.Type.TWITCH_RAID)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 void onImportant(TwitchBotPlugin plugin)
@@ -184,7 +185,7 @@ void onImportant(TwitchBotPlugin plugin)
 
     if (!plugin.twitchBotSettings.bellOnImportant) return;
 
-    write(cast(char)TerminalToken.bell);
+    write(plugin.bell);
     stdout.flush();
 }
 
@@ -198,7 +199,7 @@ void onImportant(TwitchBotPlugin plugin)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
-package void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
+void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
 }
@@ -221,17 +222,19 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.rooms) return;
 
-    plugin.rooms[channelName] = TwitchBotPlugin.Room.init;
+    plugin.rooms[channelName] = TwitchBotPlugin.Room(channelName);
 
     // Apply the timer definitions we have stored
     const timerDefs = channelName in plugin.timerDefsByChannel;
-    if (!timerDefs || !timerDefs.length) return;
 
-    auto room = channelName in plugin.rooms;
-
-    foreach (const timerDef; *timerDefs)
+    if (timerDefs && timerDefs.length)
     {
-        room.timers ~= plugin.createTimerFiber(timerDef, channelName);
+        auto room = channelName in plugin.rooms;
+
+        foreach (const timerDef; *timerDefs)
+        {
+            room.timers ~= plugin.createTimerFiber(timerDef, channelName);
+        }
     }
 }
 
@@ -244,7 +247,7 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.home)
-void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
+void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     plugin.rooms.remove(event.channel);
 }
@@ -263,7 +266,7 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
     "$command [ban|unban|list|clear]")
-void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandPhrase(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return handlePhraseCommand(plugin, event, event.channel);
 }
@@ -278,7 +281,7 @@ void onCommandPhrase(TwitchBotPlugin plugin, const IRCEvent event)
         event = The triggering `dialect.defs.IRCEvent`.
         targetChannel = The channel we're handling phrase bans for.
  +/
-void handlePhraseCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+void handlePhraseCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle phrases with an empty target channel string")
 {
     import lu.string : contains, nom;
@@ -443,7 +446,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
     "$command [add|del|list|clear]")
-void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return handleTimerCommand(plugin, event, event.channel);
 }
@@ -460,7 +463,7 @@ void onCommandTimer(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "enable")
 @BotCommand(PrefixPolicy.prefixed, "disable")
 @Description("Toggles the Twitch bot in the current channel.")
-void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandEnableDisable(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (event.aux == "enable")
     {
@@ -490,75 +493,12 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "uptime")
 @Description("Reports how long the streamer has been streaming.")
-void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
 
-    version(TwitchAPIFeatures)
-    {
-        immutable streamer = room.broadcasterDisplayName;
-    }
-    else
-    {
-        import kameloso.plugins.common : nameOf;
-        immutable streamer = plugin.nameOf(event.channel[1..$]);
-    }
-
-    if (room.broadcast.active)
-    {
-        import core.time : msecs;
-        import std.datetime.systime : Clock, SysTime;
-        import std.format : format;
-
-        // Remove fractional seconds from the current timestamp
-        auto now = Clock.currTime;
-        now.fracSecs = 0.msecs;
-
-        immutable delta = now - SysTime.fromUnixTime(room.broadcast.start);
-        bool sent;
-
-        version(TwitchAPIFeatures)
-        {
-            if (room.broadcast.chattersSeen.length)
-            {
-                enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
-                    "(max at any one time has so far been %d viewers)";
-
-                chan(plugin.state, event.channel, pattern.format(streamer, delta,
-                    room.broadcast.chattersSeen.length,
-                    room.broadcast.maxConcurrentChatters));
-                sent = true;
-            }
-        }
-
-        if (!sent)
-        {
-            chan(plugin.state, event.channel, "%s has been live for %s."
-                .format(streamer, delta));
-        }
-    }
-    else
-    {
-        if (room.broadcast.stop)
-        {
-            import std.datetime.systime : SysTime;
-            import std.format : format;
-            import core.time : msecs;
-
-            auto end = SysTime.fromUnixTime(room.broadcast.stop);
-            end.fracSecs = 0.msecs;
-            immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
-
-            chan(plugin.state, event.channel, ("%s is currently not streaming. " ~
-                "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.")
-                .format(streamer, end.year, end.month, end.day, end.hour, end.minute, delta));
-        }
-        else
-        {
-            chan(plugin.state, event.channel, streamer ~ " is currently not streaming.");
-        }
-    }
+    reportStreamTime(plugin, *room);
 }
 
 
@@ -577,7 +517,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "start")
 @Description("Marks the start of a broadcast.")
-void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandStart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to start a broadcast on a nonexistent room");
@@ -590,7 +530,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
         }
         else
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
             immutable streamer = plugin.nameOf(event.channel[1..$]);
         }
 
@@ -599,7 +539,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     room.broadcast = typeof(room.broadcast).init;
-    room.broadcast.start = event.time;
+    room.broadcast.startTime = event.time;
     room.broadcast.active = true;
     chan(plugin.state, event.channel, "Broadcast start registered!");
 
@@ -658,7 +598,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stop")
 @Description("Marks the stop of a broadcast.")
-void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to stop a broadcast on a nonexistent room");
@@ -673,10 +613,16 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     room.broadcast.active = false;
-    room.broadcast.stop = event.time;
+    room.broadcast.stopTime = event.time;
+
+    version(TwitchAPIFeatures)
+    {
+        room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
+        room.broadcast.chattersSeen = typeof(room.broadcast.chattersSeen).init;
+    }
 
     chan(plugin.state, event.channel, "Broadcast ended!");
-    plugin.reportStopTime(event);
+    reportStreamTime(plugin, *room, Yes.justNowEnded);
 }
 
 
@@ -689,48 +635,122 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
  +/
 @(ChannelPolicy.home)
 @(IRCEvent.Type.TWITCH_HOSTSTART)
-void onAutomaticStop(TwitchBotPlugin plugin, const IRCEvent event)
+void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
 }
 
 
-// reportStopTime
+// reportStreamTime
 /++
-    Reports how long the recently ongoing, now ended broadcast lasted.
+    Reports how long a broadcast has currently been ongoing, up until now lasted,
+    or previously lasted.
+
+    Params:
+        plugin = The current `TwitchBotPlugin`.
+        room = The `TwitchBotPlugin.Room` of the channel.
+        justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStopTime(TwitchBotPlugin plugin, const IRCEvent event)
-in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
+void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
+    const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
+    import kameloso.common : timeSince;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
 
-    const room = event.channel in plugin.rooms;
-    assert(room, "Tried to report broadcast stop time on a nonexistent room");
-
-    auto end = SysTime.fromUnixTime(room.broadcast.stop);
-    end.fracSecs = 0.msecs;
-    immutable delta = end - SysTime.fromUnixTime(room.broadcast.start);
-
     version(TwitchAPIFeatures)
     {
-        enum pattern = "%s streamed for %s, with %d unique viewers. " ~
-            "(max at any one time was %d viewers)";
-
         immutable streamer = room.broadcasterDisplayName;
-        chan(plugin.state, event.channel, pattern.format(streamer, delta,
-            room.broadcast.chattersSeen.length,
-            room.broadcast.maxConcurrentChatters));
     }
     else
     {
-        import kameloso.plugins.common : nameOf;
+        import kameloso.plugins.common.base : nameOf;
+        immutable streamer = plugin.nameOf(room.name[1..$]);
+    }
 
-        enum pattern = "%s streamed for %s.";
+    if (room.broadcast.active)
+    {
+        assert(!justNowEnded, "Tried to report ended stream time on an active stream");
 
-        immutable streamer = plugin.nameOf(event.channel[1..$]);
-        chan(plugin.state, event.channel, pattern.format(streamer, delta));
+        // Remove fractional seconds from the current timestamp
+        auto now = Clock.currTime;
+        now.fracSecs = 0.msecs;
+        immutable delta = now - SysTime.fromUnixTime(room.broadcast.startTime);
+        immutable timestring = timeSince(delta);
+        bool sent;
+
+        version(TwitchAPIFeatures)
+        {
+            if (room.broadcast.chattersSeen.length)
+            {
+                enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
+                    "(max at any one time has so far been %d viewers)";
+
+                chan(plugin.state, room.name, pattern.format(streamer, timestring,
+                    room.broadcast.chattersSeen.length,
+                    room.broadcast.maxConcurrentChatters));
+                sent = true;
+            }
+        }
+
+        if (!sent)
+        {
+            chan(plugin.state, room.name, "%s has been live for %s."
+                .format(streamer, timestring));
+        }
+    }
+    else
+    {
+        if (room.broadcast.stopTime)
+        {
+            // There was at least one stream this session (we have a stop timestamp)
+            auto end = SysTime.fromUnixTime(room.broadcast.stopTime);
+            end.fracSecs = 0.msecs;
+            immutable delta = end - SysTime.fromUnixTime(room.broadcast.startTime);
+            immutable timestring = timeSince(delta);
+
+            if (justNowEnded)
+            {
+                bool sent;
+
+                version(TwitchAPIFeatures)
+                {
+                    if (room.broadcast.numViewersLastStream)
+                    {
+                        enum pattern = "%s streamed for %s, with %d unique viewers. " ~
+                            "(max at any one time was %d viewers)";
+
+                        chan(plugin.state, room.name, pattern.format(streamer, timestring,
+                            room.broadcast.numViewersLastStream,
+                            room.broadcast.maxConcurrentChatters));
+                        sent = true;
+                    }
+                }
+
+                if (!sent)
+                {
+                    enum pattern = "%s streamed for %s.";
+                    chan(plugin.state, room.name, pattern.format(streamer, timestring));
+                }
+            }
+            else
+            {
+                enum pattern = "%s is currently not streaming. " ~
+                    "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.";
+
+                chan(plugin.state, room.name, pattern.format(streamer,
+                    end.year, end.month, end.day, end.hour, end.minute, timestring));
+            }
+        }
+        else
+        {
+            assert(!justNowEnded, "Tried to report stream time of a just ended stream " ~
+                "but no stop time had been recorded");
+
+            // No streams this session
+            chan(plugin.state, room.name, streamer ~ " is currently not streaming.");
+        }
     }
 }
 
@@ -747,11 +767,11 @@ in ((event != IRCEvent.init), "Tried to report stop time to an empty IRCEvent")
     any user who has been given a temporary permit via `onCommandPermit`.
     Those without permission will have the message deleted and be served a timeout.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onLink(TwitchBotPlugin plugin, const IRCEvent event)
+void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
     import lu.string : beginsWith;
@@ -766,7 +786,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
 
         void passToWebtitles(string[] urls)
         {
-            import kameloso.plugins.common : EventURLs;
+            import kameloso.plugins.common.base : EventURLs;
             import kameloso.thread : ThreadMessage, busMessage;
             import std.concurrency : send;
 
@@ -795,6 +815,7 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         }
     }
 
+    TwitchBotPlugin.Room* room;
     bool allowed;
 
     with (IRCUser.Class)
@@ -803,8 +824,14 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
     case unset:
     case blacklist:
     case anyone:
-        auto room = event.channel in plugin.rooms;
-        assert(room, "Tried to parse a link in a nonexistent room");
+        room = event.channel in plugin.rooms;
+
+        if (!room)
+        {
+            // Race...
+            plugin.handleSelfjoin(event.channel);
+            room = event.channel in plugin.rooms;
+        }
 
         if (const permitTimestamp = event.sender.nickname in room.linkPermits)
         {
@@ -846,8 +873,17 @@ void onLink(TwitchBotPlugin plugin, const IRCEvent event)
         "Go cool off.",
     ];
 
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to get bans of a nonexistent room");
+    /*if (!room)
+    {
+        room = event.channel in plugin.rooms;
+
+        if (!room)
+        {
+            // Race...
+            plugin.handleSelfjoin(event.channel);
+            room = event.channel in plugin.rooms;
+        }
+    }*/
 
     auto ban = event.sender.nickname in room.linkBans;
 
@@ -898,7 +934,7 @@ version(TwitchAPIFeatures)
 @Description("Queries the server for how long you have been a follower of the " ~
     "current channel. Optionally takes a nickname parameter, to query for someone else.",
     "$command [optional nickname]")
-void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
+void onFollowAge(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.conv : to;
@@ -907,7 +943,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
-    void dg()
+    void followageDg()
     {
         string slice = event.content.stripped;  // mutable
         immutable nameSpecified = (slice.length > 0);
@@ -1054,8 +1090,8 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
         }
     }
 
-    Fiber fiber = new Fiber(&dg, 32_768);
-    fiber.call();
+    Fiber followageFiber = new Fiber(&followageDg, 32_768);
+    followageFiber.call();
 }
 
 
@@ -1067,7 +1103,7 @@ void onFollowAge(TwitchBotPlugin plugin, const IRCEvent event)
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.ROOMSTATE)
 @(ChannelPolicy.home)
-void onRoomState(TwitchBotPlugin plugin, const IRCEvent event)
+void onRoomState(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONType, parseJSON;
@@ -1127,9 +1163,9 @@ version(TwitchAPIFeatures)
 @BotCommand(PrefixPolicy.prefixed, "shoutout")
 @BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
 @Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
-void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
+void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common : idOf;
+    import kameloso.plugins.common.base : idOf;
     import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;
@@ -1200,25 +1236,25 @@ void onCommandShoutout(TwitchBotPlugin plugin, const IRCEvent event)
 
     Belling is useful with small audiences, so you don't miss messages.
 
-    Note: This is annotated `kameloso.plugins.core.Terminating` and must be
+    Note: This is annotated `kameloso.plugins.common.core.Terminating` and must be
     placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
     This lets us know the banned phrase wasn't part of a command (as it would
     otherwise not reach this point).
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
+void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.twitchBotSettings.bellOnMessage)
     {
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
 
-        write(cast(char)TerminalToken.bell);
+        write(plugin.bell);
         stdout.flush();
     }
 
@@ -1226,7 +1262,13 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
     if (event.type == IRCEvent.Type.QUERY) return;
 
     auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to process `onAnyMessage` on a nonexistent room");
+
+    if (!room)
+    {
+        // Race...
+        plugin.handleSelfjoin(event.channel);
+        room = event.channel in plugin.rooms;
+    }
 
     ++room.messageCount;
 
@@ -1302,13 +1344,17 @@ void onAnyMessage(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onWelcome
+// onEndOfMOTD
 /++
     Populate the banned phrases array after we have successfully
     logged onto the server.
+
+    Has to be done at MOTD, as we only know whether we're on Twitch after
+    RPL_MYINFO or so.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(TwitchBotPlugin plugin)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
@@ -1402,18 +1448,19 @@ void onWelcome(TwitchBotPlugin plugin)
                     if ((expiresWhen - now) > 1.weeks)
                     {
                         // More than a week away, just .info
-                        enum pattern = "Your Twitch authorisation key will expire " ~
-                            "%s%02d-%02d-%02d";
-                        logger.infof(pattern, Tint.log, expiresWhen.year,
-                            expiresWhen.month, expiresWhen.day);
+                        enum pattern = "Your Twitch authorisation key will expire on " ~
+                            "%s%02d-%02d-%02d%s.";
+                        logger.infof!pattern( Tint.log, expiresWhen.year,
+                            expiresWhen.month, expiresWhen.day, Tint.info);
                     }
                     else
                     {
                         // A week or less; warning
                         enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                            "%s%02d-%02d-%02d %02d:%02d";
-                        logger.warningf(pattern, Tint.log, expiresWhen.year, expiresWhen.month,
-                            expiresWhen.day, expiresWhen.hour, expiresWhen.minute);
+                            "%s%02d-%02d-%02d %02d:%02d%s.";
+                        logger.warningf!pattern( Tint.log, expiresWhen.year,
+                            expiresWhen.month, expiresWhen.day, expiresWhen.hour,
+                            expiresWhen.minute, Tint.warning);
                     }
                 }
             }
@@ -1558,111 +1605,134 @@ void initResources(TwitchBotPlugin plugin)
 }
 
 
-// periodically
+// onMyInfo
 /++
-    Periodically calls timer `core.thread.fiber.Fiber`s with a periodicity of
-    `TwitchBotPlugin.timerPeriodicity`.
+    Sets up a Fiber to periodically call timer `core.thread.fiber.Fiber`s with a
+    periodicity of `TwitchBotPlugin.timerPeriodicity`.
+
+    Cannot be done on `dialect.defs.IRCEvent.Type.RPL_WELCOME` as the server
+    daemon isn't known by then.
  +/
-void periodically(TwitchBotPlugin plugin, const long now)
+@(IRCEvent.Type.RPL_MYINFO)
+void onMyInfo(TwitchBotPlugin plugin)
 {
-    if ((plugin.state.server.daemon != IRCServer.Daemon.unset) &&
-        (plugin.state.server.daemon != IRCServer.Daemon.twitch))
-    {
-        // Known to not be a Twitch server
-        plugin.state.nextPeriodical = now + 315_569_260L;
-        return;
-    }
+    import kameloso.plugins.common.delayawait : delay;
+    import core.thread : Fiber;
 
-    // Walk through channels, trigger fibers
-    foreach (immutable channelName, room; plugin.rooms)
+    void periodicDg()
     {
-        foreach (timer; room.timers)
+        import kameloso.common : nextMidnight;
+        import std.datetime.systime : Clock;
+
+        // Schedule next prune to next midnight
+        long nextPrune = Clock.currTime.nextMidnight.toUnixTime;
+
+        top:
+        while (true)
         {
-            if (!timer || (timer.state != Fiber.State.HOLD))
-            {
-                logger.error("Dead or busy timer Fiber in channel ", channelName);
-                continue;
-            }
-
-            timer.call();
-        }
-    }
-
-    // Schedule next
-    plugin.state.nextPeriodical = now + plugin.timerPeriodicity;
-
-    // Early abort if we shouldn't clean up
-    if (now < plugin.nextPrune) return;
-
-    // Walk through channels, prune stale bans and permits
-    foreach (immutable channelName, room; plugin.rooms)
-    {
-        static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
-        {
-            string[] garbage;
-
-            foreach (immutable key, const entry; aa)
-            {
-                static if (is(typeof(entry) : long))
-                {
-                    immutable maxEndTime = entry + gracePeriod;
-                }
-                else
-                {
-                    immutable maxEndTime = entry.timestamp + gracePeriod;
-                }
-
-                if (now > maxEndTime)
-                {
-                    garbage ~= key;
-                }
-            }
-
-            foreach (immutable key; garbage)
-            {
-                aa.remove(key);
-            }
-        }
-
-        pruneByTimestamp(room.linkBans, now, 7200);
-        pruneByTimestamp(room.linkPermits, now, 60);
-        pruneByTimestamp(room.phraseBans, now, 7200);
-    }
-
-    import kameloso.common : nextMidnight;
-    import std.datetime.systime : Clock;
-
-    // Schedule next prune to next midnight
-    plugin.nextPrune = Clock.currTime.nextMidnight.toUnixTime;
-
-    version(TwitchAPIFeatures)
-    {
-        // Clear and re-cache follows once as often as we prune
-
-        void dg()
-        {
+            // Walk through channels, trigger fibers
             foreach (immutable channelName, room; plugin.rooms)
             {
-                if (!room.enabled) continue;
-                room.follows = getFollows(plugin, room.id);
+                foreach (timer; room.timers)
+                {
+                    if (!timer || (timer.state != Fiber.State.HOLD))
+                    {
+                        logger.error("Dead or busy timer Fiber in channel ", channelName);
+                        continue;
+                    }
+
+                    timer.call();
+                }
+            }
+
+            immutable now = Clock.currTime;
+            immutable nowInUnix = now.toUnixTime;
+
+            // Early yield if we shouldn't clean up
+            if (nowInUnix < nextPrune)
+            {
+                delay(plugin, plugin.timerPeriodicity, No.msecs, Yes.yield);
+                continue top;
+            }
+            else
+            {
+                nextPrune = now.nextMidnight.toUnixTime;
+            }
+
+            // Walk through channels, prune stale bans and permits
+            foreach (immutable channelName, room; plugin.rooms)
+            {
+                static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
+                {
+                    string[] garbage;
+
+                    foreach (immutable key, const entry; aa)
+                    {
+                        static if (is(typeof(entry) : long))
+                        {
+                            immutable maxEndTime = entry + gracePeriod;
+                        }
+                        else
+                        {
+                            immutable maxEndTime = entry.timestamp + gracePeriod;
+                        }
+
+                        if (now > maxEndTime)
+                        {
+                            garbage ~= key;
+                        }
+                    }
+
+                    foreach (immutable key; garbage)
+                    {
+                        aa.remove(key);
+                    }
+                }
+
+                pruneByTimestamp(room.linkBans, nowInUnix, 7200);
+                pruneByTimestamp(room.linkPermits, nowInUnix, 60);
+                pruneByTimestamp(room.phraseBans, nowInUnix, 7200);
+            }
+
+            version(TwitchAPIFeatures)
+            {
+                // Clear and re-cache follows once as often as we prune
+
+                void cacheFollowsAnewDg()
+                {
+                    foreach (immutable channelName, room; plugin.rooms)
+                    {
+                        if (!room.enabled) continue;
+                        room.follows = getFollows(plugin, room.id);
+                    }
+                }
+
+                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg, 32_768);
+                cacheFollowsAnewFiber.call();
             }
         }
-
-        Fiber cacheFollowsFiber = new Fiber(&dg, 32_768);
-        cacheFollowsFiber.call();
     }
+
+    Fiber periodicFiber = new Fiber(&periodicDg, 32_768);
+    delay(plugin, periodicFiber, plugin.timerPeriodicity);
 }
 
 
 // start
 /++
-    Starts the plugin after successful connect, rescheduling the next
-    `.periodical` to trigger after hardcoded 60 seconds.
+    Disables the bell if we're not running inside a terminal. Snapshots
+    `TwitchBotSettings.enableAPIFeatures` into `TwitchBotPlugin` so it can be
+    disabled without modifying settings.
  +/
 void start(TwitchBotPlugin plugin)
 {
-    import std.datetime.systime : Clock;
-    plugin.state.nextPeriodical = Clock.currTime.toUnixTime + 60;
+    import kameloso.terminal : isTTY;
+
+    if (!isTTY)
+    {
+        // Not a TTY so replace our bell string with an empty one
+        plugin.bell = string.init;
+    }
 
     version(TwitchAPIFeatures)
     {
@@ -1705,6 +1775,9 @@ public:
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
+private:
+    import kameloso.terminal : TerminalToken;
+
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
     static struct Room
@@ -1716,10 +1789,10 @@ package:
             bool active;
 
             /// UNIX timestamp of when broadcasting started.
-            long start;
+            long startTime;
 
             /// UNIX timestamp of when broadcasting ended.
-            long stop;
+            long stopTime;
 
             version(TwitchAPIFeatures)
             {
@@ -1728,6 +1801,9 @@ package:
 
                 /// How many users were max seen as in the channel at the same time.
                 int maxConcurrentChatters;
+
+                /// How many users visited the channel during the last stream.
+                size_t numViewersLastStream;
             }
         }
 
@@ -1738,8 +1814,17 @@ package:
             uint offense;  /// How many consecutive bans have been fired.
         }
 
+        /// Constructor taking a string (channel) name.
+        this(const string name) @safe pure nothrow @nogc
+        {
+            this.name = name;
+        }
+
         /// Toggle of whether or not the bot should operate in this channel.
         bool enabled = true;
+
+        /// Name of the channel.
+        string name;
 
         /// Struct instance representing the current broadcast.
         Broadcast broadcast;
@@ -1798,14 +1883,17 @@ package:
     /// Filename of file with timer definitions.
     @Resource string timersFile = "twitchtimers.json";
 
-    /// When to next clear expired permits and bans.
-    long nextPrune;
-
     /++
         How often to check whether timers should fire, in seconds. A smaller
         number means better precision.
      +/
     enum timerPeriodicity = 10;
+
+    /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
+    private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+
+    /// Effective bell after `kameloso.terminal.isTTY` checks.
+    string bell = bellString;
 
     version(TwitchAPIFeatures)
     {
@@ -1882,7 +1970,7 @@ package:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this plugin only works on Twitch, in addition
         to doing nothing when `twitchbotSettings.enabled` is false.
 
@@ -1899,16 +1987,16 @@ package:
 
     // onEvent
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.onEvent` and inject a server check, so this
+        Override `kameloso.plugins.common.core.IRCPluginImpl.onEvent` and inject a server check, so this
         plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
         events to only trigger on active channels (that have its `Channel.enabled`
         set to true).
 
-        The function to call is `kameloso.plugins.core.IRCPluginImpl.onEventImpl`.
+        The function to call is `kameloso.plugins.common.core.IRCPluginImpl.onEventImpl`.
 
         Params:
             event = Parsed `dialect.defs.IRCEvent` to pass onto
-                `kameloso.plugins.core.IRCPluginImpl.onEventImpl`
+                `kameloso.plugins.common.core.IRCPluginImpl.onEventImpl`
                 after verifying we should process the event.
      +/
     override public void onEvent(IRCEvent event)

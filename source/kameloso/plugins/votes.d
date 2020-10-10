@@ -4,8 +4,8 @@
 
     Cheating by changing nicknames is warded against.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#votes
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#votes
  +/
 module kameloso.plugins.votes;
 
@@ -14,8 +14,8 @@ version(WithVotesPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -48,7 +48,7 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
 @Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
     "$command [seconds] [choice1] [choice2] ...")
-void onCommandVote(VotesPlugin plugin, const IRCEvent event)
+void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;

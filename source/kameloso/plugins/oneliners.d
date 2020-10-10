@@ -5,8 +5,8 @@
     More advanced commands that do more than just repeat the preset lines of text
     will have to be written separately.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
  +/
 module kameloso.plugins.oneliners;
 
@@ -15,8 +15,8 @@ version(WithOnelinersPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -39,12 +39,12 @@ import dialect.defs;
 
     Responses are stored in `OnelinersPlugin.onelinersByChannel`.
  +/
-@(Chainable)
+@Chainable
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
+void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, contains, nom;
 
@@ -64,7 +64,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 
         if (const response = key in *channelOneliners)
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;
@@ -92,7 +92,7 @@ void onOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
 @Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
-void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
+void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : contains, nom;
     import std.format : format;
@@ -172,7 +172,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "commands")
 @Description("Lists all available oneliners.")
-void onCommandCommands(OnelinersPlugin plugin, const IRCEvent event)
+void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     return plugin.listCommands(event.channel);
 }

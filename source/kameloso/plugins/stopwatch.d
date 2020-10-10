@@ -3,8 +3,8 @@
     to get how much time passed between the creation of a stopwatch and the
     cessation of it.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
  +/
 module kameloso.plugins.stopwatch;
 
@@ -13,8 +13,8 @@ version(WithStopwatchPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -42,7 +42,7 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "stopwatch")
 @BotCommand(PrefixPolicy.prefixed, "sw", Yes.hidden)
 @Description("Manages stopwatches.", "$command [start|stop|status]")
-void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
+void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : nom, stripped, strippedLeft;

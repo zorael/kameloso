@@ -6,7 +6,7 @@ module kameloso.config;
 
 private:
 
-import kameloso.common : IRCBot, Kameloso;
+import kameloso.kameloso : Kameloso, IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import std.typecons : Flag, No, Yes;
 
@@ -29,7 +29,7 @@ public:
     ---
 
     Params:
-        instance = Reference to the current `kameloso.common.Kameloso`,
+        instance = Reference to the current `kameloso.kameloso.Kameloso`,
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/
@@ -90,7 +90,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
     Params:
         filename = Filename of file to write to.
         configurationText = Content to write to file.
-        banner = Whether or not to add the "*kameloso bot*" banner at the head of the file.
+        banner = Whether or not to add the "kameloso bot" banner at the head of the file.
  +/
 void writeToDisk(const string filename, const string configurationText,
     Flag!"addBanner" banner = Yes.addBanner)
@@ -123,10 +123,10 @@ void writeToDisk(const string filename, const string configurationText,
 
 // complainAboutIncompleteConfiguration
 /++
-    Displays an error on how to complete a minimal configuration file.
+    Displays a hint on how to complete a minimal configuration file.
 
-    It assumes that the bot's `kameloso.common.IRCBot.admins` and
-    `kameloso.common.IRCBot.homeChannels` are both empty.
+    It assumes that the bot's `kameloso.kameloso.IRCBot.admins` and
+    `kameloso.kameloso.IRCBot.homeChannels` are both empty. (Else it should not have been called.)
 
     Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
     so place it here.
@@ -147,14 +147,14 @@ void complainAboutIncompleteConfiguration()
     given values from compile-time defaults.
 
     Nickname, user, GECOS/"real name", server address and server port are
-    required. If there is no nickname, generate a random one, then just update
-    the other members to have the same value (if they're empty) OR with values
-    stored in `kameloso.constants.KamelosoDefaultStrings`.
+    required. If there is no nickname, generate a random one. For any other empty values,
+    update them with relevant such from `kameloso.constants.KamelosoDefaultStrings`
+    (and `kameloso.constants.KamelosoDefaultIntegers`).
 
     Params:
         client = Reference to the `dialect.defs.IRCClient` to complete.
         server = Reference to the `dialect.defs.IRCServer` to complete.
-        bot = Reference to the `kameloso.common.IRCBot` to complete.
+        bot = Reference to the `kameloso.kameloso.IRCBot` to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")
@@ -342,8 +342,10 @@ private import lu.traits : isStruct;
 /++
     Reads a configuration file and applies the settings therein to passed objects.
 
-    More than one can be supplied, and invalid ones for which there are no
-    settings will be silently ignored with no errors.
+    More than one object can be supplied; invalid ones for which there are no
+    settings in the configuration file will be silently ignored with no errors.
+    Orphan settings in the configuration file for which no appropriate
+    object was passed will be saved to `invalidEntries`.
 
     Example:
     ---
@@ -382,9 +384,8 @@ if (allSatisfy!(isStruct, T))
 // readConfigInto
 /++
     Reads a configuration file and applies the settings therein to passed objects.
-
     Merely wraps the other `readConfigInto` overload and distinguishes itself
-        from it by not taking the two `string[][string]` out parameters it does.
+    from it by not taking the two `string[][string]` out parameters it does.
 
     Params:
         configFile = Filename of file to read from.

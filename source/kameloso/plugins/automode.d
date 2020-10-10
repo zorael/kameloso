@@ -3,8 +3,8 @@
     channel. The common use-case is to have someone be automatically set to `+o`
     (operator) when joining.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#automode
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#automode
  +/
 module kameloso.plugins.automode;
 
@@ -13,8 +13,8 @@ version(WithAutomodePlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
@@ -102,7 +102,7 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
 @(PrivilegeLevel.ignore)
-void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
+void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
     if (event.sender.nickname == plugin.state.client.nickname) return;
@@ -160,7 +160,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.JOIN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onJoin(AutomodePlugin plugin, const IRCEvent event)
+void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
     {
@@ -269,7 +269,7 @@ unittest
 @BotCommand(PrefixPolicy.prefixed, "automode")
 @Description("Adds, lists or removes automode definitions for the current channel.",
     "$command [add|list|clear] [account/nickname] [mode]")
-void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
+void onCommandAutomode(AutomodePlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;
@@ -437,7 +437,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 /++
     Triggers a WHOIS of the user invoking it with bot commands.
 
-    The `kameloso.plugins.core.PrivilegeLevel.anyone` annotation is to
+    The `kameloso.plugins.common.core.PrivilegeLevel.anyone` annotation is to
     force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
@@ -445,7 +445,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "op")
 @Description("Forces the bot to attempt to apply automodes.")
-void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
+void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
     {
@@ -459,12 +459,12 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
-// onWelcome
+// onMyInfo
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(AutomodePlugin plugin)
+@(IRCEvent.Type.RPL_MYINFO)
+void onMyInfo(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -482,7 +482,7 @@ void onWelcome(AutomodePlugin plugin)
  +/
 @(IRCEvent.Type.MODE)
 @(ChannelPolicy.home)
-void onMode(AutomodePlugin plugin, const IRCEvent event)
+void onMode(AutomodePlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -561,7 +561,7 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
         to doing nothing when `automodeSettings.enabled` is false.
 

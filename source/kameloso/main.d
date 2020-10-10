@@ -1,5 +1,5 @@
 /++
-    Dummy main module so the main `kameloso.d` gets tested by dub.
+    Dummy main module so all the real files get tested by dub.
  +/
 module kameloso.main;
 
@@ -8,12 +8,14 @@ public:
 /+
     Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
 
+    https://issues.dlang.org/show_bug.cgi?id=18026
+
     It may have been fixed in versions in the future at time of writing, so
-    limit it to 2.086 and earlier. Update this condition as compilers are released.
+    limit it to 2.094 and earlier. Update this condition as compilers are released.
 
     Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
  +/
-static if (__VERSION__ <= 2092L)
+static if (__VERSION__ <= 2094L)
 {
     debug
     {
@@ -33,6 +35,8 @@ static if (__VERSION__ <= 2092L)
 
 /*
     Warn about bug #20562: [dmd] Memory allocation failed (ERROR: This is a compiler bug)
+
+    https://issues.dlang.org/show_bug.cgi?id=20562
 
     It only affects Windows with DMD 2.089.0 or later, on build modes other than
     `singleFile`. Constrain with an upper major version as the issue is fixed.
@@ -55,42 +59,28 @@ version(Windows)
 
 
 version(unittest)
-/++
-    Unit-testing main; does nothing.
- +/
-void main()
 {
-    import kameloso.common : logger;
-
-    version(Windows)
-    {
-        import kameloso.terminal : setConsoleModeAndCodepage;
-
-        // Set up the console to display text and colours properly.
-        // It will only affect the below "All tests passed" line however...
-        setConsoleModeAndCodepage();
-    }
-
-    // Compiled with -b unittest, so run the tests and exit.
-    // Logger is initialised in a module constructor, don't re-init here.
-    logger.info("All tests passed successfully!");
-    // No need to Cygwin-flush; the logger did that already
+    /++
+        Unit-testing main; does nothing.
+     +/
+    void main() {}
 }
 else
-/++
-    Entry point of the program.
-
-    Technically it just passes on execution to `kameloso.kameloso.initBot`.
-
-    Params:
-        args = Command-line arguments passed to the program.
-
-    Returns:
-        `0` on success, non-`0` on failure.
- +/
-int main(string[] args)
 {
-    import kameloso.kameloso : initBot;
+    /++
+        Entry point of the program.
 
-    return initBot(args);
+        Technically it just passes on execution to `kameloso.core.initBot`.
+
+        Params:
+            args = Command-line arguments passed to the program.
+
+        Returns:
+            `0` on success, non-`0` on failure.
+     +/
+    int main(string[] args)
+    {
+        import kameloso.core : initBot;
+        return initBot(args);
+    }
 }

@@ -2,26 +2,22 @@
     The Channel Queries service queries channels for information about them (in
     terms of topic and modes) as well as their lists of participants. It does this
     shortly after having joined a channel, as a service to all other plugins,
-    so they don't each have to repeat it themselves.
+    so they don't each have to independently do it themselves.
 
     It is qualified as a service, so while it is not technically mandatory, it
     is highly recommended if you plan on mixing in
-    `kameloso.plugins.awareness.ChannelAwareness` into your plugins.
+    `kameloso.plugins.common.awareness.ChannelAwareness` into your plugins.
  +/
 module kameloso.plugins.chanqueries;
 
 version(WithPlugins):
 version(WithChanQueriesService):
 
-// Whether or not to do channel queries for non-home channels.
-//version = OmniscientQueries;
-
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.common;
+import kameloso.plugins.common.core;
 import kameloso.plugins.common.delayawait;
-import kameloso.plugins.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : No, Yes;
 
@@ -29,7 +25,7 @@ import std.typecons : No, Yes;
 version(OmniscientQueries)
 {
     /++
-        The `kameloso.plugins.core.ChannelPolicy` to mix in awareness with depending
+        The `kameloso.plugins.common.core.ChannelPolicy` to mix in awareness with depending
         on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -357,7 +353,7 @@ void startChannelQueries(ChanQueriesService service)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @omniscientChannelPolicy
-void onSelfjoin(ChanQueriesService service, const IRCEvent event)
+void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
 }
@@ -371,7 +367,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
 @omniscientChannelPolicy
-void onSelfpart(ChanQueriesService service, const IRCEvent event)
+void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates.remove(event.channel);
 }
@@ -385,7 +381,7 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_TOPIC)
 @omniscientChannelPolicy
-void onTopic(ChanQueriesService service, const IRCEvent event)
+void onTopic(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] |= ChannelState.topicKnown;
 }
@@ -408,12 +404,12 @@ void onEndOfNames(ChanQueriesService service)
 }
 
 
-// onWelcome
+// onMyInfo
 /++
     After successful connection, start a delayed channel query on all channels.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(ChanQueriesService service)
+@(IRCEvent.Type.RPL_MYINFO)
+void onMyInfo(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
@@ -480,7 +476,7 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:

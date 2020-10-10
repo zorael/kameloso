@@ -13,9 +13,9 @@ version(WithTwitchBotPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.base : TwitchBotPlugin;
+import kameloso.plugins.twitchbot.base;
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
@@ -57,7 +57,7 @@ struct TimerDefinition
     `core.thread.fiber.Fiber` that implements the timer.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
@@ -82,13 +82,13 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         /// Whether or not stagger has passed, so we don't evaluate it every single time.
         bool staggerDone;
 
-        version(Web)
+        version(TwitchAPIFeatures)
         {
             immutable streamer = room.broadcasterDisplayName;
         }
         else
         {
-            import kameloso.plugins.common : nameOf;
+            import kameloso.plugins.common.base : nameOf;
             immutable streamer = plugin.nameOf(channelName[1..$]);
         }
 
@@ -159,11 +159,11 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     Adds, deletes, lists or clears timers for the specified target channel.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         event = The triggering `dialect.defs.IRCEvent`.
         targetChannel = The channel we're handling timers for.
  +/
-void handleTimerCommand(TwitchBotPlugin plugin, const IRCEvent event, const string targetChannel)
+void handleTimerCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
     import lu.string : SplitResults, contains, nom, splitInto;
@@ -257,7 +257,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
             try
             {
-                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
+                immutable i = slice.stripped.to!ptrdiff_t - 1;
 
                 if ((i >= 0) && (i < room.timers.length))
                 {
@@ -364,7 +364,8 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
 // timerDefsToJSON
 /++
-    Expresses the `FiberDefinition` associative array (`TwitchBotPlugin.fiberDefsByChannel`)
+    Expresses the `FiberDefinition` associative array
+    (`kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel`)
     in JSON form, for easier saving to and loading from disk.
 
     Using `std.json.JSONValue` directly fails with an error.
@@ -406,14 +407,14 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // populateTimers
 /++
-    Populates the `TwitchBotPlugin.timerDefsByChannel` associative array with
-    the timer definitions in the passed JSON file.
+    Populates the `kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel`
+    associative array with the timer definitions in the passed JSON file.
 
     This reads the JSON values from disk and creates the `TimerDefinition`s
     appropriately.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
         filename = Filename of the JSON file to read definitions from.
  +/
 void populateTimers(TwitchBotPlugin plugin, const string filename)

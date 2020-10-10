@@ -10,18 +10,14 @@
 module kameloso.plugins.webtitles;
 
 version(WithPlugins):
-version(Web):
 version(WithWebtitlesPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
-import kameloso.irccolours : ircBold;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
-import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.concurrency;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
@@ -94,12 +90,12 @@ struct TitleLookupRequest
     It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
     try to look up every URL returned by it.
  +/
-@(Terminating)
+@Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
+void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
     import lu.string : beginsWith;
@@ -120,10 +116,11 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
     It accesses the cache of already looked up addresses to speed things up.
  +/
-void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
+void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 {
     import kameloso.common : Tint, logger;
     import lu.string : beginsWith, contains, nom;
+    import std.concurrency : spawn;
 
     bool[string] uniques;
 
@@ -182,7 +179,7 @@ void lookupURLs(WebtitlesPlugin plugin, const IRCEvent event, string[] urls)
             continue;
         }
 
-        spawn(&worker, cast(shared)request, plugin.cache,
+        cast(void)spawn(&worker, cast(shared)request, plugin.cache,
             (i * plugin.delayMsecs), colouredFlag);
     }
 }
@@ -368,12 +365,16 @@ TitleLookupResults lookupTitle(const string url)
     import std.net.curl : HTTP;
     import core.time : seconds;
 
+    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+
     auto client = HTTP(url);
     client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+    client.setUserAgent(userAgent);
     client.addRequestHeader("Accept", "text/html");
 
     Document doc = new Document;
+    doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+
     Appender!(ubyte[]) sink;
     sink.reserve(WebtitlesPlugin.lookupBufferSize);
 
@@ -390,7 +391,7 @@ TitleLookupResults lookupTitle(const string url)
     if (code >= 400)
     {
         import std.conv : text;
-        throw new Exception(code.text ~ " fetching URL " ~ url);
+        throw new Exception(text(code, " fetching URL ", url));
     }
     else if (!doc.title.length)
     {
@@ -426,6 +427,7 @@ void reportTitle(TitleLookupRequest request,
 
     if (request.results.domain.length)
     {
+        import kameloso.irccolours : ircBold;
         import std.format : format;
 
         line = colouredOutgoing ?
@@ -452,7 +454,7 @@ void reportTitle(TitleLookupRequest request,
 void reportYouTubeTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
-    import kameloso.irccolours : ircColourByHash;
+    import kameloso.irccolours : ircColourByHash, ircBold;
     import std.format : format;
 
     immutable line = colouredOutgoing ?
@@ -684,7 +686,7 @@ void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable c
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    import kameloso.plugins.common : EventURLs;
+    import kameloso.plugins.common.base : EventURLs;
     import kameloso.thread : BusMessage;
 
     auto message = cast(BusMessage!EventURLs)content;
@@ -733,7 +735,7 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
         to doing nothing when `webtitlesSettings.enabled` is false.
 

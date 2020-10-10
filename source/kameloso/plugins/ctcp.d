@@ -12,7 +12,7 @@ version(WithCTCPService):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -36,7 +36,7 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.CTCP_DCC)
 @(IRCEvent.Type.CTCP_AVATAR)
 @(IRCEvent.Type.CTCP_LAG)
-void onCTCPs(CTCPService service, const IRCEvent event)
+void onCTCPs(CTCPService service, const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
     import std.format : format;
@@ -199,15 +199,11 @@ void onCTCPs(CTCPService service, const IRCEvent event)
     }
     else
     {
-        import dialect.common : IRCControlCharacter;
+        import dialect.common : I = IRCControlCharacter;
 
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-
-        with (IRCControlCharacter)
-        {
-            raw(service.state, ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target), Yes.quiet);
-        }
+        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), No.quiet);
     }
 }
 
@@ -238,7 +234,7 @@ unittest
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
-void onCTCPClientinfo(CTCPService service, const IRCEvent event)
+void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 {
     import dialect.common : IRCControlCharacter;
     import std.format : format;
@@ -309,7 +305,7 @@ final class CTCPService : IRCPlugin
 private:
     // isEnabled
     /++
-        Override `kameloso.plugins.core.IRCPluginImpl.isEnabled` and inject
+        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:

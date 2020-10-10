@@ -4,7 +4,7 @@
     `dialect.defs.IRCEvent`s when information about them is incomplete.
 
     This means that even if a service only refers to a user by nickname, things
-    like his ident and address will be available to plugins as well, assuming
+    like its ident and address will be available to plugins as well, assuming
     the Persistence service had seen that previously.
 
     It has no commands. It only does post-processing and doesn't handle
@@ -17,7 +17,7 @@ version(WithPersistenceService):
 
 private:
 
-import kameloso.plugins.core;
+import kameloso.plugins.common.core;
 import dialect.defs;
 
 
@@ -64,7 +64,7 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
             the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const IRCEvent event, ref IRCUser user)
+            const ref IRCEvent event, ref IRCUser user)
         {
             bool set;
 
@@ -290,7 +290,7 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
             the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const IRCEvent event, ref IRCUser user)
+            const ref IRCEvent event, ref IRCUser user)
         {
             if (user.class_ == IRCUser.Class.admin)
             {
@@ -423,12 +423,12 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 /++
     Removes a user's `dialect.defs.IRCUser` entry from the `users`
     associative array of the current `PersistenceService`'s
-    `kameloso.plugins.core.IRCPluginState` upon them disconnecting.
+    `kameloso.plugins.common.core.IRCPluginState` upon them disconnecting.
 
     Additionally from the nickname-channel cache.
  +/
 @(IRCEvent.Type.QUIT)
-void onQuit(PersistenceService service, const IRCEvent event)
+void onQuit(PersistenceService service, const ref IRCEvent event)
 {
     service.state.users.remove(event.sender.nickname);
     service.userClassCurrentChannelCache.remove(event.sender.nickname);
@@ -438,14 +438,14 @@ void onQuit(PersistenceService service, const IRCEvent event)
 // onNick
 /++
     Updates the entry of someone in the `users` associative array of the current
-    `PersistenceService`'s `kameloso.plugins.core.IRCPluginState` when they
+    `PersistenceService`'s `kameloso.plugins.common.core.IRCPluginState` when they
     change nickname, to point to the new `dialect.defs.IRCUser`.
 
     Removes the old entry.
  +/
 @(IRCEvent.Type.NICK)
 @(IRCEvent.Type.SELFNICK)
-void onNick(PersistenceService service, const IRCEvent event)
+void onNick(PersistenceService service, const ref IRCEvent event)
 {
     if (service.state.settings.preferHostmasks)
     {
@@ -470,13 +470,33 @@ void onNick(PersistenceService service, const IRCEvent event)
 
 // onWelcome
 /++
-    Reloads classifier definitions from disk.
+    Reloads classifier definitions from disk. Additionally rehashes the user array,
+    allowing for optimised access.
+
+    This is normally done as part of user awareness, but we're not mixing that
+    in so we have to reinvent it.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PersistenceService service)
 {
+    import kameloso.plugins.common.delayawait : delay;
+    import std.typecons : Flag, No, Yes;
+    import core.thread : Fiber;
+
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();
+
+    void periodicallyDg()
+    {
+        while (true)
+        {
+            service.state.users.rehash();
+            delay(service, service.timeBetweenRehashes, No.msecs, Yes.yield);
+        }
+    }
+
+    Fiber rehashFiber = new Fiber(&periodicallyDg, 32_768);
+    delay(service, rehashFiber, service.timeBetweenRehashes);
 }
 
 
@@ -490,22 +510,6 @@ void reload(PersistenceService service)
     service.state.users.rehash();
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();
-}
-
-
-// periodically
-/++
-    Periodically rehashes the user array, allowing for optimised access.
-
-    This is normally done as part of user-awareness, but we're not mixing that
-    in so we have to reinvent it.
- +/
-void periodically(PersistenceService service, const long now)
-{
-    enum hoursBetweenRehashes = 3;
-
-    service.state.users.rehash();
-    service.state.nextPeriodical = now + (hoursBetweenRehashes * 3600);
 }
 
 
@@ -614,7 +618,7 @@ void initResources(PersistenceService service)
     Params:
         service = The current `PersistenceService`.
 
-    Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
+    Throws: `kameloso.plugins.common.core.IRCPluginInitialisationException` on
         failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
@@ -706,7 +710,7 @@ void initAccountResources(PersistenceService service)
     Reads, completes and saves the hostmasks JSON file, creating one if it
     doesn't exist.
 
-    Throws: `kameloso.plugins.core.IRCPluginInitialisationException` on
+    Throws: `kameloso.plugins.common.core.IRCPluginInitialisationException` on
         failure loading the `user.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
@@ -751,7 +755,7 @@ public:
     this service we aim to complete such `dialect.defs.IRCUser` entries as
     the union of everything we know from previous events.
 
-    It only needs part of `kameloso.plugins.awareness.UserAwareness` for minimal
+    It only needs part of `kameloso.plugins.common.awareness.UserAwareness` for minimal
     bookkeeping, not the full package, so we only copy/paste the relevant bits
     to stay slim.
  +/
@@ -759,6 +763,9 @@ final class PersistenceService : IRCPlugin
 {
 private:
     import kameloso.constants : KamelosoFilenames;
+
+    /// How often to rehash associative arrays, optimising access.
+    enum long timeBetweenRehashes = 3 * 3600;
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;
@@ -771,7 +778,7 @@ private:
 
     /++
         User "accounts" by hostmask. Future optimisation may involve making this
-        an `IRCUser[string]` associative array instead.
+        an `dialect.defs.IRCUser[string]` associative array instead.
      +/
     string[string] accountByUser;
 

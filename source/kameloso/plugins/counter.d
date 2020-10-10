@@ -5,8 +5,8 @@
     decrement or assign specific values to. This can be used to track deaths in
     video games, for instance.
 
-    See the GitHub wiki for more information about available commands:<br>
-    - https://github.com/zorael/kameloso/wiki/Current-plugins#counter
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#counter
  +/
 module kameloso.plugins.counter;
 
@@ -15,8 +15,8 @@ version(WithCounterPlugin):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -47,7 +47,7 @@ import std.typecons : Flag, No, Yes;
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
-void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
+void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
     import lu.string : nom, stripped, strippedLeft;
@@ -173,7 +173,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 /++
     Allows users to increment, decrement, and set counters.
 
-    This function fakes `kameloso.plugin.core.BotCommand`s by listening for
+    This function fakes `kameloso.plugins.core.BotCommand`s by listening for
     prefixes (and the bot's nickname), and treating whatever comes after it as
     a command word. If it doesn't match a previously added counter, it is ignored.
 
@@ -186,7 +186,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onCounterWord(CounterPlugin plugin, const IRCEvent event)
+void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
     import lu.string : beginsWith, stripped, strippedLeft, strippedRight;
