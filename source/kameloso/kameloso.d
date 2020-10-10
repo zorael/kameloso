@@ -571,7 +571,7 @@ public:
     /++
         Takes a `kameloso.kameloso.CoreSettings` and passes it out to all plugins.
 
-        This is called when a change to the bot has occurred and we want to
+        This is called when a change to the settings has occurred and we want to
         update all plugins to have a current copy of it.
 
         Params:

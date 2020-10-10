@@ -1020,8 +1020,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             event.content = sanitize(event.content);
             event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
-            event.errors ~= event.errors.length ?
-                ". Sanitized" : "Sanitzed";
+            event.errors ~= event.errors.length ? ". Sanitized" : "Sanitized";
 
             foreach (user; only(&event.sender, &event.target))
             {
