@@ -365,9 +365,11 @@ TitleLookupResults lookupTitle(const string url)
     import std.net.curl : HTTP;
     import core.time : seconds;
 
+    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+
     auto client = HTTP(url);
     client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+    client.setUserAgent(userAgent);
     client.addRequestHeader("Accept", "text/html");
 
     Document doc = new Document;
