@@ -269,7 +269,7 @@ unittest
 @BotCommand(PrefixPolicy.prefixed, "automode")
 @Description("Adds, lists or removes automode definitions for the current channel.",
     "$command [add|list|clear] [account/nickname] [mode]")
-void onCommandAutomode(AutomodePlugin plugin, const ref IRCEvent event)
+void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;

@@ -115,7 +115,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 @BotCommand(PrefixPolicy.prefixed, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname, " ~
     "or adds a new one.", "$command [nickname] [text if adding new quote]")
-void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
+void onCommandQuote(QuotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
     import lu.string : nom, stripped, strippedLeft;
