@@ -47,4 +47,5 @@ alias PluginModules = AliasSeq!(
     "kameloso.plugins.counter",
     "kameloso.plugins.webtitles",
     "kameloso.plugins.pipeline",
+    "kameloso.plugins.tester",
 );

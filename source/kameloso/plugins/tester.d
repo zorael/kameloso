@@ -8,9 +8,8 @@ version(WithPlugins):
 
 private:
 
-import kameloso.plugins.core;
-import kameloso.plugins.awareness : MinimalAuthentication;
-import kameloso.plugins.common;
+import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.plugins.common.delayawait;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -275,6 +274,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     // ------------ hostmasks
 
     send("hostmask");
+    awaitReply();
     if (thisFiber.payload.content != "This bot is not currently configured " ~
         "to use hostmasks for authentication.")
     {
