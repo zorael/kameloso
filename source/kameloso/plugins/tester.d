@@ -840,7 +840,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("Counter blah removed.");
 
     send("counter del blah");
-    expect("No such counter enabled."); //available.");
+    expect("No such counter available."); //available.");
 
     send("counter list");
     expect("Current counters: !bluh");
