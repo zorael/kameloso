@@ -785,7 +785,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("Usage: !counter [add|del|list] [counter word]");
 
     send("counter del blah");
-    expect("No such counter enabled.");
+    expect("No such counter available.");
 
     send("counter add blah");
     expect("Counter blah added! Access it with !blah.");
