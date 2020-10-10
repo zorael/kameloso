@@ -173,7 +173,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             logger.info("All tests passed!");
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&allDg, 65_356);
+        Fiber fiber = new CarryingFiber!IRCEvent(&allDg, 32_768*3);
         fiber.call();
         break;
 
