@@ -100,52 +100,52 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     switch (pluginName)
     {
     case "admin":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAdminFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAdminFiber, 32_768);
         fiber.call();
         break;
 
     case "automodes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAutomodesFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAutomodesFiber, 32_768);
         fiber.call();
         break;
 
     case "chatbot":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testChatbotFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testChatbotFiber, 32_768);
         fiber.call();
         break;
 
     case "notes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testNotesFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testNotesFiber, 32_768);
         fiber.call();
         break;
 
     case "oneliners":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testOnelinersFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testOnelinersFiber, 32_768);
         fiber.call();
         break;
 
     case "quotes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testQuotesFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testQuotesFiber, 32_768);
         fiber.call();
         break;
 
     case "sedreplace":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSedReplaceFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSedReplaceFiber, 32_768);
         fiber.call();
         break;
 
     case "seen":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSeenFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSeenFiber, 32_768);
         fiber.call();
         break;
 
     case "counter":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testCounterFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testCounterFiber, 32_768);
         fiber.call();
         break;
 
     case "stopwatch":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testStopwatchFiber);
+        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testStopwatchFiber, 32_768);
         fiber.call();
         break;
 
@@ -173,7 +173,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             logger.info("All tests passed!");
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&allDg);
+        Fiber fiber = new CarryingFiber!IRCEvent(&allDg, 32_768);
         fiber.call();
         break;
 
