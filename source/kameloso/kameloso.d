@@ -305,31 +305,41 @@ public:
 
         foreach (immutable moduleName; PluginModules)
         {
-            static assert(__traits(compiles, { mixin("import ", moduleName, ";"); }),
-                "Plugin module `" ~ moduleName ~ "` is missing or fails to compile");
-
-            mixin("import pluginModule = ", moduleName, ";");
-
-            foreach (member; __traits(allMembers, pluginModule))
+            static if (is(typeof(moduleName) : string) && moduleName.length)
             {
-                static if (is(__traits(getMember, pluginModule, member) == class))
-                {
-                    alias Class = __traits(getMember, pluginModule, member);
+                static assert(__traits(compiles, { mixin("import ", moduleName, ";"); }),
+                    "Plugin module `" ~ moduleName ~ "` (listed in `plugins/package.d`) " ~
+                    "is missing or fails to compile");
 
-                    static if (is(Class : IRCPlugin))
+                mixin("import pluginModule = ", moduleName, ";");
+
+                foreach (member; __traits(allMembers, pluginModule))
+                {
+                    static if (is(__traits(getMember, pluginModule, member) == class))
                     {
-                        static if (__traits(compiles, new Class(state)))
+                        alias Class = __traits(getMember, pluginModule, member);
+
+                        static if (is(Class : IRCPlugin))
                         {
-                            plugins ~= new Class(state);
-                        }
-                        else
-                        {
-                            import std.format : format;
-                            static assert(0, "`%s.%s` constructor does not compile"
-                                .format(moduleName, Class.stringof));
+                            static if (__traits(compiles, new Class(state)))
+                            {
+                                plugins ~= new Class(state);
+                            }
+                            else
+                            {
+                                import std.format : format;
+                                static assert(0, "`%s.%s` constructor does not compile"
+                                    .format(moduleName, Class.stringof));
+                            }
                         }
                     }
                 }
+            }
+            else
+            {
+                import std.conv : text;
+                static assert(0, text("Invalid `PluginModules` entry in `plugins/package.d`: `",
+                    moduleName, '`'));
             }
         }
 
