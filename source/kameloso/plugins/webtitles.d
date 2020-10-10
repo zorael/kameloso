@@ -389,7 +389,7 @@ TitleLookupResults lookupTitle(const string url)
     if (code >= 400)
     {
         import std.conv : text;
-        throw new Exception(code.text ~ " fetching URL " ~ url);
+        throw new Exception(text(code, " fetching URL ", url));
     }
     else if (!doc.title.length)
     {

@@ -320,7 +320,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
          +/
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
-            import std.conv : to;
+            import std.conv : text, to;
             import std.format : format;
             import std.random : uniform;
             import std.range : repeat;
@@ -401,10 +401,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &inputAdmins,
                 "H|homeChannels",
                     quiet ? string.init :
-                        "Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe " ~
-                            Tint.info ~ '#' ~ Tint.reset ~ "s)" ~
-                            formatNum(bot.homeChannels.length),
+                        text("Home channels to operate in, comma-separated " ~
+                            "(escape or enquote any octothorpe ",
+                            Tint.info, '#', Tint.reset, "s)",
+                            formatNum(bot.homeChannels.length)),
                     &inputHomeChannels,
                 "C|guestChannels",
                     quiet ? string.init :
@@ -414,7 +414,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "a|append",
                     quiet ? string.init :
                         "Append input home channels, guest channels and " ~
-                        "admins instead of overriding",
+                            "admins instead of overriding",
                     &shouldAppendToArrays,
                 "settings",
                     quiet ? string.init :
@@ -432,7 +432,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &settings.monochrome,
                 "set",
                     quiet ? string.init :
-                        "Manually change a setting (syntax: " ~ setSyntax ~ ')',
+                        text("Manually change a setting (syntax: ", setSyntax, ')'),
                     &customSettings,
                 "c|config",
                     quiet ? string.init :
@@ -477,9 +477,9 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &shouldWriteConfig,
                 "edit",
                     quiet ? string.init :
-                        "Open the configuration file in a text editor " ~
-                            "(or the default application used to open " ~ Tint.log ~
-                            "*.conf" ~ Tint.reset ~ " files on your system",
+                        text("Open the configuration file in a text editor " ~
+                            "(or the default application used to open ", Tint.log,
+                            "*.conf", Tint.reset, " files on your system"),
                     &shouldOpenEditor,
                 "version",
                     quiet ? string.init :

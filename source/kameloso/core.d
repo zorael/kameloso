@@ -246,6 +246,7 @@ void messageFiber(ref Kameloso instance)
         void eventToServer(Message m) scope
         {
             import lu.string : splitLineAtPosition;
+            import std.conv : text;
             import std.format : format;
 
             enum maxIRCLineLength = 512;
@@ -331,7 +332,7 @@ void messageFiber(ref Kameloso instance)
                 if (event.aux.length)
                 {
                     // Key, assume only one channel
-                    line = "JOIN " ~ event.channel ~ ' ' ~ event.aux;
+                    line = text("JOIN ", event.channel, ' ', event.aux);
                 }
                 else
                 {
@@ -349,8 +350,8 @@ void messageFiber(ref Kameloso instance)
                 if (event.content.length)
                 {
                     // Reason given, assume only one channel
-                    line = "PART " ~ event.channel ~ " :" ~
-                        event.content.replaceTokens(instance.parser.client);
+                    line = text("PART ", event.channel, " :",
+                        event.content.replaceTokens(instance.parser.client));
                 }
                 else
                 {
@@ -1924,9 +1925,11 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
  +/
 void complainAboutMissingConfigurationEntries(const string[][string] missingEntries)
 {
+    import std.conv : text;
+
     logger.log("Found MISSING configuration entries:");
 
-    immutable pattern = "...under [%s%s%s]: %-(" ~ Tint.info ~ "%s%|" ~ Tint.log ~ ", %)";
+    immutable pattern = text("...under [%s%s%s]: %-(", Tint.info, "%s%|", Tint.log, ", %)");
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
@@ -1950,9 +1953,11 @@ void complainAboutMissingConfigurationEntries(const string[][string] missingEntr
  +/
 void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
 {
+    import std.conv : text;
+
     logger.log("Found INVALID configuration entries:");
 
-    immutable pattern = "...under [%s%s%s]: %-(" ~ Tint.info ~ "%s%|" ~ Tint.log ~ ", %)";
+    immutable pattern = text("...under [%s%s%s]: %-(", Tint.info, "%s%|", Tint.log, ", %)");
 
     foreach (immutable section, const sectionEntries; invalidEntries)
     {
