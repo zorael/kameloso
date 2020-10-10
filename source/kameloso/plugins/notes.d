@@ -43,7 +43,7 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onReplayEvent(NotesPlugin plugin, const ref IRCEvent event)
+void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.channel !in plugin.notes) return;
 
@@ -65,7 +65,7 @@ void onReplayEvent(NotesPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
-void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
+void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
 

@@ -256,7 +256,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
-void onDance(ChatbotPlugin plugin, const ref IRCEvent event)
+void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
