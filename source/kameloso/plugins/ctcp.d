@@ -203,7 +203,7 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
 
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), No.quiet);
+        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), Yes.quiet);
     }
 }
 
