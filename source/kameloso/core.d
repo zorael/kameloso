@@ -1512,10 +1512,6 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
     unless it has already been done recently (within
     `kameloso.constants.Timeout.whoisRetry` seconds).
 
-    Unconditionally clear the list afterwards. If a `Replay` wasn't replayed, it
-    wasn't meant to be. Future improvements may include something like a retry
-    counter, so "failed" replays get a second chance.
-
     Params:
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
         plugin = The relevant `kameloso.plugins.common.core.IRCPlugin`.
@@ -1567,9 +1563,6 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
             }
         }
     }
-
-    // plugin.state.replays is guaranteed to be exhausted
-    plugin.state.replays = typeof(plugin.state.replays).init;
 }
 
 
