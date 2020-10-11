@@ -176,39 +176,24 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
     auto replaysForNickname = event.target.nickname in plugin.state.replays;
     if (!replaysForNickname) return;
 
-    scope(exit) plugin.state.hasReplays = (plugin.state.replays.length > 0);
-
-    if (!replaysForNickname.length)
+    scope(exit)
     {
         plugin.state.replays.remove(event.target.nickname);
-        return;
+        plugin.state.hasReplays = (plugin.state.replays.length > 0);
     }
 
-    mixin Repeater;
+    if (!replaysForNickname.length) return;
 
-    size_t[] garbageIndexes;
-    garbageIndexes.reserve(replaysForNickname.length);
+    mixin Repeater;
 
     foreach (immutable i, replay; *replaysForNickname)
     {
         import kameloso.constants : Timeout;
-        import std.algorithm.searching : canFind;
 
-        scope(exit) garbageIndexes ~= i;
-
-        if ((event.time - replay.when) > Timeout.whoisRetry)
+        if ((event.time - replay.when) <= Timeout.whoisRetry)
         {
-            // Entry is too old, replay timed out. Flag it for removal.
-            continue;
+            repeat(replay);
         }
-
-        repeat(replay);
-    }
-
-    foreach_reverse (immutable i; garbageIndexes)
-    {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        *replaysForNickname = (*replaysForNickname).remove!(SwapStrategy.unstable)(i);
     }
 }
 
