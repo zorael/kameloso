@@ -1060,8 +1060,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             try
             {
                 plugin.onEvent(event);
-                if (plugin.state.repeats.length) processRepeats(instance, plugin);
                 if (plugin.state.hasReplays) processReplays(instance, plugin);
+                if (plugin.state.repeats.length) processRepeats(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
             }
