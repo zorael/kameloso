@@ -1429,9 +1429,8 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
 {
     import dialect.common : IRCParseException;
     import lu.string : NomException;
+    import core.memory : GC;
     import core.thread : Fiber;
-
-    size_t[] spentRepeats;
 
     foreach (immutable i, repeat; plugin.state.repeats)
     {
@@ -1490,19 +1489,14 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
             version(PrintStacktraces) logger.trace(e);
         }
 
-        if (repeat.fiber.state == Fiber.State.TERM)
-        {
-            spentRepeats ~= i;
-        }
+        assert((repeat.fiber.state == Fiber.State.TERM), "Undead Repeater Fiber");
+
+        destroy(repeat);
+        GC.free(&repeat);
     }
 
-    // Clean exhausted repeats
-    foreach_reverse (immutable i; spentRepeats)
-    {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        plugin.state.repeats = plugin.state.repeats
-            .remove!(SwapStrategy.unstable)(i);
-    }
+    // All repeats guaranteed exhausted
+    plugin.state.repeats = typeof(plugin.state.repeats).init;
 }
 
 
