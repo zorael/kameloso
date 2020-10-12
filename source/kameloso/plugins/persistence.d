@@ -151,12 +151,18 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
-        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
-
-        if (stored.class_ == IRCUser.Class.unset)
+        // Additionally snapshot the .updated value and restore it after melding
+        if (!foundNoStored)
         {
-            // The class was not changed, restore the previously saved one
-            stored.class_ = preMeldClass;
+            immutable preMeldUpdated = stored.updated;
+            user.meldInto!(MeldingStrategy.aggressive)(*stored);
+            stored.updated = preMeldUpdated;
+
+            if (stored.class_ == IRCUser.Class.unset)
+            {
+                // The class was not changed, restore the previously saved one
+                stored.class_ = preMeldClass;
+            }
         }
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
