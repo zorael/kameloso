@@ -167,7 +167,9 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            if (event.type == IRCEvent.Type.RPL_ENDOFWHOIS)
+            if ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
+                (event.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
+                (event.type == IRCEvent.Type.RPL_ENDOFWHOIS))
             {
                 // Record updated timestamp; this is the end of a WHOIS
                 stored.updated = event.time;
