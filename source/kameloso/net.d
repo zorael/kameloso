@@ -714,8 +714,11 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 continue;
 
             // Others that may be benign?
-            case "An established connection was aborted by the software in your host machine.":
-            case "An existing connection was forcibly closed by the remote host.":
+            version(Windows)
+            {
+                case "An established connection was aborted by the software in your host machine.":
+            }
+            case "An existing connection was forcibly closed by the remote host.":  // Windows-only?
             case "Connection reset by peer":
             case "Transport endpoint is not connected":  // IPv6/IPv4 connection/socket mismatch
                 attempt.state = State.error;
