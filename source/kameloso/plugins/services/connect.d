@@ -8,7 +8,7 @@
     See_Also:
         kameloso.net
  +/
-module kameloso.plugins.connect;
+module kameloso.plugins.services.connect;
 
 version(WithPlugins):
 version(WithConnectService):

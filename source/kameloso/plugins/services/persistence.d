@@ -10,7 +10,7 @@
     It has no commands. It only does post-processing and doesn't handle
     `dialect.defs.IRCEvent`s in the normal sense at all.
  +/
-module kameloso.plugins.persistence;
+module kameloso.plugins.services.persistence;
 
 version(WithPlugins):
 version(WithPersistenceService):

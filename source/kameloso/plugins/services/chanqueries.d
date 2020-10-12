@@ -8,7 +8,7 @@
     is highly recommended if you plan on mixing in
     `kameloso.plugins.common.awareness.ChannelAwareness` into your plugins.
  +/
-module kameloso.plugins.chanqueries;
+module kameloso.plugins.services.chanqueries;
 
 version(WithPlugins):
 version(WithChanQueriesService):

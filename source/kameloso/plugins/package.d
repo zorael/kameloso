@@ -26,11 +26,11 @@ public:
     to the below not being possible to be resolved to valid modules.
  +/
 alias PluginModules = AliasSeq!(
-    "kameloso.plugins.persistence",
+    "kameloso.plugins.services.persistence",
     "kameloso.plugins.printer.base",
-    "kameloso.plugins.connect",
-    "kameloso.plugins.chanqueries",
-    "kameloso.plugins.ctcp",
+    "kameloso.plugins.services.connect",
+    "kameloso.plugins.services.chanqueries",
+    "kameloso.plugins.services.ctcp",
     "kameloso.plugins.admin.base",
     "kameloso.plugins.chatbot",
     "kameloso.plugins.notes",
