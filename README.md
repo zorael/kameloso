@@ -349,8 +349,6 @@ If SSL flat doesn't work at all, you may simply be missing the necessary librari
 
 Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
-Cygwin/mintty terminals may work erratically. There may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use the plain `cmd.exe`, the Powershell console or a Windows Subsystem for Linux (WSL) terminal instead.
-
 ## macOS/Linux/other Posix
 
 If the Pipeline plugin's FIFO file is removed while the program is running, it will hang when trying to exit, requiring manual interruption with Ctrl+C. This is a tricky problem to solve as it requires figuring out how to do non-blocking reads. Help wanted.
