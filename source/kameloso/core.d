@@ -1097,6 +1097,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
         }
 
+        // Take some special actions on select event types
         with (IRCEvent.Type)
         switch (event.type)
         {
@@ -1131,6 +1132,18 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             {
                 instance.throttleline(instance.outbuffer, Yes.dryRun);
             }
+            break;
+
+        case QUIT:
+            // Remove users from the WHOIS history when they quit the server.
+            instance.previousWhoisTimestamps.remove(event.sender.nickname);
+            break;
+
+        case NICK:
+            // Transfer WHOIS history timestamp when a user changes its nickname.
+            instance.previousWhoisTimestamps[event.target.nickname] =
+                instance.previousWhoisTimestamps[event.sender.nickname];
+            instance.previousWhoisTimestamps.remove(event.sender.nickname);
             break;
 
         default:
