@@ -791,9 +791,10 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         import lu.conv : Enum;
 
         logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
-            "based on WHOIS results: user is %1$s%7$s%3$s class",
+            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class",
             Tint.info, context.name, Tint.log, contextName,
-            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel), repeat.replay.caller,
+            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel),
+            repeat.replay.caller, repeat.replay.event.sender.nickname,
             Enum!(IRCUser.Class).toString(repeat.replay.event.sender.class_));
     }
 
