@@ -145,15 +145,14 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 
         import lu.meld : MeldingStrategy, meldInto;
 
-        // Store initial class and restore after meld. The origin user.class_
-        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
-        immutable preMeldClass = stored.class_;
-
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
+        // Store initial class and restore after meld. The origin user.class_
+        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
         // Additionally snapshot the .updated value and restore it after melding
         if (!foundNoStored)
         {
+            immutable preMeldClass = stored.class_;
             immutable preMeldUpdated = stored.updated;
             user.meldInto!(MeldingStrategy.aggressive)(*stored);
             stored.updated = preMeldUpdated;
@@ -360,13 +359,13 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 
         import lu.meld : MeldingStrategy, meldInto;
 
-        // Store initial class and restore after meld.
-        immutable preMeldClass = stored.class_;
-
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
         if (!foundNoStored)
         {
+            // Store initial class and restore after meld.
+            immutable preMeldClass = stored.class_;
+
             user.meldInto!(MeldingStrategy.aggressive)(*stored);
 
             if (stored.class_ == IRCUser.Class.unset)
