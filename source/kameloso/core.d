@@ -1035,6 +1035,12 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                     plugin.name, Tint.log, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
+            catch (UnicodeException e)
+            {
+                logger.warningf("UnicodeException %s.postprocess: %s%s",
+                    plugin.name, Tint.log, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
             catch (Exception e)
             {
                 logger.warningf("Exception %s.postprocess: %s%s",
