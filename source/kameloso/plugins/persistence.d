@@ -365,12 +365,15 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
-        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
-
-        if (stored.class_ == IRCUser.Class.unset)
+        if (!foundNoStored)
         {
-            // The class was not changed, restore the previously saved one
-            stored.class_ = preMeldClass;
+            user.meldInto!(MeldingStrategy.aggressive)(*stored);
+
+            if (stored.class_ == IRCUser.Class.unset)
+            {
+                // The class was not changed, restore the previously saved one
+                stored.class_ = preMeldClass;
+            }
         }
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
