@@ -615,10 +615,14 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
      +/
     void openEditor()
     {
+        import kameloso.common : Tint, logger;
         import std.process : execute;
 
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by `kameloso.kameloso.tryGetopt`.
+
+        logger.logf("Attempting to open %s%s%s in a text editor ...",
+            Tint.info, instance.settings.configFile, Tint.log);
 
         version(OSX)
         {
@@ -667,11 +671,6 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
             writeConfig(instance, instance.parser.client, instance.parser.server,
                 instance.bot, customSettings, No.giveInstructions);
         }
-
-        import kameloso.common : Tint, logger;
-
-        logger.logf("Attempting to open %s%s%s in a text editor ...",
-            Tint.info, instance.settings.configFile, Tint.log);
 
         openEditor();
     }
