@@ -1642,8 +1642,7 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
-    import kameloso.config : ConfigurationFileReadFailureException;
-    import kameloso.getopt : handleGetopt;
+    import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
