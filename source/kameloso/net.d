@@ -705,6 +705,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                     // Timed out read in Windows
                 case "A non-blocking socket operation could not be completed immediately.":
                     // Sporadic Cygwin error
+                    goto case;
             }
             case "Resource temporarily unavailable":
                 // Nothing received
@@ -717,6 +718,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             version(Windows)
             {
                 case "An established connection was aborted by the software in your host machine.":
+                    goto case;
             }
             case "An existing connection was forcibly closed by the remote host.":  // Windows-only?
             case "Connection reset by peer":
