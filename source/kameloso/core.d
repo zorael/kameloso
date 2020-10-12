@@ -1141,9 +1141,11 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         case NICK:
             // Transfer WHOIS history timestamp when a user changes its nickname.
-            instance.previousWhoisTimestamps[event.target.nickname] =
-                instance.previousWhoisTimestamps[event.sender.nickname];
-            instance.previousWhoisTimestamps.remove(event.sender.nickname);
+            if (const timestamp = event.sender.nickname in instance.previousWhoisTimestamps)
+            {
+                instance.previousWhoisTimestamps[event.target.nickname] = *timestamp;
+                instance.previousWhoisTimestamps.remove(event.sender.nickname);
+            }
             break;
 
         default:
