@@ -697,13 +697,18 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             switch (attempt.error)
             {
+            version(Windows)
+            {
+                case "A connection attempt failed because the connected party did not " ~
+                    "properly respond after a period of time, or established connection " ~
+                    "failed because connected host has failed to respond.":
+                    // Timed out read in Windows
+                case "A non-blocking socket operation could not be completed immediately.":
+                    // Sporadic Cygwin error
+            }
             case "Resource temporarily unavailable":
                 // Nothing received
             //case "Interrupted system call":
-            case "A connection attempt failed because the connected party did not " ~
-                 "properly respond after a period of time, or established connection " ~
-                 "failed because connected host has failed to respond.":
-                // Timed out read in Windows
                 attempt.state = State.isEmpty;
                 yield(attempt);
                 continue;
