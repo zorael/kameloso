@@ -1,7 +1,10 @@
 /++
     Dummy main module so all the real files get tested by dub.
+
+    See_Also:
+        kameloso.main
  +/
-module kameloso.main;
+module kameloso.entrypoint;
 
 public:
 

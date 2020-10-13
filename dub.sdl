@@ -6,7 +6,7 @@ homepage "https://www.github.com/zorael/kameloso"
 license "MIT"
 
 targetType "executable"
-mainSourceFile "source/kameloso/main.d"
+mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
