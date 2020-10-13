@@ -71,7 +71,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
-  * [macOS/Linux/Other Posix](#macoslinuxother-posix)
+  * [macOS/Linux/other Posix](#macoslinuxother-posix)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -366,6 +366,7 @@ If the Pipeline plugin's FIFO file is removed while the program is running, it w
 * [`dub`](https://code.dlang.org)
 * [`dialect`](https://github.com/zorael/dialect) ([dub](https://code.dlang.org/packages/dialect))
 * [`lu`](https://github.com/zorael/lu) ([dub](https://code.dlang.org/packages/lu))
+* [`requests`](https://github.com/ikod/dlang-requests) ([dub](https://code.dlang.org/packages/requests))
 * [`arsd`](https://github.com/adamdruppe/arsd) ([dub](https://code.dlang.org/packages/arsd-official))
 
 # License
