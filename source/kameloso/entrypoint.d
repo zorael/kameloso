@@ -73,7 +73,7 @@ else
     /++
         Entry point of the program.
 
-        Technically it just passes on execution to `kameloso.core.initBot`.
+        Technically it just passes on execution to `kameloso.main.initBot`.
 
         Params:
             args = Command-line arguments passed to the program.
@@ -83,7 +83,7 @@ else
      +/
     int main(string[] args)
     {
-        import kameloso.core : initBot;
+        import kameloso.main : initBot;
         return initBot(args);
     }
 }

@@ -1,7 +1,7 @@
 /++
     The main module, housing startup logic and the main event loop.
  +/
-module kameloso.core;
+module kameloso.main;
 
 private:
 
