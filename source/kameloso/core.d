@@ -1448,10 +1448,11 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
  +/
 void processRepeats(ref Kameloso instance, IRCPlugin plugin)
 {
-    import dialect.common : IRCParseException;
     import lu.string : NomException;
+    import core.exception : UnicodeException;
     import core.memory : GC;
     import core.thread : Fiber;
+    import std.utf : UTFException;
 
     foreach (immutable i, repeat; plugin.state.repeats)
     {
@@ -1478,11 +1479,16 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
             printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
         }
-        catch (IRCParseException e)
+        catch (UTFException e)
         {
-            logger.warningf("IRCParseException postprocessing %s.state.repeats[%d]: %s%s",
+            logger.warningf("UTFException postprocessing %s.state.repeats[%d]: %s%s",
                 plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(e.event, e.event.raw);
+            version(PrintStacktraces) logger.trace(e.info);
+        }
+        catch (UnicodeException e)
+        {
+            logger.warningf("UnicodeException postprocessing %s.state.repeats[%d]: %s%s",
+                plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
