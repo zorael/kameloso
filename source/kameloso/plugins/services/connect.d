@@ -1287,14 +1287,15 @@ void negotiateNick(ConnectService service)
     if ((service.registration == Progress.finished) ||
         (service.nickNegotiation != Progress.notStarted)) return;
 
-    import kameloso.common : replaceTokens;
     import std.algorithm.searching : endsWith;
-    import std.format : format;
 
     service.nickNegotiation = Progress.started;
 
     if (!service.state.server.address.endsWith(".twitch.tv"))
     {
+        import kameloso.common : replaceTokens;
+        import std.format : format;
+
         // Twitch doesn't require USER, only PASS and NICK
         /+
             Command: USER
