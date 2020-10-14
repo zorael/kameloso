@@ -117,7 +117,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 {
     import kameloso.common : Tint, logger, printVersionInfo;
     import kameloso.config : writeConfigurationFile;
-    import kameloso.constants : KamelosoDefaultStrings;
+    import kameloso.constants : KamelosoDefaults;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -147,7 +147,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     // Take the opportunity to set a default quit reason. We can't do this in
     // applyDefaults because it's a perfectly valid use-case not to have a quit
     // string, and having it there would enforce the default string if none present.
-    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaultStrings.quitReason;
+    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
 
     printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
 
@@ -811,7 +811,7 @@ void complainAboutIncompleteConfiguration()
 
     Nickname, user, GECOS/"real name", server address and server port are
     required. If there is no nickname, generate a random one. For any other empty values,
-    update them with relevant such from `kameloso.constants.KamelosoDefaultStrings`
+    update them with relevant such from `kameloso.constants.KamelosoDefaults`
     (and `kameloso.constants.KamelosoDefaultIntegers`).
 
     Params:
@@ -828,7 +828,7 @@ out (; (server.port != 0), "Server port of 0")
 out (; (bot.quitReason.length), "Empty bot quit reason")
 out (; (bot.partReason.length), "Empty bot part reason")
 {
-    import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
+    import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
 
     // If no client.nickname set, generate a random guest name.
     if (!client.nickname.length)
@@ -839,22 +839,22 @@ out (; (bot.partReason.length), "Empty bot part reason")
         client.nickname = "guest%03d".format(uniform(0, 1000));
     }
 
-    // If no client.user set, inherit from `kameloso.constants.KamelosoDefaultStrings`.
+    // If no client.user set, inherit from `kameloso.constants.KamelosoDefaults`.
     if (!client.user.length)
     {
-        client.user = KamelosoDefaultStrings.user;
+        client.user = KamelosoDefaults.user;
     }
 
     // If no client.realName set, inherit.
     if (!client.realName.length)
     {
-        client.realName = KamelosoDefaultStrings.realName;
+        client.realName = KamelosoDefaults.realName;
     }
 
     // If no server.address set, inherit.
     if (!server.address.length)
     {
-        server.address = KamelosoDefaultStrings.serverAddress;
+        server.address = KamelosoDefaults.serverAddress;
     }
 
     // Ditto but `kameloso.constants.KamelosoDefaultIntegers`.
@@ -865,19 +865,19 @@ out (; (bot.partReason.length), "Empty bot part reason")
 
     if (!bot.quitReason.length)
     {
-        bot.quitReason = KamelosoDefaultStrings.quitReason;
+        bot.quitReason = KamelosoDefaults.quitReason;
     }
 
     if (!bot.partReason.length)
     {
-        bot.partReason = KamelosoDefaultStrings.partReason;
+        bot.partReason = KamelosoDefaults.partReason;
     }
 }
 
 ///
 unittest
 {
-    import kameloso.constants : KamelosoDefaultIntegers, KamelosoDefaultStrings;
+    import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
     import std.conv : text;
 
     IRCClient client;
@@ -894,13 +894,13 @@ unittest
     applyDefaults(client, server, bot);
 
     assert(client.nickname.length);
-    assert((client.user == KamelosoDefaultStrings.user), client.user);
+    assert((client.user == KamelosoDefaults.user), client.user);
     assert(!client.ident.length, client.ident);
-    assert((client.realName == KamelosoDefaultStrings.realName), client.realName);
-    assert((server.address == KamelosoDefaultStrings.serverAddress), server.address);
+    assert((client.realName == KamelosoDefaults.realName), client.realName);
+    assert((server.address == KamelosoDefaults.serverAddress), server.address);
     assert((server.port == KamelosoDefaultIntegers.port), server.port.text);
-    assert((bot.quitReason == KamelosoDefaultStrings.quitReason), bot.quitReason);
-    assert((bot.partReason == KamelosoDefaultStrings.partReason), bot.partReason);
+    assert((bot.quitReason == KamelosoDefaults.quitReason), bot.quitReason);
+    assert((bot.partReason == KamelosoDefaults.partReason), bot.partReason);
 
     client.nickname = string.init;
     applyDefaults(client, server, bot);

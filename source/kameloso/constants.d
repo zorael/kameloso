@@ -31,11 +31,11 @@ enum KamelosoInfo
 }
 
 
-// KamelosoDefaultStrings
+// KamelosoDefaults
 /++
     Kameloso defaults, strings version.
  +/
-enum KamelosoDefaultStrings
+enum KamelosoDefaults
 {
     /++
         Default user to use when logging onto a server (the USER command).
