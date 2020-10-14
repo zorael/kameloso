@@ -11,14 +11,14 @@
     mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
     mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
 
-    auto fiber = new CarryingFiber!string(&someDelegate, 32_768);
+    auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
     fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
     fiber.call();
     fiber.payload = "You can change it in between calls to pass information to it";
     fiber.call();
 
     // As such we can make Fibers act like they're taking new arguments each call
-    auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate, 32_768);
+    auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate, BufferSize.fiberStack);
     fiber2.payload = newIncomingIRCEvent;
     fiber2.call();
     // [...]
@@ -50,7 +50,8 @@ public:
 
     void dg() { /* ... */ }
 
-    auto scheduledFiber = ScheduledFiber(new Fiber(&dg), Clock.currTime.toUnixTime + 10L);
+    auto scheduledFiber = ScheduledFiber(new Fiber(&dg, BufferSize.fiberStack),
+        Clock.currTime.toUnixTime + 10L);
     ---
  +/
 struct ScheduledFiber
@@ -279,7 +280,7 @@ unittest
         assert(fiber.payload);
     }
 
-    auto fiber = new CarryingFiber!bool(true, &dg, 32_768);
+    auto fiber = new CarryingFiber!bool(true, &dg, BufferSize.fiberStack);
     ---
 
     Params:

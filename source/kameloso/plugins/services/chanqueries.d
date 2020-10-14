@@ -339,9 +339,10 @@ void startChannelQueries(ChanQueriesService service)
         }
     }
 
+    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     fiber.call();
 }
 

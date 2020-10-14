@@ -475,6 +475,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 void onWelcome(SedReplacePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     void prevlineClearDg()
@@ -486,7 +487,7 @@ void onWelcome(SedReplacePlugin plugin)
         }
     }
 
-    Fiber prevlineClearFiber = new Fiber(&prevlineClearDg, 32_768);
+    Fiber prevlineClearFiber = new Fiber(&prevlineClearDg, BufferSize.fiberStack);
     delay(plugin, prevlineClearFiber, plugin.timeBetweenPurges);
 }
 

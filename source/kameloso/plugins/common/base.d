@@ -354,8 +354,10 @@ if (isSomeFunction!Dg)
 in ((dg !is null), "Tried to queue a repeat with a null delegate pointer")
 in ((replay.event != IRCEvent.init), "Tried to queue a repeat of an init `Replay`")
 {
+    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
-    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, 32_768), replay);
+
+    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, BufferSize.fiberStack), replay);
 }
 
 

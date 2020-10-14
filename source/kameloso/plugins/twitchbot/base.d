@@ -25,6 +25,7 @@ import kameloso.plugins.twitchbot.timers;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
+import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
@@ -579,7 +580,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
         }
 
-        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, 32_768);
+        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, BufferSize.fiberStack);
         chattersCheckFiber.call();
     }
 }
@@ -1090,7 +1091,7 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    Fiber followageFiber = new Fiber(&followageDg, 32_768);
+    Fiber followageFiber = new Fiber(&followageDg, BufferSize.fiberStack);
     followageFiber.call();
 }
 
@@ -1135,7 +1136,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
-    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, BufferSize.fiberStack);
     getDisplayNameFiber.call();
 
     // Always cache as soon as possible, before we get any !followage requests
@@ -1144,7 +1145,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.follows = getFollows(plugin, room.id);
     }
 
-    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
+    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, BufferSize.fiberStack);
     cacheFollowsFiber.call();
 }
 
@@ -1221,7 +1222,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
             .format(broadcasterName, login, gameName));
     }
 
-    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, 32_768);
+    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, BufferSize.fiberStack);
     shoutoutFiber.call();
 }
 
@@ -1485,7 +1486,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
         }
 
-        Fiber validationFiber = new Fiber(&validationDg, 32_768);
+        Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
         validationFiber.call();
     }
 }
@@ -1707,13 +1708,14 @@ void onMyInfo(TwitchBotPlugin plugin)
                     }
                 }
 
-                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg, 32_768);
+                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg,
+                    BufferSize.fiberStack);
                 cacheFollowsAnewFiber.call();
             }
         }
     }
 
-    Fiber periodicFiber = new Fiber(&periodicDg, 32_768);
+    Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
     delay(plugin, periodicFiber, plugin.timerPeriodicity);
 }
 

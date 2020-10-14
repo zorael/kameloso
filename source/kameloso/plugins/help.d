@@ -232,7 +232,9 @@ void onCommandHelp(HelpPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
+    import kameloso.constants : BufferSize;
+
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 

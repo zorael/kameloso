@@ -511,6 +511,7 @@ package string datestamp()
 void start(PrinterPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import kameloso.terminal : isTTY;
     import core.thread : Fiber;
 
@@ -557,7 +558,7 @@ void start(PrinterPlugin plugin)
         }
     }
 
-    Fiber daybreakFiber = new Fiber(&daybreakDg, 32_768);
+    Fiber daybreakFiber = new Fiber(&daybreakDg, BufferSize.fiberStack);
     delay(plugin, daybreakFiber, untilNextMidnight);
 }
 

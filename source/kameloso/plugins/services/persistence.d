@@ -490,6 +490,7 @@ void onNick(PersistenceService service, const ref IRCEvent event)
 void onWelcome(PersistenceService service)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import std.typecons : Flag, No, Yes;
     import core.thread : Fiber;
 
@@ -505,7 +506,7 @@ void onWelcome(PersistenceService service)
         }
     }
 
-    Fiber rehashFiber = new Fiber(&periodicallyDg, 32_768);
+    Fiber rehashFiber = new Fiber(&periodicallyDg, BufferSize.fiberStack);
     delay(service, rehashFiber, service.timeBetweenRehashes);
 }
 

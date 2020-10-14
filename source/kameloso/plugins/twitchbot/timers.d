@@ -64,6 +64,8 @@ struct TimerDefinition
 Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     const string channelName)
 {
+    import kameloso.constants : BufferSize;
+
     void dg()
     {
         import std.datetime.systime : Clock;
@@ -150,7 +152,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         }
     }
 
-    return new Fiber(&dg, 32_768);
+    return new Fiber(&dg, BufferSize.fiberStack);
 }
 
 

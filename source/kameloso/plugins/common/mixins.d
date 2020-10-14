@@ -396,8 +396,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         import kameloso.plugins.common.delayawait : await;
+        import kameloso.constants : BufferSize;
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, BufferSize.fiberStack);
         await(context, fiber, whoisEventTypes[]);
 
         string slice = nickname;

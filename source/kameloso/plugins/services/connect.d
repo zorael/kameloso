@@ -356,6 +356,7 @@ void tryAuth(ConnectService service)
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     enum secsBetweenRegistrationFinishedChecks = 5;
@@ -380,7 +381,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, 32_768);
+    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, BufferSize.fiberStack);
     delay(service, delayedJoinFiber, service.authenticationGracePeriod);
 }
 
@@ -1248,8 +1249,9 @@ void register(ConnectService service)
             }
 
             import kameloso.plugins.common.delayawait : await;
+            import kameloso.constants : BufferSize;
 
-            Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+            Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
             await(service, fiber, IRCEvent.Type.CAP);
 
             // Make sure nickname is lowercase so we can rely on it as account name
