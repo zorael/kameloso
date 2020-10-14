@@ -13,6 +13,7 @@ import std.format : format;
 public:
 
 
+// KamelosoInfo
 /++
     Meta-information about the program.
  +/
@@ -29,6 +30,8 @@ enum KamelosoInfo
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
 
+
+// KamelosoDefaultStrings
 /++
     Kameloso defaults, strings version.
  +/
@@ -57,6 +60,8 @@ enum KamelosoDefaultStrings
     altNickSign = "^",
 }
 
+
+// KamelosoDefaultIntegers
 /++
     Kameloso defaults, integers version.
  +/
@@ -66,6 +71,8 @@ enum KamelosoDefaultIntegers
     port = 6667,
 }
 
+
+// KamelosoFilenames
 /++
     Kameloso filenames.
  +/
@@ -89,6 +96,8 @@ enum KamelosoFilenames
     hostmasks = "hostmasks.json",
 }
 
+
+// ConnectionDefaultIntegers
 /++
     Connection defaults, integers version.
  +/
@@ -96,10 +105,10 @@ enum ConnectionDefaultIntegers
 {
     /// How many times to attempt to connect to an IP before moving on to the next one.
     retries = 4,
-    /// The maximum amount of time to wait between connection attempts.
-    delayCap = 10*60,  // seconds
 }
 
+
+// ConnectionDefaultFloats
 /++
     Connection defaults, floating point version.
  +/
@@ -109,6 +118,8 @@ enum ConnectionDefaultFloats : double
     delayIncrementMultiplier = 1.5,
 }
 
+
+// BufferSize
 /++
     Buffer sizes in bytes.
  +/
@@ -152,8 +163,11 @@ enum BufferSize
      +/
     vbufStdout = 16_384,
 }
+
+
+// Timeout
 /++
-    Various timeouts in seconds.
+    Various timeouts, in seconds unless specified otherwise.
  +/
 enum Timeout
 {
