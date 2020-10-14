@@ -115,6 +115,21 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
+        The receive buffer size as set as a `std.socket.SocketOption`.
+     +/
+    socketOptionReceive = 2048,
+
+    /++
+        The send buffer size as set as a `std.socket.SocketOption`.
+     +/
+    socketOptionSend = 1024,
+
+    /++
+        The actual buffer array size used when reading from the socket.
+     +/
+    socketReceive = 2048,
+
+    /++
         The maximum number of queued outgoing lines to buffer. Anything above
         this will crash the program with a buffer overrun. It can be arbitrarily big.
      +/
@@ -143,6 +158,21 @@ enum BufferSize
 enum Timeout
 {
     /++
+        The send attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
+     +/
+    sendMsecs = 5000,
+
+    /++
+        The receive attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
+     +/
+    receiveMsecs = 1000,
+
+    /++
+        The maximum amount of time to wait between connection attempts.
+     +/
+    delayCap = 600,
+
+    /++
         The amount of seconds to wait before retrying after a failed connection attempt.
      +/
     retry = 10,
@@ -162,7 +192,7 @@ enum Timeout
         Not having a small delay could cause it to spam the screen with errors
         as fast as it can.
      +/
-    readErrorGracePeriod = 1,
+    readErrorGracePeriodMsecs = 100,
 
     /++
         How long to keep trying to read from the sever when not receiving anything

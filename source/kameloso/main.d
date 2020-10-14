@@ -593,7 +593,7 @@ void messageFiber(ref Kameloso instance)
 Next mainLoop(ref Kameloso instance)
 {
     import kameloso.constants : Timeout;
-    import kameloso.net : DefaultTimeout, ListenAttempt, listenFiber;
+    import kameloso.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
 
@@ -785,7 +785,7 @@ Next mainLoop(ref Kameloso instance)
                 cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
                 uint.max;
             instance.conn.receiveTimeout =
-                min(DefaultTimeout.receive, timeoutFromMessages, untilNextGlobalScheduled);
+                min(Timeout.receiveMsecs, timeoutFromMessages, untilNextGlobalScheduled);
         }
 
         if (socketBlockingDisabled)
@@ -887,13 +887,13 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         // Benign socket error; break foreach and try again
         import kameloso.constants : Timeout;
         import core.thread : Thread;
-        import core.time : seconds;
+        import core.time : msecs;
 
         logger.warningf("Connection error! (%s%s%s)", Tint.log,
             attempt.error, Tint.warning);
 
         // Sleep briefly so it won't flood the screen on chains of errors
-        Thread.sleep(Timeout.readErrorGracePeriod.seconds);
+        Thread.sleep(Timeout.readErrorGracePeriodMsecs.msecs);
         return Next.retry;
 
     case timeout:
@@ -1794,8 +1794,7 @@ Next tryConnect(ref Kameloso instance)
             import std.algorithm.comparison : min;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
                 ConnectionDefaultFloats.delayIncrementMultiplier);
-            incrementedRetryDelay = min(incrementedRetryDelay,
-                ConnectionDefaultIntegers.delayCap);
+            incrementedRetryDelay = min(incrementedRetryDelay, Timeout.delayCap);
             continue;
 
         case delayThenNextIP:
