@@ -110,12 +110,13 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
-        import std.format : format;
+        private import std.format : format;
         static assert(0, "Double mixin of `%s` in `%s`"
             .format("MinimalAuthentication", module_));
     }
     else
     {
+        /// Flag denoting that `MinimalAuthetication` has been mixed in.
         package enum hasMinimalAuthentication = true;
     }
 
@@ -260,12 +261,13 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     static if (__traits(compiles, .hasUserAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
         static assert(0, "Double mixin of `%s` in `%s`"
             .format("UserAwareness", module_));
     }
     else
     {
+        /// Flag denoting that `UserAwareness` has been mixed in.
         package enum hasUserAwareness = true;
     }
 
@@ -650,20 +652,21 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     static if (__traits(compiles, .hasChannelAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
         static assert(0, "Double mixin of `%s` in `%s`"
             .format("ChannelAwareness", module_));
     }
     else
     {
+        /// Flag denoting that `ChannelAwareness` has been mixed in.
         package enum hasChannelAwareness = true;
     }
 
     static if (!__traits(compiles, .hasUserAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
 
-        enum pattern = "`%s` is missing a `UserAwareness` mixin " ~
+        private enum pattern = "`%s` is missing a `UserAwareness` mixin " ~
             "(needed for `ChannelAwareness`)";
         static assert(0, pattern.format(module_));
     }
@@ -1291,20 +1294,21 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     static if (__traits(compiles, .hasTwitchAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
         static assert(0, "Double mixin of `%s` in `%s`"
             .format("TwitchAwareness", module_));
     }
     else
     {
+        /// Flag denoting that `TwitchAwareness` has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
 
-        enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
+        private enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
             "(needed for `TwitchAwareness`)";
         static assert(0, pattern.format(module_));
     }
@@ -1461,20 +1465,21 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     static if (__traits(compiles, .hasTwitchAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
         static assert(0, "Double mixin of `%s` in `%s`"
             .format("TwitchAwareness", module_));
     }
     else
     {
+        /// Flag denoting that `TwitchAwareness` has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
-        import std.format : format;
+        private import std.format : format;
 
-        enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
+        private enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
             "(needed for `TwitchAwareness`)";
         static assert(0, pattern.format(module_));
     }

@@ -64,6 +64,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
+        /// Flag denoting that `WHOISFiberDelegate` has been mixed in.
         private enum hasWHOISFiber = true;
     }
 
@@ -458,7 +459,7 @@ private:
         alias messagingParent = __traits(parent, mixinSentinel);
         alias messagingParentInfo = CategoryName!messagingParent;
 
-        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
+        private enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
         static assert(0, pattern.format(messagingParentInfo.type,
             messagingParentInfo.fqn, "MessagingProxy"));
@@ -472,6 +473,7 @@ private:
     }
     else
     {
+        /// Flag denoting that `MessagingProxy` has been mixed in.
         private enum hasMessagingProxy = true;
     }
 
@@ -755,6 +757,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
     else
     {
+        /// Flag denoting that `Repeater` has been mixed in.
         private enum hasRepeater = true;
     }
 
