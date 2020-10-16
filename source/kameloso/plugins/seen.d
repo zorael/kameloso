@@ -572,7 +572,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 void onEndOfList(SeenPlugin plugin)
 {
-    plugin.seenUsers.rehash();
+    plugin.seenUsers = plugin.seenUsers.rehash();
 }
 
 
@@ -908,7 +908,8 @@ void onWelcome(SeenPlugin plugin)
         while (true)
         {
             plugin.updateAllObservedUsers();
-            plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
+            plugin.seenUsers = plugin.seenUsers.rehash();
+            plugin.seenUsers.saveSeen(plugin.seenFile);
             delay(plugin, plugin.timeBetweenSaves, No.msecs, Yes.yield);
         }
     }

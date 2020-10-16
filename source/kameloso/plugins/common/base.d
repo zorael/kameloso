@@ -378,14 +378,14 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 {
     if (!channelName.length)
     {
-        plugin.state.users.rehash();
+        plugin.state.users = plugin.state.users.rehash();
     }
     else
     {
         foreach (ref channel; plugin.state.channels)
         {
             if (channelName != channel.name) continue;
-            channel.users.rehash();
+            channel.users = channel.users.rehash();
         }
     }
 }

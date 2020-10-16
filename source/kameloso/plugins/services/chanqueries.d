@@ -213,7 +213,7 @@ void startChannelQueries(ChanQueriesService service)
 
         if (!uniqueUsers.length) return;  // Early exit
 
-        uniqueUsers.rehash();
+        uniqueUsers = uniqueUsers.rehash();
 
         /// Event types that signal the end of a WHOIS response.
         static immutable whoisTypes =

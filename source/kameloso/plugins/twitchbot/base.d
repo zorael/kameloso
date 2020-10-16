@@ -1363,7 +1363,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     JSONStorage channelBannedPhrasesJSON;
     channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
     plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-    plugin.bannedPhrasesByChannel.rehash();
+    plugin.bannedPhrasesByChannel = plugin.bannedPhrasesByChannel.rehash();
 
     // Timers use a specialised function
     plugin.populateTimers(plugin.timersFile);
@@ -1524,7 +1524,7 @@ void reload(TwitchBotPlugin plugin)
     channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
     plugin.bannedPhrasesByChannel = typeof(plugin.bannedPhrasesByChannel).init;
     plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-    plugin.bannedPhrasesByChannel.rehash();
+    plugin.bannedPhrasesByChannel = plugin.bannedPhrasesByChannel.rehash();
 
     plugin.timerDefsByChannel = typeof(plugin.timerDefsByChannel).init;
     plugin.populateTimers(plugin.timersFile);

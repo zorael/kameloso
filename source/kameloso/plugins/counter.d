@@ -365,7 +365,7 @@ void onWelcome(CounterPlugin plugin)
     JSONStorage countersJSON;
     countersJSON.load(plugin.countersFile);
     plugin.counters.populateFromJSON(countersJSON, No.lowercaseKeys);
-    plugin.counters.rehash();
+    plugin.counters = plugin.counters.rehash();
 }
 
 

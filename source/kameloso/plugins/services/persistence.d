@@ -501,7 +501,7 @@ void onWelcome(PersistenceService service)
     {
         while (true)
         {
-            service.state.users.rehash();
+            service.state.users = service.state.users.rehash();
             delay(service, service.timeBetweenRehashes, No.msecs, Yes.yield);
         }
     }
@@ -518,7 +518,7 @@ void onWelcome(PersistenceService service)
  +/
 void reload(PersistenceService service)
 {
-    service.state.users.rehash();
+    service.state.users = service.state.users.rehash();
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();
 }
@@ -602,7 +602,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     hostmasksJSON.load(service.hostmasksFile);
     //service.accountByUser.clear();
     service.accountByUser.populateFromJSON(hostmasksJSON);
-    service.accountByUser.rehash();
+    service.accountByUser = service.accountByUser.rehash();
 }
 
 

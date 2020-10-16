@@ -220,7 +220,7 @@ void onWelcome(OnelinersPlugin plugin)
     plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON,
         plugin.onelinersSettings.caseSensitiveTriggers ?
         Yes.lowercaseKeys : No.lowercaseKeys);
-    plugin.onelinersByChannel.rehash();
+    plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
 }
 
 
