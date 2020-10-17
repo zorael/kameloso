@@ -555,7 +555,7 @@ JSONValue getYouTubeInfo(const string url)
     import std.net.curl : HTTP;
     import core.time : seconds;
 
-    immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
+    immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
     auto client = HTTP(youtubeURL);
     client.operationTimeout = Timeout.httpGET.seconds;
@@ -571,14 +571,14 @@ JSONValue getYouTubeInfo(const string url)
     };
 
     client.perform();
-    immutable received = assumeUnique(cast(char[])sink.data);
 
-    if (received == "Not Found")
+    if (sink.data == "Not Found")
     {
         // Invalid video ID
         throw new Exception("Invalid YouTube video ID");
     }
 
+    immutable received = assumeUnique(cast(char[])sink.data);
     return parseJSON(received);
 }
 
