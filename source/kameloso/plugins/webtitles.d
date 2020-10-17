@@ -199,10 +199,10 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         cache = Shared cache of previous `TitleLookupRequest`s.
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
-        colouredOutgoing = Whether or not to send coloured output to the server.
+        colouredFlag = Flag of whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredOutgoing)
+    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredFlag)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
@@ -222,10 +222,6 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
     }
 
     TitleLookupRequest request = cast()sRequest;
-    immutable colouredFlag = colouredOutgoing ?
-        Yes.colouredOutgoing :
-        No.colouredOutgoing;
-
     immutable now = Clock.currTime.toUnixTime;
 
     if (request.url.contains("://i.imgur.com/"))
