@@ -65,7 +65,7 @@ public:
             brightTerminal = Bright terminal setting.
      +/
     this(const Flag!"monochrome" monochrome,
-        const Flag!"brightTerminal" brightTerminal) @safe
+        const Flag!"brightTerminal" brightTerminal) pure nothrow @safe
     {
         linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
@@ -99,7 +99,7 @@ public:
      +/
     pragma(inline, true)
     version(Colours)
-    static auto tint(const LogLevel level, const Flag!"brightTerminal" bright)
+    static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
     {
         return bright ? logcoloursBright[level] : logcoloursDark[level];
     }
@@ -144,7 +144,7 @@ public:
      +/
     pragma(inline, true)
     version(Colours)
-    private string tintImpl(LogLevel level)() const @property
+    private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
     {
         version(CtTints)
         {
@@ -169,25 +169,25 @@ public:
     version(Colours)
     {
         /// Provides easy way to get a log tint.
-        auto tracetint() const @property { return tintImpl!(LogLevel.trace); }
+        auto tracetint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.trace); }
 
         /// Synonymous alias to `tracetint`.
         alias resettint = tracetint;
 
         /// Provides easy way to get a log tint.
-        auto logtint() const @property { return tintImpl!(LogLevel.all); }
+        auto logtint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.all); }
 
         /// Provides easy way to get an info tint.
-        auto infotint() const @property { return tintImpl!(LogLevel.info); }
+        auto infotint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.info); }
 
         /// Provides easy way to get a warning tint.
-        auto warningtint() const @property { return tintImpl!(LogLevel.warning); }
+        auto warningtint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.warning); }
 
         /// Provides easy way to get an error tint.
-        auto errortint() const @property { return tintImpl!(LogLevel.error); }
+        auto errortint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.error); }
 
         /// Provides easy way to get a fatal tint.
-        auto fataltint() const @property { return tintImpl!(LogLevel.fatal); }
+        auto fataltint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.fatal); }
     }
 
 
@@ -422,7 +422,7 @@ unittest
 
     struct S1
     {
-        void toString(Sink)(auto ref Sink sink)
+        void toString(Sink)(auto ref Sink sink) const
         {
             sink.put("sink toString");
         }
