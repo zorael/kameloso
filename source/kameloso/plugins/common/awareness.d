@@ -116,7 +116,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     }
     else
     {
-        /// Flag denoting that `MinimalAuthetication` has been mixed in.
+        /// Flag denoting that `MinimalAuthentication` has been mixed in.
         package enum hasMinimalAuthentication = true;
     }
 

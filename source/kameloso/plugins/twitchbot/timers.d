@@ -467,6 +467,6 @@ in (filename.length, "Tried to populate timers from an empty filename")
 
     if (errored)
     {
-        logger.warning("Errors encountered; all timers were not read.");
+        logger.warning("Errors encountered; not all timers were read.");
     }
 }

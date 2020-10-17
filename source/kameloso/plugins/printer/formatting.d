@@ -243,6 +243,7 @@ if (isOutputRange!(Sink, char[]))
 
                     default:
                         .put(sink, " [", event.sender.badges, ']');
+                        break;
                     }
                 }
             }
@@ -693,6 +694,7 @@ if (isOutputRange!(Sink, char[]))
                         .put!(Yes.colours)(sink,
                             TerminalForeground(bright ? Bright.badge : Dark.badge),
                             " [", event.sender.badges, ']');
+                        break;
                     }
                 }
             }
@@ -1340,7 +1342,10 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
     if ((pos > 0) && (haystack[pos-1].isValidNicknameCharacter ||
         (haystack[pos-1] == '.') ||  // URLs
         (haystack[pos-1] == '/')) &&  // likewise
-        (haystack[pos-1] != '@')) return false;
+        (haystack[pos-1] != '@'))
+    {
+        return false;
+    }
 
     immutable end = pos + needle.length;
 

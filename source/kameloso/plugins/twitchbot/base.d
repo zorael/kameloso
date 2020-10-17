@@ -1,9 +1,8 @@
 /++
     This is an example Twitch streamer bot. It supports querying uptime or how
-    long a streamer has been live, banned phrases, timered announcements and
-    voting.
-
-    It can also emit some terminal bells on certain events, to draw attention.
+    long a streamer has been live, banned phrases, follower age queries, and
+    timered announcements. It can also emit some terminal bells on certain
+    events, to draw attention.
 
     One immediately obvious venue of expansion is expression bans, such as if a
     message has too many capital letters, etc. There is no protection from spam yet.
