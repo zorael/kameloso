@@ -362,17 +362,9 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.aux.length) .put(sink, " (", event.aux, ')');
 
-    if (event.count != 0)
-    {
-        // BUG: the 0 in "time since idle 0 seconds" does not get printed
-        .put(sink, " {", event.count, '}');
-    }
+    if (event.count != int.min) .put(sink, " {", event.count, '}');
 
-    if (event.altcount != 0)
-    {
-        // As above
-        .put(sink, " {", event.altcount, '}');
-    }
+    if (event.altcount != int.min) .put(sink, " {", event.altcount, '}');
 
     if (event.num > 0)
     {
@@ -907,16 +899,14 @@ if (isOutputRange!(Sink, char[]))
             " (", event.aux, ')');
     }
 
-    if (event.count != 0)
+    if (event.count != int.min)
     {
-        // BUG: the 0 in "time since idle 0 seconds" does not get printed
         sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
         .put(sink, " {", event.count, '}');
     }
 
-    if (event.altcount != 0)
+    if (event.altcount != int.min)
     {
-        // As above
         sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
         .put(sink, " {", event.altcount, '}');
     }
