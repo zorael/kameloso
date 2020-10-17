@@ -551,11 +551,12 @@ JSONValue getYouTubeInfo(const string url)
     import std.net.curl : HTTP;
     import core.time : seconds;
 
+    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
     auto client = HTTP(youtubeURL);
     client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+    client.setUserAgent(userAgent);
 
     Appender!(ubyte[]) sink;
     sink.reserve(8192);  // Magic number for now.
