@@ -15,7 +15,6 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.plugins.common.core;
 import kameloso.irccolours;
 import dialect.defs;
 import std.range.primitives : isOutputRange;
@@ -89,7 +88,6 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.conv : to;
     import std.traits : Unqual;
 
     foreach (arg; args)
@@ -127,6 +125,7 @@ if (isOutputRange!(Sink, char[]))
         }
         else
         {
+            import std.conv : to;
             sink.put(arg.to!string);
         }
     }
@@ -391,16 +390,13 @@ if (isOutputRange!(Sink, char[]))
     shouldBell = shouldBell || (event.errors.length && bellOnError &&
         !plugin.printerSettings.silentErrors);
 
-    if (shouldBell)
-    {
-        import kameloso.terminal : TerminalToken;
-        sink.put(plugin.bell);
-    }
+    if (shouldBell) sink.put(plugin.bell);
 }
 
 ///
 @system unittest
 {
+    import kameloso.plugins.common.core : IRCPluginState;
     import std.array : Appender;
 
     Appender!(char[]) sink;
@@ -944,11 +940,7 @@ if (isOutputRange!(Sink, char[]))
     shouldBell = shouldBell || (event.errors.length && bellOnError &&
         !plugin.printerSettings.silentErrors);
 
-    if (shouldBell)
-    {
-        import kameloso.terminal : TerminalToken;
-        sink.put(plugin.bell);
-    }
+    if (shouldBell) sink.put(plugin.bell);
 }
 
 

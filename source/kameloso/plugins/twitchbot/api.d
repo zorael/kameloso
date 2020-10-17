@@ -12,8 +12,6 @@ private:
 
 import kameloso.plugins.twitchbot.base;
 
-import kameloso.plugins.common.core;
-import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
@@ -116,7 +114,7 @@ void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
  +/
 void generateKey(TwitchBotPlugin plugin)
 {
-    import kameloso.common : Tint;
+    import kameloso.common : Tint, logger;
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.process : Pid, ProcessException, wait;
@@ -512,9 +510,9 @@ void queryTwitchImpl(const string url, const string authToken,
 {
     import std.net.curl : HTTP;
     import std.datetime.systime : Clock, SysTime;
-    import core.time : seconds;
     import std.array : Appender;
     import std.exception : assumeUnique;
+    import core.time : seconds;
 
     auto client = HTTP(url);
     client.operationTimeout = timeout.seconds;
@@ -702,7 +700,6 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
-    import kameloso.plugins.common.delayawait : delay;
     import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
 

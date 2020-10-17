@@ -15,7 +15,6 @@ private:
 
 import kameloso.plugins.twitchbot.base;
 
-import kameloso.plugins.common.core;
 import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
