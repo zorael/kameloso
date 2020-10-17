@@ -5,8 +5,10 @@
     output and align columns for `kameloso.printing.printObject`.
 
     More of our homebrewn traits were deemed too generic to be in kameloso and
-    were moved to `lu.traits` instead:
-    - https://github.com/zorael/lu/blob/master/source/lu/traits.d
+    were moved to `lu.traits` instead.
+
+    See_Also:
+        https://github.com/zorael/lu/blob/master/source/lu/traits.d
  +/
 module kameloso.traits;
 
