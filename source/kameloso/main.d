@@ -1070,6 +1070,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                 if (plugin.state.repeats.length) processRepeats(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
+                if (*instance.abort) return;  // handled in mainLoop listenerloop
             }
             catch (NomException e)
             {
