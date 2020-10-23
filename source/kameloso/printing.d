@@ -158,7 +158,7 @@ void printObjects(Flag!"all" all = No.all, Things...)
         {
             if (!settings.monochrome)
             {
-                formatObjectsImpl!(all, Yes.coloured)(outbuffer,
+                formatObjectImpl!(all, Yes.coloured)(outbuffer,
                     (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
                     thing, widths.type+1, widths.name);
                 put = true;
@@ -168,7 +168,7 @@ void printObjects(Flag!"all" all = No.all, Things...)
         if (!put)
         {
             // Brightness setting is irrelevant; pass false
-            formatObjectsImpl!(all, No.coloured)(outbuffer, No.brightTerminal,
+            formatObjectImpl!(all, No.coloured)(outbuffer, No.brightTerminal,
                 thing, widths.type+1, widths.name);
         }
 
@@ -226,7 +226,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i, thing; things)
     {
-        formatObjectsImpl!(all, coloured)(sink, bright, thing, widths.type+1, widths.name);
+        formatObjectImpl!(all, coloured)(sink, bright, thing, widths.type+1, widths.name);
 
         static if ((i+1 < things.length) || !__traits(hasMember, Sink, "data"))
         {
@@ -240,7 +240,7 @@ if (isOutputRange!(Sink, char[]))
 alias formatObject = formatObjects;
 
 
-// formatObjectsImpl
+// formatObjectImpl
 /++
     Formats a struct object, with all its printable members with all their
     printable values. This is an implementation template and should not be
@@ -257,7 +257,7 @@ alias formatObject = formatObjects;
         typewidth = The width with which to pad type names, to align properly.
         namewidth = The width with which to pad variable names, to align properly.
  +/
-private void formatObjectsImpl(Flag!"all" all = No.all,
+private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
     (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing,
     const uint typewidth, const uint namewidth)
