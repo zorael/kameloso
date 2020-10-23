@@ -379,8 +379,12 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
 void exhaustMessages()
 {
     import core.time : msecs;
-    import std.concurrency : receiveTimeout;
+    import std.concurrency : receiveTimeout, thisTid;
     import std.variant : Variant;
+
+    // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
+    // until a thread was spawned or thisTid was passed to a running thread.
+    const ensureMessageBoxIsInitialised = thisTid;
 
     bool notEmpty;
     static immutable almostInstant = 10.msecs;
