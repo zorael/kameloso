@@ -182,6 +182,8 @@ void printObjects(Flag!"all" all = No.all, Things...)
     writeln(outbuffer.data);
 }
 
+
+/// Ditto
 alias printObject = printObjects;
 
 
