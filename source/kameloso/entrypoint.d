@@ -84,6 +84,16 @@ else
     int main(string[] args)
     {
         import kameloso.main : initBot;
+
+        scope(exit)
+        {
+            import std.stdio : stdout;
+
+            // Unsure if this is ever needed, but just in case the buffer isn't
+            // flushing on linebreaks and wouldn't get flushed on exit
+            stdout.flush();
+        }
+
         return initBot(args);
     }
 }
