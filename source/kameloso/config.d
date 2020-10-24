@@ -533,7 +533,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                         "Specify a different resource directory [%s%s%s]"
                         .format(Tint.info, settings.resourceDirectory, Tint.reset),
                     &settings.resourceDirectory,
-                /*"privateKey",
+                /*"receiveTimeout",
+                    quiet ? string.init :
+                        "Socket receive timeout in milliseconds; lower numbers " ~
+                            "improve worst-case responsiveness of outgoing messages [%s%d%s]"
+                            .format(Tint.info, connSettings.receiveTimeout, Tint.reset),
+                    &connSettings.receiveTimeout,
+                "privateKey",
                     quiet ? string.init :
                         "Path to private key file, used to authenticate some SSL connections",
                     &connSettings.privateKeyFile,
