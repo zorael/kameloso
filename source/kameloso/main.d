@@ -785,7 +785,7 @@ Next mainLoop(ref Kameloso instance)
                 cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
                 uint.max;
             instance.conn.receiveTimeout =
-                min(Timeout.receiveMsecs, timeoutFromMessages, untilNextGlobalScheduled);
+                min(instance.connSettings.receiveTimeout, timeoutFromMessages, untilNextGlobalScheduled);
         }
 
         if (socketBlockingDisabled)
@@ -2263,6 +2263,10 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
         if (*instance.abort) break outerloop;
 
         instance.conn.reset();
+
+        // reset() sets the receive timeout to the enum default, so make sure to
+        // update it to any custom value after each reset() call.
+        instance.conn.receiveTimeout = instance.connSettings.receiveTimeout;
 
         immutable actionAfterResolve = tryResolve(instance,
             (attempt.firstConnect ? Yes.firstConnect : No.firstConnect));
