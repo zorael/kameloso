@@ -586,6 +586,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
 
+        // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
+        if (connSettings.receiveTimeout == 0)
+        {
+            import kameloso.constants : Timeout;
+            connSettings.receiveTimeout = Timeout.receiveMsecs;
+        }
+
         // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
         initLogger((settings.monochrome ? Yes.monochrome : No.monochrome),
