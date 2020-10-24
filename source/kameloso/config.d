@@ -563,7 +563,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &settings.force,
                 "flush",
                     quiet ? string.init :
-                        "Flush screen output after each write to it. " ~
+                        "Set terminal mode to flush screen output after each line written to it. " ~
                             "(Use this if the screen only occasionally updates.)",
                     &settings.flush,
                 "w|save",
@@ -573,7 +573,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "edit",
                     quiet ? string.init :
                         text("Open the configuration file in a text editor " ~
-                            "(or the default application used to open ", Tint.log,
+                            "(or the default application used to open ", Tint.info,
                             "*.conf", Tint.reset, " files on your system"),
                     &shouldOpenEditor,
                 "version",
