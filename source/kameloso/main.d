@@ -1721,7 +1721,7 @@ Next tryConnect(ref Kameloso instance)
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, instance.connSettings.endlesslyConnect,
             ConnectionDefaultIntegers.retries, *instance.abort));
-    uint incrementedRetryDelay = Timeout.retry;
+    uint incrementedRetryDelay = Timeout.connectionRetry;
 
     connector.call();
 
@@ -1795,13 +1795,13 @@ Next tryConnect(ref Kameloso instance)
             import std.algorithm.comparison : min;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
                 ConnectionDefaultFloats.delayIncrementMultiplier);
-            incrementedRetryDelay = min(incrementedRetryDelay, Timeout.delayCap);
+            incrementedRetryDelay = min(incrementedRetryDelay, Timeout.connectionDelayCap);
             continue;
 
         case delayThenNextIP:
             logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
-                Tint.info, Timeout.retry, Tint.log);
-            interruptibleSleep(Timeout.retry.seconds, *instance.abort);
+                Tint.info, Timeout.connectionRetry, Tint.log);
+            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
             if (*instance.abort) return Next.returnFailure;
             continue;
 
@@ -1858,7 +1858,7 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         resolveFiber(instance.conn, instance.parser.server.address,
         instance.parser.server.port, instance.connSettings.ipv6, resolveAttempts, *instance.abort));
 
-    uint incrementedRetryDelay = Timeout.retry;
+    uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;
 
     void delayOnNetworkDown(const ResolveAttempt attempt)
@@ -2240,7 +2240,7 @@ void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
             }
 
             logger.log("Please wait a few seconds ...");
-            interruptibleSleep(Timeout.retry.seconds, *instance.abort);
+            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
             if (*instance.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt

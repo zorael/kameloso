@@ -190,12 +190,12 @@ enum Timeout
     /++
         The maximum amount of time to wait between connection attempts.
      +/
-    delayCap = 600,
+    connectionDelayCap = 600,
 
     /++
         The amount of seconds to wait before retrying after a failed connection attempt.
      +/
-    retry = 10,
+    connectionRetry = 10,
 
     /++
         How long to wait before allowing to re-issue a WHOIS query for a user.

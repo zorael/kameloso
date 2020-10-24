@@ -687,6 +687,7 @@ public:
 struct ConnectionSettings
 {
 private:
+    import kameloso.constants : Timeout;
     import lu.uda : CannotContainComments;
 
 public:
@@ -710,6 +711,9 @@ public:
 
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
+
+    /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
+    uint receiveTimeout = Timeout.receiveMsecs;
 }
 
 
