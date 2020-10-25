@@ -2594,14 +2594,7 @@ int initBot(string[] args)
         if (instance.settings.configFile.exists && missingEntries.length)
         {
             import kameloso.config : notifyAboutMissingSettings;
-
-            notifyAboutMissingSettings(missingEntries);
-
-            logger.logf("Use %s--save%s to regenerate the file, " ~
-                "updating it with all available settings. [%1$s%3$s%2$s]",
-                Tint.info, Tint.log, instance.settings.configFile);
-            logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
-            logger.trace();
+            notifyAboutMissingSettings(missingEntries, args[0], instance.settings.configFile);
         }
     }
     catch (ConvException e)

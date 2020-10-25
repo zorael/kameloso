@@ -820,11 +820,15 @@ void notifyAboutIncompleteConfiguration()
         missingEntries = A `string[][string]` associative array of dynamic
             `string[]` arrays, keyed by configuration section name strings.
             These arrays contain missing settings.
+        binaryPath = The program's `args[0]`.
+        configFile = (Relative) path of the configuration file.
  +/
-void notifyAboutMissingSettings(const string[][string] missingEntries)
+void notifyAboutMissingSettings(const string[][string] missingEntries,
+    const string binaryPath, const string configFile)
 {
     import kameloso.common : Tint, logger;
     import std.conv : text;
+    import std.path : baseName;
 
     logger.log("Your configuration file is missing the following settings:");
     immutable pattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
@@ -833,6 +837,12 @@ void notifyAboutMissingSettings(const string[][string] missingEntries)
     {
         logger.tracef(pattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
     }
+
+    logger.logf("Use %s%s --save%s to regenerate the file, " ~
+        "updating it with all available settings. [%1$s%4$s%3$s]",
+        Tint.info, binaryPath.baseName, Tint.log, configFile);
+    logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+    logger.trace();
 }
 
 
