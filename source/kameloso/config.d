@@ -116,7 +116,6 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
     import kameloso.common : Tint, logger, printVersionInfo;
-    import kameloso.config : writeConfigurationFile;
     import kameloso.constants : KamelosoDefaults;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
@@ -152,13 +151,10 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
 
     instance.writeConfigurationFile(instance.settings.configFile);
-
     logger.logf("Configuration written to %s%s", Tint.info, instance.settings.configFile);
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
     {
-        import kameloso.config : complainAboutIncompleteConfiguration;
-
         logger.trace("---");
         logger.log("Edit it and make sure it contains at least one of the following:");
         complainAboutIncompleteConfiguration();
@@ -340,7 +336,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     with (instance)
     {
         import kameloso.common : Tint, printVersionInfo;
-        import kameloso.config : applyDefaults, readConfigInto;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
