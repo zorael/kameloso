@@ -972,45 +972,14 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         {
             // Parsing changed the client; propagate
             instance.parser.clientUpdated = false;
-            instance.propagateClient(instance.parser.client);
+            instance.propagate(instance.parser.client);
         }
 
         if (instance.parser.serverUpdated)
         {
             // Parsing changed the server; propagate
             instance.parser.serverUpdated = false;
-            instance.propagateServer(instance.parser.server);
-        }
-
-        static void checkUpdatesAndPropagate(ref Kameloso instance, IRCPlugin plugin)
-        {
-            if (plugin.state.botUpdated)
-            {
-                // Something changed the bot; propagate
-                plugin.state.botUpdated = false;
-                instance.propagateBot(plugin.state.bot);
-            }
-
-            if (plugin.state.clientUpdated)
-            {
-                // Something changed the client; propagate
-                plugin.state.clientUpdated = false;
-                instance.propagateClient(plugin.state.client);
-            }
-
-            if (plugin.state.serverUpdated)
-            {
-                // Something changed the server; propagate
-                plugin.state.serverUpdated = false;
-                instance.propagateServer(plugin.state.server);
-            }
-
-            if (plugin.state.settingsUpdated)
-            {
-                // Something changed the settings; propagate
-                plugin.state.settingsUpdated = false;
-                instance.propagateSettings(plugin.state.settings);
-            }
+            instance.propagate(instance.parser.server);
         }
 
         // Save timestamp in the event itself.
@@ -1055,7 +1024,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                     plugin.state.serverUpdated ||
                     plugin.state.settingsUpdated)
                 {
-                    checkUpdatesAndPropagate(instance, plugin);
+                    instance.checkPluginForUpdates(plugin);
                 }
             }
         }
@@ -1099,7 +1068,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                     plugin.state.serverUpdated ||
                     plugin.state.settingsUpdated)
                 {
-                    checkUpdatesAndPropagate(instance, plugin);
+                    instance.checkPluginForUpdates(plugin);
                 }
             }
         }
