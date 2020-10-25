@@ -2481,10 +2481,11 @@ int initBot(string[] args)
         writeln("Failed to set stdout buffer mode/size! errno:", errno);
         if (!instance.settings.force) return 1;
     }
-    catch (Exception)
+    catch (Exception e)
     {
         import std.stdio : writeln;
         writeln("Failed to set stdout buffer mode/size!");
+        writeln(e);
         if (!instance.settings.force) return 1;
     }
 
