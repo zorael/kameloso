@@ -385,8 +385,19 @@ public:
     }
 
 
+    /// Mixin to exit the program on `fatal` calls.
+    private enum fatalExitMixin =
+        "import std.stdio : writeln;
+        import core.runtime : defaultTraceHandler;
+        import core.stdc.stdlib : exit;
+
+        writeln(defaultTraceHandler);
+        exit(1);";
+
     /+
         Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
+
+        Mixes in `fatalExitMixin` on `fatal` to have it exit the program on those.
      +/
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
@@ -394,17 +405,20 @@ public:
 q{void %1$s(Args...)(Args args)
 {
     printImpl(LogLevel.%1$s, args);
+    %2$s
 }
 
 void %1$sf(Args...)(const string pattern, Args args)
 {
     printfImpl(LogLevel.%1$s, pattern, args);
+    %2$s
 }
 
-void %sf(string pattern, Args...)(Args args)
+void %1$sf(string pattern, Args...)(Args args)
 {
     printfImpl!pattern(LogLevel.%1$s, args);
-}}.format(lv));
+    %2$s
+}}.format(lv, (lv == LogLevel.fatal) ? fatalExitMixin : string.init));
     }
 
     /// Alias to `KamelosoLogger.all`.
