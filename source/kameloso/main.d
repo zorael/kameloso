@@ -1904,7 +1904,7 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 }
 
 
-// complainAboutMissingConfigurationEntries
+// notifyAboutMissingSettings
 /++
     Prints some information about missing configuration entries to the local terminal.
 
@@ -1913,50 +1913,17 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
             `string[]` arrays, keyed by configuration section name strings.
             These arrays contain missing settings.
  +/
-void complainAboutMissingConfigurationEntries(const string[][string] missingEntries)
+void notifyAboutMissingSettings(const string[][string] missingEntries)
 {
     import std.conv : text;
 
-    logger.log("Found MISSING configuration entries:");
-
-    immutable pattern = text("...under [%s%s%s]: %-(", Tint.info, "%s%|", Tint.log, ", %)");
+    logger.log("Your configuration file is missing the following settings:");
+    immutable pattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
-        logger.logf(pattern, Tint.info, section, Tint.log, sectionEntries);
+        logger.tracef(pattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
     }
-
-    logger.log("They are either new, or your configuration file was generated " ~
-        "with not as many plugins compiled in as it has now.");
-    logger.trace();
-}
-
-
-// complainAboutInvalidConfigurationEntries
-/++
-    Prints some information about invalid configuration entries to the local terminal.
-
-    Params:
-        invalidEntries = A `string[][string]` associative array of dynamic
-            `string[]` arrays, keyed by configuration section name strings.
-            These arrays contain invalid settings.
- +/
-void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
-{
-    import std.conv : text;
-
-    logger.log("Found INVALID configuration entries:");
-
-    immutable pattern = text("...under [%s%s%s]: %-(", Tint.info, "%s%|", Tint.log, ", %)");
-
-    foreach (immutable section, const sectionEntries; invalidEntries)
-    {
-        logger.logf(pattern, Tint.info, section, Tint.log, sectionEntries);
-    }
-
-    logger.log("They are either malformed, no longer in use, or belong to " ~
-        "plugins not currently compiled in.");
-    logger.trace();
 }
 
 
@@ -2682,18 +2649,15 @@ int initBot(string[] args)
 
         instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
 
-        if (instance.settings.configFile.exists)
+        if (instance.settings.configFile.exists && missingEntries.length)
         {
-            if (missingEntries.length) complainAboutMissingConfigurationEntries(missingEntries);
-            if (invalidEntries.length) complainAboutInvalidConfigurationEntries(invalidEntries);
+            notifyAboutMissingSettings(missingEntries);
 
-            if (missingEntries.length || invalidEntries.length)
-            {
-                logger.logf("Use %s--save%s to update your configuration file. [%1$s%3$s%2$s]",
-                    Tint.info, Tint.log, instance.settings.configFile);
-                logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
-                logger.trace("---");
-            }
+            logger.logf("Use %s--save%s to regenerate the file, " ~
+                "updating it with all available settings. [%1$s%3$s%2$s]",
+                Tint.info, Tint.log, instance.settings.configFile);
+            logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+            logger.trace();
         }
     }
     catch (ConvException e)
