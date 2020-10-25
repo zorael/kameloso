@@ -553,7 +553,7 @@ void onNickInUse(ConnectService service)
         }
 
         service.state.clientUpdated = true;
-        raw(service.state, "NICK " ~ service.state.client.nickname);
+        raw!(Yes.priority)(service.state, "NICK " ~ service.state.client.nickname);
     }
 }
 
