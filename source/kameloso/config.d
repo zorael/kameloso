@@ -157,7 +157,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     {
         logger.trace("---");
         logger.log("Edit it and make sure it contains at least one of the following:");
-        complainAboutIncompleteConfiguration();
+        notifyAboutIncompleteConfiguration();
     }
 }
 
@@ -792,7 +792,7 @@ void writeToDisk(const string filename, const string configurationText,
 }
 
 
-// complainAboutIncompleteConfiguration
+// notifyAboutIncompleteConfiguration
 /++
     Displays a hint on how to complete a minimal configuration file.
 
@@ -802,13 +802,72 @@ void writeToDisk(const string filename, const string configurationText,
     Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
     so place it here.
  +/
-void complainAboutIncompleteConfiguration()
+void notifyAboutIncompleteConfiguration()
 {
     import kameloso.common : Tint, logger;
 
     logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
         Tint.info, Tint.log);
     logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
+}
+
+
+// notifyAboutMissingSettings
+/++
+    Prints some information about missing configuration entries to the local terminal.
+
+    Params:
+        missingEntries = A `string[][string]` associative array of dynamic
+            `string[]` arrays, keyed by configuration section name strings.
+            These arrays contain missing settings.
+ +/
+void notifyAboutMissingSettings(const string[][string] missingEntries)
+{
+    import kameloso.common : Tint, logger;
+    import std.conv : text;
+
+    logger.log("Your configuration file is missing the following settings:");
+    immutable pattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
+
+    foreach (immutable section, const sectionEntries; missingEntries)
+    {
+        logger.tracef(pattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
+    }
+}
+
+
+// notifyAboutMissingConfiguration
+/++
+    Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
+
+    It assumes such information is missing, and that the check has been done at
+    the calling site.
+
+    Params:
+        configFile = Full path to the configuration file.
+        binaryPath = Full path to the current binary.
+ +/
+void notifyAboutMissingConfiguration(const string configFile, const string binaryPath)
+{
+    import kameloso.common : Tint, logger;
+    import std.file : exists;
+    import std.path : baseName;
+
+    logger.warning("Warning: No administrators nor home channels configured!");
+
+    if (configFile.exists)
+    {
+        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
+            Tint.info, configFile, Tint.log);
+        notifyAboutIncompleteConfiguration();
+    }
+    else
+    {
+        logger.logf("Use %s%s --save%s to generate a configuration file.",
+            Tint.info, binaryPath.baseName, Tint.log);
+    }
+
+    logger.trace("---");
 }
 
 

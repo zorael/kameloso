@@ -1904,65 +1904,6 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 }
 
 
-// notifyAboutMissingSettings
-/++
-    Prints some information about missing configuration entries to the local terminal.
-
-    Params:
-        missingEntries = A `string[][string]` associative array of dynamic
-            `string[]` arrays, keyed by configuration section name strings.
-            These arrays contain missing settings.
- +/
-void notifyAboutMissingSettings(const string[][string] missingEntries)
-{
-    import std.conv : text;
-
-    logger.log("Your configuration file is missing the following settings:");
-    immutable pattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
-
-    foreach (immutable section, const sectionEntries; missingEntries)
-    {
-        logger.tracef(pattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
-    }
-}
-
-
-// complainAboutMissingConfiguration
-/++
-    Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
-
-    It assumes such information is missing, and that the check has been done at
-    the calling site.
-
-    Params:
-        configFile = Full path to the configuration file.
-        binaryPath = Full path to the current binary.
- +/
-void complainAboutMissingConfiguration(const string configFile, const string binaryPath)
-{
-    import std.file : exists;
-    import std.path : baseName;
-
-    logger.warning("Warning: No administrators nor home channels configured!");
-
-    if (configFile.exists)
-    {
-        import kameloso.config : complainAboutIncompleteConfiguration;
-
-        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            Tint.info, configFile, Tint.log);
-        complainAboutIncompleteConfiguration();
-    }
-    else
-    {
-        logger.logf("Use %s%s --save%s to generate a configuration file.",
-            Tint.info, binaryPath.baseName, Tint.log);
-    }
-
-    logger.trace("---");
-}
-
-
 // postInstanceSetup
 /++
     Sets up the program (terminal) environment.
@@ -2603,7 +2544,8 @@ int initBot(string[] args)
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
-        complainAboutMissingConfiguration(instance.settings.configFile, args[0]);
+        import kameloso.config : notifyAboutMissingConfiguration;
+        notifyAboutMissingConfiguration(instance.settings.configFile, args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
@@ -2651,6 +2593,8 @@ int initBot(string[] args)
 
         if (instance.settings.configFile.exists && missingEntries.length)
         {
+            import kameloso.config : notifyAboutMissingSettings;
+
             notifyAboutMissingSettings(missingEntries);
 
             logger.logf("Use %s--save%s to regenerate the file, " ~
