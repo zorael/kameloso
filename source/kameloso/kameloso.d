@@ -529,7 +529,7 @@ public:
         Params:
             thing = Struct object to propagate.
      +/
-    pragma(inline, true)
+    //pragma(inline, true)
     void propagate(Thing)(Thing thing) pure nothrow @nogc
     if (allSatisfy!(isStruct, Thing))
     {
