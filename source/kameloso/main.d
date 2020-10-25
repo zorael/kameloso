@@ -220,8 +220,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Passes a bus message to each plugin.
         import kameloso.thread : Sendable;
+
+        /// Passes a bus message to each plugin.
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
             foreach (plugin; instance.plugins)
