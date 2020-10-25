@@ -877,7 +877,7 @@ void notifyAboutMissingConfiguration(const string configFile, const string binar
             Tint.info, binaryPath.baseName, Tint.log);
     }
 
-    logger.trace("---");
+    logger.trace();
 }
 
 
