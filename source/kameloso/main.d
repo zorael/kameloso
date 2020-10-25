@@ -2591,7 +2591,7 @@ int initBot(string[] args)
 
         instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
 
-        if (instance.settings.configFile.exists && missingEntries.length)
+        if (missingEntries.length && instance.settings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
             notifyAboutMissingSettings(missingEntries, args[0], instance.settings.configFile);
