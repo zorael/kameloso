@@ -198,7 +198,7 @@ public:
             logLevel = The `std.experimental.logger.LogLevel` to treat this
                 message as being of.
      +/
-    protected void beginLogMsg(const LogLevel logLevel) @safe
+    private void beginLogMsg(const LogLevel logLevel) @safe
     {
         import std.datetime : DateTime;
         import std.datetime.systime : Clock;
