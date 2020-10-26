@@ -256,24 +256,28 @@ public:
     }
 
     /// Logger colours to use with a dark terminal background.
-    static immutable TerminalForeground[193] logcoloursDark  =
+    static immutable TerminalForeground[256] logcoloursDark  =
     [
-        LogLevel.all     : TF.white,        /// LogLevel.all, or just `log`
-        LogLevel.trace   : TF.default_,     /// `trace`
-        LogLevel.info    : TF.lightgreen,   /// `info`
-        LogLevel.warning : TF.lightred,     /// `warning`
-        LogLevel.error   : TF.red,          /// `error`
-        LogLevel.fatal   : TF.red,          /// `fatal`
+        LogLevel.all      : TF.white,        /// LogLevel.all, or just `log`
+        LogLevel.trace    : TF.default_,     /// `trace`
+        LogLevel.info     : TF.lightgreen,   /// `info`
+        LogLevel.warning  : TF.lightred,     /// `warning`
+        LogLevel.error    : TF.red,          /// `error`
+        LogLevel.critical : TF.red,          /// `critical`
+        LogLevel.fatal    : TF.red,          /// `fatal`
+        LogLevel.off      : TF.default_,     /// `off`
     ];
 
     /// Logger colours to use with a bright terminal background.
-    static immutable TerminalForeground[193] logcoloursBright  =
+    static immutable TerminalForeground[256] logcoloursBright  =
     [
-        LogLevel.all     : TF.black,        /// LogLevel.all, or just `log`
-        LogLevel.trace   : TF.default_,     /// `trace`
-        LogLevel.info    : TF.green,        /// `info`
-        LogLevel.warning : TF.red,          /// `warning`
-        LogLevel.error   : TF.red,          /// `error`
-        LogLevel.fatal   : TF.red,          /// `fatal`
+        LogLevel.all      : TF.black,        /// LogLevel.all, or just `log`
+        LogLevel.trace    : TF.default_,     /// `trace`
+        LogLevel.info     : TF.green,        /// `info`
+        LogLevel.warning  : TF.red,          /// `warning`
+        LogLevel.error    : TF.red,          /// `error`
+        LogLevel.critical : TF.red,          /// `critical`
+        LogLevel.fatal    : TF.red,          /// `fatal`
+        LogLevel.off      : TF.default_,     /// `off`
     ];
 }
