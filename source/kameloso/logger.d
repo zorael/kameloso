@@ -261,11 +261,11 @@ public:
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printImpl(Args...)(const LogLevel logLevel, Args args)
+    private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
         beginLogMsg(logLevel);
 
-        foreach (arg; args)
+        foreach (ref arg; args)
         {
             alias T = typeof(arg);
 
@@ -347,7 +347,8 @@ public:
             pattern = Runtime pattern to format the output with.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printfImpl(Args...)(const LogLevel logLevel, const string pattern, Args args)
+    private void printfImpl(Args...)(const LogLevel logLevel,
+        const string pattern, auto ref Args args)
     {
         import std.format : formattedWrite;
 
@@ -375,7 +376,7 @@ public:
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printfImpl(string pattern, Args...)(const LogLevel logLevel, Args args)
+    private void printfImpl(string pattern, Args...)(const LogLevel logLevel, auto ref Args args)
     {
         import std.format : formattedWrite;
 
@@ -402,19 +403,19 @@ public:
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
         mixin(
-q{void %1$s(Args...)(Args args)
+q{void %1$s(Args...)(auto ref Args args)
 {
     printImpl(LogLevel.%1$s, args);
     %2$s
 }
 
-void %1$sf(Args...)(const string pattern, Args args)
+void %1$sf(Args...)(const string pattern, auto ref Args args)
 {
     printfImpl(LogLevel.%1$s, pattern, args);
     %2$s
 }
 
-void %1$sf(string pattern, Args...)(Args args)
+void %1$sf(string pattern, Args...)(auto ref Args args)
 {
     printfImpl!pattern(LogLevel.%1$s, args);
     %2$s
