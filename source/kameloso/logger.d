@@ -486,8 +486,10 @@ unittest
     log_.infof!"log: %s"("info");
     log_.warningf!"log: %s"("warning");
     log_.errorf!"log: %s"("error");
+    log_.criticalf!"log: %s"("critical");
     // log_.fatalf!"log: %s"("FATAL");
     log_.tracef("log: %s", "trace");
+    log_.offf("log: %s", "off");
 
     version(Colours)
     {
@@ -497,8 +499,10 @@ unittest
         log_.info("log: info");
         log_.warning("log: warning");
         log_.error("log: error");
+        log_.critical("log: critical");
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
+        log_.off("log: off");
 
         log_ = new KamelosoLogger(No.monochrome, No.brightTerminal);
 
@@ -508,6 +512,7 @@ unittest
         log_.error("log: error");
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
+        log_.off("log: off");
     }
 
     S1 s1;
@@ -517,12 +522,12 @@ unittest
     S5 s5;
     C c = new C;
 
-    log_.trace("---");
+    log_.trace();
 
     log_.log(s1);
     log_.info(s2);
     log_.warning(s3);
-    log_.error(s4);
-    log_.trace(s5);
-    log_.log(c);
+    log_.critical(s4);
+    log_.error(s5);
+    log_.trace(c);
 }
