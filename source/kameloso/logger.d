@@ -449,6 +449,8 @@ unittest
         {
             dg("delegate toString");
         }
+
+        @disable this(this);
     }
 
     struct S3
