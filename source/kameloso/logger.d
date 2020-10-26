@@ -395,18 +395,21 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
         mixin(
-q{void %1$s(Args...)(auto ref Args args)
+q{/// Prints a %1$s message.
+void %1$s(Args...)(auto ref Args args)
 {
     printImpl(LogLevel.%1$s, args);
     %2$s
 }
 
+/// Prints a formatted %1$s message.
 void %1$sf(Args...)(const string pattern, auto ref Args args)
 {
     printfImpl(LogLevel.%1$s, pattern, args);
     %2$s
 }
 
+/// Prints a formatted %1$s message, validating the pattern at compile time.
 void %1$sf(string pattern, Args...)(auto ref Args args)
 {
     printfImpl!pattern(LogLevel.%1$s, args);
@@ -414,10 +417,16 @@ void %1$sf(string pattern, Args...)(auto ref Args args)
 }}.format(lv, (lv == LogLevel.fatal) ? fatalExitMixin : string.init));
     }
 
-    /// Alias to `KamelosoLogger.all`.
+    /++
+        Synonymous alias to `KamelosoLogger.all`, as a workaround for
+        `std.experimental.logger.LogLevel.all` not being named `LogLevel.log`.
+     +/
     alias log = all;
 
-    /// Alias to `KamelosoLogger.allf`.
+    /++
+        Synonymous alias to `KamelosoLogger.allf`, as a workaround for
+        `std.experimental.logger.LogLevel.all` not being named `LogLevel.log`.
+     +/
     alias logf = allf;
 }
 
