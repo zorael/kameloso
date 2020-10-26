@@ -411,7 +411,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
             immutable setSyntax = quiet ? string.init :
                 "%s--set plugin%s.%1$ssetting%2$s=%1$svalue%2$s"
-                .format(Tint.info, Tint.reset);
+                .format(Tint.info, Tint.off);
 
             immutable nickname = quiet ? string.init :
                 parser.client.nickname.length ? parser.client.nickname : "<random>";
@@ -429,7 +429,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             string formatNum(const size_t num)
             {
                 return (quiet || (num == 0)) ? string.init :
-                    " (%s%d%s)".format(Tint.info, num, Tint.reset);
+                    " (%s%d%s)".format(Tint.info, num, Tint.off);
             }
 
             return getopt(theseArgs,
@@ -438,44 +438,44 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "n|nickname",
                     quiet ? string.init :
                         "Nickname [%s%s%s]"
-                        .format(Tint.info, nickname, Tint.reset),
+                        .format(Tint.info, nickname, Tint.off),
                     &parser.client.nickname,
                 "s|server",
                     quiet ? string.init :
                         "Server address [%s%s%s]"
-                        .format(Tint.info, parser.server.address, Tint.reset),
+                        .format(Tint.info, parser.server.address, Tint.off),
                     &parser.server.address,
                 "P|port",
                     quiet ? string.init :
                         "Server port [%s%d%s]"
-                        .format(Tint.info, parser.server.port, Tint.reset),
+                        .format(Tint.info, parser.server.port, Tint.off),
                     &parser.server.port,
                 "6|ipv6",
                     quiet ? string.init :
                         "Use IPv6 when available [%s%s%s]"
-                        .format(Tint.info, connSettings.ipv6, Tint.reset),
+                        .format(Tint.info, connSettings.ipv6, Tint.off),
                     &connSettings.ipv6,
                 "ssl",
                     quiet ? string.init :
                         "Attempt SSL connection [%s%s%s]"
-                        .format(Tint.info, sslText, Tint.reset),
+                        .format(Tint.info, sslText, Tint.off),
                     &connSettings.ssl,
                 "A|account",
                     quiet ? string.init :
                         "Services account name" ~ (bot.account.length ?
-                            " [%s%s%s]".format(Tint.info, bot.account, Tint.reset) :
+                            " [%s%s%s]".format(Tint.info, bot.account, Tint.off) :
                             string.init),
                     &bot.account,
                 "p|password",
                     quiet ? string.init :
                         "Services account password" ~ (bot.password.length ?
-                            " [%s%s%s]".format(Tint.info, passwordMask, Tint.reset) :
+                            " [%s%s%s]".format(Tint.info, passwordMask, Tint.off) :
                             string.init),
                     &bot.password,
                 "pass",
                     quiet ? string.init :
                         "Registration pass" ~ (bot.pass.length ?
-                            " [%s%s%s]".format(Tint.info, passMask, Tint.reset) :
+                            " [%s%s%s]".format(Tint.info, passMask, Tint.off) :
                             string.init),
                     &bot.pass,
                 "admins",
@@ -487,7 +487,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     quiet ? string.init :
                         text("Home channels to operate in, comma-separated " ~
                             "(escape or enquote any octothorpe ",
-                            Tint.info, '#', Tint.reset, "s)",
+                            Tint.info, '#', Tint.off, "s)",
                             formatNum(bot.homeChannels.length)),
                     &inputHomeChannels,
                 "C|guestChannels",
@@ -507,12 +507,12 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "bright",
                     quiet ? string.init :
                         "Adjust colours for bright terminal backgrounds [%s%s%s]"
-                        .format(Tint.info, settings.brightTerminal, Tint.reset),
+                        .format(Tint.info, settings.brightTerminal, Tint.off),
                     &settings.brightTerminal,
                 "monochrome",
                     quiet ? string.init :
                         "Use monochrome output [%s%s%s]"
-                        .format(Tint.info, settings.monochrome, Tint.reset),
+                        .format(Tint.info, settings.monochrome, Tint.off),
                     &settings.monochrome,
                 "set",
                     quiet ? string.init :
@@ -521,18 +521,18 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "c|config",
                     quiet ? string.init :
                         "Specify a different configuration file [%s%s%s]"
-                        .format(Tint.info, settings.configFile, Tint.reset),
+                        .format(Tint.info, settings.configFile, Tint.off),
                     &settings.configFile,
                 "r|resourceDir",
                     quiet ? string.init :
                         "Specify a different resource directory [%s%s%s]"
-                        .format(Tint.info, settings.resourceDirectory, Tint.reset),
+                        .format(Tint.info, settings.resourceDirectory, Tint.off),
                     &settings.resourceDirectory,
                 /*"receiveTimeout",
                     quiet ? string.init :
                         "Socket receive timeout in milliseconds; lower numbers " ~
                             "improve worst-case responsiveness of outgoing messages [%s%d%s]"
-                            .format(Tint.info, connSettings.receiveTimeout, Tint.reset),
+                            .format(Tint.info, connSettings.receiveTimeout, Tint.off),
                     &connSettings.receiveTimeout,
                 "privateKey",
                     quiet ? string.init :
@@ -545,12 +545,12 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "cacert",
                     quiet ? string.init :
                         "Path to %scacert.pem%s certificate bundle, or equivalent"
-                        .format(Tint.info, Tint.reset),
+                        .format(Tint.info, Tint.off),
                     &connSettings.caBundleFile,*/
                 "summary",
                     quiet ? string.init :
                         "Show a connection summary on program exit [%s%s%s]"
-                        .format(Tint.info, settings.exitSummary, Tint.reset),
+                        .format(Tint.info, settings.exitSummary, Tint.off),
                     &settings.exitSummary,
                 "force",
                     quiet ? string.init :
@@ -569,7 +569,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     quiet ? string.init :
                         text("Open the configuration file in a text editor " ~
                             "(or the default application used to open ", Tint.info,
-                            "*.conf", Tint.reset, " files on your system"),
+                            "*.conf", Tint.off, " files on your system"),
                     &shouldOpenEditor,
                 "version",
                     quiet ? string.init :
