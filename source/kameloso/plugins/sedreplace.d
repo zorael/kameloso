@@ -23,6 +23,7 @@
     $ echo "foo bar baz" | sed "s#bar#qux#g"
     $ echo "foo bar baz" | sed "s@bar@qux@"
     $ echo "foo bar baz" | sed "s bar qux "
+    $ echo "foo bar baz" | sed "s_bar_qux "
     $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
     ---
  +/
@@ -37,6 +38,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
+import lu.string : beginsWith;
 import std.meta : AliasSeq;
 import std.typecons : Flag, No, Yes;
 
@@ -110,9 +112,10 @@ struct Line
  +/
 string sedReplace(const string line, const string expr,
     const Flag!"relaxSyntax" relaxSyntax) @safe pure nothrow
+in (line.length, "Tried to `sedReplace` an empty line")
+in ((expr.length >= 5), "Tried to `sedReplace` with an invalid-length expression")
+in (expr.beginsWith('s'), "Tried to `sedReplace` with a non-expression expression")
 {
-    if (expr.length < 5) return line;
-
     immutable delimiter = expr[1];
 
     switch (delimiter)
@@ -202,22 +205,24 @@ unittest
 /++
     Private sed-replace implementation.
 
-    Works on any given character deliminator. Works with escapes.
+    Works on any given character delimiter. Works with escapes.
 
     Params:
-        char_ = Deliminator character, usually '/'.
+        char_ = Delimiter character, generally one of `DelimiterCharacters`.
         line = Original line to apply the replacement expression to.
         expr = Replacement expression to apply.
         relaxSyntax = Whether or not to require the expression to end with the delimiter.
 
     Returns:
         The passed line with the relevant bits replaced, or as is if the expression
-        was invalid or didn't apply.
+        didn't apply.
  +/
 string sedReplaceImpl(char char_)(const string line, const string expr,
     const Flag!"relaxSyntax" relaxSyntax)
+in (line.length, "Tried to `sedReplaceImpl` on an empty line")
+in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
+in (expr.beginsWith("s" ~ char_), "Tried to `sedReplaceImpl` with an invalid expression")
 {
-    import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.string : indexOf;
 
@@ -228,7 +233,7 @@ string sedReplaceImpl(char char_)(const string line, const string expr,
     {
         string slice = lineWithChar;  // mutable
         ptrdiff_t offset;
-        ptrdiff_t charPos = slice[offset..$].indexOf(char_);
+        ptrdiff_t charPos = slice.indexOf(char_);
 
         while (charPos != -1)
         {
@@ -248,9 +253,6 @@ string sedReplaceImpl(char char_)(const string line, const string expr,
 
         return -1;
     }
-
-    // No need to test for this, sedReplace only calls us if this is already true
-    //if (!expr.startsWith("s" ~ char_)) return line;
 
     string slice = expr;  // mutable
     slice = slice[2..$];  // nom 's' ~ char_
@@ -376,6 +378,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
     import lu.string : beginsWith, stripped;
 
     immutable stripped_ = event.content.stripped;
+    if (!stripped_.length) return;
 
     static void recordLineAsLast(SedReplacePlugin plugin, const string sender,
         const string string_, const long time)
@@ -408,14 +411,20 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         delimiterswitch:
         switch (delimiter)
         {
-        case '/':
+        foreach (immutable c; DelimiterCharacters[1..$])
+        {
+            case c:
+                goto case DelimiterCharacters[0];
+        }
+        /*case '/':
         case '|':
         case '#':
         case '@':
         case ' ':
         case '_':
-        case ';':
-            if (auto senderLines = event.sender.nickname in plugin.prevlines)
+        case ';':*/
+        case DelimiterCharacters[0]:
+            if (const senderLines = event.sender.nickname in plugin.prevlines)
             {
                 foreach (immutable line; (*senderLines)[])
                 {
@@ -466,6 +475,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 void onWelcome(SedReplacePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     void prevlineClearDg()
@@ -477,7 +487,7 @@ void onWelcome(SedReplacePlugin plugin)
         }
     }
 
-    Fiber prevlineClearFiber = new Fiber(&prevlineClearDg, 32_768);
+    Fiber prevlineClearFiber = new Fiber(&prevlineClearDg, BufferSize.fiberStack);
     delay(plugin, prevlineClearFiber, plugin.timeBetweenPurges);
 }
 
@@ -486,6 +496,7 @@ void onWelcome(SedReplacePlugin plugin)
 /++
     Removes the records of previous messages from a user when they quit.
  +/
+@(IRCEvent.Type.QUIT)
 void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     plugin.prevlines.remove(event.sender.nickname);
@@ -516,7 +527,7 @@ private:
     enum timeBetweenPurges = 3600;
 
     /++
-        A `Line[string]` 1-buffer of the previous line every user said, with
+        A `Line[string]` buffer of the previous line every user said, with
         with nickname as key.
      +/
     Line[][string] prevlines;

@@ -8,7 +8,7 @@
     See_Also:
         kameloso.net
  +/
-module kameloso.plugins.connect;
+module kameloso.plugins.services.connect;
 
 version(WithPlugins):
 version(WithConnectService):
@@ -356,6 +356,7 @@ void tryAuth(ConnectService service)
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     enum secsBetweenRegistrationFinishedChecks = 5;
@@ -380,7 +381,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, 32_768);
+    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, BufferSize.fiberStack);
     delay(service, delayedJoinFiber, service.authenticationGracePeriod);
 }
 
@@ -546,13 +547,13 @@ void onNickInUse(ConnectService service)
         }
         else
         {
-            import kameloso.constants : KamelosoDefaultStrings;
-            service.state.client.nickname ~= KamelosoDefaultStrings.altNickSign;
+            import kameloso.constants : KamelosoDefaults;
+            service.state.client.nickname ~= KamelosoDefaults.altNickSign;
             service.renamedDuringRegistration = true;
         }
 
         service.state.clientUpdated = true;
-        raw(service.state, "NICK " ~ service.state.client.nickname);
+        raw!(Yes.priority)(service.state, "NICK " ~ service.state.client.nickname);
     }
 }
 
@@ -1248,8 +1249,9 @@ void register(ConnectService service)
             }
 
             import kameloso.plugins.common.delayawait : await;
+            import kameloso.constants : BufferSize;
 
-            Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+            Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
             await(service, fiber, IRCEvent.Type.CAP);
 
             // Make sure nickname is lowercase so we can rely on it as account name
@@ -1287,14 +1289,15 @@ void negotiateNick(ConnectService service)
     if ((service.registration == Progress.finished) ||
         (service.nickNegotiation != Progress.notStarted)) return;
 
-    import kameloso.common : replaceTokens;
     import std.algorithm.searching : endsWith;
-    import std.format : format;
 
     service.nickNegotiation = Progress.started;
 
     if (!service.state.server.address.endsWith(".twitch.tv"))
     {
+        import kameloso.common : replaceTokens;
+        import std.format : format;
+
         // Twitch doesn't require USER, only PASS and NICK
         /+
             Command: USER

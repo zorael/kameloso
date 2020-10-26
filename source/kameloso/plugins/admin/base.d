@@ -25,6 +25,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.base : applyCustomSettings;
 import kameloso.plugins.common.awareness;
 import kameloso.common : Tint, logger;
+import kameloso.constants : BufferSize;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -399,7 +400,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }*/
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, joinTypes);
 }
 
@@ -725,7 +726,7 @@ void onSetCommand(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 
@@ -861,7 +862,7 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
         }
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
 }
@@ -1067,7 +1068,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             // applyCustomSettings displays its own error messages
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
+        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
         return plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 
     case "save":

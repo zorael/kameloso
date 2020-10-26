@@ -199,10 +199,10 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         cache = Shared cache of previous `TitleLookupRequest`s.
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
-        colouredOutgoing = Whether or not to send coloured output to the server.
+        colouredFlag = Flag of whether or not to send coloured output to the server.
  +/
 void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredOutgoing)
+    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredFlag)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
@@ -222,10 +222,6 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
     }
 
     TitleLookupRequest request = cast()sRequest;
-    immutable colouredFlag = colouredOutgoing ?
-        Yes.colouredOutgoing :
-        No.colouredOutgoing;
-
     immutable now = Clock.currTime.toUnixTime;
 
     if (request.url.contains("://i.imgur.com/"))
@@ -289,52 +285,60 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         }
     }
 
-    void tryLookup(const bool firstTime = true)
+    void tryLookup()
     {
-        import core.exception : UnicodeException;
         import std.net.curl : CurlException;
+        import std.range : only;
+        import core.exception : UnicodeException;
 
-        try
+        foreach (immutable firstTime; only(true, false))
         {
-            request.results = lookupTitle(request.url);
-            reportTitle(request, colouredFlag);
-            request.results.when = now;
-
-            synchronized //()
+            try
             {
-                cache[request.url] = cast(shared)request.results;
+                request.results = lookupTitle(request.url);
+                reportTitle(request, colouredFlag);
+                request.results.when = now;
+
+                synchronized //()
+                {
+                    cache[request.url] = cast(shared)request.results;
+                }
             }
-        }
-        catch (CurlException e)
-        {
-            request.state.askToError("Webtitles worker cURL exception: " ~ e.msg);
-            //version(PrintStacktraces) request.state.askToTrace(e.info);
-        }
-        catch (UnicodeException e)
-        {
-            request.state.askToError("Webtitles worker Unicode exception: " ~
-                e.msg ~ " (link is probably to an image or similar)");
-            //version(PrintStacktraces) request.state.askToTrace(e.info);
-        }
-        catch (Exception e)
-        {
-            request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
-            //version(PrintStacktraces) request.state.askToTrace(e.info);
-
-            if (!firstTime) return;
-
-            request.state.askToLog("Rewriting URL and retrying ...");
-
-            if (request.url[$-1] == '/')
+            catch (CurlException e)
             {
-                request.url = request.url[0..$-1];
+                request.state.askToError("Webtitles worker cURL exception: " ~ e.msg);
+                //version(PrintStacktraces) request.state.askToTrace(e.info);
             }
-            else
+            catch (UnicodeException e)
             {
-                request.url ~= '/';
+                request.state.askToError("Webtitles worker Unicode exception: " ~
+                    e.msg ~ " (link is probably to an image or similar)");
+                //version(PrintStacktraces) request.state.askToTrace(e.info);
+            }
+            catch (Exception e)
+            {
+                request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
+                //version(PrintStacktraces) request.state.askToTrace(e.info);
+
+                if (firstTime)
+                {
+                    request.state.askToLog("Rewriting URL and retrying ...");
+
+                    if (request.url[$-1] == '/')
+                    {
+                        request.url = request.url[0..$-1];
+                    }
+                    else
+                    {
+                        request.url ~= '/';
+                    }
+
+                    continue;
+                }
             }
 
-            tryLookup(false);
+            // Dropped down; end foreach by returning
+            return;
         }
     }
 
@@ -547,11 +551,12 @@ JSONValue getYouTubeInfo(const string url)
     import std.net.curl : HTTP;
     import core.time : seconds;
 
-    immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
+    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
     auto client = HTTP(youtubeURL);
     client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+    client.setUserAgent(userAgent);
 
     Appender!(ubyte[]) sink;
     sink.reserve(8192);  // Magic number for now.
@@ -563,14 +568,14 @@ JSONValue getYouTubeInfo(const string url)
     };
 
     client.perform();
-    immutable received = assumeUnique(cast(char[])sink.data);
 
-    if (received == "Not Found")
+    if (sink.data == "Not Found")
     {
         // Invalid video ID
         throw new Exception("Invalid YouTube video ID");
     }
 
+    immutable received = assumeUnique(cast(char[])sink.data);
     return parseJSON(received);
 }
 

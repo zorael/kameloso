@@ -890,13 +890,31 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
                         this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
-                        return NextStep.continue_;  // Next function
+
+                        static if (isAnnotated!(fun, Chainable) ||
+                            (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                        {
+                            return NextStep.continue_;
+                        }
+                        else /*static if (isAnnotated!(fun, Terminating))*/
+                        {
+                            return NextStep.return_;
+                        }
                     }
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
                         this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
-                        return NextStep.continue_;  // Next function
+
+                        static if (isAnnotated!(fun, Chainable) ||
+                            (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                        {
+                            return NextStep.continue_;
+                        }
+                        else /*static if (isAnnotated!(fun, Terminating))*/
+                        {
+                            return NextStep.return_;
+                        }
                     }
                     else
                     {
@@ -907,7 +925,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else if (result == FilterResult.fail)
                 {
-                    return NextStep.continue_;  // Next function
+                    static if (isAnnotated!(fun, Chainable) ||
+                        (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                    {
+                        return NextStep.continue_;
+                    }
+                    else /*static if (isAnnotated!(fun, Terminating))*/
+                    {
+                        return NextStep.return_;
+                    }
                 }
                 /*else
                 {

@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-beta.1.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v2.0.0-beta.1...master)
+# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-beta.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v2.0.0-beta.2...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -71,7 +71,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
-  * [macOS/Linux/Other Posix](#macoslinuxother-posix)
+  * [macOS/Linux/other Posix](#macoslinuxother-posix)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -85,9 +85,9 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 
 There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019).
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower but produces faster code. The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
-The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it will need to be installed separately. Refer to your repositories.
+The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
 ## Downloading
 
@@ -102,7 +102,7 @@ $ cd kameloso
 $ dub build
 ```
 
-This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols. You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
 See the [known issues](#known-issues) section for compilation caveats.
 
@@ -122,7 +122,7 @@ List configurations with `dub build --print-configs`. You can specify which to c
 $ dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` list in `dub.sdl`. Simply delete the lines that correspond to the plugin(s) you want to omit. Mind that disabling any of the plugins named `Service` may yield undefined behaviour.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from a line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the "service" plugins may break the bot in subtle ways.
 
 # How to use
 
@@ -158,17 +158,17 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Invocations of `--save` with an existing configuration file will regenerate it. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a currently *available* plugin, so any orphan sections belonging to plugins that are currently not built in will be silently removed.
+Invocations of `--save` with an existing configuration file will regenerate it. It will never overwrite your settings, only sync them with available ones. Beware however that this means it will delete any lines not corresponding to a currently *available* plugin, so any orphan sections belonging to plugins that are currently not built in will be silently removed.
 
 ### Display settings
 
-If you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
+If you have a bright terminal background, the colours may be hard to see and the text difficult to read, depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points).
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to).
 
 ## Example use
 
@@ -243,20 +243,20 @@ MrOffline joined #channel
 
 Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
-The **prefix** (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
+The command **prefix** (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
 ```ini
 [Core]
 prefix              "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. Some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Additionally, some administrative commands only work when called this way.
 
 ### Except nothing happens
 
-Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged in with. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable, and as such will not be able to access features it might normally have enjoyed.
+Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
-> In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the `hostmasks.json` file for how to map hostmasks to would-be accounts.
+> In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services.
 
 ## Twitch
 
@@ -280,7 +280,7 @@ https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr
 
 Most of the bot's features will work on Twitch. The **Automode** plugin is an exception (as modes are not really applicable on Twitch), and it will auto-disable itself appropriately.
 
-That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised, and when they are they come in delayed batches. You can also only join channels for which a corresponding Twitch user account exists.
+That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised, and when they are they come in delayed batches and cannot be relied upon. You can also only join channels for which a corresponding Twitch user account exists.
 
 ### Example configuration
 
@@ -309,7 +309,7 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Streamer assistant bot
 
-The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file with `--save`.
+The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built in it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file with `--save`.
 
 ```sh
 $ dub build -c twitch
@@ -327,7 +327,7 @@ Assuming a prefix of `!`, commands to test are:
 
 ...alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, `!counter`, `!stopwatch`, and other non-Twitch-specific commands.
 
-> Note: dot `.` and slash `/` prefixes will not work on Twitch, as they conflict with Twitch's own commands.
+> Note: dot `.` and slash `/` prefixes will not work on Twitch.
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
@@ -349,11 +349,9 @@ If SSL flat doesn't work at all, you may simply be missing the necessary librari
 
 Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
-Cygwin/mintty terminals may work erratically. There may be garbage "`[39m`" characters randomly at the beginning of lines, lines may arbitrarily break at certain lengths, text effects may spiral out of control, and more general wonkiness. It's really unreliable, and unsure how to solve it. The current workaround is to just use the plain `cmd.exe`, the Powershell console or a Windows Subsystem for Linux (WSL) terminal instead.
+## macOS/Linux/other Posix
 
-## macOS/Linux/Other Posix
-
-If the Pipeline plugin's FIFO file is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve as it requires figuring out how to do non-blocking reads. Help wanted.
+If the Pipeline plugin's FIFO file is removed while the program is running, it will hang when trying to exit, requiring manual interruption with Ctrl+C. This is a tricky problem to solve as it requires figuring out how to do non-blocking reads. Help wanted.
 
 # Roadmap
 
@@ -368,6 +366,7 @@ If the Pipeline plugin's FIFO file is removed while the program is running, it w
 * [`dub`](https://code.dlang.org)
 * [`dialect`](https://github.com/zorael/dialect) ([dub](https://code.dlang.org/packages/dialect))
 * [`lu`](https://github.com/zorael/lu) ([dub](https://code.dlang.org/packages/lu))
+* [`requests`](https://github.com/ikod/dlang-requests) ([dub](https://code.dlang.org/packages/requests))
 * [`arsd`](https://github.com/adamdruppe/arsd) ([dub](https://code.dlang.org/packages/arsd-official))
 
 # License

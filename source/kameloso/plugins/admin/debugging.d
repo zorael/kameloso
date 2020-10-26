@@ -16,7 +16,6 @@ private:
 
 import kameloso.plugins.admin.base : AdminPlugin;
 
-import kameloso.common : logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour;//, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -167,6 +166,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
  +/
 void onCommandStatusImpl(AdminPlugin plugin)
 {
+    import kameloso.common : logger;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -198,6 +198,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
  +/
 void onCommandBusImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
+    import kameloso.common : logger;
     import kameloso.thread : ThreadMessage, busMessage;
     import lu.string : contains, nom;
     import std.concurrency : send;

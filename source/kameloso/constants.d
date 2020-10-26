@@ -13,6 +13,7 @@ import std.format : format;
 public:
 
 
+// KamelosoInfo
 /++
     Meta-information about the program.
  +/
@@ -29,10 +30,12 @@ enum KamelosoInfo
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
 
+
+// KamelosoDefaults
 /++
     Kameloso defaults, strings version.
  +/
-enum KamelosoDefaultStrings
+enum KamelosoDefaults
 {
     /++
         Default user to use when logging onto a server (the USER command).
@@ -57,6 +60,8 @@ enum KamelosoDefaultStrings
     altNickSign = "^",
 }
 
+
+// KamelosoDefaultIntegers
 /++
     Kameloso defaults, integers version.
  +/
@@ -66,6 +71,8 @@ enum KamelosoDefaultIntegers
     port = 6667,
 }
 
+
+// KamelosoFilenames
 /++
     Kameloso filenames.
  +/
@@ -89,6 +96,8 @@ enum KamelosoFilenames
     hostmasks = "hostmasks.json",
 }
 
+
+// ConnectionDefaultIntegers
 /++
     Connection defaults, integers version.
  +/
@@ -96,10 +105,10 @@ enum ConnectionDefaultIntegers
 {
     /// How many times to attempt to connect to an IP before moving on to the next one.
     retries = 4,
-    /// The maximum amount of time to wait between connection attempts.
-    delayCap = 10*60,  // seconds
 }
 
+
+// ConnectionDefaultFloats
 /++
     Connection defaults, floating point version.
  +/
@@ -109,11 +118,28 @@ enum ConnectionDefaultFloats : double
     delayIncrementMultiplier = 1.5,
 }
 
+
+// BufferSize
 /++
     Buffer sizes in bytes.
  +/
 enum BufferSize
 {
+    /++
+        The receive buffer size as set as a `std.socket.SocketOption`.
+     +/
+    socketOptionReceive = 2048,
+
+    /++
+        The send buffer size as set as a `std.socket.SocketOption`.
+     +/
+    socketOptionSend = 1024,
+
+    /++
+        The actual buffer array size used when reading from the socket.
+     +/
+    socketReceive = 2048,
+
     /++
         The maximum number of queued outgoing lines to buffer. Anything above
         this will crash the program with a buffer overrun. It can be arbitrarily big.
@@ -136,16 +162,40 @@ enum BufferSize
         How many bytes to allocate for the stdout buffer, when we need to do so explicitly.
      +/
     vbufStdout = 16_384,
+
+    /++
+        How large to make `core.thread.fiber.Fiber` stacks, so they don't overflow
+        (which they seem to have a knack for doing).
+     +/
+    fiberStack = 32_768,
 }
+
+
+// Timeout
 /++
-    Various timeouts in seconds.
+    Various timeouts, in seconds unless specified otherwise.
  +/
 enum Timeout
 {
     /++
+        The send attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
+     +/
+    sendMsecs = 5000,
+
+    /++
+        The receive attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
+     +/
+    receiveMsecs = 1000,
+
+    /++
+        The maximum amount of time to wait between connection attempts.
+     +/
+    connectionDelayCap = 600,
+
+    /++
         The amount of seconds to wait before retrying after a failed connection attempt.
      +/
-    retry = 10,
+    connectionRetry = 10,
 
     /++
         How long to wait before allowing to re-issue a WHOIS query for a user.
@@ -162,7 +212,7 @@ enum Timeout
         Not having a small delay could cause it to spam the screen with errors
         as fast as it can.
      +/
-    readErrorGracePeriod = 1,
+    readErrorGracePeriodMsecs = 100,
 
     /++
         How long to keep trying to read from the sever when not receiving anything
@@ -206,24 +256,28 @@ public:
     }
 
     /// Logger colours to use with a dark terminal background.
-    static immutable TerminalForeground[193] logcoloursDark  =
+    static immutable TerminalForeground[256] logcoloursDark  =
     [
-        LogLevel.all     : TF.white,        /// LogLevel.all, or just `log`
-        LogLevel.trace   : TF.default_,     /// `trace`
-        LogLevel.info    : TF.lightgreen,   /// `info`
-        LogLevel.warning : TF.lightred,     /// `warning`
-        LogLevel.error   : TF.red,          /// `error`
-        LogLevel.fatal   : TF.red,          /// `fatal`
+        LogLevel.all      : TF.white,        /// LogLevel.all, or just `log`
+        LogLevel.trace    : TF.default_,     /// `trace`
+        LogLevel.info     : TF.lightgreen,   /// `info`
+        LogLevel.warning  : TF.lightred,     /// `warning`
+        LogLevel.error    : TF.red,          /// `error`
+        LogLevel.critical : TF.red,          /// `critical`
+        LogLevel.fatal    : TF.red,          /// `fatal`
+        LogLevel.off      : TF.default_,     /// `off`
     ];
 
     /// Logger colours to use with a bright terminal background.
-    static immutable TerminalForeground[193] logcoloursBright  =
+    static immutable TerminalForeground[256] logcoloursBright  =
     [
-        LogLevel.all     : TF.black,        /// LogLevel.all, or just `log`
-        LogLevel.trace   : TF.default_,     /// `trace`
-        LogLevel.info    : TF.green,        /// `info`
-        LogLevel.warning : TF.red,          /// `warning`
-        LogLevel.error   : TF.red,          /// `error`
-        LogLevel.fatal   : TF.red,          /// `fatal`
+        LogLevel.all      : TF.black,        /// LogLevel.all, or just `log`
+        LogLevel.trace    : TF.default_,     /// `trace`
+        LogLevel.info     : TF.green,        /// `info`
+        LogLevel.warning  : TF.red,          /// `warning`
+        LogLevel.error    : TF.red,          /// `error`
+        LogLevel.critical : TF.red,          /// `critical`
+        LogLevel.fatal    : TF.red,          /// `fatal`
+        LogLevel.off      : TF.default_,     /// `off`
     ];
 }

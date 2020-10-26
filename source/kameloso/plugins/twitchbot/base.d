@@ -1,9 +1,8 @@
 /++
     This is an example Twitch streamer bot. It supports querying uptime or how
-    long a streamer has been live, banned phrases, timered announcements and
-    voting.
-
-    It can also emit some terminal bells on certain events, to draw attention.
+    long a streamer has been live, banned phrases, follower age queries, and
+    timered announcements. It can also emit some terminal bells on certain
+    events, to draw attention.
 
     One immediately obvious venue of expansion is expression bans, such as if a
     message has too many capital letters, etc. There is no protection from spam yet.
@@ -25,6 +24,7 @@ import kameloso.plugins.twitchbot.timers;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
+import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
@@ -579,7 +579,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
         }
 
-        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, 32_768);
+        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, BufferSize.fiberStack);
         chattersCheckFiber.call();
     }
 }
@@ -1090,7 +1090,7 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    Fiber followageFiber = new Fiber(&followageDg, 32_768);
+    Fiber followageFiber = new Fiber(&followageDg, BufferSize.fiberStack);
     followageFiber.call();
 }
 
@@ -1135,7 +1135,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
-    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, 32_768);
+    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, BufferSize.fiberStack);
     getDisplayNameFiber.call();
 
     // Always cache as soon as possible, before we get any !followage requests
@@ -1144,7 +1144,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.follows = getFollows(plugin, room.id);
     }
 
-    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, 32_768);
+    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, BufferSize.fiberStack);
     cacheFollowsFiber.call();
 }
 
@@ -1221,7 +1221,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
             .format(broadcasterName, login, gameName));
     }
 
-    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, 32_768);
+    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, BufferSize.fiberStack);
     shoutoutFiber.call();
 }
 
@@ -1362,7 +1362,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     JSONStorage channelBannedPhrasesJSON;
     channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
     plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-    plugin.bannedPhrasesByChannel.rehash();
+    plugin.bannedPhrasesByChannel = plugin.bannedPhrasesByChannel.rehash();
 
     // Timers use a specialised function
     plugin.populateTimers(plugin.timersFile);
@@ -1485,7 +1485,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
         }
 
-        Fiber validationFiber = new Fiber(&validationDg, 32_768);
+        Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
         validationFiber.call();
     }
 }
@@ -1523,7 +1523,7 @@ void reload(TwitchBotPlugin plugin)
     channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
     plugin.bannedPhrasesByChannel = typeof(plugin.bannedPhrasesByChannel).init;
     plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-    plugin.bannedPhrasesByChannel.rehash();
+    plugin.bannedPhrasesByChannel = plugin.bannedPhrasesByChannel.rehash();
 
     plugin.timerDefsByChannel = typeof(plugin.timerDefsByChannel).init;
     plugin.populateTimers(plugin.timersFile);
@@ -1707,13 +1707,14 @@ void onMyInfo(TwitchBotPlugin plugin)
                     }
                 }
 
-                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg, 32_768);
+                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg,
+                    BufferSize.fiberStack);
                 cacheFollowsAnewFiber.call();
             }
         }
     }
 
-    Fiber periodicFiber = new Fiber(&periodicDg, 32_768);
+    Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
     delay(plugin, periodicFiber, plugin.timerPeriodicity);
 }
 

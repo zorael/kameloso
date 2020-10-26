@@ -572,7 +572,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 void onEndOfList(SeenPlugin plugin)
 {
-    plugin.seenUsers.rehash();
+    plugin.seenUsers = plugin.seenUsers.rehash();
 }
 
 
@@ -898,6 +898,7 @@ in (filename.length, "Tried to save seen users to an empty filename")
 void onWelcome(SeenPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     plugin.seenUsers = loadSeen(plugin.seenFile);
@@ -907,12 +908,13 @@ void onWelcome(SeenPlugin plugin)
         while (true)
         {
             plugin.updateAllObservedUsers();
-            plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
+            plugin.seenUsers = plugin.seenUsers.rehash();
+            plugin.seenUsers.saveSeen(plugin.seenFile);
             delay(plugin, plugin.timeBetweenSaves, No.msecs, Yes.yield);
         }
     }
 
-    Fiber saveFiber = new Fiber(&saveDg, 32_768);
+    Fiber saveFiber = new Fiber(&saveDg, BufferSize.fiberStack);
     delay(plugin, saveFiber, plugin.timeBetweenSaves);
 }
 

@@ -472,7 +472,7 @@ void onMyInfo(AutomodePlugin plugin)
     automodesJSON.load(plugin.automodeFile);
     //plugin.automodes.clear();
     plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
-    plugin.automodes.rehash();
+    plugin.automodes = plugin.automodes.rehash();
 }
 
 

@@ -258,6 +258,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
 @(ChannelPolicy.home)
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
     import core.thread : Fiber;
@@ -304,7 +305,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
         emote(plugin.state, event.channel, "dances :D/-<");
     }
 
-    Fiber danceFiber = new Fiber(&danceDg, 32_768);
+    Fiber danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
     danceFiber.call();
 }
 

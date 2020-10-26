@@ -472,119 +472,97 @@ public:
         foreach (plugin; plugins)
         {
             plugin.start();
-
-            if (plugin.state.botUpdated)
-            {
-                // start changed the bot; propagate
-                plugin.state.botUpdated = false;
-                propagateBot(plugin.state.bot);
-            }
-
-            if (plugin.state.clientUpdated)
-            {
-                // start changed the client; propagate
-                plugin.state.clientUpdated = false;
-                propagateClient(plugin.state.client);
-            }
-
-            if (plugin.state.serverUpdated)
-            {
-                // start changed the server; propagate
-                plugin.state.serverUpdated = false;
-                propagateServer(plugin.state.server);
-            }
-
-            if (plugin.state.settingsUpdated)
-            {
-                // Something changed the settings; propagate
-                plugin.state.settingsUpdated = false;
-                propagateSettings(plugin.state.settings);
-            }
+            checkPluginForUpdates(plugin);
         }
     }
 
 
-    // propagateClient
+    // checkPluginForUpdates
     /++
-        Takes an `dialect.defs.IRCClient` and passes it out to all plugins.
-
-        This is called when a change to the client has occurred and we want to
-        update all plugins to have a current copy of it.
+        Propagates updated bots, clients, servers and/or settings, to `this`,
+        `parser`, and to all plugins.
 
         Params:
-            client = `dialect.defs.IRCClient` to propagate to all plugins.
+            plugin = The plugin whose `kameloso.plugin.common.core.IRCPluginState`s
+                member structs to inspect for updates.
      +/
-    void propagateClient(IRCClient client) pure nothrow @nogc
+    void checkPluginForUpdates(IRCPlugin plugin)
     {
-        parser.client = client;
-
-        foreach (plugin; plugins)
+        if (plugin.state.botUpdated)
         {
-            plugin.state.client = client;
+            // Something changed the bot; propagate
+            plugin.state.botUpdated = false;
+            propagate(plugin.state.bot);
+        }
+
+        if (plugin.state.clientUpdated)
+        {
+            // Something changed the client; propagate
+            plugin.state.clientUpdated = false;
+            propagate(plugin.state.client);
+        }
+
+        if (plugin.state.serverUpdated)
+        {
+            // Something changed the server; propagate
+            plugin.state.serverUpdated = false;
+            propagate(plugin.state.server);
+        }
+
+        if (plugin.state.settingsUpdated)
+        {
+            // Something changed the settings; propagate
+            plugin.state.settingsUpdated = false;
+            propagate(plugin.state.settings);
         }
     }
 
 
-    // propagateServer
-    /++
-        Takes an `dialect.defs.IRCServer` and passes it out to all plugins.
+    private import lu.traits : isStruct;
+    private import std.meta : allSatisfy;
 
-        This is called when a change to the server has occurred and we want to
-        update all plugins to have a current copy of it.
+    // propagate
+    /++
+        Propgates an updated struct, to `this`, `parser`, and to each plugins'
+        `kameloso.plugin.common.core.IRCPluginState`s, overwriting existing such.
 
         Params:
-            server = `dialect.defs.IRCServer` to propagate to all plugins.
+            thing = Struct object to propagate.
      +/
-    void propagateServer(IRCServer server) pure nothrow @nogc
+    //pragma(inline, true)
+    void propagate(Thing)(Thing thing) pure nothrow @nogc
+    if (allSatisfy!(isStruct, Thing))
     {
-        parser.server = server;
+        import std.meta : AliasSeq;
 
-        foreach (plugin; plugins)
+        aliasloop:
+        foreach (ref sym; AliasSeq!(this, parser))
         {
-            plugin.state.server = server;
+            foreach (immutable i, ref member; sym.tupleof)
+            {
+                alias T = typeof(sym.tupleof[i]);
+
+                static if (is(T == Thing))
+                {
+                    sym.tupleof[i] = thing;
+                    continue aliasloop;
+                }
+            }
         }
-    }
 
-
-    // propagateBot
-    /++
-        Takes an `kameloso.kameloso.IRCBot` and passes it out to all plugins.
-
-        This is called when a change to the bot has occurred and we want to
-        update all plugins to have a current copy of it.
-
-        Params:
-            bot = `kameloso.kameloso.IRCBot` to propagate to all plugins.
-     +/
-    void propagateBot(IRCBot bot) pure nothrow @nogc
-    {
-        this.bot = bot;
-
+        pluginloop:
         foreach (plugin; plugins)
         {
-            plugin.state.bot = bot;
-        }
-    }
+            foreach (immutable i, ref member; plugin.state.tupleof)
+            {
+                alias T = typeof(plugin.state.tupleof[i]);
 
-
-    // propagateSettings
-    /++
-        Takes a `kameloso.kameloso.CoreSettings` and passes it out to all plugins.
-
-        This is called when a change to the settings has occurred and we want to
-        update all plugins to have a current copy of it.
-
-        Params:
-            settings = `kameloso.kameloso.CoreSettings` to propagate to all plugins.
-     +/
-    void propagateSettings(CoreSettings settings) nothrow @nogc
-    {
-        // Inherit the changes ourselves
-        this.settings = settings;
-
-        foreach (plugin; plugins)
-        {
-            plugin.state.settings = settings;
+                static if (is(T == Thing))
+                {
+                    plugin.state.tupleof[i] = thing;
+                    continue pluginloop;
+                }
+            }
         }
     }
 
@@ -687,6 +665,7 @@ public:
 struct ConnectionSettings
 {
 private:
+    import kameloso.constants : Timeout;
     import lu.uda : CannotContainComments;
 
 public:
@@ -710,6 +689,9 @@ public:
 
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
+
+    /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
+    uint receiveTimeout = Timeout.receiveMsecs;
 }
 
 

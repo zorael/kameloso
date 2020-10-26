@@ -5,7 +5,7 @@
     It has no commands and is not aware in the normal sense; it only blindly
     responds to requests.
  +/
-module kameloso.plugins.ctcp;
+module kameloso.plugins.services.ctcp;
 
 version(WithPlugins):
 version(WithCTCPService):
@@ -203,7 +203,7 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
 
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), No.quiet);
+        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), Yes.quiet);
     }
 }
 
@@ -255,9 +255,11 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
         import lu.traits : getSymbolsByUDA;
         import std.traits : getUDAs, isSomeFunction;
 
+        mixin("import thisModule = ", __MODULE__, ";");
+
         string allTypes;
 
-        foreach (fun; getSymbolsByUDA!(mixin(__MODULE__), IRCEvent.Type))
+        foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
         {
             static if (isSomeFunction!(fun))
             {

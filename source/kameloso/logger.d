@@ -65,7 +65,7 @@ public:
             brightTerminal = Bright terminal setting.
      +/
     this(const Flag!"monochrome" monochrome,
-        const Flag!"brightTerminal" brightTerminal) @safe
+        const Flag!"brightTerminal" brightTerminal) pure nothrow @safe
     {
         linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
@@ -73,121 +73,113 @@ public:
     }
 
 
-    // tint
-    /++
-        Returns the corresponding `kameloso.terminal.TerminalForeground` for the
-        supplied `std.experimental.logger.LogLevel`,
-        taking into account whether the terminal is said to be bright or not.
-
-        This is merely a convenient wrapping for `logcoloursBright` and
-        `logcoloursDark`.
-
-        Example:
-        ---
-        TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
-        immutable errtintString = errtint.colour;
-        ---
-
-        Params:
-            level = The `std.experimental.logger.LogLevel` of the colour we want to scry.
-            bright = Whether the colour should be for a bright terminal
-                background or a dark one.
-
-        Returns:
-            A `kameloso.terminal.TerminalForeground` of the right colour. Use with
-            `kameloso.terminal.colour` to get a string.
-     +/
     pragma(inline, true)
     version(Colours)
-    static auto tint(const LogLevel level, const Flag!"brightTerminal" bright)
     {
-        return bright ? logcoloursBright[level] : logcoloursDark[level];
-    }
+        // tint
+        /++
+            Returns the corresponding `kameloso.terminal.TerminalForeground` for the
+            supplied `std.experimental.logger.LogLevel`,
+            taking into account whether the terminal is said to be bright or not.
 
-    ///
-    version(Colours)
-    unittest
-    {
-        import std.range : only;
+            This is merely a convenient wrapping for `logcoloursBright` and
+            `logcoloursDark`.
 
-        foreach (immutable logLevel; only(LogLevel.all, LogLevel.info,
-            LogLevel.warning, LogLevel.fatal))
+            Example:
+            ---
+            TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
+            immutable errtintString = errtint.colour;
+            ---
+
+            Params:
+                level = The `std.experimental.logger.LogLevel` of the colour we want to scry.
+                bright = Whether the colour should be for a bright terminal
+                    background or a dark one.
+
+            Returns:
+                A `kameloso.terminal.TerminalForeground` of the right colour. Use with
+                `kameloso.terminal.colour` to get a string.
+         +/
+        static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
         {
-            import std.format : format;
-
-            immutable tintBright = tint(logLevel, Yes.brightTerminal);
-            immutable tintBrightTable = logcoloursBright[logLevel];
-            assert((tintBright == tintBrightTable), "%s != %s"
-                .format(tintBright, tintBrightTable));
-
-            immutable tintDark = tint(logLevel, No.brightTerminal);
-            immutable tintDarkTable = logcoloursDark[logLevel];
-            assert((tintDark == tintDarkTable), "%s != %s"
-                .format(tintDark, tintDarkTable));
+            return bright ? logcoloursBright[level] : logcoloursDark[level];
         }
-    }
 
-
-    // tintImpl
-    /++
-        Template for returning tints based on the settings of the `this`
-        `KamelosoLogger`.
-
-        This saves us having to pass the brightness setting, and allows for
-        making easy aliases for the log level.
-
-        Params:
-            level = Compile-time `std.experimental.logger.LogLevel`.
-
-        Returns:
-            A tint string.
-     +/
-    pragma(inline, true)
-    version(Colours)
-    private string tintImpl(LogLevel level)() const @property
-    {
-        version(CtTints)
+        ///
+        unittest
         {
-            if (brightTerminal)
+            import std.range : only;
+
+            foreach (immutable logLevel; only(LogLevel.all, LogLevel.info,
+                LogLevel.warning, LogLevel.fatal))
             {
-                enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
-                return ctTintBright;
+                import std.format : format;
+
+                immutable tintBright = tint(logLevel, Yes.brightTerminal);
+                immutable tintBrightTable = logcoloursBright[logLevel];
+                assert((tintBright == tintBrightTable), "%s != %s"
+                    .format(tintBright, tintBrightTable));
+
+                immutable tintDark = tint(logLevel, No.brightTerminal);
+                immutable tintDarkTable = logcoloursDark[logLevel];
+                assert((tintDark == tintDarkTable), "%s != %s"
+                    .format(tintDark, tintDarkTable));
+            }
+        }
+
+
+        // tintImpl
+        /++
+            Template for returning tints based on the settings of the `this`
+            `KamelosoLogger`.
+
+            This saves us having to pass the brightness setting, and allows for
+            making easy aliases for the log level.
+
+            Params:
+                level = Compile-time `std.experimental.logger.LogLevel`.
+
+            Returns:
+                A tint string.
+         +/
+        private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
+        {
+            version(CtTints)
+            {
+                if (brightTerminal)
+                {
+                    enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
+                    return ctTintBright;
+                }
+                else
+                {
+                    enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
+                    return ctTintDark;
+                }
             }
             else
             {
-                enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
-                return ctTintDark;
+                return tint(level, brightTerminal ? Yes.brightTerminal : No.brightTerminal).colour;
             }
         }
-        else
+
+
+        /+
+            Generate *tint functions for each `std.experimental.logger.LogLevel`.
+         +/
+        static foreach (const lv; [ EnumMembers!LogLevel ])
         {
-            return tint(level, brightTerminal ? Yes.brightTerminal : No.brightTerminal).colour;
+            mixin(
+q{/// Provides an easy way to get a %1$s tint.
+auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.%1$s); }
+            }.format(lv));
         }
-    }
 
-    pragma(inline, true)
-    version(Colours)
-    {
-        /// Provides easy way to get a log tint.
-        auto tracetint() const @property { return tintImpl!(LogLevel.trace); }
-
-        /// Synonymous alias to `tracetint`.
-        alias resettint = tracetint;
-
-        /// Provides easy way to get a log tint.
-        auto logtint() const @property { return tintImpl!(LogLevel.all); }
-
-        /// Provides easy way to get an info tint.
-        auto infotint() const @property { return tintImpl!(LogLevel.info); }
-
-        /// Provides easy way to get a warning tint.
-        auto warningtint() const @property { return tintImpl!(LogLevel.warning); }
-
-        /// Provides easy way to get an error tint.
-        auto errortint() const @property { return tintImpl!(LogLevel.error); }
-
-        /// Provides easy way to get a fatal tint.
-        auto fataltint() const @property { return tintImpl!(LogLevel.fatal); }
+        /++
+            Synonymous alias to `alltint`, as a workaround for
+            `std.experimental.logger.LogLevel.all` not being named `LogLevel.log`.
+         +/
+        alias logtint = alltint;
     }
 
 
@@ -198,7 +190,7 @@ public:
             logLevel = The `std.experimental.logger.LogLevel` to treat this
                 message as being of.
      +/
-    protected void beginLogMsg(const LogLevel logLevel) @safe
+    private void beginLogMsg(const LogLevel logLevel) @safe
     {
         import std.datetime : DateTime;
         import std.datetime.systime : Clock;
@@ -261,11 +253,11 @@ public:
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printImpl(Args...)(const LogLevel logLevel, Args args)
+    private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
         beginLogMsg(logLevel);
 
-        foreach (arg; args)
+        foreach (ref arg; args)
         {
             alias T = typeof(arg);
 
@@ -347,7 +339,8 @@ public:
             pattern = Runtime pattern to format the output with.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printfImpl(Args...)(const LogLevel logLevel, const string pattern, Args args)
+    private void printfImpl(Args...)(const LogLevel logLevel,
+        const string pattern, auto ref Args args)
     {
         import std.format : formattedWrite;
 
@@ -375,7 +368,7 @@ public:
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printfImpl(string pattern, Args...)(const LogLevel logLevel, Args args)
+    private void printfImpl(string pattern, Args...)(const LogLevel logLevel, auto ref Args args)
     {
         import std.format : formattedWrite;
 
@@ -385,32 +378,55 @@ public:
     }
 
 
+    /// Mixin to exit the program on `fatal` calls.
+    private enum fatalExitMixin =
+        "import std.stdio : writeln;
+        import core.runtime : defaultTraceHandler;
+        import core.stdc.stdlib : exit;
+
+        writeln(defaultTraceHandler);
+        exit(1);";
+
     /+
         Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
+
+        Mixes in `fatalExitMixin` on `fatal` to have it exit the program on those.
      +/
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
         mixin(
-q{void %1$s(Args...)(Args args)
+q{/// Prints a %1$s message.
+void %1$s(Args...)(auto ref Args args)
 {
     printImpl(LogLevel.%1$s, args);
+    %2$s
 }
 
-void %1$sf(Args...)(const string pattern, Args args)
+/// Prints a formatted %1$s message.
+void %1$sf(Args...)(const string pattern, auto ref Args args)
 {
     printfImpl(LogLevel.%1$s, pattern, args);
+    %2$s
 }
 
-void %sf(string pattern, Args...)(Args args)
+/// Prints a formatted %1$s message, validating the pattern at compile time.
+void %1$sf(string pattern, Args...)(auto ref Args args)
 {
     printfImpl!pattern(LogLevel.%1$s, args);
-}}.format(lv));
+    %2$s
+}}.format(lv, (lv == LogLevel.fatal) ? fatalExitMixin : string.init));
     }
 
-    /// Alias to `KamelosoLogger.all`.
+    /++
+        Synonymous alias to `KamelosoLogger.all`, as a workaround for
+        `std.experimental.logger.LogLevel.all` not being named `LogLevel.log`.
+     +/
     alias log = all;
 
-    /// Alias to `KamelosoLogger.allf`.
+    /++
+        Synonymous alias to `KamelosoLogger.allf`, as a workaround for
+        `std.experimental.logger.LogLevel.all` not being named `LogLevel.log`.
+     +/
     alias logf = allf;
 }
 
@@ -422,7 +438,7 @@ unittest
 
     struct S1
     {
-        void toString(Sink)(auto ref Sink sink)
+        void toString(Sink)(auto ref Sink sink) const
         {
             sink.put("sink toString");
         }
@@ -434,6 +450,8 @@ unittest
         {
             dg("delegate toString");
         }
+
+        @disable this(this);
     }
 
     struct S3
@@ -468,8 +486,10 @@ unittest
     log_.infof!"log: %s"("info");
     log_.warningf!"log: %s"("warning");
     log_.errorf!"log: %s"("error");
+    log_.criticalf!"log: %s"("critical");
     // log_.fatalf!"log: %s"("FATAL");
     log_.tracef("log: %s", "trace");
+    log_.offf("log: %s", "off");
 
     version(Colours)
     {
@@ -479,8 +499,10 @@ unittest
         log_.info("log: info");
         log_.warning("log: warning");
         log_.error("log: error");
+        log_.critical("log: critical");
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
+        log_.off("log: off");
 
         log_ = new KamelosoLogger(No.monochrome, No.brightTerminal);
 
@@ -490,6 +512,7 @@ unittest
         log_.error("log: error");
         // log_.fatal("log: FATAL");
         log_.trace("log: trace");
+        log_.off("log: off");
     }
 
     S1 s1;
@@ -499,12 +522,12 @@ unittest
     S5 s5;
     C c = new C;
 
-    log_.trace("---");
+    log_.trace();
 
     log_.log(s1);
     log_.info(s2);
     log_.warning(s3);
-    log_.error(s4);
-    log_.trace(s5);
-    log_.log(c);
+    log_.critical(s4);
+    log_.error(s5);
+    log_.trace(c);
 }

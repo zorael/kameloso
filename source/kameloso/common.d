@@ -1082,7 +1082,7 @@ unittest
             assert(Tint.error is logger.errortint);
             assert(Tint.fatal is logger.fataltint);
             assert(Tint.trace is logger.tracetint);
-            assert(Tint.reset is logger.resettint);
+            assert(Tint.off is logger.offtint);
         }
         else
         {
@@ -1092,7 +1092,7 @@ unittest
             assert(Tint.error == string.init);
             assert(Tint.fatal == string.init);
             assert(Tint.trace == string.init);
-            assert(Tint.reset == string.init);
+            assert(Tint.off == string.init);
         }
     }
 }

@@ -322,8 +322,9 @@ void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
     }
 
     import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.constants : BufferSize;
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
     {
@@ -369,35 +370,35 @@ void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
 
     if (dur >= 1200)
     {
-        auto reminder600 = new CarryingFiber!int(&dgReminder, 32_768);
+        auto reminder600 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
         reminder600.payload = 600;
         delay(plugin, reminder600, dur-600);
     }
 
     if (dur >= 600)
     {
-        auto reminder300 = new CarryingFiber!int(&dgReminder, 32_768);
+        auto reminder300 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
         reminder300.payload = 300;
         delay(plugin, reminder300, dur-300);
     }
 
     if (dur >= 240)
     {
-        auto reminder60 = new CarryingFiber!int(&dgReminder, 32_768);
+        auto reminder60 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
         reminder60.payload = 60;
         delay(plugin, reminder60, dur-180);
     }
 
     if (dur >= 60)
     {
-        auto reminder30 = new CarryingFiber!int(&dgReminder, 32_768);
+        auto reminder30 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
         reminder30.payload = 30;
         delay(plugin, reminder30, dur-30);
     }
 
     if (dur >= 20)
     {
-        auto reminder10 = new CarryingFiber!int(&dgReminder, 32_768);
+        auto reminder10 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
         reminder10.payload = 10;
         delay(plugin, reminder10, dur-10);
     }

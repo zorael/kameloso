@@ -67,53 +67,13 @@
  +/
 module kameloso.net;
 
+private:
+
+import kameloso.constants : BufferSize, Timeout;
+
 public:
 
 @safe:
-
-/++
-    Default buffer sizes in bytes.
- +/
-enum DefaultBufferSize
-{
-    /++
-        The receive buffer size as set as a `std.socket.SocketOption`.
-     +/
-    socketOptionReceive = 2048,
-
-    /++
-        The send buffer size as set as a `std.socket.SocketOption`.
-     +/
-    socketOptionSend = 1024,
-
-    /++
-        The actual buffer array size used when reading from the socket.
-     +/
-    socketReceive = 2048,
-}
-
-
-/++
-    Various timeouts in milliseconds.
- +/
-enum DefaultTimeout
-{
-    /++
-        The send attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
-     +/
-    send = 5000,
-
-    /++
-        The receive attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
-     +/
-    receive = 1000,
-
-    /++
-        The actual time after which, if nothing was read during that whole time,
-        we decide the connection is dead. In seconds.
-     +/
-    connectionLost = 600,
-}
 
 
 // Connection
@@ -333,20 +293,21 @@ public:
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
-        import core.time : msecs;
+        import kameloso.constants : BufferSize, Timeout;
         import std.socket : SocketOption, SocketOptionLevel;
+        import core.time : msecs;
 
         with (socketToSetup)
         with (SocketOption)
         with (SocketOptionLevel)
         {
-            setOption(SOCKET, RCVBUF, DefaultBufferSize.socketOptionReceive);
-            setOption(SOCKET, SNDBUF, DefaultBufferSize.socketOptionSend);
-            setOption(SOCKET, RCVTIMEO, DefaultTimeout.receive.msecs);
-            setOption(SOCKET, SNDTIMEO, DefaultTimeout.send.msecs);
+            setOption(SOCKET, RCVBUF, BufferSize.socketOptionReceive);
+            setOption(SOCKET, SNDBUF, BufferSize.socketOptionSend);
+            setOption(SOCKET, RCVTIMEO, Timeout.receiveMsecs.msecs);
+            setOption(SOCKET, SNDTIMEO, Timeout.sendMsecs.msecs);
 
-            privateReceiveTimeout = DefaultTimeout.receive;
-            privateSendTimeout = DefaultTimeout.send;
+            privateReceiveTimeout = Timeout.receiveMsecs;
+            privateSendTimeout = Timeout.sendMsecs;
             blocking = true;
         }
     }
@@ -611,20 +572,23 @@ struct ListenAttempt
     ---
 
     Params:
+        bufferSize = What size static array to use as buffer. Defaults to
+            twice of `kameloso.constants.BufferSize.socketReceive` for now.
         conn = `Connection` whose `std.socket.Socket` it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the `core.thread.fiber.Fiber` terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
-            Optional, defaults to `DefaultTimeout.connectionLost`.
+            Optional, defaults to `kameloso.constants.Timeout.connectionLost`.
 
     Yields:
         `ListenAttempt`s with information about the line receieved in its member values.
  +/
-void listenFiber(Connection conn, ref bool abort,
-    const int connectionLost = DefaultTimeout.connectionLost) @system
+void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
+    (Connection conn, ref bool abort, const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
 {
+    import kameloso.constants : BufferSize;
     import std.concurrency : yield;
     import std.datetime.systime : Clock;
     import std.socket : Socket, lastSocketError;
@@ -632,7 +596,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
     if (abort) return;
 
-    ubyte[DefaultBufferSize.socketReceive*2] buffer;
+    ubyte[bufferSize] buffer;
     long timeLastReceived = Clock.currTime.toUnixTime;
     size_t start;
 
@@ -697,20 +661,30 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             switch (attempt.error)
             {
+            version(Windows)
+            {
+                case "A connection attempt failed because the connected party did not " ~
+                    "properly respond after a period of time, or established connection " ~
+                    "failed because connected host has failed to respond.":
+                    // Timed out read in Windows
+                case "A non-blocking socket operation could not be completed immediately.":
+                    // Sporadic Cygwin error
+                    goto case;
+            }
             case "Resource temporarily unavailable":
                 // Nothing received
             //case "Interrupted system call":
-            case "A connection attempt failed because the connected party did not " ~
-                 "properly respond after a period of time, or established connection " ~
-                 "failed because connected host has failed to respond.":
-                // Timed out read in Windows
                 attempt.state = State.isEmpty;
                 yield(attempt);
                 continue;
 
             // Others that may be benign?
-            case "An established connection was aborted by the software in your host machine.":
-            case "An existing connection was forcibly closed by the remote host.":
+            version(Windows)
+            {
+                case "An established connection was aborted by the software in your host machine.":
+                    goto case;
+            }
+            case "An existing connection was forcibly closed by the remote host.":  // Windows-only?
             case "Connection reset by peer":
             case "Transport endpoint is not connected":  // IPv6/IPv4 connection/socket mismatch
                 attempt.state = State.error;

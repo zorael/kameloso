@@ -8,7 +8,7 @@
     is highly recommended if you plan on mixing in
     `kameloso.plugins.common.awareness.ChannelAwareness` into your plugins.
  +/
-module kameloso.plugins.chanqueries;
+module kameloso.plugins.services.chanqueries;
 
 version(WithPlugins):
 version(WithChanQueriesService):
@@ -213,7 +213,7 @@ void startChannelQueries(ChanQueriesService service)
 
         if (!uniqueUsers.length) return;  // Early exit
 
-        uniqueUsers.rehash();
+        uniqueUsers = uniqueUsers.rehash();
 
         /// Event types that signal the end of a WHOIS response.
         static immutable whoisTypes =
@@ -339,9 +339,10 @@ void startChannelQueries(ChanQueriesService service)
         }
     }
 
+    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, 32_768);
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     fiber.call();
 }
 

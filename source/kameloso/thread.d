@@ -11,14 +11,14 @@
     mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
     mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
 
-    auto fiber = new CarryingFiber!string(&someDelegate, 32_768);
+    auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
     fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
     fiber.call();
     fiber.payload = "You can change it in between calls to pass information to it";
     fiber.call();
 
     // As such we can make Fibers act like they're taking new arguments each call
-    auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate, 32_768);
+    auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate, BufferSize.fiberStack);
     fiber2.payload = newIncomingIRCEvent;
     fiber2.call();
     // [...]
@@ -50,7 +50,8 @@ public:
 
     void dg() { /* ... */ }
 
-    auto scheduledFiber = ScheduledFiber(new Fiber(&dg), Clock.currTime.toUnixTime + 10L);
+    auto scheduledFiber = ScheduledFiber(new Fiber(&dg, BufferSize.fiberStack),
+        Clock.currTime.stdTime + 10 * 10_000_000);  // ten seconds in hnsecs
     ---
  +/
 struct ScheduledFiber
@@ -58,7 +59,7 @@ struct ScheduledFiber
     /// Fiber to trigger at the point in time `timestamp`.
     Fiber fiber;
 
-    /// When `fiber` is scheduled to be called.
+    /// When `fiber` is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
     long timestamp;
 }
 
@@ -77,7 +78,7 @@ struct ScheduledFiber
 
     void dg() { /* ... */ }
 
-    auto scheduledDg = ScheduledDelegate(&dg, Clock.currTime.toUnixTime + 10L);
+    auto scheduledDg = ScheduledDelegate(&dg, Clock.currTime.stdTime + 10 * 10_000_000);
     ---
  +/
 struct ScheduledDelegate
@@ -85,7 +86,7 @@ struct ScheduledDelegate
     /// Delegate to trigger at the point in time `timestamp`.
     void delegate() dg;
 
-    /// When `dg` is scheduled to be called.
+    /// When `dg` is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
     long timestamp;
 }
 
@@ -139,13 +140,13 @@ struct ThreadMessage
     /// Concurrency message type asking to quietly send a line to the server.
     static struct Quietline {}
 
-    /// Concurrency message type asking to immediately send a message.
+    /// Concurrency message type asking to immediately send a line to the server.
     static struct Immediateline {}
 
-    /// Concurrency message type asking to quit the server and the program.
+    /// Concurrency message type asking to quit the server and exit the program.
     static struct Quit {}
 
-    /// Concurrency message type asking for a plugin to shut down cleanly.
+    /// Concurrency message type asking for a plugin's worker thread to shut down cleanly.
     static struct Teardown {}
 
     /// Concurrency message type asking to have plugins' configuration saved.
@@ -154,7 +155,7 @@ struct ThreadMessage
     /++
         Concurrency message asking for a reference to the arrays of
         `kameloso.plugins.common.core.IRCPlugin`s in the current
-        `dialect.defs.IRCClient`'s plugin array.
+        `kameloso.kameloso.Kameloso` instance's `plugin` array.
      +/
     static struct PeekPlugins {}
 
@@ -167,7 +168,7 @@ struct ThreadMessage
     /// Concurrency message meant to be sent between plugins.
     static struct BusMessage {}
 
-    /// Concurrency messages for writing text to the terminal.
+    /// Concurrency message for writing text to the terminal.
     enum TerminalOutput
     {
         writeln,
@@ -276,10 +277,16 @@ unittest
     {
         CarryingFiber!bool fiber = cast(CarryingFiber!bool)(Fiber.getThis);
         assert(fiber !is null);  // Correct cast
+
         assert(fiber.payload);
+        Fiber.yield();
+        assert(!fiber.payload);
     }
 
-    auto fiber = new CarryingFiber!bool(true, &dg, 32_768);
+    auto fiber = new CarryingFiber!bool(true, &dg, BufferSize.fiberStack);
+    fiber.call();
+    fiber.payload = false;
+    fiber.call();
     ---
 
     Params:
@@ -378,8 +385,12 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
 void exhaustMessages()
 {
     import core.time : msecs;
-    import std.concurrency : receiveTimeout;
+    import std.concurrency : receiveTimeout, thisTid;
     import std.variant : Variant;
+
+    // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
+    // until a thread was spawned or thisTid was passed to a running thread.
+    const ensureMessageBoxIsInitialised = thisTid;
 
     bool notEmpty;
     static immutable almostInstant = 10.msecs;

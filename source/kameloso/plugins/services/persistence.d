@@ -10,7 +10,7 @@
     It has no commands. It only does post-processing and doesn't handle
     `dialect.defs.IRCEvent`s in the normal sense at all.
  +/
-module kameloso.plugins.persistence;
+module kameloso.plugins.services.persistence;
 
 version(WithPlugins):
 version(WithPersistenceService):
@@ -145,23 +145,30 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
 
         import lu.meld : MeldingStrategy, meldInto;
 
-        // Store initial class and restore after meld. The origin user.class_
-        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
-        immutable preMeldClass = stored.class_;
-
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
-        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
-
-        if (stored.class_ == IRCUser.Class.unset)
+        // Store initial class and restore after meld. The origin user.class_
+        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
+        // Additionally snapshot the .updated value and restore it after melding
+        if (!foundNoStored)
         {
-            // The class was not changed, restore the previously saved one
-            stored.class_ = preMeldClass;
+            immutable preMeldClass = stored.class_;
+            immutable preMeldUpdated = stored.updated;
+            user.meldInto!(MeldingStrategy.aggressive)(*stored);
+            stored.updated = preMeldUpdated;
+
+            if (stored.class_ == IRCUser.Class.unset)
+            {
+                // The class was not changed, restore the previously saved one
+                stored.class_ = preMeldClass;
+            }
         }
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            if (event.type == IRCEvent.Type.RPL_ENDOFWHOIS)
+            if ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
+                (event.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
+                (event.type == IRCEvent.Type.RPL_ENDOFWHOIS))
             {
                 // Record updated timestamp; this is the end of a WHOIS
                 stored.updated = event.time;
@@ -352,17 +359,20 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 
         import lu.meld : MeldingStrategy, meldInto;
 
-        // Store initial class and restore after meld.
-        immutable preMeldClass = stored.class_;
-
         // Meld into the stored user, and store the union in the event
         // Skip if the current stored is just a direct copy of user
-        if (!foundNoStored) user.meldInto!(MeldingStrategy.aggressive)(*stored);
-
-        if (stored.class_ == IRCUser.Class.unset)
+        if (!foundNoStored)
         {
-            // The class was not changed, restore the previously saved one
-            stored.class_ = preMeldClass;
+            // Store initial class and restore after meld.
+            immutable preMeldClass = stored.class_;
+
+            user.meldInto!(MeldingStrategy.aggressive)(*stored);
+
+            if (stored.class_ == IRCUser.Class.unset)
+            {
+                // The class was not changed, restore the previously saved one
+                stored.class_ = preMeldClass;
+            }
         }
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
@@ -480,6 +490,7 @@ void onNick(PersistenceService service, const ref IRCEvent event)
 void onWelcome(PersistenceService service)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import std.typecons : Flag, No, Yes;
     import core.thread : Fiber;
 
@@ -490,12 +501,12 @@ void onWelcome(PersistenceService service)
     {
         while (true)
         {
-            service.state.users.rehash();
+            service.state.users = service.state.users.rehash();
             delay(service, service.timeBetweenRehashes, No.msecs, Yes.yield);
         }
     }
 
-    Fiber rehashFiber = new Fiber(&periodicallyDg, 32_768);
+    Fiber rehashFiber = new Fiber(&periodicallyDg, BufferSize.fiberStack);
     delay(service, rehashFiber, service.timeBetweenRehashes);
 }
 
@@ -507,7 +518,7 @@ void onWelcome(PersistenceService service)
  +/
 void reload(PersistenceService service)
 {
-    service.state.users.rehash();
+    service.state.users = service.state.users.rehash();
     service.reloadAccountClassifiersFromDisk();
     service.reloadHostmasksFromDisk();
 }
@@ -591,7 +602,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     hostmasksJSON.load(service.hostmasksFile);
     //service.accountByUser.clear();
     service.accountByUser.populateFromJSON(hostmasksJSON);
-    service.accountByUser.rehash();
+    service.accountByUser = service.accountByUser.rehash();
 }
 
 

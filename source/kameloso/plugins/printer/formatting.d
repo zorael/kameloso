@@ -15,7 +15,6 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.plugins.common.core;
 import kameloso.irccolours;
 import dialect.defs;
 import std.range.primitives : isOutputRange;
@@ -89,28 +88,26 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.conv : to;
+    import kameloso.terminal : isAColourCode;
     import std.traits : Unqual;
 
     foreach (arg; args)
     {
         alias T = Unqual!(typeof(arg));
 
-        bool coloured;
-
-        version(Colours)
+        static if (colours && isAColourCode!T)
         {
-            import kameloso.terminal : isAColourCode;
+            bool coloured;
 
-            static if (colours && isAColourCode!T)
+            version(Colours)
             {
                 import kameloso.terminal : colourWith;
                 sink.colourWith(arg);
                 coloured = true;
             }
-        }
 
-        if (coloured) continue;
+            if (coloured) continue;
+        }
 
         static if (__traits(compiles, sink.put(T.init)) && !is(T == bool))
         {
@@ -127,6 +124,7 @@ if (isOutputRange!(Sink, char[]))
         }
         else
         {
+            import std.conv : to;
             sink.put(arg.to!string);
         }
     }
@@ -244,6 +242,7 @@ if (isOutputRange!(Sink, char[]))
 
                     default:
                         .put(sink, " [", event.sender.badges, ']');
+                        break;
                     }
                 }
             }
@@ -363,15 +362,9 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.aux.length) .put(sink, " (", event.aux, ')');
 
-    if (event.count != 0)
-    {
-        .put(sink, " {", event.count, '}');
-    }
+    if (event.count != int.min) .put(sink, " {", event.count, '}');
 
-    if (event.altcount != 0)
-    {
-        .put(sink, " {", event.altcount, '}');
-    }
+    if (event.altcount != int.min) .put(sink, " {", event.altcount, '}');
 
     if (event.num > 0)
     {
@@ -391,16 +384,13 @@ if (isOutputRange!(Sink, char[]))
     shouldBell = shouldBell || (event.errors.length && bellOnError &&
         !plugin.printerSettings.silentErrors);
 
-    if (shouldBell)
-    {
-        import kameloso.terminal : TerminalToken;
-        sink.put(plugin.bell);
-    }
+    if (shouldBell) sink.put(plugin.bell);
 }
 
 ///
 @system unittest
 {
+    import kameloso.plugins.common.core : IRCPluginState;
     import std.array : Appender;
 
     Appender!(char[]) sink;
@@ -697,6 +687,7 @@ if (isOutputRange!(Sink, char[]))
                         .put!(Yes.colours)(sink,
                             TerminalForeground(bright ? Bright.badge : Dark.badge),
                             " [", event.sender.badges, ']');
+                        break;
                     }
                 }
             }
@@ -908,13 +899,13 @@ if (isOutputRange!(Sink, char[]))
             " (", event.aux, ')');
     }
 
-    if (event.count != 0)
+    if (event.count != int.min)
     {
         sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
         .put(sink, " {", event.count, '}');
     }
 
-    if (event.altcount != 0)
+    if (event.altcount != int.min)
     {
         sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
         .put(sink, " {", event.altcount, '}');
@@ -944,11 +935,7 @@ if (isOutputRange!(Sink, char[]))
     shouldBell = shouldBell || (event.errors.length && bellOnError &&
         !plugin.printerSettings.silentErrors);
 
-    if (shouldBell)
-    {
-        import kameloso.terminal : TerminalToken;
-        sink.put(plugin.bell);
-    }
+    if (shouldBell) sink.put(plugin.bell);
 }
 
 
@@ -1348,7 +1335,10 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
     if ((pos > 0) && (haystack[pos-1].isValidNicknameCharacter ||
         (haystack[pos-1] == '.') ||  // URLs
         (haystack[pos-1] == '/')) &&  // likewise
-        (haystack[pos-1] != '@')) return false;
+        (haystack[pos-1] != '@'))
+    {
+        return false;
+    }
 
     immutable end = pos + needle.length;
 

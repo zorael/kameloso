@@ -49,6 +49,7 @@ import std.typecons : Flag, No, Yes;
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
 void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.irccolours : ircBold;
     import lu.string : nom, stripped, strippedLeft;
     import std.algorithm.comparison : among;
@@ -115,7 +116,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             saveResourceToDisk(plugin.counters, plugin.countersFile);
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, 32_768);
+        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
         plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
         break;
 
@@ -364,7 +365,7 @@ void onWelcome(CounterPlugin plugin)
     JSONStorage countersJSON;
     countersJSON.load(plugin.countersFile);
     plugin.counters.populateFromJSON(countersJSON, No.lowercaseKeys);
-    plugin.counters.rehash();
+    plugin.counters = plugin.counters.rehash();
 }
 
 

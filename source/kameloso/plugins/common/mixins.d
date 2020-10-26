@@ -64,6 +64,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
+        /// Flag denoting that `WHOISFiberDelegate` has been mixed in.
         private enum hasWHOISFiber = true;
     }
 
@@ -395,8 +396,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         import kameloso.plugins.common.delayawait : await;
+        import kameloso.constants : BufferSize;
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, BufferSize.fiberStack);
         await(context, fiber, whoisEventTypes[]);
 
         string slice = nickname;
@@ -458,7 +460,7 @@ private:
         alias messagingParent = __traits(parent, mixinSentinel);
         alias messagingParentInfo = CategoryName!messagingParent;
 
-        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
+        private enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
         static assert(0, pattern.format(messagingParentInfo.type,
             messagingParentInfo.fqn, "MessagingProxy"));
@@ -472,6 +474,7 @@ private:
     }
     else
     {
+        /// Flag denoting that `MessagingProxy` has been mixed in.
         private enum hasMessagingProxy = true;
     }
 
@@ -755,6 +758,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
     else
     {
+        /// Flag denoting that `Repeater` has been mixed in.
         private enum hasRepeater = true;
     }
 
@@ -791,9 +795,10 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         import lu.conv : Enum;
 
         logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
-            "based on WHOIS results: user is %1$s%7$s%3$s class",
+            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class",
             Tint.info, context.name, Tint.log, contextName,
-            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel), repeat.replay.caller,
+            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel),
+            repeat.replay.caller, repeat.replay.event.sender.nickname,
             Enum!(IRCUser.Class).toString(repeat.replay.event.sender.class_));
     }
 

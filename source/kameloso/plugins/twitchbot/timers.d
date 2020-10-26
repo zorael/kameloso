@@ -15,7 +15,6 @@ private:
 
 import kameloso.plugins.twitchbot.base;
 
-import kameloso.plugins.common.core;
 import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
@@ -64,6 +63,8 @@ struct TimerDefinition
 Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     const string channelName)
 {
+    import kameloso.constants : BufferSize;
+
     void dg()
     {
         import std.datetime.systime : Clock;
@@ -150,7 +151,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         }
     }
 
-    return new Fiber(&dg, 32_768);
+    return new Fiber(&dg, BufferSize.fiberStack);
 }
 
 
@@ -466,6 +467,6 @@ in (filename.length, "Tried to populate timers from an empty filename")
 
     if (errored)
     {
-        logger.warning("Errors encountered; all timers were not read.");
+        logger.warning("Errors encountered; not all timers were read.");
     }
 }

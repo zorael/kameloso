@@ -4,14 +4,14 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.094.0
+      DVersion: 2.094.1
       DSubversion:
       arch: x64
       #dubArgs:
       #Ddflags:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.094.0
+      DVersion: 2.094.1
       DSubversion:
       arch: x86
       #dubArgs:
@@ -31,7 +31,7 @@ environment:
       #dubArgs:
       #Ddflags:
     - DC: ldc
-      DVersion: 1.23.0
+      DVersion: 1.24.0
       DSubversion:
       arch: x64
       #dubArgs:

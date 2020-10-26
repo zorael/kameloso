@@ -15,7 +15,6 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.common : Tint, logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -96,6 +95,7 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
+    import kameloso.common : logger;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -413,6 +413,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
  +/
 bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 {
+    import kameloso.common : Tint, logger;
     import std.file : exists, isDir;
 
     if (logLocation.exists)
@@ -485,6 +486,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
+    import kameloso.common : logger;
     import kameloso.terminal : TerminalToken;
     import std.exception : ErrnoException;
     import std.file : FileException;
