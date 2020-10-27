@@ -239,6 +239,7 @@ if (isOutputRange!(Sink, char[]))
     }
 }
 
+/// Ditto
 alias formatObject = formatObjects;
 
 
