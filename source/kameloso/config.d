@@ -140,7 +140,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
     {
-        logger.trace("---");
+        logger.trace();
         logger.log("Edit it and make sure it contains at least one of the following:");
         giveConfigurationMinimalIntructions();
     }
@@ -342,9 +342,9 @@ void giveConfigurationMinimalIntructions()
 {
     import kameloso.common : Tint, logger;
 
-    logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
-        Tint.info, Tint.log);
-    logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
+    logger.tracef("...one or more %sadmins%s who get administrative control over the bot.",
+        Tint.info, Tint.trace);
+    logger.tracef("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.trace);
 }
 
 
