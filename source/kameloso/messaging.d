@@ -71,6 +71,7 @@ struct Message
         quiet       = 1 << 1,  /// Message should be sent without echoing it to the terminal.
         background  = 1 << 2,  /// Message should be lazily sent in the background.
         forced      = 1 << 3,  /// Message should bypass some checks.
+        priority    = 1 << 4,  /// Message should be given higher priority.
     }
 
     /++
@@ -124,6 +125,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     version(TwitchSupport)
     {
@@ -205,6 +207,7 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -349,6 +352,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     if (state.server.chantypes.contains(emoteTarget[0]))
     {
@@ -439,6 +443,7 @@ in (channel.length, "Tried to set a mode but no channel was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -500,6 +505,7 @@ in (channel.length, "Tried to set a topic but no channel was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -561,6 +567,7 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -621,6 +628,7 @@ in (channel.length, "Tried to join a channel but no channel was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -683,6 +691,7 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -744,6 +753,7 @@ in (channel.length, "Tried to part a channel but no channel was given")
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
@@ -850,6 +860,7 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
     if (force) m.properties |= Message.Property.forced;
+    if (priority) m.properties |= Message.Property.priority;
 
     version(TraceWhois)
     {
@@ -918,6 +929,7 @@ void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const str
 
     if (quiet) m.properties |= Message.Property.quiet;
     if (background) m.properties |= Message.Property.background;
+    if (priority) m.properties |= Message.Property.priority;
 
     state.mainThread.send(m);
 }
