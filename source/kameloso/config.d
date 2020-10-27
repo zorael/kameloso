@@ -157,7 +157,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     {
         logger.trace("---");
         logger.log("Edit it and make sure it contains at least one of the following:");
-        notifyAboutIncompleteConfiguration();
+        giveConfigurationMinimalIntructions();
     }
 }
 
@@ -294,6 +294,124 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         }
 
         openEditor();
+    }
+}
+
+
+// writeToDisk
+/++
+    Saves the passed configuration text to disk, with the given filename.
+
+    Optionally (and by default) adds the "kameloso" version banner at the head of it.
+
+    Example:
+    ---
+    Appender!string sink;
+    sink.serialise(client, server, settings);
+    immutable configText = sink.data.justifiedEntryValueText;
+    writeToDisk("kameloso.conf", configText, Yes.addBanner);
+    ---
+
+    Params:
+        filename = Filename of file to write to.
+        configurationText = Content to write to file.
+        banner = Whether or not to add the "kameloso bot" banner at the head of the file.
+ +/
+void writeToDisk(const string filename, const string configurationText,
+    Flag!"addBanner" banner = Yes.addBanner)
+{
+    import std.file : mkdirRecurse;
+    import std.path : dirName;
+    import std.stdio : File, writefln, writeln;
+
+    immutable dir = filename.dirName;
+    mkdirRecurse(dir);
+
+    auto file = File(filename, "w");
+
+    if (banner)
+    {
+        import kameloso.constants : KamelosoInfo;
+        import core.time : msecs;
+        import std.datetime.systime : Clock;
+
+        auto timestamp = Clock.currTime;
+        timestamp.fracSecs = 0.msecs;
+
+        file.writefln("# kameloso v%s configuration file (%s)\n",
+            cast(string)KamelosoInfo.version_, timestamp);
+    }
+
+    file.writeln(configurationText);
+}
+
+
+// giveConfigurationMinimalInstructions
+/++
+    Displays a hint on how to complete a minimal configuration file.
+
+    It assumes that the bot's `kameloso.kameloso.IRCBot.admins` and
+    `kameloso.kameloso.IRCBot.homeChannels` are both empty. (Else it should not have been called.)
+ +/
+void giveConfigurationMinimalIntructions()
+{
+    import kameloso.common : Tint, logger;
+
+    logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
+        Tint.info, Tint.log);
+    logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
+}
+
+
+// configurationText
+/++
+    Reads a configuration file into a string.
+
+    Example:
+    ---
+    string configText = "kameloso.conf".configurationText;
+    ---
+
+    Params:
+        configFile = Filename of file to read from.
+
+    Returns:
+        The contents of the supplied file.
+
+    Throws:
+        `lu.common.FileTypeMismatchException` if the configuration file is a directory, a
+        character file or any other non-file type we can't write to.
+        `lu.serialisation.ConfigurationFileReadFailureException` if the reading and decoding of
+        the configuration file failed.
+ +/
+string configurationText(const string configFile)
+{
+    import lu.common : FileTypeMismatchException;
+    import std.file : exists, getAttributes, isFile, readText;
+    import std.string : chomp;
+
+    if (!configFile.exists)
+    {
+        return string.init;
+    }
+    else if (!configFile.isFile)
+    {
+        throw new FileTypeMismatchException("Configuration file is not a file",
+            configFile, cast(ushort)getAttributes(configFile), __FILE__);
+    }
+
+    try
+    {
+        return configFile
+            .readText
+            .chomp;
+    }
+    catch (Exception e)
+    {
+        // catch Exception instead of UTFException, just in case there are more
+        // kinds of error than the normal "Invalid UTF-8 sequence".
+        throw new ConfigurationFileReadFailureException(e.msg, configFile,
+            __FILE__, __LINE__);
     }
 }
 
@@ -744,74 +862,6 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 }
 
 
-// writeToDisk
-/++
-    Saves the passed configuration text to disk, with the given filename.
-
-    Optionally (and by default) adds the "kameloso" version banner at the head of it.
-
-    Example:
-    ---
-    Appender!string sink;
-    sink.serialise(client, server, settings);
-    immutable configText = sink.data.justifiedEntryValueText;
-    writeToDisk("kameloso.conf", configText, Yes.addBanner);
-    ---
-
-    Params:
-        filename = Filename of file to write to.
-        configurationText = Content to write to file.
-        banner = Whether or not to add the "kameloso bot" banner at the head of the file.
- +/
-void writeToDisk(const string filename, const string configurationText,
-    Flag!"addBanner" banner = Yes.addBanner)
-{
-    import std.file : mkdirRecurse;
-    import std.path : dirName;
-    import std.stdio : File, writefln, writeln;
-
-    immutable dir = filename.dirName;
-    mkdirRecurse(dir);
-
-    auto file = File(filename, "w");
-
-    if (banner)
-    {
-        import kameloso.constants : KamelosoInfo;
-        import core.time : msecs;
-        import std.datetime.systime : Clock;
-
-        auto timestamp = Clock.currTime;
-        timestamp.fracSecs = 0.msecs;
-
-        file.writefln("# kameloso v%s configuration file (%s)\n",
-            cast(string)KamelosoInfo.version_, timestamp);
-    }
-
-    file.writeln(configurationText);
-}
-
-
-// notifyAboutIncompleteConfiguration
-/++
-    Displays a hint on how to complete a minimal configuration file.
-
-    It assumes that the bot's `kameloso.kameloso.IRCBot.admins` and
-    `kameloso.kameloso.IRCBot.homeChannels` are both empty. (Else it should not have been called.)
-
-    Used in both `kameloso.getopt` and `kameloso.kameloso.initBot`,
-    so place it here.
- +/
-void notifyAboutIncompleteConfiguration()
-{
-    import kameloso.common : Tint, logger;
-
-    logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
-        Tint.info, Tint.log);
-    logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
-}
-
-
 // notifyAboutMissingSettings
 /++
     Prints some information about missing configuration entries to the local terminal.
@@ -846,7 +896,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
 }
 
 
-// notifyAboutMissingConfiguration
+// notifyAboutIncompleteConfiguration
 /++
     Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
 
@@ -857,7 +907,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
         configFile = Full path to the configuration file.
         binaryPath = Full path to the current binary.
  +/
-void notifyAboutMissingConfiguration(const string configFile, const string binaryPath)
+void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
 {
     import kameloso.common : Tint, logger;
     import std.file : exists;
@@ -869,7 +919,7 @@ void notifyAboutMissingConfiguration(const string configFile, const string binar
     {
         logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
             Tint.info, configFile, Tint.log);
-        notifyAboutIncompleteConfiguration();
+        giveConfigurationMinimalIntructions();
     }
     else
     {
@@ -983,59 +1033,6 @@ unittest
     applyDefaults(client, server, bot);
 
     assert(client.nickname.length, client.nickname);
-}
-
-
-// configurationText
-/++
-    Reads a configuration file into a string.
-
-    Example:
-    ---
-    string configText = "kameloso.conf".configurationText;
-    ---
-
-    Params:
-        configFile = Filename of file to read from.
-
-    Returns:
-        The contents of the supplied file.
-
-    Throws:
-        `lu.common.FileTypeMismatchException` if the configuration file is a directory, a
-        character file or any other non-file type we can't write to.
-        `lu.serialisation.ConfigurationFileReadFailureException` if the reading and decoding of
-        the configuration file failed.
- +/
-string configurationText(const string configFile)
-{
-    import lu.common : FileTypeMismatchException;
-    import std.file : exists, getAttributes, isFile, readText;
-    import std.string : chomp;
-
-    if (!configFile.exists)
-    {
-        return string.init;
-    }
-    else if (!configFile.isFile)
-    {
-        throw new FileTypeMismatchException("Configuration file is not a file",
-            configFile, cast(ushort)getAttributes(configFile), __FILE__);
-    }
-
-    try
-    {
-        return configFile
-            .readText
-            .chomp;
-    }
-    catch (Exception e)
-    {
-        // catch Exception instead of UTFException, just in case there are more
-        // kinds of error than the normal "Invalid UTF-8 sequence".
-        throw new ConfigurationFileReadFailureException(e.msg, configFile,
-            __FILE__, __LINE__);
-    }
 }
 
 

@@ -2548,8 +2548,8 @@ int initBot(string[] args)
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {
-        import kameloso.config : notifyAboutMissingConfiguration;
-        notifyAboutMissingConfiguration(instance.settings.configFile, args[0]);
+        import kameloso.config : notifyAboutIncompleteConfiguration;
+        notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
