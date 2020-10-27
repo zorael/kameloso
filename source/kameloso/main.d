@@ -2712,15 +2712,7 @@ int initBot(string[] args)
 
         static if (__VERSION__ >= 2087L)
         {
-            static if (__VERSION__ >= 2094L)
-            {
-                immutable allocated = GC.allocatedInCurrentThread;
-            }
-            else
-            {
-                immutable allocated = stats.allocatedInCurrentThread;
-            }
-
+            immutable allocated = stats.allocatedInCurrentThread;
             logger.infof("Allocated in current thread: %s%,d%s bytes",
                 Tint.log, allocated, Tint.info);
         }
