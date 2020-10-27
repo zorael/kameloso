@@ -82,7 +82,43 @@ void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.stdio : printf;
 
-    printf("...caught signal %d!\n", sig);
+    // $ kill -l
+    static immutable char*[31] signalNames =
+    [
+        "HUP\0",
+        "INT\0",
+        "QUIT\0",
+        "ILL\0",
+        "TRAP\0",
+        "ABRT\0",
+        "BUS\0",
+        "FPE\0",
+        "KILL\0",
+        "USR1\0",
+        "SEGV\0",
+        "USR2\0",
+        "PIPE\0",
+        "ALRM\0",
+        "TERM\0",
+        "STKFLT\0",
+        "CHLD\0",
+        "CONT\0",
+        "STOP\0",
+        "TSTP\0",
+        "TTIN\0",
+        "TTOU\0",
+        "URG\0",
+        "XCPU\0",
+        "XFSZ\0",
+        "VTALRM\0",
+        "PROF\0",
+        "WINCH\0",
+        "POLL\0",
+        "PWR\0",
+        "SYS\0",
+    ];
+
+    printf("...caught signal SIG%s! (%d)\n", signalNames.ptr[sig-1], sig);
     rawAbort = true;
 
     version(Posix)
