@@ -839,7 +839,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     }
 
     logger.logf("Use %s%s --save%s to regenerate the file, " ~
-        "updating it with all available settings. [%1$s%4$s%3$s]",
+        "updating it with all available configuration. [%1$s%4$s%3$s]",
         Tint.info, binaryPath.baseName, Tint.log, configFile);
     logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
     logger.trace();
