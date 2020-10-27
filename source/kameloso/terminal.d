@@ -477,7 +477,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
         b = Reference to a blue value.
  +/
 version(Colours)
-void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
+private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureWhiteReplacement = 120;
     enum pureWhiteRange = 200;
@@ -541,7 +541,7 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
         b = Reference to a blue value.
  +/
 version(Colours)
-void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
+private void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureBlackReplacement = 120;
 
