@@ -2075,9 +2075,9 @@ void resolveResourceDirectory(ref Kameloso instance)
 
     Params:
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
-        attempt = Voldemort aggregate of state variables used when connecting.
+        attempt = `AttemptState` aggregate of state variables used when connecting.
  +/
-void startBot(Attempt)(ref Kameloso instance, ref Attempt attempt)
+void startBot(ref Kameloso instance, ref AttemptState attempt)
 {
     import kameloso.terminal : TerminalToken, isTTY;
 
@@ -2365,6 +2365,34 @@ void printSummary(const ref Kameloso instance)
 }
 
 
+/++
+    Aggregate of state values used in an execution of the program.
+ +/
+struct AttemptState
+{
+    /// Enum denoting what we should do next loop in an execution attempt.
+    Next next;
+
+    /++
+        An array for `handleGetopt` to fill by ref with custom settings
+        set on the command-line using `--set plugin.setting=value`.
+     +/
+    string[] customSettings;
+
+    /++
+        Bool whether this is the first connection attempt or if we have
+        connected at least once already.
+     +/
+    bool firstConnect = true;
+
+    /// Whether or not "Exiting..." should be printed at program exit.
+    bool silentExit;
+
+    /// Shell return value to exit with.
+    int retval;
+}
+
+
 public:
 
 
@@ -2383,31 +2411,6 @@ public:
  +/
 int initBot(string[] args)
 {
-    /// Voldemort aggregate of state variables.
-    static struct Attempt
-    {
-        /// Enum denoting what we should do next loop.
-        Next next;
-
-        /++
-            An array for `handleGetopt` to fill by ref with custom settings
-            set on the command-line using `--set plugin.setting=value`.
-         +/
-        string[] customSettings;
-
-        /++
-            Bool whether this is the first connection attempt or if we have
-            connected at least once already.
-         +/
-        bool firstConnect = true;
-
-        /// Whether or not "Exiting..." should be printed at program exit.
-        bool silentExit;
-
-        /// Shell return value to exit with.
-        int retval;
-    }
-
     static import kameloso.common;
     import kameloso.common : initLogger;
     import std.exception : ErrnoException;
@@ -2421,8 +2424,8 @@ int initBot(string[] args)
     kameloso.common.settings = &instance.settings;
     instance.abort = &rawAbort;
 
-    // Declare Attempt instance.
-    Attempt attempt;
+    // Declare AttemptState instance.
+    AttemptState attempt;
 
     // Set up `kameloso.common.settings`, expanding paths.
     expandPaths(instance.settings);
