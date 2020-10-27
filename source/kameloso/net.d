@@ -399,6 +399,8 @@ public:
 
             alias T = typeof(piece);
 
+            if (!data.length) continue;
+
             static if (isSomeString!T || hasLength!T)
             {
                 import std.algorithm.iteration : splitter;
