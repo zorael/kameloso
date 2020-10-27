@@ -51,6 +51,7 @@ void printHelp(GetoptResult results,
     const Flag!"brightTerminal" brightTerminal) @system
 {
     import kameloso.common : printVersionInfo;
+    import std.getopt : defaultGetoptPrinter;
     import std.stdio : writeln;
 
     string pre, post;
@@ -70,24 +71,8 @@ void printHelp(GetoptResult results,
     }
 
     printVersionInfo(pre, post);
-    writeln();
 
-    string headline = "Command-line arguments available:\n";
-
-    version(Colours)
-    {
-        if (!monochrome)
-        {
-            import kameloso.terminal : TerminalForeground, colour;
-
-            immutable headlineTint = brightTerminal ?
-                TerminalForeground.green : TerminalForeground.lightgreen;
-            headline = headline.colour(headlineTint);
-        }
-    }
-
-    import std.getopt : defaultGetoptPrinter;
-    defaultGetoptPrinter(headline, results.options);
+    defaultGetoptPrinter(string.init, results.options);
     writeln();
     writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.");
     writeln();
@@ -687,7 +672,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     quiet ? string.init :
                         text("Open the configuration file in a text editor " ~
                             "(or the default application used to open ", Tint.info,
-                            "*.conf", Tint.off, " files on your system"),
+                            "*.conf", Tint.off, " files on your system)"),
                     &shouldOpenEditor,
                 "version",
                     quiet ? string.init :
