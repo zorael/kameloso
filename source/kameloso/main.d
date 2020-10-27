@@ -1761,6 +1761,8 @@ Next tryConnect(ref Kameloso instance)
                 // Just let the string be empty
             }
 
+            if (*instance.abort) return Next.returnFailure;
+
             immutable pattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
                 "Connecting to [%s%s%s]:%1$s%4$s%3$s %5$s..." :
