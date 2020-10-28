@@ -337,7 +337,7 @@ For more information and help see [the wiki](https://github.com/zorael/kameloso/
 
 # Known issues
 
-Compiling in a non-`debug` build mode might fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
+Compiling in a non-`debug` build mode *may* fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
 
 ## Windows
 
@@ -375,7 +375,7 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 
 # Acknowledgements
 
-* [Kameloso](https://youtu.be/ykj3Kpm3O0g)
+* [Kamelåså](https://youtu.be/ykj3Kpm3O0g)
 * [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
