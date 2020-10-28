@@ -114,10 +114,10 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
         cast(string)KamelosoInfo.built,
         Tint.off);
 
-    writefln("$ git clone %1$s%3$s.git%2$s",
+    writefln("$ git clone %s%s.git%s",
         infotint,
-        Tint.off,
-        cast(string)KamelosoInfo.source);
+        cast(string)KamelosoInfo.source,
+        Tint.off);
 }
 
 
