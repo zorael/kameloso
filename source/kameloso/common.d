@@ -86,11 +86,6 @@ out (; (logger !is null), "Failed to initialise logger")
 kameloso.kameloso.CoreSettings* settings;
 
 
-version(Colours)
-{
-    private import kameloso.terminal : TerminalForeground;
-}
-
 // printVersionInfo
 /++
     Prints out the bot banner with the version number and GitHub URL, with the
@@ -98,49 +93,31 @@ version(Colours)
 
     Example:
     ---
-    printVersionInfo(TerminalForeground.white);
+    printVersionInfo(Yes.colours);
     ---
 
     Params:
-        colourCode = Terminal foreground colour to display the text in.
+        colours = Whether or not to tint output, default yes. A global monochrome
+            setting overrides this.
  +/
-version(Colours)
-void printVersionInfo(TerminalForeground colourCode) @system
-{
-    import kameloso.terminal : colour;
-
-    enum fgDefault = TerminalForeground.default_.colour.idup;
-    return printVersionInfo(colourCode.colour, fgDefault);
-}
-
-
-// printVersionInfo
-/++
-    Prints out the bot banner with the version number and GitHub URL, optionally
-    with passed colouring in string format. Overload that does not rely on
-    `kameloso.terminal.TerminalForeground` being available, yet takes the necessary
-    parameters to allow the other overload to reuse this one.
-
-    Example:
-    ---
-    printVersionInfo();
-    ---
-
-    Params:
-        pre = String to preface the line with, usually a colour code string.
-        post = String to end the line with, usually a resetting code string.
- +/
-void printVersionInfo(const string pre = string.init, const string post = string.init) @safe
+void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
     import kameloso.constants : KamelosoInfo;
     import std.stdio : writefln;
 
-    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
-        pre,
+    immutable logtint = colours ? Tint.log : string.init;
+    immutable infotint = colours ? Tint.info : string.init;
+
+    writefln("%skameloso IRC bot v%s, built %s%s",
+        logtint,
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
-        cast(string)KamelosoInfo.source,
-        post);
+        Tint.off);
+
+    writefln("$ git clone %1$s%3$s.git%2$s",
+        infotint,
+        Tint.off,
+        cast(string)KamelosoInfo.source);
 }
 
 

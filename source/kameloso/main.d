@@ -2551,28 +2551,11 @@ int initBot(string[] args)
         instance.conn.ssl = true;
     }
 
-    string pre, post;
-
-    version(Colours)
-    {
-        if (!instance.settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-            import kameloso.terminal : TerminalForeground, colour;
-
-            enum headertintColourBright = TerminalForeground.black.colour.idup;
-            enum headertintColourDark = TerminalForeground.white.colour.idup;
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = instance.settings.brightTerminal ? headertintColourBright : headertintColourDark;
-            post = defaulttintColour;
-        }
-    }
-
     import kameloso.common : replaceTokens, printVersionInfo;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
-    printVersionInfo(pre, post);
+    printVersionInfo();
     writeln();
 
     // Print the current settings to show what's going on.

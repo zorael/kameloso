@@ -42,35 +42,14 @@ import std.typecons : Flag, No, Yes;
 
     Params:
         results = Results from a `std.getopt.getopt` call.
-        monochrome = Whether or not terminal colours should be used.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adjusted to suit.
  +/
-void printHelp(GetoptResult results,
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" brightTerminal) @system
+void printHelp(GetoptResult results) @system
 {
     import kameloso.common : printVersionInfo;
     import std.getopt : defaultGetoptPrinter;
     import std.stdio : writeln;
 
-    string pre, post;
-
-    version(Colours)
-    {
-        import kameloso.terminal : TerminalForeground, colour;
-
-        if (!monochrome)
-        {
-            enum headertintColourBright = TerminalForeground.black.colour.idup;
-            enum headertintColourDark = TerminalForeground.white.colour.idup;
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = brightTerminal ? headertintColourBright : headertintColourDark;
-            post = defaulttintColour;
-        }
-    }
-
-    printVersionInfo(pre, post);
+    printVersionInfo();
 
     defaultGetoptPrinter(string.init, results.options);
     writeln();
@@ -107,22 +86,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     // --save was passed; write configuration to file and quit
 
-    string post;
-
-    version(Colours)
-    {
-        import kameloso.terminal : TerminalForeground;
-
-        if (!instance.settings.monochrome)
-        {
-            import kameloso.terminal : colour;
-
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            post = defaulttintColour;
-        }
-    }
-
-    printVersionInfo(Tint.log, post);
+    printVersionInfo();
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
@@ -155,35 +119,14 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
         instance = Reference to the current `kameloso.kameloso.Kameloso`.
         customSettings = Array of all the custom settings set
             via `getopt`, to apply to things before saving to disk.
-        monochrome = Whether or not terminal colours should be used.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adjusted to suit.
  +/
-void printSettings(ref Kameloso instance, const string[] customSettings,
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" brightTerminal) @system
+void printSettings(ref Kameloso instance, const string[] customSettings) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
-    string pre, post;
-
-    version(Colours)
-    {
-        import kameloso.terminal : TerminalForeground, colour;
-
-        if (!monochrome)
-        {
-            enum headertintColourBright = TerminalForeground.black.colour.idup;
-            enum headertintColourDark = TerminalForeground.white.colour.idup;
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = brightTerminal ? headertintColourBright : headertintColourDark;
-            post = defaulttintColour;
-        }
-    }
-
-    printVersionInfo(pre, post);
+    printVersionInfo();
     writeln();
 
     printObjects!(No.all)(instance.parser.client, instance.bot,
@@ -474,7 +417,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldShowVersion)
         {
             // --version was passed; show version info and quit
-            printVersionInfo();
+            printVersionInfo(No.colours);
             return Next.returnSuccess;
         }
 
@@ -759,9 +702,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             // --help|-h was passed, show the help table and quit
             // It's okay to reuse args, it's probably empty save for arg0
             // and we just want the help listing
-            printHelp(callGetopt(args, No.quiet),
-                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            printHelp(callGetopt(args, No.quiet));
             return Next.returnSuccess;
         }
 
@@ -778,9 +719,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            printSettings(instance, customSettings,
-                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            printSettings(instance, customSettings);
             return Next.returnSuccess;
         }
 
