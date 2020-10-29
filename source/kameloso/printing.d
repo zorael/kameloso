@@ -36,6 +36,8 @@ module kameloso.printing;
 private:
 
 import std.range.primitives : isOutputRange;
+import std.meta : allSatisfy;
+import std.traits : isAggregateType;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -138,6 +140,7 @@ unittest
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things)
+if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
     import kameloso.common : settings;
     import kameloso.constants : BufferSize;
@@ -222,7 +225,7 @@ alias printObject = printObjects;
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Things things)
-if (isOutputRange!(Sink, char[]))
+if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
 {
     alias widths = Widths!(all, Things);
 
@@ -264,7 +267,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
     (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing,
     const uint typewidth, const uint namewidth)
-if (isOutputRange!(Sink, char[]))
+if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
