@@ -668,4 +668,25 @@ unittest
    string members                    "foo"(3)
       int asdf                        42
 `), '\n' ~ formatted);
+
+    class ClassSettings
+    {
+        string s = "arb";
+        int i;
+        string someLongConfiguration = "acdc adcadcad acacdadc";
+        int[] arrMatey = [ 1, 2, 3, 42 ];
+
+    }
+
+    auto c = new ClassSettings;
+    c.i = 2;
+
+    immutable formattedClass = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+    assert((formattedClass ==
+`-- Class
+   string s                          "arb"(3)
+      int i                           2
+   string someLongConfiguration      "acdc adcadcad acacdadc"(22)
+    int[] arrMatey                  [1, 2, 3, 42](4)
+`), '\n' ~ formattedClass);
 }
