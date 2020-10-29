@@ -837,7 +837,7 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     import std.file : exists;
     import std.path : baseName;
 
-    logger.warning("Warning: No administrators nor home channels configured!");
+    logger.info("No administrators nor home channels configured!");
 
     if (configFile.exists)
     {
