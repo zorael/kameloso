@@ -296,7 +296,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     {
         import lu.traits : isAnnotated, isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAssociativeArray, isType;
+        import std.traits : isAggregateType, isAssociativeArray, isType;
 
         enum shouldBePrinted = all ||
             (!__traits(isDeprecated, thing.tupleof[i]) &&
@@ -394,13 +394,24 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                         member.length);
                 }
             }
-            else static if (is(T == struct) || is(T == class))
+            else static if (isAggregateType!T)
             {
-                enum classOrStruct = is(T == struct) ? "struct" : "class";
+                enum aggregateType =
+                    is(T == struct) ? "struct" :
+                    is(T == class) ? "class" :
+                    is(T == interface) ? "interface" :
+                    /*is(T == union) ?*/ "union"; //: "<error>";
 
-                immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
-                    " (init)" :
-                    string.init;
+                static if (is(T == struct))
+                {
+                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
+                        " (init)" :
+                        string.init;
+                }
+                else
+                {
+                    enum initText = string.init;
+                }
 
                 static if (coloured)
                 {
@@ -412,13 +423,13 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     sink.formattedWrite(normalPattern,
                         typeCode.colour, typewidth, T.stringof,
                         memberCode.colour, (namewidth + 2), memberstring,
-                        valueCode.colour, classOrStruct, initText);
+                        valueCode.colour, aggregateType, initText);
                 }
                 else
                 {
                     enum normalPattern = "%*s %-*s <%s>%s\n";
                     sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring, classOrStruct, initText);
+                        (namewidth + 2), memberstring, aggregateType, initText);
                 }
             }
             else
