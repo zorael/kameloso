@@ -672,13 +672,19 @@ unittest
       int asdf                        42
 `), '\n' ~ formatted);
 
+    class Nested
+    {
+        int harbl;
+        string snarbl;
+    }
+
     class ClassSettings
     {
         string s = "arb";
         int i;
         string someLongConfiguration = "acdc adcadcad acacdadc";
         int[] arrMatey = [ 1, 2, 3, 42 ];
-
+        Nested nest;
     }
 
     auto c = new ClassSettings;
@@ -691,5 +697,6 @@ unittest
       int i                           2
    string someLongConfiguration      "acdc adcadcad acacdadc"(22)
     int[] arrMatey                  [1, 2, 3, 42](4)
+   Nested nest                       <class>
 `), '\n' ~ formattedClass);
 }
