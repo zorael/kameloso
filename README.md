@@ -150,12 +150,12 @@ You can override some configured settings with arguments on the command line, li
 $ ./kameloso \
     --server irc.freenode.net \
     --nickname "kameloso" \
-    --admins "you,friend,thatguy" \
+    --admins "you,friend" \
     --homeChannels "#mychannel,#elsewhere" \
     --guestChannels "#d,##networking" \
     --save
 
-Configuration file written to /home/user/.config/kameloso/kameloso.conf
+[12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
 ```
 
 Invocations of `--save` with an existing configuration file will regenerate it. It will never overwrite your settings, only sync them with available ones. Beware however that this means it will delete any lines not corresponding to a currently *available* plugin, so any orphan sections belonging to plugins that are currently not built in will be silently removed.
