@@ -38,14 +38,16 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
 ```
 
 ```sh
-$ dub run kameloso -- --server irc.freenode.net --guestChannels "#d,#freenode"
+$ dub run kameloso -- --server irc.freenode.net --guestChannels "#d"
 
 # alternatively
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 $ dub build
-$ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
+$ ./kameloso --server irc.freenode.net --guestChannels "#d"
 ```
+
+If there's anyone talking it should show up on your screen. Add `--monochrome` to disable colours.
 
 ---
 
