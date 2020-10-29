@@ -1,7 +1,7 @@
 /++
     Various traits that are too kameloso-specific to be in `lu`.
 
-    They generally deal with lengths of struct member names, used to format
+    They generally deal with lengths of aggregate member names, used to format
     output and align columns for `kameloso.printing.printObject`.
 
     More of our homebrewn traits were deemed too generic to be in kameloso and
@@ -14,8 +14,6 @@ module kameloso.traits;
 
 private:
 
-import lu.traits : isStruct;
-import std.meta : allSatisfy;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -23,7 +21,7 @@ public:
 
 // longestMemberNameImpl
 /++
-    Gets the name of the longest member in one or more struct objects.
+    Gets the name of the longest member in one or more aggregate objects.
 
     This is used for formatting terminal output of objects, so that columns line up.
 
@@ -32,34 +30,45 @@ public:
         Things = Types to introspect and count member name lengths of.
  +/
 private template longestMemberNameImpl(Flag!"all" all, Things...)
-if ((Things.length > 0) && allSatisfy!(isStruct, Things))
+if (Things.length > 0)
 {
     enum longestMemberNameImpl = ()
     {
         import lu.traits : isAnnotated, isSerialisable;
         import lu.uda : Hidden, Unserialisable;
+        import std.traits : isAggregateType;
 
         string longest;
 
         foreach (Thing; Things)
         {
-            Thing thing;  // need a `this`
-
-            foreach (immutable i, member; thing.tupleof)
+            static if (isAggregateType!Thing)
             {
-                static if (
-                    !__traits(isDeprecated, thing.tupleof[i]) &&
-                    isSerialisable!(thing.tupleof[i]) &&
-                    !isAnnotated!(thing.tupleof[i], Hidden) &&
-                    (all || !isAnnotated!(thing.tupleof[i], Unserialisable)))
+                foreach (immutable memberstring; __traits(derivedMembers, Thing))
                 {
-                    enum name = __traits(identifier, thing.tupleof[i]);
-
-                    if (name.length > longest.length)
+                    static if (
+                        (memberstring != "this") &&
+                        (memberstring != "__ctor") &&
+                        (memberstring != "__dtor") &&
+                        !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                        isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                        !isAnnotated!(__traits(getMember, Thing, memberstring), Hidden) &&
+                        (all || !isAnnotated!(__traits(getMember, Thing, memberstring), Unserialisable)))
                     {
-                        longest = name;
+                        enum name = __traits(identifier, __traits(getMember, Thing, memberstring));
+
+                        if (name.length > longest.length)
+                        {
+                            longest = name;
+                        }
                     }
                 }
+            }
+            else
+            {
+                import std.format : format;
+                static assert(0, "Non-aggregate type `%s` passed to `longestMemberNameImpl`"
+                    .format(Thing.stringof));
             }
         }
 
@@ -112,7 +121,7 @@ unittest
 
 // longestUnserialisableMemberName
 /++
-    Gets the name of the longest member in one or more structs, including
+    Gets the name of the longest member in one or more aggregate types, including
     `lu.uda.Unserialisable` ones.
 
     This is used for formatting terminal output of objects, so that columns line up.
@@ -154,7 +163,7 @@ unittest
 
 // longestMemberTypeNameImpl
 /++
-    Gets the name of the longest type of a configurable member in one or more structs.
+    Gets the name of the longest type of a configurable member in one or more aggregate types.
 
     This is used for formatting terminal output of objects, so that columns line up.
 
@@ -163,49 +172,60 @@ unittest
         Things = Types to introspect and count member type name lengths of.
  +/
 private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
-if ((Things.length > 0) && allSatisfy!(isStruct, Things))
+if (Things.length > 0)
 {
     enum longestMemberTypeNameImpl = ()
     {
         import lu.traits : isAnnotated, isSerialisable;
         import lu.uda : Hidden, Unserialisable;
+        import std.traits : isAggregateType;
 
         string longest;
 
         foreach (Thing; Things)
         {
-            Thing thing;  // need a `this`
-
-            foreach (immutable i, member; thing.tupleof)
+            static if (isAggregateType!Thing)
             {
-                static if (
-                    !__traits(isDeprecated, thing.tupleof[i]) &&
-                    isSerialisable!(thing.tupleof[i]) &&
-                    !isAnnotated!(thing.tupleof[i], Hidden) &&
-                    (all || !isAnnotated!(thing.tupleof[i], Unserialisable)))
+                foreach (immutable memberstring; __traits(derivedMembers, Thing))
                 {
-                    import std.traits : isArray, isAssociativeArray;
-
-                    alias T = typeof(thing.tupleof[i]);
-
-                    import lu.traits : isTrulyString;
-
-                    static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
+                    static if (
+                        (memberstring != "this") &&
+                        (memberstring != "__ctor") &&
+                        (memberstring != "__dtor") &&
+                        !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                        isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                        !isAnnotated!(__traits(getMember, Thing, memberstring), Hidden) &&
+                        (all || !isAnnotated!(__traits(getMember, Thing, memberstring), Unserialisable)))
                     {
-                        import lu.traits : UnqualArray;
-                        enum typestring = UnqualArray!T.stringof;
-                    }
-                    else
-                    {
-                        import std.traits : Unqual;
-                        enum typestring = Unqual!T.stringof;
-                    }
+                        import std.traits : isArray, isAssociativeArray;
 
-                    if (typestring.length > longest.length)
-                    {
-                        longest = typestring;
+                        alias T = typeof(__traits(getMember, Thing, memberstring));
+
+                        import lu.traits : isTrulyString;
+
+                        static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
+                        {
+                            import lu.traits : UnqualArray;
+                            enum typestring = UnqualArray!T.stringof;
+                        }
+                        else
+                        {
+                            import std.traits : Unqual;
+                            enum typestring = Unqual!T.stringof;
+                        }
+
+                        if (typestring.length > longest.length)
+                        {
+                            longest = typestring;
+                        }
                     }
                 }
+            }
+            else
+            {
+                import std.format : format;
+                static assert(0, "Non-aggregate type `%s` passed to `longestMemberTypeNameImpl`"
+                    .format(Thing.stringof));
             }
         }
 
@@ -216,7 +236,7 @@ if ((Things.length > 0) && allSatisfy!(isStruct, Things))
 
 // longestMemberTypeName
 /++
-    Gets the name of the longest type of a member in one or more structs.
+    Gets the name of the longest type of a member in one or more aggregate types.
 
     This is used for formatting terminal output of configuration files, so that
     columns line up.
@@ -245,7 +265,7 @@ unittest
 
 // longestUnserialisableMemberTypeName
 /++
-    Gets the name of the longest type of a member in one or more structs.
+    Gets the name of the longest type of a member in one or more aggregate types.
 
     This is used for formatting terminal output of state objects, so that
     columns line up.
