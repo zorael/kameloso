@@ -689,7 +689,6 @@ Next mainLoop(ref Kameloso instance)
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
         immutable nowInHnsecs = Clock.currStdTime;
-        historyEntry.stopTime = nowInUnix;
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
@@ -752,6 +751,7 @@ Next mainLoop(ref Kameloso instance)
             {
             case continue_:
                 historyEntry.bytesReceived += attempt.bytesReceived;
+                historyEntry.stopTime = nowInUnix;
                 // Drop down and continue
                 break;
 
