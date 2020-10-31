@@ -23,6 +23,8 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 
 # tl;dr
 
+Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases).
+
 ```
 -n       --nickname Nickname
 -s         --server Server address [irc.freenode.net]
@@ -56,6 +58,7 @@ If there's anyone talking it should show up on your screen. Add `--monochrome` t
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
+  * [Fetching a copy of the source](#fetching-a-copy-of-the-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
@@ -89,13 +92,16 @@ There are three [D](https://dlang.org) compilers available; see [here](https://w
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
-The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
+The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories. macOS; unsure.
 
 ## Downloading
 
+Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, compile it yourself.
+
+## Fetching a copy of the source
+
 ```sh
 $ git clone https://github.com/zorael/kameloso.git
-$ cd kameloso
 ```
 
 ## Compiling
