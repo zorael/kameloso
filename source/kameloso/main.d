@@ -757,6 +757,7 @@ Next mainLoop(ref Kameloso instance)
 
             case retry:
                 // Break and try again
+                historyEntry.stopTime = nowInUnix;
                 break listenerloop;
 
             case returnSuccess:
