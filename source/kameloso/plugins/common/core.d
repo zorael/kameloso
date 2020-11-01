@@ -1904,7 +1904,7 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
     version(WithPersistenceService) {}
     else
     {
-        pragma(msg, "Warning: The Persistence service is disabled. " ~
+        pragma(msg, "Warning: The Persistence service is not compiled in. " ~
             "Event triggers may or may not work. You get to keep the pieces.");
     }
 
