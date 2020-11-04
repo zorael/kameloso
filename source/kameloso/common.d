@@ -1037,12 +1037,13 @@ struct Tint
             return string.init;
         }
 
+        alias all = log;
         alias info = log;
         alias warning = log;
         alias error = log;
         alias fatal = log;
         alias trace = log;
-        alias reset = trace;
+        alias off = log;
     }
 }
 
