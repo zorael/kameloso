@@ -24,7 +24,7 @@ package:
 // QueryResponse
 /++
     Embodies a response from a query to the Twitch servers. A string paired with
-    a millisecond count of how long the query took.
+    a millisecond count of how long the query took, and some metadata about the request.
 
     This is used instead of a `std.typecons.Tuple` because it doesn't apparently
     work with `shared`.
