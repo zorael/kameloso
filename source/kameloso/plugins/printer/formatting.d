@@ -1428,4 +1428,17 @@ unittest
     assert("kameloso.".containsNickname("kameloso"));
     assert("kameloso/".containsNickname("kameloso"));
     assert(!"/kameloso/".containsNickname("kameloso"));
+    assert(!"kamelosoooo".containsNickname("kameloso"));
+    assert("\033[1mkameloso".containsNickname("kameloso"));
+    assert("\033[2;3mkameloso".containsNickname("kameloso"));
+    assert("\033[12;34mkameloso".containsNickname("kameloso"));
+    assert(!"\033[0m0mkameloso".containsNickname("kameloso"));
+    assert(!"\033[kameloso".containsNickname("kameloso"));
+    assert(!"\033[mkameloso".containsNickname("kameloso"));
+    assert(!"\033[0kameloso".containsNickname("kameloso"));
+    assert(!"\033[0mmkameloso".containsNickname("kameloso"));
+    assert(!"\033[0;mkameloso".containsNickname("kameloso"));
+    assert("\033[12mkameloso\033[1mjoe".containsNickname("kameloso"));
+    assert(!"".containsNickname("kameloso"));
+    assert(!"0mkameloso".containsNickname("kameloso"));
 }
