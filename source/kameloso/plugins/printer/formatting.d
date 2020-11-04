@@ -1309,6 +1309,9 @@ unittest
     can be part of a nickname. This can detect a nickname in a string without
     getting false positives from similar nicknames.
 
+    Tries to detect nicknames enclosed in terminal formatting. As such, call this
+    *after* having translated IRC- to terminal such with `kameloso.irccolours.mapEffects`.
+
     Uses `std.string.indexOf` internally with hopes of being more resilient to
     weird UTF-8.
 
@@ -1323,6 +1326,7 @@ unittest
 bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
 {
+    import kameloso.terminal : TerminalToken;
     import dialect.common : isValidNicknameCharacter;
     import std.string : indexOf;
 
@@ -1331,13 +1335,61 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
     immutable pos = haystack.indexOf(needle);
     if (pos == -1) return false;
 
-    // Allow for a prepended @, since @mention is commonplace
-    if ((pos > 0) && (haystack[pos-1].isValidNicknameCharacter ||
-        (haystack[pos-1] == '.') ||  // URLs
-        (haystack[pos-1] == '/')) &&  // likewise
-        (haystack[pos-1] != '@'))
+    if (pos > 0)
     {
-        return false;
+        import std.algorithm.searching : canFind;
+
+        if ((pos >= 4) && (haystack[pos-1] == 'm'))
+        {
+            import std.algorithm.comparison : min;
+            import std.ascii : isDigit;
+
+            bool previousWasNumber;
+            bool previousWasBracket;
+
+            foreach_reverse (immutable i, immutable c; haystack[pos-min(8, pos)..pos-1])
+            {
+                if (c.isDigit)
+                {
+                    if (previousWasBracket) return false;
+                    previousWasNumber = true;
+                }
+                else if (c == ';')
+                {
+                    if (!previousWasNumber) return false;
+                    previousWasNumber = false;
+                }
+                else if (c == '[')
+                {
+                    if (!previousWasNumber) return false;
+                    previousWasNumber = false;
+                    previousWasBracket = true;
+                }
+                else if (c == TerminalToken.format)
+                {
+                    if (!previousWasBracket) return false;
+
+                    // Seems valid, drop down
+                    break;
+                }
+                else
+                {
+                    // Invalid character
+                    return false;
+                }
+            }
+        }
+        else if (haystack[pos-1] == '@')
+        {
+            // "@kameloso"
+        }
+        else if (haystack[pos-1].isValidNicknameCharacter ||
+            (haystack[pos-1] == '.') ||
+            (haystack[pos-1] == '/'))
+        {
+            // URL or run-on word
+            return false;
+        }
     }
 
     immutable end = pos + needle.length;
@@ -1351,7 +1403,15 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
         return true;
     }
 
-    return !haystack[end].isValidNicknameCharacter;
+    if (haystack[end] == TerminalToken.format)
+    {
+        // Run-on formatted word
+        return true;
+    }
+    else
+    {
+        return !haystack[end].isValidNicknameCharacter;
+    }
 }
 
 ///
