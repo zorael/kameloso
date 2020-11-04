@@ -114,8 +114,7 @@ configuration "dev" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainRepeat" \
-        "ProfileGC"
+        "ExplainRepeat"
         //"TraceWhois" \
 }
 
@@ -129,8 +128,7 @@ configuration "dev-lowmem" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainRepeat" \
-        "ProfileGC"
+        "ExplainRepeat"
         //"TraceWhois" \
 }
 
@@ -142,6 +140,7 @@ configuration "unittest" {
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
+        "OmniscientQueries" \
         "PrintStacktraces" \
         "ExplainRepeat" \
         "ProfileGC"
@@ -156,6 +155,7 @@ configuration "unittest-lowmem" {
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
+        "OmniscientQueries" \
         "PrintStacktraces" \
         "ExplainRepeat" \
         "ProfileGC"
