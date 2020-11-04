@@ -1338,47 +1338,56 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
 
     if (pos > 0)
     {
-        import std.algorithm.searching : canFind;
+        bool match;
 
-        if ((pos >= 4) && (haystack[pos-1] == 'm'))
+        version(Colours)
         {
-            import std.algorithm.comparison : min;
-            import std.ascii : isDigit;
-
-            bool previousWasNumber;
-            bool previousWasBracket;
-
-            foreach_reverse (immutable i, immutable c; haystack[pos-min(8, pos)..pos-1])
+            if ((pos >= 4) && (haystack[pos-1] == 'm'))
             {
-                if (c.isDigit)
-                {
-                    if (previousWasBracket) return false;
-                    previousWasNumber = true;
-                }
-                else if (c == ';')
-                {
-                    if (!previousWasNumber) return false;
-                    previousWasNumber = false;
-                }
-                else if (c == '[')
-                {
-                    if (!previousWasNumber) return false;
-                    previousWasNumber = false;
-                    previousWasBracket = true;
-                }
-                else if (c == TerminalToken.format)
-                {
-                    if (!previousWasBracket) return false;
+                import std.algorithm.comparison : min;
+                import std.ascii : isDigit;
 
-                    // Seems valid, drop down
-                    break;
-                }
-                else
+                bool previousWasNumber;
+                bool previousWasBracket;
+
+                foreach_reverse (immutable i, immutable c; haystack[pos-min(8, pos)..pos-1])
                 {
-                    // Invalid character
-                    return false;
+                    if (c.isDigit)
+                    {
+                        if (previousWasBracket) return false;
+                        previousWasNumber = true;
+                    }
+                    else if (c == ';')
+                    {
+                        if (!previousWasNumber) return false;
+                        previousWasNumber = false;
+                    }
+                    else if (c == '[')
+                    {
+                        if (!previousWasNumber) return false;
+                        previousWasNumber = false;
+                        previousWasBracket = true;
+                    }
+                    else if (c == TerminalToken.format)
+                    {
+                        if (!previousWasBracket) return false;
+
+                        // Seems valid, drop down
+                        match = true;
+                        break;
+                    }
+                    else
+                    {
+                        // Invalid character
+                        return false;
+                    }
                 }
             }
+        }
+
+        if (match)
+        {
+            // The above found a formatted nickname
         }
         else if (haystack[pos-1] == '@')
         {
