@@ -88,18 +88,19 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.terminal : isAColourCode;
     import std.traits : Unqual;
 
     foreach (arg; args)
     {
         alias T = Unqual!(typeof(arg));
 
-        static if (colours && isAColourCode!T)
+        version(Colours)
         {
+            import kameloso.terminal : isAColourCode;
+
             bool coloured;
 
-            version(Colours)
+            static if (colours && isAColourCode!T)
             {
                 import kameloso.terminal : colourWith;
                 sink.colourWith(arg);
