@@ -4,10 +4,10 @@
 
 ## Current functionality includes:
 
-* bedazzling coloured terminal output like it's the 90s
+* bedazzling coloured chat monitoring like it's the 90s
 * automatic mode sets (e.g. auto `+o` on join)
 * logs
-* fetching and echoing titles of pasted URLs
+* reporting titles of pasted URLs
 * **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
 * channel polls
@@ -110,7 +110,7 @@ $ git clone https://github.com/zorael/kameloso.git
 $ dub build
 ```
 
-This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+This will compile the bot in the default *debug* mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in *release* mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
 See the [known issues](#known-issues) section for compilation caveats.
 
@@ -122,7 +122,7 @@ There are several configurations in which the bot may be built.
 * `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
-All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of raising compilation times, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
+All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -130,13 +130,13 @@ List configurations with `dub build --print-configs`. You can specify which to c
 $ dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from a line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the "service" plugins may break the bot in subtle ways.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from a line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the "*service*" plugins may break the bot in subtle ways.
 
 # How to use
 
 ## Configuration
 
-The bot needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these accounts you can either specify them on the command line, or generate a configuration file and input them there.
+The bot preferably needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these accounts you can either specify them on the command line, or generate a configuration file and input them there.
 
 ```sh
 $ ./kameloso --save
@@ -145,14 +145,14 @@ $ ./kameloso --save
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 * **Linux** and other Posix: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
-* **macOS**: `$HOME/Library/Application Support/kameloso`
 * **Windows**: `%APPDATA%\kameloso`
+* **macOS**: `$HOME/Library/Application Support/kameloso`
 
 Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can do so by passing `--edit`.
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--save`, it will apply these changes to the configuration file without having to manually edit it.
+You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--save`, it will apply these changes to your configuration file in-place.
 
 ```sh
 $ ./kameloso \
@@ -166,11 +166,11 @@ $ ./kameloso \
 [12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Invocations of `--save` with an existing configuration file will regenerate it. It will never overwrite your settings, only sync them with available ones. Beware however that this means it will delete any lines not corresponding to a currently *available* plugin, so any orphan sections belonging to plugins that are currently not built in will be silently removed.
+Settings not specified at invocations of `--save` will keep their values. Mind that invalid and/or commented-out entries are silently removed.
 
 ### Display settings
 
-If you have a bright terminal background, the colours may be hard to see and the text difficult to read, depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
+If you have a bright terminal background, text may be difficult to read, depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
