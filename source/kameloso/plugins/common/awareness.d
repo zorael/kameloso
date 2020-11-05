@@ -160,7 +160,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     `dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS` is also handled, to
     cover the case where a user without an account triggering
     `kameloso.plugins.common.core.PrivilegeLevel.anyone`- or
-    `kameloso.plugins.common.core.PrivilegeLevel.ignored`-level commands.
+    `kameloso.plugins.common.core.PrivilegeLevel.ignore`-level commands.
 
     This function was part of `UserAwareness` but triggering queued replays
     is too common to conflate with it.
