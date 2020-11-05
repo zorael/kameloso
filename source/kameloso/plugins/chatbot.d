@@ -122,7 +122,7 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 /++
     Fetch a random or specified `bash.org` quote.
 
-    Defers to the `worker` subthread.
+    Defers to the $(REF worker) subthread.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -148,10 +148,10 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     Supposed to be run in its own, short-lived thread.
 
     Params:
-        sState = A `shared` `kameloso.plugins.common.core.IRCPluginState` containing
+        sState = A `shared` $(REF kameloso.plugins.common.core.IRCPluginState) containing
             necessary information to pass messages to send messages to the main
             thread, to send text to the server or display text on the screen.
-        event = The `dialect.defs.IRCEvent` in flight.
+        event = The $(REF dialect.defs.IRCEvent) in flight.
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
  +/

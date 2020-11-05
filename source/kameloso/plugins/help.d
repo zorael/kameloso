@@ -39,19 +39,19 @@ import dialect.defs;
     Sends a list of all plugins' commands to the requesting user.
 
     Plugins don't know about other plugins; the only thing they know of the
-    outside world is the thread ID of the main thread `mainThread` (stored in
-    `kameloso.plugins.common.core.IRCPluginState`). As such, we can't easily query
-    each plugin for their `kameloso.plugins.common.core.BotCommand`-annotated functions.
+    outside world is the thread ID of the main thread ID (stored in
+    $(REF kameloso.plugins.common.core.IRCPluginState,mainThread)). As such, we can't easily query
+    each plugin for their $(REF kameloso.plugins.common.core.BotCommand)-annotated functions.
 
-    To work around this we construct a
-    `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin[])` and send it
+    To work around this we construct an array of
+    `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin)`s and send it
     to the main thread. It will attach the client-global `plugins` array of
-    `kameloso.plugins.common.core.IRCPlugin`s to it, and invoke the Fiber.
+    $(REF kameloso.plugins.common.core.IRCPlugin)s to it, and invoke the Fiber.
     The delegate inside will then process the list as if it had taken the array
     as an argument.
 
     Once we have the list we format it nicely and send it back to the requester,
-    which we remember since we saved the original `dialect.defs.IRCEvent`.
+    which we remember since we saved the original $(REF dialect.defs.IRCEvent).
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -244,11 +244,11 @@ void onCommandHelp(HelpPlugin plugin, const ref IRCEvent event)
     Sends the help text for a command to the querying channel or user.
 
     Params:
-        plugin = The current `HelpPlugin`.
+        plugin = The current $(REF HelpPlugin).
         otherPlugin = The plugin that hosts the command we're to send the help text for.
-        event = The triggering `dialect.defs.IRCEvent`.
+        event = The triggering $(REF dialect.defs.IRCEvent).
         command = String of the command we're to send help text for (sans prefix).
-        description = The `kameloso.plugins.common.core.Description` that anotates
+        description = The $(REF kameloso.plugins.common.core.Description) that anotates
             the command's function.
  +/
 void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,

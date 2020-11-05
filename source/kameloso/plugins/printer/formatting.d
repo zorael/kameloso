@@ -2,8 +2,8 @@
     Implementation of Printer plugin functionality that concerns formatting.
     For internal use.
 
-    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
-    as the `kameloso.plugins.printer.base.PrinterPlugin`, but these implementation
+    The $(REF dialect.defs.IRCEvent)-annotated handlers must be in the same module
+    as the $(REF kameloso.plugins.printer.base.PrinterPlugin), but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.formatting;
@@ -156,15 +156,15 @@ unittest
 
 // formatMessageMonochrome
 /++
-    Formats an `dialect.defs.IRCEvent` into an output range sink, in monochrome.
+    Formats an $(REF dialect.defs.IRCEvent) into an output range sink, in monochrome.
 
     It formats the timestamp, the type of the event, the sender or sender alias,
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
-        sink = Output range to format the `dialect.defs.IRCEvent` into.
-        event = The `dialect.defs.IRCEvent` that is to be formatted.
+        plugin = Current $(REF kameloso.plugins.printer.base.PrinterPlugin).
+        sink = Output range to format the $(REF dialect.defs.IRCEvent) into.
+        event = The $(REF dialect.defs.IRCEvent) that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -473,16 +473,16 @@ if (isOutputRange!(Sink, char[]))
 
 // formatMessageColoured
 /++
-    Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
+    Formats an $(REF dialect.defs.IRCEvent) into an output range sink, coloured.
 
     It formats the timestamp, the type of the event, the sender or the sender's
     display name, the channel or target, the content body, as well as auxiliary
     information and numbers.
 
     Params:
-        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
-        sink = Output range to format the `dialect.defs.IRCEvent` into.
-        event = The `dialect.defs.IRCEvent` that is to be formatted.
+        plugin = Current $(REF kameloso.plugins.printer.base.PrinterPlugin).
+        sink = Output range to format the $(REF dialect.defs.IRCEvent) into.
+        event = The $(REF dialect.defs.IRCEvent) that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -943,10 +943,10 @@ if (isOutputRange!(Sink, char[]))
 // withoutTypePrefix
 /++
     Slices away any type prefixes from the string of a
-    `dialect.defs.IRCEvent.Type`.
+    $(REF dialect.defs.IRCEvent.Type).
 
-    Only for shared use in `formatMessageMonochrome` and
-    `formatMessageColoured`.
+    Only for shared use in $(REF formatMessageMonochrome) and
+    $(REF formatMessageColoured).
 
     Example:
     ---
@@ -961,7 +961,7 @@ if (isOutputRange!(Sink, char[]))
     ---
 
     Params:
-        typestring = The string form of a `dialect.defs.IRCEvent.Type`.
+        typestring = The string form of a $(REF dialect.defs.IRCEvent.Type).
 
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
@@ -1018,12 +1018,12 @@ unittest
 // highlightEmotes
 /++
     Tints emote strings and highlights Twitch emotes in a ref
-    `dialect.defs.IRCEvent`'s `content` member.
+    $(REF dialect.defs.IRCEvent)'s `content` member.
 
-    Wraps `highlightEmotesImpl`.
+    Wraps $(REF highlightEmotesImpl).
 
     Params:
-        event = `dialect.defs.IRCEvent` whose content text to highlight.
+        event = $(REF dialect.defs.IRCEvent) whose content text to highlight.
         colourful = Whether or not emotes should be highlit in colours.
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adapted to suit.
@@ -1311,9 +1311,9 @@ unittest
     getting false positives from similar nicknames.
 
     Tries to detect nicknames enclosed in terminal formatting. As such, call this
-    *after* having translated IRC- to terminal such with `kameloso.irccolours.mapEffects`.
+    *after* having translated IRC- to terminal such with $(REF kameloso.irccolours.mapEffects).
 
-    Uses `std.string.indexOf` internally with hopes of being more resilient to
+    Uses $(REF std.string.indexOf) internally with hopes of being more resilient to
     weird UTF-8.
 
     Params:

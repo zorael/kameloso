@@ -1,8 +1,8 @@
 /++
     Implementation of Twitch bot timers. For internal use.
 
-    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
-    as the `kameloso.plugins.twitchbot.TwitchBotPlugin`, but these implementation
+    The $(REF dialect.defs.IRCEvent)-annotated handlers must be in the same module
+    as the $(REF kameloso.plugins.twitchbot.TwitchBotPlugin), but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.twitchbot.timers;
@@ -52,11 +52,11 @@ struct TimerDefinition
 
 // createTimerFiber
 /++
-    Given a `TimerDefinition` and a string channel name, creates a
-    `core.thread.fiber.Fiber` that implements the timer.
+    Given a $(REF TimerDefinition) and a string channel name, creates a
+    $(REF core.thread.fiber.Fiber) that implements the timer.
 
     Params:
-        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
+        plugin = The current $(REF kameloso.plugins.twitchbot.base.TwitchBotPlugin).
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
@@ -160,8 +160,8 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
     Adds, deletes, lists or clears timers for the specified target channel.
 
     Params:
-        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
-        event = The triggering `dialect.defs.IRCEvent`.
+        plugin = The current $(REF kameloso.plugins.twitchbot.base.TwitchBotPlugin).
+        event = The triggering $(REF dialect.defs.IRCEvent).
         targetChannel = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
@@ -365,11 +365,11 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
 // timerDefsToJSON
 /++
-    Expresses the `FiberDefinition` associative array
-    (`kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel`)
+    Expresses the $(REF FiberDefinition) associative array
+    ($(REF kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel))
     in JSON form, for easier saving to and loading from disk.
 
-    Using `std.json.JSONValue` directly fails with an error.
+    Using $(REF std.json.JSONValue) directly fails with an error.
  +/
 JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 {
@@ -408,14 +408,14 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // populateTimers
 /++
-    Populates the `kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel`
+    Populates the $(REF kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel)
     associative array with the timer definitions in the passed JSON file.
 
-    This reads the JSON values from disk and creates the `TimerDefinition`s
+    This reads the JSON values from disk and creates the $(REF TimerDefinition)s
     appropriately.
 
     Params:
-        plugin = The current `kameloso.plugins.twitchbot.base.TwitchBotPlugin`.
+        plugin = The current $(REF kameloso.plugins.twitchbot.base.TwitchBotPlugin).
         filename = Filename of the JSON file to read definitions from.
  +/
 void populateTimers(TwitchBotPlugin plugin, const string filename)

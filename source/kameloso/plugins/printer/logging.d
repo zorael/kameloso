@@ -2,8 +2,8 @@
     Implementation of Printer plugin functionality that concerns logging.
     For internal use.
 
-    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
-    as the `kameloso.plugins.admin.AdminPlugin`, but these implementation
+    The $(REF dialect.defs.IRCEvent)-annotated handlers must be in the same module
+    as the $(REF kameloso.plugins.admin.base.AdminPlugin), but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.logging;
@@ -25,9 +25,9 @@ package:
 /++
     A struct containing lines to write to a log file when next committing such.
 
-    This is only relevant if `kameloso.plugins.printer.base.PrinterSettings.bufferedWrites` is set.
+    This is only relevant if $(REF kameloso.plugins.printer.base.PrinterSettings.bufferedWrites) is set.
 
-    As a micro-optimisation an `std.array.Appender` is used to store the lines,
+    As a micro-optimisation an $(REF std.array.Appender) is used to store the lines,
     instead of a normal `string[]`.
  +/
 struct LogLineBuffer
@@ -44,11 +44,11 @@ public:
     /// Fully qualified filename this buffer will be saved to.
     string file;
 
-    /// Buffered lines that will be saved to `file`, in `dir`.
+    /// Buffered lines that will be saved to $(REF file), in $(REF dir).
     Appender!(string[]) lines;
 
     /++
-        Constructor taking a `std.datetime.sytime.SysTime`, to save as the date
+        Constructor taking a $(REF std.datetime.sytime.SysTime), to save as the date
         the buffer was created.
      +/
     this(const string dir, const SysTime now)
@@ -66,7 +66,7 @@ public:
     }
 
     /++
-        Constructor not taking a `std.datetime.sytime.SysTime`, for use with
+        Constructor not taking a $(REF std.datetime.sytime.SysTime), for use with
         buffers that should not be dated, such as the error log and the raw log.
      +/
     this(const string dir, const string filename)
@@ -81,11 +81,11 @@ public:
 /++
     Logs an event to disk.
 
-    It is set to `kameloso.plugins.common.core.ChannelPolicy.any`, and configuration
+    It is set to $(REF kameloso.plugins.common.core.ChannelPolicy.any), and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 
-    Lines will either be saved immediately to disk, opening a `std.stdio.File`
+    Lines will either be saved immediately to disk, opening a $(REF std.stdio.File)
     with appending privileges for each event as they occur, or buffered by
     populating arrays of lines to be written in bulk, once in a while.
 
@@ -405,7 +405,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     ---
 
     Params:
-        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
+        plugin = The current $(REF kameloso.plugins.printer.base.PrinterPlugin).
         logLocation = String of the location directory we want to store logs in.
 
     Returns:
@@ -446,10 +446,10 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 /++
     Writes all buffered log lines to disk.
 
-    Merely wraps `commitLog` by iterating over all buffers and invoking it.
+    Merely wraps $(REF commitLog) by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
+        plugin = The current $(REF kameloso.plugins.printer.base.PrinterPlugin).
 
     See_Also:
         commitLog
@@ -478,8 +478,8 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
-        plugin = The current `kameloso.plugins.printer.base.PrinterPlugin`.
-        buffer = `LogLineBuffer` whose lines to commit to disk.
+        plugin = The current $(REF kameloso.plugins.printer.base.PrinterPlugin).
+        buffer = $(REF LogLineBuffer) whose lines to commit to disk.
 
     See_Also:
         commitAllLogsImpl

@@ -210,7 +210,7 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
 unittest
 {
     // Ensure onCTCPs implement cases for all its annotated
-    // `dialect.defs.IRCEvent.Type`s.
+    // $(REF dialect.defs.IRCEvent.Type)s.
     import std.traits : getUDAs;
 
     IRCPluginState state;
@@ -307,7 +307,7 @@ final class CTCPService : IRCPlugin
 private:
     // isEnabled
     /++
-        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
+        Override $(REF kameloso.plugins.common.core.IRCPluginImpl.isEnabled) and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:

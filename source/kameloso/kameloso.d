@@ -1,5 +1,5 @@
 /++
-    Module for the main `Kameloso` instance struct and its settings structs.
+    Module for the main $(REF Kameloso) instance struct and its settings structs.
  +/
 module kameloso.kameloso;
 
@@ -60,14 +60,14 @@ private:
 
 public:
     /++
-        The `kameloso.net.Connection` that houses and wraps the socket we use to connect
+        The $(REF kameloso.net.Connection) that houses and wraps the socket we use to connect
         to, write to and read from the server.
      +/
     Connection conn;
 
     /++
         A runtime array of all plugins. We iterate these when we have finished
-        parsing an `dialect.defs.IRCEvent`, and call the relevant event
+        parsing an $(REF dialect.defs.IRCEvent), and call the relevant event
         handlers of each.
      +/
     IRCPlugin[] plugins;
@@ -159,10 +159,10 @@ public:
         lines are to be sent at once.
 
         Params:
-            Buffer = Buffer type, generally `lu.container.Buffer`.
+            Buffer = Buffer type, generally $(REF lu.container.Buffer).
             buffer = Buffer instance.
             dryRun = Whether or not to send anything or just do a dry run,
-                incrementing the graph by `Throttle.increment`.
+                incrementing the graph by $(REF Throttle.increment).
             sendFaster = On Twitch, whether or not we should throttle less and
                 send messages faster. Useful in some situations when rate-limiting
                 is more lax.
@@ -276,7 +276,7 @@ public:
                 of unexpected configuration entries that did not belong.
 
         Throws:
-            `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
+            $(REF kameloso.plugins.common.IRCPluginSettingsException) on failure to apply custom settings.
      +/
     void initPlugins(const string[] customSettings,
         out string[][string] missingEntries,
@@ -299,7 +299,7 @@ public:
         state.abort = abort;
 
         // Instantiate all plugin classes found when introspecting the modules
-        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
+        // listed in the $(REF kameloso.plugins.PluginModules) AliasSeq.
 
         plugins.reserve(PluginModules.length);
 
@@ -377,7 +377,7 @@ public:
     // initPlugins
     /++
         Resets and *minimally* initialises all plugins. Merely wraps the other
-        `initPlugins` overload and distinguishes itself from it by not taking
+        $(REF initPlugins) overload and distinguishes itself from it by not taking
         the two `string[][string]` out parameters it does.
 
         Params:
@@ -395,7 +395,7 @@ public:
     /++
         Initialises all plugins' resource files.
 
-        This merely calls `kameloso.plugins.common.core.IRCPlugin.initResources` on
+        This merely calls $(REF kameloso.plugins.common.core.IRCPlugin.initResources) on
         each plugin.
      +/
     void initPluginResources() @system
@@ -464,8 +464,8 @@ public:
         Start all plugins, loading any resources they may want and calling any
         module-level `start` functions.
 
-        This has to happen after `initPlugins` or there will not be any plugins
-        in the `plugins` array.
+        This has to happen after $(REF initPlugins) or there will not be any plugins
+        in the $(REF plugins) array.
      +/
     void startPlugins() @system
     {
@@ -480,10 +480,10 @@ public:
     // checkPluginForUpdates
     /++
         Propagates updated bots, clients, servers and/or settings, to `this`,
-        `parser`, and to all plugins.
+        $(REF parser), and to all plugins.
 
         Params:
-            plugin = The plugin whose `kameloso.plugin.common.core.IRCPluginState`s
+            plugin = The plugin whose $(REF kameloso.plugin.common.core.IRCPluginState)s
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
@@ -523,8 +523,8 @@ public:
 
     // propagate
     /++
-        Propgates an updated struct, to `this`, `parser`, and to each plugins'
-        `kameloso.plugin.common.core.IRCPluginState`s, overwriting existing such.
+        Propgates an updated struct, to `this`, $(REF parser), and to each plugins'
+        $(REF kameloso.plugin.common.core.IRCPluginState)s, overwriting existing such.
 
         Params:
             thing = Struct object to propagate.

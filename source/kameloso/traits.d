@@ -1,11 +1,11 @@
 /++
-    Various traits that are too kameloso-specific to be in `lu`.
+    Various traits that are too kameloso-specific to be in $(REF lu).
 
     They generally deal with lengths of aggregate member names, used to format
-    output and align columns for `kameloso.printing.printObject`.
+    output and align columns for $(REF kameloso.printing.printObject).
 
     More of our homebrewn traits were deemed too generic to be in kameloso and
-    were moved to `lu.traits` instead.
+    were moved to $(REF lu.traits) instead.
 
     See_Also:
         https://github.com/zorael/lu/blob/master/source/lu/traits.d
@@ -122,7 +122,7 @@ unittest
 // longestUnserialisableMemberName
 /++
     Gets the name of the longest member in one or more aggregate types, including
-    `lu.uda.Unserialisable` ones.
+    $(REF lu.uda.Unserialisable) ones.
 
     This is used for formatting terminal output of objects, so that columns line up.
 

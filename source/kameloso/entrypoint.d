@@ -73,7 +73,7 @@ else
     /++
         Entry point of the program.
 
-        Technically it just passes on execution to `kameloso.main.initBot`.
+        Technically it just passes on execution to $(REF kameloso.main.initBot).
 
         Params:
             args = Command-line arguments passed to the program.

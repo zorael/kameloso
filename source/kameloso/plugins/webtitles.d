@@ -72,7 +72,7 @@ struct TitleLookupRequest
     /// The context state of the requesting plugin instance.
     IRCPluginState state;
 
-    /// The `dialect.defs.IRCEvent` that instigated the lookup.
+    /// The $(REF dialect.defs.IRCEvent) that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.
@@ -87,7 +87,7 @@ struct TitleLookupRequest
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+    It uses a simple state machine in $(REF kameloso.common.findURLs) to exhaustively
     try to look up every URL returned by it.
  +/
 @Terminating
@@ -194,9 +194,9 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     Worker to be run in its own thread.
 
     Params:
-        sRequest = Shared `TitleLookupRequest` aggregate with all the state and
+        sRequest = Shared $(REF TitleLookupRequest) aggregate with all the state and
             context needed to look up a URL and report the results to the local terminal.
-        cache = Shared cache of previous `TitleLookupRequest`s.
+        cache = Shared cache of previous $(REF TitleLookupRequest)s.
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
         colouredFlag = Flag of whether or not to send coloured output to the server.
@@ -354,9 +354,9 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         url = URL string to look up.
 
     Returns:
-        A finished `TitleLookupResults`.
+        A finished $(REF TitleLookupResults).
 
-    Throws: `object.Exception` if URL could not be fetched, or if no title could be
+    Throws: $(REF object.Exception) if URL could not be fetched, or if no title could be
         divined from it.
  +/
 TitleLookupResults lookupTitle(const string url)
@@ -421,7 +421,7 @@ TitleLookupResults lookupTitle(const string url)
     Echoes the result of a web title lookup to a channel.
 
     Params:
-        request = A `TitleLookupRequest` containing the results of the lookup.
+        request = A $(REF TitleLookupRequest) containing the results of the lookup.
         colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void reportTitle(TitleLookupRequest request,
@@ -452,7 +452,7 @@ void reportTitle(TitleLookupRequest request,
     Echoes the result of a YouTube lookup to a channel.
 
     Params:
-        request = A `TitleLookupRequest` containing the results of the lookup.
+        request = A $(REF TitleLookupRequest) containing the results of the lookup.
         colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void reportYouTubeTitle(TitleLookupRequest request,
@@ -536,11 +536,11 @@ unittest
         url = A YouTube video link string.
 
     Returns:
-        A `std.json.JSONValue` with fields describing the looked-up video.
+        A $(REF std.json.JSONValue) with fields describing the looked-up video.
 
     Throws:
-        `core.Exception` if the YouTube ID was invalid and could not be queried.
-        `std.json.JSONException` if the JSON response could not be parsed.
+        $(REF core.Exception) if the YouTube ID was invalid and could not be queried.
+        $(REF std.json.JSONException) if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
 {
@@ -634,7 +634,7 @@ unittest
     Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
 
     Params:
-        cache = Cache of previous `TitleLookupResults`, `shared` so that it can
+        cache = Cache of previous $(REF TitleLookupResults), `shared` so that it can
             be reused in further lookup (other threads).
         expireSeconds = After how many seconds a cached entry is considered to
             have expired and should no longer be used as a valid entry.
@@ -680,7 +680,7 @@ import kameloso.thread : Sendable;
     links, so gate it behind version TwitchBotPlugin.
 
     Params:
-        plugin = The current `WebtitlesPlugin`.
+        plugin = The current $(REF WebtitlesPlugin).
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -740,9 +740,9 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
+        Override $(REF kameloso.plugins.common.core.IRCPluginImpl.isEnabled) and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when `webtitlesSettings.enabled` is false.
+        to doing nothing when $(REF WebtitlesSettings.enabled) is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.

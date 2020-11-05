@@ -1,10 +1,10 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes `core.thread.fiber.Fiber`s that help with resolving the address of,
+    Includes $(REF core.thread.fiber.Fiber)s that help with resolving the address of,
     connecting to, and reading full string lines from a server.
 
-    Having them as `core.thread.fiber.Fiber`s means a program can do address resolution,
+    Having them as $(REF core.thread.fiber.Fiber)s means a program can do address resolution,
     connecting and reading while retaining the ability to do other stuff
     concurrently. This means you can conveniently run code inbetween each
     connection attempt, for instance, without breaking the program's flow.
@@ -101,18 +101,18 @@ private:
     SSL_CTX* sslContext;
 
     /++
-        OpenSSL `SSL` instance, for use with SSL connections.
+        OpenSSL $(REF requests.ssl_adapter.SSL) instance, for use with SSL connections.
      +/
     SSL* sslInstance;
 
 
     // setTimemout
     /++
-        Sets the `std.socket.SocketOption.RCVTIMEO` of the *current*
-        `std.socket.Socket` `socket` to the specified duration.
+        Sets the $(REF std.socket.SocketOption.RCVTIMEO) of the *current*
+        $(REF std.socket.Socket) $(REF socket) to the specified duration.
 
         Params:
-            option = The `std.socket.SocketOption` to set.
+            option = The $(REF std.socket.SocketOption) to set.
             dur = The duration to assign for the option, in number of milliseconds.
      +/
     void setTimeout(const SocketOption option, const uint dur)
@@ -129,21 +129,21 @@ private:
 
 public:
     /++
-        Pointer to the socket of the `std.socket.AddressFamily` we want to connect with.
+        Pointer to the socket of the $(REF std.socket.AddressFamily) we want to connect with.
      +/
     Socket socket;
 
     /++
-        Whether or not this `Connection` should use SSL when sending and receiving.
+        Whether or not this $(REF Connection) should use SSL when sending and receiving.
      +/
     bool ssl;
 
-    /// IPs already resolved using `kameloso.net.resolveFiber`.
+    /// IPs already resolved using $(REF kameloso.net.resolveFiber).
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current `socket`. This successfully
-        proxies to `std.socket.Socket.receive`.
+        Implicitly proxies calls to the current $(REF std.socket.Socket). This successfully
+        proxies to $(REF std.socket.Socket.receive).
      +/
     alias socket this;
 
@@ -168,7 +168,7 @@ public:
         Accessor; returns the current send timeout.
 
         Returns:
-            A copy of `privateSendTimeout`.
+            A copy of $(REF privateSendTimeout).
      +/
     pragma(inline, true)
     uint sendTimeout() const @property pure @nogc nothrow
@@ -196,7 +196,7 @@ public:
         Accessor; returns the current receive timeout.
 
         Returns:
-            A copy of `privateReceiveTimeout`.
+            A copy of $(REF privateReceiveTimeout).
      +/
     pragma(inline, true)
     uint receiveTimeout() const @property pure @nogc nothrow
@@ -250,7 +250,7 @@ public:
 
     // resetSSL
     /++
-        Resets the SSL context and resources of this `Connection`.
+        Resets the SSL context and resources of this $(REF Connection).
      +/
     void resetSSL() @system
     in (ssl, "Tried to reset SSL on a non-SSL `Connection`")
@@ -285,11 +285,11 @@ public:
 
     // setDefaultOptions
     /++
-        Sets up sockets with the `std.socket.SocketOptions` needed. These
+        Sets up sockets with the $(REF std.socket.SocketOptions) needed. These
         include timeouts and buffer sizes.
 
         Params:
-            socketToSetup = Reference to the `socket` to modify.
+            socketToSetup = Reference to the $(REF std.socket.Socket) to modify.
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
@@ -318,7 +318,7 @@ public:
         Sets up the SSL context for this connection.
 
         Throws:
-            `SSLException` if the SSL context could not be set up.
+            $(REF SSLException) if the SSL context could not be set up.
      +/
     void setupSSL() @system
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
@@ -509,7 +509,7 @@ struct ListenAttempt
     /// The last read line of text sent by the server.
     string line;
 
-    /// The `std.socket.lastSocketError` at the last point of error.
+    /// The $(REF std.socket.lastSocketError) at the last point of error.
     string error;
 
     /// The amount of bytes received this attempt.
@@ -519,14 +519,14 @@ struct ListenAttempt
 
 // listenFiber
 /++
-    A `std.socket.Socket`-reading `std.concurrency.Generator`. It reads and
+    A $(REF std.socket.Socket)-reading $(REF std.concurrency.Generator). It reads and
     yields full string lines.
 
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
-    finds a newline character, yields `ListenAttempt`s back to the caller of
+    finds a newline character, yields $(REF ListenAttempt)s back to the caller of
     the Fiber, checks for more lines to yield, and if none yields an attempt
-    with a `ListenAttempt.State` denoting that nothing was read and that a new
+    with a $(REF ListenAttempt.State) denoting that nothing was read and that a new
     attempt should be made later.
 
     Example:

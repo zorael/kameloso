@@ -52,7 +52,7 @@ public:
     /// When the line was uttered, expressed in UNIX time.
     long timestamp;
 
-    /// Constructor taking a `std.json.JSONValue`.
+    /// Constructor taking a $(REF std.json.JSONValue).
     this(const JSONValue json)
     {
         this.line = json["line"].str;
@@ -73,11 +73,11 @@ public:
     ---
 
     Params:
-        plugin = Current `QuotesPlugin`.
+        plugin = Current $(REF QuotesPlugin).
         nickname = Nickname of the user to fetch quotes for.
 
     Returns:
-        A `Quote` containing a random quote string. If no quote is available it
+        A $(REF Quote) containing a random quote string. If no quote is available it
         returns an empty `Quote.init` instead.
  +/
 Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
@@ -265,8 +265,8 @@ void onCommandQuote(QuotesPlugin plugin, const /*ref*/ IRCEvent event)
     if in a query.
 
     Params:
-        plugin = The current `QuotesPlugin`.
-        event = The instigating `dialect.defs.IRCEvent`.
+        plugin = The current $(REF QuotesPlugin).
+        event = The instigating $(REF dialect.defs.IRCEvent).
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
@@ -455,7 +455,7 @@ void reload(QuotesPlugin plugin)
 
 // onWelcome
 /++
-    Initialises the passed `QuotesPlugin`. Loads the quotes from disk.
+    Initialises the passed $(REF QuotesPlugin). Loads the quotes from disk.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(QuotesPlugin plugin)
@@ -504,7 +504,7 @@ public:
     These are not currently automatically replayed, such as when a user joins,
     but can rather be actively queried by use of the `quote` verb.
 
-    It was historically part of `kameloso.plugins.chatbot.ChatbotPlugin`.
+    It was historically part of $(REF kameloso.plugins.chatbot.ChatbotPlugin).
  +/
 final class QuotesPlugin : IRCPlugin
 {

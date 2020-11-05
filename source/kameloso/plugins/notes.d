@@ -57,10 +57,10 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     These carry a sender, so it's possible we know the account without lookups.
 
-    Do nothing if `kameloso.kameloso.CoreSettings.eagerLookups` is true,
+    Do nothing if $(REF kameloso.kameloso.CoreSettings.eagerLookups) is true,
     as we'd collide with ChanQueries' queries.
 
-    Pass `true` to `playbackNotes` to ensure it does low-priority background
+    Pass `true` to $(REF playbackNotes) to ensure it does low-priority background
     WHOIS queries.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
@@ -83,8 +83,8 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     Nothing is sent if no notes are stored.
 
     Params:
-        plugin = The current `NotesPlugin`.
-        givenUser = The `dialect.defs.IRCUser` for whom we want to replay notes.
+        plugin = The current $(REF NotesPlugin).
+        givenUser = The $(REF dialect.defs.IRCUser) for whom we want to replay notes.
         givenChannel = Name of the channel we want the notes related to.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
@@ -367,7 +367,7 @@ void reload(NotesPlugin plugin)
     Fetches the notes for a specified user, from the in-memory JSON storage.
 
     Params:
-        plugin = Current `NotesPlugin`.
+        plugin = Current $(REF NotesPlugin).
         channel = Channel for which the notes were stored.
         id = Nickname or account of user whose notes to fetch.
 
@@ -438,7 +438,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     saves it to disk.
 
     Params:
-        plugin = Current `NotesPlugin`.
+        plugin = Current $(REF NotesPlugin).
         id = Nickname or account whose notes to clear.
         channel = Channel for which the notes were stored.
  +/
@@ -474,7 +474,7 @@ in (id.length, "Tried to clear notes for an empty id")
     cleared and removed after replaying its notes.
 
     Params:
-        plugin = Current `NotesPlugin`.
+        plugin = Current $(REF NotesPlugin).
  +/
 void pruneNotes(NotesPlugin plugin)
 {
@@ -501,7 +501,7 @@ void pruneNotes(NotesPlugin plugin)
     Creates a note and saves it in the in-memory JSON storage.
 
     Params:
-        plugin = Current `NotesPlugin`.
+        plugin = Current $(REF NotesPlugin).
         id = Identifier (nickname/account) for whom the note is meant.
         sender = Originating user who places the note.
         channel = Channel for which we should save the note.

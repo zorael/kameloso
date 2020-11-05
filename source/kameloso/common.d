@@ -34,26 +34,26 @@ shared static this()
 
 // logger
 /++
-    Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
+    Instance of a $(REF kameloso.logger.KamelosoLogger), providing timestamped and
     coloured logging.
 
     The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
     and `fatal`. It is not `__gshared`, so instantiate a thread-local
-    `kameloso.logger.KamelosoLogger` if threading.
+    $(REF kameloso.logger.KamelosoLogger) if threading.
 
     Having this here is unfortunate; ideally plugins should not use variables
     from other modules, but unsure of any way to fix this other than to have
-    each plugin keep their own `kameloso.common.logger` pointer.
+    each plugin keep their own $(REF kameloso.common.logger) pointer.
  +/
 KamelosoLogger logger;
 
 
 // initLogger
 /++
-    Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
+    Initialises the $(REF kameloso.logger.KamelosoLogger) logger for use in this thread.
 
     It needs to be separately instantiated per thread, and even so there may be
-    race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
+    race conditions. Plugins are encouraged to use $(REF kameloso.thread.ThreadMessage)s
     to log to screen from other threads.
 
     Example:
@@ -77,10 +77,10 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
-    A `kameloso.kameloso.CoreSettings` struct global, housing certain runtime settings.
+    A $(REF kameloso.kameloso.CoreSettings) struct global, housing certain runtime settings.
 
     This will be accessed from other parts of the program, via
-    `kameloso.common.settings`, so they know to use monochrome output or not.
+    $(REF kameloso.common.settings), so they know to use monochrome output or not.
     It is a problem that needs solving.
  +/
 kameloso.kameloso.CoreSettings* settings;
@@ -293,7 +293,7 @@ unittest
 
 // timeSinceInto
 /++
-    Express how much time has passed in a `core.time.Duration`, in natural
+    Express how much time has passed in a $(REF core.time.Duration), in natural
     (English) language. Overload that writes the result to the passed output range `sink`.
 
     Example:
@@ -730,7 +730,7 @@ unittest
 
 // timeSince
 /++
-    Express how much time has passed in a `core.time.Duration`, in natural
+    Express how much time has passed in a $(REF core.time.Duration), in natural
     (English) language. Overload that returns the result as a new string.
 
     Example:
@@ -977,10 +977,10 @@ unittest
 // Tint
 /++
     Provides an easy way to access the `*tint` members of our
-    `kameloso.logger.KamelosoLogger` instance `logger`.
+    $(REF kameloso.logger.KamelosoLogger) instance $(REF logger).
 
-    It still accesses the global `kameloso.common.logger` instance, but is now
-    independent of `kameloso.common.settings`.
+    It still accesses the global $(REF kameloso.common.logger) instance, but is now
+    independent of $(REF kameloso.common.settings).
 
     Example:
     ---
@@ -1001,11 +1001,11 @@ struct Tint
         // opDispatch
         /++
             Provides the string that corresponds to the tint of the
-            `std.experimental.logger.core.LogLevel` that was passed in string form
+            $(REF std.experimental.logger.core.LogLevel) that was passed in string form
             as the `tint` `opDispatch` template parameter.
 
             This saves us the boilerplate of copy/pasting one function for each
-            `std.experimental.logger.core.LogLevel`.
+            $(REF std.experimental.logger.core.LogLevel).
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
@@ -1082,7 +1082,7 @@ unittest
 
     Params:
         line = String to replace tokens in.
-        client = The current `dialect.defs.IRCClient`.
+        client = The current $(REF dialect.defs.IRCClient).
 
     Returns:
         A modified string with token occurrences replaced.
@@ -1132,7 +1132,7 @@ unittest
 // replaceTokens
 /++
     Apply some common text replacements. Used on part and quit reasons.
-    Overload that doesn't take an `dialect.defs.IRCClient` and as such can't
+    Overload that doesn't take an $(REF dialect.defs.IRCClient) and as such can't
     replace `$nickname`.
 
     Params:
@@ -1154,7 +1154,7 @@ string replaceTokens(const string line) @safe pure nothrow
 
 // nextMidnight
 /++
-    Returns a `std.datetime.systime.SysTime` of the following midnight.
+    Returns a $(REF std.datetime.systime.SysTime) of the following midnight.
 
     Example:
     ---
@@ -1164,11 +1164,11 @@ string replaceTokens(const string line) @safe pure nothrow
     ---
 
     Params:
-        now = A `std.datetime.systime.SysTime` of the base date from which to proceed
+        now = A $(REF std.datetime.systime.SysTime) of the base date from which to proceed
             to the next midnight.
 
     Returns:
-        A `std.datetime.systime.SysTime` of the midnight following the date
+        A $(REF std.datetime.systime.SysTime) of the midnight following the date
         passed as argument.
  +/
 SysTime nextMidnight(const SysTime now)
