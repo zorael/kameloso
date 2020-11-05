@@ -794,12 +794,39 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
 
-        logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
-            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class",
+        enum pattern = "%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
+
+        logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel),
+            repeat.replay.privilegeLevel,
             repeat.replay.caller, repeat.replay.event.sender.nickname,
-            Enum!(IRCUser.Class).toString(repeat.replay.event.sender.class_));
+            repeat.replay.event.sender.class_);
+    }
+
+
+    // explainRefuse
+    /++
+        Verbosely explains why a repeat is not repeated.
+
+        Gated behind version `ExplainRepeat`.
+     +/
+    version(ExplainRepeat)
+    void explainRefuse(const Repeat repeat)
+    {
+        import kameloso.common : Tint, logger;
+        import lu.conv : Enum;
+
+        enum pattern = "%s%s%s %s is %9$sNOT%3$s repeating %1$s%5$s%3$s-level event " ~
+            "(which would have invoked %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
+
+        logger.logf(pattern,
+            Tint.info, context.name, Tint.log, contextName,
+            repeat.replay.privilegeLevel,
+            repeat.replay.caller, repeat.replay.event.sender.nickname,
+            repeat.replay.event.sender.class_,
+            Tint.warning);
     }
 
 
@@ -870,8 +897,10 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         case ignore:
             version(ExplainRepeat) explainRepeat(repeat);
             repeat.replay.trigger();
-            break;
+            return;
         }
+
+        version(ExplainRepeat) explainRefuse(repeat);
     }
 
     /++
