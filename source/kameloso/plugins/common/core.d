@@ -1721,6 +1721,18 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 version(WithPlugins)
 unittest
 {
+    @Settings static struct TestSettings
+    {
+        @Enabler bool enuubled = false;
+    }
+
+    static final class TestPlugin : IRCPlugin
+    {
+        TestSettings testSettings;
+
+        mixin IRCPluginImpl;
+    }
+
     IRCPluginState state;
 
     TestPlugin p = new TestPlugin(state);
@@ -1728,24 +1740,6 @@ unittest
 
     p.testSettings.enuubled = true;
     assert(p.isEnabled);
-}
-
-version(WithPlugins)
-version(unittest)
-{
-    // These need to be module-level.
-
-    @Settings private struct TestSettings
-    {
-        @Enabler bool enuubled = false;
-    }
-
-    private final class TestPlugin : IRCPlugin
-    {
-        TestSettings testSettings;
-
-        mixin IRCPluginImpl;
-    }
 }
 
 

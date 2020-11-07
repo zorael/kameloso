@@ -155,6 +155,29 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
 version(WithPlugins)
 unittest
 {
+    @Settings static struct MyPluginSettings
+    {
+        @Enabler bool enabled;
+
+        string s;
+        int i;
+        float f;
+        bool b;
+        double d;
+    }
+
+    static final class MyPlugin : IRCPlugin
+    {
+        MyPluginSettings myPluginSettings;
+
+        override string name() @property const
+        {
+            return "myplugin";
+        }
+
+        mixin IRCPluginImpl;
+    }
+
     IRCPluginState state;
     IRCPlugin plugin = new MyPlugin(state);
 
@@ -179,35 +202,6 @@ unittest
     assert(ps.f.approxEqual(3.14f), ps.f.text);
     assert(ps.b);
     assert(ps.d.approxEqual(99.99), ps.d.text);
-}
-
-version(WithPlugins)
-version(unittest)
-{
-    // These need to be module-level.
-
-    @Settings private struct MyPluginSettings
-    {
-        @Enabler bool enabled;
-
-        string s;
-        int i;
-        float f;
-        bool b;
-        double d;
-    }
-
-    private final class MyPlugin : IRCPlugin
-    {
-        MyPluginSettings myPluginSettings;
-
-        override string name() @property const
-        {
-            return "myplugin";
-        }
-
-        mixin IRCPluginImpl;
-    }
 }
 
 
