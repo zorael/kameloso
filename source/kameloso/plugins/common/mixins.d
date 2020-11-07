@@ -128,143 +128,150 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import std.traits : arity;
         import core.thread : Fiber;
 
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-        assert((thisFiber.payload != IRCEvent.init),
-            "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
-
-        immutable whoisEvent = thisFiber.payload;
-
-        assert(whoisEventTypes[].canFind(whoisEvent.type),
-            "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
-            "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
-
-        /++
-            Invoke `onSuccess`.
-         +/
-        void callOnSuccess()
+        while (true)
         {
-            static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
-            {
-                return onSuccess(whoisEvent);
-            }
-            else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
-            {
-                return onSuccess(whoisEvent.target);
-            }
-            else static if (TakesParams!(onSuccess, AliasSeq!string))
-            {
-                return onSuccess(whoisEvent.target.account);
-            }
-            else static if (arity!onSuccess == 0)
-            {
-                return onSuccess();
-            }
-            else
-            {
-                import std.format : format;
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            assert((thisFiber.payload != IRCEvent.init),
+                "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
-                enum pattern = "Unsupported signature of success function/delegate " ~
-                    "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
-                static assert(0, pattern.format(__FUNCTION__,
-                    typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
-            }
-        }
+            immutable whoisEvent = thisFiber.payload;
 
-        /++
-            Invoke `onFailure`, if it's available.
-         +/
-        void callOnFailure()
-        {
-            static if (!is(typeof(onFailure) == typeof(null)))
+            assert(whoisEventTypes[].canFind(whoisEvent.type),
+                "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
+                "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
+
+            /++
+                Invoke `onSuccess`.
+            +/
+            void callOnSuccess()
             {
-                static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                 {
-                    return onFailure(whoisEvent);
+                    return onSuccess(whoisEvent);
                 }
-                else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                 {
-                    return onFailure(whoisEvent.target);
+                    return onSuccess(whoisEvent.target);
                 }
-                else static if (TakesParams!(onFailure, AliasSeq!string))
+                else static if (TakesParams!(onSuccess, AliasSeq!string))
                 {
-                    // Never called when using hostmasks
-                    return onFailure(whoisEvent.target.account);
+                    return onSuccess(whoisEvent.target.account);
                 }
-                else static if (arity!onFailure == 0)
+                else static if (arity!onSuccess == 0)
                 {
-                    return onFailure();
+                    return onSuccess();
                 }
                 else
                 {
                     import std.format : format;
 
-                    enum pattern = "Unsupported signature of failure function/delegate " ~
+                    enum pattern = "Unsupported signature of success function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
                     static assert(0, pattern.format(__FUNCTION__,
-                        typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                        typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
                 }
             }
-        }
 
-        if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
-        {
-            if (!whoisEvent.aux.length || (whoisEvent.aux == "WHOIS"))
+            /++
+                Invoke `onFailure`, if it's available.
+            +/
+            void callOnFailure()
             {
-                // WHOIS query failed due to unknown command.
-                // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
-                // command was, so we'll have to assume it's the right one.
-                // Return and end Fiber.
-                return callOnFailure();
+                static if (!is(typeof(onFailure) == typeof(null)))
+                {
+                    static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                    {
+                        return onFailure(whoisEvent);
+                    }
+                    else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                    {
+                        return onFailure(whoisEvent.target);
+                    }
+                    else static if (TakesParams!(onFailure, AliasSeq!string))
+                    {
+                        // Never called when using hostmasks
+                        return onFailure(whoisEvent.target.account);
+                    }
+                    else static if (arity!onFailure == 0)
+                    {
+                        return onFailure();
+                    }
+                    else
+                    {
+                        import std.format : format;
+
+                        enum pattern = "Unsupported signature of failure function/delegate " ~
+                            "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
+                        static assert(0, pattern.format(__FUNCTION__,
+                            typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                    }
+                }
             }
-            else
+
+            if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
             {
-                // Wrong unknown command; await a new one
+                if (!whoisEvent.aux.length || (whoisEvent.aux == "WHOIS"))
+                {
+                    // WHOIS query failed due to unknown command.
+                    // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
+                    // command was, so we'll have to assume it's the right one.
+                    // Return and end Fiber.
+                    return callOnFailure();
+                }
+                else
+                {
+                    // Wrong unknown command; await a new one
+                    Fiber.yield();
+                    continue;
+                }
+            }
+
+            immutable m = plugin.state.server.caseMapping;
+
+            if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
+            {
+                // Wrong WHOIS; await a new one
                 Fiber.yield();
-                return whoisFiberDelegate();  // Recurse
+                continue;
             }
-        }
 
-        immutable m = plugin.state.server.caseMapping;
+            import kameloso.plugins.common.delayawait : unawait;
 
-        if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
-        {
-            // Wrong WHOIS; await a new one
-            Fiber.yield();
-            return whoisFiberDelegate();  // Recurse
-        }
+            // Clean up awaiting fiber entries on exit, just to be neat.
+            scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
 
-        import kameloso.plugins.common.delayawait : unawait;
-
-        // Clean up awaiting fiber entries on exit, just to be neat.
-        scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
-
-        with (IRCEvent.Type)
-        switch (whoisEvent.type)
-        {
-        case RPL_WHOISACCOUNT:
-        case RPL_WHOISREGNICK:
-            return callOnSuccess();
-
-        case RPL_WHOISUSER:
-            if (context.state.settings.preferHostmasks)
+            with (IRCEvent.Type)
+            switch (whoisEvent.type)
             {
+            case RPL_WHOISACCOUNT:
+            case RPL_WHOISREGNICK:
                 return callOnSuccess();
-            }
-            else
-            {
-                // We're not interested in RPL_WHOISUSER if we're not in hostmasks mode
-                Fiber.yield();
-                return whoisFiberDelegate();  // Recurse
+
+            case RPL_WHOISUSER:
+                if (context.state.settings.preferHostmasks)
+                {
+                    return callOnSuccess();
+                }
+                else
+                {
+                    // We're not interested in RPL_WHOISUSER if we're not in hostmasks mode
+                    Fiber.yield();
+                    continue;
+                }
+
+            case RPL_ENDOFWHOIS:
+            case ERR_NOSUCHNICK:
+            //case ERR_UNKNOWNCOMMAND:  // Already handled above
+                return callOnFailure();
+
+            default:
+                assert(0, "Unexpected WHOIS event type encountered in `whoisFiberDelegate`");
             }
 
-        case RPL_ENDOFWHOIS:
-        case ERR_NOSUCHNICK:
-        //case ERR_UNKNOWNCOMMAND:  // Already handled above
-            return callOnFailure();
-
-        default:
-            assert(0, "Unexpected WHOIS event type encountered in `whoisFiberDelegate`");
+            // Would end loop here but statement not reachable
+            //return;
+            assert(0, "Escaped terminal switch in `whoisFiberDelegate`");
         }
     }
 
