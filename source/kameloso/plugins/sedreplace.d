@@ -23,7 +23,7 @@
     $ echo "foo bar baz" | sed "s#bar#qux#g"
     $ echo "foo bar baz" | sed "s@bar@qux@"
     $ echo "foo bar baz" | sed "s bar qux "
-    $ echo "foo bar baz" | sed "s_bar_qux "
+    $ echo "foo bar baz" | sed "s_bar_qux_"
     $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
     ---
  +/
