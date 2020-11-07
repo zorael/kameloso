@@ -307,7 +307,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.base : nameOf;
-    import dialect.common : toLowerCase;
+    import dialect.common : opEqualsCaseInsensitive, toLowerCase;
     import lu.string : SplitResults, splitInto;
     import std.format : format;
     import std.json : JSONException;
@@ -326,14 +326,14 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    target = target.toLowerCase(plugin.state.server.caseMapping);
-
-    if (target == plugin.state.client.nickname.toLowerCase(plugin.state.server.caseMapping))
+    if (target.opEqualsCaseInsensitive(plugin.state.client.nickname, plugin.state.server.caseMapping))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
         return;
     }
+
+    target = target.toLowerCase(plugin.state.server.caseMapping);
 
     try
     {
