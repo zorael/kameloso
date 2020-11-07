@@ -119,7 +119,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     void whoisFiberDelegate()
     {
         import kameloso.thread : CarryingFiber;
-        import dialect.common : toLowerCase;
+        import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
         import lu.conv : Enum;
         import lu.traits : TakesParams;
@@ -227,8 +227,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable m = plugin.state.server.caseMapping;
 
-        if (toLowerCase(_kamelosoCarriedNickname, m) !=
-            whoisEvent.target.nickname.toLowerCase(m))
+        if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
         {
             // Wrong WHOIS; await a new one
             Fiber.yield();
