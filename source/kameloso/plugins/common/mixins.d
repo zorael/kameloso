@@ -440,7 +440,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-version(WithPlugins)
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
 private:
@@ -739,7 +738,6 @@ unittest
     Params:
         debug_ = Whether or not to print debug output to the terminal.
  +/
-version(WithPlugins)
 mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
