@@ -10,6 +10,38 @@ private:
 import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
 import std.format : format;
 
+
+version(DigitalMars)
+{
+    /// String of the compiler that was used to compile this binary with.
+    enum compiler = "dmd";
+}
+else version(LDC)
+{
+    /// Ditto
+    enum compiler = "ldc";
+}
+else version(GNU)
+{
+    /// Ditto
+    enum compiler = "gdc";
+}
+else
+{
+    /// Ditto
+    enum compiler = "<unknown>";
+}
+
+
+// compilerVersion
+/++
+    Compiler version used when this binary was compiled.
+
+    It is formatted to be in `2.094` form.
+ +/
+enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
+
+
 public:
 
 
@@ -27,6 +59,8 @@ enum KamelosoInfo
             KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease),  /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
+    compiler = .compiler,  /// Compiler used to build this binary.
+    compilerVersion = .compilerVersion,  /// Compiler version used to build this binary.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
 
