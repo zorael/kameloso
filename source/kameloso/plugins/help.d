@@ -97,8 +97,40 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (mutEvent.content.length)
         {
-            if (mutEvent.content.contains!(Yes.decode)(" "))
+            if (mutEvent.content.beginsWith(plugin.state.settings.prefix))
             {
+                // Not a plugin, just a prefixed command (probably)
+                string slice = mutEvent.content;
+                slice.nom!(Yes.decode)(plugin.state.settings.prefix);
+                immutable specifiedCommand = slice;
+
+                if (!specifiedCommand.length)
+                {
+                    // Only a prefix was supplied
+                    enum message = "No command specified.";
+                    privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+                    return;
+                }
+
+                foreach (p; plugins)
+                {
+                    if (const command = specifiedCommand in p.commands)
+                    {
+                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
+                        return;
+                    }
+                }
+
+                // If we're here there were no command matches
+                immutable message = plugin.state.settings.colouredOutgoing ?
+                    "No such command found: " ~ specifiedCommand.ircBold :
+                    "No such command found: " ~ specifiedCommand;
+
+                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+            }
+            else if (mutEvent.content.contains!(Yes.decode)(" "))
+            {
+                // Likely a plugin and a command
                 string slice = mutEvent.content;
                 immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
                 immutable specifiedCommand = slice;
@@ -133,26 +165,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             }
             else
             {
-                if (mutEvent.content.beginsWith(plugin.state.settings.prefix))
-                {
-                    // Not a plugin, just a command (probably)
-                    string slice = mutEvent.content;
-                    slice.nom!(Yes.decode)(plugin.state.settings.prefix);
-                    immutable specifiedCommand = slice;
-
-                    foreach (p; plugins)
-                    {
-                        if (const command = specifiedCommand in p.commands)
-                        {
-                            plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
-                            return;
-                        }
-                    }
-
-                    // If we're here there were no command matches
-                    // Drop down and treat as normal
-                }
-
+                // Just one word; print a specified plugin's commands
                 foreach (p; plugins)
                 {
                     if (p.name != mutEvent.content)
