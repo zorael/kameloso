@@ -56,7 +56,7 @@ If there's anyone talking it should show up on your screen.
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
-  * [Fetching a copy of the source](#fetching-a-copy-of-the-source)
+    * [Fetching a copy of the source](#fetching-a-copy-of-the-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
@@ -95,7 +95,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, compile it yourself.
 
-## Fetching a copy of the source
+### Fetching a copy of the source
 
 ```sh
 $ git clone https://github.com/zorael/kameloso.git
@@ -257,7 +257,7 @@ prefix                  "!"
 
 It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Additionally, some administrative commands only work when called this way.
 
-### Except nothing happens
+### **Except nothing happens**
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
