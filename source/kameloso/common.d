@@ -108,9 +108,11 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
     immutable logtint = colours ? Tint.log : string.init;
     immutable infotint = colours ? Tint.info : string.init;
 
-    writefln("%skameloso IRC bot v%s, built %s%s",
+    writefln("%skameloso IRC bot v%s, built with %s (%s) on %s%s",
         logtint,
         cast(string)KamelosoInfo.version_,
+        cast(string)KamelosoInfo.compiler,
+        cast(string)KamelosoInfo.compilerVersion,
         cast(string)KamelosoInfo.built,
         Tint.off);
 
