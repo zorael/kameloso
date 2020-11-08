@@ -59,7 +59,7 @@ import dialect.defs;
 @(PrivilegeLevel.anyone)
 @BotCommand(PrefixPolicy.prefixed, "help")
 @Description("Shows a list of all available commands.", "$command [plugin] [command]")
-void onCommandHelp(HelpPlugin plugin, const ref IRCEvent event)
+void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
     import kameloso.thread : CarryingFiber, ThreadMessage;

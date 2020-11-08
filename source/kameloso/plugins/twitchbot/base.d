@@ -1163,7 +1163,7 @@ version(TwitchAPIFeatures)
 @BotCommand(PrefixPolicy.prefixed, "shoutout")
 @BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
 @Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
-void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.base : idOf;
     import dialect.common : isValidNickname;
