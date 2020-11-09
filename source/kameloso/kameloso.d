@@ -174,6 +174,8 @@ public:
             sendFaster = On Twitch, whether or not we should throttle less and
                 send messages faster. Useful in some situations when rate-limiting
                 is more lax.
+            immediate = Whether or not the line should just be sent straight away,
+                ignoring throttling.
 
         Returns:
             The time remaining until the next message may be sent, so that we
@@ -181,7 +183,8 @@ public:
      +/
     double throttleline(Buffer)(ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
-        const Flag!"sendFaster" sendFaster = No.sendFaster) @system
+        const Flag!"sendFaster" sendFaster = No.sendFaster,
+        const Flag!"immediate" immediate = No.immediate) @system
     {
         with (throttle)
         {
@@ -215,26 +218,29 @@ public:
 
             while (!buffer.empty || dryRun)
             {
-                double x = (now - t0).total!"msecs"/1000.0;
-                double y = k * x + m;
-
-                if (y < 0.0)
+                if (!immediate)
                 {
+                    double x = (now - t0).total!"msecs"/1000.0;
+                    double y = k * x + m;
+
+                    if (y < 0.0)
+                    {
+                        t0 = now;
+                        x = 0.0;
+                        y = 0.0;
+                        m = 0.0;
+                    }
+
+                    if (y >= burst)
+                    {
+                        x = (now - t0).total!"msecs"/1000.0;
+                        y = k*x + m;
+                        return y;
+                    }
+
+                    m = y + increment;
                     t0 = now;
-                    x = 0.0;
-                    y = 0.0;
-                    m = 0.0;
                 }
-
-                if (y >= burst)
-                {
-                    x = (now - t0).total!"msecs"/1000.0;
-                    y = k*x + m;
-                    return y;
-                }
-
-                m = y + increment;
-                t0 = now;
 
                 if (dryRun) break;
 
