@@ -1360,7 +1360,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         we ensure we do our best to scrape the channels.
 
         See_Also:
-            onTwitchAwarenessSenderCarryingEvent
+            $(REF onTwitchAwarenessSenderCarryingEvent)
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1389,7 +1389,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     do our best to scrape the channels.
 
     See_Also:
-        onTwitchAwarenessTargetCarryingEvent
+        $(REF onTwitchAwarenessTargetCarryingEvent)
  +/
 version(TwitchSupport)
 void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1425,7 +1425,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
     we ensure we do our best to scrape the channels.
 
     See_Also:
-        onTwitchAwarenessSenderCarryingEvent
+        $(REF onTwitchAwarenessSenderCarryingEvent)
  +/
 version(TwitchSupport)
 void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)

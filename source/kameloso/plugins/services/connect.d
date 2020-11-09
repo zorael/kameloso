@@ -186,7 +186,7 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
     if (service.serverPinged) return;
 
-    raw(service.state, event.content);
+    immediate(service.state, event.content);
 }
 
 
@@ -553,7 +553,7 @@ void onNickInUse(ConnectService service)
         }
 
         service.state.clientUpdated = true;
-        raw!(Yes.priority)(service.state, "NICK " ~ service.state.client.nickname);
+        immediate(service.state, "NICK " ~ service.state.client.nickname);
     }
 }
 
@@ -688,7 +688,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                     continue;
                 }
 
-                raw(service.state, "CAP REQ :sasl", Yes.quiet);
+                immediate(service.state, "CAP REQ :sasl", Yes.quiet);
                 tryingSASL = true;
                 break;
 
@@ -727,7 +727,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                raw(service.state, "CAP REQ :" ~ cap, Yes.quiet);
+                immediate(service.state, "CAP REQ :" ~ cap, Yes.quiet);
                 break;
 
             default:
@@ -740,7 +740,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            raw(service.state, "CAP END", Yes.quiet);
+            immediate(service.state, "CAP END", Yes.quiet);
 
             if (service.capabilityNegotiation == Progress.started)
             {
@@ -761,7 +761,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 service.state.connSettings.certFile.length)) ?
                     "AUTHENTICATE EXTERNAL" :
                     "AUTHENTICATE PLAIN";
-            raw(service.state, mechanism, Yes.quiet);
+            immediate(service.state, mechanism, Yes.quiet);
             break;
 
         default:
@@ -825,7 +825,7 @@ void onSASLAuthenticate(ConnectService service)
         (service.saslExternal == Progress.notStarted))
     {
         service.saslExternal = Progress.started;
-        raw(service.state, "AUTHENTICATE +");
+        immediate(service.state, "AUTHENTICATE +");
         return;
     }
 
@@ -871,7 +871,7 @@ bool trySASLPlain(ConnectService service)
         immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
         immutable encoded = encode64(authToken);
 
-        raw(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
+        immediate(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
         if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
         return true;
     }
@@ -911,7 +911,7 @@ void onSASLSuccess(ConnectService service)
         Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    raw(service.state, "CAP END", Yes.quiet);
+    immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
 }
@@ -932,7 +932,7 @@ void onSASLFailure(ConnectService service)
     {
         // Fall back to PLAIN
         service.saslExternal = Progress.finished;
-        raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+        immediate(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
         return;
     }
 
@@ -947,7 +947,7 @@ void onSASLFailure(ConnectService service)
     service.authentication = Progress.finished;
 
     // See $(REF onSASLSuccess` for info on `CAP END`
-    raw(service.state, "CAP END", Yes.quiet);
+    immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
 }
@@ -1152,7 +1152,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 void register(ConnectService service)
 {
     service.registration = Progress.started;
-    raw(service.state, "CAP LS 302", Yes.quiet);
+    immediate(service.state, "CAP LS 302", Yes.quiet);
 
     version(TwitchSupport)
     {
@@ -1210,7 +1210,7 @@ void register(ConnectService service)
 
         //service.state.botUpdated = true;  // done below
 
-        raw(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
+        immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
         if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
     }
 
@@ -1320,11 +1320,11 @@ void negotiateNick(ConnectService service)
                 O - local operator flag;
                 s - marks a user for receipt of server notices.
          +/
-        raw(service.state, "USER %s 8 * :%s".format(service.state.client.user,
+        immediate(service.state, "USER %s 8 * :%s".format(service.state.client.user,
             service.state.client.realName.replaceTokens(service.state.client)));
     }
 
-    raw(service.state, "NICK " ~ service.state.client.nickname);
+    immediate(service.state, "NICK " ~ service.state.client.nickname);
 }
 
 

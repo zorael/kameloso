@@ -145,7 +145,8 @@ void signalHandler(int sig) nothrow @nogc @system
 void messageFiber(ref Kameloso instance)
 {
     import kameloso.common : OutgoingLine, replaceTokens;
-    import kameloso.thread : ThreadMessage;
+    import kameloso.messaging : Message;
+    import kameloso.thread : CarryingFiber, Sendable, ThreadMessage;
     import std.concurrency : yield;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -161,21 +162,8 @@ void messageFiber(ref Kameloso instance)
         /// Send a message to the server bypassing throttling.
         void immediateline(ThreadMessage.Immediateline, string line) scope
         {
-            if (!instance.settings.hideOutgoing)
-            {
-                version(Colours)
-                {
-                    import kameloso.irccolours : mapEffects;
-                    logger.trace("--> ", line.mapEffects);
-                }
-                else
-                {
-                    import kameloso.irccolours : stripEffects;
-                    logger.trace("--> ", line.stripEffects);
-                }
-            }
-
-            instance.conn.sendline(line);
+            instance.immediateBuffer.put(OutgoingLine(line,
+                (instance.settings.hideOutgoing ? Yes.quiet : No.quiet)));
         }
 
         /// Echo a line to the terminal and send it to the server.
@@ -222,8 +210,6 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(instance.settings.configFile);
         }
 
-        import kameloso.thread : CarryingFiber;
-
         /++
            Attaches a reference to the main array of
            $(REF kameloso.plugins.common.core.IRCPlugin)s (housing all plugins) to the
@@ -256,8 +242,6 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        import kameloso.thread : Sendable;
-
         /// Passes a bus message to each plugin.
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
@@ -276,8 +260,6 @@ void messageFiber(ref Kameloso instance)
                 plugin.onBusMessage(header, content);
             }
         }
-
-        import kameloso.messaging : Message;
 
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(Message m) scope
@@ -299,6 +281,7 @@ void messageFiber(ref Kameloso instance)
                 (m.properties & Message.Property.quiet)) ? Yes.quiet : No.quiet;
             immutable force = (m.properties & Message.Property.forced);
             immutable priority = (m.properties & Message.Property.priority);
+            immutable immediate = (m.properties & Message.Property.immediate);
 
             string line;
             string prelude;
@@ -466,6 +449,12 @@ void messageFiber(ref Kameloso instance)
 
             void appropriateline(const string finalLine)
             {
+                if (immediate)
+                {
+                    instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
+                    return;
+                }
+
                 version(TwitchSupport)
                 {
                     if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
@@ -507,12 +496,6 @@ void messageFiber(ref Kameloso instance)
             {
                 appropriateline(line);
             }
-        }
-
-        /// Wrapper around $(REF eventToServer) for shared heap $(REF dialect.defs.IRCEvent)s.
-        void eventPointerToServer(shared(Message)* m) scope
-        {
-            return eventToServer(cast()*m);
         }
 
         /// Proxies the passed message to the $(REF kameloso.common.logger`).
@@ -589,7 +572,6 @@ void messageFiber(ref Kameloso instance)
                 &immediateline,
                 &pong,
                 &eventToServer,
-                &eventPointerToServer,
                 &proxyLoggerMessages,
                 &quitServer,
                 &save,
@@ -799,6 +781,7 @@ Next mainLoop(ref Kameloso instance)
         bool bufferHasMessages = (
             !instance.outbuffer.empty |
             !instance.backgroundBuffer.empty |
+            !instance.immediateBuffer.empty |
             !instance.priorityBuffer.empty);
 
         version(TwitchSupport)
@@ -861,27 +844,40 @@ Next mainLoop(ref Kameloso instance)
  +/
 double sendLines(ref Kameloso instance)
 {
+    if (!instance.immediateBuffer.empty)
+    {
+        cast(void)instance.throttleline(instance.immediateBuffer, No.dryRun, No.sendFaster, Yes.immediate);
+    }
+
     if (!instance.priorityBuffer.empty)
     {
-        return instance.throttleline(instance.priorityBuffer);
+        immutable untilNext = instance.throttleline(instance.priorityBuffer);
+        if (untilNext > 0.0) return untilNext;
     }
 
     version(TwitchSupport)
     {
         if (!instance.fastbuffer.empty)
         {
-            return instance.throttleline(instance.fastbuffer, No.dryRun, Yes.sendFaster);
+            immutable untilNext = instance.throttleline(instance.fastbuffer,
+                No.dryRun, Yes.sendFaster);
+            if (untilNext > 0.0) return untilNext;
         }
     }
 
     if (!instance.outbuffer.empty)
     {
-        return instance.throttleline(instance.outbuffer);
+        immutable untilNext = instance.throttleline(instance.outbuffer);
+        if (untilNext > 0.0) return untilNext;
     }
-    else
+
+    if (!instance.backgroundBuffer.empty)
     {
-        return instance.throttleline(instance.backgroundBuffer);
+        immutable untilNext = instance.throttleline(instance.backgroundBuffer);
+        if (untilNext > 0.0) return untilNext;
     }
+
+    return 0.0;
 }
 
 
@@ -2145,6 +2141,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.outbuffer.clear();
             instance.backgroundBuffer.clear();
             instance.priorityBuffer.clear();
+            instance.immediateBuffer.clear();
 
             version(TwitchSupport)
             {

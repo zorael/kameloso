@@ -397,7 +397,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        commitAllLogs
+        $(REF commitAllLogs)
  +/
 @Chainable
 @(ChannelPolicy.any)
@@ -418,7 +418,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         plugin = The current $(REF PrinterPlugin).
 
     See_Also:
-        commitLog
+        $(REF kameloso.plugins.printer.logging.commitLog)
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)

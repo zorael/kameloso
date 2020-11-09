@@ -490,11 +490,13 @@ private:
         Sends a channel message.
      +/
     void chan(Flag!"priority" priority = No.priority)
-        (const string channel, const string content,
+        (const string channelName, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.chan!priority(state, channel, content,
-            No.quiet, No.background, caller);
+        return kameloso.messaging.chan!priority(state, channelName, content,
+            quiet, background, caller);
     }
 
 
@@ -504,10 +506,12 @@ private:
      +/
     void query(Flag!"priority" priority = No.priority)
         (const string nickname, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.query!priority(state, nickname, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -519,12 +523,14 @@ private:
         This reflects how channel messages and private messages are both the
         underlying same type; $(REF dialect.defs.IRCEvent.Type.PRIVMSG).
      +/
-    void privmsg(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string content,
+    void privmsg(Flag!"priority" priority = No.priority)
+        (const string channel, const string nickname, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.privmsg!priority(state, channel, nickname, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -534,10 +540,12 @@ private:
      +/
     void emote(Flag!"priority" priority = No.priority)
         (const string emoteTarget, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.emote!priority(state, emoteTarget, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -547,10 +555,14 @@ private:
 
         This includes modes that pertain to a user in the context of a channel, like bans.
      +/
-    void mode(Flag!"priority" priority = No.priority)(const string channel,
-        const string modes, const string content = string.init)
+    void mode(Flag!"priority" priority = No.priority)
+        (const string channel, const const(char)[] modes, const string content = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.mode!priority(state, channel, modes, content);
+        return kameloso.messaging.mode!priority(state, channel, modes, content,
+            quiet, background, caller);
     }
 
 
@@ -560,10 +572,12 @@ private:
      +/
     void topic(Flag!"priority" priority = No.priority)
         (const string channel, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.topic!priority(state, channel, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -573,10 +587,12 @@ private:
      +/
     void invite(Flag!"priority" priority = No.priority)
         (const string channel, const string nickname,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.invite!priority(state, channel, nickname,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -585,9 +601,13 @@ private:
         Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)
-        (const string channel, const string key = string.init)
+        (const string channel, const string key = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.join!priority(state, channel, key);
+        return kameloso.messaging.join!priority(state, channel, key,
+            quiet, background, caller);
     }
 
 
@@ -595,12 +615,14 @@ private:
     /++
         Kicks a user from a channel.
      +/
-    void kick(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string reason = string.init,
+    void kick(Flag!"priority" priority = No.priority)
+        (const string channel, const string nickname, const string reason = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.kick!priority(state, channel, nickname, reason,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -608,12 +630,14 @@ private:
     /++
         Leaves a channel.
      +/
-    void part(Flag!"priority" priority = No.priority)(const string channel,
-        const string reason = string.init,
+    void part(Flag!"priority" priority = No.priority)
+        (const string channel, const string reason = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.part!priority(state, channel, reason,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -621,9 +645,10 @@ private:
     /++
         Disconnects from the server, optionally with a quit reason.
      +/
-    void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
+    void quit(Flag!"priority" priority = No.priority)
+        (const string reason = string.init, const Flag!"quiet" quiet = No.quiet)
     {
-        return kameloso.messaging.quit!priority(state, reason);
+        return kameloso.messaging.quit!priority(state, reason, quiet);
     }
 
 
@@ -631,12 +656,15 @@ private:
     /++
         Queries the server for WHOIS information about a user.
      +/
-    void whois(Flag!"priority" priority = No.priority)(const string nickname,
-        const Flag!"force" force = No.force, const Flag!"background" background = No.background,
+    void whois(Flag!"priority" priority = No.priority)
+        (const string nickname,
+        const Flag!"force" force = No.force,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.whois!priority(state, nickname, force,
-            No.quiet, background, caller);
+            quiet, background, caller);
     }
 
     // raw
@@ -646,11 +674,14 @@ private:
         This is used to send messages of types for which there exist no helper
         functions.
      +/
-    void raw(Flag!"priority" priority = No.priority)(const string line,
+    void raw(Flag!"priority" priority = No.priority)
+        (const string line,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.raw!priority(state, line,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -659,9 +690,10 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
-    void immediate(const string line)
+    void immediate(const string line, const Flag!"quiet" quiet = No.quiet,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.immediate(state, line);
+        return kameloso.messaging.immediate(state, line, quiet, caller);
     }
 
     import std.format : format;
@@ -719,7 +751,7 @@ unittest
         kick(string.init, string.init, string.init);
         part(string.init, string.init);
         quit(string.init);
-        whois(string.init, Yes.force, No.background);
+        whois(string.init, Yes.force, Yes.quiet, No.background);
         raw(string.init);
         immediate(string.init);
         askToWriteln(string.init);

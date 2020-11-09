@@ -65,13 +65,14 @@ struct Message
     /++
         Properties of a $(REF Message). Describes how it should be sent.
      +/
-    enum Property : ubyte
+    enum Property
     {
         fast        = 1 << 0,  /// Message should be sent faster than normal. (Twitch)
         quiet       = 1 << 1,  /// Message should be sent without echoing it to the terminal.
         background  = 1 << 2,  /// Message should be lazily sent in the background.
         forced      = 1 << 3,  /// Message should bypass some checks.
         priority    = 1 << 4,  /// Message should be given higher priority.
+        immediate   = 1 << 5,  /// Message should be sent immediately.
     }
 
     /++
@@ -902,7 +903,7 @@ unittest
     This is used to send messages of types for which there exist no helper functions.
 
     See_Also:
-        immediate
+        $(REF immediate)
 
     Params:
         priority = Whether or not to send the message as a priority message,
@@ -964,43 +965,53 @@ unittest
     functions, and where they must be sent at once.
 
     See_Also:
-        raw
+        $(REF raw)
 
     Params:
         state = The current plugin's $(REF kameloso.plugins.common.core.IRCPluginState), via
             which to send messages to the server.
         line = Raw IRC string to send to the server.
+        quiet = Whether or not to echo what was sent to the local terminal.
+        caller = String name of the calling function, or something else that gives context.
  +/
-void immediate(IRCPluginState state, const string line)
+void immediate(IRCPluginState state, const string line,
+    const Flag!"quiet" quiet = No.quiet,
+    const string caller = __FUNCTION__)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
 
-    // The receiving loop has access to settings.hideOutgoing, so we don't need
-    // to pass a quiet bool.
+    Message m;
 
-    state.mainThread.prioritySend(ThreadMessage.Immediateline(), line);
+    m.event.type = IRCEvent.Type.UNSET;
+    m.event.content = line;
+    m.caller = caller;
+    m.properties |= Message.Property.immediate;
+
+    if (quiet) m.properties |= Message.Property.quiet;
+
+    state.mainThread.prioritySend(m);
 }
 
 ///
 unittest
 {
-    import kameloso.thread : ThreadMessage;
-    import std.meta : AliasSeq;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    immediate(state, "test");
+    immediate(state, "commands");
 
-    try
-    {
-        receiveOnly!(AliasSeq!(ThreadMessage.Immediateline, string));
-    }
-    catch (Exception e)
-    {
-        assert(0, "Receiving an `immediateline` failed.");
-    }
+    receive(
+        (Message m)
+        {
+            with (m.event)
+            {
+                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+                assert((content == "commands"), content);
+                assert(m.properties & Message.Property.immediate);
+            }
+        }
+    );
 }
 
 /// Merely an alias to $(REF immediate), because we use both terms at different places.
