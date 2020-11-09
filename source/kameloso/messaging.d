@@ -970,16 +970,25 @@ unittest
         state = The current plugin's $(REF kameloso.plugins.common.core.IRCPluginState), via
             which to send messages to the server.
         line = Raw IRC string to send to the server.
+        quiet = Whether or not to echo what was sent to the local terminal.
+        caller = String name of the calling function, or something else that gives context.
  +/
-void immediate(IRCPluginState state, const string line)
+void immediate(IRCPluginState state, const string line,
+    const Flag!"quiet" quiet = No.quiet,
+    const string caller = __FUNCTION__)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
 
-    // The receiving loop has access to settings.hideOutgoing, so we don't need
-    // to pass a quiet bool.
+    Message m;
 
-    state.mainThread.prioritySend(ThreadMessage.Immediateline(), line);
+    m.event.type = IRCEvent.Type.UNSET;
+    m.event.content = line;
+    m.caller = caller;
+
+    if (quiet) m.properties |= Message.Property.quiet;
+
+    state.mainThread.prioritySend(ThreadMessage.Immediateline(), m);
 }
 
 ///
@@ -995,7 +1004,7 @@ unittest
 
     try
     {
-        receiveOnly!(AliasSeq!(ThreadMessage.Immediateline, string));
+        receiveOnly!(AliasSeq!(ThreadMessage.Immediateline, Message));
     }
     catch (Exception e)
     {
