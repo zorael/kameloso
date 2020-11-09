@@ -286,6 +286,7 @@ void messageFiber(ref Kameloso instance)
                 (m.properties & Message.Property.quiet)) ? Yes.quiet : No.quiet;
             immutable force = (m.properties & Message.Property.forced);
             immutable priority = (m.properties & Message.Property.priority);
+            immutable immediate = (m.properties & Message.Property.immediate);
 
             string line;
             string prelude;
@@ -453,6 +454,12 @@ void messageFiber(ref Kameloso instance)
 
             void appropriateline(const string finalLine)
             {
+                if (immediate)
+                {
+                    instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
+                    return;
+                }
+
                 version(TwitchSupport)
                 {
                     if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
