@@ -2,7 +2,7 @@
     Dummy main module so all the real files get tested by dub.
 
     See_Also:
-        kameloso.main
+        $(REF kameloso.main)
  +/
 module kameloso.entrypoint;
 

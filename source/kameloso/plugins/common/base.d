@@ -35,7 +35,7 @@ public:
         `true` if no setting name mismatches occurred, `false` if it did.
 
     See_Also:
-        lu.objmanip.setSettingByName
+        $(REF lu.objmanip.setSettingByName)
  +/
 bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
     CoreSettings copyOfSettings)
@@ -504,7 +504,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
         nothing was found.
 
     See_Also:
-        getUser
+        $(REF getUser)
  +/
 string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
 {

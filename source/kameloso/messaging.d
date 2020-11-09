@@ -903,7 +903,7 @@ unittest
     This is used to send messages of types for which there exist no helper functions.
 
     See_Also:
-        immediate
+        $(REF immediate)
 
     Params:
         priority = Whether or not to send the message as a priority message,
@@ -965,7 +965,7 @@ unittest
     functions, and where they must be sent at once.
 
     See_Also:
-        raw
+        $(REF raw)
 
     Params:
         state = The current plugin's $(REF kameloso.plugins.common.core.IRCPluginState), via

@@ -66,7 +66,7 @@ public:
             Description about what the command does, along with optional syntax.
 
             See_Also:
-                Description
+                $(REF Description)
          +/
         Description desc;
 
@@ -393,7 +393,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             event = Parsed $(REF dialect.defs.IRCEvent) to pass onto $(REF onEventImpl).
 
         See_Also:
-            onEventImpl
+            $(REF onEventImpl)
      +/
     pragma(inline, true)
     override public void onEvent(/*const*/ IRCEvent event) @system
@@ -2726,7 +2726,7 @@ public:
     the same module process after it.
 
     See_Also:
-        Terminating
+        $(REF Terminating)
  +/
 struct Chainable;
 
@@ -2741,7 +2741,7 @@ struct Chainable;
     becoming more self-documenting.
 
     See_Also:
-        Chainable
+        $(REF Chainable)
  +/
 struct Terminating;
 

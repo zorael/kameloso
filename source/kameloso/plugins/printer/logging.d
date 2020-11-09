@@ -90,7 +90,7 @@ public:
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        commitAllLogsImpl
+        $(REF commitAllLogsImpl)
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
@@ -452,7 +452,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
         plugin = The current $(REF kameloso.plugins.printer.base.PrinterPlugin).
 
     See_Also:
-        commitLog
+        $(REF commitLog)
  +/
 void commitAllLogsImpl(PrinterPlugin plugin)
 {
@@ -482,7 +482,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
         buffer = $(REF LogLineBuffer) whose lines to commit to disk.
 
     See_Also:
-        commitAllLogsImpl
+        $(REF commitAllLogsImpl)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
