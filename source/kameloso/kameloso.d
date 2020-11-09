@@ -133,6 +133,14 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
 
+    /++
+        Buffer of outgoing message strings to be sent immediately.
+
+        The buffer size is "how many string pointers", now how many bytes. So
+        we can comfortably keep it arbitrarily high.
+     +/
+    Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
+
     version(TwitchSupport)
     {
         /++
