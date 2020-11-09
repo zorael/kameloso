@@ -2141,6 +2141,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.outbuffer.clear();
             instance.backgroundBuffer.clear();
             instance.priorityBuffer.clear();
+            instance.immediateBuffer.clear();
 
             version(TwitchSupport)
             {
