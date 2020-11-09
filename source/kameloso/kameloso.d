@@ -615,7 +615,7 @@ public:
 struct CoreSettings
 {
 private:
-    import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
+    import lu.uda : CannotContainComments, Quoted, Unserialisable;
 
 public:
     version(Colours)
@@ -661,7 +661,6 @@ public:
     @Quoted string prefix = "!";
 
     @Unserialisable
-    @Hidden
     {
         string configFile;  /// Main configuration file.
         string resourceDirectory;  /// Path to resource directory.
