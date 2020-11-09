@@ -602,6 +602,9 @@ public:
 
     /// History records of established connections this execution run.
     ConnectionHistoryEntry[] connectionHistory;
+
+    /// Set when the Socket read timeout was requested to be shortened.
+    bool wantReceiveTimeoutShortened;
 }
 
 
