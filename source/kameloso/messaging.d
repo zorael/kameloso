@@ -65,13 +65,14 @@ struct Message
     /++
         Properties of a $(REF Message). Describes how it should be sent.
      +/
-    enum Property : ubyte
+    enum Property
     {
         fast        = 1 << 0,  /// Message should be sent faster than normal. (Twitch)
         quiet       = 1 << 1,  /// Message should be sent without echoing it to the terminal.
         background  = 1 << 2,  /// Message should be lazily sent in the background.
         forced      = 1 << 3,  /// Message should bypass some checks.
         priority    = 1 << 4,  /// Message should be given higher priority.
+        immediate   = 1 << 5,  /// Message should be sent immediately.
     }
 
     /++
