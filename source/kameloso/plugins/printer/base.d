@@ -93,7 +93,7 @@ public:
     bool logs = false;
 
     /// Whether or not to log non-home channels.
-    bool logAllChannels = false;
+    bool logGuestChannels = false;
 
     /// Whether or not to log errors.
     bool logErrors = true;
