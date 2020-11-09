@@ -825,14 +825,12 @@ struct ConnectionAttempt
 
     Params:
         conn = Reference to the current, unconnected `Connection`.
-        endlesslyConnect = Whether or not to endlessly try connecting.
         connectionRetries = How many times to attempt to connect before signaling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the `core.thread.fiber.Fiber` terminate.
  +/
-void connectFiber(ref Connection conn, const bool endlesslyConnect,
-    const uint connectionRetries, ref bool abort) @system
+void connectFiber(ref Connection conn, const uint connectionRetries, ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -960,7 +958,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
             }
         }
     }
-    while (!abort && endlesslyConnect);
+    while (!abort);
 
     // All IPs exhausted
     ConnectionAttempt endAttempt;
@@ -1057,12 +1055,11 @@ struct ResolveAttempt
         address = String address to look up.
         port = Remote port build into the `std.socket.Address`.
         useIPv6 = Whether to include resolved IPv6 addresses or not.
-        resolveAttempts = How many times to try resolving before giving up.
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the `core.thread.fiber.Fiber` terminate.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
-    const bool useIPv6, const uint resolveAttempts, ref bool abort) @system
+    const bool useIPv6, ref bool abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
@@ -1075,12 +1072,12 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     yield(ResolveAttempt.init);
 
-    foreach (immutable i; 0..resolveAttempts)
+    for (size_t i; (i > 0); ++i)
     {
         if (abort) return;
 
         ResolveAttempt attempt;
-        attempt.retryNum = i;
+        attempt.retryNum = cast(uint)i;
 
         with (AddressFamily)
         try

@@ -683,12 +683,6 @@ private:
     import lu.uda : CannotContainComments;
 
 public:
-    /// Flag denoting whether or not the program should reconnect after disconnect.
-    bool reconnectOnFailure = true;
-
-    /// Whether to endlessly connect or whether to give up after a while.
-    bool endlesslyConnect = true;
-
     /// Whether to connect to IPv6 addresses or only use IPv4 ones.
     bool ipv6 = true;
 

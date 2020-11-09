@@ -1717,8 +1717,7 @@ Next tryConnect(ref Kameloso instance)
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn, instance.connSettings.endlesslyConnect,
-            ConnectionDefaultIntegers.retries, *instance.abort));
+        connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.connectionRetry;
 
     connector.call();
@@ -1850,20 +1849,16 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     import kameloso.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
 
-    enum defaultResolveAttempts = 15;
-    immutable resolveAttempts = instance.connSettings.endlesslyConnect ?
-        int.max : defaultResolveAttempts;
-
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, instance.connSettings.ipv6, resolveAttempts, *instance.abort));
+        instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;
 
     void delayOnNetworkDown(const ResolveAttempt attempt)
     {
-        if (attempt.retryNum+1 < resolveAttempts)
+        if (attempt.retryNum > 0)
         {
             import kameloso.thread : interruptibleSleep;
             import core.time : seconds;
@@ -2687,13 +2682,6 @@ int initBot(string[] args)
         }
 
         instance.conn.sendline("QUIT :" ~ reason.replaceTokens(instance.parser.client));
-    }
-    else if (!*instance.abort && (attempt.next == Next.returnFailure) &&
-        !instance.connSettings.reconnectOnFailure)
-    {
-        // Didn't Ctrl+C, did return failure and shouldn't reconnect
-        logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)",
-            Tint.info, Tint.log);
     }
 
     // Save if we're exiting and configuration says we should.
