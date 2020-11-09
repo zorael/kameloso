@@ -2105,6 +2105,7 @@ void resolveResourceDirectory(ref Kameloso instance)
 void startBot(ref Kameloso instance, ref AttemptState attempt)
 {
     import kameloso.terminal : TerminalToken, isTTY;
+    import std.algorithm.comparison : among;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
@@ -2297,8 +2298,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;
     }
-    while (!*instance.abort && ((attempt.next == Next.continue_) || (attempt.next == Next.retry) ||
-        ((attempt.next == Next.returnFailure) && instance.connSettings.reconnectOnFailure)));
+    while (!*instance.abort && attempt.next.among!(Next.continue_, Next.retry, Next.returnFailure));
 }
 
 
