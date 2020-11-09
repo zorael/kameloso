@@ -230,7 +230,7 @@ public:
 
                 if (dryRun) break;
 
-                if (!buffer.front.quiet)
+                if (settings.trace || !buffer.front.quiet)
                 {
                     bool printed;
 
