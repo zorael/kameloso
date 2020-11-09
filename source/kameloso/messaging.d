@@ -986,31 +986,32 @@ void immediate(IRCPluginState state, const string line,
     m.event.type = IRCEvent.Type.UNSET;
     m.event.content = line;
     m.caller = caller;
+    m.properties |= Message.Property.immediate;
 
     if (quiet) m.properties |= Message.Property.quiet;
 
-    state.mainThread.prioritySend(ThreadMessage.Immediateline(), m);
+    state.mainThread.prioritySend(m);
 }
 
 ///
 unittest
 {
-    import kameloso.thread : ThreadMessage;
-    import std.meta : AliasSeq;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    immediate(state, "test");
+    immediate(state, "commands");
 
-    try
-    {
-        receiveOnly!(AliasSeq!(ThreadMessage.Immediateline, Message));
-    }
-    catch (Exception e)
-    {
-        assert(0, "Receiving an `immediateline` failed.");
-    }
+    receive(
+        (Message m)
+        {
+            with (m.event)
+            {
+                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+                assert((content == "commands"), content);
+                assert(m.properties & Message.Property.immediate);
+            }
+        }
+    );
 }
 
 /// Merely an alias to $(REF immediate), because we use both terms at different places.
