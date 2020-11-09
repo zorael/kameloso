@@ -161,21 +161,8 @@ void messageFiber(ref Kameloso instance)
         /// Send a message to the server bypassing throttling.
         void immediateline(ThreadMessage.Immediateline, string line) scope
         {
-            if (!instance.settings.hideOutgoing)
-            {
-                version(Colours)
-                {
-                    import kameloso.irccolours : mapEffects;
-                    logger.trace("--> ", line.mapEffects);
-                }
-                else
-                {
-                    import kameloso.irccolours : stripEffects;
-                    logger.trace("--> ", line.stripEffects);
-                }
-            }
-
-            instance.conn.sendline(line);
+            instance.immediateBuffer.put(OutgoingLine(line,
+                (instance.settings.hideOutgoing ? Yes.quiet : No.quiet)));
         }
 
         /// Echo a line to the terminal and send it to the server.
