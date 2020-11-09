@@ -710,7 +710,6 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
             // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
-            writeln();  // pad slightly, for cosmetics
             return Next.returnSuccess;
         }
 
