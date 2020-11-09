@@ -654,10 +654,16 @@ Next mainLoop(ref Kameloso instance)
     historyEntry = &instance.connectionHistory[historyEntryIndex];
     historyEntry.startTime = Clock.currTime.toUnixTime;
 
+    /// UNIX timestamp of when the Socket receive timeout was shortened.
+    long timeWhenReceiveWasShortened;
+
     // Set wantLiveSummary to false just in case a change happened in the middle
     // of the last connection. Otherwise the first thing to happen would be
     // that a summary gets printed.
     instance.wantLiveSummary = false;
+
+    /// `Timeout.maxShortenDurationMsecs` in hecto-nanoseconds.
+    enum maxShortenDurationHnsecs = Timeout.maxShortenDurationMsecs * 10_000;
 
     do
     {
@@ -817,15 +823,46 @@ Next mainLoop(ref Kameloso instance)
             }
         }
 
-        if ((timeoutFromMessages < uint.max) || nextGlobalScheduledTimestamp)
+        if (instance.wantReceiveTimeoutShortened)
+        {
+            // Set the timestamp and unset the bool
+            instance.wantReceiveTimeoutShortened = false;
+            timeWhenReceiveWasShortened = nowInHnsecs;
+        }
+
+        if (timeWhenReceiveWasShortened &&
+            (nowInHnsecs > (timeWhenReceiveWasShortened + maxShortenDurationHnsecs)))
+        {
+            // Shortened duration passed, reset timestamp to disable it
+            timeWhenReceiveWasShortened = 0L;
+        }
+
+        if ((timeoutFromMessages < uint.max) || nextGlobalScheduledTimestamp ||
+            timeWhenReceiveWasShortened)
         {
             import std.algorithm.comparison : min;
+
+            immutable defaultTimeout = timeWhenReceiveWasShortened ?
+                Timeout.receiveShortenedMsecs :
+                instance.connSettings.receiveTimeout;
 
             immutable untilNextGlobalScheduled = nextGlobalScheduledTimestamp ?
                 cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
                 uint.max;
-            instance.conn.receiveTimeout =
-                min(instance.connSettings.receiveTimeout, timeoutFromMessages, untilNextGlobalScheduled);
+
+            immutable supposedNewTimeout =
+                min(defaultTimeout, timeoutFromMessages, untilNextGlobalScheduled);
+
+            import std.stdio;
+            writefln("def:%d | msg:%d | glb:%d", defaultTimeout, timeoutFromMessages,
+                untilNextGlobalScheduled);
+
+            if (supposedNewTimeout != instance.conn.receiveTimeout)
+            {
+                writeln("---> NEW:", supposedNewTimeout);
+                instance.conn.receiveTimeout = (supposedNewTimeout > 0) ?
+                    supposedNewTimeout : 1;
+            }
         }
 
         if (socketBlockingDisabled)
