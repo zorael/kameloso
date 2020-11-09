@@ -793,6 +793,7 @@ Next mainLoop(ref Kameloso instance)
         bool bufferHasMessages = (
             !instance.outbuffer.empty |
             !instance.backgroundBuffer.empty |
+            !instance.immediateBuffer.empty |
             !instance.priorityBuffer.empty);
 
         version(TwitchSupport)
