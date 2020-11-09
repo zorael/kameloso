@@ -707,7 +707,8 @@ Next mainLoop(ref Kameloso instance)
 
             if (delayToNextMsecs < instance.conn.receiveTimeout)
             {
-                instance.conn.receiveTimeout = delayToNextMsecs;
+                instance.conn.receiveTimeout = (delayToNextMsecs > 0) ?
+                    delayToNextMsecs : 1;
             }
         }
 
