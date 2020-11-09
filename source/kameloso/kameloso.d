@@ -680,20 +680,24 @@ struct ConnectionSettings
 {
 private:
     import kameloso.constants : Timeout;
-    import lu.uda : CannotContainComments;
+    import lu.uda : CannotContainComments, Hidden;
 
 public:
     /// Whether to connect to IPv6 addresses or only use IPv4 ones.
     bool ipv6 = true;
 
-    /// Path to private (`.pem`) key file, used in SSL connections.
-    @CannotContainComments string privateKeyFile;
+    @CannotContainComments
+    @Hidden
+    {
+        /// Path to private (`.pem`) key file, used in SSL connections.
+        string privateKeyFile;
 
-    /// Path to certificate (`.pem`) file.
-    @CannotContainComments string certFile;
+        /// Path to certificate (`.pem`) file.
+        string certFile;
 
-    /// Path to certificate bundle `cacert.pem` file or equivalent.
-    @CannotContainComments string caBundleFile;
+        /// Path to certificate bundle `cacert.pem` file or equivalent.
+        string caBundleFile;
+    }
 
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
