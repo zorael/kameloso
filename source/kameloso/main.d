@@ -532,6 +532,14 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
+            Lowers the Socket read timeout temporarily, increasing responsiveness.
+         +/
+        void shortenReceiveTimeout(ThreadMessage.ShortenReceiveTimeout) scope
+        {
+            instance.wantReceiveTimeoutShortened = true;
+        }
+
+        /++
             Sets the `instance.wantsLiveSummary` flag to true, causing the main
             loop to print a connection summary to the terminal on the next iteration.
          +/
@@ -573,6 +581,7 @@ void messageFiber(ref Kameloso instance)
                 &pong,
                 &eventToServer,
                 &proxyLoggerMessages,
+                &shortenReceiveTimeout,
                 &quitServer,
                 &save,
                 &reloadPlugins,
