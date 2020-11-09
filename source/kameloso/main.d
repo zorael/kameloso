@@ -145,7 +145,8 @@ void signalHandler(int sig) nothrow @nogc @system
 void messageFiber(ref Kameloso instance)
 {
     import kameloso.common : OutgoingLine, replaceTokens;
-    import kameloso.thread : ThreadMessage;
+    import kameloso.messaging : Message;
+    import kameloso.thread : CarryingFiber, Sendable, ThreadMessage;
     import std.concurrency : yield;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -209,8 +210,6 @@ void messageFiber(ref Kameloso instance)
             instance.writeConfigurationFile(instance.settings.configFile);
         }
 
-        import kameloso.thread : CarryingFiber;
-
         /++
            Attaches a reference to the main array of
            $(REF kameloso.plugins.common.core.IRCPlugin)s (housing all plugins) to the
@@ -243,8 +242,6 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        import kameloso.thread : Sendable;
-
         /// Passes a bus message to each plugin.
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
@@ -263,8 +260,6 @@ void messageFiber(ref Kameloso instance)
                 plugin.onBusMessage(header, content);
             }
         }
-
-        import kameloso.messaging : Message;
 
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(Message m) scope
@@ -503,12 +498,6 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Wrapper around $(REF eventToServer) for shared heap $(REF dialect.defs.IRCEvent)s.
-        void eventPointerToServer(shared(Message)* m) scope
-        {
-            return eventToServer(cast()*m);
-        }
-
         /// Proxies the passed message to the $(REF kameloso.common.logger`).
         void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
         {
@@ -583,7 +572,6 @@ void messageFiber(ref Kameloso instance)
                 &immediateline,
                 &pong,
                 &eventToServer,
-                &eventPointerToServer,
                 &proxyLoggerMessages,
                 &quitServer,
                 &save,
