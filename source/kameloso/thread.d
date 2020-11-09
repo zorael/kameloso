@@ -184,6 +184,12 @@ struct ThreadMessage
 
     /// Concurrency message asking the main thread to set the `abort` flag.
     static struct Abort {}
+
+    /++
+        Concurrency message asking for the Socket receive timeout to be lowered
+        temporarily, for increased responsiveness.
+     +/
+    static struct ShortenReceiveTimeout {}
 }
 
 
