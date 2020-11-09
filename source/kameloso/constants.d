@@ -222,6 +222,18 @@ enum Timeout
     receiveMsecs = 1000,
 
     /++
+        The receive attempt timeout as set as a $(REF std.socket.SocketOption),
+        in milliseconds, when a shorter one than $(REF receiveMsecs) is desired.
+     +/
+    receiveShortenedMsecs = 250,
+
+    /++
+        The amount of time to spend with a shortened receive timeout, in milliseconds.
+        After this, it reverts from $(REF receiveShortenedMsecs) to $(REF receiveMsecs).
+     +/
+    maxShortenDurationMsecs = 2000,
+
+    /++
         The maximum amount of time to wait between connection attempts.
      +/
     connectionDelayCap = 600,
