@@ -1072,7 +1072,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     yield(ResolveAttempt.init);
 
-    for (size_t i; (i > 0); ++i)
+    for (size_t i; (i >= 0); ++i)
     {
         if (abort) return;
 
