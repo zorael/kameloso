@@ -133,7 +133,10 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
 void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 {
-    import std.concurrency : spawn;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend, spawn;
+
+    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
     // Defer all work to the worker thread
     spawn(&worker, cast(shared)plugin.state, event,

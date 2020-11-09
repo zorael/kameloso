@@ -182,6 +182,14 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
             (i * plugin.delayMsecs), colouredFlag);
     }
+
+    if (urls.length)
+    {
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : prioritySend;
+
+        plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+    }
 }
 
 

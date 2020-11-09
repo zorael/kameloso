@@ -399,11 +399,14 @@ QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.thread : ThreadMessage;
     import lu.string : beginsWith;
-    import std.concurrency : send, spawn;
+    import std.concurrency : prioritySend, send, spawn;
     import std.datetime.systime : Clock, SysTime;
 
     SysTime pre;
+
+    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
     if (plugin.twitchBotSettings.singleWorkerThread)
     {
