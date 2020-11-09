@@ -844,27 +844,40 @@ Next mainLoop(ref Kameloso instance)
  +/
 double sendLines(ref Kameloso instance)
 {
+    if (!instance.immediateBuffer.empty)
+    {
+        cast(void)instance.throttleline(instance.immediateBuffer, No.dryRun, No.sendFaster, Yes.immediate);
+    }
+
     if (!instance.priorityBuffer.empty)
     {
-        return instance.throttleline(instance.priorityBuffer);
+        immutable untilNext = instance.throttleline(instance.priorityBuffer);
+        if (untilNext > 0.0) return untilNext;
     }
 
     version(TwitchSupport)
     {
         if (!instance.fastbuffer.empty)
         {
-            return instance.throttleline(instance.fastbuffer, No.dryRun, Yes.sendFaster);
+            immutable untilNext = instance.throttleline(instance.fastbuffer,
+                No.dryRun, Yes.sendFaster);
+            if (untilNext > 0.0) return untilNext;
         }
     }
 
     if (!instance.outbuffer.empty)
     {
-        return instance.throttleline(instance.outbuffer);
+        immutable untilNext = instance.throttleline(instance.outbuffer);
+        if (untilNext > 0.0) return untilNext;
     }
-    else
+
+    if (!instance.backgroundBuffer.empty)
     {
-        return instance.throttleline(instance.backgroundBuffer);
+        immutable untilNext = instance.throttleline(instance.backgroundBuffer);
+        if (untilNext > 0.0) return untilNext;
     }
+
+    return 0.0;
 }
 
 
