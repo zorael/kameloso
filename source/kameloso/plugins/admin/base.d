@@ -129,7 +129,6 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "save")
-@BotCommand(PrefixPolicy.nickname, "writeconfig", Yes.hidden)
 @Description("Saves current configuration to disk.")
 void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 {
