@@ -854,13 +854,8 @@ Next mainLoop(ref Kameloso instance)
             immutable supposedNewTimeout =
                 min(defaultTimeout, timeoutFromMessages, untilNextGlobalScheduled);
 
-            import std.stdio;
-            writefln("def:%d | msg:%d | glb:%d", defaultTimeout, timeoutFromMessages,
-                untilNextGlobalScheduled);
-
             if (supposedNewTimeout != instance.conn.receiveTimeout)
             {
-                writeln("---> NEW:", supposedNewTimeout);
                 instance.conn.receiveTimeout = (supposedNewTimeout > 0) ?
                     supposedNewTimeout : 1;
             }
