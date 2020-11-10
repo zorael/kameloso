@@ -150,6 +150,9 @@ enum ConnectionDefaultFloats : double
 {
     /// By what to multiply the connect timeout after failing an attempt.
     delayIncrementMultiplier = 1.5,
+
+    /// By what to multiply $(REF Timeout.receiveMsecs) with to shorten reads.
+    receiveShorteningMultiplier = 0.25,
 }
 
 
@@ -220,12 +223,6 @@ enum Timeout
         The receive attempt timeout as set as a $(REF std.socket.SocketOption), in milliseconds.
      +/
     receiveMsecs = 1000,
-
-    /++
-        The receive attempt timeout as set as a $(REF std.socket.SocketOption),
-        in milliseconds, when a shorter one than $(REF receiveMsecs) is desired.
-     +/
-    receiveShortenedMsecs = 250,
 
     /++
         The amount of time to spend with a shortened receive timeout, in milliseconds.

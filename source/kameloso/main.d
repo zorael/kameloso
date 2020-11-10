@@ -840,10 +840,11 @@ Next mainLoop(ref Kameloso instance)
         if ((timeoutFromMessages < uint.max) || nextGlobalScheduledTimestamp ||
             timeWhenReceiveWasShortened)
         {
+            import kameloso.constants : ConnectionDefaultFloats;
             import std.algorithm.comparison : min;
 
             immutable defaultTimeout = timeWhenReceiveWasShortened ?
-                Timeout.receiveShortenedMsecs :
+                cast(uint)(Timeout.receiveMsecs * ConnectionDefaultFloats.receiveShorteningMultiplier) :
                 instance.connSettings.receiveTimeout;
 
             immutable untilNextGlobalScheduled = nextGlobalScheduledTimestamp ?
