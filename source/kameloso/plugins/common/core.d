@@ -1766,7 +1766,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
     const PrefixPolicy policy, const IRCClient client, const string prefix)
 {
     import kameloso.common : stripSeparatedPrefix;
-    import lu.string : beginsWith, nom;
+    import lu.string : beginsWith;
     import std.typecons : No, Yes;
 
     static if (verbose)
@@ -1794,7 +1794,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
                 writefln("starts with prefix (%s)", prefix);
             }
 
-            event.content.nom!(Yes.decode)(prefix);
+            event.content = event.content[prefix.length..$];
         }
         else
         {
