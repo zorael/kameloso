@@ -1841,6 +1841,16 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
 
             event.content = event.content
                 .stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
+
+            if (prefix.length && event.content.beginsWith(prefix))
+            {
+                static if (verbose)
+                {
+                    writefln("starts with prefix (%s)", prefix);
+                }
+
+                event.content = event.content[prefix.length..$];
+            }
             // Drop down
         }
         else if (event.type == IRCEvent.Type.QUERY)
