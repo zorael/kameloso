@@ -658,6 +658,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
             {
+                import lu.string : strippedLeft;
+                event.content = event.content.strippedLeft;
+
                 if (!event.content.length)
                 {
                     // Event has a $(REF BotCommand) or a $(REF BotRegex) set up but
