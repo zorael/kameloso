@@ -808,7 +808,6 @@ void onCommandSummary(AdminPlugin plugin)
     "$command [optional channel] [optional delay] [optional key(s)]")
 void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import dialect.common : isValidChannel;
     import lu.string : nom;
     import std.conv : ConvException, text, to;
 
