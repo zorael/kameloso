@@ -882,7 +882,14 @@ void cycle(AdminPlugin plugin, const string channelName,
                     join(plugin.state, channelName, key);
                 }
 
-                return delay(plugin, &joinDg, delaySecs);
+                if (!delaySecs)
+                {
+                    return joinDg();
+                }
+                else
+                {
+                    return delay(plugin, &joinDg, delaySecs);
+                }
             }
 
             // Wrong channel, wait for the next SELFPART
