@@ -906,8 +906,8 @@ void cycle(AdminPlugin plugin, const string channelName,
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "mask")
-@BotCommand(PrefixPolicy.prefixed, "hostmask", Yes.hidden)
+@BotCommand(PrefixPolicy.prefixed, "hostmask")
+@BotCommand(PrefixPolicy.prefixed, "mask", Yes.hidden)
 @Description("Modifies a hostmask definition, for use on servers without services accounts.",
     "$command [add|del|list] [account] [hostmask if adding]")
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
