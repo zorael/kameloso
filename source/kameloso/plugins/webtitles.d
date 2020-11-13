@@ -193,13 +193,10 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
             (i * plugin.delayMsecs), colouredFlag, descriptionsFlag);
     }
 
-    if (urls.length)
-    {
-        import kameloso.thread : ThreadMessage;
-        import std.concurrency : prioritySend;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend;
 
-        plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
-    }
+    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 }
 
 
