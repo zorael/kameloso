@@ -104,9 +104,9 @@ struct TitleLookupRequest
 void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
-    import lu.string : beginsWith;
+    import lu.string : beginsWith, strippedLeft;
 
-    if (event.content.beginsWith(plugin.state.settings.prefix)) return;
+    if (event.content.strippedLeft.beginsWith(plugin.state.settings.prefix)) return;
 
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
