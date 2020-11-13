@@ -382,7 +382,7 @@ void worker(shared TitleLookupRequest sRequest,
     Throws: $(REF object.Exception) if URL could not be fetched, or if no title could be
         divined from it.
  +/
-TitleLookupResults lookupTitle(const string url)
+TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descriptions)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
@@ -434,13 +434,16 @@ TitleLookupResults lookupTitle(const string url)
     results.title = decodeTitle(doc.title);
     results.domain = host;
 
-    auto metaTags = doc.getElementsByTagName("meta");
-
-    foreach (tag; metaTags)
+    if (descriptions)
     {
-        if (tag.name != "description") continue;
-        results.description = tag.content;
-        break;
+        auto metaTags = doc.getElementsByTagName("meta");
+
+        foreach (tag; metaTags)
+        {
+            if (tag.name != "description") continue;
+            results.description = tag.content;
+            break;
+        }
     }
 
     client.shutdown();
