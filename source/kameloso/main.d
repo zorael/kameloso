@@ -1899,24 +1899,21 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;
 
-    void delayOnNetworkDown(const ResolveAttempt attempt)
+    void delayOnNetworkDown()
     {
-        if (attempt.retryNum > 0)
-        {
-            import kameloso.thread : interruptibleSleep;
-            import core.time : seconds;
+        import kameloso.thread : interruptibleSleep;
+        import core.time : seconds;
 
-            logger.logf("Network down? Retrying in %s%d%s seconds.",
-                Tint.info, incrementedRetryDelay, Tint.log);
-            interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
-            if (*instance.abort) return;
+        logger.logf("Network down? Retrying in %s%d%s seconds.",
+            Tint.info, incrementedRetryDelay, Tint.log);
+        interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+        if (*instance.abort) return;
 
-            import std.algorithm.comparison : min;
+        import std.algorithm.comparison : min;
 
-            enum delayCap = 10*60;  // seconds
-            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
-            incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
-        }
+        enum delayCap = 10*60;  // seconds
+        incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+        incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
     }
 
     foreach (const attempt; resolver)
@@ -1938,7 +1935,7 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         case exception:
             logger.warningf("Could not resolve server address. (%s%s%s)",
                 Tint.log, attempt.error, Tint.warning);
-            delayOnNetworkDown(attempt);
+            delayOnNetworkDown();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
@@ -1957,7 +1954,7 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
             else
             {
                 // Not the first attempt yet failure; transient error? retry
-                delayOnNetworkDown(attempt);
+                delayOnNetworkDown();
                 if (*instance.abort) return Next.returnFailure;
                 continue;
             }
