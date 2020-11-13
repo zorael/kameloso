@@ -207,30 +207,36 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
 
         if (!numBlock.length)
         {
-            immutable message = colouredOutgoing ?
-                "No such bash.org quote: " ~ event.content.ircBold :
-                "No such bash.org quote: " ~ event.content;
-
+            enum message = "No such bash.org quote found.";
             privmsg(state, event.channel, event.sender.nickname, message);
             return;
         }
 
-        immutable num = numBlock[0]
-            .getElementsByTagName("p")[0]
-            .getElementsByTagName("b")[0]
-            .toString[4..$-4];
+        void reportLayoutError()
+        {
+            askToError(state, "Failed to parse bash.org page; unexpected layout.");
+        }
 
-        auto range = doc
-            .getElementsByClassName("qt")[0]
+        auto p = numBlock[0].getElementsByTagName("p");
+        if (!p.length) return reportLayoutError();  // Page changed layout
+
+        auto b = p[0].getElementsByTagName("b");
+        if (!b.length) return reportLayoutError();  // Page changed layout
+
+        auto qt = doc.getElementsByClassName("qt");
+        if (!qt.length) return reportLayoutError();  // Page changed layout
+
+        auto range = qt[0]
             .toString
-            .htmlEntitiesDecode
             .replace(`<p class="qt">`, string.init)
             .replace(`</p>`, string.init)
             .replace(`<br />`, string.init)
+            .htmlEntitiesDecode
             .splitter('\n');
 
+        immutable num = b[0].toString[4..$-4];
         immutable message = colouredOutgoing ?
-            "%s #%s".format("[bash.org]".ircBold, num) :
+            "[%s] #%s".format("bash.org".ircBold, num) :
             "[bash.org] #%s".format(num);
 
         privmsg(state, event.channel, event.sender.nickname, message);
