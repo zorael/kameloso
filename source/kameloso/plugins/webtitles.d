@@ -128,6 +128,10 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
+    if (!urls.length) return;
+
+    immutable descriptionsFlag = plugin.webtitlesSettings.descriptions ?
+        Yes.descriptions : No.descriptions;
     bool[string] uniques;
 
     foreach (immutable i, url; urls)
@@ -186,7 +190,7 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), colouredFlag);
+            (i * plugin.delayMsecs), colouredFlag, descriptionsFlag);
     }
 
     if (urls.length)
@@ -214,9 +218,13 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
         colouredFlag = Flag of whether or not to send coloured output to the server.
+        descriptions = Whether or not to look up meta descriptions.
  +/
-void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredFlag)
+void worker(shared TitleLookupRequest sRequest,
+    shared TitleLookupResults[string] cache,
+    const ulong delayMsecs,
+    const Flag!"colouredOutgoing" colouredFlag,
+    const Flag!"descriptions" descriptions)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
@@ -309,7 +317,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         {
             try
             {
-                request.results = lookupTitle(request.url);
+                request.results = lookupTitle(request.url, descriptions);
                 reportTitle(request, colouredFlag);
                 request.results.when = now;
 
@@ -366,6 +374,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
     Params:
         url = URL string to look up.
+        descriptions = Whether or not to look up meta descriptions.
 
     Returns:
         A finished $(REF TitleLookupResults).
