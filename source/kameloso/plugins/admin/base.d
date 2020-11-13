@@ -795,7 +795,7 @@ void onCommandSummary(AdminPlugin plugin)
 }
 
 
-// cycle
+// onCommandCycle
 /++
     Cycles (parts and immediately rejoins) a channel.
  +/
@@ -804,25 +804,48 @@ void onCommandSummary(AdminPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "cycle")
-@Description("Cycles (parts and immediately rejoins) a channel.")
+@Description("Cycles (parts and rejoins) a channel.",
+    "$command [optional channel] [optional delay] [optional key(s)]")
 void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
 {
+    import dialect.common : isValidChannel;
     import lu.string : nom;
+    import std.conv : ConvException, text, to;
 
     string slice = event.content;  // mutable
 
-    immutable channelName = slice.length ?
-        slice.nom!(Yes.inherit)(' ') :
-        event.channel;
+    if (!slice.length)
+    {
+        return cycle(plugin, event.channel);
+    }
 
-    if (event.content.length && (channelName !in plugin.state.channels))
+    immutable channelName = slice.nom!(Yes.inherit)(' ');
+
+    if (channelName !in plugin.state.channels)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "I am not in that channel.");
         return;
     }
 
-    cycle(plugin, channelName, slice);
+    if (!slice.length)
+    {
+        return cycle(plugin, channelName);
+    }
+
+    immutable delaystring = slice.nom!(Yes.inherit)(' ');
+
+    try
+    {
+        immutable delay = delaystring.to!uint;
+        return cycle(plugin, channelName, delay, slice);
+    }
+    catch (ConvException e)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            text(`"`, slice, `" is not a valid number for seconds to delay.`));
+        return;
+    }
 }
 
 
@@ -833,11 +856,13 @@ void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
     Params:
         plugin = The current $(REF AdminPlugin).
         channelName = The name of the channel to cycle.
+        delaySecs = Number of second to delay rejoining.
         key = The key to use when rejoining the channel.
  +/
-void cycle(AdminPlugin plugin, const string channelName, const string key = string.init)
+void cycle(AdminPlugin plugin, const string channelName,
+    const uint delaySecs = 0, const string key = string.init)
 {
-    import kameloso.plugins.common.delayawait : await;
+    import kameloso.plugins.common.delayawait : await, delay;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
@@ -853,7 +878,12 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
 
             if (partEvent.channel == channelName)
             {
-                return join(plugin.state, channelName, key);
+                void joinDg()
+                {
+                    join(plugin.state, channelName, key);
+                }
+
+                return delay(plugin, &joinDg, delaySecs);
             }
 
             // Wrong channel, wait for the next SELFPART
