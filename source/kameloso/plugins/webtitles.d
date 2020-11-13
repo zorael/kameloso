@@ -46,6 +46,9 @@ struct TitleLookupResults
     /// Looked up web page title.
     string title;
 
+    /// The content of the web page's `description` tag.
+    string description;
+
     /// Domain name of the looked up URL.
     string domain;
 
@@ -419,6 +422,15 @@ TitleLookupResults lookupTitle(const string url)
     results.title = decodeTitle(doc.title);
     results.domain = host;
 
+    auto metaTags = doc.getElementsByTagName("meta");
+
+    foreach (tag; metaTags)
+    {
+        if (tag.name != "description") continue;
+        results.description = tag.content;
+        break;
+    }
+
     client.shutdown();
     return results;
 }
@@ -442,13 +454,22 @@ void reportTitle(TitleLookupRequest request,
         import kameloso.irccolours : ircBold;
         import std.format : format;
 
+        immutable maybePipe = request.results.description.length ? " | " : string.init;
         line = colouredOutgoing ?
-            "[%s] %s".format(request.results.domain.ircBold, request.results.title) :
-            "[%s] %s".format(request.results.domain, request.results.title);
+            "[%s] %s%s%s".format(request.results.domain.ircBold, request.results.title,
+                maybePipe, request.results.description) :
+            "[%s] %s%s%s".format(request.results.domain, request.results.title,
+                maybePipe, request.results.description);
     }
     else
     {
         line = request.results.title;
+    }
+
+    if (line.length > 510)
+    {
+        // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
+        line = line[0..504] ~ " [...]";
     }
 
     chan(request.state, request.event.channel, line);
