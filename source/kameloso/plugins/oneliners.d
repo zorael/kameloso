@@ -50,8 +50,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
-    string slice = event.content;
-    slice.nom(plugin.state.settings.prefix);
+    immutable slice = event.content[plugin.state.settings.prefix.length..$];
 
     // An empty command is invalid, as is one containing spaces
     if (!slice.length || slice.contains(' ')) return;

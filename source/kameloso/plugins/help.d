@@ -100,9 +100,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             if (mutEvent.content.beginsWith(plugin.state.settings.prefix))
             {
                 // Not a plugin, just a prefixed command (probably)
-                string slice = mutEvent.content;
-                slice.nom!(Yes.decode)(plugin.state.settings.prefix);
-                immutable specifiedCommand = slice;
+                immutable specifiedCommand = mutEvent.content[plugin.state.settings.prefix.length..$];
 
                 if (!specifiedCommand.length)
                 {

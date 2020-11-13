@@ -248,7 +248,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         if (slice[0] == 's') slice = slice[1..$];
         slice = slice[3..$];  // ://
 
-        if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
+        if (slice.beginsWith("www.")) slice = slice[4..$];
 
         if (slice.beginsWith("youtube.com/watch?v=") ||
             slice.beginsWith("youtu.be/"))
