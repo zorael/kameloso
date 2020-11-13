@@ -30,6 +30,9 @@ import std.typecons : Flag, No, Yes;
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /// Toggles whether or not meta descriptions should be reported next to titles.
+    bool descriptions = true;
 }
 
 
