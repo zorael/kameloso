@@ -87,7 +87,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
         if (homeIndex != -1)
         {
-            logger.warning("Leaving a home ...");
+            logger.warning("Leaving a home...");
         }
         else
         {
@@ -142,7 +142,7 @@ void joinChannels(ConnectService service)
 {
     if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
     {
-        logger.warning("No channels, no purpose ...");
+        logger.warning("No channels, no purpose...");
         return;
     }
 
@@ -157,7 +157,7 @@ void joinChannels(ConnectService service)
     auto guestlist = service.state.bot.guestChannels.sort.uniq;
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-    logger.logf("Joining %s%d%s %s ...", Tint.info, numChans, Tint.log,
+    logger.logf("Joining %s%d%s %s...", Tint.info, numChans, Tint.log,
         numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
@@ -294,7 +294,7 @@ void tryAuth(ConnectService service)
 
         if (!service.state.bot.account.length)
         {
-            logger.logf("No account specified! Trying %s%s%s ...",
+            logger.logf("No account specified! Trying %s%s%s...",
                 Tint.info, service.state.client.origNickname, Tint.log);
             account = service.state.client.origNickname;
         }

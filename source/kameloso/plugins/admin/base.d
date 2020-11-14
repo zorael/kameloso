@@ -634,7 +634,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
     if (!event.content.length)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "No channels to join supplied ...");
+            "No channels to join supplied...");
         return;
     }
 
@@ -665,7 +665,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
     if (!event.content.length)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "No channels to part supplied ...");
+            "No channels to part supplied...");
         return;
     }
 

@@ -168,7 +168,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by $(REF kameloso.kameloso.tryGetopt).
 
-        logger.logf("Attempting to open %s%s%s in a text editor ...",
+        logger.logf("Attempting to open %s%s%s in a text editor...",
             Tint.info, instance.settings.configFile, Tint.log);
 
         version(OSX)

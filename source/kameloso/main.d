@@ -2184,7 +2184,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 instance.fastbuffer.clear();
             }
 
-            logger.log("Please wait a few seconds ...");
+            logger.log("One moment...");
             interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
             if (*instance.abort) break outerloop;
 

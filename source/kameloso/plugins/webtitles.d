@@ -341,7 +341,7 @@ void worker(shared TitleLookupRequest sRequest,
 
                 if (firstTime)
                 {
-                    request.state.askToLog("Rewriting URL and retrying ...");
+                    request.state.askToLog("Rewriting URL and retrying...");
 
                     if (request.url[$-1] == '/')
                     {
