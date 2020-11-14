@@ -185,7 +185,7 @@ if (Things.length > 0)
     {
         import lu.traits : isAnnotated, isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAggregateType;
+        import std.traits : isAggregateType, isSomeFunction, isType;
 
         string longest;
 
@@ -200,6 +200,9 @@ if (Things.length > 0)
                         (memberstring != "__ctor") &&
                         (memberstring != "__dtor") &&
                         !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                        !isType!(__traits(getMember, Thing, memberstring)) &&
+                        !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
+                        !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
                         !isAnnotated!(__traits(getMember, Thing, memberstring), Hidden) &&
                         (all || !isAnnotated!(__traits(getMember, Thing, memberstring), Unserialisable)))
