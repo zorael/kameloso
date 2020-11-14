@@ -142,7 +142,7 @@ void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things)
 if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
-    import kameloso.common : settings;
+    static import kameloso.common;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
     import std.stdio : writeln;
@@ -159,10 +159,18 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 
         version(Colours)
         {
-            if (!settings.monochrome)
+            if (!kameloso.common.settings)
+            {
+                // Threading and/or otherwise forgot to assign pointer `kameloso.common.settings`
+                // It will be wrong but initialise it here so we at least don't crash
+                //logger.warning("Tried to call `printObjects` with an uninitialised `kameloso.common.settings`!");
+                kameloso.common.settings = new typeof(*kameloso.common.settings);
+            }
+
+            if (!kameloso.common.settings.monochrome)
             {
                 formatObjectImpl!(all, Yes.coloured)(outbuffer,
-                    (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+                    (kameloso.common.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
                     thing, widths.type+1, widths.name);
                 put = true;
             }
