@@ -482,6 +482,9 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     import lu.string : contains;
     import std.array : Appender;
 
+    Appender!(char[]) sink;
+    sink.reserve(512);  // ~323
+
     struct Struct
     {
         string members;
@@ -511,9 +514,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     s.cC = [ 'a':'a', 'b':'b' ];
     assert('a' in s.cC);
     assert('b' in s.cC);
-    Appender!(char[]) sink;
 
-    sink.reserve(512);  // ~323
     sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
 
     enum structNameSerialised =
@@ -541,6 +542,47 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+
+    // Class copy
+    class ClassName
+    {
+        Struct struct_;
+        int i = 12_345;
+        string s = "foo";
+        string p = "!";
+        string p2;
+        bool b = true;
+        float f = 3.14f;
+        double d = 99.9;
+        const(char)[] c = [ 'a', 'b', 'c' ];
+        const(char)[] emptyC;
+        string[] dynA = [ "foo", "bar", "baz" ];
+        int[] iA = [ 1, 2, 3, 4 ];
+        const(char)[char] cC;
+    }
+
+    auto c1 = new ClassName;
+    sink.clear();
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
+
+    enum classNameSerialised =
+`-- ClassName
+     Struct struct_                    <struct>
+        int i                           12345
+     string s                          "foo"(3)
+     string p                           "!"(1)
+     string p2                          ""(0)
+       bool b                           true
+      float f                           3.14
+     double d                           99.9
+     char[] c                         ['a', 'b', 'c'](3)
+     char[] emptyC                      [](0)
+   string[] dynA                      ["foo", "bar", "baz"](3)
+      int[] iA                        [1, 2, 3, 4](4)
+ char[char] cC                          [](0)
+`;
+
+    assert((sink.data == classNameSerialised), '\n' ~ sink.data);
 
     // Two at a time
     struct Struct1
@@ -621,6 +663,25 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
         sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
+
+    class C
+    {
+        string a = "abc";
+        bool b = true;
+        int i = 42;
+    }
+
+    C c2 = new C;
+
+    sink.clear();
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
+    enum cFormatted =
+`-- C
+   string a                          "abc"(3)
+     bool b                           true
+      int i                           42
+`;
+    assert((sink.data == cFormatted), '\n' ~ sink.data);
 }
 
 
