@@ -104,6 +104,8 @@ unittest
         @Unserialisable string veryVeryVeryLongNameThatIsInvalid;
         @Hidden float likewiseWayLongerButInvalid;
         deprecated bool alsoVeryLongButDeprecated;
+        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
     }
 
     struct Bar
@@ -146,6 +148,8 @@ unittest
         @Unserialisable string veryVeryVeryLongNameThatIsValidNow;
         @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
         deprecated bool alsoVeryLongButDeprecated;
+        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
     }
 
     struct Bar
@@ -259,6 +263,8 @@ unittest
         string s;
         char[][string] css;
         @Unserialisable string[][string] ss;
+        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
     }
 
     enum longestConfigurable = longestMemberTypeName!S1;
@@ -288,6 +294,8 @@ unittest
         string s;
         char[][string] css;
         @Unserialisable string[][string] ss;
+        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
     }
 
     enum longestUnserialisable = longestUnserialisableMemberTypeName!S1;
