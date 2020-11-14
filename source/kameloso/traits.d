@@ -268,6 +268,7 @@ unittest
         @Unserialisable string[][string] ss;
         void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
+        string foo(string,string,string,string,string,string,string,string);
     }
 
     enum longestConfigurable = longestMemberTypeName!S1;
@@ -299,6 +300,7 @@ unittest
         @Unserialisable string[][string] ss;
         void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
+        string foo(string,string,string,string,string,string,string,string);
     }
 
     enum longestUnserialisable = longestUnserialisableMemberTypeName!S1;
