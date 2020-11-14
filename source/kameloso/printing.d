@@ -112,7 +112,7 @@ unittest
 
 // printObjects
 /++
-    Prints out struct objects, with all their printable members with all their
+    Prints out aggregate objects, with all their printable members with all their
     printable values.
 
     This is not only convenient for debugging but also usable to print out
@@ -136,7 +136,7 @@ unittest
         all = Whether or not to also display members marked as
             $(REF lu.uda.Unserialisable); usually transitive information that
             doesn't carry between program runs. Also those annotated $(REF lu.uda.Hidden).
-        things = Variadic list of struct objects to enumerate.
+        things = Variadic list of aggregate objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things)
@@ -200,7 +200,7 @@ alias printObject = printObjects;
 
 // formatObjects
 /++
-    Formats a struct object, with all its printable members with all their
+    Formats an aggregate object, with all its printable members with all their
     printable values. Overload that writes to a passed output range sink.
 
     Example:
@@ -228,7 +228,7 @@ alias printObject = printObjects;
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
-        things = Variadic list of structs or classes to enumerate and format.
+        things = Variadic list of aggregate objects to enumerate and format.
  +/
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
@@ -256,7 +256,7 @@ alias formatObject = formatObjects;
 
 // formatObjectImpl
 /++
-    Formats a struct object, with all its printable members with all their
+    Formats an aggregate object, with all its printable members with all their
     printable values. This is an implementation template and should not be
     called directly; instead use $(REF printObjects) or $(REF formatObjects).
 
@@ -267,7 +267,7 @@ alias formatObject = formatObjects;
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
-        thing = Struct or class to enumerate and format.
+        thing = Aggregate object to enumerate and format.
         typewidth = The width with which to pad type names, to align properly.
         namewidth = The width with which to pad variable names, to align properly.
  +/
@@ -300,26 +300,29 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
         sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
     }
 
-    foreach (immutable i, ref member; thing.tupleof)
+    foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
         import lu.traits : isAnnotated, isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAggregateType, isAssociativeArray, isType;
+        import std.traits : isAggregateType, isAssociativeArray, isSomeFunction, isType;
 
-        enum shouldBePrinted = all ||
-            (!__traits(isDeprecated, thing.tupleof[i]) &&
-            isSerialisable!member &&
-            !isAnnotated!(thing.tupleof[i], Hidden) &&
-            !isAnnotated!(thing.tupleof[i], Unserialisable));
-
-        static if (shouldBePrinted)
+        static if (
+            (memberstring != "this") &&
+            (memberstring != "__ctor") &&
+            (memberstring != "__dtor") &&
+            !isType!(__traits(getMember, thing, memberstring)) &&
+            !isSomeFunction!(__traits(getMember, thing, memberstring)) &&
+            !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
+            (all ||
+                (!__traits(isDeprecated, __traits(getMember, thing, memberstring)) &&
+                isSerialisable!(__traits(getMember, thing, memberstring)) &&
+                !isAnnotated!(__traits(getMember, thing, memberstring), Hidden) &&
+                !isAnnotated!(__traits(getMember, thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
 
-            alias T = Unqual!(typeof(member));
-
-            enum memberstring = __traits(identifier, thing.tupleof[i]);
+            alias T = Unqual!(typeof(__traits(getMember, thing, memberstring)));
 
             static if (isTrulyString!T)
             {
@@ -334,17 +337,18 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     sink.formattedWrite(stringPattern,
                         typeCode.colour, typewidth, T.stringof,
                         memberCode.colour, (namewidth + 2), memberstring,
-                        (member.length < 2) ? " " : string.init,
-                        valueCode.colour, member,
-                        lengthCode.colour, member.length);
+                        (__traits(getMember, thing, memberstring).length < 2) ? " " : string.init,
+                        valueCode.colour, __traits(getMember, thing, memberstring),
+                        lengthCode.colour, __traits(getMember, thing, memberstring).length);
                 }
                 else
                 {
                     enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
                     sink.formattedWrite(stringPattern, typewidth, T.stringof,
                         (namewidth + 2), memberstring,
-                        (member.length < 2) ? " " : string.init,
-                        member, member.length);
+                        (__traits(getMember, thing, memberstring).length < 2) ? " " : string.init,
+                        __traits(getMember, thing, memberstring),
+                        __traits(getMember, thing, memberstring).length);
                 }
             }
             else static if (isArray!T || isAssociativeArray!T)
@@ -356,7 +360,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 enum elemIsCharacter = is(ElemType == char) ||
                     is(ElemType == dchar) || is(ElemType == wchar);
 
-                immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
+                immutable thisWidth = __traits(getMember, thing, memberstring).length ?
+                    (namewidth + 2) : (namewidth + 4);
 
                 static if (coloured)
                 {
@@ -379,8 +384,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     sink.formattedWrite(arrayPattern,
                         typeCode.colour, typewidth, UnqualArray!T.stringof,
                         memberCode.colour, thisWidth, memberstring,
-                        valueCode.colour, member,
-                        lengthCode.colour, member.length);
+                        valueCode.colour, __traits(getMember, thing, memberstring),
+                        lengthCode.colour, __traits(getMember, thing, memberstring).length);
                 }
                 else
                 {
@@ -398,8 +403,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     sink.formattedWrite(arrayPattern,
                         typewidth, UnqualArray!T.stringof,
                         thisWidth, memberstring,
-                        member,
-                        member.length);
+                        __traits(getMember, thing, memberstring),
+                        __traits(getMember, thing, memberstring).length);
                 }
             }
             else static if (isAggregateType!T)
@@ -410,11 +415,11 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     is(T == interface) ? "interface" :
                     /*is(T == union) ?*/ "union"; //: "<error>";
 
-                static if (is(T == struct))
+                static if (is(Thing == struct) && is(T == struct))
                 {
-                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
-                        " (init)" :
-                        string.init;
+                    immutable initText = (__traits(getMember, thing, memberstring) ==
+                        __traits(getMember, Thing.init, memberstring)) ?
+                            " (init)" : string.init;
                 }
                 else
                 {
@@ -452,13 +457,13 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     sink.formattedWrite(normalPattern,
                         typeCode.colour, typewidth, T.stringof,
                         memberCode.colour, (namewidth + 2), memberstring,
-                        valueCode.colour, member);
+                        valueCode.colour, __traits(getMember, thing, memberstring));
                 }
                 else
                 {
                     enum normalPattern = "%*s %-*s  %s\n";
                     sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring, member);
+                        (namewidth + 2), memberstring, __traits(getMember, thing, memberstring));
                 }
             }
         }
