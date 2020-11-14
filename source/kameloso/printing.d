@@ -310,14 +310,14 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             (memberstring != "this") &&
             (memberstring != "__ctor") &&
             (memberstring != "__dtor") &&
+            !__traits(isDeprecated, __traits(getMember, thing, memberstring)) &&
             !isType!(__traits(getMember, thing, memberstring)) &&
             !isSomeFunction!(__traits(getMember, thing, memberstring)) &&
             !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
             (all ||
-                (!__traits(isDeprecated, __traits(getMember, thing, memberstring)) &&
                 isSerialisable!(__traits(getMember, thing, memberstring)) &&
                 !isAnnotated!(__traits(getMember, thing, memberstring), Hidden) &&
-                !isAnnotated!(__traits(getMember, thing, memberstring), Unserialisable))))
+                !isAnnotated!(__traits(getMember, thing, memberstring), Unserialisable)))
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
