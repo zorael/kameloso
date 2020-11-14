@@ -153,7 +153,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
     scope(exit) outbuffer.clear();
     outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
-    foreach (immutable i, thing; things)
+    foreach (immutable i, ref thing; things)
     {
         bool put;
 
@@ -237,7 +237,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange
 {
     alias widths = Widths!(all, Things);
 
-    foreach (immutable i, thing; things)
+    foreach (immutable i, ref thing; things)
     {
         formatObjectImpl!(all, coloured)(sink, bright, thing, widths.type+1, widths.name);
 
@@ -300,7 +300,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
         sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
     }
 
-    foreach (immutable i, member; thing.tupleof)
+    foreach (immutable i, ref member; thing.tupleof)
     {
         import lu.traits : isAnnotated, isSerialisable;
         import lu.uda : Hidden, Unserialisable;
