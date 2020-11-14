@@ -2082,7 +2082,9 @@ Next verifySettings(ref Kameloso instance)
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
-        immutable addressIsResolvable = instance.parser.server.address.contains('.');
+        immutable addressIsResolvable = instance.settings.force ||
+            instance.parser.server.address.contains('.') ||
+            instance.parser.server.address.contains(':');
     }
     else
     {
@@ -2090,7 +2092,7 @@ Next verifySettings(ref Kameloso instance)
         enum addressIsResolvable = true;
     }
 
-    if (!instance.settings.force && !addressIsResolvable)
+    if (!addressIsResolvable)
     {
         logger.errorf("Invalid address! [%s%s%s]", Tint.log,
             instance.parser.server.address, Tint.error);
