@@ -635,7 +635,9 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         {
             import core.stdc.errno : EINTR, errno;
 
-            if (errno == EINTR)
+            attempt.errno = errno;
+
+            if (attempt.errno == EINTR)
             {
                 // Interrupted read; try again
                 // Unlucky callgrind_control -d timing
@@ -670,7 +672,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             {
                 import core.stdc.errno : EAGAIN;
 
-                if (errno == EAGAIN)
+                if (attempt.errno == EAGAIN)
                 {
                     // Timed out, nothing received
                     //attempt.error = lastSocketError;  // avoid it, uninteresting
