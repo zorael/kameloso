@@ -512,6 +512,12 @@ struct ListenAttempt
     /// The $(REF std.socket.lastSocketError) at the last point of error.
     string error;
 
+    version(Posix)
+    {
+        /// $(REF core.stdc.errno.errno) at time of read.
+        int errno;
+    }
+
     /// The amount of bytes received this attempt.
     long bytesReceived;
 }
