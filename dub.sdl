@@ -59,7 +59,8 @@ versions \
     "PrefixedCommandsFallBackToNickname" \
     "SanitizeAndRetryOnUnicodeException" \
     "TwitchAPIFeatures" \
-    "CtTints"
+    "CtTints" \
+    "PrintErrnos"
 
 /**
     Non-default features.
@@ -114,7 +115,8 @@ configuration "dev" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainRepeat"
+        "ExplainRepeat" \
+        "PrintErrnos"
         //"TraceWhois" \
 }
 
@@ -128,7 +130,8 @@ configuration "dev-lowmem" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainRepeat"
+        "ExplainRepeat" \
+        "PrintErrnos"
         //"TraceWhois" \
 }
 
@@ -143,6 +146,7 @@ configuration "unittest" {
         "OmniscientQueries" \
         "PrintStacktraces" \
         "ExplainRepeat" \
+        "PrintErrnos" \
         "ProfileGC"
 }
 
@@ -158,5 +162,6 @@ configuration "unittest-lowmem" {
         "OmniscientQueries" \
         "PrintStacktraces" \
         "ExplainRepeat" \
+        "PrintErrnos" \
         "ProfileGC"
 }
