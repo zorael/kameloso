@@ -59,8 +59,7 @@ versions \
     "PrefixedCommandsFallBackToNickname" \
     "SanitizeAndRetryOnUnicodeException" \
     "TwitchAPIFeatures" \
-    "CtTints" \
-    "PrintErrnos"
+    "CtTints"
 
 /**
     Non-default features.
@@ -77,7 +76,8 @@ versions \
     "OSXTMPDIR" \
     "OmniscientQueries" \
     "TraceWhois" \
-    "ProfileGC"
+    "ProfileGC" \
+    "PrintErrnos"
 */
 
 configuration "application" {
