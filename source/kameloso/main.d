@@ -924,6 +924,14 @@ double sendLines(ref Kameloso instance)
 }
 
 
+version(Posix)
+{
+    version(PrintErrnos)
+    {
+        version = ShouldPrintErrnos;
+    }
+}
+
 import kameloso.net : ListenAttempt;
 
 // listenAttemptToNext
@@ -941,6 +949,11 @@ import kameloso.net : ListenAttempt;
  +/
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
+    version(ShouldPrintErrnos)
+    {
+        import kameloso.common : errnoStrings;
+    }
+
     // Handle the attempt; switch on its state
     with (ListenAttempt.State)
     final switch (attempt.state)
@@ -962,14 +975,23 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         import core.thread : Thread;
         import core.time : msecs;
 
-        logger.warningf("Connection error! (%s%s%s)", Tint.log,
-            attempt.error, Tint.warning);
+        version(ShouldPrintErrnos)
+        {
+            logger.warningf("Connection error! (%s%s: %s%s)",
+                Tint.log, errnoStrings[attempt.errno], attempt.error, Tint.warning);
+        }
+        else
+        {
+            logger.warningf("Connection error! (%s%s%s)",
+                Tint.log, attempt.error, Tint.warning);
+        }
 
         // Sleep briefly so it won't flood the screen on chains of errors
         Thread.sleep(Timeout.readErrorGracePeriodMsecs.msecs);
         return Next.retry;
 
     case timeout:
+        // No point printing the errno, it'll just be EAGAIN or EWOULDBLOCK.
         logger.error("Connection lost.");
         instance.conn.connected = false;
         return Next.returnFailure;
@@ -977,12 +999,28 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     case error:
         if (attempt.bytesReceived == 0)
         {
-            logger.error("Connection error: empty server response!");
+            version(ShouldPrintErrnos)
+            {
+                logger.errorf("Connection error: empty server response! (%s%s%s)",
+                    Tint.log, errnoStrings[attempt.errno], Tint.error);
+            }
+            else
+            {
+                logger.error("Connection error: empty server response!");
+            }
         }
         else
         {
-            logger.errorf("Connection error: invalid server response! (%s%s%s)",
-                Tint.log, attempt.error, Tint.error);
+            version(ShouldPrintErrnos)
+            {
+                logger.errorf("Connection error: invalid server response! (%s%s: %s%s)",
+                    Tint.log, errnoStrings[attempt.errno], attempt.error, Tint.error);
+            }
+            else
+            {
+                logger.errorf("Connection error: invalid server response! (%s%s%s)",
+                    Tint.log, attempt.error, Tint.error);
+            }
         }
 
         instance.conn.connected = false;
