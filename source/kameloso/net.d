@@ -670,11 +670,17 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             version(Posix)
             {
-                import core.stdc.errno : EAGAIN;
+                import core.stdc.errno : EAGAIN, EWOULDBLOCK;
 
-                if (attempt.errno == EAGAIN)
+                if ((attempt.errno == EAGAIN) || (attempt.errno == EWOULDBLOCK))
                 {
                     // Timed out, nothing received
+                    /+
+                        Portability Note: In many older Unix systems ...
+                        [EWOULDBLOCK was] a distinct error code different from
+                        EAGAIN. To make your program portable, you should check
+                        for both codes and treat them the same.
+                     +/
                     //attempt.error = lastSocketError;  // avoid it, uninteresting
                     attempt.state = State.isEmpty;
                     yield(attempt);
