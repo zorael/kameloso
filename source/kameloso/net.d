@@ -650,16 +650,31 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         }
         else if (attempt.bytesReceived == Socket.ERROR)
         {
-            attempt.error = lastSocketError;
-
             if ((Clock.currTime.toUnixTime - timeLastReceived) > connectionLost)
             {
+                attempt.error = lastSocketError;
                 attempt.state = State.timeout;
                 yield(attempt);
                 // Should never get here
                 assert(0, "Timed out `listenFiber` resumed after yield " ~
                     "(received error, elapsed > timeout)");
             }
+
+            version(Posix)
+            {
+                import core.stdc.errno : EAGAIN;
+
+                if (errno == EAGAIN)
+                {
+                    // Timed out, nothing received
+                    //attempt.error = lastSocketError;  // avoid it, uninteresting
+                    attempt.state = State.isEmpty;
+                    yield(attempt);
+                    continue;
+                }
+            }
+
+            attempt.error = lastSocketError;
 
             switch (attempt.error)
             {
@@ -673,14 +688,13 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                     // Sporadic Cygwin error
                     goto case;
             }
-            case "Resource temporarily unavailable":
+            case "Resource temporarily unavailable":  // EAGAIN
                 // Nothing received
             //case "Interrupted system call":
                 attempt.state = State.isEmpty;
                 yield(attempt);
                 continue;
 
-            // Others that may be benign?
             version(Windows)
             {
                 case "An established connection was aborted by the software in your host machine.":
