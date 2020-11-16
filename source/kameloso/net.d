@@ -512,11 +512,8 @@ struct ListenAttempt
     /// The $(REF std.socket.lastSocketError) at the last point of error.
     string error;
 
-    version(Posix)
-    {
-        /// $(REF core.stdc.errno.errno) at time of read.
-        int errno;
-    }
+    /// $(REF core.stdc.errno.errno) at time of read.
+    int errno;
 
     /// The amount of bytes received this attempt.
     long bytesReceived;
@@ -631,6 +628,15 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             attempt.bytesReceived = conn.receive(buffer[start..$]);
         }
 
+        if (!attempt.bytesReceived)
+        {
+            attempt.state = State.error;
+            attempt.error = lastSocketError;
+            yield(attempt);
+            // Should never get here
+            assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
+        }
+
         version(Posix)
         {
             import core.stdc.errno : EINTR, errno;
@@ -647,20 +653,26 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 continue;
             }
         }
-
-        if (!attempt.bytesReceived)
+        else version(Windows)
         {
-            attempt.state = State.error;
-            attempt.error = lastSocketError;
-            yield(attempt);
-            // Should never get here
-            assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
+            import core.sys.windows.winsock2 : WSAEINTR, WSAGetLastError;
+
+            attempt.errno = WSAGetLastError();
+
+            if (attempt.errno == WSAEINTR)
+            {
+                // Windows equivalent to the above?
+                attempt.state = State.isEmpty;
+                attempt.error = lastSocketError;
+                yield(attempt);
+                continue;
+            }
         }
-        else if (attempt.bytesReceived == Socket.ERROR)
+
+        if (attempt.bytesReceived == Socket.ERROR)
         {
             if ((Clock.currTime.toUnixTime - timeLastReceived) > connectionLost)
             {
-                attempt.error = lastSocketError;
                 attempt.state = State.timeout;
                 yield(attempt);
                 // Should never get here
@@ -670,62 +682,87 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             version(Posix)
             {
-                import core.stdc.errno : EAGAIN, EWOULDBLOCK;
+                import core.stdc.errno;
 
-                if ((attempt.errno == EAGAIN) || (attempt.errno == EWOULDBLOCK))
+                // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+
+                switch (attempt.errno)
                 {
-                    // Timed out, nothing received
+                case EAGAIN:
+                    // Resource temporarily unavailable
+                case EWOULDBLOCK:
                     /+
                         Portability Note: In many older Unix systems ...
                         [EWOULDBLOCK was] a distinct error code different from
                         EAGAIN. To make your program portable, you should check
                         for both codes and treat them the same.
                      +/
-                    //attempt.error = lastSocketError;  // avoid it, uninteresting
+                    // Timed out, nothing received
                     attempt.state = State.isEmpty;
+                    yield(attempt);
+                    continue;
+
+                case ENETDOWN:
+                case ENETUNREACH:
+                case ENOTCONN:
+                case ECONNRESET:
+                    attempt.error = lastSocketError;
+                    attempt.state = State.error;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Dead `listenFiber` resumed after yield (`lastSocketError` error)");
+
+                default:
+                    attempt.error = lastSocketError;
+                    attempt.state = State.warning;
+                    import kameloso.common : errnoStrings;
+                    import std.stdio;
+                    writeln(attempt.errno, " ", errnoStrings[attempt.errno], " - ", attempt.error);
                     yield(attempt);
                     continue;
                 }
             }
-
-            attempt.error = lastSocketError;
-
-            switch (attempt.error)
+            else version(Windows)
             {
-            version(Windows)
-            {
-                case "A connection attempt failed because the connected party did not " ~
-                    "properly respond after a period of time, or established connection " ~
-                    "failed because connected host has failed to respond.":
-                    // Timed out read in Windows
-                case "A non-blocking socket operation could not be completed immediately.":
-                    // Sporadic Cygwin error
-                    goto case;
-            }
-            case "Resource temporarily unavailable":  // EAGAIN
-                // Nothing received
-            //case "Interrupted system call":
-                attempt.state = State.isEmpty;
-                yield(attempt);
-                continue;
+                import core.sys.windows.winsock2;
 
-            version(Windows)
-            {
-                case "An established connection was aborted by the software in your host machine.":
-                    goto case;
-            }
-            case "An existing connection was forcibly closed by the remote host.":  // Windows-only?
-            case "Connection reset by peer":
-            case "Transport endpoint is not connected":  // IPv6/IPv4 connection/socket mismatch
-                attempt.state = State.error;
-                yield(attempt);
-                // Should never get here
-                assert(0, "Dead `listenFiber` resumed after yield (`lastSocketError` error)");
+                // https://www.hardhats.org/cs/broker/docs/winsock.html
+                // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
 
-            default:
-                attempt.state = State.warning;
-                yield(attempt);
-                continue;
+                switch (attempt.errno)
+                {
+                case WSAETIMEDOUT:
+                    /*
+                        A connection attempt failed because the connected party did not
+                        properly respond after a period of time, or established connection
+                        failed because connected host has failed to respond.
+                     */
+                case WSAEWOULDBLOCK:
+                    // A non-blocking socket operation could not be completed immediately.
+                    attempt.state = State.isEmpty;
+                    yield(attempt);
+                    continue;
+
+                case WSAENETDOWN:
+                    // A socket operation encountered a dead network.
+                case WSAECONNABORTED:
+                    // An established connection was aborted by the software in your host machine.
+                case WSAECONNRESET:
+                    // A existing connection was forcibly closed by the remote host.
+                    attempt.error = lastSocketError;
+                    attempt.state = State.error;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Dead `listenFiber` resumed after yield (`lastSocketError` error)");
+
+                default:
+                    attempt.error = lastSocketError;
+                    attempt.state = State.warning;
+                    import std.stdio;
+                    writeln(attempt.errno, " - ", attempt.error);
+                    yield(attempt);
+                    continue;
+                }
             }
         }
 
@@ -794,6 +831,9 @@ struct ConnectionAttempt
 
     /// The error message as thrown by an exception.
     string error;
+
+    /// $(REF core.stdc.errno.errno) at time of connect.
+    int errno;
 
     /// The number of retries so far towards this `ip`.
     uint retryNum;
@@ -929,40 +969,106 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 }
                 catch (SocketException e)
                 {
-                    switch (e.msg)
+                    version(Posix)
                     {
-                    case "Unable to connect socket: Address family not supported by protocol":
-                        if (isIPv6)
+                        import core.stdc.errno;
+
+                        // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+
+                        attempt.errno = errno;
+
+                        switch (attempt.errno)
                         {
-                            ipv6IsFailing = true;
-                            attempt.state = State.ipv6Failure;
+                        case EAFNOSUPPORT:
+                            // Address family not supported by protocol
+                            if (isIPv6)
+                            {
+                                ipv6IsFailing = true;
+                                attempt.state = State.ipv6Failure;
+                                attempt.error = e.msg;
+                                yield(attempt);
+                                continue iploop;
+                            }
+                            else
+                            {
+                                // Just treat it as a normal error
+                                goto case;
+                            }
+
+                        case ECONNREFUSED:
+                            // Connection refused
+                            attempt.state = State.error;
                             attempt.error = e.msg;
                             yield(attempt);
-                            continue iploop;
-                        }
-                        else
-                        {
-                            // Just treat it as a normal error
-                            goto case;// "Unable to connect socket: Connection refused";
-                        }
+                            // Should never get here
+                            assert(0, "Dead `connectFiber` resumed after yield");
 
-                    // Add more as necessary
-                    case "Unable to connect socket: Connection refused":
-                        attempt.state = State.error;
-                        attempt.error = e.msg;
-                        yield(attempt);
-                        // Should never get here
-                        assert(0, "Dead `connectFiber` resumed after yield");
+                        //case EHOSTUNREACH:
+                            // No route to host
+                        //case ENETUNREACH:
+                            // Network is unreachable
+                        default:
+                            import kameloso.common : errnoStrings;
+                            import std.stdio;
+                            writeln(attempt.errno, " ", errnoStrings[attempt.errno], " - ", e.msg);
 
-                    //case "Unable to connect socket: Network is unreachable":
-                    default:
-                        // Don't delay for retrying on the last retry, drop down below
-                        if (retry+1 < connectionRetries)
+                            // Don't delay for retrying on the last retry, drop down below
+                            if (retry+1 < connectionRetries)
+                            {
+                                attempt.state = State.delayThenReconnect;
+                                yield(attempt);
+                            }
+                            break;
+                        }
+                    }
+                    else version(Windows)
+                    {
+                        import core.sys.windows.winsock2;
+
+                        attempt.errno = WSAGetLastError();
+
+                        switch (attempt.errno)
                         {
-                            attempt.state = State.delayThenReconnect;
+                        case WSAEAFNOSUPPORT:
+                            // An address incompatible with the requested protocol was used.
+                            if (isIPv6)
+                            {
+                                ipv6IsFailing = true;
+                                attempt.state = State.ipv6Failure;
+                                attempt.error = e.msg;
+                                yield(attempt);
+                                continue iploop;
+                            }
+                            else
+                            {
+                                // Just treat it as a normal error
+                                goto case;
+                            }
+
+                        case WSAECONNREFUSED:
+                            // No connection could be made because the target machine actively refused it.
+                            attempt.state = State.error;
+                            attempt.error = e.msg;
                             yield(attempt);
+                            // Should never get here
+                            assert(0, "Dead `connectFiber` resumed after yield");
+
+                        //case WSAEHOSTUNREACH:
+                            // A socket operation was attempted to an unreachable host.
+                        //case WSAENETUNREACH:
+                            // A socket operation was attempted to an unreachable network.
+                        default:
+                            import std.stdio;
+                            writeln(attempt.errno, " - ", attempt.error);
+
+                            // Don't delay for retrying on the last retry, drop down below
+                            if (retry+1 < connectionRetries)
+                            {
+                                attempt.state = State.delayThenReconnect;
+                                yield(attempt);
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
                 catch (SSLException e)

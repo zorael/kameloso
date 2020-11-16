@@ -1901,7 +1901,7 @@ Next tryConnect(ref Kameloso instance)
             goto case delayThenReconnect;
 
         case error:
-            logger.error("Failed to connect: ", attempt.error);
+            logger.error("Failed to connect: ", Tint.log, attempt.error);
             return Next.returnFailure;
         }
     }
