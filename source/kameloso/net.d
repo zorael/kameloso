@@ -639,34 +639,58 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
         version(Posix)
         {
-            import core.stdc.errno : EINTR, errno;
+            import core.stdc.errno : EAGAIN, ECONNRESET, EINTR, ENETDOWN,
+                ENETUNREACH, ENOTCONN, EWOULDBLOCK, errno;
+
+            // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+
+            enum Errno
+            {
+                timedOut = EAGAIN,
+                wouldBlock = EWOULDBLOCK,
+                netDown = ENETDOWN,
+                netUnreachable = ENETUNREACH,
+                endpointNotConnected = ENOTCONN,
+                connectionReset = ECONNRESET,
+                interrupted = EINTR,
+            }
 
             attempt.errno = errno;
-
-            if (attempt.errno == EINTR)
-            {
-                // Interrupted read; try again
-                // Unlucky callgrind_control -d timing
-                attempt.state = State.isEmpty;
-                attempt.error = lastSocketError;
-                yield(attempt);
-                continue;
-            }
         }
         else version(Windows)
         {
-            import core.sys.windows.winsock2 : WSAEINTR, WSAGetLastError;
+            import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
+                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, WSAGetLastEerror;
+
+            // https://www.hardhats.org/cs/broker/docs/winsock.html
+            // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
+
+            enum Errno
+            {
+                timedOut = WSAETIMEDOUT,
+                wouldBlock = WSAEWOULDBLOCK,
+                netDown = WSAENETDOWN,
+                netUnreachable = WSAENETUNREACH,
+                endpointNotConnected = WSAENOTCONN,
+                connectionReset = WSAECONNRESET,
+                interrupted = WSAEINTR,
+            }
 
             attempt.errno = WSAGetLastError();
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
 
-            if (attempt.errno == WSAEINTR)
-            {
-                // Windows equivalent to the above?
-                attempt.state = State.isEmpty;
-                attempt.error = lastSocketError;
-                yield(attempt);
-                continue;
-            }
+        if (attempt.errno == Errno.interrupted)
+        {
+            // Interrupted read; try again
+            // Unlucky callgrind_control -d timing
+            attempt.state = State.isEmpty;
+            attempt.error = lastSocketError;
+            yield(attempt);
+            continue;
         }
 
         if (attempt.bytesReceived == Socket.ERROR)
@@ -678,46 +702,6 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 // Should never get here
                 assert(0, "Timed out `listenFiber` resumed after yield " ~
                     "(received error, elapsed > timeout)");
-            }
-
-            version(Posix)
-            {
-                import core.stdc.errno : EAGAIN, ECONNRESET, ENETDOWN,
-                    ENETUNREACH, ENOTCONN, EWOULDBLOCK;
-
-                // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
-
-                enum Errno
-                {
-                    timedOut = EAGAIN,
-                    wouldBlock = EWOULDBLOCK,
-                    netDown = ENETDOWN,
-                    netUnreachable = ENETUNREACH,
-                    endpointNotConnected = ENOTCONN,
-                    connectionReset = ECONNRESET,
-                }
-            }
-            else version(Windows)
-            {
-                import core.sys.windows.winsock2 : WSAECONNRESET, WSAENETDOWN,
-                    WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK;
-
-                // https://www.hardhats.org/cs/broker/docs/winsock.html
-                // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
-
-                enum Errno
-                {
-                    timedOut = WSAETIMEDOUT,
-                    wouldBlock = WSAEWOULDBLOCK,
-                    netDown = WSAENETDOWN,
-                    netUnreachable = WSAENETUNREACH,
-                    endpointNotConnected = WSAENOTCONN,
-                    connectionReset = WSAECONNRESET,
-                }
-            }
-            else
-            {
-                static assert(0, "Unsupported platform, please file a bug.");
             }
 
             with (Errno)
@@ -788,7 +772,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         while (newline != -1)
         {
             attempt.state = State.hasString;
-            attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;
+            attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;  // eat \r before \n
             yield(attempt);
             pos += (newline + 1); // eat remaining newline
             newline = (cast(char[])buffer[pos..end]).indexOf('\n');
