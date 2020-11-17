@@ -690,7 +690,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 enum Errno
                 {
                     timedOut = EAGAIN,
-                    //wouldBlock = EWOULDBLOCK,
+                    wouldBlock = EWOULDBLOCK,
                     netDown = ENETDOWN,
                     netUnreachable = ENETUNREACH,
                     endpointNotConnected = ENOTCONN,
@@ -708,7 +708,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 enum Errno
                 {
                     timedOut = WSAETIMEDOUT,
-                    //wouldBlock = WSAEWOULDBLOCK,
+                    wouldBlock = WSAEWOULDBLOCK,
                     netDown = WSAENETDOWN,
                     netUnreachable = WSAENETUNREACH,
                     endpointNotConnected = WSAENOTCONN,
@@ -730,18 +730,23 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                     properly respond after a period of time, or established connection
                     failed because connected host has failed to respond.
                  */
-            //case wouldBlock:  // duplicate case!
-                /+
-                    Portability Note: In many older Unix systems ...
-                    [EWOULDBLOCK was] a distinct error code different from
-                    EAGAIN. To make your program portable, you should check
-                    for both codes and treat them the same.
-                 +/
-                // A non-blocking socket operation could not be completed immediately.
                 // Timed out, nothing received
                 attempt.state = State.isEmpty;
                 yield(attempt);
                 continue;
+
+            static if (int(timedOut) != int(wouldBlock))
+            {
+                case wouldBlock:
+                    /+
+                        Portability Note: In many older Unix systems ...
+                        [EWOULDBLOCK was] a distinct error code different from
+                        EAGAIN. To make your program portable, you should check
+                        for both codes and treat them the same.
+                     +/
+                    // A non-blocking socket operation could not be completed immediately.
+                    goto case timedOut;
+            }
 
             case netDown:
             case netUnreachable:
