@@ -1028,6 +1028,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                         if (retry+1 < connectionRetries)
                         {
                             attempt.state = State.delayThenReconnect;
+                            attempt.error = e.msg;
                             yield(attempt);
                         }
                         break;

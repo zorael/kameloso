@@ -1797,6 +1797,11 @@ Next tryConnect(ref Kameloso instance)
     import kameloso.net : ConnectionAttempt, connectFiber;
     import std.concurrency : Generator;
 
+    version(ShouldPrintErrnos)
+    {
+        import kameloso.common : errnoStrings;
+    }
+
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
     uint incrementedRetryDelay = Timeout.connectionRetry;
@@ -1858,6 +1863,12 @@ Next tryConnect(ref Kameloso instance)
         case delayThenReconnect:
             import core.time : seconds;
 
+            version(ShouldPrintErrnos)
+            {
+                logger.warningf("Connection failed with %s%s%s: %4$s",
+                    Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
+            }
+
             if (attempt.retryNum == 0)
             {
                 logger.logf("Retrying in %s%d%s seconds...",
@@ -1890,7 +1901,16 @@ Next tryConnect(ref Kameloso instance)
             return Next.returnFailure;
 
         case ipv6Failure:
-            logger.warning("IPv6 connection failed. Disabling IPv6.");
+            version(ShouldPrintErrnos)
+            {
+                logger.warning("IPv6 connection failed with %s%s%s: %4$s",
+                    Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
+                logger.warning("Disabling IPv6.");
+            }
+            else
+            {
+                logger.warning("IPv6 connection failed. Disabling IPv6.");
+            }
             continue;
 
         case sslFailure:
@@ -1901,7 +1921,15 @@ Next tryConnect(ref Kameloso instance)
             goto case delayThenReconnect;
 
         case error:
-            logger.error("Failed to connect: ", Tint.log, attempt.error);
+            version(ShouldPrintErrnos)
+            {
+                logger.errorf("Failed to connect (%s%s%s): %1$s%4$s",
+                    Tint.log, errnoStrings[attempt.errno], Tint.error, attempt.error);
+            }
+            else
+            {
+                logger.error("Failed to connect: ", Tint.log, attempt.error);
+            }
             return Next.returnFailure;
         }
     }
