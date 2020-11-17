@@ -745,19 +745,6 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             default:
                 attempt.error = lastSocketError;
                 attempt.state = State.warning;
-
-                import std.stdio;
-
-                version(Posix)
-                {
-                    import kameloso.common : errnoStrings;
-                    writeln(attempt.errno, " ", errnoStrings[attempt.errno], " - ", attempt.error);
-                }
-                else version(Windows)
-                {
-                    writeln(attempt.errno, " - ", attempt.error);
-                }
-
                 yield(attempt);
                 continue;
             }
@@ -1037,18 +1024,6 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                         // Network is unreachable
                         // A socket operation was attempted to an unreachable network.
                     default:
-                        import std.stdio;
-
-                        version(Posix)
-                        {
-                            import kameloso.common : errnoStrings;
-                            writeln(attempt.errno, " ", errnoStrings[attempt.errno], " - ", e.msg);
-                        }
-                        else version(Windows)
-                        {
-                            writeln(attempt.errno, " - ", attempt.error);
-                        }
-
                         // Don't delay for retrying on the last retry, drop down below
                         if (retry+1 < connectionRetries)
                         {
