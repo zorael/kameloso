@@ -955,7 +955,8 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 {
                     version(Posix)
                     {
-                        import core.stdc.errno;
+                        import core.stdc.errno : EAFNOSUPPORT, ECONNREFUSED,
+                            EHOSTUNREACH, ENETUNREACH, errno;
 
                         // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
 
@@ -963,22 +964,23 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                         {
                             addressFamilyNoSupport = EAFNOSUPPORT,
                             connectionRefused = ECONNREFUSED,
-                            //noRouteToHost = EHOSTUNREACH,
-                            //networkUnreachable = ENETUNREACH,
+                            noRouteToHost = EHOSTUNREACH,
+                            networkUnreachable = ENETUNREACH,
                         }
 
                         attempt.errno = errno;
                     }
                     else version(Windows)
                     {
-                        import core.sys.windows.winsock2;
+                        import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAECONNREFUSED,
+                            WSAEHOSTUNREACH, WSAENETUNREACH, WSAGetLastError;
 
                         enum Errno
                         {
                             addressFamilyNoSupport = WSAEAFNOSUPPORT,
                             connectionRefused = WSAECONNREFUSED,
-                            //noRouteToHost = WSAEHOSTUNREACH,
-                            //networkUnreachable = WSAENETUNREACH,
+                            noRouteToHost = WSAEHOSTUNREACH,
+                            networkUnreachable = WSAENETUNREACH,
                         }
 
                         attempt.errno = WSAGetLastError();
