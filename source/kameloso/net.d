@@ -660,7 +660,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         else version(Windows)
         {
             import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
-                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, WSAGetLastEerror;
+                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, WSAGetLastError;
 
             // https://www.hardhats.org/cs/broker/docs/winsock.html
             // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
