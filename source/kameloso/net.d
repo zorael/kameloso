@@ -1166,7 +1166,7 @@ in (!conn.connected, "Tried to set up a resolving fiber on an already live conne
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
     import std.concurrency : yield;
-    import std.socket : AddressFamily, SocketException, getAddress;
+    import std.socket : AddressFamily, SocketOSException, getAddress;
 
     if (abort) return;
 
@@ -1197,43 +1197,35 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             // Should never get here
             assert(0, "Dead `resolveFiber` resumed after yield");
         }
-        catch (SocketException e)
+        catch (SocketOSException e)
         {
-            version(Posix)
-            {
-                import core.stdc.errno : EALREADY, EHOSTDOWN, errno;
-
-                enum Errno
-                {
-                    hostDown = EHOSTDOWN,
-                    tryAgain = EALREADY,  //?
-                }
-
-                attempt.errno = errno;
-            }
-            else version(Windows)
-            {
-                import core.sys.windows.winsock2 : WSAHOST_NOT_FOUND, WSATRY_AGAIN, WSAGetLastError;
-
-                enum Errno
-                {
-                    hostDown = WSAHOST_NOT_FOUND,
-                    tryAgain = WSATRY_AGAIN,
-                }
-
-                attempt.errno = WSAGetLastError();
-            }
-
             import std.stdio;
+            attempt.errno = e.errorCode;
             writeln(attempt.errno);
 
-            with (Errno)
+            // https://stackoverflow.com/questions/4395919/linux-system-call-getaddrinfo-return-2
+
+            enum AddrInfoErrors
+            {
+                //badFlags  = -1,  /* Invalid value for `ai_flags' field.  */
+                noName      = -2,  /* NAME or SERVICE is unknown.  */
+                again       = -3,  /* Temporary failure in name resolution.  */
+                fail        = -4,  /* Non-recoverable failure in name res.  */
+                family      = -6,  /* `ai_family' not supported.  */
+                sockType    = -7,  /* `ai_socktype' not supported.  */
+                //service   = -8,  /* SERVICE not supported for `ai_socktype'.  */
+                //memory    = -10, /* Memory allocation failure.  */
+                system      = -11, /* System error returned in `errno'.  */
+                //overflow  = -12, /* Argument buffer overflow.  */
+            }
+
+            with (AddrInfoErrors)
             switch (attempt.errno)
             {
-            case hostDown:
-            case tryAgain:
+            case noName:
+            case again:
                 // UNSURE WHICH OF THESE ARE COVERED:
-                // getaddrinfo error: Name or service not known
+                // getaddrinfo error: Name or service not known (errno 22)
                 // getaddrinfo error: Temporary failure in name resolution
                 // getaddrinfo error: No such host is known. (Windows 11001)
                 // Assume net down, wait and try again
@@ -1242,6 +1234,22 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
                 yield(attempt);
                 continue;
 
+            case system:
+                version(Posix)
+                {
+                    import core.stdc.errno : errno;
+                    attempt.errno = errno;
+                }
+                else version(Windows)
+                {
+                    import core.sys.windows.winsock2 : WSAGetLastError;
+                    attempt.errno = WSAGetLastError();
+                }
+                goto default;
+
+            //case fail:
+            //case family:
+            //case sockType:
             default:
                 attempt.state = State.error;
                 attempt.error = e.msg;
