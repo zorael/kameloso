@@ -1230,7 +1230,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             else version(Windows)
             {
                 import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAESOCKTNOSUPPORT,
-                    WSAHOST_NOT_FOUND, WSANO_RECOVERY, WSATRY_AGAIN;
+                    WSAHOST_NOT_FOUND, WSANO_DATA, WSANO_RECOVERY, WSATRY_AGAIN;
 
                 // https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
 
