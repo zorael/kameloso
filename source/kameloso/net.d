@@ -1092,6 +1092,9 @@ struct ResolveAttempt
     /// The error message as thrown by an exception.
     string error;
 
+    /// $(REF core.stdc.errno.errno) at time of resolve.
+    int errno;
+
     /// The number of retries so far towards this address.
     uint retryNum;
 }
@@ -1171,21 +1174,21 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     yield(ResolveAttempt.init);
 
-    for (size_t i; (i >= 0); ++i)
+    for (uint i; (i >= 0); ++i)
     {
         if (abort) return;
 
         ResolveAttempt attempt;
-        attempt.retryNum = cast(uint)i;
+        attempt.retryNum = i;
 
-        with (AddressFamily)
         try
         {
             import std.algorithm.iteration : filter, uniq;
             import std.array : array;
 
             conn.ips = getAddress(address, port)
-                .filter!(ip => (ip.addressFamily == INET) || ((ip.addressFamily == INET6) && useIPv6))
+                .filter!(ip => (ip.addressFamily == AddressFamily.INET) ||
+                    ((ip.addressFamily == AddressFamily.INET6) && useIPv6))
                 .uniq!((a,b) => a.toString == b.toString)
                 .array;
 
@@ -1196,11 +1199,43 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
         }
         catch (SocketException e)
         {
-            switch (e.msg)
+            version(Posix)
             {
-            case "getaddrinfo error: Name or service not known":
-            case "getaddrinfo error: Temporary failure in name resolution":
-            case "getaddrinfo error: No such host is known.":
+                import core.stdc.errno : EALREADY, EHOSTDOWN, errno;
+
+                enum Errno
+                {
+                    hostDown = EHOSTDOWN,
+                    tryAgain = EALREADY,  //?
+                }
+
+                attempt.errno = errno;
+            }
+            else version(Windows)
+            {
+                import core.sys.windows.winsock2 : WSAHOST_NOT_FOUND, WSATRY_AGAIN, WSAGetLastError;
+
+                enum Errno
+                {
+                    hostDown = WSAHOST_NOT_FOUND,
+                    tryAgain = WSATRY_AGAIN,
+                }
+
+                attempt.errno = WSAGetLastError();
+            }
+
+            import std.stdio;
+            writeln(attempt.errno);
+
+            with (Errno)
+            switch (attempt.errno)
+            {
+            case hostDown:
+            case tryAgain:
+                // UNSURE WHICH OF THESE ARE COVERED:
+                // getaddrinfo error: Name or service not known
+                // getaddrinfo error: Temporary failure in name resolution
+                // getaddrinfo error: No such host is known. (Windows 11001)
                 // Assume net down, wait and try again
                 attempt.state = State.exception;
                 attempt.error = e.msg;
