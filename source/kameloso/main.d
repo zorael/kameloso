@@ -118,7 +118,7 @@ void signalHandler(int sig) nothrow @nogc @system
         "SYS\0",
     ];
 
-    printf("...caught signal SIG%s! (%d)\n", signalNames.ptr[sig-1], sig);
+    printf("...caught signal SIG%s!\n", signalNames.ptr[sig-1]);
     rawAbort = true;
 
     version(Posix)
