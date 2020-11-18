@@ -2206,8 +2206,18 @@ void resolveResourceDirectory(ref Kameloso instance)
     import std.path : buildNormalizedPath, dirName;
 
     // Resolve and create the resource directory
-    instance.settings.resourceDirectory = buildNormalizedPath(instance.settings.resourceDirectory,
-        "server", instance.parser.server.address);
+    version(Windows)
+    {
+        import std.string : replace;
+        instance.settings.resourceDirectory = buildNormalizedPath(instance.settings.resourceDirectory,
+            "server", instance.parser.server.address.replace(":", "_"));
+    }
+    else
+    {
+        instance.settings.resourceDirectory = buildNormalizedPath(instance.settings.resourceDirectory,
+            "server", instance.parser.server.address);
+    }
+
     instance.settings.configDirectory = instance.settings.configFile.dirName;
 
     if (!instance.settings.resourceDirectory.exists)
