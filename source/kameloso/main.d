@@ -2006,8 +2006,8 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         case exception:
             version(ShouldPrintErrnos)
             {
-                logger.warningf("Could not resolve server address. (%s%s%s: %s)",
-                    Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
+                logger.warningf("Could not resolve server address. (%s%d%s: %1$s%4$s%3$s)",
+                    Tint.log, attempt.errno, Tint.warning, attempt.error);
             }
             else
             {
@@ -2022,8 +2022,8 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         case error:
             version(ShouldPrintErrnos)
             {
-                logger.errorf("Could not resolve server address. (%s%s%s: %s)",
-                    Tint.log, errnoStrings[attempt.errno], Tint.error, attempt.error);
+                logger.errorf("Could not resolve server address. (%s%d%s: %1$s%4$s%3$s)",
+                    Tint.log, attempt.errno, Tint.error, attempt.error);
             }
             else
             {
