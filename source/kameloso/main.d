@@ -1958,6 +1958,11 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     import kameloso.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
 
+    version(ShouldPrintErrnos)
+    {
+        import kameloso.common : errnoStrings;
+    }
+
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
         instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
@@ -1999,15 +2004,32 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
             return Next.continue_;
 
         case exception:
-            logger.warningf("Could not resolve server address. (%s%s%s)",
-                Tint.log, attempt.error, Tint.warning);
+            version(ShouldPrintErrnos)
+            {
+                logger.warningf("Could not resolve server address. (%s%s%s: %s)",
+                    Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
+            }
+            else
+            {
+                logger.warningf("Could not resolve server address. (%s%s%s)",
+                    Tint.log, attempt.error, Tint.warning);
+            }
+
             delayOnNetworkDown();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
-            logger.errorf("Could not resolve server address. (%s%s%s)",
-                Tint.log, attempt.error, Tint.error);
+            version(ShouldPrintErrnos)
+            {
+                logger.errorf("Could not resolve server address. (%s%s%s: %s)",
+                    Tint.log, errnoStrings[attempt.errno], Tint.error, attempt.error);
+            }
+            else
+            {
+                logger.errorf("Could not resolve server address. (%s%s%s)",
+                    Tint.log, attempt.error, Tint.error);
+            }
 
             if (firstConnect)
             {
