@@ -1203,20 +1203,56 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             attempt.errno = e.errorCode;
             writeln(attempt.errno);
 
-            // https://stackoverflow.com/questions/4395919/linux-system-call-getaddrinfo-return-2
-
-            enum AddrInfoErrors
+            version(Posix)
             {
-                //badFlags  = -1,  /* Invalid value for `ai_flags' field.  */
-                noName      = -2,  /* NAME or SERVICE is unknown.  */
-                again       = -3,  /* Temporary failure in name resolution.  */
-                fail        = -4,  /* Non-recoverable failure in name res.  */
-                family      = -6,  /* `ai_family' not supported.  */
-                sockType    = -7,  /* `ai_socktype' not supported.  */
-                //service   = -8,  /* SERVICE not supported for `ai_socktype'.  */
-                //memory    = -10, /* Memory allocation failure.  */
-                system      = -11, /* System error returned in `errno'.  */
-                //overflow  = -12, /* Argument buffer overflow.  */
+                import core.sys.posix.netdb : EAI_AGAIN, EAI_FAIL, EAI_FAMILY, EAI_NONAME, EAI_SOCKTYPE;
+
+                enum EAI_NODATA = -5;
+
+                // https://stackoverflow.com/questions/4395919/linux-system-call-getaddrinfo-return-2
+
+                enum AddrInfoErrors
+                {
+                    //badFlags  = EAI_BADFLAGS,     /** Invalid value for `ai_flags` field. */
+                    noName      = EAI_NONAME,       /** NAME or SERVICE is unknown. */
+                    again       = EAI_AGAIN,        /** Temporary failure in name resolution. */
+                    fail        = EAI_FAIL,         /** Non-recoverable failure in name res. */
+                    noData      = EAI_NODATA,       /** No address associated with NAME. (GNU) */
+                    family      = EAI_FAMILY,       /** `ai_family` not supported. */
+                    sockType    = EAI_SOCKTYPE,     /** `ai_socktype` not supported. */
+                    //service   = EAI_SERVICE,      /** SERVICE not supported for `ai_socktype`. */
+                    //addrFamily= EAI_ADDRFAMILY,   /** Address family for NAME not supported. (GNU) */
+                    //memory    = EAI_MEMORY,       /** Memory allocation failure. */
+                    //system    = EAI_SYSTEM,       /** System error returned in `errno`. */
+                    //overflow  = EAI_OVERFLOW,     /** Argument buffer overflow. */
+                }
+            }
+            else version(Windows)
+            {
+                import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAESOCKTNOSUPPORT,
+                    WSAHOST_NOT_FOUND, WSANO_RECOVERY, WSATRY_AGAIN;
+
+                // https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
+
+                enum AddrInfoErrors
+                {
+                    //badFlags  = WSAEINVAL,            /** An invalid value was provided for the `ai_flags` member of the `pHints` parameter. */
+                    noName      = WSAHOST_NOT_FOUND,    /** The name does not resolve for the supplied parameters or the `pNodeName` and `pServiceName` parameters were not provided. */
+                    again       = WSATRY_AGAIN,         /** A temporary failure in name resolution occurred. */
+                    fail        = WSANO_RECOVERY,       /** A nonrecoverable failure in name resolution occurred. */
+                    noData      = WSANO_DATA,
+                    family      = WSAEAFNOSUPPORT,      /** The 'ai_family' member of the `pHints` parameter is not supported. */
+                    sockType    = WSAESOCKTNOSUPPORT,   /** The `ai_socktype` member of the `pHints` parameter is not supported. */
+                    //service   = WSATYPE_NOT_FOUND,    /** The `pServiceName` parameter is not supported for the specified `ai_socktype` member of the `pHints` parameter. */
+                    //addrFamily= ?,
+                    //memory    = WSANOT_ENOUGH_MEMORY, /** A memory allocation failure occurred. */
+                    //system    = ?,
+                    //overflow  = ?,
+                }
+            }
+            else
+            {
+                static assert(0, "Unsupported platform, please file a bug.");
             }
 
             with (AddrInfoErrors)
@@ -1224,17 +1260,13 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             {
             case noName:
             case again:
-                // UNSURE WHICH OF THESE ARE COVERED:
-                // getaddrinfo error: Name or service not known (errno 22)
-                // getaddrinfo error: Temporary failure in name resolution
-                // getaddrinfo error: No such host is known. (Windows 11001)
                 // Assume net down, wait and try again
                 attempt.state = State.exception;
                 attempt.error = e.msg;
                 yield(attempt);
                 continue;
 
-            case system:
+            /*case system:
                 version(Posix)
                 {
                     import core.stdc.errno : errno;
@@ -1245,8 +1277,9 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
                     import core.sys.windows.winsock2 : WSAGetLastError;
                     attempt.errno = WSAGetLastError();
                 }
-                goto default;
+                goto default;*/
 
+            //case noData:
             //case fail:
             //case family:
             //case sockType:
