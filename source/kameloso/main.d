@@ -977,7 +977,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
         version(ShouldPrintErrnos)
         {
-            logger.warningf("Connection error! (%s%s: %s%s)",
+            logger.warningf("Connection error! (%s%s: %1$s%4$s%3$s)",
                 Tint.log, errnoStrings[attempt.errno], attempt.error, Tint.warning);
         }
         else
@@ -1013,8 +1013,8 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         {
             version(ShouldPrintErrnos)
             {
-                logger.errorf("Connection error: invalid server response! (%s%s: %s%s)",
-                    Tint.log, errnoStrings[attempt.errno], attempt.error, Tint.error);
+                logger.errorf("Connection error: invalid server response! (%s%s%s: %1$s%4$s%3$s)",
+                    Tint.log, errnoStrings[attempt.errno], Tint.error, attempt.error);
             }
             else
             {
@@ -1865,7 +1865,7 @@ Next tryConnect(ref Kameloso instance)
 
             version(ShouldPrintErrnos)
             {
-                logger.warningf("Connection failed with %s%s%s: %4$s",
+                logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
                     Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
             }
 
@@ -1903,7 +1903,7 @@ Next tryConnect(ref Kameloso instance)
         case ipv6Failure:
             version(ShouldPrintErrnos)
             {
-                logger.warning("IPv6 connection failed with %s%s%s: %4$s",
+                logger.warning("IPv6 connection failed with %s%s%s: %1$s%4$s",
                     Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
                 logger.warning("Disabling IPv6.");
             }
