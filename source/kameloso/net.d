@@ -1205,7 +1205,8 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
             version(Posix)
             {
-                import core.sys.posix.netdb : EAI_AGAIN, EAI_FAIL, EAI_FAMILY, EAI_NONAME, EAI_SOCKTYPE;
+                import core.sys.posix.netdb : EAI_AGAIN, EAI_FAIL, EAI_FAMILY,
+                    EAI_NONAME, EAI_SOCKTYPE, EAI_SYSTEM;
 
                 enum EAI_NODATA = -5;
 
@@ -1220,10 +1221,10 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
                     noData      = EAI_NODATA,       /** No address associated with NAME. (GNU) */
                     family      = EAI_FAMILY,       /** `ai_family` not supported. */
                     sockType    = EAI_SOCKTYPE,     /** `ai_socktype` not supported. */
-                    //service   = EAI_SERVICE,      /** SERVICE not supported for `ai_socktype`. */
+                    //service     = EAI_SERVICE,    /** SERVICE not supported for `ai_socktype`. */
                     //addrFamily= EAI_ADDRFAMILY,   /** Address family for NAME not supported. (GNU) */
                     //memory    = EAI_MEMORY,       /** Memory allocation failure. */
-                    //system    = EAI_SYSTEM,       /** System error returned in `errno`. */
+                    system      = EAI_SYSTEM,       /** System error returned in `errno`. */
                     //overflow  = EAI_OVERFLOW,     /** Argument buffer overflow. */
                 }
             }
@@ -1266,18 +1267,13 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
                 yield(attempt);
                 continue;
 
-            /*case system:
-                version(Posix)
-                {
+            version(Posix)
+            {
+                case system:
                     import core.stdc.errno : errno;
                     attempt.errno = errno;
-                }
-                else version(Windows)
-                {
-                    import core.sys.windows.winsock2 : WSAGetLastError;
-                    attempt.errno = WSAGetLastError();
-                }
-                goto default;*/
+                    goto default;
+            }
 
             //case noData:
             //case fail:
