@@ -2816,6 +2816,7 @@ int initBot(string[] args)
     {
         import kameloso.thread : ThreadMessage;
         import std.concurrency : receiveTimeout;
+        import std.variant : Variant;
         import core.time : seconds;
 
         // Connected and aborting
@@ -2830,6 +2831,7 @@ int initBot(string[] args)
                 reason = givenReason;
                 quiet = givenQuiet;
             },
+            (Variant v) scope {},
         );
 
         if (!received) reason = instance.bot.quitReason;
