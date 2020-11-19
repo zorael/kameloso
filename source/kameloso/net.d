@@ -389,7 +389,7 @@ public:
     void sendline(uint maxLineLength = 512, Data...)(const Data data) @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
-        int remainingMaxLength = (maxLineLength - 1);
+        int remainingMaxLength = (maxLineLength - 2);
         bool justSentNewline;
 
         foreach (immutable piece; data)
@@ -418,12 +418,12 @@ public:
                         if (ssl)
                         {
                             openssl.SSL_write(sslInstance, cast(void*)&line[0], cast(int)end);
-                            openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
+                            openssl.SSL_write(sslInstance, cast(void*)&"\r\n"[0], 2);
                         }
                         else
                         {
                             socket.send(line[0..end]);
-                            socket.send("\n");
+                            socket.send("\r\n");
                         }
 
                         justSentNewline = true;
@@ -440,7 +440,6 @@ public:
                     if (ssl)
                     {
                         openssl.SSL_write(sslInstance, cast(void*)&piece[0], cast(int)end);
-                        openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
                     }
                     else
                     {
@@ -473,11 +472,11 @@ public:
         {
             if (ssl)
             {
-                openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
+                openssl.SSL_write(sslInstance, cast(void*)&"\r\n"[0], 2);
             }
             else
             {
-                socket.send("\n");
+                socket.send("\r\n");
             }
         }
     }
