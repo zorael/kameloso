@@ -578,15 +578,15 @@ struct ListenAttempt
 
     Params:
         bufferSize = What size static array to use as buffer. Defaults to
-            twice of `kameloso.constants.BufferSize.socketReceive` for now.
-        conn = `Connection` whose `std.socket.Socket` it reads from the server with.
+            twice of $(REF kameloso.constants.BufferSize.socketReceive) for now.
+        conn = $(REF Connection) whose $(REF std.socket.Socket) it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the `core.thread.fiber.Fiber` terminate.
+            function return and the $(REF core.thread.fiber.Fiber) terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
-            Optional, defaults to `kameloso.constants.Timeout.connectionLost`.
+            Optional, defaults to $(REF kameloso.constants.Timeout.connectionLost).
 
     Yields:
-        `ListenAttempt`s with information about the line receieved in its member values.
+        $(REF ListenAttempt)s with information about the line receieved in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn, ref bool abort, const int connectionLost = Timeout.connectionLost) @system
@@ -819,7 +819,7 @@ struct ConnectionAttempt
     /// $(REF core.stdc.errno.errno) at time of connect.
     int errno;
 
-    /// The number of retries so far towards this `ip`.
+    /// The number of retries so far towards this $(REF ip).
     uint retryNum;
 }
 
@@ -827,7 +827,7 @@ struct ConnectionAttempt
 // connectFiber
 /++
     Fiber function that tries to connect to IPs in the `ips` array of the passed
-    `Connection`, yielding at certain points throughout the process to let the
+    $(REF Connection), yielding at certain points throughout the process to let the
     calling function do stuff inbetween connection attempts.
 
     Example:
@@ -876,11 +876,11 @@ struct ConnectionAttempt
     ---
 
     Params:
-        conn = Reference to the current, unconnected `Connection`.
+        conn = Reference to the current, unconnected $(REF Connection).
         connectionRetries = How many times to attempt to connect before signaling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the `core.thread.fiber.Fiber` terminate.
+            function return and the $(REF core.thread.fiber.Fiber) terminate.
  +/
 void connectFiber(ref Connection conn, const uint connectionRetries, ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
@@ -1103,7 +1103,7 @@ struct ResolveAttempt
 // resolveFiber
 /++
     Given an address and a port, resolves these and populates the array of unique
-    `std.socket.Address` IPs inside the passed `Connection`.
+    `std.socket.Address` IPs inside the passed $(REF Connection).
 
     Example:
     ---
@@ -1153,12 +1153,12 @@ struct ResolveAttempt
     ---
 
     Params:
-        conn = Reference to the current `Connection`.
+        conn = Reference to the current $(REF Connection).
         address = String address to look up.
-        port = Remote port build into the `std.socket.Address`.
+        port = Remote port build into the $(REF std.socket.Address).
         useIPv6 = Whether to include resolved IPv6 addresses or not.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the `core.thread.fiber.Fiber` terminate.
+            function return and the $(REF core.thread.fiber.Fiber) terminate.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
     const bool useIPv6, ref bool abort) @system
@@ -1212,18 +1212,18 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
                 enum AddrInfoErrors
                 {
-                    //badFlags  = EAI_BADFLAGS,     /** Invalid value for `ai_flags` field. */
-                    noName      = EAI_NONAME,       /** NAME or SERVICE is unknown. */
-                    again       = EAI_AGAIN,        /** Temporary failure in name resolution. */
-                    fail        = EAI_FAIL,         /** Non-recoverable failure in name res. */
-                    noData      = EAI_NODATA,       /** No address associated with NAME. (GNU) */
-                    family      = EAI_FAMILY,       /** `ai_family` not supported. */
-                    sockType    = EAI_SOCKTYPE,     /** `ai_socktype` not supported. */
-                    //service     = EAI_SERVICE,    /** SERVICE not supported for `ai_socktype`. */
-                    //addrFamily= EAI_ADDRFAMILY,   /** Address family for NAME not supported. (GNU) */
-                    //memory    = EAI_MEMORY,       /** Memory allocation failure. */
-                    system      = EAI_SYSTEM,       /** System error returned in `errno`. */
-                    //overflow  = EAI_OVERFLOW,     /** Argument buffer overflow. */
+                    //badFlags   = EAI_BADFLAGS,     /** Invalid value for `ai_flags` field. */
+                    noName       = EAI_NONAME,       /** NAME or SERVICE is unknown. */
+                    again        = EAI_AGAIN,        /** Temporary failure in name resolution. */
+                    fail         = EAI_FAIL,         /** Non-recoverable failure in name res. */
+                    noData       = EAI_NODATA,       /** No address associated with NAME. (GNU) */
+                    family       = EAI_FAMILY,       /** `ai_family` not supported. */
+                    sockType     = EAI_SOCKTYPE,     /** `ai_socktype` not supported. */
+                    //service    = EAI_SERVICE,      /** SERVICE not supported for `ai_socktype`. */
+                    //addrFamily = EAI_ADDRFAMILY,   /** Address family for NAME not supported. (GNU) */
+                    //memory     = EAI_MEMORY,       /** Memory allocation failure. */
+                    system       = EAI_SYSTEM,       /** System error returned in `errno`. */
+                    //overflow   = EAI_OVERFLOW,     /** Argument buffer overflow. */
                 }
             }
             else version(Windows)
@@ -1235,18 +1235,18 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
                 enum AddrInfoErrors
                 {
-                    //badFlags  = WSAEINVAL,            /** An invalid value was provided for the `ai_flags` member of the `pHints` parameter. */
-                    noName      = WSAHOST_NOT_FOUND,    /** The name does not resolve for the supplied parameters or the `pNodeName` and `pServiceName` parameters were not provided. */
-                    again       = WSATRY_AGAIN,         /** A temporary failure in name resolution occurred. */
-                    fail        = WSANO_RECOVERY,       /** A nonrecoverable failure in name resolution occurred. */
-                    noData      = WSANO_DATA,
-                    family      = WSAEAFNOSUPPORT,      /** The 'ai_family' member of the `pHints` parameter is not supported. */
-                    sockType    = WSAESOCKTNOSUPPORT,   /** The `ai_socktype` member of the `pHints` parameter is not supported. */
-                    //service   = WSATYPE_NOT_FOUND,    /** The `pServiceName` parameter is not supported for the specified `ai_socktype` member of the `pHints` parameter. */
-                    //addrFamily= ?,
-                    //memory    = WSANOT_ENOUGH_MEMORY, /** A memory allocation failure occurred. */
-                    //system    = ?,
-                    //overflow  = ?,
+                    //badFlags   = WSAEINVAL,            /** An invalid value was provided for the `ai_flags` member of the `pHints` parameter. */
+                    noName       = WSAHOST_NOT_FOUND,    /** The name does not resolve for the supplied parameters or the `pNodeName` and `pServiceName` parameters were not provided. */
+                    again        = WSATRY_AGAIN,         /** A temporary failure in name resolution occurred. */
+                    fail         = WSANO_RECOVERY,       /** A nonrecoverable failure in name resolution occurred. */
+                    noData       = WSANO_DATA,
+                    family       = WSAEAFNOSUPPORT,      /** The 'ai_family' member of the `pHints` parameter is not supported. */
+                    sockType     = WSAESOCKTNOSUPPORT,   /** The `ai_socktype` member of the `pHints` parameter is not supported. */
+                    //service    = WSATYPE_NOT_FOUND,    /** The `pServiceName` parameter is not supported for the specified `ai_socktype` member of the `pHints` parameter. */
+                    //addrFamily = ?,
+                    //memory     = WSANOT_ENOUGH_MEMORY, /** A memory allocation failure occurred. */
+                    //system     = ?,
+                    //overflow   = ?,
                 }
             }
             else
