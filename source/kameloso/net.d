@@ -1199,9 +1199,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
         }
         catch (SocketOSException e)
         {
-            import std.stdio;
             attempt.errno = e.errorCode;
-            writeln(attempt.errno);
 
             version(Posix)
             {
