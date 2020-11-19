@@ -1289,9 +1289,11 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
         }
     }
 
-    ResolveAttempt endAttempt;
+    // This doesn't really happen at present. Subject to change, so keep it here.
+    /*ResolveAttempt endAttempt;
     endAttempt.state = State.failure;
-    yield(endAttempt);
+    yield(endAttempt);*/
+    assert(0, "Broke out of unending `for` loop in `resolveFiber`");
 }
 
 
