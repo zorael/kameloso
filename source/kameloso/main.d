@@ -288,7 +288,7 @@ void messageFiber(ref Kameloso instance)
             import std.conv : text;
             import std.format : format;
 
-            enum maxIRCLineLength = 512;
+            enum maxIRCLineLength = 512-2;  // sans CRLF
 
             version(TwitchSupport)
             {
