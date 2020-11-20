@@ -276,8 +276,7 @@ void tryAuth(ConnectService service)
             return;
         }
 
-        query(service.state, serviceNick, "%s %s"
-            .format(verb, password), Yes.quiet);
+        query(service.state, serviceNick, (verb ~ ' ' ~ password), Yes.quiet);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
