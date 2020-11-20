@@ -396,7 +396,7 @@ void exhaustMessages()
 
     // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
     // until a thread was spawned or thisTid was passed to a running thread.
-    const ensureMessageBoxIsInitialised = thisTid;
+    cast(void)thisTid;
 
     bool notEmpty;
     static immutable almostInstant = 10.msecs;
@@ -404,7 +404,7 @@ void exhaustMessages()
     do
     {
         notEmpty = receiveTimeout(almostInstant,
-            (Variant v) {}
+            (Variant v) scope {}
         );
     }
     while (notEmpty);
