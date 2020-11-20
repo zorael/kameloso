@@ -279,7 +279,7 @@ void tryAuth(ConnectService service)
         query(service.state, serviceNick, "%s %s"
             .format(verb, password), Yes.quiet);
 
-        if (!service.state.settings.hideOutgoing)
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
             logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
         }
@@ -302,7 +302,7 @@ void tryAuth(ConnectService service)
         query(service.state, serviceNick, "%s %s %s"
             .format(verb, account, password), Yes.quiet);
 
-        if (!service.state.settings.hideOutgoing)
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
             logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
         }
@@ -312,7 +312,7 @@ void tryAuth(ConnectService service)
         // Doesn't want a PRIVMSG
         raw(service.state, "NICKSERV IDENTIFY " ~ password, Yes.quiet);
 
-        if (!service.state.settings.hideOutgoing)
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
             logger.trace("--> NICKSERV IDENTIFY hunter2");
         }
@@ -872,7 +872,11 @@ bool trySASLPlain(ConnectService service)
         immutable encoded = encode64(authToken);
 
         immediate(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
-        if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        {
+            logger.trace("--> AUTHENTICATE hunter2");
+        }
         return true;
     }
     catch (Base64Exception e)
@@ -1211,7 +1215,12 @@ void register(ConnectService service)
         //service.state.botUpdated = true;  // done below
 
         immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
-        if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
+
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        {
+            // fake it
+            logger.trace("--> PASS hunter2");
+        }
     }
 
     import core.thread : Fiber;
