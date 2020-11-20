@@ -591,6 +591,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                         "Path to %scacert.pem%s certificate bundle, or equivalent"
                         .format(Tint.info, Tint.off),
                     &connSettings.caBundleFile,*/
+                "numeric",
+                    quiet ? string.init :
+                        "Use numeric output of addresses",
+                    &settings.numericAddresses,
                 "summary",
                     quiet ? string.init :
                         "Show a connection summary on program exit [%s%s%s]"
