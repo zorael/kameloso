@@ -1257,7 +1257,15 @@ unittest
         static if (symname[0] == 'E')
         {
             immutable idx = __traits(getMember, core.stdc.errno, symname);
-            errnoStrings[idx] = symname;
+
+            if (errnoStrings[idx].length)
+            {
+                writefln("%s DUPLICATE %d", symname, idx);
+            }
+            else
+            {
+                errnoStrings[idx] = symname;
+            }
         }
     }
 
@@ -1273,6 +1281,7 @@ unittest
     ---
  +/
 version(Posix)
+version(PrintErrnos)
 static immutable string[134] errnoStrings =
 [
     1   : "EPERM",
@@ -1285,7 +1294,7 @@ static immutable string[134] errnoStrings =
     8   : "ENOEXEC",
     9   : "EBADF",
     10  : "ECHILD",
-    11  : "EWOULDBLOCK",
+    11  : "EAGAIN",  // duplicate EWOULDBLOCK
     12  : "ENOMEM",
     13  : "EACCES",
     14  : "EFAULT",
@@ -1309,7 +1318,7 @@ static immutable string[134] errnoStrings =
     32  : "EPIPE",
     33  : "EDOM",
     34  : "ERANGE",
-    35  : "EDEADLOCK",
+    35  : "EDEADLK",  // duplicate EDEADLOCK
     36  : "ENAMETOOLONG",
     37  : "ENOLCK",
     38  : "ENOSYS",
@@ -1367,7 +1376,7 @@ static immutable string[134] errnoStrings =
     92  : "ENOPROTOOPT",
     93  : "EPROTONOSUPPORT",
     94  : "ESOCKTNOSUPPORT",
-    95  : "ENOTSUP",
+    95  : "EOPNOTSUPP",  // duplicate ENOTSUPP
     96  : "EPFNOSUPPORT",
     97  : "EAFNOSUPPORT",
     98  : "EADDRINUSE",

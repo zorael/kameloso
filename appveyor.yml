@@ -51,12 +51,6 @@ branches:
     - gh-pages
     - /dustmite-.*/
 
-artifacts:
-  - path: kameloso.exe
-    name: Full build
-  - path: kameloso-dev.exe
-    name: Development build
-
 install:
   - ps: function SetUpDCompiler
         {
@@ -129,3 +123,12 @@ test_script:
  - mv kameloso.exe kameloso-dev.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
  #- mv kameloso.exe kameloso-twitch.exe
+
+after_test:
+ - ps: if($env:APPVEYOR_REPO_TAG -eq "True"){
+         Push-AppveyorArtifact kameloso.exe -DeploymentName "Full build"
+         Push-AppveyorArtifact kameloso-dev.exe -DeploymentName "Development build";
+       }
+       else{
+         echo "Does not seem to be a tag so not pushing artifacts";
+       }
