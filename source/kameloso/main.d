@@ -2847,7 +2847,7 @@ int initBot(string[] args)
         }
         while (notEmpty);
 
-        if (!instance.settings.hideOutgoing && !quiet)
+        if ((!instance.settings.hideOutgoing && !quiet) || instance.settings.trace)
         {
             bool printed;
 
