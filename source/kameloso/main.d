@@ -2828,18 +2828,24 @@ int initBot(string[] args)
 
         // Connected and aborting
         // Catch any queued quit calls and use their reasons and quit settings
+        // Also catch Variants so as not to throw an exception on missed priority messages
 
-        bool quiet;
         string reason = instance.bot.quitReason;
+        bool quiet;
+        bool notEmpty;
 
-        cast(void)receiveTimeout((-1).seconds,
-            (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
-            {
-                reason = givenReason;
-                quiet = givenQuiet;
-            },
-            (Variant v) scope {},
-        );
+        do
+        {
+            notEmpty = receiveTimeout((-1).seconds,
+                (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
+                {
+                    reason = givenReason;
+                    quiet = givenQuiet;
+                },
+                (Variant v) scope {},
+            );
+        }
+        while (notEmpty);
 
         if (!instance.settings.hideOutgoing && !quiet)
         {
