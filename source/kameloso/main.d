@@ -2830,9 +2830,9 @@ int initBot(string[] args)
         // Catch any queued quit calls and use their reasons and quit settings
 
         bool quiet;
-        string reason;
+        string reason = instance.bot.quitReason;
 
-        immutable received = receiveTimeout((-1).seconds,
+        cast(void)receiveTimeout((-1).seconds,
             (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
             {
                 reason = givenReason;
@@ -2840,8 +2840,6 @@ int initBot(string[] args)
             },
             (Variant v) scope {},
         );
-
-        if (!received) reason = instance.bot.quitReason;
 
         if (!instance.settings.hideOutgoing && !quiet)
         {
