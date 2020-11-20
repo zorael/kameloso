@@ -1,5 +1,11 @@
 /++
     The main module, housing startup logic and the main event loop.
+
+    No module (save $(REF kameloso.entrypoint)) should be importing this.
+
+    See_Also:
+        $(REF kameloso.kameloso)
+        $(REF kameloso.common)
  +/
 module kameloso.main;
 
@@ -23,8 +29,8 @@ version(PrintErrnos)
     {
         version = PrintErrnosWindows;
     }
-
 }
+
 
 version(ProfileGC)
 {
@@ -2165,8 +2171,6 @@ void expandPaths(ref CoreSettings settings)
     settings.configFile = buildNormalizedPath(configurationBaseDirectory,
         "kameloso", KamelosoFilenames.configuration);
     settings.resourceDirectory = buildNormalizedPath(resourceBaseDirectory, "kameloso");
-
-
 }
 
 
