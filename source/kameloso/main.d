@@ -1818,22 +1818,25 @@ Next tryConnect(ref Kameloso instance)
 
             string resolvedHost;
 
-            try
+            if (!instance.settings.numericAddresses)
             {
-                resolvedHost = attempt.ip.toHostNameString;
-            }
-            catch (AddressException e)
-            {
-                /*
-                std.socket.AddressException@std/socket.d(1301): Could not get host name: Success
-                ----------------
-                ??:? pure @safe bool std.exception.enforce!(bool).enforce(bool, lazy object.Throwable) [0x2cf5f0]
-                ??:? const @trusted immutable(char)[] std.socket.Address.toHostString(bool) [0x4b2d7c6]
-                */
-                // Just let the string be empty
-            }
+                try
+                {
+                    resolvedHost = attempt.ip.toHostNameString;
+                }
+                catch (AddressException e)
+                {
+                    /*
+                    std.socket.AddressException@std/socket.d(1301): Could not get host name: Success
+                    ----------------
+                    ??:? pure @safe bool std.exception.enforce!(bool).enforce(bool, lazy object.Throwable) [0x2cf5f0]
+                    ??:? const @trusted immutable(char)[] std.socket.Address.toHostString(bool) [0x4b2d7c6]
+                    */
+                    // Just let the string be empty
+                }
 
-            if (*instance.abort) return Next.returnFailure;
+                if (*instance.abort) return Next.returnFailure;
+            }
 
             immutable pattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
