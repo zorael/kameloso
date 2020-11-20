@@ -20,7 +20,6 @@ import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.format : format;
 import std.typecons : Flag, No, Yes;
 
 
@@ -287,6 +286,8 @@ void tryAuth(ConnectService service)
     case snircd:
     case ircdseven:
     case u2:
+        import std.format : format;
+
         // Accepts auth login
         // GameSurge is AuthServ
         string account = service.state.bot.account;
@@ -856,6 +857,7 @@ bool trySASLPlain(ConnectService service)
 {
     import lu.string : beginsWith, decode64, encode64;
     import std.base64 : Base64Exception;
+    import std.format : format;
 
     try
     {
