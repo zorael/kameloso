@@ -341,8 +341,15 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         }
 
     case USERSTATE: // Insanely spammy, once every sent message
-    case PING:
     case PONG:
+        break;
+
+    case PING:
+        import lu.string : contains;
+
+        // Show the on-connect-ping-this type of events if !filterMost
+        // Assume those containing dots are real pings for the server address
+        if (!plugin.printerSettings.filterMost && !event.content.contains('.')) goto default;
         break;
 
     default:
