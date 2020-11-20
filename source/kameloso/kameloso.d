@@ -671,6 +671,7 @@ public:
         bool force;  /// Whether or not to force connecting, skipping some sanity checks.
         bool flush;  /// Whether or not to explicitly set stdout to flush after writing a linebreak to it.
         bool trace = false;  /// Whether or not *all* outgoing messages should be echoed to the terminal.
+        bool numericAddresses;  /// Whether to print addresses as IPs or as hostnames (where applicable).
     }
 }
 
