@@ -315,9 +315,9 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             !isSomeFunction!(__traits(getMember, thing, memberstring)) &&
             !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
             (all ||
-                isSerialisable!(__traits(getMember, thing, memberstring)) &&
+                (isSerialisable!(__traits(getMember, thing, memberstring)) &&
                 !isAnnotated!(__traits(getMember, thing, memberstring), Hidden) &&
-                !isAnnotated!(__traits(getMember, thing, memberstring), Unserialisable)))
+                !isAnnotated!(__traits(getMember, thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
