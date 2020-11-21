@@ -13,22 +13,22 @@ import std.format : format;
 
 version(DigitalMars)
 {
-    /// String of the compiler that was used to compile this binary with.
+    /// String of the compiler that was used to compile this binary with. Here: `dmd`.
     enum compiler = "dmd";
 }
 else version(LDC)
 {
-    /// Ditto
+    /// String of the compiler that was used to compile this binary with. Here: `ldc`.
     enum compiler = "ldc";
 }
 else version(GNU)
 {
-    /// Ditto
+    /// String of the compiler that was used to compile this binary with. Here: `gdc`.
     enum compiler = "gdc";
 }
 else
 {
-    /// Ditto
+    /// String of the compiler that was used to compile this binary with. Here: no idea.
     enum compiler = "<unknown>";
 }
 
