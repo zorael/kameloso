@@ -326,9 +326,8 @@ unittest
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
     uint numUnits = 7, uint truncateUnits = 0, Sink)
-    (const Duration duration, auto ref Sink sink) pure
+    (const Duration signedDuration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
-in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration")
 {
     import lu.string : plurality;
     import std.algorithm.comparison : min;
@@ -352,6 +351,8 @@ in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration
             "expected `0` to `6`, got `%d`";
         static assert(0, pattern.format(truncateUnits));
     }
+
+    immutable duration = signedDuration < 0.seconds ? -signedDuration : signedDuration;
 
     alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
     enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
@@ -412,6 +413,11 @@ in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration
     }
 
     // -------------------------------------------------------------------------
+
+    if (signedDuration < 0.seconds)
+    {
+        sink.put('-');
+    }
 
     static if (numUnits >= 7)
     {
@@ -725,6 +731,15 @@ unittest
         sink.clear();
         dur.timeSinceInto!(Yes.abbreviate, 7, 1)(sink);
         assert((sink.data == "2h 28m"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = -1.minutes + -1.seconds;
+        dur.timeSinceInto!(No.abbreviate, 2, 0)(sink);
+        assert((sink.data == "-1 minute and 1 second"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 2, 0)(sink);
+        assert((sink.data == "-1m 1s"), sink.data);
         sink.clear();
     }
 }
