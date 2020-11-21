@@ -2552,6 +2552,7 @@ void printEventDebugDetails(const ref IRCEvent event, const string raw)
  +/
 void printSummary(const ref Kameloso instance)
 {
+    import kameloso.common : timeSince;
     import core.time : Duration;
 
     Duration totalTime;
@@ -2585,10 +2586,11 @@ void printSummary(const ref Kameloso instance)
         totalBytesReceived += entry.bytesReceived;
 
         writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
-            i+1, duration, entry.numEvents, entry.bytesReceived, startString, stopString);
+            i+1, duration.timeSince!(Yes.abbreviate, 7, 0), entry.numEvents,
+            entry.bytesReceived, startString, stopString);
     }
 
-    logger.info("Total time connected: ", Tint.log, totalTime);
+    logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(No.abbreviate, 7, 1));
     logger.infof("Total received: %s%,d%s bytes", Tint.log, totalBytesReceived, Tint.info);
 }
 
