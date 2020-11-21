@@ -1837,9 +1837,17 @@ Next tryConnect(ref Kameloso instance)
 
     foreach (const attempt; connector)
     {
+        import lu.string : beginsWith;
         import core.time : seconds;
 
         if (*instance.abort) return Next.returnFailure;
+
+        enum unableToConnectString = "Unable to connect socket: ";
+        immutable errorString = attempt.error.length ?
+            (attempt.error.beginsWith(unableToConnectString) ?
+                attempt.error[unableToConnectString.length..$] :
+                attempt.error) :
+            string.init;
 
         with (ConnectionAttempt.State)
         final switch (attempt.state)
@@ -1896,12 +1904,12 @@ Next tryConnect(ref Kameloso instance)
             version(PrintErrnosPosix)
             {
                 logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
-                    Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
+                    Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
             }
             else version(PrintErrnosWindows)
             {
                 logger.warningf("Connection failed with error %s%d%s: %1$s%4$s",
-                    Tint.log, attempt.errno, Tint.warning, attempt.error);
+                    Tint.log, attempt.errno, Tint.warning, errorString);
             }
 
             if (attempt.retryNum == 0)
@@ -1941,12 +1949,12 @@ Next tryConnect(ref Kameloso instance)
                 version(PrintErrnosPosix)
                 {
                     logger.warning("IPv6 connection failed with %s%s%s: %1$s%4$s",
-                        Tint.log, errnoStrings[attempt.errno], Tint.warning, attempt.error);
+                        Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
                 }
                 else version(PrintErrnosWindows)
                 {
                     logger.warning("IPv6 connection failed with error %s%d%s: %1$s%4$s",
-                        Tint.log, attempt.errno, Tint.warning, attempt.error);
+                        Tint.log, attempt.errno, Tint.warning, errorString);
                 }
 
                 logger.warning("Disabling IPv6.");
@@ -1960,24 +1968,23 @@ Next tryConnect(ref Kameloso instance)
         case sslFailure:
             // This can be transient?
             // "Failed to establish SSL connection after successful connect (system lib)"
-            logger.error("Failed to connect due to SSL setup/handshake failure: ",
-                Tint.log, attempt.error);
+            logger.error("Failed to connect: ", Tint.log, attempt.error);
             goto case delayThenReconnect;
 
         case error:
             version(PrintErrnosPosix)
             {
                 logger.errorf("Failed to connect: %s%s%s (%1$s%4$s%3$s)",
-                    Tint.log, attempt.error, Tint.error, errnoStrings[attempt.errno]);
+                    Tint.log, errorString, Tint.error, errnoStrings[attempt.errno]);
             }
             else version(PrintErrnosWindows)
             {
                 logger.errorf("Failed to connect: %s%s%s (%1$s%4$d%3$s)",
-                    Tint.log, attempt.error, Tint.error, attempt.errno);
+                    Tint.log, errorString, Tint.error, attempt.errno);
             }
             else
             {
-                logger.error("Failed to connect: ", Tint.log, attempt.error);
+                logger.error("Failed to connect: ", Tint.log, errorString);
             }
             return Next.returnFailure;
         }
@@ -2038,6 +2045,15 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
 
     foreach (const attempt; resolver)
     {
+        import lu.string : beginsWith;
+
+        enum getaddrinfoErrorString = "getaddrinfo error: ";
+        immutable errorString = attempt.error.length ?
+            (attempt.error.beginsWith(getaddrinfoErrorString) ?
+                attempt.error[getaddrinfoErrorString.length..$] :
+                attempt.error) :
+            string.init;
+
         with (ResolveAttempt.State)
         final switch (attempt.state)
         {
@@ -2055,13 +2071,12 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         case exception:
             version(PrintErrnos)
             {
-                logger.warningf("Could not resolve server address. (%s%s%s) (%1$s%4$d%3$s)",
-                    Tint.log, attempt.error, Tint.warning, attempt.errno);
+                logger.warningf("Could not resolve server address: %s%s%s (%1$s%4$d%3$s)",
+                    Tint.log, errorString, Tint.warning, attempt.errno);
             }
             else
             {
-                logger.warningf("Could not resolve server address. (%s%s%s)",
-                    Tint.log, attempt.error, Tint.warning);
+                logger.warning("Could not resolve server address: ", Tint.log, errorString);
             }
 
             delayOnNetworkDown();
@@ -2071,13 +2086,12 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
         case error:
             version(PrintErrnos)
             {
-                logger.errorf("Could not resolve server address. (%s%s%s) (%1$s%4$d%3$s)",
-                    Tint.log, attempt.error, Tint.error, attempt.errno);
+                logger.errorf("Could not resolve server address: %s%s%s (%1$s%4$d%3$s)",
+                    Tint.log, errorString, Tint.error, attempt.errno);
             }
             else
             {
-                logger.errorf("Could not resolve server address. (%s%s%s)",
-                    Tint.log, attempt.error, Tint.error);
+                logger.error("Could not resolve server address: ", Tint.log, errorString);
             }
 
             if (firstConnect)
