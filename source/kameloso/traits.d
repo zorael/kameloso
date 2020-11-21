@@ -82,7 +82,7 @@ if (Things.length > 0)
 
 // longestMemberName
 /++
-    Gets the name of the longest configurable member in one or more structs.
+    Gets the name of the longest configurable member in one or more aggregate types.
 
     This is used for formatting terminal output of configuration files, so that
     columns line up.

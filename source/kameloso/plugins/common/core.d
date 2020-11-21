@@ -627,7 +627,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             {
                 import std.algorithm.searching : canFind;
 
-                // Default policy if none given is $(REF ChannelPolicy.home)
+                // Default policy if none given is ChannelPolicy.home
 
                 static if (verbose)
                 {
@@ -636,7 +636,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 if (!event.channel.length)
                 {
-                    // it is a non-channel event, like a $(REF dialect.defs.IRCEvent.Type.QUERY)
+                    // it is a non-channel event, like an IRCEvent.Type.QUERY
                 }
                 else if (!state.bot.homeChannels.canFind(event.channel))
                 {
@@ -664,19 +664,17 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 if (!event.content.length)
                 {
-                    // Event has a $(REF BotCommand) or a $(REF BotRegex) set up but
+                    // Event has a BotCommand or a BotRegex set up but
                     // `event.content` is empty; cannot possibly be of interest.
                     return NextStep.continue_;  // next function
                 }
-            }
 
-            bool commandMatch;  // Whether or not a BotCommand or BotRegex matched
-
-            static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
-            {
                 // Snapshot content and aux for later restoration
                 immutable origContent = event.content;
                 immutable origAux = event.aux;
+
+                /// Whether or not a $(REF BotCommand) or $(REF BotRegex) matched.
+                bool commandMatch;
             }
 
             // Evaluate each BotCommand UDAs with the current event
@@ -1457,11 +1455,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else static if (hasUDA!(this.tupleof[i], Settings))
             {
                 import std.format : format;
+                import std.traits : fullyQualifiedName;
 
                 // Warn here but nowhere else about this.
-                static assert(0, "`%s.%s.%s` is annotated `@Settings` but is not a `struct`"
-                    .format(module_, typeof(this).stringof,
-                    __traits(identifier, this.tupleof[i])));
+                static assert(0, "`%s` is annotated `@Settings` but is not a `struct`"
+                    .format(fullyQualifiedName!(this.tupleof[i])));
             }
         }
 
