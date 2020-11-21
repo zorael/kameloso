@@ -1,10 +1,10 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes $(REF core.thread.fiber.Fiber)s that help with resolving the address of,
+    Includes [core.thread.fiber.Fiber]s that help with resolving the address of,
     connecting to, and reading full string lines from a server.
 
-    Having them as $(REF core.thread.fiber.Fiber)s means a program can do address resolution,
+    Having them as [core.thread.fiber.Fiber]s means a program can do address resolution,
     connecting and reading while retaining the ability to do other stuff
     concurrently. This means you can conveniently run code inbetween each
     connection attempt, for instance, without breaking the program's flow.
@@ -101,18 +101,18 @@ private:
     SSL_CTX* sslContext;
 
     /++
-        OpenSSL $(REF requests.ssl_adapter.SSL) instance, for use with SSL connections.
+        OpenSSL [requests.ssl_adapter.SSL] instance, for use with SSL connections.
      +/
     SSL* sslInstance;
 
 
     // setTimemout
     /++
-        Sets the $(REF std.socket.SocketOption.RCVTIMEO) of the *current*
-        $(REF std.socket.Socket) $(REF socket) to the specified duration.
+        Sets the [std.socket.SocketOption.RCVTIMEO] of the *current*
+        [std.socket.Socket] [socket] to the specified duration.
 
         Params:
-            option = The $(REF std.socket.SocketOption) to set.
+            option = The [std.socket.SocketOption] to set.
             dur = The duration to assign for the option, in number of milliseconds.
      +/
     void setTimeout(const SocketOption option, const uint dur)
@@ -129,21 +129,21 @@ private:
 
 public:
     /++
-        Pointer to the socket of the $(REF std.socket.AddressFamily) we want to connect with.
+        Pointer to the socket of the [std.socket.AddressFamily] we want to connect with.
      +/
     Socket socket;
 
     /++
-        Whether or not this $(REF Connection) should use SSL when sending and receiving.
+        Whether or not this [Connection] should use SSL when sending and receiving.
      +/
     bool ssl;
 
-    /// IPs already resolved using $(REF kameloso.net.resolveFiber).
+    /// IPs already resolved using [kameloso.net.resolveFiber].
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current $(REF std.socket.Socket). This successfully
-        proxies to $(REF std.socket.Socket.receive).
+        Implicitly proxies calls to the current [std.socket.Socket]. This successfully
+        proxies to [std.socket.Socket.receive].
      +/
     alias socket this;
 
@@ -168,7 +168,7 @@ public:
         Accessor; returns the current send timeout.
 
         Returns:
-            A copy of $(REF privateSendTimeout).
+            A copy of [privateSendTimeout].
      +/
     pragma(inline, true)
     uint sendTimeout() const @property pure @nogc nothrow
@@ -196,7 +196,7 @@ public:
         Accessor; returns the current receive timeout.
 
         Returns:
-            A copy of $(REF privateReceiveTimeout).
+            A copy of [privateReceiveTimeout].
      +/
     pragma(inline, true)
     uint receiveTimeout() const @property pure @nogc nothrow
@@ -250,7 +250,7 @@ public:
 
     // resetSSL
     /++
-        Resets the SSL context and resources of this $(REF Connection).
+        Resets the SSL context and resources of this [Connection].
      +/
     void resetSSL() @system
     in (ssl, "Tried to reset SSL on a non-SSL `Connection`")
@@ -285,11 +285,11 @@ public:
 
     // setDefaultOptions
     /++
-        Sets up sockets with the $(REF std.socket.SocketOptions) needed. These
+        Sets up sockets with the [std.socket.SocketOptions] needed. These
         include timeouts and buffer sizes.
 
         Params:
-            socketToSetup = Reference to the $(REF std.socket.Socket) to modify.
+            socketToSetup = Reference to the [std.socket.Socket] to modify.
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
@@ -318,7 +318,7 @@ public:
         Sets up the SSL context for this connection.
 
         Throws:
-            $(REF SSLException) if the SSL context could not be set up.
+            [SSLException] if the SSL context could not be set up.
      +/
     void setupSSL() @system
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
@@ -508,10 +508,10 @@ struct ListenAttempt
     /// The last read line of text sent by the server.
     string line;
 
-    /// The $(REF std.socket.lastSocketError) at the last point of error.
+    /// The [std.socket.lastSocketError] at the last point of error.
     string error;
 
-    /// $(REF core.stdc.errno.errno) at time of read.
+    /// [core.stdc.errno.errno] at time of read.
     int errno;
 
     /// The amount of bytes received this attempt.
@@ -521,14 +521,14 @@ struct ListenAttempt
 
 // listenFiber
 /++
-    A $(REF std.socket.Socket)-reading $(REF std.concurrency.Generator). It reads and
+    A [std.socket.Socket]-reading [std.concurrency.Generator]. It reads and
     yields full string lines.
 
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
-    finds a newline character, yields $(REF ListenAttempt)s back to the caller of
+    finds a newline character, yields [ListenAttempt]s back to the caller of
     the Fiber, checks for more lines to yield, and if none yields an attempt
-    with a $(REF ListenAttempt.State) denoting that nothing was read and that a new
+    with a [ListenAttempt.State] denoting that nothing was read and that a new
     attempt should be made later.
 
     Example:
@@ -577,15 +577,15 @@ struct ListenAttempt
 
     Params:
         bufferSize = What size static array to use as buffer. Defaults to
-            twice of $(REF kameloso.constants.BufferSize.socketReceive) for now.
-        conn = $(REF Connection) whose $(REF std.socket.Socket) it reads from the server with.
+            twice of [kameloso.constants.BufferSize.socketReceive] for now.
+        conn = [Connection] whose [std.socket.Socket] it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the $(REF core.thread.fiber.Fiber) terminate.
+            function return and the [core.thread.fiber.Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
-            Optional, defaults to $(REF kameloso.constants.Timeout.connectionLost).
+            Optional, defaults to [kameloso.constants.Timeout.connectionLost].
 
     Yields:
-        $(REF ListenAttempt)s with information about the line receieved in its member values.
+        [ListenAttempt]s with information about the line receieved in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn, ref bool abort, const int connectionLost = Timeout.connectionLost) @system
@@ -815,10 +815,10 @@ struct ConnectionAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// $(REF core.stdc.errno.errno) at time of connect.
+    /// [core.stdc.errno.errno] at time of connect.
     int errno;
 
-    /// The number of retries so far towards this $(REF ip).
+    /// The number of retries so far towards this [ip].
     uint retryNum;
 }
 
@@ -826,7 +826,7 @@ struct ConnectionAttempt
 // connectFiber
 /++
     Fiber function that tries to connect to IPs in the `ips` array of the passed
-    $(REF Connection), yielding at certain points throughout the process to let the
+    [Connection], yielding at certain points throughout the process to let the
     calling function do stuff inbetween connection attempts.
 
     Example:
@@ -875,11 +875,11 @@ struct ConnectionAttempt
     ---
 
     Params:
-        conn = Reference to the current, unconnected $(REF Connection).
+        conn = Reference to the current, unconnected [Connection].
         connectionRetries = How many times to attempt to connect before signaling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the $(REF core.thread.fiber.Fiber) terminate.
+            function return and the [core.thread.fiber.Fiber] terminate.
  +/
 void connectFiber(ref Connection conn, const uint connectionRetries, ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
@@ -1091,7 +1091,7 @@ struct ResolveAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// $(REF core.stdc.errno.errno) at time of resolve.
+    /// [core.stdc.errno.errno] at time of resolve.
     int errno;
 
     /// The number of retries so far towards this address.
@@ -1102,7 +1102,7 @@ struct ResolveAttempt
 // resolveFiber
 /++
     Given an address and a port, resolves these and populates the array of unique
-    `std.socket.Address` IPs inside the passed $(REF Connection).
+    `std.socket.Address` IPs inside the passed [Connection].
 
     Example:
     ---
@@ -1152,12 +1152,12 @@ struct ResolveAttempt
     ---
 
     Params:
-        conn = Reference to the current $(REF Connection).
+        conn = Reference to the current [Connection].
         address = String address to look up.
-        port = Remote port build into the $(REF std.socket.Address).
+        port = Remote port build into the [std.socket.Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the $(REF core.thread.fiber.Fiber) terminate.
+            function return and the [core.thread.fiber.Fiber] terminate.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
     const bool useIPv6, ref bool abort) @system

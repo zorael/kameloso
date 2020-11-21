@@ -1,9 +1,9 @@
 /++
-    The Printer plugin takes incoming $(REF dialect.defs.IRCEvent)s, formats them
+    The Printer plugin takes incoming [dialect.defs.IRCEvent]s, formats them
     into something easily readable and prints them to the screen, optionally with colours.
     It also supports logging to disk.
 
-    It has no commands; all $(REF dialect.defs.IRCEvent)s will be parsed and
+    It has no commands; all [dialect.defs.IRCEvent]s will be parsed and
     printed, excluding certain types that were deemed too spammy. Print them as
     well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
 
@@ -122,9 +122,9 @@ public:
 /++
     Prints an event to the local terminal.
 
-    Buffer output in an $(REF std.array.Appender).
+    Buffer output in an [std.array.Appender].
 
-    Mutable $(REF dialect.defs.IRCEvent) parameter so as to make fewer internal copies
+    Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
 @Chainable
@@ -395,16 +395,16 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to $(REF kameloso.plugins.common.core.ChannelPolicy.any), and configuration
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any], and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 
-    Lines will either be saved immediately to disk, opening a $(REF std.stdio.File)
+    Lines will either be saved immediately to disk, opening a [std.stdio.File]
     with appending privileges for each event as they occur, or buffered by
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        $(REF commitAllLogs)
+        [commitAllLogs]
  +/
 @Chainable
 @(ChannelPolicy.any)
@@ -419,13 +419,13 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 /++
     Writes all buffered log lines to disk.
 
-    Merely wraps $(REF commitAllLogsImpl) by iterating over all buffers and invoking it.
+    Merely wraps [commitAllLogsImpl] by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current $(REF PrinterPlugin).
+        plugin = The current [PrinterPlugin].
 
     See_Also:
-        $(REF kameloso.plugins.printer.logging.commitLog)
+        [kameloso.plugins.printer.logging.commitLog]
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -439,7 +439,7 @@ void commitAllLogs(PrinterPlugin plugin)
 // onISUPPORT
 /++
     Prints information about the current server as we gain details of it from an
-    $(REF dialect.defs.IRCEvent.Type.RPL_ISUPPORT) event.
+    [dialect.defs.IRCEvent.Type.RPL_ISUPPORT] event.
 
     Set a flag so we only print this information once; (ISUPPORTS can/do stretch
     across several events.)
@@ -605,13 +605,13 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed $(REF kameloso.thread.BusMessage) with the "`printer`" header,
+    Receives a passed [kameloso.thread.BusMessage] with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    $(REF kameloso.plugins.services.chanqueries.ChanQueriesService) querying current channel
+    [kameloso.plugins.services.chanqueries.ChanQueriesService] querying current channel
     for information on the channels and their users.
 
     Params:
-        plugin = The current $(REF PrinterPlugin).
+        plugin = The current [PrinterPlugin].
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -761,7 +761,7 @@ public:
 
 // PrinterPlugin
 /++
-    The Printer plugin takes all $(REF dialect.defs.IRCEvent)s and prints them to
+    The Printer plugin takes all [dialect.defs.IRCEvent]s and prints them to
     the local terminal, formatted and optionally in colour. Alternatively to disk
     as logs.
 
@@ -781,7 +781,7 @@ package:
     /// How many seconds before a request to squelch list events times out.
     enum squelchTimeout = 10;  // seconds
 
-    /// How many bytes to preallocate for the $(REF linebuffer).
+    /// How many bytes to preallocate for the [linebuffer].
     enum linebufferInitialSize = 2048;
 
     /// From which channel or for which user events are being squelched.
@@ -809,10 +809,10 @@ package:
     /// Where to save logs.
     @Resource string logDirectory = "logs";
 
-    /// $(REF kameloso.terminal.TerminalToken.bell) as string, for use as bell.
+    /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after $(REF kameloso.terminal.isTTY) checks.
+    /// Effective bell after [kameloso.terminal.isTTY] checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;

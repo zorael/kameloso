@@ -1,9 +1,9 @@
 /++
-    Contains the definition of an $(REF IRCPlugin) and its ancilliaries, as well as
+    Contains the definition of an [IRCPlugin] and its ancilliaries, as well as
     mixins to fully implement it.
 
     Event handlers can then be module-level functions, annotated with
-    $(REF dialect.defs.IRCEvent.Type)s.
+    [dialect.defs.IRCEvent.Type]s.
 
     Example:
     ---
@@ -42,7 +42,7 @@ public:
 
 // IRCPlugin
 /++
-    Abstract $(REF IRCPlugin) class.
+    Abstract [IRCPlugin] class.
 
     This is currently shared with all `service`-class "plugins".
  +/
@@ -57,7 +57,7 @@ private:
 public:
     // CommandMetadata
     /++
-        Metadata about a $(REF BotCommand)- and/or $(REF BotRegex)-annotated event handler.
+        Metadata about a [BotCommand]- and/or [BotRegex]-annotated event handler.
      +/
     static struct CommandMetadata
     {
@@ -66,7 +66,7 @@ public:
             Description about what the command does, along with optional syntax.
 
             See_Also:
-                $(REF Description)
+                [Description]
          +/
         Description desc;
 
@@ -82,7 +82,7 @@ public:
 
     // state
     /++
-        An $(REF IRCPluginState) instance containing variables and arrays that represent
+        An [IRCPluginState] instance containing variables and arrays that represent
         the current state of the plugin. Should generally be passed by reference.
      +/
     IRCPluginState state;
@@ -173,7 +173,7 @@ public:
         Returns an array of the descriptions of the commands a plugin offers.
 
         Returns:
-            An associative $(REF CommandMetadata) array keyed by string.
+            An associative [CommandMetadata] array keyed by string.
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
@@ -205,7 +205,7 @@ public:
 
 // IRCPluginImpl
 /++
-    Mixin that fully implements an $(REF IRCPlugin).
+    Mixin that fully implements an [IRCPlugin].
 
     Uses compile-time introspection to call module-level functions to extend behaviour.
 
@@ -265,8 +265,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // isEnabled
     /++
-        Introspects the current plugin, looking for a $(REF Settings)-annotated struct
-        member that has a bool annotated with $(REF Enabler), which denotes it as the
+        Introspects the current plugin, looking for a [Settings]-annotated struct
+        member that has a bool annotated with [Enabler], which denotes it as the
         bool that toggles a plugin on and off.
 
         It then returns its value.
@@ -325,13 +325,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     // allow
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated $(REF PrivilegeLevel) of the handler in question. Wrapper function
-        that merely calls $(REF allowImpl). The point behind it is to make something
+        the annotated [PrivilegeLevel] of the handler in question. Wrapper function
+        that merely calls [allowImpl]. The point behind it is to make something
         that can be overridden and still allow it to call the original logic (below).
 
         Params:
-            event = $(REF dialect.defs.IRCEvent) to allow, or not.
-            privilegeLevel = $(REF PrivilegeLevel) of the handler in question.
+            event = [dialect.defs.IRCEvent] to allow, or not.
+            privilegeLevel = [PrivilegeLevel] of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
@@ -346,11 +346,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     // allowImpl
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated $(REF PrivilegeLevel) of the handler in question. Implementation function.
+        the annotated [PrivilegeLevel] of the handler in question. Implementation function.
 
         Params:
-            event = $(REF dialect.defs.IRCEvent) to allow, or not.
-            privilegeLevel = $(REF PrivilegeLevel) of the handler in question.
+            event = [dialect.defs.IRCEvent] to allow, or not.
+            privilegeLevel = [PrivilegeLevel] of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
@@ -384,17 +384,17 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // onEvent
     /++
-        Pass on the supplied $(REF dialect.defs.IRCEvent) to $(REF onEventImpl).
+        Pass on the supplied [dialect.defs.IRCEvent] to [onEventImpl].
 
         This is made a separate function to allow plugins to override it and
-        insert their own code, while still leveraging $(REF onEventImpl) for the
+        insert their own code, while still leveraging [onEventImpl] for the
         actual dirty work.
 
         Params:
-            event = Parsed $(REF dialect.defs.IRCEvent) to pass onto $(REF onEventImpl).
+            event = Parsed [dialect.defs.IRCEvent] to pass onto [onEventImpl].
 
         See_Also:
-            $(REF onEventImpl)
+            [onEventImpl]
      +/
     pragma(inline, true)
     override public void onEvent(const ref IRCEvent event) @system
@@ -405,16 +405,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // onEventImpl
     /++
-        Pass on the supplied $(REF dialect.defs.IRCEvent) to module-level functions
-        annotated with the matching $(REF dialect.defs.IRCEvent.Type)s.
+        Pass on the supplied [dialect.defs.IRCEvent] to module-level functions
+        annotated with the matching [dialect.defs.IRCEvent.Type]s.
 
-        It also does checks for $(REF kameloso.plugins.common.core.ChannelPolicy),
-        $(REF kameloso.plugins.common.core.PrivilegeLevel), $(REF kameloso.plugins.common.core.PrefixPolicy),
-        $(REF kameloso.plugins.common.core.BotCommand), $(REF kameloso.plugins.common.core.BotRegex)
+        It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
+        [kameloso.plugins.common.core.PrivilegeLevel], [kameloso.plugins.common.core.PrefixPolicy],
+        [kameloso.plugins.common.core.BotCommand], [kameloso.plugins.common.core.BotRegex]
         etc; where such is applicable.
 
         Params:
-            origEvent = Parsed $(REF dialect.defs.IRCEvent) to dispatch to event handlers.
+            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
      +/
     private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
@@ -504,7 +504,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
-                    // UDA is $(REF dialect.defs.IRCEvent.Type.ANY), let pass
+                    // UDA is [dialect.defs.IRCEvent.Type.ANY], let pass
                     typeMatches = true;
                     break udaloop;
                 }
@@ -673,7 +673,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 immutable origContent = event.content;
                 immutable origAux = event.aux;
 
-                /// Whether or not a $(REF BotCommand) or $(REF BotRegex) matched.
+                /// Whether or not a [BotCommand] or [BotRegex] matched.
                 bool commandMatch;
             }
 
@@ -1232,11 +1232,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // postprocess
     /++
-        Lets a plugin modify an $(REF dialect.defs.IRCEvent) while it's begin
+        Lets a plugin modify an [dialect.defs.IRCEvent] while it's begin
         constructed, before it's finalised and passed on to be handled.
 
         Params:
-            event = The $(REF dialect.defs.IRCEvent) in flight.
+            event = The [dialect.defs.IRCEvent] in flight.
      +/
     override public void postprocess(ref IRCEvent event) @system
     {
@@ -1291,7 +1291,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         Loads configuration for this plugin from disk.
 
         This does not proxy a call but merely loads configuration from disk for
-        all struct variables annotated $(REF Settings).
+        all struct variables annotated [Settings].
 
         "Returns" two associative arrays for missing entries and invalid
         entries via its two out parameters.
@@ -1340,7 +1340,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // setSettingByName
     /++
-        Change a plugin's $(REF Settings)-annotated settings struct member by their
+        Change a plugin's [Settings]-annotated settings struct member by their
         string name.
 
         This is used to allow for command-line argument to set any plugin's
@@ -1391,7 +1391,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // printSettings
     /++
-        Prints the plugin's $(REF Settings)-annotated settings struct.
+        Prints the plugin's [Settings]-annotated settings struct.
      +/
     override public void printSettings() const
     {
@@ -1428,7 +1428,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         ---
 
         Params:
-            sink = Reference $(REF std.array.Appender) to fill with plugin-specific
+            sink = Reference [std.array.Appender] to fill with plugin-specific
                 settings text.
 
         Returns:
@@ -1570,14 +1570,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // commands
     /++
-        Collects all $(REF BotCommand) command words and $(REF BotRegex) regex expressions
+        Collects all [BotCommand] command words and [BotRegex] regex expressions
         that this plugin offers at compile time, then at runtime returns them
-        alongside their $(REF Description)s and their visibility, as an associative
-        array of $(REF IRCPlugin.CommandMetadata)s keyed by command name strings.
+        alongside their [Description]s and their visibility, as an associative
+        array of [IRCPlugin.CommandMetadata]s keyed by command name strings.
 
         Returns:
-            Associative array of tuples of all $(REF Descriptions) and whether they
-            are hidden, keyed by $(REF BotCommand.word)s and $(REF BotRegex.expression)s.
+            Associative array of tuples of all [Descriptions] and whether they
+            are hidden, keyed by [BotCommand.word]s and [BotRegex.expression]s.
      +/
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
     {
@@ -1747,17 +1747,17 @@ unittest
 
 // prefixPolicyMatches
 /++
-    Evaluates whether or not the message in an event satisfies the $(REF PrefixPolicy)
-    specified, as fetched from a $(REF BotCommand) or $(REF BotRegex) UDA.
+    Evaluates whether or not the message in an event satisfies the [PrefixPolicy]
+    specified, as fetched from a [BotCommand] or [BotRegex] UDA.
 
-    If it doesn't match, the $(REF onEvent) routine shall consider the UDA as not
+    If it doesn't match, the [onEvent] routine shall consider the UDA as not
     matching and continue with the next one.
 
     Params:
         verbose = Whether or not to output verbose debug information to the local terminal.
-        event = Reference to the mutable $(REF dialect.defs.IRCEvent) we're considering.
+        event = Reference to the mutable [dialect.defs.IRCEvent] we're considering.
         policy = Policy to apply.
-        client = $(REF dialect.defs.IRCClient) of the calling $(REF IRCPlugin)'s $(REF IRCPluginState).
+        client = [dialect.defs.IRCClient] of the calling [IRCPlugin]'s [IRCPluginState].
         prefix = The prefix as set in the program-wide settings.
 
     Returns:
@@ -1885,20 +1885,20 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
 
 // filterSender
 /++
-    Decides if a sender meets a $(REF PrivilegeLevel) and is allowed to trigger an event
+    Decides if a sender meets a [PrivilegeLevel] and is allowed to trigger an event
     handler, or if a WHOIS query is needed to be able to tell.
 
     This requires the Persistence service to be active to work.
 
     Params:
-        event = $(REF dialect.defs.IRCEvent) to filter.
-        level = The $(REF PrivilegeLevel) context in which this user should be filtered.
+        event = [dialect.defs.IRCEvent] to filter.
+        level = The [PrivilegeLevel] context in which this user should be filtered.
         preferHostmasks = Whether to rely on hostmasks for user identification,
             or to use services account logins, which need to be issued WHOIS
             queries to divine.
 
     Returns:
-        A $(REF FilterResult) saying the event should `pass`, `fail`, or that more
+        A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
@@ -2001,7 +2001,7 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
     module. This allows for making more or less all functions top-level
     functions, since any state could be passed to it with variables of this type.
 
-    Plugin-specific state should be kept inside the $(REF IRCPlugin) itself.
+    Plugin-specific state should be kept inside the [IRCPlugin] itself.
  +/
 struct IRCPluginState
 {
@@ -2013,30 +2013,30 @@ private:
 
 public:
     /++
-        The current $(REF dialect.defs.IRCClient), containing information pertaining
+        The current [dialect.defs.IRCClient], containing information pertaining
         to the bot in the context of a client connected to an IRC server.
      +/
     IRCClient client;
 
     /++
-        The current $(REF dialect.defs.IRCServer), containing information pertaining
+        The current [dialect.defs.IRCServer], containing information pertaining
         to the bot in the context of an IRC server.
      +/
     IRCServer server;
 
     /++
-        The current $(REF kameloso.kameloso.IRCBot), containing information pertaining
+        The current [kameloso.kameloso.IRCBot], containing information pertaining
         to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
     /++
-        The current program-wide $(REF kameloso.kameloso.CoreSettings).
+        The current program-wide [kameloso.kameloso.CoreSettings].
      +/
     CoreSettings settings;
 
     /++
-        The current program-wide $(REF kameloso.kameloso.ConnectionSettings).
+        The current program-wide [kameloso.kameloso.ConnectionSettings].
      +/
     ConnectionSettings connSettings;
 
@@ -2050,33 +2050,33 @@ public:
     IRCChannel[string] channels;
 
     /++
-        Queued $(REF dialect.defs.IRCEvent)s to replay.
+        Queued [dialect.defs.IRCEvent]s to replay.
 
         The main loop iterates this after processing all on-event functions so
         as to know what nicks the plugin wants a WHOIS for. After the WHOIS
-        response returns, the event bundled with the $(REF Replay) will be replayed.
+        response returns, the event bundled with the [Replay] will be replayed.
      +/
     Replay[][string] replays;
 
-    /// Whether or not $(REF replays) has elements (i.e. is not empty).
+    /// Whether or not [replays] has elements (i.e. is not empty).
     bool hasReplays;
 
-    /// This plugin's array of $(REF Repeat)s to let the main loop play back.
+    /// This plugin's array of [Repeat]s to let the main loop play back.
     Repeat[] repeats;
 
     /++
-        The list of awaiting $(REF core.thread.fiber.Fiber)s, keyed by
-        $(REF dialect.defs.IRCEvent.Type).
+        The list of awaiting [core.thread.fiber.Fiber]s, keyed by
+        [dialect.defs.IRCEvent.Type].
      +/
     Fiber[][] awaitingFibers;
 
     /++
         The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
-        $(REF dialect.defs.IRCEvent.Type).
+        [dialect.defs.IRCEvent.Type].
      +/
     void delegate(const IRCEvent)[][] awaitingDelegates;
 
-    /// The list of scheduled $(REF core.thread.fiber.Fiber), UNIX time tuples.
+    /// The list of scheduled [core.thread.fiber.Fiber], UNIX time tuples.
     ScheduledFiber[] scheduledFibers;
 
     /// The list of scheduled delegate, UNIX time tuples.
@@ -2084,14 +2084,14 @@ public:
 
     /++
         The UNIX timestamp of when the next scheduled
-        $(REF kameloso.thread.ScheduledFiber) or delegate should be triggered.
+        [kameloso.thread.ScheduledFiber] or delegate should be triggered.
      +/
     long nextScheduledTimestamp;
 
     // updateSchedule
     /++
         Updates the saved UNIX timestamp of when the next scheduled
-        $(REF core.thread.fiber.Fiber) or delegate should be triggered.
+        [core.thread.fiber.Fiber] or delegate should be triggered.
      +/
     void updateSchedule() pure nothrow @nogc
     {
@@ -2117,16 +2117,16 @@ public:
         }
     }
 
-    /// Whether or not $(REF bot) was altered. Must be reset manually.
+    /// Whether or not [bot] was altered. Must be reset manually.
     bool botUpdated;
 
-    /// Whether or not $(REF client) was altered. Must be reset manually.
+    /// Whether or not [client] was altered. Must be reset manually.
     bool clientUpdated;
 
-    /// Whether or not $(REF server) was altered. Must be reset manually.
+    /// Whether or not [server] was altered. Must be reset manually.
     bool serverUpdated;
 
-    /// Whether or not $(REF settings) was altered. Must be reset manually.
+    /// Whether or not [settings] was altered. Must be reset manually.
     bool settingsUpdated;
 
     /// Pointer to the global abort flag.
@@ -2138,7 +2138,7 @@ public:
 /++
     Exception thrown when an IRC plugin failed to initialise itself or its resources.
 
-    A normal $(REF object.Exception), which only differs in the sense that we can deduce
+    A normal [object.Exception], which only differs in the sense that we can deduce
     what went wrong by its type.
  +/
 final class IRCPluginInitialisationException : Exception
@@ -2156,17 +2156,17 @@ final class IRCPluginInitialisationException : Exception
 /++
     A queued event to be replayed upon a WHOIS query response.
 
-    It is abstract; all objects must be of a concrete $(REF ReplayImpl) type.
+    It is abstract; all objects must be of a concrete [ReplayImpl] type.
  +/
 abstract class Replay
 {
     /// Name of the caller function or similar context.
     string caller;
 
-    /// Stored $(REF dialect.defs.IRCEvent) to replay.
+    /// Stored [dialect.defs.IRCEvent] to replay.
     IRCEvent event;
 
-    /// $(REF PrivilegeLevel) of the function to replay.
+    /// [PrivilegeLevel] of the function to replay.
     PrivilegeLevel privilegeLevel;
 
     /// When this request was issued.
@@ -2175,7 +2175,7 @@ abstract class Replay
     /// Replay the stored event.
     void trigger();
 
-    /// Creates a new $(REF Replay) with a timestamp of the current time.
+    /// Creates a new [Replay] with a timestamp of the current time.
     this() @safe
     {
         import std.datetime.systime : Clock;
@@ -2187,11 +2187,11 @@ abstract class Replay
 // ReplayImpl
 /++
     Implementation of the notion of a function call with a bundled payload
-    $(REF dialect.defs.IRCEvent), used to replay a previous event.
+    [dialect.defs.IRCEvent], used to replay a previous event.
 
     It functions like a Command pattern object in that it stores a payload and
     a function pointer, which we queue and issue a WHOIS query. When the response
-    returns we trigger the object and the original $(REF dialect.defs.IRCEvent)
+    returns we trigger the object and the original [dialect.defs.IRCEvent]
     is replayed.
 
     Params:
@@ -2206,16 +2206,16 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 
     static if (!is(Payload == typeof(null)))
     {
-        /// Command payload aside from the $(REF dialect.defs.IRCEvent).
+        /// Command payload aside from the [dialect.defs.IRCEvent].
         Payload payload;
 
 
         /++
-            Create a new $(REF ReplayImpl) with the passed variables.
+            Create a new [ReplayImpl] with the passed variables.
 
             Params:
-                payload = Payload of templated type `Payload` to attach to this $(REF ReplayImpl).
-                event = $(REF dialect.defs.IRCEvent) to attach to this $(REF ReplayImpl).
+                payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
+                event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
                 privilegeLevel = The privilege level required to replay the
                     passed function.
                 fn = Function pointer to call with the attached payloads when
@@ -2236,10 +2236,10 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
     else
     {
         /++
-            Create a new $(REF ReplayImpl) with the passed variables.
+            Create a new [ReplayImpl] with the passed variables.
 
             Params:
-                payload = Payload of templated type `Payload` to attach to this $(REF ReplayImpl).
+                payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
                 fn = Function pointer to call with the attached payloads when
                     the replay is triggered.
          +/
@@ -2258,7 +2258,7 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
     // trigger
     /++
         Call the passed function/delegate pointer, optionally with the stored
-        $(REF dialect.defs.IRCEvent) and/or `Payload`.
+        [dialect.defs.IRCEvent] and/or `Payload`.
      +/
     override void trigger() @system
     {
@@ -2377,17 +2377,17 @@ private:
     alias This = Unqual!(typeof(this));
 
 public:
-    /// $(REF core.thread.fiber.Fiber) to call to invoke this repeat.
+    /// [core.thread.fiber.Fiber] to call to invoke this repeat.
     Fiber fiber;
 
 
     // carryingFiber
     /++
-        Returns $(REF fiber) as a $(REF kameloso.thread.CarryingFiber), blindly assuming
+        Returns [fiber] as a [kameloso.thread.CarryingFiber], blindly assuming
         it can be cast thus.
 
         Returns:
-            $(REF fiber), cast as a $(REF kameloso.thread.CarryingFiber)!$(REF Repeat).
+            [fiber], cast as a [kameloso.thread.CarryingFiber]![Repeat].
      +/
     CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
@@ -2399,8 +2399,8 @@ public:
 
     // isCarrying
     /++
-        Returns whether or not $(REF fiber) is actually a
-        $(REF kameloso.thread.CarryingFiber)!$(REF Repeat).
+        Returns whether or not [fiber] is actually a
+        [kameloso.thread.CarryingFiber]![Repeat].
 
         Returns:
             `true` if it is of such a subclass, `false` if not.
@@ -2410,13 +2410,13 @@ public:
         return cast(CarryingFiber!This)fiber !is null;
     }
 
-    /// The $(REF Replay) to repeat.
+    /// The [Replay] to repeat.
     Replay replay;
 
     /// UNIX timestamp of when this repeat event was created.
     long created;
 
-    /// Constructor taking a $(REF core.thread.fiber.Fiber) and a $(REF Replay).
+    /// Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
     this(Fiber fiber, Replay replay) @safe
     {
         import std.datetime.systime : Clock;
@@ -2446,30 +2446,30 @@ enum FilterResult
 
 // PrefixPolicy
 /++
-    In what way the contents of a $(REF dialect.defs.IRCEvent) must start (be "prefixed")
+    In what way the contents of a [dialect.defs.IRCEvent] must start (be "prefixed")
     for an annotated function to be allowed to trigger.
  +/
 enum PrefixPolicy
 {
     /++
-        The annotated event handler will not examine the $(REF dialect.defs.IRCEvent.content)
+        The annotated event handler will not examine the [dialect.defs.IRCEvent.content]
         member at all and will always trigger, as long as all other annotations match.
      +/
     direct,
 
     /++
-        The annotated event handler will only trigger if the $(REF dialect.defs.IRCEvent.content)
-        member starts with the $(REF kameloso.kameloso.CoreSettings.prefix) (e.g. "!").
+        The annotated event handler will only trigger if the [dialect.defs.IRCEvent.content]
+        member starts with the [kameloso.kameloso.CoreSettings.prefix] (e.g. "!").
         All other annotations must also match.
      +/
     prefixed,
 
     /++
-        The annotated event handler will only trigger if the $(REF dialect.defs.IRCEvent.content)
+        The annotated event handler will only trigger if the [dialect.defs.IRCEvent.content]
         member starts with the bot's name, as if addressed to it.
 
-        In $(REF dialect.defs.IRCEvent.Type.QUERY) events this instead behaves as
-        $(REF PrefixPolicy.direct).
+        In [dialect.defs.IRCEvent.Type.QUERY] events this instead behaves as
+        [PrefixPolicy.direct].
      +/
     nickname,
 }
@@ -2514,7 +2514,7 @@ enum PrivilegeLevel
     ignore = 0,
 
     /++
-        Anyone not explicitly blacklisted (with a $(REF dialect.defs.IRCClient.Class.blacklist)
+        Anyone not explicitly blacklisted (with a [dialect.defs.IRCClient.Class.blacklist]
         classifier) may trigger the annotated function. As such, to know if they're
         blacklisted, unknown users will first be looked up with a WHOIS query
         before allowing the function to trigger.
@@ -2527,13 +2527,13 @@ enum PrivilegeLevel
     registered = 2,
 
     /++
-        Only users with a $(REF dialect.defs.IRCClient.Class.whitelist) classifier
+        Only users with a [dialect.defs.IRCClient.Class.whitelist] classifier
         may trigger the annotated function.
      +/
     whitelist = 3,
 
     /++
-        Only users with a $(REF dialect.defs.IRCClient.Class.operator) classifier
+        Only users with a [dialect.defs.IRCClient.Class.operator] classifier
         may trigger the annotated function.
 
         Note: this does not mean IRC "+o" operators.
@@ -2541,7 +2541,7 @@ enum PrivilegeLevel
     operator = 4,
 
     /++
-        Only users with a $(REF dialect.defs.IRCClient.Class.staff) classifier may
+        Only users with a [dialect.defs.IRCClient.Class.staff] classifier may
         trigger the annotated function. These are channel owners.
      +/
     staff = 5,
@@ -2556,19 +2556,19 @@ enum PrivilegeLevel
 
 // replay
 /++
-    Convenience function that returns a $(REF ReplayImpl) of the right type,
+    Convenience function that returns a [ReplayImpl] of the right type,
     *with* a subclass plugin reference attached.
 
     Params:
-        subPlugin = Subclass $(REF IRCPlugin) to call the function pointer `fn` with
+        subPlugin = Subclass [IRCPlugin] to call the function pointer `fn` with
             as first argument, when the WHOIS results return.
-        event = $(REF dialect.defs.IRCEvent) that instigated the WHOIS lookup.
+        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
         privilegeLevel = The privilege level policy to apply to the WHOIS results.
         fn = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
-        A $(REF Replay) with template parameters inferred from the arguments
+        A [Replay] with template parameters inferred from the arguments
         passed to this function.
  +/
 Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
@@ -2581,17 +2581,17 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
 
 // replay
 /++
-    Convenience function that returns a $(REF ReplayImpl) of the right type,
+    Convenience function that returns a [ReplayImpl] of the right type,
     *without* a subclass plugin reference attached.
 
     Params:
-        event = $(REF dialect.defs.IRCEvent) that instigated the WHOIS lookup.
+        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
         privilegeLevel = The privilege level policy to apply to the WHOIS results.
         fn = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
-        A $(REF Replay) with template parameters inferred from the arguments
+        A [Replay] with template parameters inferred from the arguments
         passed to this function.
  +/
 Replay replay(Fn)(const ref IRCEvent event, const PrivilegeLevel privilegeLevel,
@@ -2605,8 +2605,8 @@ Replay replay(Fn)(const ref IRCEvent event, const PrivilegeLevel privilegeLevel,
 /++
     Defines an IRC bot command, for people to trigger with messages.
 
-    If no $(REF PrefixPolicy) is specified then it will default to $(REF PrefixPolicy.prefixed)
-    and look for $(REF kameloso.kameloso.CoreSettings.prefix) at the beginning of
+    If no [PrefixPolicy] is specified then it will default to [PrefixPolicy.prefixed]
+    and look for [kameloso.kameloso.CoreSettings.prefix] at the beginning of
     messages, to prefix the command `word`. (Usually "`!`", making it "`!command`".)
 
     Example:
@@ -2639,7 +2639,7 @@ struct BotCommand
     bool hidden;
 
     /++
-        Create a new $(REF BotCommand) with the passed policy, trigger word, and hidden flag.
+        Create a new [BotCommand] with the passed policy, trigger word, and hidden flag.
      +/
     this(const PrefixPolicy policy, const string word, const Flag!"hidden" hidden = No.hidden) pure
     {
@@ -2649,7 +2649,7 @@ struct BotCommand
     }
 
     /++
-        Create a new $(REF BotCommand) with a default $(REF PrefixPolicy.prefixed) policy
+        Create a new [BotCommand] with a default [PrefixPolicy.prefixed] policy
         and the passed trigger word.
      +/
     this(const string word) pure
@@ -2663,7 +2663,7 @@ struct BotCommand
 /++
     Defines an IRC bot regular expression, for people to trigger with messages.
 
-    If no $(REF PrefixPolicy) is specified then it will default to $(REF PrefixPolicy.direct)
+    If no [PrefixPolicy] is specified then it will default to [PrefixPolicy.direct]
     and try to match the regex on all messages, regardless of how they start.
 
     Example:
@@ -2705,7 +2705,7 @@ public:
     bool hidden;
 
     /++
-        Creates a new $(REF BotRegex) with the passed policy, regex expression and hidden flag.
+        Creates a new [BotRegex] with the passed policy, regex expression and hidden flag.
      +/
     this(const PrefixPolicy policy, const string expression,
         const Flag!"hidden" hidden = No.hidden)
@@ -2720,7 +2720,7 @@ public:
     }
 
     /++
-        Creates a new $(REF BotRegex) with the passed regex expression.
+        Creates a new [BotRegex] with the passed regex expression.
      +/
     this(const string expression)
     {
@@ -2738,7 +2738,7 @@ public:
     the same module process after it.
 
     See_Also:
-        $(REF Terminating)
+        [Terminating]
  +/
 enum Chainable;
 
@@ -2748,12 +2748,12 @@ enum Chainable;
     Annotation denoting that an event-handling function is the end of a chain,
     letting no other functions in the same module be triggered after it has been.
 
-    This is not strictly necessary since anything non-$(REF Chainable) is implicitly
-    $(REF Terminating), but it's here to silence warnings and in hopes of the code
+    This is not strictly necessary since anything non-[Chainable] is implicitly
+    [Terminating], but it's here to silence warnings and in hopes of the code
     becoming more self-documenting.
 
     See_Also:
-        $(REF Chainable)
+        [Chainable]
  +/
 enum Terminating;
 
@@ -2777,10 +2777,10 @@ enum Settings;
 
 // Description
 /++
-    Describes an $(REF dialect.defs.IRCEvent)-annotated handler function.
+    Describes an [dialect.defs.IRCEvent]-annotated handler function.
 
-    This is used to describe functions triggered by $(REF BotCommand)s, in the help
-    listing routine in $(REF kameloso.plugins.chatbot).
+    This is used to describe functions triggered by [BotCommand]s, in the help
+    listing routine in [kameloso.plugins.chatbot].
  +/
 struct Description
 {
@@ -2790,7 +2790,7 @@ struct Description
     /// Command usage syntax help string.
     string syntax;
 
-    /// Creates a new $(REF Description) with the passed $(REF line) description text.
+    /// Creates a new [Description] with the passed [line] description text.
     this(const string line, const string syntax = string.init)
     {
         this.line = line;

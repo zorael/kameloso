@@ -12,7 +12,7 @@
     of `s/this/that/` patterns.
 
     It supports a delimiter of `/`, `|`, `#`, `@`, ` `, `_` and `;`, but more
-    can be trivially added. See the $(REF DelimiterCharacters) alias.
+    can be trivially added. See the [DelimiterCharacters] alias.
 
     You can also end it with a `g` to set the global flag, to have more than one
     match substituted.
@@ -208,7 +208,7 @@ unittest
     Works on any given character delimiter. Works with escapes.
 
     Params:
-        char_ = Delimiter character, generally one of $(REF DelimiterCharacters).
+        char_ = Delimiter character, generally one of [DelimiterCharacters].
         line = Original line to apply the replacement expression to.
         expr = Replacement expression to apply.
         relaxSyntax = Whether or not to require the expression to end with the delimiter.
@@ -467,7 +467,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 // onWelcome
 /++
     Sets up a Fiber to periodically clear the lists of previous messages from
-    users once every $(REF SedReplacePlugin.timeBetweenPurges) seconds.
+    users once every [SedReplacePlugin.timeBetweenPurges] seconds.
 
     This is to prevent the lists from becoming huge over time.
  +/
@@ -520,10 +520,10 @@ private:
     /// All sed-replace options gathered.
     SedReplaceSettings sedReplaceSettings;
 
-    /// Lifetime of a $(REF Line) in $(REF prevlines), in seconds.
+    /// Lifetime of a [Line] in [prevlines], in seconds.
     enum replaceTimeoutSeconds = 3600;
 
-    /// How often to purge the $(REF prevlines) list of messages.
+    /// How often to purge the [prevlines] list of messages.
     enum timeBetweenPurges = 3600;
 
     /++

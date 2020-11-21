@@ -1,5 +1,5 @@
 /++
-    Contains the custom $(REF KamelosoLogger) class, used to print timestamped and
+    Contains the custom [KamelosoLogger] class, used to print timestamped and
     (optionally) coloured logging messages.
 
     Example:
@@ -50,7 +50,7 @@ private:
     /// Buffer to compose a line in before printing it to screen in one go.
     Appender!(char[]) linebuffer;
 
-    /// The initial size to allocate for $(REF linebuffer). It will grow if needed.
+    /// The initial size to allocate for [linebuffer]. It will grow if needed.
     enum linebufferInitialSize = 4096;
 
     bool monochrome;  /// Whether to use colours or not in logger output.
@@ -58,7 +58,7 @@ private:
 
 public:
     /++
-        Create a new $(REF KamelosoLogger) with the passed settings.
+        Create a new [KamelosoLogger] with the passed settings.
 
         Params:
             monochrome = Whether or not to print colours.
@@ -78,12 +78,12 @@ public:
     {
         // tint
         /++
-            Returns the corresponding $(REF kameloso.terminal.TerminalForeground) for the
-            supplied $(REF std.experimental.logger.LogLevel),
+            Returns the corresponding [kameloso.terminal.TerminalForeground] for the
+            supplied [std.experimental.logger.LogLevel],
             taking into account whether the terminal is said to be bright or not.
 
-            This is merely a convenient wrapping for $(REF logcoloursBright) and
-            $(REF logcoloursDark).
+            This is merely a convenient wrapping for [logcoloursBright] and
+            [logcoloursDark].
 
             Example:
             ---
@@ -92,13 +92,13 @@ public:
             ---
 
             Params:
-                level = The $(REF std.experimental.logger.LogLevel) of the colour we want to scry.
+                level = The [std.experimental.logger.LogLevel] of the colour we want to scry.
                 bright = Whether the colour should be for a bright terminal
                     background or a dark one.
 
             Returns:
-                A $(REF kameloso.terminal.TerminalForeground) of the right colour. Use with
-                $(REF kameloso.terminal.colour) to get a string.
+                A [kameloso.terminal.TerminalForeground] of the right colour. Use with
+                [kameloso.terminal.colour] to get a string.
          +/
         static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
         {
@@ -131,13 +131,13 @@ public:
         // tintImpl
         /++
             Template for returning tints based on the settings of the `this`
-            $(REF KamelosoLogger).
+            [KamelosoLogger].
 
             This saves us having to pass the brightness setting, and allows for
             making easy aliases for the log level.
 
             Params:
-                level = Compile-time $(REF std.experimental.logger.LogLevel).
+                level = Compile-time [std.experimental.logger.LogLevel].
 
             Returns:
                 A tint string.
@@ -165,7 +165,7 @@ public:
 
 
         /+
-            Generate *tint functions for each $(REF std.experimental.logger.LogLevel).
+            Generate *tint functions for each [std.experimental.logger.LogLevel].
          +/
         static foreach (const lv; [ EnumMembers!LogLevel ])
         {
@@ -177,7 +177,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
 
         /++
             Synonymous alias to `alltint`, as a workaround for
-            $(REF std.experimental.logger.LogLevel.all) not being named `LogLevel.log`.
+            [std.experimental.logger.LogLevel.all] not being named `LogLevel.log`.
          +/
         alias logtint = alltint;
     }
@@ -187,7 +187,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         Outputs the header of a logger message.
 
         Params:
-            logLevel = The $(REF std.experimental.logger.LogLevel) to treat this
+            logLevel = The [std.experimental.logger.LogLevel] to treat this
                 message as being of.
      +/
     private void beginLogMsg(const LogLevel logLevel) @safe
@@ -246,10 +246,10 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
 
         Prints the arguments as they are if possible (if they are some variant of
         `char` or `char[]`), and otherwise tries to coerce them by using
-        $(REF std.conv.to).
+        [std.conv.to].
 
         Params:
-            logLevel = The $(REF std.experimental.logger.LogLevel) to treat this
+            logLevel = The [std.experimental.logger.LogLevel] to treat this
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
@@ -330,11 +330,11 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         Prints a timestamped log message to screen as per the passed runtime pattern,
         in `printf` style. Implementation function.
 
-        Uses $(REF std.format.formattedWrite) to coerce the passed arguments as
+        Uses [std.format.formattedWrite] to coerce the passed arguments as
         the format pattern dictates.
 
         Params:
-            logLevel = The $(REF std.experimental.logger.LogLevel) to treat this
+            logLevel = The [std.experimental.logger.LogLevel] to treat this
                 message as being of.
             pattern = Runtime pattern to format the output with.
             args = Variadic arguments to compose the output message with.
@@ -355,16 +355,16 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         Prints a timestamped log message to screen as per the passed compile-time pattern,
         in `printf` style. Implementation function.
 
-        Uses $(REF std.format.formattedWrite) to coerce the passed arguments as
+        Uses [std.format.formattedWrite] to coerce the passed arguments as
         the format pattern dictates.
 
         If on D version 2.074 or later, passes the pattern as a compile-time
         parameter to it, to validate that the pattern matches the arguments.
-        If earlier it passes execution to the other, runtime-pattern $(REF printfImpl) overload.
+        If earlier it passes execution to the other, runtime-pattern [printfImpl] overload.
 
         Params:
             pattern = Compile-time pattern to validate the arguments and format the output with.
-            logLevel = The $(REF std.experimental.logger.LogLevel) to treat this
+            logLevel = The [std.experimental.logger.LogLevel] to treat this
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
@@ -390,7 +390,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     /+
         Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
 
-        Mixes in $(REF fatalExitMixin) on `fatal` to have it exit the program on those.
+        Mixes in [fatalExitMixin] on `fatal` to have it exit the program on those.
      +/
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
@@ -418,14 +418,14 @@ void %1$sf(string pattern, Args...)(auto ref Args args)
     }
 
     /++
-        Synonymous alias to $(REF KamelosoLogger.all), as a workaround for
-        $(REF std.experimental.logger.LogLevel.all) not being named $(REF LogLevel.log).
+        Synonymous alias to [KamelosoLogger.all], as a workaround for
+        [std.experimental.logger.LogLevel.all] not being named [LogLevel.log].
      +/
     alias log = all;
 
     /++
-        Synonymous alias to $(REF KamelosoLogger.allf), as a workaround for
-        $(REF std.experimental.logger.LogLevel.all) not being named `LogLevel.log`.
+        Synonymous alias to [KamelosoLogger.allf], as a workaround for
+        [std.experimental.logger.LogLevel.all] not being named `LogLevel.log`.
      +/
     alias logf = allf;
 }

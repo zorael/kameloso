@@ -57,7 +57,7 @@ enum Awareness
 {
     /++
         First stage: setup. The annotated event handlers will process first,
-        setting the stage for the following $(REF Awareness.early)-annotated handlers.
+        setting the stage for the following [Awareness.early]-annotated handlers.
      +/
     setup,
 
@@ -85,14 +85,14 @@ enum Awareness
 /++
     Implements triggering of queued events in a plugin module.
 
-    Most of the time a plugin doesn't require a full $(REF UserAwareness); only
+    Most of the time a plugin doesn't require a full [UserAwareness]; only
     those that need looking up users outside of the current event do. The
     persistency service allows for plugins to just read the information from
-    the $(REF dialect.defs.IRCUser) embedded in the event directly, and that's
+    the [dialect.defs.IRCUser] embedded in the event directly, and that's
     often enough.
 
-    General rule: if a plugin doesn't access $(REF kameloso.plugins.common.core.IRCPluginState.users),
-    it's probably going to be enough with only $(REF MinimalAuthentication).
+    General rule: if a plugin doesn't access [kameloso.plugins.common.core.IRCPluginState.users],
+    it's probably going to be enough with only [MinimalAuthentication].
 
     Params:
         debug_ = Whether or not to include debugging output.
@@ -116,14 +116,14 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     }
     else
     {
-        /// Flag denoting that $(REF MinimalAuthentication) has been mixed in.
+        /// Flag denoting that [MinimalAuthentication] has been mixed in.
         package enum hasMinimalAuthentication = true;
     }
 
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget).
+        Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -138,7 +138,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS).
+        Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -152,17 +152,17 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
 // onMinimalAuthenticationAccountInfoTarget
 /++
-    Replays any queued $(REF kameloso.plugins.common.core.Replay)s awaiting the result
+    Replays any queued [kameloso.plugins.common.core.Replay]s awaiting the result
     of a WHOIS query. Before that, records the user's services account by
-    saving it to the user's $(REF dialect.defs.IRCClient) in the $(REF kameloso.plugins.common.core.IRCPlugin)'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.users) associative array.
+    saving it to the user's [dialect.defs.IRCClient] in the [kameloso.plugins.common.core.IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users] associative array.
 
-    $(REF dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS) is also handled, to
+    [dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS] is also handled, to
     cover the case where a user without an account triggering
-    $(REF kameloso.plugins.common.core.PrivilegeLevel.anyone)- or
-    $(REF kameloso.plugins.common.core.PrivilegeLevel.ignore)-level commands.
+    [kameloso.plugins.common.core.PrivilegeLevel.anyone]- or
+    [kameloso.plugins.common.core.PrivilegeLevel.ignore]-level commands.
 
-    This function was part of $(REF UserAwareness) but triggering queued replays
+    This function was part of [UserAwareness] but triggering queued replays
     is too common to conflate with it.
  +/
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEvent event) @system
@@ -201,7 +201,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
 
 // onMinimalAuthenticationUnknownCommandWHOIS
 /++
-    Clears all queued $(REF kameloso.plugins.common.core.Replay)s if the server says
+    Clears all queued [kameloso.plugins.common.core.Replay]s if the server says
     it doesn't support WHOIS at all.
 
     This is the case with Twitch servers.
@@ -244,7 +244,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     where applicable, annotated appropriately.
 
     Params:
-        channelPolicy = What $(REF kameloso.plugins.common.core.ChannelPolicy) to
+        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy] to
             apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
@@ -267,7 +267,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        /// Flag denoting that $(REF UserAwareness) has been mixed in.
+        /// Flag denoting that [UserAwareness] has been mixed in.
         package enum hasUserAwareness = true;
     }
 
@@ -281,7 +281,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessQuitMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessQuit).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessQuit].
      +/
     @(Awareness.cleanup)
     @(Chainable)
@@ -294,7 +294,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessNickMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessNick).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -307,7 +307,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessCatchTargetMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessCatchTarget).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -323,7 +323,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessCatchSenderMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessCatchSender).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchSender].
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -340,7 +340,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessNamesReplyMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessNamesReply).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNamesReply].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -354,7 +354,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessEndOfListMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessEndOfList).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessEndOfList].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -369,7 +369,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessPingMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onUserAwarenessPing).
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessPing].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -383,8 +383,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // _kamelosoNextPingRehashTimestamp
     /++
-        UNIX timestamp of when the $(REF kameloso.plugins.common.core.IRCPluginState.users)
-        array is next to be rehashed in $(REF onUserAwarenessPingMixin).
+        UNIX timestamp of when the [kameloso.plugins.common.core.IRCPluginState.users]
+        array is next to be rehashed in [onUserAwarenessPingMixin].
      +/
     long _kamelosoNextPingRehashTimestamp;
 }
@@ -392,7 +392,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
 // onUserAwarenessQuit
 /++
-    Removes a user's $(REF dialect.defs.IRCUser) entry from a plugin's user
+    Removes a user's [dialect.defs.IRCUser] entry from a plugin's user
     list upon them disconnecting.
  +/
 void onUserAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
@@ -404,8 +404,8 @@ void onUserAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
 // onUserAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    $(REF kameloso.plugins.common.core.IRCPlugin)'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.users) array to point to the new nickname.
+    [kameloso.plugins.common.core.IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users] array to point to the new nickname.
 
     Removes the old entry after assigning it to the new key.
  +/
@@ -428,12 +428,12 @@ void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
 // onUserAwarenessCatchTarget
 /++
     Catches a user's information and saves it in the plugin's
-    $(REF kameloso.plugins.common.core.IRCPluginState.users) array of $(REF dialect.defs.IRCUser)s.
+    [kameloso.plugins.common.core.IRCPluginState.users] array of [dialect.defs.IRCUser]s.
 
-    $(REF dialect.defs.IRCEvent.Type.RPL_WHOISUSER) events carry values in
-    the $(REF dialect.defs.IRCUser.updated) field that we want to store.
+    [dialect.defs.IRCEvent.Type.RPL_WHOISUSER] events carry values in
+    the [dialect.defs.IRCUser.updated] field that we want to store.
 
-    $(REF dialect.defs.IRCEvent.Type.CHGHOST) occurs when a user changes host
+    [dialect.defs.IRCEvent.Type.CHGHOST] occurs when a user changes host
     on some servers that allow for custom host addresses.
  +/
 void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
@@ -445,8 +445,8 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
 
 // onUserAwarenessCatchSender
 /++
-    Adds a user to the $(REF kameloso.plugins.common.core.IRCPlugin)'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.users) array,
+    Adds a user to the [kameloso.plugins.common.core.IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users] array,
     potentially including their services account name.
 
     Servers with the (enabled) capability `extended-join` will include the
@@ -561,8 +561,8 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 
 // onUserAwarenessEndOfList
 /++
-    Rehashes, or optimises, the $(REF kameloso.plugins.common.core.IRCPlugin)'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.users)
+    Rehashes, or optimises, the [kameloso.plugins.common.core.IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users]
     associative array upon the end of a WHO or a NAMES list.
 
     These replies can list hundreds of users depending on the size of the
@@ -581,12 +581,12 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
 
 // onUserAwarenessPingMixin
 /++
-    Rehash the internal $(REF kameloso.plugins.common.core.IRCPluginState.users) associative array of
-    $(REF dialect.defs.IRCUser)s, once every `hoursBetweenRehashes` hours.
+    Rehash the internal [kameloso.plugins.common.core.IRCPluginState.users] associative array of
+    [dialect.defs.IRCUser]s, once every `hoursBetweenRehashes` hours.
 
-    We ride the periodicity of $(REF dialect.defs.IRCEvent.Type.PING) to get
+    We ride the periodicity of [dialect.defs.IRCEvent.Type.PING] to get
     a natural cadence without having to resort to queued
-    $(REF kameloso.thread.ScheduledFiber)s.
+    [kameloso.thread.ScheduledFiber]s.
 
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
@@ -634,7 +634,7 @@ void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
     already (and avoid range errors).
 
     Params:
-        channelPolicy = What $(REF kameloso.plugins.common.core.ChannelPolicy)
+        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy]
             to apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
@@ -658,7 +658,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
     else
     {
-        /// Flag denoting that $(REF ChannelAwareness) has been mixed in.
+        /// Flag denoting that [ChannelAwareness] has been mixed in.
         package enum hasChannelAwareness = true;
     }
 
@@ -676,7 +676,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfjoinMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin].
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -690,7 +690,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfpartMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessSelfpart).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart].
      +/
     @(Awareness.cleanup)
     @(Chainable)
@@ -705,7 +705,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessJoinMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessJoin).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessJoin].
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -719,7 +719,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessPartMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessPart).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessPart].
      +/
     @(Awareness.late)
     @(Chainable)
@@ -733,7 +733,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessNickMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessNick).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNick].
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -746,7 +746,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessQuitMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessQuit).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessQuit].
      +/
     @(Awareness.late)
     @(Chainable)
@@ -759,7 +759,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessTopicMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessTopic).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessTopic].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -774,7 +774,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessCreationTimeMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessCreationTime).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -788,7 +788,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessModeMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessMode).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessMode].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -802,7 +802,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessWhoReplyMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessWhoReply).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -816,7 +816,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessNamesReplyMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessNamesReply).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -830,7 +830,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessModeListsMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessModeLists).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessModeLists].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -848,7 +848,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessChannelModeIsMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs).
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -863,8 +863,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
 // onChannelAwarenessSelfjoin
 /++
-    Create a new $(REF dialect.defs.IRCChannel) in the the $(REF kameloso.plugins.common.core.IRCPlugin)'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.channels) associative array
+    Create a new [dialect.defs.IRCChannel] in the the [kameloso.plugins.common.core.IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.channels] associative array
     when the bot joins a channel.
  +/
 void onChannelAwarenessSelfjoin(IRCPlugin plugin, const ref IRCEvent event)
@@ -878,10 +878,10 @@ void onChannelAwarenessSelfjoin(IRCPlugin plugin, const ref IRCEvent event)
 
 // onChannelAwarenessSelfpart
 /++
-    Removes an $(REF dialect.defs.IRCChannel) from the internal list when the
+    Removes an [dialect.defs.IRCChannel] from the internal list when the
     bot leaves it.
 
-    Remove users from the $(REF kameloso.plugins.common.core.IRCPlugin.state.users) array if, by leaving, it left
+    Remove users from the [kameloso.plugins.common.core.IRCPlugin.state.users] array if, by leaving, it left
     the last channel we can observe it from, so as not to leak users. It can
     be argued that this should be part of user awareness, however this would
     not be possible if it were not for channel-tracking. As such keep the
@@ -926,7 +926,7 @@ void onChannelAwarenessJoin(IRCPlugin plugin, const ref IRCEvent event)
 /++
     Removes a user from being part of a channel when they leave it.
 
-    Remove the user from the $(REF kameloso.plugins.common.core.IRCPlugin.state.users) array if, by leaving, it
+    Remove the user from the [kameloso.plugins.common.core.IRCPlugin.state.users] array if, by leaving, it
     left the last channel we can observe it from, so as not to leak users.
     It can be argued that this should be part of user awareness, however
     this would not be possible if it were not for channel-tracking. As such
@@ -981,12 +981,12 @@ void onChannelAwarenessPart(IRCPlugin plugin, const ref IRCEvent event)
 // onChannelAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    $(REF kameloso.plugins.common.core.IRCPluginState.users) associative array to
+    [kameloso.plugins.common.core.IRCPluginState.users] associative array to
     point to the new nickname.
 
     Does *not* add a new entry if one doesn't exits, to counter the fact
-    that $(REF dialect.defs.IRCEvent.Type.NICK) events don't belong to a channel,
-    and as such can't be regulated with $(REF kameloso.plugins.common.core.ChannelPolicy)
+    that [dialect.defs.IRCEvent.Type.NICK] events don't belong to a channel,
+    and as such can't be regulated with [kameloso.plugins.common.core.ChannelPolicy]
     annotations. This way the user will only be moved if it was already added elsewhere.
     Else we'll leak users.
 
@@ -1024,7 +1024,7 @@ void onChannelAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
 
 // onChannelAwarenessTopic
 /++
-    Update the entry for an $(REF dialect.defs.IRCChannel) if someone changes
+    Update the entry for an [dialect.defs.IRCChannel] if someone changes
     the topic of it.
  +/
 void onChannelAwarenessTopic(IRCPlugin plugin, const ref IRCEvent event)
@@ -1054,7 +1054,7 @@ void onChannelAwarenessCreationTime(IRCPlugin plugin, const ref IRCEvent event)
     Sets a mode for a channel.
 
     Most modes replace others of the same type, notable exceptions being
-    bans and mode exemptions. We let $(REF dialect.common.setMode) take care of that.
+    bans and mode exemptions. We let [dialect.common.setMode] take care of that.
  +/
 void onChannelAwarenessMode(IRCPlugin plugin, const ref IRCEvent event)
 {
@@ -1269,13 +1269,13 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
 
     There is a chance of a user leak, if parting users are not broadcast. As
     such we mark when the user was last seen in the
-    $(REF dialect.defs.IRCUser.updated) member, which opens up the possibility
-    of pruning the plugin's $(REF kameloso.plugins.common.core.IRCPluginState.users) array of old entries.
+    [dialect.defs.IRCUser.updated] member, which opens up the possibility
+    of pruning the plugin's [kameloso.plugins.common.core.IRCPluginState.users] array of old entries.
 
     Twitch awareness needs channel awareness, or it is meaningless.
 
     Params:
-        channelPolicy = What $(REF kameloso.plugins.common.core.ChannelPolicy)
+        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy]
             to apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
@@ -1300,7 +1300,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        /// Flag denoting that $(REF TwitchAwareness) has been mixed in.
+        /// Flag denoting that [TwitchAwareness] has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 
@@ -1316,7 +1316,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
-        Proxies to $(REF kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent).
+        Proxies to [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent].
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1360,7 +1360,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         we ensure we do our best to scrape the channels.
 
         See_Also:
-            $(REF onTwitchAwarenessSenderCarryingEvent)
+            [onTwitchAwarenessSenderCarryingEvent]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1389,7 +1389,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     do our best to scrape the channels.
 
     See_Also:
-        $(REF onTwitchAwarenessTargetCarryingEvent)
+        [onTwitchAwarenessTargetCarryingEvent]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1425,7 +1425,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
     we ensure we do our best to scrape the channels.
 
     See_Also:
-        $(REF onTwitchAwarenessSenderCarryingEvent)
+        [onTwitchAwarenessSenderCarryingEvent]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1454,7 +1454,7 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
 version(TwitchSupport) {}
 else
 /++
-    No-op mixin of version `!TwitchSupport` $(REF TwitchAwareness).
+    No-op mixin of version `!TwitchSupport` [TwitchAwareness].
  +/
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
@@ -1471,7 +1471,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        /// Flag denoting that $(REF TwitchAwareness) has been mixed in.
+        /// Flag denoting that [TwitchAwareness] has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 

@@ -1,12 +1,12 @@
 /++
     The Connect service handles logging onto IRC servers after having connected,
     as well as managing authentication to services. It also manages responding
-    to $(REF dialect.defs.IRCEvent.Type.PING) requests, and capability negotiations.
+    to [dialect.defs.IRCEvent.Type.PING] requests, and capability negotiations.
 
-    The actual connection logic is in the $(REF kameloso.net) module.
+    The actual connection logic is in the [kameloso.net] module.
 
     See_Also:
-        $(REF kameloso.net)
+        [kameloso.net]
  +/
 module kameloso.plugins.services.connect;
 
@@ -25,7 +25,7 @@ import std.typecons : Flag, No, Yes;
 
 // ConnectSettings
 /++
-    Settings for a $(REF ConnectService).
+    Settings for a [ConnectService].
  +/
 @Settings struct ConnectSettings
 {
@@ -99,8 +99,8 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Records a channel in the `channels` array in the $(REF dialect.defs.IRCClient) of
-    the current $(REF ConnectService)'s $(REF kameloso.plugins.common.core.IRCPluginState) upon joining it.
+    Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
+    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
 
     Additionally records our given IDENT identifier. This is likely the first event
     after connection that carries us as a user, so we can only catch it as early
@@ -131,11 +131,11 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 // joinChannels
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
-    $(REF kameoso.kameloso.IRCBot) of the current $(REF ConnectService)'s
-    $(REF kameloso.plugins.common.core.IRCPluginState).
+    [kameoso.kameloso.IRCBot] of the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState].
 
     Params:
-        service = The current $(REF ConnectService).
+        service = The current [ConnectService].
  +/
 void joinChannels(ConnectService service)
 {
@@ -171,10 +171,10 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
-    Responds to $(REF dialect.defs.IRCEvent.Type.ERR_NEEDPONG) events by sending
-    the text supplied as content in the $(REF dialect.defs.IRCEvent) to the server.
+    Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] events by sending
+    the text supplied as content in the [dialect.defs.IRCEvent] to the server.
 
-    "Also known as $(REF dialect.defs.IRCEvent.Type.ERR_NEEDPONG) (Unreal/Ultimate)
+    "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] (Unreal/Ultimate)
     for use during registration, however it's not used in Unreal (and might not
     be used in Ultimate either)."
 
@@ -191,11 +191,11 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 
 // onPing
 /++
-    Pongs the server upon $(REF dialect.defs.IRCEvent.Type.PING).
+    Pongs the server upon [dialect.defs.IRCEvent.Type.PING].
 
     Ping with the sender as target, and not the necessarily
-    the server as saved in the $(REF dialect.defs.IRCServer) struct. For
-    example, $(REF dialect.defs.IRCEvent.Type.ERR_NEEDPONG) generally wants you to
+    the server as saved in the [dialect.defs.IRCServer] struct. For
+    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
     ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
@@ -218,7 +218,7 @@ void onPing(ConnectService service, const ref IRCEvent event)
     use some heuristics and try the best guess.
 
     Params:
-        service = The current $(REF ConnectService).
+        service = The current [ConnectService].
  +/
 void tryAuth(ConnectService service)
 {
@@ -347,11 +347,11 @@ void tryAuth(ConnectService service)
 
 // delayJoinsAfterFailedAuth
 /++
-    Creates and schedules a $(REF core.thread.fiber.Fiber) (in a $(REF kameloso.thread.ScheduledFiber))
+    Creates and schedules a [core.thread.fiber.Fiber] (in a [kameloso.thread.ScheduledFiber])
     that joins channels after having failed to authenticate for n seconds.
 
     Params:
-        service = The current $(REF ConnectService).
+        service = The current [ConnectService].
  +/
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
@@ -389,7 +389,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 // onNotRegistered
 /++
     Requeues joining channels if we receive an
-    $(REF dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED) error.
+    [dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED] error.
 
     This can happen if the authentication process turns out to be particularly slow.
     Recover by schedling to join channels again later.
@@ -444,8 +444,8 @@ else
     Flags authentication as finished and join channels.
 
     Some networks/daemons (like RusNet) send the "authentication complete"
-    message as a $(REF dialect.defs.IRCEvent.Type.NOTICE) from `NickServ`, not a
-    $(REF dialect.defs.IRCEvent.Type.PRIVMSG).
+    message as a [dialect.defs.IRCEvent.Type.NOTICE] from `NickServ`, not a
+    [dialect.defs.IRCEvent.Type.PRIVMSG].
 
     Whitelist more nicknames as we discover them. Also English only for now but
     can be easily extended.
@@ -591,7 +591,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad $(REF kameloso.kameloso.IRCBot.pass).
+    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass].
 
     There's no point in reconnecting.
  +/
@@ -840,18 +840,18 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    $(REF kameloso.kameloso.IRCBot.account) and $(REF kameloso.kameloso.IRCBot.password),
+    [kameloso.kameloso.IRCBot.account] and [kameloso.kameloso.IRCBot.password],
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where $(REF kameloso.kameloso.IRCBot.account) is the services account name and
-    $(REF kameloso.kameloso.IRCBot.password) is the account password.
+    ...where [kameloso.kameloso.IRCBot.account] is the services account name and
+    [kameloso.kameloso.IRCBot.password] is the account password.
 
     Params:
-        service = The current $(REF ConnectService).
+        service = The current [ConnectService].
  +/
 bool trySASLPlain(ConnectService service)
 {
@@ -892,7 +892,7 @@ bool trySASLPlain(ConnectService service)
 // onSASLSuccess
 /++
     On SASL authentication success, calls a `CAP END` to finish the
-    $(REF dialect.defs.IRCEvent.Type.CAP) negotiations.
+    [dialect.defs.IRCEvent.Type.CAP] negotiations.
 
     Flags the client as having finished registering and authing, allowing the
     main loop to pick it up and propagate it to all other plugins.
@@ -925,7 +925,7 @@ void onSASLSuccess(ConnectService service)
 // onSASLFailure
 /++
     On SASL authentication failure, calls a `CAP END` to finish the
-    $(REF dialect.defs.IRCEvent.Type.CAP) negotiations and finish registration.
+    [dialect.defs.IRCEvent.Type.CAP] negotiations and finish registration.
 
     Flags the client as having finished registering, allowing the main loop to
     pick it up and propagate it to all other plugins.
@@ -951,7 +951,7 @@ void onSASLFailure(ConnectService service)
     // finished auth and invoke `CAP END`
     service.authentication = Progress.finished;
 
-    // See $(REF onSASLSuccess` for info on `CAP END`
+    // See `onSASLSuccess` for info on `CAP END`
     immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
@@ -976,7 +976,7 @@ void onNoCapabilities(ConnectService service, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Marks registration as completed upon $(REF dialect.defs.IRCEvent.Type.RPL_WELCOME)
+    Marks registration as completed upon [dialect.defs.IRCEvent.Type.RPL_WELCOME]
     (numeric `001`).
 
     Additionally performs post-connect routines (authenticates if not already done,
@@ -1028,7 +1028,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 /++
     Joins channels and prints some Twitch warnings on end of MOTD.
 
-    Do this then instead of on $(REF IRCEvent.Type.RPL_WELCOME) for better timing,
+    Do this then instead of on [IRCEvent.Type.RPL_WELCOME] for better timing,
     and to avoid having the message drown in MOTD.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1115,7 +1115,7 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
     This is a "benign" disconnect. We need to reconnect preemptively instead of
     waiting for the server to disconnect us, as it would otherwise constitute
     an error and the program would exit if
-    $(REF kameloso.kameloso.CoreSettings.endlesslyConnect) isn't set.
+    [kameloso.kameloso.CoreSettings.endlesslyConnect] isn't set.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)
@@ -1152,7 +1152,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     Registers with/logs onto an IRC server.
 
     Params:
-        service = The current $(REF ConnectService).
+        service = The current [ConnectService].
  +/
 void register(ConnectService service)
 {
@@ -1344,7 +1344,7 @@ void negotiateNick(ConnectService service)
 
     This initialisation event fires immediately after a successful connect, and
     so instead of waiting for something from the server to trigger our
-    registration procedure (notably $(REF dialect.defs.IRCEvent.Type.NOTICE)s
+    registration procedure (notably [dialect.defs.IRCEvent.Type.NOTICE]s
     about our `IDENT` and hostname), we preemptively register.
 
     It seems to work.
@@ -1359,13 +1359,13 @@ import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
 /++
-    Receives a passed $(REF kameloso.thread.BusMessage) with the "`connect`" header,
+    Receives a passed [kameloso.thread.BusMessage] with the "`connect`" header,
     and calls functions based on the payload message.
 
     This is used to let other plugins trigger re-authentication with services.
 
     Params:
-        service = The current $(REF ConnectService).
+        service = The current [ConnectService].
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -1426,7 +1426,7 @@ private:
     /// At what step we're currently at with regards to nick negotiation.
     Progress nickNegotiation;
 
-    /// Whether or not the server has sent at least one $(REF dialect.defs.IRCEvent.Type.PING).
+    /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
     bool serverPinged;
 
     /// Whether or not the bot has renamed itself during registration.

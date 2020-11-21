@@ -447,7 +447,7 @@ private:
 
     /++
         An unique identifier for an ongoing channel vote, as set by
-        $(REF onCommandVote) and monitored inside its $(REF core.thread.fiber.Fiber)'s closures.
+        [onCommandVote] and monitored inside its [core.thread.fiber.Fiber]'s closures.
      +/
     int[string] channelVoteInstances;
 

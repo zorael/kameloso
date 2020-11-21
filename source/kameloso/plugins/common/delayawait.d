@@ -1,7 +1,7 @@
 /++
-    The section of $(REF kameloso.plugins.common) that deals with delaying executing
-    of $(REF core.thread.fiber.Fiber)s and delegates to a later point in time, and registering
-    such to await a specific type of $(REF dialect.defs.IRCEvent).
+    The section of [kameloso.plugins.common] that deals with delaying executing
+    of [core.thread.fiber.Fiber]s and delegates to a later point in time, and registering
+    such to await a specific type of [dialect.defs.IRCEvent].
 
     This was all in one `plugins/common.d` file that just grew too big.
  +/
@@ -22,17 +22,17 @@ public:
 
 // delay
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called at a point `duration`
+    Queues a [core.thread.fiber.Fiber] to be called at a point `duration`
     seconds or milliseconds later, by appending it to the `plugin`'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.scheduledFibers).
+    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
 
-    Updates the $(REF kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp)
+    Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp]
     timestamp so that the main loop knows when to next process the array of
-    $(REF kameloso.thread.ScheduledFiber)s.
+    [kameloso.thread.ScheduledFiber]s.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        fiber = $(REF core.thread.fiber.Fiber) to enqueue to be executed at a later point in time.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        fiber = [core.thread.fiber.Fiber] to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
         msecs = Whether `duration` is in milliseconds or seconds.
  +/
@@ -54,13 +54,13 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 
 // delay
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called at a point `duration`
+    Queues a [core.thread.fiber.Fiber] to be called at a point `duration`
     seconds or milliseconds later, by appending it to the `plugin`'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.scheduledFibers).
-    Overload that implicitly queues $(REF core.thread.fiber.Fiber.getThis).
+    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         duration = Amount of time to delay the implicit fiber in the current context.
         msecs = Whether `period` is in milliseconds or seconds.
         yield = Whether or not to immediately yield the Fiber.
@@ -76,13 +76,13 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 
 // delay
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called at a point `duration`
+    Queues a [core.thread.fiber.Fiber] to be called at a point `duration`
     seconds later, by appending it to the `plugin`'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.scheduledFibers).
-    Overload that implicitly queues $(REF core.thread.fiber.Fiber.getThis).
+    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         duration = Amount of time to delay the implicit fiber in the current context.
         yield = Whether or not to immediately yield the Fiber.
  +/
@@ -98,14 +98,14 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 /++
     Queues a `void delegate()` delegate to be called at a point `duration`
     seconds or milliseconds later, by appending it to the `plugin`'s
-    $(REF kameloso.plugins.common.core.IRCPluginState.scheduledDelegates).
+    [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates].
 
-    Updates the $(REF kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp)
+    Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp]
     timestamp so that the main loop knows when to next process the array of
-    $(REF kameloso.thread.ScheduledDelegate)s.
+    [kameloso.thread.ScheduledDelegate]s.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         dg = Delegate to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
         msecs = Whether `duration` is in milliseconds or seconds.
@@ -128,14 +128,14 @@ in ((dg !is null), "Tried to delay a null delegate")
 
 // removeDelayedFiber
 /++
-    Removes a $(REF core.thread.fiber.Fiber) from being called at any point later.
+    Removes a [core.thread.fiber.Fiber] from being called at any point later.
 
     Updates the `nextScheduledTimestamp` UNIX timestamp so that the main loop knows
-    when to process the array of $(REF core.thread.fiber.Fiber)s.
+    when to process the array of [core.thread.fiber.Fiber]s.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        fiber = $(REF core.thread.fiber.Fiber) to dequeue from being executed at a later point in time.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        fiber = [core.thread.fiber.Fiber] to dequeue from being executed at a later point in time.
  +/
 void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
 in ((fiber !is null), "Tried to remove a delayed null Fiber")
@@ -167,11 +167,11 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 
 // removeDelayedFiber
 /++
-    Removes a $(REF core.thread.fiber.Fiber) from being called at any point later.
-    Overload that implicitly removes $(REF core.thread.fiber.Fiber.getThis).
+    Removes a [core.thread.fiber.Fiber] from being called at any point later.
+    Overload that implicitly removes [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
  +/
 void removeDelayedFiber(IRCPlugin plugin)
 {
@@ -187,7 +187,7 @@ void removeDelayedFiber(IRCPlugin plugin)
     when to process the array of delegates.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         dg = Delegate to dequeue from being executed at a later point in time.
  +/
 void removeDelayedDelegate(IRCPlugin plugin, void delegate() dg)
@@ -220,15 +220,15 @@ in ((dg !is null), "Tried to remove a delayed null delegate")
 
 // await
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type.
+    Queues a [core.thread.fiber.Fiber] to be called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        fiber = $(REF core.thread.fiber.Fiber) to enqueue to be executed when the next
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        type = The kind of $(REF dialect.defs.IRCEvent) that should trigger the
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        fiber = [core.thread.fiber.Fiber] to enqueue to be executed when the next
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        type = The kind of [dialect.defs.IRCEvent] that should trigger the
             passed awaiting fiber.
  +/
 void await(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
@@ -241,14 +241,14 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
 
 // await
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type.
-    Overload that implicitly queues $(REF core.thread.fiber.Fiber.getThis).
+    Queues a [core.thread.fiber.Fiber] to be called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type.
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        type = The kind of $(REF dialect.defs.IRCEvent) that should trigger this
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        type = The kind of [dialect.defs.IRCEvent] that should trigger this
             implicit awaiting fiber (in the current context).
         yield = Whether or not to immediately yield the Fiber.
  +/
@@ -264,17 +264,17 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
 
 // await
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches any of the passed
-    $(REF dialect.defs.IRCEvent.Type) types.
+    Queues a [core.thread.fiber.Fiber] to be called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches any of the passed
+    [dialect.defs.IRCEvent.Type] types.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        fiber = $(REF core.thread.fiber.Fiber) to enqueue to be executed when the next
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        types = The kinds of $(REF dialect.defs.IRCEvent) that should trigger
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        fiber = [core.thread.fiber.Fiber] to enqueue to be executed when the next
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        types = The kinds of [dialect.defs.IRCEvent] that should trigger
             the passed awaiting fiber, in an array with elements of type
-            $(REF dialect.defs.IRCEvent.Type).
+            [dialect.defs.IRCEvent.Type].
  +/
 void await(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
@@ -290,16 +290,16 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
 
 // await
 /++
-    Queues a $(REF core.thread.fiber.Fiber) to be called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches any of the passed
-    $(REF dialect.defs.IRCEvent.Type) types.
-    Overload that implicitly queues $(REF core.thread.fiber.Fiber.getThis).
+    Queues a [core.thread.fiber.Fiber] to be called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches any of the passed
+    [dialect.defs.IRCEvent.Type] types.
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        types = The kinds of $(REF dialect.defs.IRCEvent) that should trigger
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        types = The kinds of [dialect.defs.IRCEvent] that should trigger
             this implicit awaiting fiber (in the current context), in an array
-            with elements of type $(REF dialect.defs.IRCEvent.Type).
+            with elements of type [dialect.defs.IRCEvent.Type].
         yield = Whether or not to immediately yield the Fiber.
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type[] types,
@@ -320,16 +320,16 @@ in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
 // await
 /++
     Queues a `void delegate(const IRCEvent)` delegate to be called whenever the next parsed and
-    triggering const $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type.
+    triggering const [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type.
 
-    Note: The delegate stays in the queue until a call to $(REF unawait) it is made.
+    Note: The delegate stays in the queue until a call to [unawait] it is made.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         dg = Delegate to enqueue to be executed when the next const
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        type = The kind of $(REF dialect.defs.IRCEvent) that should trigger the
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        type = The kind of [dialect.defs.IRCEvent] that should trigger the
             passed awaiting delegate.
  +/
 void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
@@ -343,14 +343,14 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEven
 // unawaitImpl
 /++
     Dequeues something from being called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type. Implementation template.
+    triggering [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type. Implementation template.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         thing = Thing to dequeue from being executed when the next
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        type = The kind of $(REF dialect.defs.IRCEvent) that would trigger the
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting thing.
  +/
 private void unawaitImpl(Thing, AA)(Thing thing, ref AA aa, const IRCEvent.Type type)
@@ -393,15 +393,15 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
 
 // unawait
 /++
-    Dequeues a $(REF core.thread.fiber.Fiber) from being called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type.
+    Dequeues a [core.thread.fiber.Fiber] from being called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        fiber = $(REF core.thread.fiber.Fiber) to dequeue from being executed when the next
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        type = The kind of $(REF dialect.defs.IRCEvent) that would trigger the
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        fiber = [core.thread.fiber.Fiber] to dequeue from being executed when the next
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting fiber.
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
@@ -412,14 +412,14 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 
 // unawait
 /++
-    Dequeues a $(REF core.thread.fiber.Fiber) from being called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type. Overload that implicitly dequeues
-    $(REF core.thread.fiber.Fiber.getThis).
+    Dequeues a [core.thread.fiber.Fiber] from being called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type. Overload that implicitly dequeues
+    [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        type = The kind of $(REF dialect.defs.IRCEvent) that would trigger this
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        type = The kind of [dialect.defs.IRCEvent] that would trigger this
             implicit awaiting fiber (in the current context).
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type type)
@@ -430,17 +430,17 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type type)
 
 // unawait
 /++
-    Dequeues a $(REF core.thread.fiber.Fiber) from being called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches any of the passed
-    $(REF dialect.defs.IRCEvent.Type) types.
+    Dequeues a [core.thread.fiber.Fiber] from being called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches any of the passed
+    [dialect.defs.IRCEvent.Type] types.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        fiber = $(REF core.thread.fiber.Fiber) to dequeue from being executed when the next
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        types = The kinds of $(REF dialect.defs.IRCEvent) that should trigger
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        fiber = [core.thread.fiber.Fiber] to dequeue from being executed when the next
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        types = The kinds of [dialect.defs.IRCEvent] that should trigger
             the passed awaiting fiber, in an array with elements of type
-            $(REF dialect.defs.IRCEvent.Type).
+            [dialect.defs.IRCEvent.Type].
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
@@ -453,16 +453,16 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 
 // unawait
 /++
-    Dequeues a $(REF core.thread.fiber.Fiber) from being called whenever the next parsed and
-    triggering $(REF dialect.defs.IRCEvent) matches any of the passed
-    $(REF dialect.defs.IRCEvent.Type) types. Overload that implicitly dequeues
-    $(REF core.thread.fiber.Fiber.getThis).
+    Dequeues a [core.thread.fiber.Fiber] from being called whenever the next parsed and
+    triggering [dialect.defs.IRCEvent] matches any of the passed
+    [dialect.defs.IRCEvent.Type] types. Overload that implicitly dequeues
+    [core.thread.fiber.Fiber.getThis].
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
-        types = The kinds of $(REF dialect.defs.IRCEvent) that should trigger
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        types = The kinds of [dialect.defs.IRCEvent] that should trigger
             this implicit awaiting fiber (in the current context), in an array
-            with elements of type $(REF dialect.defs.IRCEvent.Type).
+            with elements of type [dialect.defs.IRCEvent.Type].
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
@@ -476,14 +476,14 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 // unawait
 /++
     Dequeues a `void delegate(const IRCEvent)` delegate from being called whenever
-    the next parsed and triggering $(REF dialect.defs.IRCEvent) matches the passed
-    $(REF dialect.defs.IRCEvent.Type) type.
+    the next parsed and triggering [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] type.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.common.core.IRCPlugin).
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         dg = Delegate to dequeue from being executed when the next
-            $(REF dialect.defs.IRCEvent) of type `type` comes along.
-        type = The kind of $(REF dialect.defs.IRCEvent) that would trigger the
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting delegate.
  +/
 void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)

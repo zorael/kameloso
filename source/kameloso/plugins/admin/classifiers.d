@@ -2,8 +2,8 @@
     Implementation of Admin plugin functionality regarding user classifiers.
     For internal use.
 
-    The $(REF dialect.defs.IRCEvent)-annotated handlers must be in the same module
-    as the $(REF kameloso.plugins.admin.base.AdminPlugin), but these implementation
+    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
+    as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.admin.classifiers;
@@ -31,8 +31,8 @@ package:
     Common code for whitelisting and blacklisting nicknames/accounts.
 
     Params:
-        plugin = The current $(REF kameloso.pluins.admin.baseAdminPlugin).
-        event = The triggering $(REF dialect.defs.IRCEvent).
+        plugin = The current [kameloso.pluins.admin.baseAdminPlugin].
+        event = The triggering [dialect.defs.IRCEvent].
         list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin, const ref IRCEvent event, const string list)
@@ -82,10 +82,10 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     blacklist to the querying user or channel.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.admin.base.AdminPlugin).
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
         channel = The channel the list relates to.
         list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
-        event = Optional $(REF dialect.defs.IRCEvent) that instigated the listing.
+        event = Optional [dialect.defs.IRCEvent] that instigated the listing.
  +/
 void listList(AdminPlugin plugin, const string channel, const string list,
     const IRCEvent event = IRCEvent.init)
@@ -128,14 +128,14 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 /++
     Adds an account to either the whitelist, operator list or the blacklist.
 
-    Passes the `list` parameter to $(REF alterAccountClassifier), for list selection.
+    Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.admin.base.AdminPlugin).
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
         rawSpecified = The nickname or account to white-/blacklist.
         list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
         channel = Which channel the enlisting relates to.
-        event = Optional instigating $(REF dialect.defs.IRCEvent).
+        event = Optional instigating [dialect.defs.IRCEvent].
  +/
 void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
@@ -345,14 +345,14 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 /++
     Removes a nickname from either the whitelist, operator list or the blacklist.
 
-    Passes the `list` parameter to $(REF alterAccountClassifier), for list selection.
+    Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.admin.base.AdminPlugin).
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
         account = The account to delist as whitelisted/blacklisted or as operator.
         list = Which of "whitelist", "operator", "staff" or "blacklist" to remove from.
         channel = Which channel the enlisting relates to.
-        event = Optional instigating $(REF dialect.defs.IRCEvent).
+        event = Optional instigating [dialect.defs.IRCEvent].
  +/
 void delist(AdminPlugin plugin, const string account, const string list,
     const string channel, const IRCEvent event = IRCEvent.init)
@@ -467,20 +467,20 @@ enum AlterationResult
     and reloads all plugins to make them read the updated lists.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.admin.base.AdminPlugin).
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
         add = Whether to add to or remove from lists.
         list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
         account = Services account name to add or remove.
         channel = Channel the account-class applies to.
 
     Returns:
-        $(REF AlterationResult.alreadyInList) if enlisting (`Yes.add`) and the account
+        [AlterationResult.alreadyInList] if enlisting (`Yes.add`) and the account
         was already in the specified list.
-        $(REF AlterationResult.noSuchAccount) if delisting (`No.add`) and no such
+        [AlterationResult.noSuchAccount] if delisting (`No.add`) and no such
         account could be found in the specified list.
-        $(REF AlterationResult.noSuchChannel) if delisting (`No.add`) and no such
+        [AlterationResult.noSuchChannel] if delisting (`No.add`) and no such
         channel could be found in the specified list.
-        $(REF AlterationResult.success) if enlisting or delisting succeeded.
+        [AlterationResult.success] if enlisting or delisting succeeded.
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string list, const string account, const string channel)
@@ -555,11 +555,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     Adds or removes hostmasks used to identify users on servers that don't employ services.
 
     Params:
-        plugin = The current $(REF kameloso.plugins.admin.base.AdminPlugin).
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
         add = Whether to add or to remove the hostmask.
         account = Account the hostmask will equate to.
         mask = String "nickname!ident@address.tld" hostmask.
-        event = Instigating $(REF dialect.defs.IRCEvent).
+        event = Instigating [dialect.defs.IRCEvent].
  +/
 void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     const string account, const string mask, const ref IRCEvent event)

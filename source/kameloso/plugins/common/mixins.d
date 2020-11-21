@@ -1,5 +1,5 @@
 /++
-    The section of $(REF kameloso.plugins.common) that involves mixins.
+    The section of [kameloso.plugins.common] that involves mixins.
 
     This was all in one `plugins/common.d` file that just grew too big.
  +/
@@ -20,8 +20,8 @@ public:
 /++
     Functionality for catching WHOIS results and calling passed function aliases
     with the resulting account information that was divined from it, in the form
-    of the actual $(REF dialect.defs.IRCEvent), the target
-    $(REF dialect.defs.IRCUser) within it, the user's `account` field, or merely
+    of the actual [dialect.defs.IRCEvent], the target
+    [dialect.defs.IRCUser] within it, the user's `account` field, or merely
     alone as an arity-0 function.
 
     The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -64,7 +64,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        /// Flag denoting that $(REF WHOISFiberDelegate) has been mixed in.
+        /// Flag denoting that [WHOISFiberDelegate] has been mixed in.
         private enum hasWHOISFiber = true;
     }
 
@@ -278,8 +278,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-        Constructs a $(REF kameloso.thread.CarryingFiber) carrying a $(REF dialect.defs.IRCEvent)
-        and enqueues it into the $(REF kameloso.plugins.common.core.IRCPluginState.awaitingFibers)
+        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent]
+        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -289,7 +289,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:
-            $(REF object.Exception) if a success of failure function was to trigger
+            [object.Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname,
@@ -434,12 +434,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
 // MessagingProxy
 /++
-    Mixin to give shorthands to the functions in $(REF kameloso.messaging), for
+    Mixin to give shorthands to the functions in [kameloso.messaging], for
     easier use when in a `with (plugin) { /* ... */ }` scope.
 
     This merely makes it possible to use commands like
     `raw("PING :irc.freenode.net")` without having to import
-    $(REF kameloso.messaging) and include the thread ID of the main thread in every
+    [kameloso.messaging] and include the thread ID of the main thread in every
     call of the functions.
 
     Params:
@@ -479,7 +479,7 @@ private:
     }
     else
     {
-        /// Flag denoting that $(REF MessagingProxy) has been mixed in.
+        /// Flag denoting that [MessagingProxy] has been mixed in.
         private enum hasMessagingProxy = true;
     }
 
@@ -521,7 +521,7 @@ private:
         the arguments passed to it.
 
         This reflects how channel messages and private messages are both the
-        underlying same type; $(REF dialect.defs.IRCEvent.Type.PRIVMSG).
+        underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
      +/
     void privmsg(Flag!"priority" priority = No.priority)
         (const string channel, const string nickname, const string content,
@@ -710,7 +710,7 @@ private:
             Generated `askToVerb` function. Asks the main thread to output text
             to the local terminal.
 
-            No need for any annotation; $(REF kameloso.messaging.askToOutputImpl) is
+            No need for any annotation; [kameloso.messaging.askToOutputImpl] is
             `@system` and nothing else.
          +/
         mixin("void askTo%s(const string line)
@@ -769,8 +769,8 @@ unittest
 /++
     Implements queueing of events to repeat.
 
-    This allows us to deal with triggers both in $(REF dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT)
-    and $(REF dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND) while keeping the code
+    This allows us to deal with triggers both in [dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT]
+    and [dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND] while keeping the code
     in one place.
 
     Params:
@@ -794,7 +794,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
     else
     {
-        /// Flag denoting that $(REF Repeater) has been mixed in.
+        /// Flag denoting that [Repeater] has been mixed in.
         private enum hasRepeater = true;
     }
 
@@ -819,8 +819,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     // explainRepeat
     /++
         Verbosely explains a repeat, including what
-        $(REF kameloso.plugins.common.core.PrivilegeLevel) and
-        $(REF dialect.defs.IRCUser.Class) were involved.
+        [kameloso.plugins.common.core.PrivilegeLevel] and
+        [dialect.defs.IRCUser.Class] were involved.
 
         Gated behind version `ExplainRepeat`.
      +/
@@ -868,7 +868,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
     // repeaterDelegate
     /++
-        Delegate to call from inside a $(REF kameloso.thread.CarryingFiber).
+        Delegate to call from inside a [kameloso.thread.CarryingFiber].
      +/
     void repeaterDelegate()
     {
@@ -940,8 +940,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
 
     /++
-        Queues the delegate $(REF repeaterDelegate) with the passed
-        $(REF kameloso.plugins.common.core.Replay) attached to it.
+        Queues the delegate [repeaterDelegate] with the passed
+        [kameloso.plugins.common.core.Replay] attached to it.
      +/
     void repeat(Replay replay)
     {

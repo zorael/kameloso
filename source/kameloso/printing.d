@@ -50,7 +50,7 @@ public:
     formatting into neat columns.
 
     Params:
-        all = Whether or not to also include $(REF lu.uda.Unserialisable) members.
+        all = Whether or not to also include [lu.uda.Unserialisable] members.
         Things = Variadic list of aggregates to inspect.
  +/
 private template Widths(Flag!"all" all, Things...)
@@ -134,8 +134,8 @@ unittest
 
     Params:
         all = Whether or not to also display members marked as
-            $(REF lu.uda.Unserialisable); usually transitive information that
-            doesn't carry between program runs. Also those annotated $(REF lu.uda.Hidden).
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
@@ -223,8 +223,8 @@ alias printObject = printObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            $(REF lu.uda.Unserialisable); usually transitive information that
-            doesn't carry between program runs. Also those annotated $(REF lu.uda.Hidden).
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
@@ -258,12 +258,12 @@ alias formatObject = formatObjects;
 /++
     Formats an aggregate object, with all its printable members with all their
     printable values. This is an implementation template and should not be
-    called directly; instead use $(REF printObjects) or $(REF formatObjects).
+    called directly; instead use [printObjects] or [formatObjects].
 
     Params:
         all = Whether or not to also display members marked as
-            $(REF lu.uda.Unserialisable); usually transitive information that
-            doesn't carry between program runs. Also those annotated $(REF lu.uda.Hidden).
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
@@ -711,8 +711,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     Params:
         all = Whether or not to also display members marked as
-            $(REF lu.uda.Unserialisable); usually transitive information that
-            doesn't carry between program runs. Also those annotated $(REF lu.uda.Hidden).
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         coloured = Whether to display in colours or not.
         bright = Whether or not to format for a bright terminal background.
         things = Variadic list of structs to enumerate and format.
