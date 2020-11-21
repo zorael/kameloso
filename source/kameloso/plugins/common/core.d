@@ -2742,7 +2742,7 @@ public:
     See_Also:
         $(REF Terminating)
  +/
-struct Chainable;
+enum Chainable;
 
 
 // Terminating
@@ -2757,7 +2757,7 @@ struct Chainable;
     See_Also:
         $(REF Chainable)
  +/
-struct Terminating;
+enum Terminating;
 
 
 // Verbose
@@ -2765,7 +2765,7 @@ struct Terminating;
     Annotation denoting that we want verbose debug output of the plumbing when
     handling events, iterating through the module's event handler functions.
  +/
-struct Verbose;
+enum Verbose;
 
 
 // Settings
@@ -2774,7 +2774,7 @@ struct Verbose;
     as housing settings for a plugin, and should thus be serialised and saved in
     the configuration file.
  +/
-struct Settings;
+enum Settings;
 
 
 // Description
@@ -2804,17 +2804,17 @@ struct Description
 /++
     Annotation denoting that a variable is the basename of a resource file or directory.
  +/
-struct Resource;
+enum Resource;
 
 
 /++
     Annotation denoting that a variable is the basename of a configuration
     file or directory.
  +/
-struct Configuration;
+enum Configuration;
 
 
 /++
     Annotation denoting that a variable enables and disables a plugin.
  +/
-struct Enabler;
+enum Enabler;
