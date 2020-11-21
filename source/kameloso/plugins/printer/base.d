@@ -349,7 +349,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         // Show the on-connect-ping-this type of events if !filterMost
         // Assume those containing dots are real pings for the server address
-        if (!plugin.printerSettings.filterMost && !event.content.contains('.')) goto default;
+        if (!plugin.printerSettings.filterMost && event.content.length) goto default;
         break;
 
     default:
