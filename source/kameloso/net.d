@@ -1188,7 +1188,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             conn.ips = getAddress(address, port)
                 .filter!(ip => (ip.addressFamily == AddressFamily.INET) ||
                     ((ip.addressFamily == AddressFamily.INET6) && useIPv6))
-                .uniq!((a,b) => a.toString == b.toString)
+                .uniq!((a,b) => a.toAddrString == b.toAddrString)
                 .array;
 
             attempt.state = State.success;
