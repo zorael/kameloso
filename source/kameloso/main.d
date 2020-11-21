@@ -2232,6 +2232,7 @@ Next verifySettings(ref Kameloso instance)
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
         immutable addressIsResolvable = instance.settings.force ||
+            instance.parser.server.address == "localhost" ||
             instance.parser.server.address.contains('.') ||
             instance.parser.server.address.contains(':');
     }
