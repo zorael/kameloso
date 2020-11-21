@@ -673,6 +673,7 @@ Next mainLoop(ref Kameloso instance)
     instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
     historyEntry = &instance.connectionHistory[historyEntryIndex];
     historyEntry.startTime = Clock.currTime.toUnixTime;
+    historyEntry.stopTime = historyEntry.startTime;  // In case we abort before the first read is recorded
 
     /// UNIX timestamp of when the Socket receive timeout was shortened.
     long timeWhenReceiveWasShortened;
