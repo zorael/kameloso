@@ -3,10 +3,10 @@
     replacement/substitution of text. It does not require the tool itself though,
     and will work on Windows too.
 
-    ---
-    $ echo "foo bar baz" | sed "s/bar/qux/"
-    foo qux baz
-    ---
+    $(CONSOLE
+        $ echo "foo bar baz" | sed "s/bar/qux/"
+        foo qux baz
+    )
 
     It has no bot commands, as everything is done by scanning messages for signs
     of `s/this/that/` patterns.
@@ -17,15 +17,15 @@
     You can also end it with a `g` to set the global flag, to have more than one
     match substituted.
 
-    ---
-    $ echo "foo bar baz" | sed "s/bar/qux/g"
-    $ echo "foo bar baz" | sed "s|bar|qux|g"
-    $ echo "foo bar baz" | sed "s#bar#qux#g"
-    $ echo "foo bar baz" | sed "s@bar@qux@"
-    $ echo "foo bar baz" | sed "s bar qux "
-    $ echo "foo bar baz" | sed "s_bar_qux_"
-    $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
-    ---
+    $(CONSOLE
+        $ echo "foo bar baz" | sed "s/bar/qux/g"
+        $ echo "foo bar baz" | sed "s|bar|qux|g"
+        $ echo "foo bar baz" | sed "s#bar#qux#g"
+        $ echo "foo bar baz" | sed "s@bar@qux@"
+        $ echo "foo bar baz" | sed "s bar qux "
+        $ echo "foo bar baz" | sed "s_bar_qux_"
+        $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
+    )
  +/
 module kameloso.plugins.sedreplace;
 
