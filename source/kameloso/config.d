@@ -232,7 +232,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.serialise(client, server, settings);
     immutable configText = sink.data.justifiedEntryValueText;
     writeToDisk("kameloso.conf", configText, Yes.addBanner);
@@ -753,7 +753,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(4096);  // ~2234
 
     with (instance)
@@ -781,7 +781,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             }
         }
 
-        immutable justified = sink.data.justifiedEntryValueText;
+        immutable justified = sink.data.idup.justifiedEntryValueText;
         writeToDisk(filename, justified, Yes.addBanner);
     }
 }

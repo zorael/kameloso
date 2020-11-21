@@ -124,7 +124,7 @@ public:
     /++
         Executed when gathering things to put in the configuration file.
      +/
-    bool serialiseConfigInto(ref Appender!string) const;
+    bool serialiseConfigInto(ref Appender!(char[])) const;
 
 
     // setSettingByName
@@ -1422,7 +1422,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         Example:
         ---
-        Appender!string sink;
+        Appender!(char[]) sink;
         sink.reserve(128);
         serialiseConfigInto(sink);
         ---
@@ -1434,7 +1434,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         Returns:
             true if something was serialised into the passed sink; false if not.
      +/
-    override public bool serialiseConfigInto(ref Appender!string sink) const
+    override public bool serialiseConfigInto(ref Appender!(char[]) sink) const
     {
         import std.traits : hasUDA;
 

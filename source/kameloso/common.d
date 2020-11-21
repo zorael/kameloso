@@ -300,7 +300,7 @@ unittest
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     immutable then = Clock.currTime;
     Thread.sleep(1.seconds);

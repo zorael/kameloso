@@ -966,7 +966,7 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
 
     if (pos == -1) return line;  // As is
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     static if (!strip)
     {

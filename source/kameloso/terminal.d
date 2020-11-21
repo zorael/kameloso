@@ -6,7 +6,7 @@
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     // Output range version
     sink.put("Hello ");
@@ -380,7 +380,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.colourWith(TerminalForeground.red, TerminalFormat.bold);
     sink.put("Foo");
     sink.colourWith(TerminalForeground.default_, TerminalReset.bold);
@@ -693,7 +693,7 @@ unittest
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
     int r, g, b;
     numFromHex("3C507D", r, g, b);
     sink.truecolour(r, g, b);
@@ -853,7 +853,7 @@ string invert(Flag!"caseSensitive" caseSensitive = Yes.caseSensitive)
     immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.format,
         TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(line.length + 16);
     string slice = line;  // mutable
 

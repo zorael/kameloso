@@ -214,7 +214,7 @@ alias printObject = printObjects;
     }
 
     Foo foo, bar;
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     sink.formatObjects!(Yes.coloured)(foo);
     sink.formatObjects!(No.coloured)(bar);
