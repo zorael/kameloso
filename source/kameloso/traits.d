@@ -34,9 +34,9 @@ if (Things.length > 0)
 {
     enum longestMemberNameImpl = ()
     {
-        import lu.traits : isAnnotated, isSerialisable;
+        import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAggregateType, isSomeFunction, isType;
+        import std.traits : hasUDA, isAggregateType, isSomeFunction, isType;
 
         string longest;
 
@@ -55,8 +55,8 @@ if (Things.length > 0)
                         !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
                         !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                        !isAnnotated!(__traits(getMember, Thing, memberstring), Hidden) &&
-                        (all || !isAnnotated!(__traits(getMember, Thing, memberstring), Unserialisable)))
+                        !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                        (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
                     {
                         enum name = __traits(identifier, __traits(getMember, Thing, memberstring));
 
@@ -183,9 +183,9 @@ if (Things.length > 0)
 {
     enum longestMemberTypeNameImpl = ()
     {
-        import lu.traits : isAnnotated, isSerialisable;
+        import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAggregateType, isSomeFunction, isType;
+        import std.traits : hasUDA, isAggregateType, isSomeFunction, isType;
 
         string longest;
 
@@ -204,8 +204,8 @@ if (Things.length > 0)
                         !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
                         !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                        !isAnnotated!(__traits(getMember, Thing, memberstring), Hidden) &&
-                        (all || !isAnnotated!(__traits(getMember, Thing, memberstring), Unserialisable)))
+                        !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                        (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
                     {
                         import std.traits : isArray, isAssociativeArray;
 

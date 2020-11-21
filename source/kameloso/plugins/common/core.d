@@ -277,22 +277,23 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
      +/
     override public bool isEnabled() const @property pure nothrow @nogc
     {
-        import lu.traits : getSymbolsByUDA, isAnnotated;
+        import lu.traits : getSymbolsByUDA;
+        import std.traits : hasUDA;
 
         bool retval = true;
 
         top:
         foreach (immutable i, const ref member; this.tupleof)
         {
-            static if (isAnnotated!(this.tupleof[i], Settings) ||
+            static if (hasUDA!(this.tupleof[i], Settings) ||
                 (is(typeof(this.tupleof[i]) == struct) &&
-                isAnnotated!(typeof(this.tupleof[i]), Settings)))
+                hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
                 {
                     foreach (immutable n, const submember; this.tupleof[i].tupleof)
                     {
-                        static if (isAnnotated!(this.tupleof[i].tupleof[n], Enabler))
+                        static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
                         {
                             import std.traits : Unqual;
                             alias ThisEnabler = Unqual!(typeof(this.tupleof[i].tupleof[n]));
@@ -421,7 +422,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         import kameloso.plugins.common.awareness : Awareness;
         import lu.string : contains, nom;
-        import lu.traits : getSymbolsByUDA, isAnnotated;
+        import lu.traits : getSymbolsByUDA;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
         import std.typecons : Flag, No, Yes;
@@ -453,7 +454,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             import kameloso.plugins.common.core : BotCommand, BotRegex,
                 ChannelPolicy, Verbose, prefixPolicyMatches;
 
-            enum verbose = (isAnnotated!(fun, Verbose) || debug_) ?
+            enum verbose = (hasUDA!(fun, Verbose) || debug_) ?
                 Yes.verbose :
                 No.verbose;
 
@@ -526,8 +527,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     static if (
                         !hasUDA!(fun, BotCommand) &&
                         !hasUDA!(fun, BotRegex) &&
-                        !isAnnotated!(fun, Chainable) &&
-                        !isAnnotated!(fun, Terminating) &&
+                        !hasUDA!(fun, Chainable) &&
+                        !hasUDA!(fun, Terminating) &&
                         ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                         (eventTypeUDA == IRCEvent.Type.QUERY) ||
                         (eventTypeUDA == IRCEvent.Type.ANY) ||
@@ -894,12 +895,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     {
                         this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
 
-                        static if (isAnnotated!(fun, Chainable) ||
-                            (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                        static if (hasUDA!(fun, Chainable) ||
+                            (isAwarenessFunction!fun && !hasUDA!(fun, Terminating)))
                         {
                             return NextStep.continue_;
                         }
-                        else /*static if (isAnnotated!(fun, Terminating))*/
+                        else /*static if (hasUDA!(fun, Terminating))*/
                         {
                             return NextStep.return_;
                         }
@@ -909,12 +910,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     {
                         this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
 
-                        static if (isAnnotated!(fun, Chainable) ||
-                            (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                        static if (hasUDA!(fun, Chainable) ||
+                            (isAwarenessFunction!fun && !hasUDA!(fun, Terminating)))
                         {
                             return NextStep.continue_;
                         }
-                        else /*static if (isAnnotated!(fun, Terminating))*/
+                        else /*static if (hasUDA!(fun, Terminating))*/
                         {
                             return NextStep.return_;
                         }
@@ -928,12 +929,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else if (result == FilterResult.fail)
                 {
-                    static if (isAnnotated!(fun, Chainable) ||
-                        (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+                    static if (hasUDA!(fun, Chainable) ||
+                        (isAwarenessFunction!fun && !hasUDA!(fun, Terminating)))
                     {
                         return NextStep.continue_;
                     }
-                    else /*static if (isAnnotated!(fun, Terminating))*/
+                    else /*static if (hasUDA!(fun, Terminating))*/
                     {
                         return NextStep.return_;
                     }
@@ -1014,8 +1015,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             import kameloso.plugins.common.core : Chainable, Terminating;
 
-            static if (isAnnotated!(fun, Chainable) ||
-                (isAwarenessFunction!fun && !isAnnotated!(fun, Terminating)))
+            static if (hasUDA!(fun, Chainable) ||
+                (isAwarenessFunction!fun && !hasUDA!(fun, Terminating)))
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
@@ -1023,7 +1024,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 // sharing one or more annotations with another.
                 return NextStep.continue_;
             }
-            else /*static if (isAnnotated!(fun, Terminating))*/
+            else /*static if (hasUDA!(fun, Terminating))*/
             {
                 // The triggered function is not Chainable so return and
                 // let the main loop continue with the next plugin.
@@ -1180,8 +1181,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
      +/
     public this(IRCPluginState state) @system
     {
-        import lu.traits : isAnnotated, isSerialisable;
-        import std.traits : EnumMembers;
+        import lu.traits : isSerialisable;
+        import std.traits : EnumMembers, hasUDA;
 
         this.state = state;
         this.state.awaitingFibers = state.awaitingFibers.dup;
@@ -1198,13 +1199,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         {
             static if (isSerialisable!member)
             {
-                static if (isAnnotated!(this.tupleof[i], Resource))
+                static if (hasUDA!(this.tupleof[i], Resource))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
                     member = buildNormalizedPath(state.settings.resourceDirectory, member)
                         .expandTilde;
                 }
-                else static if (isAnnotated!(this.tupleof[i], Configuration))
+                else static if (hasUDA!(this.tupleof[i], Configuration))
                 {
                     import std.path : buildNormalizedPath, expandTilde;
                     member = buildNormalizedPath(state.settings.configDirectory, member)
@@ -1309,13 +1310,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     {
         import kameloso.config : readConfigInto;
         import lu.meld : MeldingStrategy, meldInto;
-        import lu.traits : isAnnotated;
+        import std.traits : hasUDA;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct) &&
-                (isAnnotated!(this.tupleof[i], Settings) ||
-                isAnnotated!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(this.tupleof[i], Settings) ||
+                hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 alias T = typeof(symbol);
 
@@ -1371,15 +1372,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     override public bool setSettingByName(const string setting, const string value)
     {
         import lu.objmanip : setMemberByName;
-        import lu.traits : isAnnotated;
+        import std.traits : hasUDA;
 
         bool success;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct) &&
-                (isAnnotated!(this.tupleof[i], Settings) ||
-                isAnnotated!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(this.tupleof[i], Settings) ||
+                hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
                 if (success) break;
@@ -1397,13 +1398,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     override public void printSettings() const
     {
         import kameloso.printing : printObject;
-        import lu.traits : isAnnotated;
+        import std.traits : hasUDA;
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct) &&
-                (isAnnotated!(this.tupleof[i], Settings) ||
-                isAnnotated!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(this.tupleof[i], Settings) ||
+                hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import std.typecons : No, Yes;
 
@@ -1437,15 +1438,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
      +/
     override public bool serialiseConfigInto(ref Appender!string sink) const
     {
-        import lu.traits : isAnnotated;
+        import std.traits : hasUDA;
 
         bool didSomething;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct) &&
-                (isAnnotated!(this.tupleof[i], Settings) ||
-                isAnnotated!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(this.tupleof[i], Settings) ||
+                hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import lu.serialisation : serialise;
 
@@ -1453,7 +1454,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 didSomething = true;
                 break;
             }
-            else static if (isAnnotated!(this.tupleof[i], Settings))
+            else static if (hasUDA!(this.tupleof[i], Settings))
             {
                 import std.format : format;
 
@@ -1585,7 +1586,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         enum ctCommandsEnumLiteral =
         {
             import kameloso.plugins.common.core : BotCommand, BotRegex, Description;
-            import lu.traits : getSymbolsByUDA, isAnnotated;
+            import lu.traits : getSymbolsByUDA;
             import std.meta : AliasSeq, Filter;
             import std.traits : getUDAs, hasUDA, isSomeFunction;
 

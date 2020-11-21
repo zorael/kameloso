@@ -302,9 +302,9 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
-        import lu.traits : isAnnotated, isSerialisable;
+        import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAggregateType, isAssociativeArray, isSomeFunction, isType;
+        import std.traits : hasUDA, isAggregateType, isAssociativeArray, isSomeFunction, isType;
 
         static if (
             (memberstring != "this") &&
@@ -316,8 +316,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
             (all ||
                 (isSerialisable!(__traits(getMember, thing, memberstring)) &&
-                !isAnnotated!(__traits(getMember, thing, memberstring), Hidden) &&
-                !isAnnotated!(__traits(getMember, thing, memberstring), Unserialisable))))
+                !hasUDA!(__traits(getMember, thing, memberstring), Hidden) &&
+                !hasUDA!(__traits(getMember, thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
