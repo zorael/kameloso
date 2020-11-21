@@ -2914,7 +2914,7 @@ int initBot(string[] args)
         instance.printSummary();
     }
 
-    version(ProfileGC)
+    version(GCStatsOnExit)
     {
         import core.memory : GC;
 
