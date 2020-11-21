@@ -1996,12 +1996,14 @@ package:
         The function to call is $(REF kameloso.plugins.common.core.IRCPluginImpl.onEventImpl).
 
         Params:
-            event = Parsed $(REF dialect.defs.IRCEvent) to pass onto
+            origEvent = Parsed $(REF dialect.defs.IRCEvent) to pass onto
                 $(REF kameloso.plugins.common.core.IRCPluginImpl.onEventImpl)
                 after verifying we should process the event.
      +/
-    override public void onEvent(IRCEvent event)
+    override public void onEvent(const ref IRCEvent origEvent)
     {
+        IRCEvent event = origEvent;
+
         if (this.twitchBotSettings.promoteBroadcasters)
         {
             if (event.sender.nickname.length && event.channel.length &&

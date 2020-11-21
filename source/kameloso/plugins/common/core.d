@@ -99,7 +99,7 @@ public:
     /++
         Executed upon new IRC event parsed from the server.
      +/
-    void onEvent(/*const*/ IRCEvent) @system;
+    void onEvent(const ref IRCEvent) @system;
 
 
     // initResources
@@ -397,7 +397,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             $(REF onEventImpl)
      +/
     pragma(inline, true)
-    override public void onEvent(/*const*/ IRCEvent event) @system
+    override public void onEvent(const ref IRCEvent event) @system
     {
         return onEventImpl(event);
     }
