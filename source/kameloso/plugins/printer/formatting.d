@@ -615,7 +615,7 @@ if (isOutputRange!(Sink, char[]))
         {
             immutable name = user.isServer ?
                 user.address :
-                (user.account.length ?
+                ((user.account.length && plugin.printerSettings.colourByAccount) ?
                     user.account :
                     user.nickname);
 
