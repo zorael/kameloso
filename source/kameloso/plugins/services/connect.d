@@ -532,29 +532,26 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 /++
     Modifies the nickname by appending characters to the end of it.
 
-    Flags the client as updated, so as to propagate the change to all other plugins.
+    Don't modify [IRCPluginState.client.nickname] as the nickname only changes
+    when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
 {
+    import std.conv : text;
+    import std.random : uniform;
+
     if (service.registration == Progress.started)
     {
-        if (service.renamedDuringRegistration)
-        {
-            import std.conv : text;
-            import std.random : uniform;
-
-            service.state.client.nickname ~= uniform(0, 10).text;
-        }
-        else
+        if (!service.renameDuringRegistration.length)
         {
             import kameloso.constants : KamelosoDefaults;
-            service.state.client.nickname ~= KamelosoDefaults.altNickSign;
-            service.renamedDuringRegistration = true;
+            service.renameDuringRegistration = service.state.client.nickname ~
+                KamelosoDefaults.altNickSign;
         }
 
-        service.state.clientUpdated = true;
-        immediate(service.state, "NICK " ~ service.state.client.nickname);
+        service.renameDuringRegistration ~= uniform(0, 10).text;
+        immediate(service.state, "NICK " ~ service.renameDuringRegistration);
     }
 }
 
