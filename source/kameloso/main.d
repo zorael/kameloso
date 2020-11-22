@@ -103,42 +103,44 @@ void signalHandler(int sig) nothrow @nogc @system
     import core.stdc.stdio : printf;
 
     // $ kill -l
-    static immutable char*[31] signalNames =
+    // https://man7.org/linux/man-pages/man7/signal.7.html
+    static immutable char*[32] signalNames =
     [
-        "HUP\0",
-        "INT\0",
-        "QUIT\0",
-        "ILL\0",
-        "TRAP\0",
-        "ABRT\0",
-        "BUS\0",
-        "FPE\0",
-        "KILL\0",
-        "USR1\0",
-        "SEGV\0",
-        "USR2\0",
-        "PIPE\0",
-        "ALRM\0",
-        "TERM\0",
-        "STKFLT\0",
-        "CHLD\0",
-        "CONT\0",
-        "STOP\0",
-        "TSTP\0",
-        "TTIN\0",
-        "TTOU\0",
-        "URG\0",
-        "XCPU\0",
-        "XFSZ\0",
-        "VTALRM\0",
-        "PROF\0",
-        "WINCH\0",
-        "POLL\0",
-        "PWR\0",
-        "SYS\0",
+         0 : "<err>\0", /// Should never happen.
+         1 : "HUP\0",   /// Hangup detected on controlling terminal or death of controlling process.
+         2 : "INT\0",   /// Interrupt from keyboard.
+         3 : "QUIT\0",  /// Quit from keyboard.
+         4 : "ILL\0",   /// Illegal instruction.
+         5 : "TRAP\0",  /// Trace/breakpoint trap.
+         6 : "ABRT\0",  /// Abort signal from `abort(3)`.
+         7 : "BUS\0",   /// Bus error: access to an undefined portion of a memory object.
+         8 : "FPE\0",   /// Floating-point exception.
+         9 : "KILL\0",  /// Kill signal.
+        10 : "USR1\0",  /// User-defined signal 1.
+        11 : "SEGV\0",  /// Invalid memory reference.
+        12 : "USR2\0",  /// User-defined signal 2.
+        13 : "PIPE\0",  /// Broken pipe: write to pipe with no readers.
+        14 : "ALRM\0",  /// Timer signal from `alarm(2)`.
+        15 : "TERM\0",  /// Termination signal.
+        16 : "STKFLT\0",/// Stack fault on coprocessor. (unused?)
+        17 : "CHLD\0",  /// Child stopped or terminated.
+        18 : "CONT\0",  /// Continue if stopped.
+        19 : "STOP\0",  /// Stop process.
+        20 : "TSTP\0",  /// Stop typed at terminal.
+        21 : "TTIN\0",  /// Terminal input for background process.
+        22 : "TTOU\0",  /// Terminal output for background process.
+        23 : "URG\0",   /// Urgent condition on socket. (4.2 BSD)
+        24 : "XCPU\0",  /// CPU time limit exceeded. (4.2 BSD)
+        25 : "XFSZ\0",  /// File size limit exceeded. (4.2 BSD)
+        26 : "VTALRM\0",/// Virtual alarm clock. (4.2 BSD)
+        27 : "PROF\0",  /// Profile alarm clock.
+        28 : "WINCH\0", /// Window resize signal. (4.3 BSD, Sun)
+        29 : "POLL\0",  /// Pollable event; a synonym for `SIGIO`: I/O now possible. (System V)
+        30 : "PWR\0",   /// Power failure. (System V)
+        31 : "SYS\0",   /// Bad system call. (SVr4)
     ];
 
-    printf("...caught signal SIG%s!\n", signalNames.ptr[sig-1]);
+    printf("...caught signal SIG%s!\n", signalNames.ptr[sig]);
     rawAbort = true;
 
     version(Posix)
