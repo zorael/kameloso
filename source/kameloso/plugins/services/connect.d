@@ -102,9 +102,9 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
     the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
 
-    Additionally records our given IDENT identifier. This is likely the first event
-    after connection that carries us as a user, so we can only catch it as early
-    as here.
+    Additionally records our given IDENT identifier. This may be the first event
+    after connection that carries us as a (sender) user, assuming there were no
+    [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] events prior.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
