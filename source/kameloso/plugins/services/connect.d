@@ -567,7 +567,17 @@ void onBadNick(ConnectService service)
     if (service.registration == Progress.started)
     {
         // Mid-registration and invalid nickname; abort
-        logger.error("Your nickname is invalid. (reserved, too long, or contains invalid characters)");
+
+        if (service.renameDuringRegistration.length)
+        {
+            logger.error("Your nickname was taken and an alternative nickname " ~
+                "could not be successfully generated.");
+        }
+        else
+        {
+            logger.error("Your nickname is invalid. (reserved, too long, or contains invalid characters)");
+        }
+
         quit(service.state, "Invalid nickname");
     }
 }
