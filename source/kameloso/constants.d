@@ -91,7 +91,7 @@ enum KamelosoDefaults
     partReason = quitReason,
 
     /// When a nickname is taken, first append this to get a new name before trying random numbers.
-    altNickSign = "^",
+    altNickSign = "|",
 }
 
 
