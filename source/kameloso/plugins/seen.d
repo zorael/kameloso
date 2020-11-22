@@ -268,7 +268,7 @@ private:  // Module-level private.
     /++
         The amount of seconds after which seen users should be saved to disk.
      +/
-    enum timeBetweenSaves = 3600;
+    enum timeBetweenSaves = 300;
 
 
     // IRCPluginImpl
