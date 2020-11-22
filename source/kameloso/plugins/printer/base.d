@@ -49,6 +49,9 @@ public:
     /// Whether or not to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
+    /// Whether or not two users on the same account should be coloured identically.
+    bool colourByAccount = true;
+
     version(TwitchSupport)
     {
         /// Whether or not to display Twitch badges next to sender/target names.
