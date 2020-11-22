@@ -416,14 +416,15 @@ void onAuthEnd(ConnectService service)
 {
     service.authentication = Progress.finished;
 
-    // This can be before registration ends in case of SASL
-    // return if still registering
-    if (service.registration != Progress.finished) return;
+    // Dialect will have caught any change in nickname and updated the client. (RPL_LOGGEDIN)
 
-    if (!service.joinedChannels)
+    if (service.registration == Progress.finished)
     {
-        service.joinChannels();
-        service.joinedChannels = true;
+        if (!service.joinedChannels)
+        {
+            service.joinChannels();
+            service.joinedChannels = true;
+        }
     }
 }
 
