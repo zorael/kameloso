@@ -409,10 +409,6 @@ void onNotRegistered(ConnectService service)
 
     Fires when an authentication service sends a message with a known success,
     invalid or rejected auth text, signifying completed login.
-
-    Additionally records our given IDENT identifier. This is likely the first event
-    after connection that carries us as a (target) user, so we can only catch it as early
-    as here.
  +/
 @(IRCEvent.Type.RPL_LOGGEDIN)
 @(IRCEvent.Type.AUTH_FAILURE)
@@ -420,18 +416,8 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
     service.authentication = Progress.finished;
 
-    // Dialect will have caught any change in nickname and updated the client. (RPL_LOGGEDIN)
-
     if (service.registration == Progress.finished)
     {
-        // :wilhelm.freenode.net 900 * *!unknown@2001:41d0:2:80b4:: kameloso :You are now logged in as kameloso.
-        if (!service.state.client.ident.length && (event.target.ident != "unknown"))
-        {
-            // RPL_LOGGEDIN
-            service.state.client.ident = event.target.ident;
-            service.state.clientUpdated = true;
-        }
-
         if (!service.joinedChannels)
         {
             service.joinChannels();
