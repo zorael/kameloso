@@ -321,7 +321,7 @@ unittest
             Passing 1 will express it in only seconds.
         truncateUnits = Number of units to skip from output, going from least
             significant (seconds) to most significant (years).
-        duration = A period of time.
+        signedDuration = A period of time.
         sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
