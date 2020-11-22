@@ -403,7 +403,7 @@ void onNotRegistered(ConnectService service)
 }
 
 
-// onLoggedIn
+// onAuthEnd
 /++
     Flags authentication as finished and join channels.
 
@@ -415,47 +415,22 @@ void onNotRegistered(ConnectService service)
     as here.
  +/
 @(IRCEvent.Type.RPL_LOGGEDIN)
-void onLoggedIn(ConnectService service, const ref IRCEvent event)
+@(IRCEvent.Type.AUTH_FAILURE)
+void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
     service.authentication = Progress.finished;
 
-    if (service.registration == Progress.started)
+    // Dialect will have caught any change in nickname and updated the client. (RPL_LOGGEDIN)
+
+    if (service.registration == Progress.finished)
     {
         // :wilhelm.freenode.net 900 * *!unknown@2001:41d0:2:80b4:: kameloso :You are now logged in as kameloso.
-        // dialect will have caught any change in nickname and updated the client.
-
         if (!service.state.client.ident.length && (event.target.ident != "unknown"))
         {
             // RPL_LOGGEDIN
             service.state.client.ident = event.target.ident;
             service.state.clientUpdated = true;
         }
-    }
-    else if (service.registration == Progress.finished)
-    {
-        // Post-registration log in, if that's possible.
-
-        if (!service.joinedChannels)
-        {
-            service.joinChannels();
-            service.joinedChannels = true;
-        }
-    }
-}
-
-
-// onAuthFailure
-/++
-    Flags authentication as finished (failed) and join channels.
- +/
-@(IRCEvent.Type.AUTH_FAILURE)
-void onAuthFailure(ConnectService service)
-{
-    service.authentication = Progress.finished;
-
-    if (service.registration == Progress.finished)
-    {
-        // Post-registration log in failure, if that's possible.
 
         if (!service.joinedChannels)
         {
