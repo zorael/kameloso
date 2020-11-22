@@ -1430,8 +1430,15 @@ private:
     /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
     bool serverPinged;
 
-    /// Whether or not the bot has renamed itself during registration.
-    bool renamedDuringRegistration;
+    /++
+        Temporary: the nickname that we had to rename to, to successfully
+        register on the server.
+
+        This is to avoid modifying [IRCPluginState.client.nickname] before the
+        nickname is actually changed, yet still carry information about the
+        incremental rename throughout calls of [onNickInUse].
+     +/
+    string renameDuringRegistration;
 
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;
