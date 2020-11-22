@@ -424,7 +424,8 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 
     if (service.registration == Progress.finished)
     {
-        if (!service.state.client.ident.length)
+        // :wilhelm.freenode.net 900 * *!unknown@2001:41d0:2:80b4:: kameloso :You are now logged in as kameloso.
+        if (!service.state.client.ident.length && (event.target.ident != "unknown"))
         {
             // RPL_LOGGEDIN
             service.state.client.ident = event.target.ident;
