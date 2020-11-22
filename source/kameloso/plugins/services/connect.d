@@ -389,7 +389,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 // onNotRegistered
 /++
     Requeues joining channels if we receive an
-    [dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED] error.
+    [dialect.defs.IRCEvent.Type.ERR_NOTREGISTERED] error.
 
     This can happen if the authentication process turns out to be particularly slow.
     Recover by schedling to join channels again later.
