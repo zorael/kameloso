@@ -118,7 +118,7 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(arg ? "true" : "false");
         }
-        else static if (is(T : int))
+        else static if (is(T : long))
         {
             import lu.conv : toAlphaInto;
             arg.toAlphaInto(sink);
@@ -138,8 +138,8 @@ unittest
 
     Appender!(char[]) sink;
 
-    .put(sink, "abc", 123, "def", 456, true);
-    assert((sink.data == "abc123def456true"), sink.data);
+    .put(sink, "abc", long.min, "def", 456, true);
+    assert((sink.data == "abc-9223372036854775808def456true"), sink.data);
 
     version(Colours)
     {
