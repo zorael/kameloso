@@ -1046,7 +1046,8 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 void onEndOFMotd(ConnectService service)
 {
     // Gather information about ourselves
-    if (!service.state.client.ident.length)
+    if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+        !service.state.client.ident.length)
     {
         whois!(Yes.priority)(service.state, service.state.client.nickname, Yes.force, Yes.quiet);
     }
