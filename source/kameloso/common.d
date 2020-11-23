@@ -1299,6 +1299,7 @@ version(Posix)
 version(PrintErrnos)
 static immutable string[134] errnoStrings =
 [
+    0   : "<unset>",
     1   : "EPERM",
     2   : "ENOENT",
     3   : "ESRCH",
