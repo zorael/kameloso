@@ -4,7 +4,7 @@
 
     IRC colours are not in the standard per se, but there is a de-facto standard
     based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
-    `fg` is a foreground colour number (of `IRCColour`) and `bg` is a similar
+    `fg` is a foreground colour number (of [IRCColour]) and `bg` is a similar
     background colour number.
 
     Example:
@@ -65,8 +65,8 @@ enum IRCColour
     Params:
         line = Line to tint.
         sink = Output range sink to fill with the function's output.
-        fg = Foreground `IRCColour`.
-        bg = Optional background `IRCColour`.
+        fg = Foreground [IRCColour].
+        bg = Optional background [IRCColour].
  +/
 void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour fg,
     const IRCColour bg = IRCColour.unset)
@@ -116,12 +116,12 @@ unittest
 /++
     Colour-codes the passed string with mIRC colouring, foreground and background.
     Direct overload that leverages the output range version to colour an internal
-    `std.array.Appender`, and returns the resulting string.
+    [std.array.Appender], and returns the resulting string.
 
     Params:
         line = Line to tint.
-        fg = Foreground `IRCColour`.
-        bg = Optional background `IRCColour`.
+        fg = Foreground [IRCColour].
+        bg = Optional background [IRCColour].
 
     Returns:
         The passed line, encased within IRC colour tags.
@@ -157,12 +157,12 @@ unittest
 // ircColour
 /++
     Returns a mIRC colour code for the passed foreground and background colour.
-    Overload that doesn't take a string to tint, only the `IRCColour`s to
+    Overload that doesn't take a string to tint, only the [IRCColour]s to
     produce a colour code from.
 
     Params:
-        fg = Foreground `IRCColour`.
-        bg = Optional background `IRCColour`.
+        fg = Foreground [IRCColour].
+        bg = Optional background [IRCColour].
 
     Returns:
         An opening IRC colour token with the passed colours.
@@ -283,7 +283,7 @@ unittest
     Returns the passed something wrapped in between IRC bold control characters.
 
     Params:
-        something = Something `std.conv.text`-convertible to enwrap in bold.
+        something = Something [std.conv.text]-convertible to enwrap in bold.
 
     Returns:
         The passed something, as a string, in IRC bold.
@@ -326,7 +326,7 @@ unittest
     Returns the passed something wrapped in between IRC italics control characters.
 
     Params:
-        something = Something `std.conv.text`-convertible to enwrap in italics.
+        something = Something [std.conv.text]-convertible to enwrap in italics.
 
     Returns:
         The passed something, as a string, in IRC italics.
@@ -368,7 +368,7 @@ unittest
     Returns the passed something wrapped in between IRC underlined control characters.
 
     Params:
-        something = Something `std.conv.text`-convertible to enwrap in underlined.
+        something = Something [std.conv.text]-convertible to enwrap in underlined.
 
     Returns:
         The passed something, as a string, in IRC underlined.
@@ -552,7 +552,7 @@ unittest
 /++
     Maps mIRC effect colour tokens to terminal ones.
 
-    Merely calls `mapColoursImpl` with `No.strip`.
+    Merely calls [mapColoursImpl] with `No.strip`.
 
     Params:
         line = String line with IRC colours to translate.
@@ -876,7 +876,7 @@ unittest
 /++
     Removes IRC colouring from a passed string.
 
-    Merely calls `mapColours` with a `Yes.strip` template parameter.
+    Merely calls [mapColours] with a `Yes.strip` template parameter.
 
     Params:
         line = String to strip of IRC colour tags.
@@ -966,7 +966,7 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
 
     if (pos == -1) return line;  // As is
 
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     static if (!strip)
     {

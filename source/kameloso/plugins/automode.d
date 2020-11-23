@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
     Use JSON to get a pretty-printed list, then write it to disk.
 
     Params:
-        plugin = The current `AutomodePlugin`.
+        plugin = The current [AutomodePlugin].
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
@@ -90,7 +90,7 @@ void initResources(AutomodePlugin plugin)
     Potentially applies an automode, depending on the definitions and the user
     triggering the function.
 
-    Different `dialect.defs.IRCEvent.Type`s have to be handled differently,
+    Different [dialect.defs.IRCEvent.Type]s have to be handled differently,
     as the triggering user may be either the sender or the target.
 
     Additionally none of these events carry a channel, so we'll have to make
@@ -153,7 +153,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 /++
     Applies automodes upon someone joining a home channel.
 
-    `applyAutomodes` will cautiously probe whether there are any definitions to
+    [applyAutomodes] will cautiously probe whether there are any definitions to
     apply, so there's little sense in doing it here as well. Just pass the
     arguments and let it look things up.
  +/
@@ -174,7 +174,7 @@ void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
     Applies automodes for a specific user in a specific channel.
 
     Params:
-        plugin = The current `AutomodePlugin`
+        plugin = The current [AutomodePlugin]
         channelName = String channel to apply the modes in.
         nickname = String nickname of the user to apply modes to.
         account = String account of the user, to look up definitions for.
@@ -377,7 +377,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     existing one.
 
     Params:
-        plugin = The current `AutomodePlugin`.
+        plugin = The current [AutomodePlugin].
         add = Whether to add or to remove the automode.
         nickname = The nickname of the user to add the automode for.
         channelName = The channel the automode should play out in.
@@ -437,7 +437,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 /++
     Triggers a WHOIS of the user invoking it with bot commands.
 
-    The `kameloso.plugins.common.core.PrivilegeLevel.anyone` annotation is to
+    The [kameloso.plugins.common.core.PrivilegeLevel.anyone] annotation is to
     force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
@@ -561,9 +561,9 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when `automodeSettings.enabled` is false.
+        to doing nothing when [AutomodeSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.

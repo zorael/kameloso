@@ -10,10 +10,10 @@ mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>0.5.0"
-dependency "dialect" version="~>0.9.0"
+dependency "lu" version="~>1.0.0"
+dependency "dialect" version="~>1.0.0"
 dependency "arsd-official:dom" version="~>8.5.0"
-dependency "requests" version="~>1.1.5"
+dependency "requests" version="~>2.0.0"
 
 sourcePaths "source"
 importPaths "source"
@@ -76,7 +76,9 @@ versions \
     "OSXTMPDIR" \
     "OmniscientQueries" \
     "TraceWhois" \
-    "ProfileGC"
+    "GCStatsOnExit" \
+    "ProfileGC" \
+    "PrintErrnos"
 */
 
 configuration "application" {
@@ -115,7 +117,8 @@ configuration "dev" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "ProfileGC"
+        "GCStatsOnExit" \
+        "PrintErrnos"
         //"TraceWhois" \
 }
 
@@ -130,7 +133,8 @@ configuration "dev-lowmem" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "ProfileGC"
+        "GCStatsOnExit" \
+        "PrintErrnos"
         //"TraceWhois" \
 }
 
@@ -142,8 +146,11 @@ configuration "unittest" {
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
+        "OmniscientQueries" \
         "PrintStacktraces" \
         "ExplainRepeat" \
+        "GCStatsOnExit" \
+        "PrintErrnos" \
         "ProfileGC"
 }
 
@@ -156,7 +163,10 @@ configuration "unittest-lowmem" {
         "WithTwitchBotPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
+        "OmniscientQueries" \
         "PrintStacktraces" \
         "ExplainRepeat" \
+        "GCStatsOnExit" \
+        "PrintErrnos" \
         "ProfileGC"
 }

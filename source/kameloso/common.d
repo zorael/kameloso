@@ -34,26 +34,26 @@ shared static this()
 
 // logger
 /++
-    Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
+    Instance of a [kameloso.logger.KamelosoLogger], providing timestamped and
     coloured logging.
 
     The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
     and `fatal`. It is not `__gshared`, so instantiate a thread-local
-    `kameloso.logger.KamelosoLogger` if threading.
+    [kameloso.logger.KamelosoLogger] if threading.
 
     Having this here is unfortunate; ideally plugins should not use variables
     from other modules, but unsure of any way to fix this other than to have
-    each plugin keep their own `kameloso.common.logger` pointer.
+    each plugin keep their own [kameloso.common.logger] pointer.
  +/
 KamelosoLogger logger;
 
 
 // initLogger
 /++
-    Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
+    Initialises the [kameloso.logger.KamelosoLogger] logger for use in this thread.
 
     It needs to be separately instantiated per thread, and even so there may be
-    race conditions. Plugins are encouraged to use `kameloso.thread.ThreadMessage`s
+    race conditions. Plugins are encouraged to use [kameloso.thread.ThreadMessage]s
     to log to screen from other threads.
 
     Example:
@@ -77,19 +77,14 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
-    A `kameloso.kameloso.CoreSettings` struct global, housing certain runtime settings.
+    A [kameloso.kameloso.CoreSettings] struct global, housing certain runtime settings.
 
     This will be accessed from other parts of the program, via
-    `kameloso.common.settings`, so they know to use monochrome output or not.
+    [kameloso.common.settings], so they know to use monochrome output or not.
     It is a problem that needs solving.
  +/
 kameloso.kameloso.CoreSettings* settings;
 
-
-version(Colours)
-{
-    private import kameloso.terminal : TerminalForeground;
-}
 
 // printVersionInfo
 /++
@@ -98,49 +93,33 @@ version(Colours)
 
     Example:
     ---
-    printVersionInfo(TerminalForeground.white);
+    printVersionInfo(Yes.colours);
     ---
 
     Params:
-        colourCode = Terminal foreground colour to display the text in.
+        colours = Whether or not to tint output, default yes. A global monochrome
+            setting overrides this.
  +/
-version(Colours)
-void printVersionInfo(TerminalForeground colourCode) @system
-{
-    import kameloso.terminal : colour;
-
-    enum fgDefault = TerminalForeground.default_.colour.idup;
-    return printVersionInfo(colourCode.colour, fgDefault);
-}
-
-
-// printVersionInfo
-/++
-    Prints out the bot banner with the version number and GitHub URL, optionally
-    with passed colouring in string format. Overload that does not rely on
-    `kameloso.terminal.TerminalForeground` being available, yet takes the necessary
-    parameters to allow the other overload to reuse this one.
-
-    Example:
-    ---
-    printVersionInfo();
-    ---
-
-    Params:
-        pre = String to preface the line with, usually a colour code string.
-        post = String to end the line with, usually a resetting code string.
- +/
-void printVersionInfo(const string pre = string.init, const string post = string.init) @safe
+void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
     import kameloso.constants : KamelosoInfo;
     import std.stdio : writefln;
 
-    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
-        pre,
+    immutable logtint = colours ? Tint.log : string.init;
+    immutable infotint = colours ? Tint.info : string.init;
+
+    writefln("%skameloso IRC bot v%s, built with %s (%s) on %s%s",
+        logtint,
         cast(string)KamelosoInfo.version_,
+        cast(string)KamelosoInfo.compiler,
+        cast(string)KamelosoInfo.compilerVersion,
         cast(string)KamelosoInfo.built,
+        Tint.off);
+
+    writefln("$ git clone %s%s.git%s",
+        infotint,
         cast(string)KamelosoInfo.source,
-        post);
+        Tint.off);
 }
 
 
@@ -316,12 +295,12 @@ unittest
 
 // timeSinceInto
 /++
-    Express how much time has passed in a `core.time.Duration`, in natural
+    Express how much time has passed in a [core.time.Duration], in natural
     (English) language. Overload that writes the result to the passed output range `sink`.
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     immutable then = Clock.currTime;
     Thread.sleep(1.seconds);
@@ -342,14 +321,13 @@ unittest
             Passing 1 will express it in only seconds.
         truncateUnits = Number of units to skip from output, going from least
             significant (seconds) to most significant (years).
-        duration = A period of time.
+        signedDuration = A period of time.
         sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
     uint numUnits = 7, uint truncateUnits = 0, Sink)
-    (const Duration duration, auto ref Sink sink) pure
+    (const Duration signedDuration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
-in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration")
 {
     import lu.string : plurality;
     import std.algorithm.comparison : min;
@@ -373,6 +351,8 @@ in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration
             "expected `0` to `6`, got `%d`";
         static assert(0, pattern.format(truncateUnits));
     }
+
+    immutable duration = signedDuration < 0.seconds ? -signedDuration : signedDuration;
 
     alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
     enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
@@ -433,6 +413,11 @@ in ((duration >= 0.seconds), "Cannot call `timeSinceInto` on a negative duration
     }
 
     // -------------------------------------------------------------------------
+
+    if (signedDuration < 0.seconds)
+    {
+        sink.put('-');
+    }
 
     static if (numUnits >= 7)
     {
@@ -748,12 +733,21 @@ unittest
         assert((sink.data == "2h 28m"), sink.data);
         sink.clear();
     }
+    {
+        immutable dur = -1.minutes + -1.seconds;
+        dur.timeSinceInto!(No.abbreviate, 2, 0)(sink);
+        assert((sink.data == "-1 minute and 1 second"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 2, 0)(sink);
+        assert((sink.data == "-1m 1s"), sink.data);
+        sink.clear();
+    }
 }
 
 
 // timeSince
 /++
-    Express how much time has passed in a `core.time.Duration`, in natural
+    Express how much time has passed in a [core.time.Duration], in natural
     (English) language. Overload that returns the result as a new string.
 
     Example:
@@ -951,6 +945,8 @@ string stripSeparatedPrefix(Flag!"demandSeparatingChars" demandSep = Yes.demandS
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
     import lu.string : nom, strippedLeft;
+    import std.algorithm.comparison : among;
+    import std.meta : aliasSeqOf;
 
     enum separatingChars = ": !?;";  // In reasonable order of likelihood
 
@@ -961,12 +957,13 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 
     static if (demandSep)
     {
-        import std.algorithm.comparison : among;
-        import std.meta : aliasSeqOf;
-
         // Return the whole line, a non-match, if there are no separating characters
         // (at least one of the chars in separatingChars)
         if (!slice.length || !slice[0].among!(aliasSeqOf!separatingChars)) return line;
+    }
+
+    while (slice.length && slice[0].among!(aliasSeqOf!separatingChars))
+    {
         slice = slice[1..$];
     }
 
@@ -994,16 +991,20 @@ unittest
     immutable isabot = "kamelosois a bot"
         .stripSeparatedPrefix!(No.demandSeparatingChars)("kameloso");
     assert((isabot == "is a bot"), isabot);
+
+    immutable doubles = "kameloso            is a snek"
+        .stripSeparatedPrefix("kameloso");
+    assert((doubles == "is a snek"), doubles);
 }
 
 
 // Tint
 /++
     Provides an easy way to access the `*tint` members of our
-    `kameloso.logger.KamelosoLogger` instance `logger`.
+    [kameloso.logger.KamelosoLogger] instance [logger].
 
-    It still accesses the global `kameloso.common.logger` instance, but is now
-    independent of `kameloso.common.settings`.
+    It still accesses the global [kameloso.common.logger] instance, but is now
+    independent of [kameloso.common.settings].
 
     Example:
     ---
@@ -1024,11 +1025,11 @@ struct Tint
         // opDispatch
         /++
             Provides the string that corresponds to the tint of the
-            `std.experimental.logger.core.LogLevel` that was passed in string form
+            [std.experimental.logger.core.LogLevel] that was passed in string form
             as the `tint` `opDispatch` template parameter.
 
             This saves us the boilerplate of copy/pasting one function for each
-            `std.experimental.logger.core.LogLevel`.
+            [std.experimental.logger.core.LogLevel].
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
@@ -1060,12 +1061,13 @@ struct Tint
             return string.init;
         }
 
+        alias all = log;
         alias info = log;
         alias warning = log;
         alias error = log;
         alias fatal = log;
         alias trace = log;
-        alias reset = trace;
+        alias off = log;
     }
 }
 
@@ -1104,7 +1106,7 @@ unittest
 
     Params:
         line = String to replace tokens in.
-        client = The current `dialect.defs.IRCClient`.
+        client = The current [dialect.defs.IRCClient].
 
     Returns:
         A modified string with token occurrences replaced.
@@ -1154,7 +1156,7 @@ unittest
 // replaceTokens
 /++
     Apply some common text replacements. Used on part and quit reasons.
-    Overload that doesn't take an `dialect.defs.IRCClient` and as such can't
+    Overload that doesn't take an [dialect.defs.IRCClient] and as such can't
     replace `$nickname`.
 
     Params:
@@ -1176,7 +1178,7 @@ string replaceTokens(const string line) @safe pure nothrow
 
 // nextMidnight
 /++
-    Returns a `std.datetime.systime.SysTime` of the following midnight.
+    Returns a [std.datetime.systime.SysTime] of the following midnight.
 
     Example:
     ---
@@ -1186,11 +1188,11 @@ string replaceTokens(const string line) @safe pure nothrow
     ---
 
     Params:
-        now = A `std.datetime.systime.SysTime` of the base date from which to proceed
+        now = A [std.datetime.systime.SysTime] of the base date from which to proceed
             to the next midnight.
 
     Returns:
-        A `std.datetime.systime.SysTime` of the midnight following the date
+        A [std.datetime.systime.SysTime] of the midnight following the date
         passed as argument.
  +/
 SysTime nextMidnight(const SysTime now)
@@ -1254,3 +1256,179 @@ unittest
     immutable alsoFirstApril = SysTime(DateTime(2005, 4, 1, 0, 0, 0), utc);
     assert(firstApril == alsoFirstApril);
 }
+
+
+// errnoStrings
+/++
+    Reverse mapping of [core.stdc.errno.errno] values to their string names.
+
+    Automatically generated by introspecting [core.stdc.errno].
+
+    ---
+    string[134] errnoStrings;
+
+    foreach (immutable symname; __traits(allMembers, core.stdc.errno))
+    {
+        static if (symname[0] == 'E')
+        {
+            immutable idx = __traits(getMember, core.stdc.errno, symname);
+
+            if (errnoStrings[idx].length)
+            {
+                writefln("%s DUPLICATE %d", symname, idx);
+            }
+            else
+            {
+                errnoStrings[idx] = symname;
+            }
+        }
+    }
+
+    writeln("static immutable string[134] errnoStrings =\n[");
+
+    foreach (immutable i, immutable e; errnoStrings)
+    {
+        if (!e.length) continue;
+        writefln(`    %-3d : "%s",`, i, e);
+    }
+
+    writeln("];");
+    ---
+ +/
+version(Posix)
+version(PrintErrnos)
+static immutable string[134] errnoStrings =
+[
+    0   : "<unset>",
+    1   : "EPERM",
+    2   : "ENOENT",
+    3   : "ESRCH",
+    4   : "EINTR",
+    5   : "EIO",
+    6   : "ENXIO",
+    7   : "E2BIG",
+    8   : "ENOEXEC",
+    9   : "EBADF",
+    10  : "ECHILD",
+    11  : "EAGAIN",  // duplicate EWOULDBLOCK
+    12  : "ENOMEM",
+    13  : "EACCES",
+    14  : "EFAULT",
+    15  : "ENOTBLK",
+    16  : "EBUSY",
+    17  : "EEXIST",
+    18  : "EXDEV",
+    19  : "ENODEV",
+    20  : "ENOTDIR",
+    21  : "EISDIR",
+    22  : "EINVAL",
+    23  : "ENFILE",
+    24  : "EMFILE",
+    25  : "ENOTTY",
+    26  : "ETXTBSY",
+    27  : "EFBIG",
+    28  : "ENOSPC",
+    29  : "ESPIPE",
+    30  : "EROFS",
+    31  : "EMLINK",
+    32  : "EPIPE",
+    33  : "EDOM",
+    34  : "ERANGE",
+    35  : "EDEADLK",  // duplicate EDEADLOCK
+    36  : "ENAMETOOLONG",
+    37  : "ENOLCK",
+    38  : "ENOSYS",
+    39  : "ENOTEMPTY",
+    40  : "ELOOP",
+    42  : "ENOMSG",
+    43  : "EIDRM",
+    44  : "ECHRNG",
+    45  : "EL2NSYNC",
+    46  : "EL3HLT",
+    47  : "EL3RST",
+    48  : "ELNRNG",
+    49  : "EUNATCH",
+    50  : "ENOCSI",
+    51  : "EL2HLT",
+    52  : "EBADE",
+    53  : "EBADR",
+    54  : "EXFULL",
+    55  : "ENOANO",
+    56  : "EBADRQC",
+    57  : "EBADSLT",
+    59  : "EBFONT",
+    60  : "ENOSTR",
+    61  : "ENODATA",
+    62  : "ETIME",
+    63  : "ENOSR",
+    64  : "ENONET",
+    65  : "ENOPKG",
+    66  : "EREMOTE",
+    67  : "ENOLINK",
+    68  : "EADV",
+    69  : "ESRMNT",
+    70  : "ECOMM",
+    71  : "EPROTO",
+    72  : "EMULTIHOP",
+    73  : "EDOTDOT",
+    74  : "EBADMSG",
+    75  : "EOVERFLOW",
+    76  : "ENOTUNIQ",
+    77  : "EBADFD",
+    78  : "EREMCHG",
+    79  : "ELIBACC",
+    80  : "ELIBBAD",
+    81  : "ELIBSCN",
+    82  : "ELIBMAX",
+    83  : "ELIBEXEC",
+    84  : "EILSEQ",
+    85  : "ERESTART",
+    86  : "ESTRPIPE",
+    87  : "EUSERS",
+    88  : "ENOTSOCK",
+    89  : "EDESTADDRREQ",
+    90  : "EMSGSIZE",
+    91  : "EPROTOTYPE",
+    92  : "ENOPROTOOPT",
+    93  : "EPROTONOSUPPORT",
+    94  : "ESOCKTNOSUPPORT",
+    95  : "EOPNOTSUPP",  // duplicate ENOTSUPP
+    96  : "EPFNOSUPPORT",
+    97  : "EAFNOSUPPORT",
+    98  : "EADDRINUSE",
+    99  : "EADDRNOTAVAIL",
+    100 : "ENETDOWN",
+    101 : "ENETUNREACH",
+    102 : "ENETRESET",
+    103 : "ECONNABORTED",
+    104 : "ECONNRESET",
+    105 : "ENOBUFS",
+    106 : "EISCONN",
+    107 : "ENOTCONN",
+    108 : "ESHUTDOWN",
+    109 : "ETOOMANYREFS",
+    110 : "ETIMEDOUT",
+    111 : "ECONNREFUSED",
+    112 : "EHOSTDOWN",
+    113 : "EHOSTUNREACH",
+    114 : "EALREADY",
+    115 : "EINPROGRESS",
+    116 : "ESTALE",
+    117 : "EUCLEAN",
+    118 : "ENOTNAM",
+    119 : "ENAVAIL",
+    120 : "EISNAM",
+    121 : "EREMOTEIO",
+    122 : "EDQUOT",
+    123 : "ENOMEDIUM",
+    124 : "EMEDIUMTYPE",
+    125 : "ECANCELED",
+    126 : "ENOKEY",
+    127 : "EKEYEXPIRED",
+    128 : "EKEYREVOKED",
+    129 : "EKEYREJECTED",
+    130 : "EOWNERDEAD",
+    131 : "ENOTRECOVERABLE",
+    132 : "ERFKILL",
+    133 : "EHWPOISON",
+];

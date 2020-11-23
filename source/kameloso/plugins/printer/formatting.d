@@ -2,8 +2,8 @@
     Implementation of Printer plugin functionality that concerns formatting.
     For internal use.
 
-    The `dialect.defs.IRCEvent`-annotated handlers must be in the same module
-    as the `kameloso.plugins.printer.base.PrinterPlugin`, but these implementation
+    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
+    as the [kameloso.plugins.printer.base.PrinterPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
  +/
 module kameloso.plugins.printer.formatting;
@@ -88,18 +88,19 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.terminal : isAColourCode;
     import std.traits : Unqual;
 
     foreach (arg; args)
     {
         alias T = Unqual!(typeof(arg));
 
-        static if (colours && isAColourCode!T)
+        version(Colours)
         {
+            import kameloso.terminal : isAColourCode;
+
             bool coloured;
 
-            version(Colours)
+            static if (colours && isAColourCode!T)
             {
                 import kameloso.terminal : colourWith;
                 sink.colourWith(arg);
@@ -117,7 +118,7 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(arg ? "true" : "false");
         }
-        else static if (is(T : int))
+        else static if (is(T : long))
         {
             import lu.conv : toAlphaInto;
             arg.toAlphaInto(sink);
@@ -137,8 +138,8 @@ unittest
 
     Appender!(char[]) sink;
 
-    .put(sink, "abc", 123, "def", 456, true);
-    assert((sink.data == "abc123def456true"), sink.data);
+    .put(sink, "abc", long.min, "def", 456, true);
+    assert((sink.data == "abc-9223372036854775808def456true"), sink.data);
 
     version(Colours)
     {
@@ -155,15 +156,15 @@ unittest
 
 // formatMessageMonochrome
 /++
-    Formats an `dialect.defs.IRCEvent` into an output range sink, in monochrome.
+    Formats an [dialect.defs.IRCEvent] into an output range sink, in monochrome.
 
     It formats the timestamp, the type of the event, the sender or sender alias,
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
-        sink = Output range to format the `dialect.defs.IRCEvent` into.
-        event = The `dialect.defs.IRCEvent` that is to be formatted.
+        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin].
+        sink = Output range to format the [dialect.defs.IRCEvent] into.
+        event = The [dialect.defs.IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -362,9 +363,9 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.aux.length) .put(sink, " (", event.aux, ')');
 
-    if (event.count != int.min) .put(sink, " {", event.count, '}');
+    if (event.count != long.min) .put(sink, " {", event.count, '}');
 
-    if (event.altcount != int.min) .put(sink, " {", event.altcount, '}');
+    if (event.altcount != long.min) .put(sink, " {", event.altcount, '}');
 
     if (event.num > 0)
     {
@@ -472,16 +473,16 @@ if (isOutputRange!(Sink, char[]))
 
 // formatMessageColoured
 /++
-    Formats an `dialect.defs.IRCEvent` into an output range sink, coloured.
+    Formats an [dialect.defs.IRCEvent] into an output range sink, coloured.
 
     It formats the timestamp, the type of the event, the sender or the sender's
     display name, the channel or target, the content body, as well as auxiliary
     information and numbers.
 
     Params:
-        plugin = Current `kameloso.plugins.printer.base.PrinterPlugin`.
-        sink = Output range to format the `dialect.defs.IRCEvent` into.
-        event = The `dialect.defs.IRCEvent` that is to be formatted.
+        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin].
+        sink = Output range to format the [dialect.defs.IRCEvent] into.
+        event = The [dialect.defs.IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -614,7 +615,7 @@ if (isOutputRange!(Sink, char[]))
         {
             immutable name = user.isServer ?
                 user.address :
-                (user.account.length ?
+                ((user.account.length && plugin.printerSettings.colourByAccount) ?
                     user.account :
                     user.nickname);
 
@@ -899,13 +900,13 @@ if (isOutputRange!(Sink, char[]))
             " (", event.aux, ')');
     }
 
-    if (event.count != int.min)
+    if (event.count != long.min)
     {
         sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
         .put(sink, " {", event.count, '}');
     }
 
-    if (event.altcount != int.min)
+    if (event.altcount != long.min)
     {
         sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
         .put(sink, " {", event.altcount, '}');
@@ -942,10 +943,10 @@ if (isOutputRange!(Sink, char[]))
 // withoutTypePrefix
 /++
     Slices away any type prefixes from the string of a
-    `dialect.defs.IRCEvent.Type`.
+    [dialect.defs.IRCEvent.Type].
 
-    Only for shared use in `formatMessageMonochrome` and
-    `formatMessageColoured`.
+    Only for shared use in [formatMessageMonochrome] and
+    [formatMessageColoured].
 
     Example:
     ---
@@ -960,7 +961,7 @@ if (isOutputRange!(Sink, char[]))
     ---
 
     Params:
-        typestring = The string form of a `dialect.defs.IRCEvent.Type`.
+        typestring = The string form of a [dialect.defs.IRCEvent.Type].
 
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
@@ -1017,12 +1018,12 @@ unittest
 // highlightEmotes
 /++
     Tints emote strings and highlights Twitch emotes in a ref
-    `dialect.defs.IRCEvent`'s `content` member.
+    [dialect.defs.IRCEvent]'s `content` member.
 
-    Wraps `highlightEmotesImpl`.
+    Wraps [highlightEmotesImpl].
 
     Params:
-        event = `dialect.defs.IRCEvent` whose content text to highlight.
+        event = [dialect.defs.IRCEvent] whose content text to highlight.
         colourful = Whether or not emotes should be highlit in colours.
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adapted to suit.
@@ -1309,7 +1310,10 @@ unittest
     can be part of a nickname. This can detect a nickname in a string without
     getting false positives from similar nicknames.
 
-    Uses `std.string.indexOf` internally with hopes of being more resilient to
+    Tries to detect nicknames enclosed in terminal formatting. As such, call this
+    *after* having translated IRC- to terminal such with [kameloso.irccolours.mapEffects].
+
+    Uses [std.string.indexOf] internally with hopes of being more resilient to
     weird UTF-8.
 
     Params:
@@ -1323,6 +1327,7 @@ unittest
 bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
 {
+    import kameloso.terminal : TerminalToken;
     import dialect.common : isValidNicknameCharacter;
     import std.string : indexOf;
 
@@ -1331,13 +1336,70 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
     immutable pos = haystack.indexOf(needle);
     if (pos == -1) return false;
 
-    // Allow for a prepended @, since @mention is commonplace
-    if ((pos > 0) && (haystack[pos-1].isValidNicknameCharacter ||
-        (haystack[pos-1] == '.') ||  // URLs
-        (haystack[pos-1] == '/')) &&  // likewise
-        (haystack[pos-1] != '@'))
+    if (pos > 0)
     {
-        return false;
+        bool match;
+
+        version(Colours)
+        {
+            if ((pos >= 4) && (haystack[pos-1] == 'm'))
+            {
+                import std.algorithm.comparison : min;
+                import std.ascii : isDigit;
+
+                bool previousWasNumber;
+                bool previousWasBracket;
+
+                foreach_reverse (immutable i, immutable c; haystack[pos-min(8, pos)..pos-1])
+                {
+                    if (c.isDigit)
+                    {
+                        if (previousWasBracket) return false;
+                        previousWasNumber = true;
+                    }
+                    else if (c == ';')
+                    {
+                        if (!previousWasNumber) return false;
+                        previousWasNumber = false;
+                    }
+                    else if (c == '[')
+                    {
+                        if (!previousWasNumber) return false;
+                        previousWasNumber = false;
+                        previousWasBracket = true;
+                    }
+                    else if (c == TerminalToken.format)
+                    {
+                        if (!previousWasBracket) return false;
+
+                        // Seems valid, drop down
+                        match = true;
+                        break;
+                    }
+                    else
+                    {
+                        // Invalid character
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if (match)
+        {
+            // The above found a formatted nickname
+        }
+        else if (haystack[pos-1] == '@')
+        {
+            // "@kameloso"
+        }
+        else if (haystack[pos-1].isValidNicknameCharacter ||
+            (haystack[pos-1] == '.') ||
+            (haystack[pos-1] == '/'))
+        {
+            // URL or run-on word
+            return false;
+        }
     }
 
     immutable end = pos + needle.length;
@@ -1351,7 +1413,15 @@ in (needle.length, "Tried to determine whether an empty nickname was in a string
         return true;
     }
 
-    return !haystack[end].isValidNicknameCharacter;
+    if (haystack[end] == TerminalToken.format)
+    {
+        // Run-on formatted word
+        return true;
+    }
+    else
+    {
+        return !haystack[end].isValidNicknameCharacter;
+    }
 }
 
 ///
@@ -1368,4 +1438,21 @@ unittest
     assert("kameloso.".containsNickname("kameloso"));
     assert("kameloso/".containsNickname("kameloso"));
     assert(!"/kameloso/".containsNickname("kameloso"));
+    assert(!"kamelosoooo".containsNickname("kameloso"));
+    assert(!"".containsNickname("kameloso"));
+
+    version(Colours)
+    {
+        assert("\033[1mkameloso".containsNickname("kameloso"));
+        assert("\033[2;3mkameloso".containsNickname("kameloso"));
+        assert("\033[12;34mkameloso".containsNickname("kameloso"));
+        assert(!"\033[0m0mkameloso".containsNickname("kameloso"));
+        assert(!"\033[kameloso".containsNickname("kameloso"));
+        assert(!"\033[mkameloso".containsNickname("kameloso"));
+        assert(!"\033[0kameloso".containsNickname("kameloso"));
+        assert(!"\033[0mmkameloso".containsNickname("kameloso"));
+        assert(!"\033[0;mkameloso".containsNickname("kameloso"));
+        assert("\033[12mkameloso\033[1mjoe".containsNickname("kameloso"));
+        assert(!"0mkameloso".containsNickname("kameloso"));
+    }
 }

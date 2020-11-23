@@ -37,7 +37,7 @@ import dialect.defs;
 /++
     Responds to oneliners.
 
-    Responses are stored in `OnelinersPlugin.onelinersByChannel`.
+    Responses are stored in [OnelinersPlugin.onelinersByChannel].
  +/
 @Chainable
 @(IRCEvent.Type.CHAN)
@@ -50,8 +50,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
-    string slice = event.content;
-    slice.nom(plugin.state.settings.prefix);
+    immutable slice = event.content[plugin.state.settings.prefix.length..$];
 
     // An empty command is invalid, as is one containing spaces
     if (!slice.length || slice.contains(' ')) return;
@@ -164,7 +163,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 /++
     Sends a list of the current oneliners to the channel.
 
-    Merely calls `listCommands`.
+    Merely calls [listCommands].
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -183,7 +182,7 @@ void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
     Lists the current commands to the passed channel.
 
     Params:
-        plugin = The current `OnelinersPlugin`.
+        plugin = The current [OnelinersPlugin].
         channelName = Name of the channel to send the list to.
  +/
 void listCommands(OnelinersPlugin plugin, const string channelName)

@@ -1,6 +1,6 @@
 /++
     Structures and functions related to concurrency message passing, threads and
-    `core.thread.fiber.Fiber`s.
+    [core.thread.fiber.Fiber]s.
 
     Example:
     ---
@@ -37,10 +37,10 @@ public:
 
 // ScheduledFiber
 /++
-    A `core.thread.fiber.Fiber` paired with a `long` UNIX timestamp.
+    A [core.thread.fiber.Fiber] paired with a `long` UNIX timestamp.
 
     If we bundle the two together like this, we can associate a point in time
-    with a `core.thread.fiber.Fiber` without having to to use an associative
+    with a [core.thread.fiber.Fiber] without having to to use an associative
     array (with UNIX timestamp keys).
 
     Example:
@@ -56,10 +56,10 @@ public:
  +/
 struct ScheduledFiber
 {
-    /// Fiber to trigger at the point in time `timestamp`.
+    /// Fiber to trigger at the point in time [timestamp].
     Fiber fiber;
 
-    /// When `fiber` is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
+    /// When [fiber] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
     long timestamp;
 }
 
@@ -83,10 +83,10 @@ struct ScheduledFiber
  +/
 struct ScheduledDelegate
 {
-    /// Delegate to trigger at the point in time `timestamp`.
+    /// Delegate to trigger at the point in time [timestamp].
     void delegate() dg;
 
-    /// When `dg` is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
+    /// When [dg] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
     long timestamp;
 }
 
@@ -131,7 +131,7 @@ version(Posix)
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server `dialect.defs.IRCEvent.Type.PONG` event.
+    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG] event.
     static struct Pong {}
 
     /// Concurrency message type asking to verbosely send a line to the server.
@@ -154,8 +154,8 @@ struct ThreadMessage
 
     /++
         Concurrency message asking for a reference to the arrays of
-        `kameloso.plugins.common.core.IRCPlugin`s in the current
-        `kameloso.kameloso.Kameloso` instance's `plugin` array.
+        [kameloso.plugins.common.core.IRCPlugin]s in the current
+        [kameloso.kameloso.Kameloso] instance's `plugin` array.
      +/
     static struct PeekPlugins {}
 
@@ -184,6 +184,12 @@ struct ThreadMessage
 
     /// Concurrency message asking the main thread to set the `abort` flag.
     static struct Abort {}
+
+    /++
+        Concurrency message asking for the Socket receive timeout to be lowered
+        temporarily, for increased responsiveness.
+     +/
+    static struct ShortenReceiveTimeout {}
 }
 
 
@@ -195,11 +201,11 @@ interface Sendable {}
 
 // BusMessage
 /++
-    A payload of type `T` wrapped in a class implementing the `Sendable` interface.
+    A payload of type `T` wrapped in a class implementing the [Sendable] interface.
     Used to box values for sending via the message bus.
 
     Params:
-        T = Type to embed into the `BusMessage` as the type of the `BusMessage.payload`.
+        T = Type to embed into the [BusMessage] as the type of the payload.
  +/
 final class BusMessage(T) : Sendable
 {
@@ -207,8 +213,8 @@ final class BusMessage(T) : Sendable
     T payload;
 
     /++
-        Constructor that adds a passed payload to the internal stored `payload`,
-        creating a *shared* `BusMessage`.
+        Constructor that adds a passed payload to the internal stored [payload],
+        creating a *shared* [BusMessage].
      +/
     auto this(T payload) shared
     {
@@ -219,7 +225,7 @@ final class BusMessage(T) : Sendable
 
 // busMessage
 /++
-    Constructor function to create a `shared` `BusMessage` with an unqualified template type.
+    Constructor function to create a `shared` [BusMessage] with an unqualified template type.
 
     Example:
     ---
@@ -230,7 +236,7 @@ final class BusMessage(T) : Sendable
     ---
 
     Params:
-        payload = Payload whose type to instantiate the `BusMessage` with, and
+        payload = Payload whose type to instantiate the [BusMessage] with, and
             then assign to its internal `payload`.
 
     Returns:
@@ -266,9 +272,9 @@ unittest
 
 // CarryingFiber
 /++
-    A `core.thread.fiber.Fiber` carrying a payload of type `T`.
+    A [core.thread.fiber.Fiber] carrying a payload of type `T`.
 
-    Used interchangeably with `core.thread.fiber.Fiber`, but allows for casting to true
+    Used interchangeably with [core.thread.fiber.Fiber], but allows for casting to true
     `CarryingFiber!T`-ness to access the `payload` member.
 
     Example:
@@ -290,19 +296,19 @@ unittest
     ---
 
     Params:
-        T = Type to embed into the `CarryingFiber` as the type of `CarryingFiber.payload`.
+        T = Type to embed into the [CarryingFiber] as the type of [CarryingFiber.payload].
  +/
 final class CarryingFiber(T) : Fiber
 {
     /++
-        Embedded payload value in this `core.thread.fiber.Fiber`; what distinguishes
-        it from plain `core.thread.fiber.Fiber`s.
+        Embedded payload value in this [core.thread.fiber.Fiber]; what distinguishes
+        it from plain [core.thread.fiber.Fiber]s.
      +/
     T payload;
 
     /++
         Constructor function merely taking a function/delegate pointer, to call
-        when invoking this `core.thread.fiber.Fiber` (via `.call()`).
+        when invoking this [core.thread.fiber.Fiber] (via `.call()`).
      +/
     this(Fn, Args...)(Fn fn, Args args)
     {
@@ -311,9 +317,9 @@ final class CarryingFiber(T) : Fiber
     }
 
     /++
-        Constructor function taking a `T` `payload` to assign to its own
+        Constructor function taking a `T` [payload] to assign to its own
         internal `this.payload`, as well as a function/delegate pointer to call
-        when invoking this `core.thread.fiber.Fiber` (via `.call()`).
+        when invoking this [core.thread.fiber.Fiber] (via `.call()`).
      +/
     this(Fn, Args...)(T payload, Fn fn, Args args)
     {
@@ -390,7 +396,7 @@ void exhaustMessages()
 
     // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
     // until a thread was spawned or thisTid was passed to a running thread.
-    const ensureMessageBoxIsInitialised = thisTid;
+    cast(void)thisTid;
 
     bool notEmpty;
     static immutable almostInstant = 10.msecs;
@@ -398,7 +404,7 @@ void exhaustMessages()
     do
     {
         notEmpty = receiveTimeout(almostInstant,
-            (Variant v) {}
+            (Variant v) scope {}
         );
     }
     while (notEmpty);

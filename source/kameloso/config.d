@@ -2,10 +2,10 @@
     Functionality related to configuration; verifying it, correcting it,
     reading it from/writing it to disk, and parsing it from command-line arguments.
 
-    Employs the standard `std.getopt` to read arguments from the command line
+    Employs the standard [std.getopt] to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
-    function, like `dialect.defs.IRCClient`, `dialect.defs.IRCServer`,
-    `kameloso.kameloso.IRCBot` and `kameloso.kameloso.CoreSettings`.
+    function, like [dialect.defs.IRCClient], [dialect.defs.IRCServer],
+    [kameloso.kameloso.IRCBot] and [kameloso.kameloso.CoreSettings].
  +/
 module kameloso.config;
 
@@ -22,9 +22,9 @@ import std.typecons : Flag, No, Yes;
 
 // printHelp
 /++
-    Prints the `getopt` "helpWanted" help table to screen.
+    Prints the [std.getopt.getopt] "helpWanted" help table to screen.
 
-    Merely leverages `std.getopt.defaultGetoptPrinter` for the printing.
+    Merely leverages [std.getopt.defaultGetoptPrinter] for the printing.
 
     Example:
     ---
@@ -41,53 +41,17 @@ import std.typecons : Flag, No, Yes;
     ---
 
     Params:
-        results = Results from a `std.getopt.getopt` call.
-        monochrome = Whether or not terminal colours should be used.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adjusted to suit.
+        results = Results from a [std.getopt.getopt] call.
  +/
-void printHelp(GetoptResult results,
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" brightTerminal) @system
+void printHelp(GetoptResult results) @system
 {
     import kameloso.common : printVersionInfo;
+    import std.getopt : defaultGetoptPrinter;
     import std.stdio : writeln;
 
-    string pre, post;
+    printVersionInfo();
 
-    version(Colours)
-    {
-        import kameloso.terminal : TerminalForeground, colour;
-
-        if (!monochrome)
-        {
-            enum headertintColourBright = TerminalForeground.black.colour.idup;
-            enum headertintColourDark = TerminalForeground.white.colour.idup;
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = brightTerminal ? headertintColourBright : headertintColourDark;
-            post = defaulttintColour;
-        }
-    }
-
-    printVersionInfo(pre, post);
-    writeln();
-
-    string headline = "Command-line arguments available:\n";
-
-    version(Colours)
-    {
-        if (!monochrome)
-        {
-            import kameloso.terminal : TerminalForeground, colour;
-
-            immutable headlineTint = brightTerminal ?
-                TerminalForeground.green : TerminalForeground.lightgreen;
-            headline = headline.colour(headlineTint);
-        }
-    }
-
-    import std.getopt : defaultGetoptPrinter;
-    defaultGetoptPrinter(headline, results.options);
+    defaultGetoptPrinter(string.init, results.options);
     writeln();
     writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.");
     writeln();
@@ -97,17 +61,15 @@ void printHelp(GetoptResult results,
 // writeConfig
 /++
     Writes configuration to file, verbosely. Additionally gives some empty
-    settings default values.
-
-    The filename is read from `kameloso.common.settings`.
+    settings default values..
 
     Params:
-        instance = Reference to the current `kameloso.kameloso.Kameloso`.
-        client = Reference to the current `dialect.defs.IRCClient`.
-        server = Reference to the current `dialect.defs.IRCServer`.
-        bot = Reference to the current `kameloso.kameloso.IRCBot`.
+        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        client = Reference to the current [dialect.defs.IRCClient].
+        server = Reference to the current [dialect.defs.IRCServer].
+        bot = Reference to the current [kameloso.kameloso.IRCBot].
         customSettings = const string array to all the custom settings set
-            via `getopt`, to apply to things before saving to disk.
+            via [std.getopt.getopt], to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
@@ -122,22 +84,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     // --save was passed; write configuration to file and quit
 
-    string post;
-
-    version(Colours)
-    {
-        import kameloso.terminal : TerminalForeground;
-
-        if (!instance.settings.monochrome)
-        {
-            import kameloso.terminal : colour;
-
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            post = defaulttintColour;
-        }
-    }
-
-    printVersionInfo(Tint.log, post);
+    printVersionInfo();
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
@@ -155,7 +102,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
     {
-        logger.trace("---");
+        logger.trace();
         logger.log("Edit it and make sure it contains at least one of the following:");
         giveConfigurationMinimalIntructions();
     }
@@ -167,38 +114,17 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current `kameloso.kameloso.Kameloso`.
+        instance = Reference to the current [kameloso.kameloso.Kameloso].
         customSettings = Array of all the custom settings set
-            via `getopt`, to apply to things before saving to disk.
-        monochrome = Whether or not terminal colours should be used.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adjusted to suit.
+            via [std.getopt.getopt], to apply to things before saving to disk.
  +/
-void printSettings(ref Kameloso instance, const string[] customSettings,
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" brightTerminal) @system
+void printSettings(ref Kameloso instance, const string[] customSettings) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
-    string pre, post;
-
-    version(Colours)
-    {
-        import kameloso.terminal : TerminalForeground, colour;
-
-        if (!monochrome)
-        {
-            enum headertintColourBright = TerminalForeground.black.colour.idup;
-            enum headertintColourDark = TerminalForeground.white.colour.idup;
-            enum defaulttintColour = TerminalForeground.default_.colour.idup;
-            pre = brightTerminal ? headertintColourBright : headertintColourDark;
-            post = defaulttintColour;
-        }
-    }
-
-    printVersionInfo(pre, post);
+    printVersionInfo();
     writeln();
 
     printObjects!(No.all)(instance.parser.client, instance.bot,
@@ -213,19 +139,19 @@ void printSettings(ref Kameloso instance, const string[] customSettings,
 // manageConfigFile
 /++
     Writes and/or edits the configuration file. Broken out into a separate
-    function to lower the size of `handleGetopt`.
+    function to lower the size of [handleGetopt].
 
-    Takes bool parameters instead of `std.typecons.Flag`s to work with getopt bools.
+    Takes bool parameters instead of [std.typecons.Flag]s to work with getopt bools.
 
     Params:
-        instance = The current `kameloso.kameloso.Kameloso` instance.
+        instance = The current [kameloso.kameloso.Kameloso] instance.
         shouldWriteConfig = Writing to the configuration file was requested.
         shouldOpenEditor = Opening the configuration file in a text editor was requested.
         customSettings = Custom settings supplied at the command line, to be
-            passed to `writeConfig` when writing to the configuration file.
+            passed to [writeConfig] when writing to the configuration file.
 
     Throws:
-        `object.Exception` on unexpected platforms where we did not know how to
+        [object.Exception] on unexpected platforms where we did not know how to
         open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
@@ -240,9 +166,9 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         import std.process : execute;
 
         // Let exceptions (ProcessExceptions) fall through and get caught
-        // by `kameloso.kameloso.tryGetopt`.
+        // by [kameloso.kameloso.tryGetopt].
 
-        logger.logf("Attempting to open %s%s%s in a text editor ...",
+        logger.logf("Attempting to open %s%s%s in a text editor...",
             Tint.info, instance.settings.configFile, Tint.log);
 
         version(OSX)
@@ -306,7 +232,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.serialise(client, server, settings);
     immutable configText = sink.data.justifiedEntryValueText;
     writeToDisk("kameloso.conf", configText, Yes.addBanner);
@@ -350,16 +276,16 @@ void writeToDisk(const string filename, const string configurationText,
 /++
     Displays a hint on how to complete a minimal configuration file.
 
-    It assumes that the bot's `kameloso.kameloso.IRCBot.admins` and
-    `kameloso.kameloso.IRCBot.homeChannels` are both empty. (Else it should not have been called.)
+    It assumes that the bot's [kameloso.kameloso.IRCBot.admins] and
+    [kameloso.kameloso.IRCBot.homeChannels] are both empty. (Else it should not have been called.)
  +/
 void giveConfigurationMinimalIntructions()
 {
     import kameloso.common : Tint, logger;
 
-    logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
-        Tint.info, Tint.log);
-    logger.logf("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.log);
+    logger.tracef("...one or more %sadmins%s who get administrative control over the bot.",
+        Tint.info, Tint.trace);
+    logger.tracef("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.trace);
 }
 
 
@@ -379,9 +305,9 @@ void giveConfigurationMinimalIntructions()
         The contents of the supplied file.
 
     Throws:
-        `lu.common.FileTypeMismatchException` if the configuration file is a directory, a
+        [lu.common.FileTypeMismatchException] if the configuration file is a directory, a
         character file or any other non-file type we can't write to.
-        `lu.serialisation.ConfigurationFileReadFailureException` if the reading and decoding of
+        [lu.serialisation.ConfigurationFileReadFailureException] if the reading and decoding of
         the configuration file failed.
  +/
 string configurationText(const string configFile)
@@ -436,18 +362,18 @@ public:
     ---
 
     Params:
-        instance = Reference to the current `kameloso.kameloso.Kameloso`.
+        instance = Reference to the current [kameloso.kameloso.Kameloso].
         args = The command-line arguments the program was called with.
         customSettings = Out array of custom settings to apply on top of
             the settings read from the configuration file.
 
     Returns:
-        `lu.common.Next.continue_` or `lu.common.Next.returnSuccess`
+        [lu.common.Next.continue_] or [lu.common.Next.returnSuccess]
         depending on whether the arguments chosen mean the program should
         proceed or not.
 
     Throws:
-        `std.getopt.GetOptException` if an unknown flag is passed.
+        [std.getopt.GetOptException] if an unknown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
 {
@@ -471,7 +397,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         /+
             Call getopt on args once and look for any specified configuration files
             so we know what to read. As such it has to be done before the
-            `readConfigInto`  call. Then call getopt on the rest.
+            [readConfigInto]  call. Then call getopt on the rest.
             Include "c|config" in the normal getopt to have it automatically
             included in the --help text.
          +/
@@ -489,7 +415,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         if (shouldShowVersion)
         {
             // --version was passed; show version info and quit
-            printVersionInfo();
+            printVersionInfo(No.colours);
             return Next.returnSuccess;
         }
 
@@ -665,6 +591,10 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                         "Path to %scacert.pem%s certificate bundle, or equivalent"
                         .format(Tint.info, Tint.off),
                     &connSettings.caBundleFile,*/
+                "numeric",
+                    quiet ? string.init :
+                        "Use numeric output of addresses",
+                    &settings.numericAddresses,
                 "summary",
                     quiet ? string.init :
                         "Show a connection summary on program exit [%s%s%s]"
@@ -687,7 +617,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     quiet ? string.init :
                         text("Open the configuration file in a text editor " ~
                             "(or the default application used to open ", Tint.info,
-                            "*.conf", Tint.off, " files on your system"),
+                            "*.conf", Tint.off, " files on your system)"),
                     &shouldOpenEditor,
                 "version",
                     quiet ? string.init :
@@ -774,9 +704,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             // --help|-h was passed, show the help table and quit
             // It's okay to reuse args, it's probably empty save for arg0
             // and we just want the help listing
-            printHelp(callGetopt(args, No.quiet),
-                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            printHelp(callGetopt(args, No.quiet));
             return Next.returnSuccess;
         }
 
@@ -786,16 +714,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
             // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
-            writeln();  // pad slightly, for cosmetics
             return Next.returnSuccess;
         }
 
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            printSettings(instance, customSettings,
-                (instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-                (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            printSettings(instance, customSettings);
             return Next.returnSuccess;
         }
 
@@ -818,7 +743,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
     ---
 
     Params:
-        instance = Reference to the current `kameloso.kameloso.Kameloso`,
+        instance = Reference to the current [kameloso.kameloso.Kameloso],
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/
@@ -828,7 +753,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(4096);  // ~2234
 
     with (instance)
@@ -856,7 +781,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             }
         }
 
-        immutable justified = sink.data.justifiedEntryValueText;
+        immutable justified = sink.data.idup.justifiedEntryValueText;
         writeToDisk(filename, justified, Yes.addBanner);
     }
 }
@@ -891,7 +816,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     logger.logf("Use %s%s --save%s to regenerate the file, " ~
         "updating it with all available configuration. [%1$s%4$s%3$s]",
         Tint.info, binaryPath.baseName, Tint.log, configFile);
-    logger.warning("Mind that any settings belonging to unbuilt plugins will be LOST.");
+    logger.warning("Mind that any comments and/or sections belonging to unbuilt plugins will be removed.");
     logger.trace();
 }
 
@@ -913,7 +838,7 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     import std.file : exists;
     import std.path : baseName;
 
-    logger.warning("Warning: No administrators nor home channels configured!");
+    logger.info("No administrators nor home channels configured!");
 
     if (configFile.exists)
     {
@@ -938,13 +863,13 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     Nickname, user, GECOS/"real name", server address and server port are
     required. If there is no nickname, generate a random one. For any other empty values,
-    update them with relevant such from `kameloso.constants.KamelosoDefaults`
-    (and `kameloso.constants.KamelosoDefaultIntegers`).
+    update them with relevant such from [kameloso.constants.KamelosoDefaults]
+    (and [kameloso.constants.KamelosoDefaultIntegers]).
 
     Params:
-        client = Reference to the `dialect.defs.IRCClient` to complete.
-        server = Reference to the `dialect.defs.IRCServer` to complete.
-        bot = Reference to the `kameloso.kameloso.IRCBot` to complete.
+        client = Reference to the [dialect.defs.IRCClient] to complete.
+        server = Reference to the [dialect.defs.IRCServer] to complete.
+        bot = Reference to the [kameloso.kameloso.IRCBot] to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")
@@ -966,7 +891,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         client.nickname = "guest%03d".format(uniform(0, 1000));
     }
 
-    // If no client.user set, inherit from `kameloso.constants.KamelosoDefaults`.
+    // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults].
     if (!client.user.length)
     {
         client.user = KamelosoDefaults.user;
@@ -984,7 +909,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         server.address = KamelosoDefaults.serverAddress;
     }
 
-    // Ditto but `kameloso.constants.KamelosoDefaultIntegers`.
+    // Ditto but [kameloso.constants.KamelosoDefaultIntegers].
     if (server.port == 0)
     {
         server.port = KamelosoDefaultIntegers.port;
@@ -1041,7 +966,7 @@ unittest
     Exception, to be thrown when the specified configuration file could not be
     read, for whatever reason.
 
-    It is a normal `object.Exception` but with an attached filename string.
+    It is a normal [object.Exception] but with an attached filename string.
  +/
 final class ConfigurationFileReadFailureException : Exception
 {
@@ -1050,7 +975,7 @@ final class ConfigurationFileReadFailureException : Exception
     string filename;
 
     /++
-        Create a new `ConfigurationFileReadFailureException`, without attaching
+        Create a new [ConfigurationFileReadFailureException], without attaching
         a filename.
      +/
     this(const string message, const string file = __FILE__, const size_t line = __LINE__,
@@ -1060,7 +985,7 @@ final class ConfigurationFileReadFailureException : Exception
     }
 
     /++
-        Create a new `ConfigurationFileReadFailureException`, attaching a
+        Create a new [ConfigurationFileReadFailureException], attaching a
         filename.
      +/
     this(const string message, const string filename, const string file = __FILE__,
@@ -1121,7 +1046,7 @@ if (allSatisfy!(isStruct, T))
 // readConfigInto
 /++
     Reads a configuration file and applies the settings therein to passed objects.
-    Merely wraps the other `readConfigInto` overload and distinguishes itself
+    Merely wraps the other [readConfigInto] overload and distinguishes itself
     from it by not taking the two `string[][string]` out parameters it does.
 
     Params:

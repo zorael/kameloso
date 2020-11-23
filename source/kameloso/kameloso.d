@@ -1,5 +1,5 @@
 /++
-    Module for the main `Kameloso` instance struct and its settings structs.
+    Module for the main [Kameloso] instance struct and its settings structs.
  +/
 module kameloso.kameloso;
 
@@ -60,14 +60,14 @@ private:
 
 public:
     /++
-        The `kameloso.net.Connection` that houses and wraps the socket we use to connect
+        The [kameloso.net.Connection] that houses and wraps the socket we use to connect
         to, write to and read from the server.
      +/
     Connection conn;
 
     /++
         A runtime array of all plugins. We iterate these when we have finished
-        parsing an `dialect.defs.IRCEvent`, and call the relevant event
+        parsing an [dialect.defs.IRCEvent], and call the relevant event
         handlers of each.
      +/
     IRCPlugin[] plugins;
@@ -133,6 +133,14 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
 
+    /++
+        Buffer of outgoing message strings to be sent immediately.
+
+        The buffer size is "how many string pointers", now how many bytes. So
+        we can comfortably keep it arbitrarily high.
+     +/
+    Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
+
     version(TwitchSupport)
     {
         /++
@@ -159,13 +167,15 @@ public:
         lines are to be sent at once.
 
         Params:
-            Buffer = Buffer type, generally `lu.container.Buffer`.
+            Buffer = Buffer type, generally [lu.container.Buffer].
             buffer = Buffer instance.
             dryRun = Whether or not to send anything or just do a dry run,
-                incrementing the graph by `Throttle.increment`.
+                incrementing the graph by [Throttle.increment].
             sendFaster = On Twitch, whether or not we should throttle less and
                 send messages faster. Useful in some situations when rate-limiting
                 is more lax.
+            immediate = Whether or not the line should just be sent straight away,
+                ignoring throttling.
 
         Returns:
             The time remaining until the next message may be sent, so that we
@@ -173,7 +183,8 @@ public:
      +/
     double throttleline(Buffer)(ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
-        const Flag!"sendFaster" sendFaster = No.sendFaster) @system
+        const Flag!"sendFaster" sendFaster = No.sendFaster,
+        const Flag!"immediate" immediate = No.immediate) @system
     {
         with (throttle)
         {
@@ -207,30 +218,33 @@ public:
 
             while (!buffer.empty || dryRun)
             {
-                double x = (now - t0).total!"msecs"/1000.0;
-                double y = k * x + m;
-
-                if (y < 0.0)
+                if (!immediate)
                 {
+                    double x = (now - t0).total!"msecs"/1000.0;
+                    double y = k * x + m;
+
+                    if (y < 0.0)
+                    {
+                        t0 = now;
+                        x = 0.0;
+                        y = 0.0;
+                        m = 0.0;
+                    }
+
+                    if (y >= burst)
+                    {
+                        x = (now - t0).total!"msecs"/1000.0;
+                        y = k*x + m;
+                        return y;
+                    }
+
+                    m = y + increment;
                     t0 = now;
-                    x = 0.0;
-                    y = 0.0;
-                    m = 0.0;
                 }
-
-                if (y >= burst)
-                {
-                    x = (now - t0).total!"msecs"/1000.0;
-                    y = k*x + m;
-                    return y;
-                }
-
-                m = y + increment;
-                t0 = now;
 
                 if (dryRun) break;
 
-                if (!buffer.front.quiet)
+                if (settings.trace || !buffer.front.quiet)
                 {
                     bool printed;
 
@@ -276,7 +290,7 @@ public:
                 of unexpected configuration entries that did not belong.
 
         Throws:
-            `kameloso.plugins.common.IRCPluginSettingsException` on failure to apply custom settings.
+            [kameloso.plugins.common.IRCPluginSettingsException] on failure to apply custom settings.
      +/
     void initPlugins(const string[] customSettings,
         out string[][string] missingEntries,
@@ -299,7 +313,7 @@ public:
         state.abort = abort;
 
         // Instantiate all plugin classes found when introspecting the modules
-        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
+        // listed in the [kameloso.plugins.PluginModules] AliasSeq.
 
         plugins.reserve(PluginModules.length);
 
@@ -377,7 +391,7 @@ public:
     // initPlugins
     /++
         Resets and *minimally* initialises all plugins. Merely wraps the other
-        `initPlugins` overload and distinguishes itself from it by not taking
+        [initPlugins] overload and distinguishes itself from it by not taking
         the two `string[][string]` out parameters it does.
 
         Params:
@@ -395,7 +409,7 @@ public:
     /++
         Initialises all plugins' resource files.
 
-        This merely calls `kameloso.plugins.common.core.IRCPlugin.initResources` on
+        This merely calls [kameloso.plugins.common.core.IRCPlugin.initResources] on
         each plugin.
      +/
     void initPluginResources() @system
@@ -464,8 +478,8 @@ public:
         Start all plugins, loading any resources they may want and calling any
         module-level `start` functions.
 
-        This has to happen after `initPlugins` or there will not be any plugins
-        in the `plugins` array.
+        This has to happen after [initPlugins] or there will not be any plugins
+        in the [plugins] array.
      +/
     void startPlugins() @system
     {
@@ -480,10 +494,10 @@ public:
     // checkPluginForUpdates
     /++
         Propagates updated bots, clients, servers and/or settings, to `this`,
-        `parser`, and to all plugins.
+        [parser], and to all plugins.
 
         Params:
-            plugin = The plugin whose `kameloso.plugin.common.core.IRCPluginState`s
+            plugin = The plugin whose [kameloso.plugin.common.core.IRCPluginState]s
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
@@ -523,8 +537,8 @@ public:
 
     // propagate
     /++
-        Propgates an updated struct, to `this`, `parser`, and to each plugins'
-        `kameloso.plugin.common.core.IRCPluginState`s, overwriting existing such.
+        Propgates an updated struct, to `this`, [parser], and to each plugins'
+        [kameloso.plugin.common.core.IRCPluginState]s, overwriting existing such.
 
         Params:
             thing = Struct object to propagate.
@@ -588,6 +602,9 @@ public:
 
     /// History records of established connections this execution run.
     ConnectionHistoryEntry[] connectionHistory;
+
+    /// Set when the Socket read timeout was requested to be shortened.
+    bool wantReceiveTimeoutShortened;
 }
 
 
@@ -601,7 +618,7 @@ public:
 struct CoreSettings
 {
 private:
-    import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
+    import lu.uda : CannotContainComments, Quoted, Unserialisable;
 
 public:
     version(Colours)
@@ -647,13 +664,14 @@ public:
     @Quoted string prefix = "!";
 
     @Unserialisable
-    @Hidden
     {
         string configFile;  /// Main configuration file.
         string resourceDirectory;  /// Path to resource directory.
         string configDirectory;  /// Path to configuration directory.
         bool force;  /// Whether or not to force connecting, skipping some sanity checks.
         bool flush;  /// Whether or not to explicitly set stdout to flush after writing a linebreak to it.
+        bool trace = false;  /// Whether or not *all* outgoing messages should be echoed to the terminal.
+        bool numericAddresses;  /// Whether to print addresses as IPs or as hostnames (where applicable).
     }
 }
 
@@ -666,26 +684,24 @@ struct ConnectionSettings
 {
 private:
     import kameloso.constants : Timeout;
-    import lu.uda : CannotContainComments;
+    import lu.uda : CannotContainComments, Hidden;
 
 public:
-    /// Flag denoting whether or not the program should reconnect after disconnect.
-    bool reconnectOnFailure = true;
-
-    /// Whether to endlessly connect or whether to give up after a while.
-    bool endlesslyConnect = true;
-
     /// Whether to connect to IPv6 addresses or only use IPv4 ones.
     bool ipv6 = true;
 
-    /// Path to private (`.pem`) key file, used in SSL connections.
-    @CannotContainComments string privateKeyFile;
+    @CannotContainComments
+    @Hidden
+    {
+        /// Path to private (`.pem`) key file, used in SSL connections.
+        string privateKeyFile;
 
-    /// Path to certificate (`.pem`) file.
-    @CannotContainComments string certFile;
+        /// Path to certificate (`.pem`) file.
+        string certFile;
 
-    /// Path to certificate bundle `cacert.pem` file or equivalent.
-    @CannotContainComments string caBundleFile;
+        /// Path to certificate bundle `cacert.pem` file or equivalent.
+        string caBundleFile;
+    }
 
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;

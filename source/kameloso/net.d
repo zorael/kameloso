@@ -1,10 +1,10 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes `core.thread.fiber.Fiber`s that help with resolving the address of,
+    Includes [core.thread.fiber.Fiber]s that help with resolving the address of,
     connecting to, and reading full string lines from a server.
 
-    Having them as `core.thread.fiber.Fiber`s means a program can do address resolution,
+    Having them as [core.thread.fiber.Fiber]s means a program can do address resolution,
     connecting and reading while retaining the ability to do other stuff
     concurrently. This means you can conveniently run code inbetween each
     connection attempt, for instance, without breaking the program's flow.
@@ -101,18 +101,18 @@ private:
     SSL_CTX* sslContext;
 
     /++
-        OpenSSL `SSL` instance, for use with SSL connections.
+        OpenSSL [requests.ssl_adapter.SSL] instance, for use with SSL connections.
      +/
     SSL* sslInstance;
 
 
     // setTimemout
     /++
-        Sets the `std.socket.SocketOption.RCVTIMEO` of the *current*
-        `std.socket.Socket` `socket` to the specified duration.
+        Sets the [std.socket.SocketOption.RCVTIMEO] of the *current*
+        [std.socket.Socket] [socket] to the specified duration.
 
         Params:
-            option = The `std.socket.SocketOption` to set.
+            option = The [std.socket.SocketOption] to set.
             dur = The duration to assign for the option, in number of milliseconds.
      +/
     void setTimeout(const SocketOption option, const uint dur)
@@ -129,21 +129,21 @@ private:
 
 public:
     /++
-        Pointer to the socket of the `std.socket.AddressFamily` we want to connect with.
+        Pointer to the socket of the [std.socket.AddressFamily] we want to connect with.
      +/
     Socket socket;
 
     /++
-        Whether or not this `Connection` should use SSL when sending and receiving.
+        Whether or not this [Connection] should use SSL when sending and receiving.
      +/
     bool ssl;
 
-    /// IPs already resolved using `kameloso.net.resolveFiber`.
+    /// IPs already resolved using [kameloso.net.resolveFiber].
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current `socket`. This successfully
-        proxies to `std.socket.Socket.receive`.
+        Implicitly proxies calls to the current [std.socket.Socket]. This successfully
+        proxies to [std.socket.Socket.receive].
      +/
     alias socket this;
 
@@ -168,7 +168,7 @@ public:
         Accessor; returns the current send timeout.
 
         Returns:
-            A copy of `privateSendTimeout`.
+            A copy of [privateSendTimeout].
      +/
     pragma(inline, true)
     uint sendTimeout() const @property pure @nogc nothrow
@@ -196,7 +196,7 @@ public:
         Accessor; returns the current receive timeout.
 
         Returns:
-            A copy of `privateReceiveTimeout`.
+            A copy of [privateReceiveTimeout].
      +/
     pragma(inline, true)
     uint receiveTimeout() const @property pure @nogc nothrow
@@ -250,7 +250,7 @@ public:
 
     // resetSSL
     /++
-        Resets the SSL context and resources of this `Connection`.
+        Resets the SSL context and resources of this [Connection].
      +/
     void resetSSL() @system
     in (ssl, "Tried to reset SSL on a non-SSL `Connection`")
@@ -285,11 +285,11 @@ public:
 
     // setDefaultOptions
     /++
-        Sets up sockets with the `std.socket.SocketOptions` needed. These
+        Sets up sockets with the [std.socket.SocketOptions] needed. These
         include timeouts and buffer sizes.
 
         Params:
-            socketToSetup = Reference to the `socket` to modify.
+            socketToSetup = Reference to the [std.socket.Socket] to modify.
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
@@ -318,7 +318,7 @@ public:
         Sets up the SSL context for this connection.
 
         Throws:
-            `SSLException` if the SSL context could not be set up.
+            [SSLException] if the SSL context could not be set up.
      +/
     void setupSSL() @system
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
@@ -389,7 +389,7 @@ public:
     void sendline(uint maxLineLength = 512, Data...)(const Data data) @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
-        int remainingMaxLength = (maxLineLength - 1);
+        int remainingMaxLength = (maxLineLength - 2);
         bool justSentNewline;
 
         foreach (immutable piece; data)
@@ -418,12 +418,12 @@ public:
                         if (ssl)
                         {
                             openssl.SSL_write(sslInstance, cast(void*)&line[0], cast(int)end);
-                            openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
+                            openssl.SSL_write(sslInstance, cast(void*)&"\r\n"[0], 2);
                         }
                         else
                         {
                             socket.send(line[0..end]);
-                            socket.send("\n");
+                            socket.send("\r\n");
                         }
 
                         justSentNewline = true;
@@ -440,7 +440,6 @@ public:
                     if (ssl)
                     {
                         openssl.SSL_write(sslInstance, cast(void*)&piece[0], cast(int)end);
-                        openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
                     }
                     else
                     {
@@ -473,11 +472,11 @@ public:
         {
             if (ssl)
             {
-                openssl.SSL_write(sslInstance, cast(void*)&"\n"[0], 1);
+                openssl.SSL_write(sslInstance, cast(void*)&"\r\n"[0], 2);
             }
             else
             {
-                socket.send("\n");
+                socket.send("\r\n");
             }
         }
     }
@@ -509,8 +508,11 @@ struct ListenAttempt
     /// The last read line of text sent by the server.
     string line;
 
-    /// The `std.socket.lastSocketError` at the last point of error.
+    /// The [std.socket.lastSocketError] at the last point of error.
     string error;
+
+    /// [core.stdc.errno.errno] at time of read.
+    int errno;
 
     /// The amount of bytes received this attempt.
     long bytesReceived;
@@ -519,14 +521,14 @@ struct ListenAttempt
 
 // listenFiber
 /++
-    A `std.socket.Socket`-reading `std.concurrency.Generator`. It reads and
+    A [std.socket.Socket]-reading [std.concurrency.Generator]. It reads and
     yields full string lines.
 
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
-    finds a newline character, yields `ListenAttempt`s back to the caller of
+    finds a newline character, yields [ListenAttempt]s back to the caller of
     the Fiber, checks for more lines to yield, and if none yields an attempt
-    with a `ListenAttempt.State` denoting that nothing was read and that a new
+    with a [ListenAttempt.State] denoting that nothing was read and that a new
     attempt should be made later.
 
     Example:
@@ -575,15 +577,15 @@ struct ListenAttempt
 
     Params:
         bufferSize = What size static array to use as buffer. Defaults to
-            twice of `kameloso.constants.BufferSize.socketReceive` for now.
-        conn = `Connection` whose `std.socket.Socket` it reads from the server with.
+            twice of [kameloso.constants.BufferSize.socketReceive] for now.
+        conn = [Connection] whose [std.socket.Socket] it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the `core.thread.fiber.Fiber` terminate.
+            function return and the [core.thread.fiber.Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
-            Optional, defaults to `kameloso.constants.Timeout.connectionLost`.
+            Optional, defaults to [kameloso.constants.Timeout.connectionLost].
 
     Yields:
-        `ListenAttempt`s with information about the line receieved in its member values.
+        [ListenAttempt]s with information about the line receieved in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn, ref bool abort, const int connectionLost = Timeout.connectionLost) @system
@@ -625,21 +627,6 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             attempt.bytesReceived = conn.receive(buffer[start..$]);
         }
 
-        version(Posix)
-        {
-            import core.stdc.errno : EINTR, errno;
-
-            if (errno == EINTR)
-            {
-                // Interrupted read; try again
-                // Unlucky callgrind_control -d timing
-                attempt.state = State.isEmpty;
-                attempt.error = lastSocketError;
-                yield(attempt);
-                continue;
-            }
-        }
-
         if (!attempt.bytesReceived)
         {
             attempt.state = State.error;
@@ -648,10 +635,65 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             // Should never get here
             assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
         }
-        else if (attempt.bytesReceived == Socket.ERROR)
-        {
-            attempt.error = lastSocketError;
 
+        version(Posix)
+        {
+            import core.stdc.errno : EAGAIN, ECONNRESET, EINTR, ENETDOWN,
+                ENETUNREACH, ENOTCONN, EWOULDBLOCK, errno;
+
+            // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+
+            enum Errno
+            {
+                timedOut = EAGAIN,
+                wouldBlock = EWOULDBLOCK,
+                netDown = ENETDOWN,
+                netUnreachable = ENETUNREACH,
+                endpointNotConnected = ENOTCONN,
+                connectionReset = ECONNRESET,
+                interrupted = EINTR,
+            }
+
+            attempt.errno = errno;
+        }
+        else version(Windows)
+        {
+            import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
+                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, WSAGetLastError;
+
+            // https://www.hardhats.org/cs/broker/docs/winsock.html
+            // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
+
+            enum Errno
+            {
+                timedOut = WSAETIMEDOUT,
+                wouldBlock = WSAEWOULDBLOCK,
+                netDown = WSAENETDOWN,
+                netUnreachable = WSAENETUNREACH,
+                endpointNotConnected = WSAENOTCONN,
+                connectionReset = WSAECONNRESET,
+                interrupted = WSAEINTR,
+            }
+
+            attempt.errno = WSAGetLastError();
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
+
+        if (attempt.errno == Errno.interrupted)
+        {
+            // Interrupted read; try again
+            // Unlucky callgrind_control -d timing
+            attempt.state = State.isEmpty;
+            attempt.error = lastSocketError;
+            yield(attempt);
+            continue;
+        }
+
+        if (attempt.bytesReceived == Socket.ERROR)
+        {
             if ((Clock.currTime.toUnixTime - timeLastReceived) > connectionLost)
             {
                 attempt.state = State.timeout;
@@ -661,40 +703,46 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                     "(received error, elapsed > timeout)");
             }
 
-            switch (attempt.error)
+            with (Errno)
+            switch (attempt.errno)
             {
-            version(Windows)
-            {
-                case "A connection attempt failed because the connected party did not " ~
-                    "properly respond after a period of time, or established connection " ~
-                    "failed because connected host has failed to respond.":
-                    // Timed out read in Windows
-                case "A non-blocking socket operation could not be completed immediately.":
-                    // Sporadic Cygwin error
-                    goto case;
-            }
-            case "Resource temporarily unavailable":
-                // Nothing received
-            //case "Interrupted system call":
+            case timedOut:
+                // Resource temporarily unavailable
+                /*
+                    A connection attempt failed because the connected party did not
+                    properly respond after a period of time, or established connection
+                    failed because connected host has failed to respond.
+                 */
+                // Timed out, nothing received
                 attempt.state = State.isEmpty;
                 yield(attempt);
                 continue;
 
-            // Others that may be benign?
-            version(Windows)
+            static if (int(timedOut) != int(wouldBlock))
             {
-                case "An established connection was aborted by the software in your host machine.":
-                    goto case;
+                case wouldBlock:
+                    /+
+                        Portability Note: In many older Unix systems ...
+                        [EWOULDBLOCK was] a distinct error code different from
+                        EAGAIN. To make your program portable, you should check
+                        for both codes and treat them the same.
+                     +/
+                    // A non-blocking socket operation could not be completed immediately.
+                    goto case timedOut;
             }
-            case "An existing connection was forcibly closed by the remote host.":  // Windows-only?
-            case "Connection reset by peer":
-            case "Transport endpoint is not connected":  // IPv6/IPv4 connection/socket mismatch
+
+            case netDown:
+            case netUnreachable:
+            case endpointNotConnected:
+            case connectionReset:
+                attempt.error = lastSocketError;
                 attempt.state = State.error;
                 yield(attempt);
                 // Should never get here
                 assert(0, "Dead `listenFiber` resumed after yield (`lastSocketError` error)");
 
             default:
+                attempt.error = lastSocketError;
                 attempt.state = State.warning;
                 yield(attempt);
                 continue;
@@ -710,7 +758,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         while (newline != -1)
         {
             attempt.state = State.hasString;
-            attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;
+            attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;  // eat \r before \n
             yield(attempt);
             pos += (newline + 1); // eat remaining newline
             newline = (cast(char[])buffer[pos..end]).indexOf('\n');
@@ -767,7 +815,10 @@ struct ConnectionAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// The number of retries so far towards this `ip`.
+    /// [core.stdc.errno.errno] at time of connect.
+    int errno;
+
+    /// The number of retries so far towards this [ip].
     uint retryNum;
 }
 
@@ -775,7 +826,7 @@ struct ConnectionAttempt
 // connectFiber
 /++
     Fiber function that tries to connect to IPs in the `ips` array of the passed
-    `Connection`, yielding at certain points throughout the process to let the
+    [Connection], yielding at certain points throughout the process to let the
     calling function do stuff inbetween connection attempts.
 
     Example:
@@ -824,15 +875,13 @@ struct ConnectionAttempt
     ---
 
     Params:
-        conn = Reference to the current, unconnected `Connection`.
-        endlesslyConnect = Whether or not to endlessly try connecting.
+        conn = Reference to the current, unconnected [Connection].
         connectionRetries = How many times to attempt to connect before signaling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the `core.thread.fiber.Fiber` terminate.
+            function return and the [core.thread.fiber.Fiber] terminate.
  +/
-void connectFiber(ref Connection conn, const bool endlesslyConnect,
-    const uint connectionRetries, ref bool abort) @system
+void connectFiber(ref Connection conn, const uint connectionRetries, ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -903,9 +952,49 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 }
                 catch (SocketException e)
                 {
-                    switch (e.msg)
+                    version(Posix)
                     {
-                    case "Unable to connect socket: Address family not supported by protocol":
+                        import core.stdc.errno : EAFNOSUPPORT, ECONNREFUSED,
+                            EHOSTUNREACH, ENETUNREACH, errno;
+
+                        // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+
+                        enum Errno
+                        {
+                            addressFamilyNoSupport = EAFNOSUPPORT,
+                            connectionRefused = ECONNREFUSED,
+                            noRouteToHost = EHOSTUNREACH,
+                            networkUnreachable = ENETUNREACH,
+                        }
+
+                        attempt.errno = errno;
+                    }
+                    else version(Windows)
+                    {
+                        import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAECONNREFUSED,
+                            WSAEHOSTUNREACH, WSAENETUNREACH, WSAGetLastError;
+
+                        enum Errno
+                        {
+                            addressFamilyNoSupport = WSAEAFNOSUPPORT,
+                            connectionRefused = WSAECONNREFUSED,
+                            noRouteToHost = WSAEHOSTUNREACH,
+                            networkUnreachable = WSAENETUNREACH,
+                        }
+
+                        attempt.errno = WSAGetLastError();
+                    }
+                    else
+                    {
+                        static assert(0, "Unsupported platform, please file a bug.");
+                    }
+
+                    with (Errno)
+                    switch (attempt.errno)
+                    {
+                    case addressFamilyNoSupport:
+                        // Address family not supported by protocol
+                        // An address incompatible with the requested protocol was used.
                         if (isIPv6)
                         {
                             ipv6IsFailing = true;
@@ -917,23 +1006,30 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                         else
                         {
                             // Just treat it as a normal error
-                            goto case;// "Unable to connect socket: Connection refused";
+                            goto case;
                         }
 
-                    // Add more as necessary
-                    case "Unable to connect socket: Connection refused":
+                    case connectionRefused:
+                        // Connection refused
+                        // No connection could be made because the target machine actively refused it.
                         attempt.state = State.error;
                         attempt.error = e.msg;
                         yield(attempt);
                         // Should never get here
                         assert(0, "Dead `connectFiber` resumed after yield");
 
-                    //case "Unable to connect socket: Network is unreachable":
+                    //case noRouteToHost:
+                        // No route to host
+                        // A socket operation was attempted to an unreachable host.
+                    //case networkUnreachable:
+                        // Network is unreachable
+                        // A socket operation was attempted to an unreachable network.
                     default:
                         // Don't delay for retrying on the last retry, drop down below
                         if (retry+1 < connectionRetries)
                         {
                             attempt.state = State.delayThenReconnect;
+                            attempt.error = e.msg;
                             yield(attempt);
                         }
                         break;
@@ -960,7 +1056,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
             }
         }
     }
-    while (!abort && endlesslyConnect);
+    while (!abort);
 
     // All IPs exhausted
     ConnectionAttempt endAttempt;
@@ -995,6 +1091,9 @@ struct ResolveAttempt
     /// The error message as thrown by an exception.
     string error;
 
+    /// [core.stdc.errno.errno] at time of resolve.
+    int errno;
+
     /// The number of retries so far towards this address.
     uint retryNum;
 }
@@ -1003,7 +1102,7 @@ struct ResolveAttempt
 // resolveFiber
 /++
     Given an address and a port, resolves these and populates the array of unique
-    `std.socket.Address` IPs inside the passed `Connection`.
+    `std.socket.Address` IPs inside the passed [Connection].
 
     Example:
     ---
@@ -1053,21 +1152,20 @@ struct ResolveAttempt
     ---
 
     Params:
-        conn = Reference to the current `Connection`.
+        conn = Reference to the current [Connection].
         address = String address to look up.
-        port = Remote port build into the `std.socket.Address`.
+        port = Remote port build into the [std.socket.Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
-        resolveAttempts = How many times to try resolving before giving up.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the `core.thread.fiber.Fiber` terminate.
+            function return and the [core.thread.fiber.Fiber] terminate.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
-    const bool useIPv6, const uint resolveAttempts, ref bool abort) @system
+    const bool useIPv6, ref bool abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
     import std.concurrency : yield;
-    import std.socket : AddressFamily, SocketException, getAddress;
+    import std.socket : AddressFamily, SocketOSException, getAddress;
 
     if (abort) return;
 
@@ -1075,22 +1173,22 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     yield(ResolveAttempt.init);
 
-    foreach (immutable i; 0..resolveAttempts)
+    for (uint i; (i >= 0); ++i)
     {
         if (abort) return;
 
         ResolveAttempt attempt;
         attempt.retryNum = i;
 
-        with (AddressFamily)
         try
         {
             import std.algorithm.iteration : filter, uniq;
             import std.array : array;
 
             conn.ips = getAddress(address, port)
-                .filter!(ip => (ip.addressFamily == INET) || ((ip.addressFamily == INET6) && useIPv6))
-                .uniq!((a,b) => a.toString == b.toString)
+                .filter!(ip => (ip.addressFamily == AddressFamily.INET) ||
+                    ((ip.addressFamily == AddressFamily.INET6) && useIPv6))
+                .uniq!((a,b) => a.toAddrString == b.toAddrString)
                 .array;
 
             attempt.state = State.success;
@@ -1098,19 +1196,86 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             // Should never get here
             assert(0, "Dead `resolveFiber` resumed after yield");
         }
-        catch (SocketException e)
+        catch (SocketOSException e)
         {
-            switch (e.msg)
+            attempt.errno = e.errorCode;
+
+            version(Posix)
             {
-            case "getaddrinfo error: Name or service not known":
-            case "getaddrinfo error: Temporary failure in name resolution":
-            case "getaddrinfo error: No such host is known.":
+                import core.sys.posix.netdb : EAI_AGAIN, EAI_FAIL, EAI_FAMILY,
+                    EAI_NONAME, EAI_SOCKTYPE, EAI_SYSTEM;
+
+                enum EAI_NODATA = -5;
+
+                // https://stackoverflow.com/questions/4395919/linux-system-call-getaddrinfo-return-2
+
+                enum AddrInfoErrors
+                {
+                    //badFlags   = EAI_BADFLAGS,     /** Invalid value for `ai_flags` field. */
+                    noName       = EAI_NONAME,       /** NAME or SERVICE is unknown. */
+                    again        = EAI_AGAIN,        /** Temporary failure in name resolution. */
+                    fail         = EAI_FAIL,         /** Non-recoverable failure in name res. */
+                    noData       = EAI_NODATA,       /** No address associated with NAME. (GNU) */
+                    family       = EAI_FAMILY,       /** `ai_family` not supported. */
+                    sockType     = EAI_SOCKTYPE,     /** `ai_socktype` not supported. */
+                    //service    = EAI_SERVICE,      /** SERVICE not supported for `ai_socktype`. */
+                    //addrFamily = EAI_ADDRFAMILY,   /** Address family for NAME not supported. (GNU) */
+                    //memory     = EAI_MEMORY,       /** Memory allocation failure. */
+                    system       = EAI_SYSTEM,       /** System error returned in `errno`. */
+                    //overflow   = EAI_OVERFLOW,     /** Argument buffer overflow. */
+                }
+            }
+            else version(Windows)
+            {
+                import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAESOCKTNOSUPPORT,
+                    WSAHOST_NOT_FOUND, WSANO_DATA, WSANO_RECOVERY, WSATRY_AGAIN;
+
+                // https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
+
+                enum AddrInfoErrors
+                {
+                    //badFlags   = WSAEINVAL,            /** An invalid value was provided for the `ai_flags` member of the `pHints` parameter. */
+                    noName       = WSAHOST_NOT_FOUND,    /** The name does not resolve for the supplied parameters or the `pNodeName` and `pServiceName` parameters were not provided. */
+                    again        = WSATRY_AGAIN,         /** A temporary failure in name resolution occurred. */
+                    fail         = WSANO_RECOVERY,       /** A nonrecoverable failure in name resolution occurred. */
+                    noData       = WSANO_DATA,
+                    family       = WSAEAFNOSUPPORT,      /** The 'ai_family' member of the `pHints` parameter is not supported. */
+                    sockType     = WSAESOCKTNOSUPPORT,   /** The `ai_socktype` member of the `pHints` parameter is not supported. */
+                    //service    = WSATYPE_NOT_FOUND,    /** The `pServiceName` parameter is not supported for the specified `ai_socktype` member of the `pHints` parameter. */
+                    //addrFamily = ?,
+                    //memory     = WSANOT_ENOUGH_MEMORY, /** A memory allocation failure occurred. */
+                    //system     = ?,
+                    //overflow   = ?,
+                }
+            }
+            else
+            {
+                static assert(0, "Unsupported platform, please file a bug.");
+            }
+
+            with (AddrInfoErrors)
+            switch (attempt.errno)
+            {
+            case noName:
+            case again:
                 // Assume net down, wait and try again
                 attempt.state = State.exception;
                 attempt.error = e.msg;
                 yield(attempt);
                 continue;
 
+            version(Posix)
+            {
+                case system:
+                    import core.stdc.errno : errno;
+                    attempt.errno = errno;
+                    goto default;
+            }
+
+            //case noData:
+            //case fail:
+            //case family:
+            //case sockType:
             default:
                 attempt.state = State.error;
                 attempt.error = e.msg;
@@ -1121,9 +1286,11 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
         }
     }
 
-    ResolveAttempt endAttempt;
+    // This doesn't really happen at present. Subject to change, so keep it here.
+    /*ResolveAttempt endAttempt;
     endAttempt.state = State.failure;
-    yield(endAttempt);
+    yield(endAttempt);*/
+    assert(0, "Broke out of unending `for` loop in `resolveFiber`");
 }
 
 

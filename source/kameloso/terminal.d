@@ -6,7 +6,7 @@
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     // Output range version
     sink.put("Hello ");
@@ -331,14 +331,6 @@ enum TerminalReset
 // isAColourCode
 /++
     Bool of whether or not a type is a colour code enum.
-
-    The `is(T == int)` is unfortunate but it's needed to be able to have statements like:
-
-    ---
-    sink.colourWith(bright ? Bright.error : Dark.error);
-    ---
-
-    ...where `Dark` and `Bright` are two different enums.
  +/
 enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
                         is(T : TerminalFormat) || is(T : TerminalReset);/* ||
@@ -347,9 +339,9 @@ enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground)
 
 // colour
 /++
-    Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
-    `TerminalFormat` and/or a `TerminalReset` and composes them into a single
-    terminal format code token. Overload that creates an `std.array.Appender`
+    Takes a mix of a [TerminalForeground], a [TerminalBackground], a
+    [TerminalFormat] and/or a [TerminalReset] and composes them into a single
+    terminal format code token. Overload that creates an [std.array.Appender]
     and fills it with the return value of the output range version of `colour`.
 
     Example:
@@ -381,14 +373,14 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
 // colourWith
 /++
-    Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
-    `TerminalFormat` and/or a `TerminalReset` and composes them into a format code token.
+    Takes a mix of a [TerminalForeground], a [TerminalBackground], a
+    [TerminalFormat] and/or a [TerminalReset] and composes them into a format code token.
 
     This is the composing overload that fills its result into an output range.
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.colourWith(TerminalForeground.red, TerminalFormat.bold);
     sink.put("Foo");
     sink.colourWith(TerminalForeground.default_, TerminalReset.bold);
@@ -701,7 +693,7 @@ unittest
 
     Example:
     ---
-    Appender!string sink;
+    Appender!(char[]) sink;
     int r, g, b;
     numFromHex("3C507D", r, g, b);
     sink.truecolour(r, g, b);
@@ -861,7 +853,7 @@ string invert(Flag!"caseSensitive" caseSensitive = Yes.caseSensitive)
     immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.format,
         TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(line.length + 16);
     string slice = line;  // mutable
 
@@ -1074,15 +1066,15 @@ unittest
 
 // colourByHash
 /++
-    Hashes the passed string and picks a `TerminalForeground` colour by modulo.
-    Overload that takes an array of `TerminalForeground`s, to pick between.
+    Hashes the passed string and picks a [TerminalForeground] colour by modulo.
+    Overload that takes an array of [TerminalForeground]s, to pick between.
 
     Params:
         word = String to hash and base colour on.
-        fgArray = Array of `TerminalForeground`s to pick a colour from.
+        fgArray = Array of [TerminalForeground]s to pick a colour from.
 
     Returns:
-        A `TerminalForeground` based on the passed string, picked from the
+        A [TerminalForeground] based on the passed string, picked from the
             passed `fgArray` array.
  +/
 TerminalForeground colourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
@@ -1124,7 +1116,7 @@ unittest
 
 // colourByHash
 /++
-    Hashes the passed string and picks a `TerminalForeground` colour by modulo.
+    Hashes the passed string and picks a [TerminalForeground] colour by modulo.
     Overload that picks any colour, taking care not to pick black or white based on
     the value of the passed `bright` bool (which signifies a bright terminal background).
 
@@ -1139,7 +1131,7 @@ unittest
         bright = Whether or not the colour should be appropriate for a bright terminal background.
 
     Returns:
-        A `TerminalForeground` based on the passed string.
+        A [TerminalForeground] based on the passed string.
  +/
 version(Colours)
 TerminalForeground colourByHash(const string word,

@@ -50,19 +50,19 @@ public:
     @Unserialisable
     {
         /++
-            Toggles whether `onAnyEvent` prints the raw strings of all incoming
+            Toggles whether [onAnyEvent] prints the raw strings of all incoming
             events or not.
          +/
         bool printRaw;
 
         /++
-            Toggles whether `onAnyEvent` prints the raw bytes of the *contents*
+            Toggles whether [onAnyEvent] prints the raw bytes of the *contents*
             of events or not.
          +/
         bool printBytes;
 
         /++
-            Toggles whether `onAnyEvent` prints assert statements for incoming
+            Toggles whether [onAnyEvent] prints assert statements for incoming
             events or not.
          +/
         bool printAsserts;
@@ -75,13 +75,13 @@ public:
     Prints incoming events to the local terminal, in forms depending on
     which flags have been set with bot commands.
 
-    If `AdminPlugin.printRaw` is set by way of invoking `onCommandPrintRaw`,
+    If [AdminPlugin.printRaw] is set by way of invoking [onCommandPrintRaw],
     prints all incoming server strings.
 
-    If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
+    If [AdminPlugin.printBytes] is set by way of invoking [onCommandPrintBytes],
     prints all incoming server strings byte by byte.
 
-    If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintRaw`,
+    If [AdminPlugin.printAsserts] is set by way of invoking [onCommandPrintRaw],
     prints all incoming events as assert statements, for use in generating source
     code `unittest` blocks.
  +/
@@ -99,7 +99,7 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
 /++
     Prints the details of one or more specific, supplied users to the local terminal.
 
-    It basically prints the matching `dialect.defs.IRCUser`.
+    It basically prints the matching [dialect.defs.IRCUser].
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -129,7 +129,6 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "save")
-@BotCommand(PrefixPolicy.nickname, "writeconfig", Yes.hidden)
 @Description("Saves current configuration to disk.")
 void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -142,8 +141,8 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandShowUsers
 /++
-    Prints out the current `users` array of the `AdminPlugin`'s
-    `kameloso.plugins.common.core.IRCPluginState` to the local terminal.
+    Prints out the current `users` array of the [AdminPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState] to the local terminal.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -182,7 +181,7 @@ void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandQuit
 /++
-    Sends a `dialect.defs.IRCEvent.Type.QUIT` event to the server.
+    Sends a [dialect.defs.IRCEvent.Type.QUIT] event to the server.
 
     If any extra text is following the "quit" command, it uses that as the quit
     reason. Otherwise it falls back to what is specified in the configuration file.
@@ -204,10 +203,10 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandHome
 /++
     Adds or removes channels to/from the list of currently active home channels, in the
-    `kameloso.kameloso.IRCBot.homeChannels` array of the current `AdminPlugin`'s
-    `kameloso.plugins.common.core.IRCPluginState`.
+    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState].
 
-    Merely passes on execution to `addHome` and `delHome`.
+    Merely passes on execution to [addHome] and [delHome].
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -261,14 +260,14 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 // addHome
 /++
     Adds a channel to the list of currently active home channels, in the
-    `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
-    `kameloso.plugins.common.core.IRCPluginState`.
+    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState].
 
-    Follows up with a `core.thread.fiber.Fiber` to verify that the channel was actually joined.
+    Follows up with a [core.thread.fiber.Fiber] to verify that the channel was actually joined.
 
     Params:
-        plugin = The current `AdminPlugin`.
-        event = The triggering `dialect.defs.IRCEvent`.
+        plugin = The current [AdminPlugin].
+        event = The triggering [dialect.defs.IRCEvent].
         rawChannel = The channel to be added, potentially in unstripped, cased form.
  +/
 void addHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
@@ -408,8 +407,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 // delHome
 /++
     Removes a channel from the list of currently active home channels, from the
-    `dialect.defs.IRCClient.homeChannels` array of the current `AdminPlugin`'s
-    `kameloso.plugins.common.core.IRCPluginState`.
+    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState].
  +/
 void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -453,10 +452,10 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 // onCommandWhitelist
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
-    `dialect.defs.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
-    `kameloso.plugins.common.core.IRCPluginState`.
+    [dialect.defs.IRCClient.Class.whitelist] of the current [AdminPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState].
 
-    This is on a `kameloso.plugins.common.core.PrivilegeLevel.operator` level.
+    This is on a [kameloso.plugins.common.core.PrivilegeLevel.operator] level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -514,9 +513,9 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated `kameloso.plugins.common.core.PrivilegeLevel.ignore`.
+    except on actions annotated [kameloso.plugins.common.core.PrivilegeLevel.ignore].
 
-    This is on a `kameloso.plugins.common.core.PrivilegeLevel.operator` level.
+    This is on a [kameloso.plugins.common.core.PrivilegeLevel.operator] level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -635,7 +634,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
     if (!event.content.length)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "No channels to join supplied ...");
+            "No channels to join supplied...");
         return;
     }
 
@@ -666,7 +665,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
     if (!event.content.length)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "No channels to part supplied ...");
+            "No channels to part supplied...");
         return;
     }
 
@@ -733,7 +732,7 @@ void onSetCommand(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onCommandAuth
 /++
-    Asks the `kameloso.plugins.connect.ConnectService` to (re-)authenticate to services.
+    Asks the [kameloso.plugins.connect.ConnectService] to (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEvent.Type.CHAN)
@@ -796,7 +795,7 @@ void onCommandSummary(AdminPlugin plugin)
 }
 
 
-// cycle
+// onCommandCycle
 /++
     Cycles (parts and immediately rejoins) a channel.
  +/
@@ -805,40 +804,64 @@ void onCommandSummary(AdminPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "cycle")
-@Description("Cycles (parts and immediately rejoins) a channel.")
+@Description("Cycles (parts and rejoins) a channel.",
+    "$command [optional channel] [optional delay] [optional key(s)]")
 void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom;
+    import std.conv : ConvException, text, to;
 
     string slice = event.content;  // mutable
 
-    immutable channelName = slice.length ?
-        slice.nom!(Yes.inherit)(' ') :
-        event.channel;
+    if (!slice.length)
+    {
+        return cycle(plugin, event.channel);
+    }
 
-    if (event.content.length && (channelName !in plugin.state.channels))
+    immutable channelName = slice.nom!(Yes.inherit)(' ');
+
+    if (channelName !in plugin.state.channels)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "I am not in that channel.");
         return;
     }
 
-    cycle(plugin, channelName, slice);
+    if (!slice.length)
+    {
+        return cycle(plugin, channelName);
+    }
+
+    immutable delaystring = slice.nom!(Yes.inherit)(' ');
+
+    try
+    {
+        immutable delay = delaystring.to!uint;
+        return cycle(plugin, channelName, delay, slice);
+    }
+    catch (ConvException e)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname,
+            text(`"`, slice, `" is not a valid number for seconds to delay.`));
+        return;
+    }
 }
 
 
 // cycle
 /++
-    Implementation of cycling, called by `onCommandCycle`
+    Implementation of cycling, called by [onCommandCycle]
 
     Params:
-        plugin = The current `AdminPlugin`.
+        plugin = The current [AdminPlugin].
         channelName = The name of the channel to cycle.
+        delaySecs = Number of second to delay rejoining.
         key = The key to use when rejoining the channel.
  +/
-void cycle(AdminPlugin plugin, const string channelName, const string key = string.init)
+void cycle(AdminPlugin plugin, const string channelName,
+    const uint delaySecs = 0, const string key = string.init)
 {
-    import kameloso.plugins.common.delayawait : await;
+    import kameloso.plugins.common.delayawait : await, delay;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
@@ -854,7 +877,19 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
 
             if (partEvent.channel == channelName)
             {
-                return join(plugin.state, channelName, key);
+                void joinDg()
+                {
+                    join(plugin.state, channelName, key);
+                }
+
+                if (!delaySecs)
+                {
+                    return joinDg();
+                }
+                else
+                {
+                    return delay(plugin, &joinDg, delaySecs);
+                }
             }
 
             // Wrong channel, wait for the next SELFPART
@@ -878,8 +913,8 @@ void cycle(AdminPlugin plugin, const string channelName, const string key = stri
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "mask")
-@BotCommand(PrefixPolicy.prefixed, "hostmask", Yes.hidden)
+@BotCommand(PrefixPolicy.prefixed, "hostmask")
+@BotCommand(PrefixPolicy.prefixed, "mask", Yes.hidden)
 @Description("Modifies a hostmask definition, for use on servers without services accounts.",
     "$command [add|del|list] [account] [hostmask if adding]")
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
@@ -935,8 +970,8 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     Lists existing hostmask definitions.
 
     Params:
-        plugin = The current `AdminPlugin`.
-        event = The instigating `dialect.defs.IRCEvent`.
+        plugin = The current [AdminPlugin].
+        event = The instigating [dialect.defs.IRCEvent].
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -987,14 +1022,14 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed `kameloso.thread.BusMessage` with the "`admin`" header,
+    Receives a passed [kameloso.thread.BusMessage] with the "`admin`" header,
     and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger admin verbs via
     the command-line pipe.
 
     Params:
-        plugin = The current `AdminPlugin`.
+        plugin = The current [AdminPlugin].
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -1140,7 +1175,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 version(OmniscientAdmin)
 {
     /++
-        The `kameloso.plugins.common.core.ChannelPolicy` to mix in awareness with depending
+        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
         on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -1168,7 +1203,7 @@ public:
 /++
     The Admin plugin is a plugin aimed for adḿinistrative use and debugging.
 
-    It was historically part of the `kameloso.plugins.chatbot.ChatbotPlugin`.
+    It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin].
  +/
 final class AdminPlugin : IRCPlugin
 {

@@ -60,7 +60,7 @@ public:
     /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
     bool permitOneLinkOnly = true;
 
-    /// Whether or not broadcasters are always implicitly class `dialect.defs.IRCUser.Class.staff`.
+    /// Whether or not broadcasters are always implicitly class [dialect.defs.IRCUser.Class.staff].
     bool promoteBroadcasters = true;
 
     /// Whether or not to use features dependent on the Twitch API.
@@ -159,7 +159,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const ref IRCEvent event)
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
-    `TwitchBotSettings.bellOnImportant` setting is set.
+    [TwitchBotSettings.bellOnImportant] setting is set.
  +/
 @Chainable
 @(IRCEvent.Type.TWITCH_SUB)
@@ -192,10 +192,10 @@ void onImportant(TwitchBotPlugin plugin)
 
 // onSelfjoin
 /++
-    Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
+    Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Simply passes on execution to `handleSelfjoin`.
+    Simply passes on execution to [handleSelfjoin].
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.home)
@@ -207,14 +207,14 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // handleSelfjoin
 /++
-    Registers a new `TwitchBotPlugin.Room` as we join a channel, so there's
+    Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Creates the timer `core.thread.fiber.Fiber`s that there are definitions for in
-    `TwitchBotPlugin.timerDefsByChannel`.
+    Creates the timer [core.thread.fiber.Fiber]s that there are definitions for in
+    [TwitchBotPlugin.timerDefsByChannel].
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current [TwitchBotPlugin].
         channelName = The name of the channel we're supposedly joining.
  +/
 package void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
@@ -241,7 +241,7 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 
 // onSelfpart
 /++
-    Removes a channel's corresponding `TwitchBotPlugin.Room` when we leave it.
+    Removes a channel's corresponding [TwitchBotPlugin.Room] when we leave it.
 
     This resets all that channel's transient state.
  +/
@@ -257,7 +257,7 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 /++
     Bans, unbans, lists or clears banned phrases for the current channel.
 
-    Changes are persistently saved to the `TwitchBotPlugin.bannedPhrasesFile` file.
+    Changes are persistently saved to the [TwitchBotPlugin.bannedPhrasesFile] file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -277,8 +277,8 @@ void onCommandPhrase(TwitchBotPlugin plugin, const ref IRCEvent event)
     Bans, unbans, lists or clears banned phrases for the specified target channel.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
-        event = The triggering `dialect.defs.IRCEvent`.
+        plugin = The current [TwitchBotPlugin].
+        event = The triggering [dialect.defs.IRCEvent].
         targetChannel = The channel we're handling phrase bans for.
  +/
 void handlePhraseCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
@@ -437,7 +437,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 /++
     Adds, deletes, lists or clears timers for the specified target channel.
 
-    Changes are persistently saved to the `TwitchBotPlugin.timersFile` file.
+    Changes are persistently saved to the [TwitchBotPlugin.timersFile] file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -631,7 +631,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     Automatically signals a stream stop when a host starts.
 
     This is generally done as the last thing after a stream session, so it makes
-    sense to automate `onCommandStop`.
+    sense to automate [onCommandStop].
  +/
 @(ChannelPolicy.home)
 @(IRCEvent.Type.TWITCH_HOSTSTART)
@@ -647,8 +647,8 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     or previously lasted.
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
-        room = The `TwitchBotPlugin.Room` of the channel.
+        plugin = The current [TwitchBotPlugin].
+        room = The [TwitchBotPlugin.Room] of the channel.
         justNowEnded = Whether or not the stream ended just now.
  +/
 void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
@@ -759,12 +759,12 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in `kameloso.common.findURLs`. If the Webtitles
+    It uses a simple state machine in [kameloso.common.findURLs]. If the Webtitles
     plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
     send them to it for lookups and reporting.
 
     Operators, whitelisted and admin users are so far allowed to trigger this, as are
-    any user who has been given a temporary permit via `onCommandPermit`.
+    any user who has been given a temporary permit via [onCommandPermit].
     Those without permission will have the message deleted and be served a timeout.
  +/
 @Chainable
@@ -1163,7 +1163,7 @@ version(TwitchAPIFeatures)
 @BotCommand(PrefixPolicy.prefixed, "shoutout")
 @BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
 @Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
-void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.base : idOf;
     import dialect.common : isValidNickname;
@@ -1230,14 +1230,14 @@ void onCommandShoutout(TwitchBotPlugin plugin, const ref IRCEvent event)
 /++
     Performs various actions on incoming messages.
 
-    * Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+    * Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
     * Detects and deals with banned phrases.
     * Bumps the message counter for the channel, used by timers.
 
     Belling is useful with small audiences, so you don't miss messages.
 
-    Note: This is annotated `kameloso.plugins.common.core.Terminating` and must be
-    placed after all other handlers with these `dialect.defs.IRCEvent.Type` annotations.
+    Note: This is annotated [kameloso.plugins.common.core.Terminating] and must be
+    placed after all other handlers with these [dialect.defs.IRCEvent.Type] annotations.
     This lets us know the banned phrase wasn't part of a command (as it would
     otherwise not reach this point).
  +/
@@ -1607,10 +1607,10 @@ void initResources(TwitchBotPlugin plugin)
 
 // onMyInfo
 /++
-    Sets up a Fiber to periodically call timer `core.thread.fiber.Fiber`s with a
-    periodicity of `TwitchBotPlugin.timerPeriodicity`.
+    Sets up a Fiber to periodically call timer [core.thread.fiber.Fiber]s with a
+    periodicity of [TwitchBotPlugin.timerPeriodicity].
 
-    Cannot be done on `dialect.defs.IRCEvent.Type.RPL_WELCOME` as the server
+    Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME] as the server
     daemon isn't known by then.
  +/
 @(IRCEvent.Type.RPL_MYINFO)
@@ -1722,7 +1722,7 @@ void onMyInfo(TwitchBotPlugin plugin)
 // start
 /++
     Disables the bell if we're not running inside a terminal. Snapshots
-    `TwitchBotSettings.enableAPIFeatures` into `TwitchBotPlugin` so it can be
+    [TwitchBotSettings.enableAPIFeatures] into [TwitchBotPlugin] so it can be
     disabled without modifying settings.
  +/
 void start(TwitchBotPlugin plugin)
@@ -1850,7 +1850,7 @@ package:
          +/
         ulong messageCount;
 
-        /// Timer `core.thread.fiber.Fiber`s.
+        /// Timer [core.thread.fiber.Fiber]s.
         Fiber[] timers;
 
         version(TwitchAPIFeatures)
@@ -1890,10 +1890,10 @@ package:
      +/
     enum timerPeriodicity = 10;
 
-    /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
+    /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after `kameloso.terminal.isTTY` checks.
+    /// Effective bell after [kameloso.terminal.isTTY] checks.
     string bell = bellString;
 
     version(TwitchAPIFeatures)
@@ -1971,9 +1971,9 @@ package:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
         a server check, so this plugin only works on Twitch, in addition
-        to doing nothing when `twitchbotSettings.enabled` is false.
+        to doing nothing when [TwitchbotSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.
@@ -1988,20 +1988,22 @@ package:
 
     // onEvent
     /++
-        Override `kameloso.plugins.common.core.IRCPluginImpl.onEvent` and inject a server check, so this
-        plugin does nothing on non-Twitch servers. Also filters `dialect.defs.IRCEvent.Type.CHAN`
-        events to only trigger on active channels (that have its `Channel.enabled`
+        Override [kameloso.plugins.common.core.IRCPluginImpl.onEvent] and inject a server check, so this
+        plugin does nothing on non-Twitch servers. Also filters [dialect.defs.IRCEvent.Type.CHAN]
+        events to only trigger on active channels (that have its [TwitchBotPlugin.Room.enabled]
         set to true).
 
-        The function to call is `kameloso.plugins.common.core.IRCPluginImpl.onEventImpl`.
+        The function to call is [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
 
         Params:
-            event = Parsed `dialect.defs.IRCEvent` to pass onto
-                `kameloso.plugins.common.core.IRCPluginImpl.onEventImpl`
+            origEvent = Parsed [dialect.defs.IRCEvent] to pass onto
+                [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
                 after verifying we should process the event.
      +/
-    override public void onEvent(IRCEvent event)
+    override public void onEvent(const ref IRCEvent origEvent)
     {
+        IRCEvent event = origEvent;
+
         if (this.twitchBotSettings.promoteBroadcasters)
         {
             if (event.sender.nickname.length && event.channel.length &&

@@ -1,21 +1,20 @@
-# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-beta.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v2.0.0-beta.2...master)
+# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.2...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
 ## Current functionality includes:
 
-* bedazzling coloured terminal output like it's the 90s
+* chat monitoring in bedazzling colours like it's the 90s
 * automatic mode sets (e.g. auto `+o` on join)
 * logs
-* fetching and echoing titles of pasted URLs
+* reporting titles of pasted URLs
 * **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
 * channel polls
 * works on **Twitch** with some common Twitch bot features
-* SSL support
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above (save SSL support) are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
 
 Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
@@ -32,20 +31,23 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
            --admins Administrators' services accounts, comma-separated
 -H   --homeChannels Home channels to operate in, comma-separated
 -C  --guestChannels Non-home channels to idle in, comma-separated
+       --monochrome Use monochrome output
 -w           --save Write configuration to file
-
-A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
 ```
 
+Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases).
+
 ```sh
-$ dub run kameloso -- --server irc.freenode.net --guestChannels "#d,#freenode"
+$ dub run kameloso -- --server irc.freenode.net --guestChannels "#d"
 
 # alternatively
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 $ dub build
-$ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
+$ ./kameloso --server irc.freenode.net --guestChannels "#d"
 ```
+
+If there's anyone talking it should show up on your screen.
 
 ---
 
@@ -54,6 +56,7 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
+    * [Fetching a copy of the source](#fetching-a-copy-of-the-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
@@ -71,7 +74,6 @@ $ ./kameloso --server irc.freenode.net --guestChannels "#d,#freenode"
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
-  * [macOS/Linux/other Posix](#macoslinuxother-posix)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -91,9 +93,12 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ## Downloading
 
+Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, compile it yourself.
+
+### Fetching a copy of the source
+
 ```sh
 $ git clone https://github.com/zorael/kameloso.git
-$ cd kameloso
 ```
 
 ## Compiling
@@ -102,7 +107,7 @@ $ cd kameloso
 $ dub build
 ```
 
-This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+This will compile the bot in the default *debug* mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in *release* mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --help` for more build types.
 
 See the [known issues](#known-issues) section for compilation caveats.
 
@@ -114,7 +119,7 @@ There are several configurations in which the bot may be built.
 * `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
-All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of raising compilation times, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
+All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -122,13 +127,13 @@ List configurations with `dub build --print-configs`. You can specify which to c
 $ dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from a line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the "service" plugins may break the bot in subtle ways.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from the line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the "*service*" plugins may break the bot in subtle ways.
 
 # How to use
 
 ## Configuration
 
-The bot needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these accounts you can either specify them on the command line, or generate a configuration file and input them there.
+The bot ideally needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these accounts you can either specify them on the command line, or generate a configuration file and input them there.
 
 ```sh
 $ ./kameloso --save
@@ -137,32 +142,32 @@ $ ./kameloso --save
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 * **Linux** and other Posix: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
-* **macOS**: `$HOME/Library/Application Support/kameloso`
 * **Windows**: `%APPDATA%\kameloso`
+* **macOS**: `$HOME/Library/Application Support/kameloso`
 
 Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can do so by passing `--edit`.
 
 ### Command-line arguments
 
-You can override some configured settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--save`, it will apply these changes to the configuration file without having to manually edit it.
+You can set or override settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--save`, it will apply the changes to your configuration file in-place.
 
 ```sh
 $ ./kameloso \
     --server irc.freenode.net \
     --nickname "kameloso" \
-    --admins "you,friend,thatguy" \
+    --admins "you,friend" \
     --homeChannels "#mychannel,#elsewhere" \
     --guestChannels "#d,##networking" \
     --save
 
-Configuration file written to /home/user/.config/kameloso/kameloso.conf
+[12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Invocations of `--save` with an existing configuration file will regenerate it. It will never overwrite your settings, only sync them with available ones. Beware however that this means it will delete any lines not corresponding to a currently *available* plugin, so any orphan sections belonging to plugins that are currently not built in will be silently removed.
+Settings not specified at invocations of `--save` keep their values. Mind however that the file is parsed and *rewritten*, so any comments and/or invalid entries in it will be silently removed.
 
 ### Display settings
 
-If you have a bright terminal background, the colours may be hard to see and the text difficult to read, depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
+If you have a bright terminal background, text may be difficult to read, depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
@@ -247,14 +252,14 @@ The command **prefix** (here `!`) is configurable; refer to your generated confi
 
 ```ini
 [Core]
-prefix              "!"
+prefix                  "!"
 ```
 
 It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Additionally, some administrative commands only work when called this way.
 
-### Except nothing happens
+### **Except nothing happens**
 
-Before allowing *anyone* to trigger any restricted functionality, it will query the server for what services account they are logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
+Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
 > In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services.
 
@@ -264,7 +269,7 @@ To connect to Twitch servers you must first build a configuration that includes 
 
 You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pass** (not password). These authorisation tokens are unique to your user paired with an application. As such, you need a new one for each and every program you want to access Twitch with.
 
-Run the bot with `--set twitchbot.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `twitch.tv`, with the little lock symbol showing the connection is secure.
+Run the bot with `--set twitchbot.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/api.d`](source/kameloso/plugins/twitchbot/api.d).
 
@@ -309,14 +314,13 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Streamer assistant bot
 
-The streamer bot plugin is opt-in during compilation; build the `twitch` configuration to compile it. Even if built in it can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file with `--save`.
+The streamer bot is enabled by default when built, and can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, ensure that you have built a configuration with Twitch support, then regenerate the file with `--save`. Even if enabled it disables itself on non-Twitch servers.
 
 ```sh
-$ dub build -c twitch
 $ ./kameloso --set twitchbot.enabled=false --save
 ```
 
-Assuming a prefix of `!`, commands to test are:
+Properly enabled and assuming a prefix of `!`, commands to test are:
 
 * `!enable`, `!disable`
 * `!start`, `!uptime`, `!stop`
@@ -337,7 +341,7 @@ For more information and help see [the wiki](https://github.com/zorael/kameloso/
 
 # Known issues
 
-Compiling in a non-`debug` build mode might fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
+Compiling in a non-`debug` build mode *may* fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
 
 ## Windows
 
@@ -348,10 +352,6 @@ On Windows with **dmd 2.089 and above** builds *may* fail, either silently with 
 If SSL flat doesn't work at all, you may simply be missing the necessary libraries. Download and install **OpenSSL** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
 
 Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
-
-## macOS/Linux/other Posix
-
-If the Pipeline plugin's FIFO file is removed while the program is running, it will hang when trying to exit, requiring manual interruption with Ctrl+C. This is a tricky problem to solve as it requires figuring out how to do non-blocking reads. Help wanted.
 
 # Roadmap
 
@@ -375,7 +375,7 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 
 # Acknowledgements
 
-* [Kameloso](https://youtu.be/ykj3Kpm3O0g)
+* [Kamelåså](https://youtu.be/ykj3Kpm3O0g)
 * [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)

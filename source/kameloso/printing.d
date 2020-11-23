@@ -36,6 +36,8 @@ module kameloso.printing;
 private:
 
 import std.range.primitives : isOutputRange;
+import std.meta : allSatisfy;
+import std.traits : isAggregateType;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -48,7 +50,7 @@ public:
     formatting into neat columns.
 
     Params:
-        all = Whether or not to also include `lu.uda.Unserialisable` members.
+        all = Whether or not to also include [lu.uda.Unserialisable] members.
         Things = Variadic list of aggregates to inspect.
  +/
 private template Widths(Flag!"all" all, Things...)
@@ -110,7 +112,7 @@ unittest
 
 // printObjects
 /++
-    Prints out struct objects, with all their printable members with all their
+    Prints out aggregate objects, with all their printable members with all their
     printable values.
 
     This is not only convenient for debugging but also usable to print out
@@ -132,14 +134,15 @@ unittest
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`; usually transitive information that
-            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
-        things = Variadic list of struct objects to enumerate.
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
+        things = Variadic list of aggregate objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things)
+if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
-    import kameloso.common : settings;
+    static import kameloso.common;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
     import std.stdio : writeln;
@@ -150,16 +153,24 @@ void printObjects(Flag!"all" all = No.all, Things...)
     scope(exit) outbuffer.clear();
     outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
-    foreach (immutable i, thing; things)
+    foreach (immutable i, ref thing; things)
     {
         bool put;
 
         version(Colours)
         {
-            if (!settings.monochrome)
+            if (!kameloso.common.settings)
+            {
+                // Threading and/or otherwise forgot to assign pointer `kameloso.common.settings`
+                // It will be wrong but initialise it here so we at least don't crash
+                //logger.warning("Tried to call `printObjects` with an uninitialised `kameloso.common.settings`!");
+                kameloso.common.settings = new typeof(*kameloso.common.settings);
+            }
+
+            if (!kameloso.common.settings.monochrome)
             {
                 formatObjectImpl!(all, Yes.coloured)(outbuffer,
-                    (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+                    (kameloso.common.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
                     thing, widths.type+1, widths.name);
                 put = true;
             }
@@ -189,7 +200,7 @@ alias printObject = printObjects;
 
 // formatObjects
 /++
-    Formats a struct object, with all its printable members with all their
+    Formats an aggregate object, with all its printable members with all their
     printable values. Overload that writes to a passed output range sink.
 
     Example:
@@ -203,7 +214,7 @@ alias printObject = printObjects;
     }
 
     Foo foo, bar;
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     sink.formatObjects!(Yes.coloured)(foo);
     sink.formatObjects!(No.coloured)(bar);
@@ -212,21 +223,21 @@ alias printObject = printObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`; usually transitive information that
-            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
-        things = Variadic list of structs or classes to enumerate and format.
+        things = Variadic list of aggregate objects to enumerate and format.
  +/
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Things things)
-if (isOutputRange!(Sink, char[]))
+if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
 {
     alias widths = Widths!(all, Things);
 
-    foreach (immutable i, thing; things)
+    foreach (immutable i, ref thing; things)
     {
         formatObjectImpl!(all, coloured)(sink, bright, thing, widths.type+1, widths.name);
 
@@ -245,18 +256,18 @@ alias formatObject = formatObjects;
 
 // formatObjectImpl
 /++
-    Formats a struct object, with all its printable members with all their
+    Formats an aggregate object, with all its printable members with all their
     printable values. This is an implementation template and should not be
-    called directly; instead use `printObjects` or `formatObjects`.
+    called directly; instead use [printObjects] or [formatObjects].
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`; usually transitive information that
-            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
-        thing = Struct or class to enumerate and format.
+        thing = Aggregate object to enumerate and format.
         typewidth = The width with which to pad type names, to align properly.
         namewidth = The width with which to pad variable names, to align properly.
  +/
@@ -264,7 +275,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
     (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing,
     const uint typewidth, const uint namewidth)
-if (isOutputRange!(Sink, char[]))
+if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
@@ -289,26 +300,29 @@ if (isOutputRange!(Sink, char[]))
         sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
     }
 
-    foreach (immutable i, member; thing.tupleof)
+    foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
-        import lu.traits : isAnnotated, isSerialisable;
+        import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : isAssociativeArray, isType;
+        import std.traits : hasUDA, isAggregateType, isAssociativeArray, isSomeFunction, isType;
 
-        enum shouldBePrinted = all ||
-            (!__traits(isDeprecated, thing.tupleof[i]) &&
-            isSerialisable!member &&
-            !isAnnotated!(thing.tupleof[i], Hidden) &&
-            !isAnnotated!(thing.tupleof[i], Unserialisable));
-
-        static if (shouldBePrinted)
+        static if (
+            (memberstring != "this") &&
+            (memberstring != "__ctor") &&
+            (memberstring != "__dtor") &&
+            !__traits(isDeprecated, __traits(getMember, thing, memberstring)) &&
+            !isType!(__traits(getMember, thing, memberstring)) &&
+            !isSomeFunction!(__traits(getMember, thing, memberstring)) &&
+            !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
+            (all ||
+                (isSerialisable!(__traits(getMember, thing, memberstring)) &&
+                !hasUDA!(__traits(getMember, thing, memberstring), Hidden) &&
+                !hasUDA!(__traits(getMember, thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
             import std.traits : isArray;
 
-            alias T = Unqual!(typeof(member));
-
-            enum memberstring = __traits(identifier, thing.tupleof[i]);
+            alias T = Unqual!(typeof(__traits(getMember, thing, memberstring)));
 
             static if (isTrulyString!T)
             {
@@ -323,17 +337,18 @@ if (isOutputRange!(Sink, char[]))
                     sink.formattedWrite(stringPattern,
                         typeCode.colour, typewidth, T.stringof,
                         memberCode.colour, (namewidth + 2), memberstring,
-                        (member.length < 2) ? " " : string.init,
-                        valueCode.colour, member,
-                        lengthCode.colour, member.length);
+                        (__traits(getMember, thing, memberstring).length < 2) ? " " : string.init,
+                        valueCode.colour, __traits(getMember, thing, memberstring),
+                        lengthCode.colour, __traits(getMember, thing, memberstring).length);
                 }
                 else
                 {
                     enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
                     sink.formattedWrite(stringPattern, typewidth, T.stringof,
                         (namewidth + 2), memberstring,
-                        (member.length < 2) ? " " : string.init,
-                        member, member.length);
+                        (__traits(getMember, thing, memberstring).length < 2) ? " " : string.init,
+                        __traits(getMember, thing, memberstring),
+                        __traits(getMember, thing, memberstring).length);
                 }
             }
             else static if (isArray!T || isAssociativeArray!T)
@@ -345,7 +360,8 @@ if (isOutputRange!(Sink, char[]))
                 enum elemIsCharacter = is(ElemType == char) ||
                     is(ElemType == dchar) || is(ElemType == wchar);
 
-                immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
+                immutable thisWidth = __traits(getMember, thing, memberstring).length ?
+                    (namewidth + 2) : (namewidth + 4);
 
                 static if (coloured)
                 {
@@ -368,8 +384,8 @@ if (isOutputRange!(Sink, char[]))
                     sink.formattedWrite(arrayPattern,
                         typeCode.colour, typewidth, UnqualArray!T.stringof,
                         memberCode.colour, thisWidth, memberstring,
-                        valueCode.colour, member,
-                        lengthCode.colour, member.length);
+                        valueCode.colour, __traits(getMember, thing, memberstring),
+                        lengthCode.colour, __traits(getMember, thing, memberstring).length);
                 }
                 else
                 {
@@ -387,17 +403,28 @@ if (isOutputRange!(Sink, char[]))
                     sink.formattedWrite(arrayPattern,
                         typewidth, UnqualArray!T.stringof,
                         thisWidth, memberstring,
-                        member,
-                        member.length);
+                        __traits(getMember, thing, memberstring),
+                        __traits(getMember, thing, memberstring).length);
                 }
             }
-            else static if (is(T == struct) || is(T == class))
+            else static if (isAggregateType!T)
             {
-                enum classOrStruct = is(T == struct) ? "struct" : "class";
+                enum aggregateType =
+                    is(T == struct) ? "struct" :
+                    is(T == class) ? "class" :
+                    is(T == interface) ? "interface" :
+                    /*is(T == union) ?*/ "union"; //: "<error>";
 
-                immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ?
-                    " (init)" :
-                    string.init;
+                static if (is(Thing == struct) && is(T == struct))
+                {
+                    immutable initText = (__traits(getMember, thing, memberstring) ==
+                        __traits(getMember, Thing.init, memberstring)) ?
+                            " (init)" : string.init;
+                }
+                else
+                {
+                    enum initText = string.init;
+                }
 
                 static if (coloured)
                 {
@@ -409,13 +436,13 @@ if (isOutputRange!(Sink, char[]))
                     sink.formattedWrite(normalPattern,
                         typeCode.colour, typewidth, T.stringof,
                         memberCode.colour, (namewidth + 2), memberstring,
-                        valueCode.colour, classOrStruct, initText);
+                        valueCode.colour, aggregateType, initText);
                 }
                 else
                 {
                     enum normalPattern = "%*s %-*s <%s>%s\n";
                     sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring, classOrStruct, initText);
+                        (namewidth + 2), memberstring, aggregateType, initText);
                 }
             }
             else
@@ -430,13 +457,13 @@ if (isOutputRange!(Sink, char[]))
                     sink.formattedWrite(normalPattern,
                         typeCode.colour, typewidth, T.stringof,
                         memberCode.colour, (namewidth + 2), memberstring,
-                        valueCode.colour, member);
+                        valueCode.colour, __traits(getMember, thing, memberstring));
                 }
                 else
                 {
                     enum normalPattern = "%*s %-*s  %s\n";
                     sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring, member);
+                        (namewidth + 2), memberstring, __traits(getMember, thing, memberstring));
                 }
             }
         }
@@ -454,6 +481,9 @@ if (isOutputRange!(Sink, char[]))
 {
     import lu.string : contains;
     import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(512);  // ~323
 
     struct Struct
     {
@@ -484,9 +514,7 @@ if (isOutputRange!(Sink, char[]))
     s.cC = [ 'a':'a', 'b':'b' ];
     assert('a' in s.cC);
     assert('b' in s.cC);
-    Appender!(char[]) sink;
 
-    sink.reserve(512);  // ~323
     sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
 
     enum structNameSerialised =
@@ -514,6 +542,47 @@ if (isOutputRange!(Sink, char[]))
     sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+
+    // Class copy
+    class ClassName
+    {
+        Struct struct_;
+        int i = 12_345;
+        string s = "foo";
+        string p = "!";
+        string p2;
+        bool b = true;
+        float f = 3.14f;
+        double d = 99.9;
+        const(char)[] c = [ 'a', 'b', 'c' ];
+        const(char)[] emptyC;
+        string[] dynA = [ "foo", "bar", "baz" ];
+        int[] iA = [ 1, 2, 3, 4 ];
+        const(char)[char] cC;
+    }
+
+    auto c1 = new ClassName;
+    sink.clear();
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
+
+    enum classNameSerialised =
+`-- ClassName
+     Struct struct_                    <struct>
+        int i                           12345
+     string s                          "foo"(3)
+     string p                           "!"(1)
+     string p2                          ""(0)
+       bool b                           true
+      float f                           3.14
+     double d                           99.9
+     char[] c                         ['a', 'b', 'c'](3)
+     char[] emptyC                      [](0)
+   string[] dynA                      ["foo", "bar", "baz"](3)
+      int[] iA                        [1, 2, 3, 4](4)
+ char[char] cC                          [](0)
+`;
+
+    assert((sink.data == classNameSerialised), '\n' ~ sink.data);
 
     // Two at a time
     struct Struct1
@@ -594,6 +663,25 @@ if (isOutputRange!(Sink, char[]))
         sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
+
+    class C
+    {
+        string a = "abc";
+        bool b = true;
+        int i = 42;
+    }
+
+    C c2 = new C;
+
+    sink.clear();
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
+    enum cFormatted =
+`-- C
+   string a                          "abc"(3)
+     bool b                           true
+      int i                           42
+`;
+    assert((sink.data == cFormatted), '\n' ~ sink.data);
 }
 
 
@@ -623,8 +711,8 @@ if (isOutputRange!(Sink, char[]))
 
     Params:
         all = Whether or not to also display members marked as
-            `lu.uda.Unserialisable`; usually transitive information that
-            doesn't carry between program runs. Also those annotated `lu.uda.Hidden`.
+            [lu.uda.Unserialisable]; usually transitive information that
+            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
         coloured = Whether to display in colours or not.
         bright = Whether or not to format for a bright terminal background.
         things = Variadic list of structs to enumerate and format.
@@ -668,4 +756,32 @@ unittest
    string members                    "foo"(3)
       int asdf                        42
 `), '\n' ~ formatted);
+
+    class Nested
+    {
+        int harbl;
+        string snarbl;
+    }
+
+    class ClassSettings
+    {
+        string s = "arb";
+        int i;
+        string someLongConfiguration = "acdc adcadcad acacdadc";
+        int[] arrMatey = [ 1, 2, 3, 42 ];
+        Nested nest;
+    }
+
+    auto c = new ClassSettings;
+    c.i = 2;
+
+    immutable formattedClass = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+    assert((formattedClass ==
+`-- Class
+   string s                          "arb"(3)
+      int i                           2
+   string someLongConfiguration      "acdc adcadcad acacdadc"(22)
+    int[] arrMatey                  [1, 2, 3, 42](4)
+   Nested nest                       <class>
+`), '\n' ~ formattedClass);
 }

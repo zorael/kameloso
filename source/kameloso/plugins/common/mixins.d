@@ -1,5 +1,5 @@
 /++
-    The section of `kameloso.plugins.common` that involves mixins.
+    The section of [kameloso.plugins.common] that involves mixins.
 
     This was all in one `plugins/common.d` file that just grew too big.
  +/
@@ -20,8 +20,8 @@ public:
 /++
     Functionality for catching WHOIS results and calling passed function aliases
     with the resulting account information that was divined from it, in the form
-    of the actual `dialect.defs.IRCEvent`, the target
-    `dialect.defs.IRCUser` within it, the user's `account` field, or merely
+    of the actual [dialect.defs.IRCEvent], the target
+    [dialect.defs.IRCUser] within it, the user's `account` field, or merely
     alone as an arity-0 function.
 
     The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -64,7 +64,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        /// Flag denoting that `WHOISFiberDelegate` has been mixed in.
+        /// Flag denoting that [WHOISFiberDelegate] has been mixed in.
         private enum hasWHOISFiber = true;
     }
 
@@ -119,7 +119,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     void whoisFiberDelegate()
     {
         import kameloso.thread : CarryingFiber;
-        import dialect.common : toLowerCase;
+        import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
         import lu.conv : Enum;
         import lu.traits : TakesParams;
@@ -128,152 +128,158 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import std.traits : arity;
         import core.thread : Fiber;
 
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-        assert((thisFiber.payload != IRCEvent.init),
-            "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
-
-        immutable whoisEvent = thisFiber.payload;
-
-        assert(whoisEventTypes[].canFind(whoisEvent.type),
-            "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
-            "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
-
-        /++
-            Invoke `onSuccess`.
-         +/
-        void callOnSuccess()
+        while (true)
         {
-            static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
-            {
-                return onSuccess(whoisEvent);
-            }
-            else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
-            {
-                return onSuccess(whoisEvent.target);
-            }
-            else static if (TakesParams!(onSuccess, AliasSeq!string))
-            {
-                return onSuccess(whoisEvent.target.account);
-            }
-            else static if (arity!onSuccess == 0)
-            {
-                return onSuccess();
-            }
-            else
-            {
-                import std.format : format;
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            assert((thisFiber.payload != IRCEvent.init),
+                "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
-                enum pattern = "Unsupported signature of success function/delegate " ~
-                    "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
-                static assert(0, pattern.format(__FUNCTION__,
-                    typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
-            }
-        }
+            immutable whoisEvent = thisFiber.payload;
 
-        /++
-            Invoke `onFailure`, if it's available.
-         +/
-        void callOnFailure()
-        {
-            static if (!is(typeof(onFailure) == typeof(null)))
+            assert(whoisEventTypes[].canFind(whoisEvent.type),
+                "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
+                "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
+
+            /++
+                Invoke `onSuccess`.
+            +/
+            void callOnSuccess()
             {
-                static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
                 {
-                    return onFailure(whoisEvent);
+                    return onSuccess(whoisEvent);
                 }
-                else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
                 {
-                    return onFailure(whoisEvent.target);
+                    return onSuccess(whoisEvent.target);
                 }
-                else static if (TakesParams!(onFailure, AliasSeq!string))
+                else static if (TakesParams!(onSuccess, AliasSeq!string))
                 {
-                    // Never called when using hostmasks
-                    return onFailure(whoisEvent.target.account);
+                    return onSuccess(whoisEvent.target.account);
                 }
-                else static if (arity!onFailure == 0)
+                else static if (arity!onSuccess == 0)
                 {
-                    return onFailure();
+                    return onSuccess();
                 }
                 else
                 {
                     import std.format : format;
 
-                    enum pattern = "Unsupported signature of failure function/delegate " ~
+                    enum pattern = "Unsupported signature of success function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
                     static assert(0, pattern.format(__FUNCTION__,
-                        typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                        typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
                 }
             }
-        }
 
-        if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
-        {
-            if (!whoisEvent.aux.length || (whoisEvent.aux == "WHOIS"))
+            /++
+                Invoke `onFailure`, if it's available.
+            +/
+            void callOnFailure()
             {
-                // WHOIS query failed due to unknown command.
-                // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
-                // command was, so we'll have to assume it's the right one.
-                // Return and end Fiber.
-                return callOnFailure();
+                static if (!is(typeof(onFailure) == typeof(null)))
+                {
+                    static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                    {
+                        return onFailure(whoisEvent);
+                    }
+                    else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                    {
+                        return onFailure(whoisEvent.target);
+                    }
+                    else static if (TakesParams!(onFailure, AliasSeq!string))
+                    {
+                        // Never called when using hostmasks
+                        return onFailure(whoisEvent.target.account);
+                    }
+                    else static if (arity!onFailure == 0)
+                    {
+                        return onFailure();
+                    }
+                    else
+                    {
+                        import std.format : format;
+
+                        enum pattern = "Unsupported signature of failure function/delegate " ~
+                            "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
+                        static assert(0, pattern.format(__FUNCTION__,
+                            typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                    }
+                }
             }
-            else
+
+            if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
             {
-                // Wrong unknown command; await a new one
+                if (!whoisEvent.aux.length || (whoisEvent.aux == "WHOIS"))
+                {
+                    // WHOIS query failed due to unknown command.
+                    // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
+                    // command was, so we'll have to assume it's the right one.
+                    // Return and end Fiber.
+                    return callOnFailure();
+                }
+                else
+                {
+                    // Wrong unknown command; await a new one
+                    Fiber.yield();
+                    continue;
+                }
+            }
+
+            immutable m = plugin.state.server.caseMapping;
+
+            if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
+            {
+                // Wrong WHOIS; await a new one
                 Fiber.yield();
-                return whoisFiberDelegate();  // Recurse
+                continue;
             }
-        }
 
-        immutable m = plugin.state.server.caseMapping;
+            import kameloso.plugins.common.delayawait : unawait;
 
-        if (toLowerCase(_kamelosoCarriedNickname, m) !=
-            whoisEvent.target.nickname.toLowerCase(m))
-        {
-            // Wrong WHOIS; await a new one
-            Fiber.yield();
-            return whoisFiberDelegate();  // Recurse
-        }
+            // Clean up awaiting fiber entries on exit, just to be neat.
+            scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
 
-        import kameloso.plugins.common.delayawait : unawait;
-
-        // Clean up awaiting fiber entries on exit, just to be neat.
-        scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
-
-        with (IRCEvent.Type)
-        switch (whoisEvent.type)
-        {
-        case RPL_WHOISACCOUNT:
-        case RPL_WHOISREGNICK:
-            return callOnSuccess();
-
-        case RPL_WHOISUSER:
-            if (context.state.settings.preferHostmasks)
+            with (IRCEvent.Type)
+            switch (whoisEvent.type)
             {
+            case RPL_WHOISACCOUNT:
+            case RPL_WHOISREGNICK:
                 return callOnSuccess();
-            }
-            else
-            {
-                // We're not interested in RPL_WHOISUSER if we're not in hostmasks mode
-                Fiber.yield();
-                return whoisFiberDelegate();  // Recurse
+
+            case RPL_WHOISUSER:
+                if (context.state.settings.preferHostmasks)
+                {
+                    return callOnSuccess();
+                }
+                else
+                {
+                    // We're not interested in RPL_WHOISUSER if we're not in hostmasks mode
+                    Fiber.yield();
+                    continue;
+                }
+
+            case RPL_ENDOFWHOIS:
+            case ERR_NOSUCHNICK:
+            //case ERR_UNKNOWNCOMMAND:  // Already handled above
+                return callOnFailure();
+
+            default:
+                assert(0, "Unexpected WHOIS event type encountered in `whoisFiberDelegate`");
             }
 
-        case RPL_ENDOFWHOIS:
-        case ERR_NOSUCHNICK:
-        //case ERR_UNKNOWNCOMMAND:  // Already handled above
-            return callOnFailure();
-
-        default:
-            assert(0, "Unexpected WHOIS event type encountered in `whoisFiberDelegate`");
+            // Would end loop here but statement not reachable
+            //return;
+            assert(0, "Escaped terminal switch in `whoisFiberDelegate`");
         }
     }
 
 
     // enqueueAndWHOIS
     /++
-        Constructs a `kameloso.thread.CarryingFiber` carrying a `dialect.defs.IRCEvent`
-        and enqueues it into the `kameloso.plugins.common.core.IRCPluginState.awaitingFibers`
+        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent]
+        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -283,7 +289,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:
-            `object.Exception` if a success of failure function was to trigger
+            [object.Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname,
@@ -428,19 +434,18 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
 // MessagingProxy
 /++
-    Mixin to give shorthands to the functions in `kameloso.messaging`, for
+    Mixin to give shorthands to the functions in [kameloso.messaging], for
     easier use when in a `with (plugin) { /* ... */ }` scope.
 
     This merely makes it possible to use commands like
     `raw("PING :irc.freenode.net")` without having to import
-    `kameloso.messaging` and include the thread ID of the main thread in every
+    [kameloso.messaging] and include the thread ID of the main thread in every
     call of the functions.
 
     Params:
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-version(WithPlugins)
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
 private:
@@ -474,7 +479,7 @@ private:
     }
     else
     {
-        /// Flag denoting that `MessagingProxy` has been mixed in.
+        /// Flag denoting that [MessagingProxy] has been mixed in.
         private enum hasMessagingProxy = true;
     }
 
@@ -485,11 +490,13 @@ private:
         Sends a channel message.
      +/
     void chan(Flag!"priority" priority = No.priority)
-        (const string channel, const string content,
+        (const string channelName, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.chan!priority(state, channel, content,
-            No.quiet, No.background, caller);
+        return kameloso.messaging.chan!priority(state, channelName, content,
+            quiet, background, caller);
     }
 
 
@@ -499,10 +506,12 @@ private:
      +/
     void query(Flag!"priority" priority = No.priority)
         (const string nickname, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.query!priority(state, nickname, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -512,14 +521,16 @@ private:
         the arguments passed to it.
 
         This reflects how channel messages and private messages are both the
-        underlying same type; `dialect.defs.IRCEvent.Type.PRIVMSG`.
+        underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
      +/
-    void privmsg(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string content,
+    void privmsg(Flag!"priority" priority = No.priority)
+        (const string channel, const string nickname, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.privmsg!priority(state, channel, nickname, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -529,10 +540,12 @@ private:
      +/
     void emote(Flag!"priority" priority = No.priority)
         (const string emoteTarget, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.emote!priority(state, emoteTarget, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -542,10 +555,14 @@ private:
 
         This includes modes that pertain to a user in the context of a channel, like bans.
      +/
-    void mode(Flag!"priority" priority = No.priority)(const string channel,
-        const string modes, const string content = string.init)
+    void mode(Flag!"priority" priority = No.priority)
+        (const string channel, const const(char)[] modes, const string content = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.mode!priority(state, channel, modes, content);
+        return kameloso.messaging.mode!priority(state, channel, modes, content,
+            quiet, background, caller);
     }
 
 
@@ -555,10 +572,12 @@ private:
      +/
     void topic(Flag!"priority" priority = No.priority)
         (const string channel, const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.topic!priority(state, channel, content,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -568,10 +587,12 @@ private:
      +/
     void invite(Flag!"priority" priority = No.priority)
         (const string channel, const string nickname,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.invite!priority(state, channel, nickname,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -580,9 +601,13 @@ private:
         Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)
-        (const string channel, const string key = string.init)
+        (const string channel, const string key = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.join!priority(state, channel, key);
+        return kameloso.messaging.join!priority(state, channel, key,
+            quiet, background, caller);
     }
 
 
@@ -590,12 +615,14 @@ private:
     /++
         Kicks a user from a channel.
      +/
-    void kick(Flag!"priority" priority = No.priority)(const string channel,
-        const string nickname, const string reason = string.init,
+    void kick(Flag!"priority" priority = No.priority)
+        (const string channel, const string nickname, const string reason = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.kick!priority(state, channel, nickname, reason,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -603,12 +630,14 @@ private:
     /++
         Leaves a channel.
      +/
-    void part(Flag!"priority" priority = No.priority)(const string channel,
-        const string reason = string.init,
+    void part(Flag!"priority" priority = No.priority)
+        (const string channel, const string reason = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.part!priority(state, channel, reason,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -616,9 +645,10 @@ private:
     /++
         Disconnects from the server, optionally with a quit reason.
      +/
-    void quit(Flag!"priority" priority = No.priority)(const string reason = string.init)
+    void quit(Flag!"priority" priority = No.priority)
+        (const string reason = string.init, const Flag!"quiet" quiet = No.quiet)
     {
-        return kameloso.messaging.quit!priority(state, reason);
+        return kameloso.messaging.quit!priority(state, reason, quiet);
     }
 
 
@@ -626,12 +656,15 @@ private:
     /++
         Queries the server for WHOIS information about a user.
      +/
-    void whois(Flag!"priority" priority = No.priority)(const string nickname,
-        const Flag!"force" force = No.force, const Flag!"background" background = No.background,
+    void whois(Flag!"priority" priority = No.priority)
+        (const string nickname,
+        const Flag!"force" force = No.force,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.whois!priority(state, nickname, force,
-            No.quiet, background, caller);
+            quiet, background, caller);
     }
 
     // raw
@@ -641,11 +674,14 @@ private:
         This is used to send messages of types for which there exist no helper
         functions.
      +/
-    void raw(Flag!"priority" priority = No.priority)(const string line,
+    void raw(Flag!"priority" priority = No.priority)
+        (const string line,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.raw!priority(state, line,
-            No.quiet, No.background, caller);
+            quiet, background, caller);
     }
 
 
@@ -654,9 +690,10 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
-    void immediate(const string line)
+    void immediate(const string line, const Flag!"quiet" quiet = No.quiet,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.immediate(state, line);
+        return kameloso.messaging.immediate(state, line, quiet, caller);
     }
 
     import std.format : format;
@@ -673,7 +710,7 @@ private:
             Generated `askToVerb` function. Asks the main thread to output text
             to the local terminal.
 
-            No need for any annotation; `kameloso.messaging.askToOutputImpl` is
+            No need for any annotation; [kameloso.messaging.askToOutputImpl] is
             `@system` and nothing else.
          +/
         mixin("void askTo%s(const string line)
@@ -714,7 +751,7 @@ unittest
         kick(string.init, string.init, string.init);
         part(string.init, string.init);
         quit(string.init);
-        whois(string.init, Yes.force, No.background);
+        whois(string.init, Yes.force, Yes.quiet, No.background);
         raw(string.init);
         immediate(string.init);
         askToWriteln(string.init);
@@ -732,14 +769,13 @@ unittest
 /++
     Implements queueing of events to repeat.
 
-    This allows us to deal with triggers both in `dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT`
-    and `dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND` while keeping the code
+    This allows us to deal with triggers both in [dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT]
+    and [dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND] while keeping the code
     in one place.
 
     Params:
         debug_ = Whether or not to print debug output to the terminal.
  +/
-version(WithPlugins)
 mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
@@ -758,7 +794,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     }
     else
     {
-        /// Flag denoting that `Repeater` has been mixed in.
+        /// Flag denoting that [Repeater] has been mixed in.
         private enum hasRepeater = true;
     }
 
@@ -783,8 +819,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     // explainRepeat
     /++
         Verbosely explains a repeat, including what
-        `kameloso.plugins.common.core.PrivilegeLevel` and
-        `dialect.defs.IRCUser.Class` were involved.
+        [kameloso.plugins.common.core.PrivilegeLevel] and
+        [dialect.defs.IRCUser.Class] were involved.
 
         Gated behind version `ExplainRepeat`.
      +/
@@ -794,18 +830,45 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
 
-        logger.logf("%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
-            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class",
+        enum pattern = "%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
+
+        logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            Enum!PrivilegeLevel.toString(repeat.replay.privilegeLevel),
+            repeat.replay.privilegeLevel,
             repeat.replay.caller, repeat.replay.event.sender.nickname,
-            Enum!(IRCUser.Class).toString(repeat.replay.event.sender.class_));
+            repeat.replay.event.sender.class_);
+    }
+
+
+    // explainRefuse
+    /++
+        Verbosely explains why a repeat is not repeated.
+
+        Gated behind version `ExplainRepeat`.
+     +/
+    version(ExplainRepeat)
+    void explainRefuse(const Repeat repeat)
+    {
+        import kameloso.common : Tint, logger;
+        import lu.conv : Enum;
+
+        enum pattern = "%s%s%s %s is %9$sNOT%3$s repeating %1$s%5$s%3$s-level event " ~
+            "(which would have invoked %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
+
+        logger.logf(pattern,
+            Tint.info, context.name, Tint.log, contextName,
+            repeat.replay.privilegeLevel,
+            repeat.replay.caller, repeat.replay.event.sender.nickname,
+            repeat.replay.event.sender.class_,
+            Tint.warning);
     }
 
 
     // repeaterDelegate
     /++
-        Delegate to call from inside a `kameloso.thread.CarryingFiber`.
+        Delegate to call from inside a [kameloso.thread.CarryingFiber].
      +/
     void repeaterDelegate()
     {
@@ -870,13 +933,15 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         case ignore:
             version(ExplainRepeat) explainRepeat(repeat);
             repeat.replay.trigger();
-            break;
+            return;
         }
+
+        version(ExplainRepeat) explainRefuse(repeat);
     }
 
     /++
-        Queues the delegate `repeaterDelegate` with the passed
-        `kameloso.plugins.common.core.Replay` attached to it.
+        Queues the delegate [repeaterDelegate] with the passed
+        [kameloso.plugins.common.core.Replay] attached to it.
      +/
     void repeat(Replay replay)
     {

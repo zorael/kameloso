@@ -2,7 +2,7 @@
     Dummy main module so all the real files get tested by dub.
 
     See_Also:
-        kameloso.main
+        [kameloso.main]
  +/
 module kameloso.entrypoint;
 
@@ -73,7 +73,7 @@ else
     /++
         Entry point of the program.
 
-        Technically it just passes on execution to `kameloso.main.initBot`.
+        Technically it just passes on execution to [kameloso.main.initBot].
 
         Params:
             args = Command-line arguments passed to the program.

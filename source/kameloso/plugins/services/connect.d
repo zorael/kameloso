@@ -1,12 +1,12 @@
 /++
     The Connect service handles logging onto IRC servers after having connected,
     as well as managing authentication to services. It also manages responding
-    to `dialect.defs.IRCEvent.Type.PING` requests, and capability negotiations.
+    to [dialect.defs.IRCEvent.Type.PING] requests, and capability negotiations.
 
-    The actual connection logic is in the `kameloso.net` module.
+    The actual connection logic is in the [kameloso.net] module.
 
     See_Also:
-        kameloso.net
+        [kameloso.net]
  +/
 module kameloso.plugins.services.connect;
 
@@ -20,13 +20,12 @@ import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.format : format;
 import std.typecons : Flag, No, Yes;
 
 
 // ConnectSettings
 /++
-    Settings for a `ConnectService`.
+    Settings for a [ConnectService].
  +/
 @Settings struct ConnectSettings
 {
@@ -87,7 +86,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
         if (homeIndex != -1)
         {
-            logger.warning("Leaving a home ...");
+            logger.warning("Leaving a home...");
         }
         else
         {
@@ -100,24 +99,14 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Records a channel in the `channels` array in the `dialect.defs.IRCClient` of
-    the current `ConnectService`'s `kameloso.plugins.common.core.IRCPluginState` upon joining it.
-
-    Additionally records our given IDENT identifier. This is likely the first event
-    after connection that carries us as a user, so we can only catch it as early
-    as here.
+    Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
+    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
 void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
-
-    if (!service.state.client.ident.length)
-    {
-        service.state.client.ident = event.sender.ident;
-        service.state.clientUpdated = true;
-    }
 
     if (!service.state.bot.homeChannels.canFind(event.channel) &&
         !service.state.bot.guestChannels.canFind(event.channel))
@@ -132,17 +121,17 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 // joinChannels
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
-    `kameoso.common.IRCBot` of the current `ConnectService`'s
-    `kameloso.plugins.common.core.IRCPluginState`.
+    [kameoso.kameloso.IRCBot] of the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState].
 
     Params:
-        service = The current `ConnectService`.
+        service = The current [ConnectService].
  +/
 void joinChannels(ConnectService service)
 {
     if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
     {
-        logger.warning("No channels, no purpose ...");
+        logger.warning("No channels, no purpose...");
         return;
     }
 
@@ -157,7 +146,7 @@ void joinChannels(ConnectService service)
     auto guestlist = service.state.bot.guestChannels.sort.uniq;
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-    logger.logf("Joining %s%d%s %s ...", Tint.info, numChans, Tint.log,
+    logger.logf("Joining %s%d%s %s...", Tint.info, numChans, Tint.log,
         numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
@@ -172,10 +161,10 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
-    Responds to `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` events by sending
-    the text supplied as content in the `dialect.defs.IRCEvent` to the server.
+    Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] events by sending
+    the text supplied as content in the [dialect.defs.IRCEvent] to the server.
 
-    "Also known as `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` (Unreal/Ultimate)
+    "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] (Unreal/Ultimate)
     for use during registration, however it's not used in Unreal (and might not
     be used in Ultimate either)."
 
@@ -186,17 +175,17 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
     if (service.serverPinged) return;
 
-    raw(service.state, event.content);
+    immediate(service.state, event.content);
 }
 
 
 // onPing
 /++
-    Pongs the server upon `dialect.defs.IRCEvent.Type.PING`.
+    Pongs the server upon [dialect.defs.IRCEvent.Type.PING].
 
     Ping with the sender as target, and not the necessarily
-    the server as saved in the `dialect.defs.IRCServer` struct. For
-    example, `dialect.defs.IRCEvent.Type.ERR_NEEDPONG` generally wants you to
+    the server as saved in the [dialect.defs.IRCServer] struct. For
+    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
     ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
@@ -219,7 +208,7 @@ void onPing(ConnectService service, const ref IRCEvent event)
     use some heuristics and try the best guess.
 
     Params:
-        service = The current `ConnectService`.
+        service = The current [ConnectService].
  +/
 void tryAuth(ConnectService service)
 {
@@ -276,10 +265,9 @@ void tryAuth(ConnectService service)
             return;
         }
 
-        query(service.state, serviceNick, "%s %s"
-            .format(verb, password), Yes.quiet);
+        query(service.state, serviceNick, (verb ~ ' ' ~ password), Yes.quiet);
 
-        if (!service.state.settings.hideOutgoing)
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
             logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
         }
@@ -288,13 +276,15 @@ void tryAuth(ConnectService service)
     case snircd:
     case ircdseven:
     case u2:
+        import std.format : format;
+
         // Accepts auth login
         // GameSurge is AuthServ
         string account = service.state.bot.account;
 
         if (!service.state.bot.account.length)
         {
-            logger.logf("No account specified! Trying %s%s%s ...",
+            logger.logf("No account specified! Trying %s%s%s...",
                 Tint.info, service.state.client.origNickname, Tint.log);
             account = service.state.client.origNickname;
         }
@@ -302,7 +292,7 @@ void tryAuth(ConnectService service)
         query(service.state, serviceNick, "%s %s %s"
             .format(verb, account, password), Yes.quiet);
 
-        if (!service.state.settings.hideOutgoing)
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
             logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
         }
@@ -312,7 +302,7 @@ void tryAuth(ConnectService service)
         // Doesn't want a PRIVMSG
         raw(service.state, "NICKSERV IDENTIFY " ~ password, Yes.quiet);
 
-        if (!service.state.settings.hideOutgoing)
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
             logger.trace("--> NICKSERV IDENTIFY hunter2");
         }
@@ -347,11 +337,11 @@ void tryAuth(ConnectService service)
 
 // delayJoinsAfterFailedAuth
 /++
-    Creates and schedules a `core.thread.fiber.Fiber` (in a `kameloso.thread.ScheduledFiber`)
+    Creates and schedules a [core.thread.fiber.Fiber] (in a [kameloso.thread.ScheduledFiber])
     that joins channels after having failed to authenticate for n seconds.
 
     Params:
-        service = The current `ConnectService`.
+        service = The current [ConnectService].
  +/
 void delayJoinsAfterFailedAuth(ConnectService service)
 {
@@ -389,7 +379,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
 // onNotRegistered
 /++
     Requeues joining channels if we receive an
-    `dalect.defs.IRCEvent.Type.ERR_NOTREGISTERED` error.
+    [dialect.defs.IRCEvent.Type.ERR_NOTREGISTERED] error.
 
     This can happen if the authentication process turns out to be particularly slow.
     Recover by schedling to join channels again later.
@@ -412,60 +402,12 @@ void onNotRegistered(ConnectService service)
  +/
 @(IRCEvent.Type.RPL_LOGGEDIN)
 @(IRCEvent.Type.AUTH_FAILURE)
-void onAuthEnd(ConnectService service)
+void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
     service.authentication = Progress.finished;
 
-    // This can be before registration ends in case of SASL
-    // return if still registering
-    if (service.registration != Progress.finished) return;
-
-    if (!service.joinedChannels)
+    if (service.registration == Progress.finished)
     {
-        service.joinChannels();
-        service.joinedChannels = true;
-    }
-}
-
-
-version(TwitchSupport)
-{
-    alias ChainableOnTwitch = Chainable;
-}
-else
-{
-    import std.meta : AliasSeq;
-    alias ChainableOnTwitch = AliasSeq!();
-}
-
-
-// onAuthEndNotice
-/++
-    Flags authentication as finished and join channels.
-
-    Some networks/daemons (like RusNet) send the "authentication complete"
-    message as a `dialect.defs.IRCEvent.Type.NOTICE` from `NickServ`, not a
-    `dialect.defs.IRCEvent.Type.PRIVMSG`.
-
-    Whitelist more nicknames as we discover them. Also English only for now but
-    can be easily extended.
- +/
-@ChainableOnTwitch
-@(IRCEvent.Type.NOTICE)
-void onAuthEndNotice(ConnectService service, const ref IRCEvent event)
-{
-    version(TwitchSupport)
-    {
-        if (service.state.server.daemon == IRCServer.Daemon.twitch) return;
-    }
-
-    import lu.string : beginsWith;
-
-    if ((event.sender.nickname == "NickServ") &&
-        event.content.beginsWith("Password accepted for nick"))
-    {
-        service.authentication = Progress.finished;
-
         if (!service.joinedChannels)
         {
             service.joinChannels();
@@ -480,6 +422,7 @@ void onAuthEndNotice(ConnectService service, const ref IRCEvent event)
     On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
  +/
 version(TwitchSupport)
+@Chainable
 @(IRCEvent.Type.NOTICE)
 void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
@@ -527,33 +470,65 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 }
 
 
+// onAuthEndNotice
+/++
+    Flags authentication as finished and join channels.
+
+    Some networks/daemons (like RusNet) send the "authentication complete"
+    message as a [dialect.defs.IRCEvent.Type.NOTICE] from `NickServ`, not a
+    [dialect.defs.IRCEvent.Type.PRIVMSG].
+
+    Whitelist more nicknames as we discover them. Also English only for now but
+    can be easily extended.
+ +/
+@(IRCEvent.Type.NOTICE)
+void onAuthEndNotice(ConnectService service, const ref IRCEvent event)
+{
+    version(TwitchSupport)
+    {
+        if (service.state.server.daemon == IRCServer.Daemon.twitch) return;
+    }
+
+    import lu.string : beginsWith;
+
+    if ((event.sender.nickname == "NickServ") &&
+        event.content.beginsWith("Password accepted for nick"))
+    {
+        service.authentication = Progress.finished;
+
+        if (!service.joinedChannels)
+        {
+            service.joinChannels();
+            service.joinedChannels = true;
+        }
+    }
+}
+
+
 // onNickInUse
 /++
     Modifies the nickname by appending characters to the end of it.
 
-    Flags the client as updated, so as to propagate the change to all other plugins.
+    Don't modify [IRCPluginState.client.nickname] as the nickname only changes
+    when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
 {
+    import std.conv : text;
+    import std.random : uniform;
+
     if (service.registration == Progress.started)
     {
-        if (service.renamedDuringRegistration)
-        {
-            import std.conv : text;
-            import std.random : uniform;
-
-            service.state.client.nickname ~= uniform(0, 10).text;
-        }
-        else
+        if (!service.renameDuringRegistration.length)
         {
             import kameloso.constants : KamelosoDefaults;
-            service.state.client.nickname ~= KamelosoDefaults.altNickSign;
-            service.renamedDuringRegistration = true;
+            service.renameDuringRegistration = service.state.client.nickname ~
+                KamelosoDefaults.altNickSign;
         }
 
-        service.state.clientUpdated = true;
-        raw!(Yes.priority)(service.state, "NICK " ~ service.state.client.nickname);
+        service.renameDuringRegistration ~= uniform(0, 10).text;
+        immediate(service.state, "NICK " ~ service.renameDuringRegistration);
     }
 }
 
@@ -569,7 +544,17 @@ void onBadNick(ConnectService service)
     if (service.registration == Progress.started)
     {
         // Mid-registration and invalid nickname; abort
-        logger.error("Your nickname is invalid. (reserved, too long, or contains invalid characters)");
+
+        if (service.renameDuringRegistration.length)
+        {
+            logger.error("Your nickname was taken and an alternative nickname " ~
+                "could not be successfully generated.");
+        }
+        else
+        {
+            logger.error("Your nickname is invalid. (reserved, too long, or contains invalid characters)");
+        }
+
         quit(service.state, "Invalid nickname");
     }
 }
@@ -591,7 +576,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad `kameloso.kameloso.IRCBot.pass`.
+    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass].
 
     There's no point in reconnecting.
  +/
@@ -688,7 +673,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                     continue;
                 }
 
-                raw(service.state, "CAP REQ :sasl", Yes.quiet);
+                immediate(service.state, "CAP REQ :sasl", Yes.quiet);
                 tryingSASL = true;
                 break;
 
@@ -727,7 +712,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                raw(service.state, "CAP REQ :" ~ cap, Yes.quiet);
+                immediate(service.state, "CAP REQ :" ~ cap, Yes.quiet);
                 break;
 
             default:
@@ -740,15 +725,8 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            raw(service.state, "CAP END", Yes.quiet);
-
-            if (service.capabilityNegotiation == Progress.started)
-            {
-                // Gate this behind a Progress.started check, in case the fallback
-                // Fiber negotiating nick if no CAP response already fired
-                service.capabilityNegotiation = Progress.finished;
-                service.negotiateNick();
-            }
+            immediate(service.state, "CAP END", Yes.quiet);
+            service.capabilityNegotiation = Progress.finished;
         }
         break;
 
@@ -761,7 +739,28 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 service.state.connSettings.certFile.length)) ?
                     "AUTHENTICATE EXTERNAL" :
                     "AUTHENTICATE PLAIN";
-            raw(service.state, mechanism, Yes.quiet);
+            immediate(service.state, mechanism, Yes.quiet);
+            break;
+
+        case "twitch.tv/tags":
+            // Have to have the version inside the case for some reason
+            // Error: switch skips declaration of variable kameloso.plugins.services.connect.onCapabilityNegotiation.mechanism
+
+            version(TwitchSupport)
+            {
+                import std.algorithm : endsWith;
+                import std.uni : toLower;
+
+                if (!service.state.server.address.endsWith(".twitch.tv")) break;
+
+                // If we register too early on Twitch servers we won't get a
+                // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
+                // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
+                // Make sure nickname is lowercase so we can rely on it as account name
+
+                service.state.client.nickname = service.state.client.nickname.toLower;
+                service.state.clientUpdated = true;
+            }
             break;
 
         default:
@@ -784,13 +783,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             // Consider making this a Fiber that triggers after say, 5 seconds
             // That should give other CAPs time to process
             raw(service.state, "CAP END", Yes.quiet);
-
-            if (service.capabilityNegotiation == Progress.started)
-            {
-                // As above
-                service.capabilityNegotiation = Progress.finished;
-                service.negotiateNick();
-            }
+            service.capabilityNegotiation = Progress.finished;
             break;
 
         default:
@@ -825,7 +818,7 @@ void onSASLAuthenticate(ConnectService service)
         (service.saslExternal == Progress.notStarted))
     {
         service.saslExternal = Progress.started;
-        raw(service.state, "AUTHENTICATE +");
+        immediate(service.state, "AUTHENTICATE +");
         return;
     }
 
@@ -840,23 +833,24 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    `kameloso.kameloso.IRCBot.account` and `kameloso.kameloso.IRCBot.password`,
+    [kameloso.kameloso.IRCBot.account] and [kameloso.kameloso.IRCBot.password],
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where `kameloso.kameloso.IRCBot.account` is the services account name and
-    `kameloso.kameloso.IRCBot.password` is the account password.
+    ...where [kameloso.kameloso.IRCBot.account] is the services account name and
+    [kameloso.kameloso.IRCBot.password] is the account password.
 
     Params:
-        service = The current `ConnectService`.
+        service = The current [ConnectService].
  +/
 bool trySASLPlain(ConnectService service)
 {
     import lu.string : beginsWith, decode64, encode64;
     import std.base64 : Base64Exception;
+    import std.format : format;
 
     try
     {
@@ -871,8 +865,12 @@ bool trySASLPlain(ConnectService service)
         immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
         immutable encoded = encode64(authToken);
 
-        raw(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
-        if (!service.state.settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
+        immediate(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
+
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        {
+            logger.trace("--> AUTHENTICATE hunter2");
+        }
         return true;
     }
     catch (Base64Exception e)
@@ -887,7 +885,7 @@ bool trySASLPlain(ConnectService service)
 // onSASLSuccess
 /++
     On SASL authentication success, calls a `CAP END` to finish the
-    `dialect.defs.IRCEvent.Type.CAP` negotiations.
+    [dialect.defs.IRCEvent.Type.CAP] negotiations.
 
     Flags the client as having finished registering and authing, allowing the
     main loop to pick it up and propagate it to all other plugins.
@@ -911,16 +909,15 @@ void onSASLSuccess(ConnectService service)
         Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    raw(service.state, "CAP END", Yes.quiet);
+    immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
-    service.negotiateNick();
 }
 
 
 // onSASLFailure
 /++
     On SASL authentication failure, calls a `CAP END` to finish the
-    `dialect.defs.IRCEvent.Type.CAP` negotiations and finish registration.
+    [dialect.defs.IRCEvent.Type.CAP] negotiations and finish registration.
 
     Flags the client as having finished registering, allowing the main loop to
     pick it up and propagate it to all other plugins.
@@ -932,7 +929,7 @@ void onSASLFailure(ConnectService service)
     {
         // Fall back to PLAIN
         service.saslExternal = Progress.finished;
-        raw(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+        immediate(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
         return;
     }
 
@@ -947,9 +944,8 @@ void onSASLFailure(ConnectService service)
     service.authentication = Progress.finished;
 
     // See `onSASLSuccess` for info on `CAP END`
-    raw(service.state, "CAP END", Yes.quiet);
+    immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
-    service.negotiateNick();
 }
 
 
@@ -964,14 +960,13 @@ void onNoCapabilities(ConnectService service, const ref IRCEvent event)
     if (event.aux == "CAP")
     {
         service.capabilityNegotiation = Progress.finished;
-        service.negotiateNick();
     }
 }
 
 
 // onWelcome
 /++
-    Marks registration as completed upon `dialect.defs.IRCEvent.Type.RPL_WELCOME`
+    Marks registration as completed upon [dialect.defs.IRCEvent.Type.RPL_WELCOME]
     (numeric `001`).
 
     Additionally performs post-connect routines (authenticates if not already done,
@@ -981,8 +976,10 @@ void onNoCapabilities(ConnectService service, const ref IRCEvent event)
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
     service.registration = Progress.finished;
-    service.nickNegotiation = Progress.finished;
+    service.renameDuringRegistration = string.init;
 
+    // FIXME: This is done automtically in dialect master so there's no need to do it here
+    // but wait for a dialect release before removing.
     if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
     {
         service.state.client.nickname = event.target.nickname;
@@ -1023,13 +1020,20 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 /++
     Joins channels and prints some Twitch warnings on end of MOTD.
 
-    Do this then instead of on `IRCEvent.Type.RPL_WELCOME` for better timing,
+    Do this then instead of on [IRCEvent.Type.RPL_WELCOME] for better timing,
     and to avoid having the message drown in MOTD.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOFMotd(ConnectService service)
 {
+    // Gather information about ourselves
+    if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+        !service.state.client.ident.length)
+    {
+        whois!(Yes.priority)(service.state, service.state.client.nickname, Yes.force, Yes.quiet);
+    }
+
     if (service.joinedChannels) return;
 
     if ((service.authentication == Progress.finished) ||
@@ -1085,6 +1089,22 @@ void onEndOFMotd(ConnectService service)
 }
 
 
+// onWHOISUser
+/++
+    Catch information about ourselves (notably our `IDENT`) from `WHOIS` results.
+ +/
+@(IRCEvent.Type.RPL_WHOISUSER)
+void onWHOISUser(ConnectService service, const ref IRCEvent event)
+{
+    if (event.target.nickname != service.state.client.nickname) return;
+
+    if (!service.state.client.ident.length)
+    {
+        service.state.client.ident = event.target.ident;
+    }
+}
+
+
 // onISUPPORT
 /++
     Requests a UTF-8 codepage if it seems that the server supports changing such.
@@ -1110,7 +1130,7 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
     This is a "benign" disconnect. We need to reconnect preemptively instead of
     waiting for the server to disconnect us, as it would otherwise constitute
     an error and the program would exit if
-    `kameloso.kameloso.CoreSettings.endlesslyConnect` isn't set.
+    [kameloso.kameloso.CoreSettings.endlesslyConnect] isn't set.
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)
@@ -1147,20 +1167,12 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     Registers with/logs onto an IRC server.
 
     Params:
-        service = The current `ConnectService`.
+        service = The current [ConnectService].
  +/
 void register(ConnectService service)
 {
     service.registration = Progress.started;
-    raw(service.state, "CAP LS 302", Yes.quiet);
-
-    version(TwitchSupport)
-    {
-        import std.algorithm : endsWith;
-
-        // Cache the check
-        immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
-    }
+    immediate(service.state, "CAP LS 302", Yes.quiet);
 
     if (service.state.bot.pass.length)
     {
@@ -1193,8 +1205,9 @@ void register(ConnectService service)
         version(TwitchSupport)
         {
             import lu.string : beginsWith;
+            import std.algorithm : endsWith;
 
-            if (serverIsTwitch)
+            if (service.state.server.address.endsWith(".twitch.tv"))
             {
                 service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
             }
@@ -1208,75 +1221,44 @@ void register(ConnectService service)
             service.state.bot.pass = decoded;
         }
 
-        //service.state.botUpdated = true;  // done below
+        service.state.botUpdated = true;
 
-        raw(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
-        if (!service.state.settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
+        immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
+
+        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        {
+            // fake it
+            logger.trace("--> PASS hunter2");
+        }
     }
-
-    import core.thread : Fiber;
 
     version(TwitchSupport)
     {
-        // If we register too early on Twitch servers we won't get a
-        // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
-        // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
+        import std.algorithm : endsWith;
+        import std.uni : toLower;
 
-        if (serverIsTwitch)
+        if (service.state.server.address.endsWith(".twitch.tv"))
         {
-            import kameloso.thread : CarryingFiber;
-            import std.uni : toLower;
-
-            void dg()
-            {
-                while (true)
-                {
-                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                    assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-                    assert((thisFiber.payload.type == IRCEvent.Type.CAP),
-                        "Twitch nick negotiation delegate triggered on unknown type");
-
-                    if ((thisFiber.payload.aux == "ACK") &&
-                        (thisFiber.payload.content == "twitch.tv/tags"))
-                    {
-                        // tag capabilities negotiated, safe to register
-                        return service.negotiateNick();
-                    }
-
-                    // Wrong kind of CAP event; yield and retry.
-                    Fiber.yield();
-                }
-            }
-
-            import kameloso.plugins.common.delayawait : await;
-            import kameloso.constants : BufferSize;
-
-            Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
-            await(service, fiber, IRCEvent.Type.CAP);
-
             // Make sure nickname is lowercase so we can rely on it as account name
             service.state.client.nickname = service.state.client.nickname.toLower;
-            service.state.botUpdated = true;  // update nickname and pass
-            return;
+            service.state.clientUpdated = true;
         }
     }
 
-    // Nick negotiation after CAP END
-    // If CAP is not supported, go ahead and negotiate nick after n seconds
-
-    enum secsToWaitForCAP = 2;
-
-    void dgTimered()
-    {
-        if (service.capabilityNegotiation == Progress.notStarted)
-        {
-            //logger.info("Does the server not support capabilities?");
-            service.negotiateNick();
-        }
-    }
-
-    import kameloso.plugins.common.delayawait : delay;
-    delay(service, &dgTimered, secsToWaitForCAP);
+    // Negotiate nick after CAP has been called; registration will only finish after CAP END anyway
+    /*
+        [21:26:59] Connected!
+        [21:27:00] --> CAP LS 302
+        [21:27:00] --> PASS oauth:redacted
+        [21:27:00] --> NICK zorael
+        [21:27:00] [cap] tmi.twitch.tv: "twitch.tv/tags twitch.tv/commands twitch.tv/membership" (LS)
+        [21:27:01] --> CAP REQ :twitch.tv/tags
+        [21:27:01] --> CAP REQ :twitch.tv/commands
+        [21:27:01] --> CAP REQ :twitch.tv/membership
+        [21:27:01] --> CAP END
+        [21:27:01] [welcome] tmi.twitch.tv -> zorael: "Welcome, GLHF!" (#001)
+    */
+    negotiateNick(service);
 }
 
 
@@ -1286,12 +1268,7 @@ void register(ConnectService service)
  +/
 void negotiateNick(ConnectService service)
 {
-    if ((service.registration == Progress.finished) ||
-        (service.nickNegotiation != Progress.notStarted)) return;
-
     import std.algorithm.searching : endsWith;
-
-    service.nickNegotiation = Progress.started;
 
     if (!service.state.server.address.endsWith(".twitch.tv"))
     {
@@ -1320,11 +1297,11 @@ void negotiateNick(ConnectService service)
                 O - local operator flag;
                 s - marks a user for receipt of server notices.
          +/
-        raw(service.state, "USER %s 8 * :%s".format(service.state.client.user,
+        immediate(service.state, "USER %s 8 * :%s".format(service.state.client.user,
             service.state.client.realName.replaceTokens(service.state.client)));
     }
 
-    raw(service.state, "NICK " ~ service.state.client.nickname);
+    immediate(service.state, "NICK " ~ service.state.client.nickname);
 }
 
 
@@ -1334,7 +1311,7 @@ void negotiateNick(ConnectService service)
 
     This initialisation event fires immediately after a successful connect, and
     so instead of waiting for something from the server to trigger our
-    registration procedure (notably `dialect.defs.IRCEvent.Type.NOTICE`s
+    registration procedure (notably [dialect.defs.IRCEvent.Type.NOTICE]s
     about our `IDENT` and hostname), we preemptively register.
 
     It seems to work.
@@ -1349,13 +1326,13 @@ import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
 /++
-    Receives a passed `kameloso.thread.BusMessage` with the "`connect`" header,
+    Receives a passed [kameloso.thread.BusMessage] with the "`connect`" header,
     and calls functions based on the payload message.
 
     This is used to let other plugins trigger re-authentication with services.
 
     Params:
-        service = The current `ConnectService`.
+        service = The current [ConnectService].
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -1413,14 +1390,18 @@ private:
     /// At what step we're currently at with regards to capabilities.
     Progress capabilityNegotiation;
 
-    /// At what step we're currently at with regards to nick negotiation.
-    Progress nickNegotiation;
-
-    /// Whether or not the server has sent at least one `dialect.defs.IRCEvent.Type.PING`.
+    /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
     bool serverPinged;
 
-    /// Whether or not the bot has renamed itself during registration.
-    bool renamedDuringRegistration;
+    /++
+        Temporary: the nickname that we had to rename to, to successfully
+        register on the server.
+
+        This is to avoid modifying [IRCPluginState.client.nickname] before the
+        nickname is actually changed, yet still carry information about the
+        incremental rename throughout calls of [onNickInUse].
+     +/
+    string renameDuringRegistration;
 
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;

@@ -48,7 +48,7 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
 @Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
     "$command [seconds] [choice1] [choice2] ...")
-void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
+void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;
@@ -447,7 +447,7 @@ private:
 
     /++
         An unique identifier for an ongoing channel vote, as set by
-        `onCommandVote` and monitored inside its `core.thread.fiber.Fiber`'s closures.
+        [onCommandVote] and monitored inside its [core.thread.fiber.Fiber]'s closures.
      +/
     int[string] channelVoteInstances;
 

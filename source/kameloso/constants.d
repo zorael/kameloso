@@ -10,6 +10,38 @@ private:
 import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
 import std.format : format;
 
+
+version(DigitalMars)
+{
+    /// String of the compiler that was used to compile this binary with. Here: `dmd`.
+    enum compiler = "dmd";
+}
+else version(LDC)
+{
+    /// String of the compiler that was used to compile this binary with. Here: `ldc`.
+    enum compiler = "ldc";
+}
+else version(GNU)
+{
+    /// String of the compiler that was used to compile this binary with. Here: `gdc`.
+    enum compiler = "gdc";
+}
+else
+{
+    /// String of the compiler that was used to compile this binary with. Here: no idea.
+    enum compiler = "<unknown>";
+}
+
+
+// compilerVersion
+/++
+    Compiler version used when this binary was compiled.
+
+    It is formatted to be in `2.094` form.
+ +/
+enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
+
+
 public:
 
 
@@ -27,6 +59,8 @@ enum KamelosoInfo
             KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease),  /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
+    compiler = .compiler,  /// Compiler used to build this binary.
+    compilerVersion = .compilerVersion,  /// Compiler version used to build this binary.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
 
@@ -57,7 +91,7 @@ enum KamelosoDefaults
     partReason = quitReason,
 
     /// When a nickname is taken, first append this to get a new name before trying random numbers.
-    altNickSign = "^",
+    altNickSign = "|",
 }
 
 
@@ -116,6 +150,9 @@ enum ConnectionDefaultFloats : double
 {
     /// By what to multiply the connect timeout after failing an attempt.
     delayIncrementMultiplier = 1.5,
+
+    /// By what to multiply [Timeout.receiveMsecs] with to shorten reads.
+    receiveShorteningMultiplier = 0.25,
 }
 
 
@@ -126,12 +163,12 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
-        The receive buffer size as set as a `std.socket.SocketOption`.
+        The receive buffer size as set as a [std.socket.SocketOption].
      +/
     socketOptionReceive = 2048,
 
     /++
-        The send buffer size as set as a `std.socket.SocketOption`.
+        The send buffer size as set as a [std.socket.SocketOption].
      +/
     socketOptionSend = 1024,
 
@@ -153,7 +190,7 @@ enum BufferSize
 
     /++
         How many bytes to preallocate a buffer for when printing objects to
-        screen with the `kameloso.printing` templates. This value times the
+        screen with the [kameloso.printing] templates. This value times the
         number of objects to print.
      +/
     printObjectBufferPerObject = 1024,
@@ -164,7 +201,7 @@ enum BufferSize
     vbufStdout = 16_384,
 
     /++
-        How large to make `core.thread.fiber.Fiber` stacks, so they don't overflow
+        How large to make [core.thread.fiber.Fiber] stacks, so they don't overflow
         (which they seem to have a knack for doing).
      +/
     fiberStack = 32_768,
@@ -178,14 +215,20 @@ enum BufferSize
 enum Timeout
 {
     /++
-        The send attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
+        The send attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
      +/
     sendMsecs = 5000,
 
     /++
-        The receive attempt timeout as set as a `std.socket.SocketOption`, in milliseconds.
+        The receive attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
      +/
     receiveMsecs = 1000,
+
+    /++
+        The amount of time to spend with a shortened receive timeout, in milliseconds.
+        After this, it reverts from [receiveShortenedMsecs] to [receiveMsecs].
+     +/
+    maxShortenDurationMsecs = 2000,
 
     /++
         The maximum amount of time to wait between connection attempts.
@@ -248,10 +291,10 @@ public:
      +/
     enum TimestampColour : TerminalForeground
     {
-        /// For dark terminal backgrounds. Was `kameloso.terminal.TerminalForeground.white_`.
+        /// For dark terminal backgrounds. Was [kameloso.terminal.TerminalForeground.white_].
         dark = TF.default_,
 
-        /// For bright terminal backgrounds. Was `kameloso.terminal.TerminalForeground.black_`.
+        /// For bright terminal backgrounds. Was [kameloso.terminal.TerminalForeground.black_].
         bright = TF.default_,
     }
 

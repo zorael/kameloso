@@ -30,6 +30,9 @@ import std.typecons : Flag, No, Yes;
 {
     /// Toggles whether or not the plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /// Toggles whether or not meta descriptions should be reported next to titles.
+    bool descriptions = true;
 }
 
 
@@ -45,6 +48,9 @@ struct TitleLookupResults
 {
     /// Looked up web page title.
     string title;
+
+    /// The content of the web page's `description` tag.
+    string description;
 
     /// Domain name of the looked up URL.
     string domain;
@@ -72,7 +78,7 @@ struct TitleLookupRequest
     /// The context state of the requesting plugin instance.
     IRCPluginState state;
 
-    /// The `dialect.defs.IRCEvent` that instigated the lookup.
+    /// The [dialect.defs.IRCEvent] that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.
@@ -87,7 +93,7 @@ struct TitleLookupRequest
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in `kameloso.common.findURLs` to exhaustively
+    It uses a simple state machine in [kameloso.common.findURLs] to exhaustively
     try to look up every URL returned by it.
  +/
 @Terminating
@@ -98,9 +104,9 @@ struct TitleLookupRequest
 void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
-    import lu.string : beginsWith;
+    import lu.string : beginsWith, strippedLeft;
 
-    if (event.content.beginsWith(plugin.state.settings.prefix)) return;
+    if (event.content.strippedLeft.beginsWith(plugin.state.settings.prefix)) return;
 
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
@@ -122,6 +128,10 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
+    if (!urls.length) return;
+
+    immutable descriptionsFlag = plugin.webtitlesSettings.descriptions ?
+        Yes.descriptions : No.descriptions;
     bool[string] uniques;
 
     foreach (immutable i, url; urls)
@@ -180,8 +190,13 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), colouredFlag);
+            (i * plugin.delayMsecs), colouredFlag, descriptionsFlag);
     }
+
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend;
+
+    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 }
 
 
@@ -194,15 +209,19 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     Worker to be run in its own thread.
 
     Params:
-        sRequest = Shared `TitleLookupRequest` aggregate with all the state and
+        sRequest = Shared [TitleLookupRequest] aggregate with all the state and
             context needed to look up a URL and report the results to the local terminal.
-        cache = Shared cache of previous `TitleLookupRequest`s.
+        cache = Shared cache of previous [TitleLookupRequest]s.
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
         colouredFlag = Flag of whether or not to send coloured output to the server.
+        descriptions = Whether or not to look up meta descriptions.
  +/
-void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string] cache,
-    const ulong delayMsecs, const Flag!"colouredOutgoing" colouredFlag)
+void worker(shared TitleLookupRequest sRequest,
+    shared TitleLookupResults[string] cache,
+    const ulong delayMsecs,
+    const Flag!"colouredOutgoing" colouredFlag,
+    const Flag!"descriptions" descriptions)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
@@ -240,7 +259,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         if (slice[0] == 's') slice = slice[1..$];
         slice = slice[3..$];  // ://
 
-        if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
+        if (slice.beginsWith("www.")) slice = slice[4..$];
 
         if (slice.beginsWith("youtube.com/watch?v=") ||
             slice.beginsWith("youtu.be/"))
@@ -295,7 +314,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
         {
             try
             {
-                request.results = lookupTitle(request.url);
+                request.results = lookupTitle(request.url, descriptions);
                 reportTitle(request, colouredFlag);
                 request.results.when = now;
 
@@ -322,7 +341,7 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
                 if (firstTime)
                 {
-                    request.state.askToLog("Rewriting URL and retrying ...");
+                    request.state.askToLog("Rewriting URL and retrying...");
 
                     if (request.url[$-1] == '/')
                     {
@@ -352,14 +371,15 @@ void worker(shared TitleLookupRequest sRequest, shared TitleLookupResults[string
 
     Params:
         url = URL string to look up.
+        descriptions = Whether or not to look up meta descriptions.
 
     Returns:
-        A finished `TitleLookupResults`.
+        A finished [TitleLookupResults].
 
-    Throws: `object.Exception` if URL could not be fetched, or if no title could be
+    Throws: [object.Exception] if URL could not be fetched, or if no title could be
         divined from it.
  +/
-TitleLookupResults lookupTitle(const string url)
+TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descriptions)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
@@ -411,6 +431,18 @@ TitleLookupResults lookupTitle(const string url)
     results.title = decodeTitle(doc.title);
     results.domain = host;
 
+    if (descriptions)
+    {
+        auto metaTags = doc.getElementsByTagName("meta");
+
+        foreach (tag; metaTags)
+        {
+            if (tag.name != "description") continue;
+            results.description = tag.content;
+            break;
+        }
+    }
+
     client.shutdown();
     return results;
 }
@@ -421,7 +453,7 @@ TitleLookupResults lookupTitle(const string url)
     Echoes the result of a web title lookup to a channel.
 
     Params:
-        request = A `TitleLookupRequest` containing the results of the lookup.
+        request = A [TitleLookupRequest] containing the results of the lookup.
         colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void reportTitle(TitleLookupRequest request,
@@ -434,13 +466,22 @@ void reportTitle(TitleLookupRequest request,
         import kameloso.irccolours : ircBold;
         import std.format : format;
 
+        immutable maybePipe = request.results.description.length ? " | " : string.init;
         line = colouredOutgoing ?
-            "[%s] %s".format(request.results.domain.ircBold, request.results.title) :
-            "[%s] %s".format(request.results.domain, request.results.title);
+            "[%s] %s%s%s".format(request.results.domain.ircBold, request.results.title,
+                maybePipe, request.results.description) :
+            "[%s] %s%s%s".format(request.results.domain, request.results.title,
+                maybePipe, request.results.description);
     }
     else
     {
         line = request.results.title;
+    }
+
+    if (line.length > 510)
+    {
+        // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
+        line = line[0..504] ~ " [...]";
     }
 
     chan(request.state, request.event.channel, line);
@@ -452,7 +493,7 @@ void reportTitle(TitleLookupRequest request,
     Echoes the result of a YouTube lookup to a channel.
 
     Params:
-        request = A `TitleLookupRequest` containing the results of the lookup.
+        request = A [TitleLookupRequest] containing the results of the lookup.
         colouredOutgoing = Whether or not to send coloured output to the server.
  +/
 void reportYouTubeTitle(TitleLookupRequest request,
@@ -536,11 +577,11 @@ unittest
         url = A YouTube video link string.
 
     Returns:
-        A `std.json.JSONValue` with fields describing the looked-up video.
+        A [std.json.JSONValue] with fields describing the looked-up video.
 
     Throws:
-        `core.Exception` if the YouTube ID was invalid and could not be queried.
-        `std.json.JSONException` if the JSON response could not be parsed.
+        [core.Exception] if the YouTube ID was invalid and could not be queried.
+        [std.json.JSONException] if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
 {
@@ -634,7 +675,7 @@ unittest
     Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
 
     Params:
-        cache = Cache of previous `TitleLookupResults`, `shared` so that it can
+        cache = Cache of previous [TitleLookupResults], `shared` so that it can
             be reused in further lookup (other threads).
         expireSeconds = After how many seconds a cached entry is considered to
             have expired and should no longer be used as a valid entry.
@@ -680,7 +721,7 @@ import kameloso.thread : Sendable;
     links, so gate it behind version TwitchBotPlugin.
 
     Params:
-        plugin = The current `WebtitlesPlugin`.
+        plugin = The current [WebtitlesPlugin].
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -740,9 +781,9 @@ private:
 
     // isEnabled
     /++
-        Override `kameloso.plugins.common.core.IRCPluginImpl.isEnabled` and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when `webtitlesSettings.enabled` is false.
+        to doing nothing when [WebtitlesSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.

@@ -1,9 +1,9 @@
 /++
-    The Printer plugin takes incoming `dialect.defs.IRCEvent`s, formats them
+    The Printer plugin takes incoming [dialect.defs.IRCEvent]s, formats them
     into something easily readable and prints them to the screen, optionally with colours.
     It also supports logging to disk.
 
-    It has no commands; all `dialect.defs.IRCEvent`s will be parsed and
+    It has no commands; all [dialect.defs.IRCEvent]s will be parsed and
     printed, excluding certain types that were deemed too spammy. Print them as
     well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
 
@@ -49,6 +49,9 @@ public:
     /// Whether or not to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
+    /// Whether or not two users on the same account should be coloured identically.
+    bool colourByAccount = true;
+
     version(TwitchSupport)
     {
         /// Whether or not to display Twitch badges next to sender/target names.
@@ -93,7 +96,7 @@ public:
     bool logs = false;
 
     /// Whether or not to log non-home channels.
-    bool logAllChannels = false;
+    bool logGuestChannels = false;
 
     /// Whether or not to log errors.
     bool logErrors = true;
@@ -122,9 +125,9 @@ public:
 /++
     Prints an event to the local terminal.
 
-    Buffer output in an `std.array.Appender`.
+    Buffer output in an [std.array.Appender].
 
-    Mutable `dialect.defs.IRCEvent` parameter so as to make fewer internal copies
+    Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
 @Chainable
@@ -341,8 +344,15 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         }
 
     case USERSTATE: // Insanely spammy, once every sent message
-    case PING:
     case PONG:
+        break;
+
+    case PING:
+        import lu.string : contains;
+
+        // Show the on-connect-ping-this type of events if !filterMost
+        // Assume those containing dots are real pings for the server address
+        if (!plugin.printerSettings.filterMost && event.content.length) goto default;
         break;
 
     default:
@@ -388,16 +398,16 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to `kameloso.plugins.common.core.ChannelPolicy.any`, and configuration
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any], and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 
-    Lines will either be saved immediately to disk, opening a `std.stdio.File`
+    Lines will either be saved immediately to disk, opening a [std.stdio.File]
     with appending privileges for each event as they occur, or buffered by
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        commitAllLogs
+        [commitAllLogs]
  +/
 @Chainable
 @(ChannelPolicy.any)
@@ -412,13 +422,13 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 /++
     Writes all buffered log lines to disk.
 
-    Merely wraps `commitLog` by iterating over all buffers and invoking it.
+    Merely wraps [commitAllLogsImpl] by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current [PrinterPlugin].
 
     See_Also:
-        commitLog
+        [kameloso.plugins.printer.logging.commitLog]
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -432,7 +442,7 @@ void commitAllLogs(PrinterPlugin plugin)
 // onISUPPORT
 /++
     Prints information about the current server as we gain details of it from an
-    `dialect.defs.IRCEvent.Type.RPL_ISUPPORT` event.
+    [dialect.defs.IRCEvent.Type.RPL_ISUPPORT] event.
 
     Set a flag so we only print this information once; (ISUPPORTS can/do stretch
     across several events.)
@@ -598,13 +608,13 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed `kameloso.thread.BusMessage` with the "`printer`" header,
+    Receives a passed [kameloso.thread.BusMessage] with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    `kameloso.plugins.chanqueries.ChanQueriesService` querying current channel
+    [kameloso.plugins.services.chanqueries.ChanQueriesService] querying current channel
     for information on the channels and their users.
 
     Params:
-        plugin = The current `PrinterPlugin`.
+        plugin = The current [PrinterPlugin].
         header = String header describing the passed content payload.
         content = Message content.
  +/
@@ -675,6 +685,18 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
         case RPL_WHOISREGNICK:
         case RPL_ENDOFWHOIS:
         case RPL_WELCOME:
+        case RPL_WHOISSECURE:
+        case RPL_WHOISCERTFP:
+        case RPL_WHOISSSLFP:
+        case RPL_WHOISSPECIAL:
+        case RPL_WHOISSTAFF:
+        case RPL_WHOISYOURID:
+        case RPL_WHOISVIRT:
+        case RPL_WHOISSVCMSG:
+        case RPL_WHOISTEXT:
+        case RPL_WHOISWEBIRC:
+            // Keep bot's nickname as target for these event types.
+            break;
 
         version(TwitchSupport)
         {
@@ -686,22 +708,19 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
             case TWITCH_HOSTSTART:
+                goto case MODE;
         }
-            // Keep bot's nickname as target for these event types.
-            break;
 
         default:
             event.target.nickname = string.init;
             return;
         }
     }
-
-    if (event.target.nickname == "*")
+    else if (event.target.nickname == "*")
     {
         // Some events have an asterisk in what we consider the target nickname field. Sometimes.
         // [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
         // Clear it if so, since it conveys no information we care about.
-        // It does not appear to be wholly reproducible, suggesting there's more to it.
         event.target.nickname = string.init;
     }
 }
@@ -754,7 +773,7 @@ public:
 
 // PrinterPlugin
 /++
-    The Printer plugin takes all `dialect.defs.IRCEvent`s and prints them to
+    The Printer plugin takes all [dialect.defs.IRCEvent]s and prints them to
     the local terminal, formatted and optionally in colour. Alternatively to disk
     as logs.
 
@@ -774,7 +793,7 @@ package:
     /// How many seconds before a request to squelch list events times out.
     enum squelchTimeout = 10;  // seconds
 
-    /// How many bytes to preallocate for the `linebuffer`.
+    /// How many bytes to preallocate for the [linebuffer].
     enum linebufferInitialSize = 2048;
 
     /// From which channel or for which user events are being squelched.
@@ -802,10 +821,10 @@ package:
     /// Where to save logs.
     @Resource string logDirectory = "logs";
 
-    /// `kameloso.terminal.TerminalToken.bell` as string, for use as bell.
+    /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after `kameloso.terminal.isTTY` checks.
+    /// Effective bell after [kameloso.terminal.isTTY] checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;
