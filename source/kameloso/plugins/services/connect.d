@@ -1033,6 +1033,12 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOFMotd(ConnectService service)
 {
+    // Gather information about ourselves
+    if (!service.state.client.ident.length)
+    {
+        whois!(Yes.priority)(service.state, service.state.client.nickname, Yes.force, Yes.quiet);
+    }
+
     if (service.joinedChannels) return;
 
     if ((service.authentication == Progress.finished) ||
