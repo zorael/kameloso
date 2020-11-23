@@ -749,6 +749,28 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             immediate(service.state, mechanism, Yes.quiet);
             break;
 
+        case "twitch.tv/tags":
+            // Have to have the version inside the case for some reason
+            // Error: switch skips declaration of variable kameloso.plugins.services.connect.onCapabilityNegotiation.mechanism
+
+            version(TwitchSupport)
+            {
+                import std.algorithm : endsWith;
+                import std.uni : toLower;
+
+                if (!service.state.server.address.endsWith(".twitch.tv")) break;
+
+                // If we register too early on Twitch servers we won't get a
+                // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
+                // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
+                // Make sure nickname is lowercase so we can rely on it as account name
+
+                service.state.client.nickname = service.state.client.nickname.toLower;
+                service.state.clientUpdated = true;
+                service.negotiateNick();
+            }
+            break;
+
         default:
             //logger.warning("Unhandled capability ACK: ", content);
             break;
@@ -1169,14 +1191,6 @@ void register(ConnectService service)
     service.registration = Progress.started;
     immediate(service.state, "CAP LS 302", Yes.quiet);
 
-    version(TwitchSupport)
-    {
-        import std.algorithm : endsWith;
-
-        // Cache the check
-        immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
-    }
-
     if (service.state.bot.pass.length)
     {
         static string decodeIfPrefixedBase64(const string encoded)
@@ -1208,8 +1222,9 @@ void register(ConnectService service)
         version(TwitchSupport)
         {
             import lu.string : beginsWith;
+            import std.algorithm : endsWith;
 
-            if (serverIsTwitch)
+            if (service.state.server.address.endsWith(".twitch.tv"))
             {
                 service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
             }
@@ -1223,7 +1238,7 @@ void register(ConnectService service)
             service.state.bot.pass = decoded;
         }
 
-        //service.state.botUpdated = true;  // done below
+        service.state.botUpdated = true;
 
         immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
 
@@ -1231,53 +1246,6 @@ void register(ConnectService service)
         {
             // fake it
             logger.trace("--> PASS hunter2");
-        }
-    }
-
-    import core.thread : Fiber;
-
-    version(TwitchSupport)
-    {
-        // If we register too early on Twitch servers we won't get a
-        // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
-        // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
-
-        if (serverIsTwitch)
-        {
-            import kameloso.thread : CarryingFiber;
-            import std.uni : toLower;
-
-            void dg()
-            {
-                while (true)
-                {
-                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                    assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-                    assert((thisFiber.payload.type == IRCEvent.Type.CAP),
-                        "Twitch nick negotiation delegate triggered on unknown type");
-
-                    if ((thisFiber.payload.aux == "ACK") &&
-                        (thisFiber.payload.content == "twitch.tv/tags"))
-                    {
-                        // tag capabilities negotiated, safe to register
-                        return service.negotiateNick();
-                    }
-
-                    // Wrong kind of CAP event; yield and retry.
-                    Fiber.yield();
-                }
-            }
-
-            import kameloso.plugins.common.delayawait : await;
-            import kameloso.constants : BufferSize;
-
-            Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
-            await(service, fiber, IRCEvent.Type.CAP);
-
-            // Make sure nickname is lowercase so we can rely on it as account name
-            service.state.client.nickname = service.state.client.nickname.toLower;
-            service.state.botUpdated = true;  // update nickname and pass
-            return;
         }
     }
 
