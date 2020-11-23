@@ -363,9 +363,9 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.aux.length) .put(sink, " (", event.aux, ')');
 
-    if (event.count != int.min) .put(sink, " {", event.count, '}');
+    if (event.count != long.min) .put(sink, " {", event.count, '}');
 
-    if (event.altcount != int.min) .put(sink, " {", event.altcount, '}');
+    if (event.altcount != long.min) .put(sink, " {", event.altcount, '}');
 
     if (event.num > 0)
     {
@@ -900,13 +900,13 @@ if (isOutputRange!(Sink, char[]))
             " (", event.aux, ')');
     }
 
-    if (event.count != int.min)
+    if (event.count != long.min)
     {
         sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
         .put(sink, " {", event.count, '}');
     }
 
-    if (event.altcount != int.min)
+    if (event.altcount != long.min)
     {
         sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
         .put(sink, " {", event.altcount, '}');
