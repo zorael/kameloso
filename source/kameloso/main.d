@@ -434,7 +434,7 @@ void messageFiber(ref Kameloso instance)
 
                     writef("[TraceWhois] messageFiber caught request to WHOIS \"%s\" " ~
                         "from %s (quiet:%s, background:%s)", m.event.target.nickname,
-                        m.caller, cast(bool)quietFlag, background);
+                        m.caller, cast(bool)quietFlag, cast(bool)background);
                 }
 
                 if ((now - then) > hysteresis)
