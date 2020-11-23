@@ -897,7 +897,7 @@ in (filename.length, "Tried to save seen users to an empty filename")
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(SeenPlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.delayawait : await, delay;
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
@@ -916,23 +916,31 @@ void onWelcome(SeenPlugin plugin)
 
     Fiber saveFiber = new Fiber(&saveDg, BufferSize.fiberStack);
     delay(plugin, saveFiber, plugin.timeBetweenSaves);
-}
 
+    // Use an awaiting delegate to report seen users, to avoid it being repeated
+    // on subsequent manual MOTD calls, unlikely as they may be. For correctness' sake.
 
-// onEndOfMotd
-/++
-    Reports statistics on how many users are registered as having been seen,
-    on end of MOTD.
- +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(SeenPlugin plugin)
-{
-    import lu.string : plurality;
+    static immutable IRCEvent.Type[2] endOfMotdEventTypes =
+    [
+        IRCEvent.Type.RPL_ENDOFMOTD,
+        IRCEvent.Type.ERR_NOMOTD,
+    ];
 
-    logger.logf("Currently %s%d%s %s seen.",
-        Tint.info, plugin.seenUsers.length, Tint.log,
-        plugin.seenUsers.length.plurality("user", "users"));
+    void endOfMotdDg(const IRCEvent motdEvent)
+    {
+        import kameloso.plugins.common.delayawait : unawait;
+        import lu.string : plurality;
+
+        unawait(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
+
+        // Reports statistics on how many users are registered as having been seen
+
+        logger.logf("Currently %s%d%s %s seen.",
+            Tint.info, plugin.seenUsers.length, Tint.log,
+            plugin.seenUsers.length.plurality("user", "users"));
+    }
+
+    await(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
 }
 
 
