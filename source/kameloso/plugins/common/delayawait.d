@@ -340,6 +340,33 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEven
 }
 
 
+// await
+/++
+    Queues a `void delegate(const IRCEvent)` delegate to be called whenever the next parsed and
+    triggering const [dialect.defs.IRCEvent] matches the passed
+    [dialect.defs.IRCEvent.Type] types. Overload that takes an array of types.
+
+    Note: The delegate stays in the queue until a call to [unawait] it is made.
+
+    Params:
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        dg = Delegate to enqueue to be executed when the next const
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        types = An array of the kinds of [dialect.defs.IRCEvent]s that should trigger the
+            passed awaiting delegate.
+ +/
+void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type[] types)
+in ((dg !is null), "Tried to set up a null delegate to await events")
+{
+    foreach (immutable type; types)
+    {
+        assert((type != IRCEvent.Type.UNSET),
+            "Tried to set up a delegate to await `IRCEvent.Type.UNSET`");
+        plugin.state.awaitingDelegates[type] ~= dg;
+    }
+}
+
+
 // unawaitImpl
 /++
     Dequeues something from being called whenever the next parsed and
@@ -489,4 +516,26 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
 {
     return unawaitImpl(dg, plugin.state.awaitingDelegates, type);
+}
+
+
+// unawait
+/++
+    Dequeues a `void delegate(const IRCEvent)` delegate from being called whenever
+    the next parsed and triggering [dialect.defs.IRCEvent] matches any of the passed
+    [dialect.defs.IRCEvent.Type] types. Overload that takes a array of types.
+
+    Params:
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        dg = Delegate to dequeue from being executed when the next
+            [dialect.defs.IRCEvent] of type `type` comes along.
+        types = An array of the kinds of [dialect.defs.IRCEvent]s that would trigger the
+            passed awaiting delegate.
+ +/
+void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type[] types)
+{
+    foreach (immutable type; types)
+    {
+        unawaitImpl(dg, plugin.state.awaitingDelegates, type);
+    }
 }
