@@ -726,14 +726,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
             immediate(service.state, "CAP END", Yes.quiet);
-
-            if (service.capabilityNegotiation == Progress.started)
-            {
-                // Gate this behind a Progress.started check, in case the fallback
-                // Fiber negotiating nick if no CAP response already fired
-                service.capabilityNegotiation = Progress.finished;
-                service.negotiateNick();
-            }
+            service.capabilityNegotiation = Progress.finished;
         }
         break;
 
@@ -767,7 +760,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
                 service.state.client.nickname = service.state.client.nickname.toLower;
                 service.state.clientUpdated = true;
-                service.negotiateNick();
             }
             break;
 
@@ -791,13 +783,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             // Consider making this a Fiber that triggers after say, 5 seconds
             // That should give other CAPs time to process
             raw(service.state, "CAP END", Yes.quiet);
-
-            if (service.capabilityNegotiation == Progress.started)
-            {
-                // As above
-                service.capabilityNegotiation = Progress.finished;
-                service.negotiateNick();
-            }
+            service.capabilityNegotiation = Progress.finished;
             break;
 
         default:
@@ -925,7 +911,6 @@ void onSASLSuccess(ConnectService service)
 
     immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
-    service.negotiateNick();
 }
 
 
@@ -961,7 +946,6 @@ void onSASLFailure(ConnectService service)
     // See `onSASLSuccess` for info on `CAP END`
     immediate(service.state, "CAP END", Yes.quiet);
     service.capabilityNegotiation = Progress.finished;
-    service.negotiateNick();
 }
 
 
@@ -976,7 +960,6 @@ void onNoCapabilities(ConnectService service, const ref IRCEvent event)
     if (event.aux == "CAP")
     {
         service.capabilityNegotiation = Progress.finished;
-        service.negotiateNick();
     }
 }
 
@@ -993,7 +976,6 @@ void onNoCapabilities(ConnectService service, const ref IRCEvent event)
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
     service.registration = Progress.finished;
-    service.nickNegotiation = Progress.finished;
     service.renameDuringRegistration = string.init;
 
     // FIXME: This is done automtically in dialect master so there's no need to do it here
@@ -1250,22 +1232,33 @@ void register(ConnectService service)
         }
     }
 
-    // Nick negotiation after CAP END
-    // If CAP is not supported, go ahead and negotiate nick after n seconds
-
-    enum secsToWaitForCAP = 2;
-
-    void dgTimered()
+    version(TwitchSupport)
     {
-        if (service.capabilityNegotiation == Progress.notStarted)
+        import std.algorithm : endsWith;
+        import std.uni : toLower;
+
+        if (service.state.server.address.endsWith(".twitch.tv"))
         {
-            //logger.info("Does the server not support capabilities?");
-            service.negotiateNick();
+            // Make sure nickname is lowercase so we can rely on it as account name
+            service.state.client.nickname = service.state.client.nickname.toLower;
+            service.state.clientUpdated = true;
         }
     }
 
-    import kameloso.plugins.common.delayawait : delay;
-    delay(service, &dgTimered, secsToWaitForCAP);
+    // Negotiate nick after CAP has been called; registration will only finish after CAP END anyway
+    /*
+        [21:26:59] Connected!
+        [21:27:00] --> CAP LS 302
+        [21:27:00] --> PASS oauth:redacted
+        [21:27:00] --> NICK zorael
+        [21:27:00] [cap] tmi.twitch.tv: "twitch.tv/tags twitch.tv/commands twitch.tv/membership" (LS)
+        [21:27:01] --> CAP REQ :twitch.tv/tags
+        [21:27:01] --> CAP REQ :twitch.tv/commands
+        [21:27:01] --> CAP REQ :twitch.tv/membership
+        [21:27:01] --> CAP END
+        [21:27:01] [welcome] tmi.twitch.tv -> zorael: "Welcome, GLHF!" (#001)
+    */
+    negotiateNick(service);
 }
 
 
@@ -1275,12 +1268,7 @@ void register(ConnectService service)
  +/
 void negotiateNick(ConnectService service)
 {
-    if ((service.registration == Progress.finished) ||
-        (service.nickNegotiation != Progress.notStarted)) return;
-
     import std.algorithm.searching : endsWith;
-
-    service.nickNegotiation = Progress.started;
 
     if (!service.state.server.address.endsWith(".twitch.tv"))
     {
@@ -1401,9 +1389,6 @@ private:
 
     /// At what step we're currently at with regards to capabilities.
     Progress capabilityNegotiation;
-
-    /// At what step we're currently at with regards to nick negotiation.
-    Progress nickNegotiation;
 
     /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
     bool serverPinged;
