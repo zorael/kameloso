@@ -1946,6 +1946,7 @@ Next tryConnect(ref Kameloso instance)
         case delayThenNextIP:
             logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
                 Tint.info, Timeout.connectionRetry, Tint.log);
+            incrementedRetryDelay = Timeout.connectionRetry;
             interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
             if (*instance.abort) return Next.returnFailure;
             continue;
