@@ -101,22 +101,12 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 /++
     Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
     the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
-
-    Additionally records our given IDENT identifier. This may be the first event
-    after connection that carries us as a (sender) user, assuming there were no
-    [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] events prior.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
 void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
-
-    if (!service.state.client.ident.length)
-    {
-        service.state.client.ident = event.sender.ident;
-        service.state.clientUpdated = true;
-    }
 
     if (!service.state.bot.homeChannels.canFind(event.channel) &&
         !service.state.bot.guestChannels.canFind(event.channel))
