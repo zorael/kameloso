@@ -685,6 +685,18 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
         case RPL_WHOISREGNICK:
         case RPL_ENDOFWHOIS:
         case RPL_WELCOME:
+        case RPL_WHOISSECURE:
+        case RPL_WHOISCERTFP:
+        case RPL_WHOISSSLFP:
+        case RPL_WHOISSPECIAL:
+        case RPL_WHOISSTAFF:
+        case RPL_WHOISYOURID:
+        case RPL_WHOISVIRT:
+        case RPL_WHOISSVCMSG:
+        case RPL_WHOISTEXT:
+        case RPL_WHOISWEBIRC:
+            // Keep bot's nickname as target for these event types.
+            break;
 
         version(TwitchSupport)
         {
@@ -696,9 +708,8 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
             case TWITCH_HOSTSTART:
+                goto case MODE;
         }
-            // Keep bot's nickname as target for these event types.
-            break;
 
         default:
             event.target.nickname = string.init;
