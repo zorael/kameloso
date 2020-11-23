@@ -1094,6 +1094,22 @@ void onEndOFMotd(ConnectService service)
 }
 
 
+// onWHOISUser
+/++
+    Catch information about ourselves (notably our `IDENT`) from `WHOIS` results.
+ +/
+@(IRCEvent.Type.RPL_WHOISUSER)
+void onWHOISUser(ConnectService service, const ref IRCEvent event)
+{
+    if (event.target.nickname != service.state.client.nickname) return;
+
+    if (!service.state.client.ident.length)
+    {
+        service.state.client.ident = event.target.ident;
+    }
+}
+
+
 // onISUPPORT
 /++
     Requests a UTF-8 codepage if it seems that the server supports changing such.
