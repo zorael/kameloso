@@ -86,7 +86,14 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         chan(plugin.state, event.channel, botNickname ~ ": set core.colouredOutgoing=true");
     }
 
-    void runTest(alias fun)()
+    void runTestAndReport(alias fun)()
+    {
+        immutable success = fun(plugin, event, botNickname);
+        immutable results = success ? "passed" : "FAILED";
+        chan(plugin.state, event.channel, __traits(identifier, fun) ~ " tests: " ~ results);
+    }
+
+    void wrapTest(alias fun)()
     {
         await(plugin, IRCEvent.Type.CHAN);
         scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
@@ -95,58 +102,58 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         scope(exit) enableColours();
         expect("Setting changed.");
 
-        fun(plugin, event, botNickname);
+        runTestAndReport!fun();
     }
 
     switch (pluginName)
     {
     case "admin":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAdminFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testAdminFiber, 32_768);
         fiber.call();
         break;
 
     case "automodes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testAutomodesFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testAutomodesFiber, 32_768);
         fiber.call();
         break;
 
     case "chatbot":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testChatbotFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testChatbotFiber, 32_768);
         fiber.call();
         break;
 
     case "notes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testNotesFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testNotesFiber, 32_768);
         fiber.call();
         break;
 
     case "oneliners":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testOnelinersFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testOnelinersFiber, 32_768);
         fiber.call();
         break;
 
     case "quotes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testQuotesFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testQuotesFiber, 32_768);
         fiber.call();
         break;
 
     case "sedreplace":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSedReplaceFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testSedReplaceFiber, 32_768);
         fiber.call();
         break;
 
     case "seen":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testSeenFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testSeenFiber, 32_768);
         fiber.call();
         break;
 
     case "counter":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testCounterFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testCounterFiber, 32_768);
         fiber.call();
         break;
 
     case "stopwatch":
-        Fiber fiber = new CarryingFiber!IRCEvent(&runTest!testStopwatchFiber, 32_768);
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testStopwatchFiber, 32_768);
         fiber.call();
         break;
 
@@ -160,16 +167,25 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             scope(exit) enableColours();
             expect("Setting changed.");
 
-            testAdminFiber(plugin, event, botNickname);
-            testAutomodesFiber(plugin, event, botNickname);
-            testChatbotFiber(plugin, event, botNickname);
-            testNotesFiber(plugin, event, botNickname);
-            testOnelinersFiber(plugin, event, botNickname);
-            testQuotesFiber(plugin, event, botNickname);
-            testSedReplaceFiber(plugin, event, botNickname);
-            testSeenFiber(plugin, event, botNickname);
-            testCounterFiber(plugin, event, botNickname);
-            testStopwatchFiber(plugin, event, botNickname);
+            runTestAndReport!testAdminFiber();
+            delay(plugin, 3);
+            runTestAndReport!testAutomodesFiber();
+            delay(plugin, 3);
+            runTestAndReport!testChatbotFiber();
+            delay(plugin, 3);
+            runTestAndReport!testNotesFiber();
+            delay(plugin, 3);
+            runTestAndReport!testOnelinersFiber();
+            delay(plugin, 3);
+            runTestAndReport!testQuotesFiber();
+            delay(plugin, 3);
+            runTestAndReport!testSedReplaceFiber();
+            delay(plugin, 3);
+            runTestAndReport!testSeenFiber();
+            delay(plugin, 3);
+            runTestAndReport!testCounterFiber();
+            delay(plugin, 3);
+            runTestAndReport!testStopwatchFiber();
 
             logger.info("All tests passed!");
         }
@@ -190,9 +206,11 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
 /++
  +
  +/
-void testAdminFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testAdminFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Admin with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -303,6 +321,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     }
 
     logger.info("Admin tests passed!");
+    return true;
 }
 
 
@@ -310,9 +329,11 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 /++
  +
  +/
-void testAutomodesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testAutomodesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Automodes with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -381,6 +402,7 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     expect("Automode for flerrp cleared.");
 
     logger.info("Automode tests passed!");
+    return true;
 }
 
 
@@ -388,9 +410,11 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
 /++
  +
  +/
-void testChatbotFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testChatbotFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Chatbot with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -467,6 +491,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     unawait(plugin, IRCEvent.Type.EMOTE);
 
     logger.info("Chatbot tests passed!");
+    return true;
 }
 
 
@@ -474,9 +499,11 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 /++
  +
  +/
-void testNotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testNotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Notes with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -528,6 +555,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
         thisFiber.payload.content, __FILE__, __LINE__);
 
     logger.info("Notes tests passed!");
+    return true;
 }
 
 
@@ -535,9 +563,11 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 /++
  +
  +/
-void testOnelinersFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testOnelinersFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Oneliners with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -590,6 +620,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     expect("Oneliner %sherp removed.".format(plugin.state.settings.prefix));
 
     logger.info("Oneliners tests passed!");
+    return true;
 }
 
 
@@ -597,10 +628,12 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
 /++
  +
  +/
-void testQuotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testQuotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Quotes with empty channel in original event")
 {
     import std.algorithm.searching : endsWith;
+
+    scope(failure) return false;
 
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
@@ -647,6 +680,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
         thisFiber.payload.content, __FILE__, __LINE__);
 
     logger.info("Quotes tests passed!");
+    return true;
 }
 
 
@@ -654,9 +688,11 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 /++
  +
  +/
-void testSedReplaceFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testSedReplaceFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test SedReplace with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -699,6 +735,7 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     expect("%s | I am a snek snek".format(plugin.state.client.nickname));
 
     logger.info("SedReplace tests passed!");
+    return true;
 }
 
 
@@ -706,9 +743,11 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
 /++
  +
  +/
-void testSeenFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testSeenFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Seen with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -749,6 +788,7 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
     expect("T-that's me though...");
 
     logger.info("Seen tests passed!");
+    return true;
 }
 
 
@@ -756,9 +796,11 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
 /++
  +
  +/
-void testCounterFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testCounterFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Counter with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -887,6 +929,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
         thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
 
     logger.info("Counter tests passed!");
+    return true;
 }
 
 
@@ -894,9 +937,11 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 /++
  +
  +/
-void testStopwatchFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testStopwatchFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in original event")
 {
+    scope(failure) return false;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -964,6 +1009,7 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
     expect("You do not have a stopwatch running.");
 
     logger.info("Stopwatch tests passed!");
+    return true;
 }
 
 
