@@ -744,15 +744,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
             version(TwitchSupport)
             {
-                import std.uni : toLower;
-
-                // If we register too early on Twitch servers we won't get a
-                // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
-                // Delay negotiation until we see the CAP ACK of twitch.tv/tags.
-                // Make sure nickname is lowercase so we can rely on it as account name
-
-                service.state.client.nickname = service.state.client.nickname.toLower;
-                service.state.clientUpdated = true;
+                // Stagger nick negotiation until here on Twitch.
                 negotiateNick(service);
             }
             break;
@@ -1235,35 +1227,17 @@ void register(ConnectService service)
     }
 
     // Negotiate nick after CAP has been called.
-    // On most(?) servers, registration ends when the final CAP has been ACKed,
-    // but on Twitch it ends when we call CAP END, even if we don't have all
-    // capabilities ACKed. As such we miss out on GLOBALUSERSTATE.
-    /*
-        [17:30:19] Connected!
-        [17:30:20] --> CAP LS 302
-        [17:30:20] --> PASS oauth:redacted
-        [17:30:20] --> NICK zorael
-        [17:30:20] [cap] tmi.twitch.tv: "twitch.tv/tags twitch.tv/commands twitch.tv/membership" (LS)
-        [17:30:20] --> CAP REQ :twitch.tv/tags
-        [17:30:20] --> CAP REQ :twitch.tv/commands
-        [17:30:20] --> CAP REQ :twitch.tv/membership
-        [17:30:20] --> CAP END
-        [17:30:20] [welcome] tmi.twitch.tv -> zorael: "Welcome, GLHF!" (#001)
-        [17:30:20] Joining 2 channels...
-        [17:30:20] --> JOIN #kameboto,#zorael
-        [17:30:21] [cap] tmi.twitch.tv: "twitch.tv/tags" (ACK)
-        [17:30:21] [cap] tmi.twitch.tv: "twitch.tv/commands" (ACK)
-        [17:30:21] [cap] tmi.twitch.tv: "twitch.tv/membership" (ACK)
-        [17:30:21] [selfjoin] [#kameboto] zorael
-    */
 
     version(TwitchSupport)
     {
-        // If Twitch, return before we negotiate nick below
+        // Normally, registration ends when NICK and CAP END have been called.
+        // On Twitch however, NICK alone is enough, even if CAP negotiation was started
+        // with CAP LS. So on Twitch, don't NICK here; stagger it until we have some CAP ACKs.
+        // Instead return and skip the call below.
+
         if (serverIsTwitch) return;
     }
 
-    // Finally
     negotiateNick(service);
 }
 
