@@ -635,11 +635,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         // this whole process anew. So stop if we have registered.
         return;
     }
-    else if (service.capabilityNegotiation == Progress.finished)
-    {
-        // If CAP LS is called after initial negotiation, leave it alone
-        return;
-    }
 
     service.capabilityNegotiation = Progress.started;
     immutable content = event.content.strippedRight;
@@ -760,6 +755,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
                 service.state.client.nickname = service.state.client.nickname.toLower;
                 service.state.clientUpdated = true;
+                negotiateNick(service);
             }
             break;
 
@@ -1182,6 +1178,12 @@ void register(ConnectService service)
     service.registration = Progress.started;
     immediate(service.state, "CAP LS 302", Yes.quiet);
 
+    version(TwitchSupport)
+    {
+        import std.algorithm : endsWith;
+        immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
+    }
+
     if (service.state.bot.pass.length)
     {
         static string decodeIfPrefixedBase64(const string encoded)
@@ -1213,9 +1215,8 @@ void register(ConnectService service)
         version(TwitchSupport)
         {
             import lu.string : beginsWith;
-            import std.algorithm : endsWith;
 
-            if (service.state.server.address.endsWith(".twitch.tv"))
+            if (serverIsTwitch)
             {
                 service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
             }
@@ -1245,7 +1246,7 @@ void register(ConnectService service)
         import std.algorithm : endsWith;
         import std.uni : toLower;
 
-        if (service.state.server.address.endsWith(".twitch.tv"))
+        if (serverIsTwitch)
         {
             // Make sure nickname is lowercase so we can rely on it as account name
             service.state.client.nickname = service.state.client.nickname.toLower;
@@ -1253,19 +1254,36 @@ void register(ConnectService service)
         }
     }
 
-    // Negotiate nick after CAP has been called; registration will only finish after CAP END anyway
+    // Negotiate nick after CAP has been called.
+    // On most(?) servers, registration ends when the final CAP has been ACKed,
+    // but on Twitch it ends when we call CAP END, even if we don't have all
+    // capabilities ACKed. As such we miss out on GLOBALUSERSTATE.
     /*
-        [21:26:59] Connected!
-        [21:27:00] --> CAP LS 302
-        [21:27:00] --> PASS oauth:redacted
-        [21:27:00] --> NICK zorael
-        [21:27:00] [cap] tmi.twitch.tv: "twitch.tv/tags twitch.tv/commands twitch.tv/membership" (LS)
-        [21:27:01] --> CAP REQ :twitch.tv/tags
-        [21:27:01] --> CAP REQ :twitch.tv/commands
-        [21:27:01] --> CAP REQ :twitch.tv/membership
-        [21:27:01] --> CAP END
-        [21:27:01] [welcome] tmi.twitch.tv -> zorael: "Welcome, GLHF!" (#001)
+        [17:30:19] Connected!
+        [17:30:20] --> CAP LS 302
+        [17:30:20] --> PASS oauth:redacted
+        [17:30:20] --> NICK zorael
+        [17:30:20] [cap] tmi.twitch.tv: "twitch.tv/tags twitch.tv/commands twitch.tv/membership" (LS)
+        [17:30:20] --> CAP REQ :twitch.tv/tags
+        [17:30:20] --> CAP REQ :twitch.tv/commands
+        [17:30:20] --> CAP REQ :twitch.tv/membership
+        [17:30:20] --> CAP END
+        [17:30:20] [welcome] tmi.twitch.tv -> zorael: "Welcome, GLHF!" (#001)
+        [17:30:20] Joining 2 channels...
+        [17:30:20] --> JOIN #kameboto,#zorael
+        [17:30:21] [cap] tmi.twitch.tv: "twitch.tv/tags" (ACK)
+        [17:30:21] [cap] tmi.twitch.tv: "twitch.tv/commands" (ACK)
+        [17:30:21] [cap] tmi.twitch.tv: "twitch.tv/membership" (ACK)
+        [17:30:21] [selfjoin] [#kameboto] zorael
     */
+
+    version(TwitchSupport)
+    {
+        // If Twitch, return before we negotiate nick below
+        if (serverIsTwitch) return;
+    }
+
+    // Finally
     negotiateNick(service);
 }
 
