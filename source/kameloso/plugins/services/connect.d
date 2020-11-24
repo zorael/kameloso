@@ -639,7 +639,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         return;
     }
 
-    service.capabilityNegotiation = Progress.started;
     immutable content = event.content.strippedRight;
 
     switch (event.aux)
@@ -724,7 +723,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
             immediate(service.state, "CAP END", Yes.quiet);
-            service.capabilityNegotiation = Progress.finished;
         }
         break;
 
@@ -779,7 +777,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             // Consider making this a Fiber that triggers after say, 5 seconds
             // That should give other CAPs time to process
             raw(service.state, "CAP END", Yes.quiet);
-            service.capabilityNegotiation = Progress.finished;
             break;
 
         default:
@@ -906,7 +903,6 @@ void onSASLSuccess(ConnectService service)
      +/
 
     immediate(service.state, "CAP END", Yes.quiet);
-    service.capabilityNegotiation = Progress.finished;
 }
 
 
@@ -941,22 +937,6 @@ void onSASLFailure(ConnectService service)
 
     // See `onSASLSuccess` for info on `CAP END`
     immediate(service.state, "CAP END", Yes.quiet);
-    service.capabilityNegotiation = Progress.finished;
-}
-
-
-// onNoCapabilities
-/++
-    Ends capability negotiation and negotiates nick if the server doesn't seem
-    to support capabilities (e.g SwiftIRC).
- +/
-@(IRCEvent.Type.ERR_NOTREGISTERED)
-void onNoCapabilities(ConnectService service, const ref IRCEvent event)
-{
-    if (event.aux == "CAP")
-    {
-        service.capabilityNegotiation = Progress.finished;
-    }
 }
 
 
@@ -1412,9 +1392,6 @@ private:
 
     /// At what step we're currently at with regards to registration.
     Progress registration;
-
-    /// At what step we're currently at with regards to capabilities.
-    Progress capabilityNegotiation;
 
     /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
     bool serverPinged;
