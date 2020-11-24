@@ -254,6 +254,8 @@ void tryAuth(ConnectService service)
     case unreal:
     case hybrid:
     case bahamut:
+        import std.conv : text;
+
         // Only accepts password, no auth nickname
         if (service.state.client.nickname != service.state.client.origNickname)
         {
@@ -265,7 +267,7 @@ void tryAuth(ConnectService service)
             return;
         }
 
-        query(service.state, serviceNick, (verb ~ ' ' ~ password), Yes.quiet);
+        query(service.state, serviceNick, text(verb, ' ', password), Yes.quiet);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
