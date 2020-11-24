@@ -746,10 +746,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
             version(TwitchSupport)
             {
-                import std.algorithm : endsWith;
                 import std.uni : toLower;
-
-                if (!service.state.server.address.endsWith(".twitch.tv")) break;
 
                 // If we register too early on Twitch servers we won't get a
                 // GLOBALUSERSTATE event, and thus miss out on stuff like colour information.
