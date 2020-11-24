@@ -961,25 +961,20 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
         service.tryAuth();
     }
 
-    if (!service.sentAfterConnect)
+    foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
     {
-        foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
-        {
-            import lu.string : strippedLeft;
-            import std.array : replace;
+        import lu.string : strippedLeft;
+        import std.array : replace;
 
-            immutable line = unstripped.strippedLeft;
-            if (!line.length) continue;
+        immutable line = unstripped.strippedLeft;
+        if (!line.length) continue;
 
-            immutable processed = line
-                .replace("$nickname", service.state.client.nickname)
-                .replace("$origserver", service.state.server.address)
-                .replace("$server", service.state.server.resolvedAddress);
+        immutable processed = line
+            .replace("$nickname", service.state.client.nickname)
+            .replace("$origserver", service.state.server.address)
+            .replace("$server", service.state.server.resolvedAddress);
 
-            raw(service.state, processed);
-        }
-
-        service.sentAfterConnect = true;
+        raw(service.state, processed);
     }
 }
 
@@ -1382,9 +1377,6 @@ private:
 
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;
-
-    /// Whether or not the bot has sent configured commands after connect.
-    bool sentAfterConnect;
 
     /// Whether or not the server seems to be supporting WHOIS queries.
     bool serverSupportsWHOIS = true;
