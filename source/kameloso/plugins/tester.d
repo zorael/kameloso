@@ -72,7 +72,8 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
         assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     void disableColours()
@@ -210,7 +211,8 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !home
@@ -289,6 +291,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
         send("hostmask list");
         // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
+        awaitReply();
         enforce(thisFiber.payload.content.contains(`"kameloso^!*@*":"kameloso"`),
             thisFiber.payload.content, __FILE__, __LINE__);
 
@@ -328,7 +331,8 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !automode
@@ -405,7 +409,8 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !say
@@ -490,7 +495,8 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !note
@@ -540,9 +546,9 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
     }
 
-    void sendNoPrefix(const string line)
+    void sendPrefixed(const string line)
     {
-        chan(plugin.state, origEvent.channel, line);
+        chan(plugin.state, origEvent.channel, plugin.state.settings.prefix ~ line);
     }
 
     void awaitReply()
@@ -555,7 +561,8 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !oneliner
@@ -573,7 +580,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     send("oneliner list");
     expect("Available commands: %sherp".format(plugin.state.settings.prefix));
 
-    sendNoPrefix("%sherp".format(plugin.state.settings.prefix));
+    sendPrefixed("herp");
     expect("derp dirp darp");
 
     send("oneliner del hirrp");
@@ -613,7 +620,8 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !quote
@@ -672,7 +680,8 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ s/abc/ABC/
@@ -718,7 +727,8 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !seen
@@ -757,6 +767,11 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
     }
 
+    void sendPrefixed(const string line)
+    {
+        chan(plugin.state, origEvent.channel, plugin.state.settings.prefix ~ line);
+    }
+
     void awaitReply()
     {
         Fiber.yield();
@@ -767,16 +782,21 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !counter
 
     send("counter");
-    expect("No counters currently active in this channel.");
+    awaitReply();
+    enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
+        thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
 
     send("counter list");
-    expect("No counters currently active in this channel.");
+    awaitReply();
+    enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
+        thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
 
     send("counter last");
     expect("Usage: !counter [add|del|list] [counter word]");
@@ -785,7 +805,14 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("Usage: !counter [add|del|list] [counter word]");
 
     send("counter del blah");
-    expect("No such counter available.");
+    awaitReply();
+    enforce(((thisFiber.payload.content == "No such counter available.") ||
+        (thisFiber.payload.content == "Counter blah removed.")), thisFiber.payload.content);
+
+    send("counter del bluh");
+    awaitReply();
+    enforce(((thisFiber.payload.content == "No such counter available.") ||
+        (thisFiber.payload.content == "Counter bluh removed.")), thisFiber.payload.content);
 
     send("counter add blah");
     expect("Counter blah added! Access it with !blah.");
@@ -797,41 +824,47 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("A counter with that name already exists.");
 
     send("counter list");
-    expect("Current counters: !blah, !bluh");
+    awaitReply();
+    enforce(thisFiber.payload.content.beginsWith("Current counters: ") &&
+        (thisFiber.payload.content.contains("!blah") &&
+        thisFiber.payload.content.contains("!bluh")), thisFiber.payload.content);
 
     // ------------ ![word]
 
-    send("blah");
+    send("set counter.wordAloneIncrements=false");
+    expect("Setting changed.");
+
+    sendPrefixed("blah");
     expect("blah count so far: 0");
 
-    send("blah+");
+    sendPrefixed("blah+");
     expect("blah +1! Current count: 1");
 
-    send("blah++");
+    sendPrefixed("blah++");
     expect("blah +1! Current count: 2");
 
-    send("blah+2");
+    sendPrefixed("blah+2");
     expect("blah +2! Current count: 4");
 
-    send("blah+abc");
+    sendPrefixed("blah+abc");
     expect("Not a number: abc");
 
-    send("blah-");
+    sendPrefixed("blah-");
     expect("blah -1! Current count: 3");
 
-    send("blah--");
+    sendPrefixed("blah--");
     expect("blah -1! Current count: 2");
 
-    send("blah-2");
+    sendPrefixed("blah-2");
     expect("blah -2! Current count: 0");
 
-    send("blah=10");
+    sendPrefixed("blah=10");
     expect("blah count assigned to 10!");
 
-    send("blah");
+    sendPrefixed("blah");
     expect("blah count so far: 10");
 
-    send("blah?");
+    sendPrefixed("blah?");
     expect("blah count so far: 10");
 
     // ------------ !counter cleanup
@@ -849,7 +882,9 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("Counter bluh removed.");
 
     send("counter list");
-    expect("No counters currently active in this channel.");
+    awaitReply();
+    enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
+        thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
 
     logger.info("Counter tests passed!");
 }
@@ -880,7 +915,8 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg), thisFiber.payload.content, file, line);
+        enforce((thisFiber.payload.content == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
     // ------------ !stopwatch
