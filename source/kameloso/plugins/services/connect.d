@@ -1034,6 +1034,14 @@ void onEndOFMotd(ConnectService service)
         whois!(Yes.priority)(service.state, service.state.client.nickname, Yes.force, Yes.quiet);
     }
 
+    version(TwitchSupport)
+    {
+        if (service.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            service.serverSupportsWHOIS = false;
+        }
+    }
+
     if (service.joinedChannels) return;
 
     if ((service.authentication == Progress.finished) ||
