@@ -1103,7 +1103,7 @@ void onReconnect(ConnectService service)
 @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
-    if (service.serverSupportsWHOIS && (event.aux == "WHOIS"))
+    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
         logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
