@@ -606,18 +606,30 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     case "LS":
         import std.algorithm.iteration : splitter;
 
-        foreach (const cap; content.splitter(' '))
+        foreach (immutable rawCap; content.splitter(' '))
         {
+            import lu.string : beginsWith, contains, nom;
+
+            string slice = rawCap;  // mutable
+            immutable cap = slice.nom!(Yes.inherit)('=');
+            immutable sub = slice;
+
+            bool acceptsPlain;
+            bool acceptsExternal;
+
             switch (cap)
             {
             case "sasl":
-                if (service.state.connSettings.ssl &&
+                /*immutable*/ acceptsExternal = !sub.length || sub.contains("EXTERNAL");
+                /*immutable*/ acceptsPlain = !sub.length || sub.contains("PLAIN");
+
+                if (service.state.connSettings.ssl && acceptsExternal &&
                     (service.state.connSettings.privateKeyFile.length ||
                     service.state.connSettings.certFile.length))
                 {
                     // Proceed
                 }
-                else if (service.connectSettings.sasl &&
+                else if (service.connectSettings.sasl && acceptsPlain &&
                     service.state.bot.password.length)
                 {
                     // Likewise
@@ -627,10 +639,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                     // Abort
                     continue;
                 }
-
-                immediate(service.state, "CAP REQ :sasl", Yes.quiet);
-                ++service.requestedCapabilitiesRemaining;
-                break;
+                goto case;
 
             version(TwitchSupport)
             {
@@ -721,11 +730,16 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         break;
     }
 
-    if (!service.requestedCapabilitiesRemaining)
+    if (!service.requestedCapabilitiesRemaining &&
+        (service.capabilityNegotiation == Progress.started))
     {
         service.capabilityNegotiation = Progress.finished;
         immediate(service.state, "CAP END", Yes.quiet);
-        negotiateNick(service);
+
+        if (!service.issuedNICK)
+        {
+            negotiateNick(service);
+        }
     }
 }
 
@@ -842,12 +856,13 @@ void onSASLSuccess(ConnectService service)
         Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    if (!--service.requestedCapabilitiesRemaining)
+    if (!--service.requestedCapabilitiesRemaining &&
+        (service.capabilityNegotiation == Progress.started))
     {
         service.capabilityNegotiation = Progress.finished;
         immediate(service.state, "CAP END", Yes.quiet);
 
-        if (service.registration == Progress.started)
+        if ((service.registration == Progress.started) && !service.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -884,12 +899,13 @@ void onSASLFailure(ConnectService service)
     // finished auth and invoke `CAP END`
     service.authentication = Progress.finished;
 
-    if (!--service.requestedCapabilitiesRemaining)
+    if (!--service.requestedCapabilitiesRemaining &&
+        (service.capabilityNegotiation == Progress.started))
     {
         service.capabilityNegotiation = Progress.finished;
         immediate(service.state, "CAP END", Yes.quiet);
 
-        if (service.registration == Progress.started)
+        if ((service.registration == Progress.started) && !service.issuedNICK)
         {
             negotiateNick(service);
         }
