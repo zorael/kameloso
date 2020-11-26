@@ -53,7 +53,7 @@ public:
 enum Progress
 {
     notStarted, /// Process not yet started, init state.
-    started,    /// Process started but has yet to finish.
+    inProgress, /// Process started but has yet to finish.
     finished,   /// Process finished.
 }
 
@@ -241,7 +241,7 @@ void tryAuth(ConnectService service)
         break;
     }
 
-    service.authentication = Progress.started;
+    service.authentication = Progress.inProgress;
 
     with (IRCServer.Daemon)
     switch (service.state.server.daemon)
@@ -334,7 +334,7 @@ void tryAuth(ConnectService service)
     {
         // If we're still authenticating after n seconds, abort and join channels.
 
-        if (service.authentication == Progress.started)
+        if (service.authentication == Progress.inProgress)
         {
             logger.warning("Authentication timed out.");
             service.authentication = Progress.finished;
@@ -479,7 +479,7 @@ void onNickInUse(ConnectService service)
     import std.conv : text;
     import std.random : uniform;
 
-    if (service.registration == Progress.started)
+    if (service.registration == Progress.inProgress)
     {
         if (!service.renameDuringRegistration.length)
         {
@@ -502,7 +502,7 @@ void onNickInUse(ConnectService service)
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectService service)
 {
-    if (service.registration == Progress.started)
+    if (service.registration == Progress.inProgress)
     {
         // Mid-registration and invalid nickname; abort
 
@@ -544,7 +544,7 @@ void onBanned(ConnectService service)
 @(IRCEvent.Type.ERR_PASSWDMISMATCH)
 void onPassMismatch(ConnectService service)
 {
-    if (service.registration != Progress.started)
+    if (service.registration != Progress.inProgress)
     {
         // Unsure if this ever happens, but don't quit if we're actually registered
         return;
@@ -597,7 +597,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         return;
     }
 
-    service.capabilityNegotiation = Progress.started;
+    service.capabilityNegotiation = Progress.inProgress;
 
     immutable content = event.content.strippedRight;
 
@@ -731,7 +731,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     }
 
     if (!service.requestedCapabilitiesRemaining &&
-        (service.capabilityNegotiation == Progress.started))
+        (service.capabilityNegotiation == Progress.inProgress))
     {
         service.capabilityNegotiation = Progress.finished;
         immediate(service.state, "CAP END", Yes.quiet);
@@ -752,7 +752,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
 {
-    service.authentication = Progress.started;
+    service.authentication = Progress.inProgress;
 
     immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
         service.state.connSettings.certFile.length);
@@ -760,7 +760,7 @@ void onSASLAuthenticate(ConnectService service)
     if (service.state.connSettings.ssl && hasKey &&
         (service.saslExternal == Progress.notStarted))
     {
-        service.saslExternal = Progress.started;
+        service.saslExternal = Progress.inProgress;
         immediate(service.state, "AUTHENTICATE +");
         return;
     }
@@ -854,12 +854,12 @@ void onSASLSuccess(ConnectService service)
      +/
 
     if (!--service.requestedCapabilitiesRemaining &&
-        (service.capabilityNegotiation == Progress.started))
+        (service.capabilityNegotiation == Progress.inProgress))
     {
         service.capabilityNegotiation = Progress.finished;
         immediate(service.state, "CAP END", Yes.quiet);
 
-        if ((service.registration == Progress.started) && !service.issuedNICK)
+        if ((service.registration == Progress.inProgress) && !service.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -878,7 +878,7 @@ void onSASLSuccess(ConnectService service)
 @(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure(ConnectService service)
 {
-    if ((service.saslExternal == Progress.started) && service.state.bot.password.length)
+    if ((service.saslExternal == Progress.inProgress) && service.state.bot.password.length)
     {
         // Fall back to PLAIN
         service.saslExternal = Progress.finished;
@@ -897,12 +897,12 @@ void onSASLFailure(ConnectService service)
     service.authentication = Progress.finished;
 
     if (!--service.requestedCapabilitiesRemaining &&
-        (service.capabilityNegotiation == Progress.started))
+        (service.capabilityNegotiation == Progress.inProgress))
     {
         service.capabilityNegotiation = Progress.finished;
         immediate(service.state, "CAP END", Yes.quiet);
 
-        if ((service.registration == Progress.started) && !service.issuedNICK)
+        if ((service.registration == Progress.inProgress) && !service.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1140,7 +1140,7 @@ void register(ConnectService service)
     import std.algorithm.searching : canFind, endsWith;
     import std.uni : toLower;
 
-    service.registration = Progress.started;
+    service.registration = Progress.inProgress;
 
     // Server networks we know to support capabilities
     static immutable capabilityServerWhitelistPrefix =
