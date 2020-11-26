@@ -905,6 +905,8 @@ void onSASLFailure(ConnectService service)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
+    import std.algorithm.searching : endsWith;
+
     service.registration = Progress.finished;
     service.renameDuringRegistration = string.init;
 
@@ -937,6 +939,60 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             .replace("$server", service.state.server.resolvedAddress);
 
         raw(service.state, processed);
+    }
+
+    if (service.state.server.address.endsWith(".twitch.tv"))
+    {
+        import kameloso.plugins.common.delayawait : await, unawait;
+
+        static immutable IRCEvent.Type[2] endOfMotdEventTypes =
+        [
+            IRCEvent.Type.RPL_ENDOFMOTD,
+            IRCEvent.Type.ERR_NOMOTD,
+        ];
+
+        void twitchWarningDg(const IRCEvent endOfMotdEvent)
+        {
+            version(TwitchSupport)
+            {
+                import lu.string : beginsWith;
+
+                /+
+                    Upon having connected, registered and logged onto the Twitch servers,
+                    disable outgoing colours and warn about having a `.` or `/` prefix.
+
+                    Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
+                    Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
+                    so we can't use that ourselves.
+                 +/
+
+                if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
+
+                service.state.settings.colouredOutgoing = false;
+                service.state.settingsUpdated = true;
+
+                if (service.state.settings.prefix.beginsWith(".") ||
+                    service.state.settings.prefix.beginsWith("/"))
+                {
+                    logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
+                        `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
+                        Tint.log, service.state.settings.prefix, Tint.warning);
+                }
+            }
+            else
+            {
+                // No Twitch support built in
+                if (service.state.server.address.endsWith(".twitch.tv"))
+                {
+                    logger.warning("This bot was not built with Twitch support enabled. " ~
+                        "Expect errors and general uselessness.");
+                }
+            }
+
+            unawait(service, &twitchWarningDg, endOfMotdEventTypes[]);
+        }
+
+        await(service, &twitchWarningDg, endOfMotdEventTypes[]);
     }
 }
 
@@ -979,45 +1035,6 @@ void onEndOFMotd(ConnectService service)
         // but don't do anything if we already joined channels.
         service.joinChannels();
         service.joinedChannels = true;
-    }
-
-    version(TwitchSupport)
-    {
-        import lu.string : beginsWith;
-
-        /+
-            Upon having connected, registered and logged onto the Twitch servers,
-            disable outgoing colours and warn about having a `.` or `/` prefix.
-
-            Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
-            Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
-            so we can't use that ourselves.
-        +/
-
-        if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-        service.state.settings.colouredOutgoing = false;
-        service.state.settingsUpdated = true;
-
-        immutable prefix = service.state.settings.prefix;
-
-        if (prefix.beginsWith(".") || prefix.beginsWith("/"))
-        {
-            logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
-                `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
-                Tint.log, prefix, Tint.warning);
-        }
-    }
-    else
-    {
-        // No Twitch support built in
-        import std.algorithm.searching : endsWith;
-
-        if (service.state.server.address.endsWith(".twitch.tv"))
-        {
-            logger.warning("This bot was not built with Twitch support enabled. " ~
-                "Expect errors and general uselessness.");
-        }
     }
 }
 
