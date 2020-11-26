@@ -743,9 +743,10 @@ void onSASLAuthenticate(ConnectService service)
 
     service.authentication = Progress.started;
 
-    if (service.state.connSettings.ssl &&
-        (service.state.connSettings.privateKeyFile.length ||
-        service.state.connSettings.certFile.length) &&
+    immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
+        service.state.connSettings.certFile.length);
+
+    if (service.state.connSettings.ssl && hasKey &&
         (service.saslExternal == Progress.notStarted))
     {
         service.saslExternal = Progress.started;
