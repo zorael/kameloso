@@ -81,7 +81,7 @@ version(Posix)
     // signalRaised
     /++
         The value of the signal, when the process was sent one that meant it
-        should abort, This determines the shell exit code to return.
+        should abort. This determines the shell exit code to return.
      +/
     private int signalRaised;
 }

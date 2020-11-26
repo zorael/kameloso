@@ -569,7 +569,7 @@ struct ListenAttempt
 
         case error:
             // Unrecoverable
-            dealWitError(attempt.error);
+            dealWithError(attempt.error);
             return;
         }
     }

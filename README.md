@@ -119,7 +119,7 @@ There are several configurations in which the bot may be built.
 * `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
-All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
+All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...) that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
