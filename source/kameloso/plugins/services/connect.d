@@ -1139,13 +1139,54 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
  +/
 void register(ConnectService service)
 {
-    import std.algorithm.searching : endsWith;
+    import lu.string : beginsWith;
+    import std.algorithm.searching : canFind, endsWith;
+    import std.uni : toLower;
 
     service.registration = Progress.started;
 
-    immutable serverSupportsCapabilities = !service.state.server.address.endsWith(".quakenet.org");
+    // Server networks we know to support capabilities
+    static immutable capabilityServerWhitelistPrefix =
+    [
+        "efnet.",
+    ];
 
-    if (serverSupportsCapabilities)
+    // Ditto
+    static immutable capabilityServerWhitelistSuffix =
+    [
+        ".freenode.net",
+        ".twitch.tv",
+        ".acc.umu.se",
+        ".irchighway.net",
+        ".oftc.net",
+        ".irc.rizon.net",
+        ".snoonet.org",
+        ".spotchat.org",
+        ".swiftirc.net",
+    ];
+
+    // Server networks we know to not support capabilities
+    static immutable capabilityServerBlacklistSuffix =
+    [
+        ".quakenet.org",
+        ".dal.net",
+        ".gamesurge.net",
+        ".geveze.org",
+        ".ircnet.net",
+        ".undernet.org",
+        ".team17.com",
+    ];
+
+    immutable serverToLower = service.state.server.address.toLower;
+    immutable serverWhitelisted = capabilityServerWhitelistSuffix
+        .canFind!((a,b) => b.endsWith(a))(serverToLower) ||
+        capabilityServerWhitelistPrefix
+        .canFind!((a,b) => b.beginsWith(a))(serverToLower);
+    immutable serverBlacklisted = !serverWhitelisted &&
+        capabilityServerBlacklistSuffix
+        .canFind!((a,b) => b.endsWith(a))(serverToLower);
+
+    if (!serverBlacklisted && !service.state.settings.force)
     {
         immediate(service.state, "CAP LS 302", Yes.quiet);
     }
@@ -1226,24 +1267,31 @@ void register(ConnectService service)
         }
     }
 
-    if (serverSupportsCapabilities)
+    if (serverWhitelisted)
+    {
+        // CAP should work, nick will be negotiated after CAP END
+    }
+    else if (serverBlacklisted && !service.state.settings.force)
+    {
+        // No CAP, do NICK right away
+        negotiateNick(service);
+    }
+    else
     {
         import kameloso.plugins.common.delayawait : delay;
 
+        // Unsure, so monitor CAP progress
         void capMonitorDg()
         {
             if (service.capabilityNegotiation == Progress.notStarted)
             {
                 logger.warning("CAP timeout. Does the server not support capabilities?");
                 negotiateNick(service);
+                service.issuedNICK = true;
             }
         }
 
         delay(service, &capMonitorDg, service.capLSTimeout);
-    }
-    else
-    {
-        negotiateNick(service);
     }
 }
 
