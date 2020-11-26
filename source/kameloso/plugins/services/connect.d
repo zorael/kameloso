@@ -173,8 +173,6 @@ void joinChannels(ConnectService service)
 @(IRCEvent.Type.ERR_NEEDPONG)
 void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
-    if (service.serverPinged) return;
-
     immediate(service.state, event.content);
 }
 
@@ -192,8 +190,6 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 void onPing(ConnectService service, const ref IRCEvent event)
 {
     import std.concurrency : prioritySend;
-
-    service.serverPinged = true;
 
     immutable target = event.content.length ? event.content : event.sender.address;
     service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
