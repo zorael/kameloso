@@ -918,13 +918,6 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
         service.state.clientUpdated = true;
     }
 
-    if (service.state.bot.password.length &&
-        (service.authentication == Progress.notStarted) &&
-        (service.state.server.daemon != IRCServer.Daemon.twitch))
-    {
-        service.tryAuth();
-    }
-
     foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
     {
         import lu.string : strippedLeft;
@@ -1023,9 +1016,14 @@ void onEndOFMotd(ConnectService service)
         }
     }
 
-    if (service.joinedChannels) return;
-
-    if ((service.authentication == Progress.finished) ||
+    if (service.state.server.network.length &&
+        service.state.bot.password.length &&
+        (service.authentication == Progress.notStarted) &&
+        (service.state.server.daemon != IRCServer.Daemon.twitch))
+    {
+        tryAuth(service);
+    }
+    else if ((service.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
         (service.state.server.daemon == IRCServer.Daemon.twitch))
     {
