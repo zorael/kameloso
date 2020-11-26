@@ -1355,6 +1355,15 @@ private:
      +/
     enum authenticationGracePeriod = 15;
 
+    /++
+        How many seconds to wait for a response to the request for the list of
+        capabilities the server has. After these many seconds, it will just
+        normally negotiate nickname and log in.
+
+        It can take as long as up to 7 seconds on freenode.
+     +/
+    enum capLSTimeout = 15;
+
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
 
