@@ -334,7 +334,7 @@ void tryAuth(ConnectService service)
     {
         // If we're still authenticating after n seconds, abort and join channels.
 
-        if (service.authentication == Progress.notStarted)
+        if (service.authentication == Progress.started)
         {
             logger.warning("Authentication timed out.");
             service.authentication = Progress.finished;
