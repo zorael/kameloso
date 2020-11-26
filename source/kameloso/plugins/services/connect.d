@@ -752,9 +752,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
 {
-    import lu.string : beginsWith, decode64, encode64;
-    import std.base64 : Base64Exception;
-
     service.authentication = Progress.started;
 
     immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
@@ -1417,8 +1414,6 @@ private:
         How many seconds to wait for a response to the request for the list of
         capabilities the server has. After these many seconds, it will just
         normally negotiate nickname and log in.
-
-        It can take as long as up to 7 seconds on freenode.
      +/
     enum capLSTimeout = 15;
 
