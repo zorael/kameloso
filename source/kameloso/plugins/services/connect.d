@@ -755,10 +755,11 @@ void onSASLAuthenticate(ConnectService service)
     }
 
     immutable plainSuccess = trySASLPlain(service);
-    if (!plainSuccess) return service.onSASLFailure();
 
-    // If we're still authenticating after n seconds, abort and join channels.
-    delayJoinsAfterFailedAuth(service);
+    if (!plainSuccess)
+    {
+        service.onSASLFailure();
+    }
 }
 
 
