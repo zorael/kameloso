@@ -332,38 +332,16 @@ void tryAuth(ConnectService service)
         }
     }
 
-    // If we're still authenticating after n seconds, abort and join channels.
-    delayJoinsAfterFailedAuth(service);
-}
-
-
-// delayJoinsAfterFailedAuth
-/++
-    Creates and schedules a [core.thread.fiber.Fiber] (in a [kameloso.thread.ScheduledFiber])
-    that joins channels after having failed to authenticate for n seconds.
-
-    Params:
-        service = The current [ConnectService].
- +/
-void delayJoinsAfterFailedAuth(ConnectService service)
-{
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
-
-    enum secsBetweenRegistrationFinishedChecks = 5;
 
     void delayedJoinDg()
     {
+        // If we're still authenticating after n seconds, abort and join channels.
+
         if (service.authentication == Progress.notStarted)
         {
-            logger.log("Timed out waiting to authenticate.");
+            logger.warning("Authentication timed out.");
             service.authentication = Progress.finished;
-        }
-
-        while (service.registration != Progress.finished)
-        {
-            delay(service, secsBetweenRegistrationFinishedChecks, Yes.yield);
         }
 
         if (!service.joinedChannels)
@@ -373,25 +351,7 @@ void delayJoinsAfterFailedAuth(ConnectService service)
         }
     }
 
-    Fiber delayedJoinFiber = new Fiber(&delayedJoinDg, BufferSize.fiberStack);
-    delay(service, delayedJoinFiber, service.authenticationGracePeriod);
-}
-
-
-// onNotRegistered
-/++
-    Requeues joining channels if we receive an
-    [dialect.defs.IRCEvent.Type.ERR_NOTREGISTERED] error.
-
-    This can happen if the authentication process turns out to be particularly slow.
-    Recover by schedling to join channels again later.
- +/
-@(IRCEvent.Type.ERR_NOTREGISTERED)
-void onNotRegistered(ConnectService service)
-{
-    logger.info("Did we try to join too early?");
-    service.joinedChannels = false;
-    service.delayJoinsAfterFailedAuth();
+    delay(service, &delayedJoinDg, service.authenticationGracePeriod);
 }
 
 
