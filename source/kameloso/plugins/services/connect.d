@@ -614,30 +614,31 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             immutable cap = slice.nom!(Yes.inherit)('=');
             immutable sub = slice;
 
-            bool acceptsPlain;
-            bool acceptsExternal;
-
             switch (cap)
             {
             case "sasl":
-                /*immutable*/ acceptsExternal = !sub.length || sub.contains("EXTERNAL");
-                /*immutable*/ acceptsPlain = !sub.length || sub.contains("PLAIN");
+                // Error: `switch` skips declaration of variable acceptsExternal
+                // feep[work] | the quick workaround is to wrap the switch body in a {}
+                {
+                    immutable acceptsExternal = !sub.length || sub.contains("EXTERNAL");
+                    immutable acceptsPlain = !sub.length || sub.contains("PLAIN");
 
-                if (service.state.connSettings.ssl && acceptsExternal &&
-                    (service.state.connSettings.privateKeyFile.length ||
-                    service.state.connSettings.certFile.length))
-                {
-                    // Proceed
-                }
-                else if (service.connectSettings.sasl && acceptsPlain &&
-                    service.state.bot.password.length)
-                {
-                    // Likewise
-                }
-                else
-                {
-                    // Abort
-                    continue;
+                    if (service.state.connSettings.ssl && acceptsExternal &&
+                        (service.state.connSettings.privateKeyFile.length ||
+                        service.state.connSettings.certFile.length))
+                    {
+                        // Proceed
+                    }
+                    else if (service.connectSettings.sasl && acceptsPlain &&
+                        service.state.bot.password.length)
+                    {
+                        // Likewise
+                    }
+                    else
+                    {
+                        // Abort
+                        continue;
+                    }
                 }
                 goto case;
 
@@ -676,6 +677,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
+
                 immediate(service.state, "CAP REQ :" ~ cap, Yes.quiet);
                 ++service.requestedCapabilitiesRemaining;
                 break;
