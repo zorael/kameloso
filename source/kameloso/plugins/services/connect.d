@@ -1364,6 +1364,9 @@ private:
     /// At what step we're currently at with regards to registration.
     Progress registration;
 
+    /// At what step we're currently at with regards to capabilities.
+    Progress capabilityNegotiation;
+
     /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
     bool serverPinged;
 
