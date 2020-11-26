@@ -601,14 +601,14 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         return;
     }
 
+    service.capabilityNegotiation = Progress.started;
+
     immutable content = event.content.strippedRight;
 
     switch (event.aux)
     {
     case "LS":
         import std.algorithm.iteration : splitter;
-
-        bool tryingSASL;
 
         foreach (const cap; content.splitter(' '))
         {
@@ -633,7 +633,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 }
 
                 immediate(service.state, "CAP REQ :sasl", Yes.quiet);
-                tryingSASL = true;
+                ++service.requestedCapabilitiesRemaining;
                 break;
 
             version(TwitchSupport)
@@ -672,6 +672,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
                 immediate(service.state, "CAP REQ :" ~ cap, Yes.quiet);
+                ++service.requestedCapabilitiesRemaining;
                 break;
 
             default:
@@ -679,45 +680,30 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 break;
             }
         }
-
-        if (!tryingSASL)
-        {
-            // No SASL request in action, safe to end handshake
-            // See onSASLSuccess for info on CAP END
-            immediate(service.state, "CAP END", Yes.quiet);
-        }
         break;
 
     case "ACK":
         switch (content)
         {
         case "sasl":
-            immutable mechanism = (service.state.connSettings.ssl &&
-                (service.state.connSettings.privateKeyFile.length ||
-                service.state.connSettings.certFile.length)) ?
+            immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
+                service.state.connSettings.certFile.length);
+            immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
                     "AUTHENTICATE EXTERNAL" :
                     "AUTHENTICATE PLAIN";
             immediate(service.state, mechanism, Yes.quiet);
             break;
 
-        case "twitch.tv/tags":
-            // Have to have the version inside the case for some reason
-            // Error: switch skips declaration of variable kameloso.plugins.services.connect.onCapabilityNegotiation.mechanism
-
-            version(TwitchSupport)
-            {
-                // Stagger nick negotiation until here on Twitch.
-                negotiateNick(service);
-            }
-            break;
-
         default:
             //logger.warning("Unhandled capability ACK: ", content);
+            --service.requestedCapabilitiesRemaining;
             break;
         }
         break;
 
     case "NAK":
+        --service.requestedCapabilitiesRemaining;
+
         switch (content)
         {
         case "sasl":
@@ -726,11 +712,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 quit(service.state, "SASL Negotiation Failure");
                 return;
             }
-
-            // SASL refused, safe to end handshake? Too early?
-            // Consider making this a Fiber that triggers after say, 5 seconds
-            // That should give other CAPs time to process
-            raw(service.state, "CAP END", Yes.quiet);
             break;
 
         default:
@@ -742,6 +723,13 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     default:
         //logger.warning("Unhandled capability type: ", event.aux);
         break;
+    }
+
+    if (!service.requestedCapabilitiesRemaining)
+    {
+        service.capabilityNegotiation = Progress.finished;
+        immediate(service.state, "CAP END", Yes.quiet);
+        negotiateNick(service);
     }
 }
 
@@ -856,7 +844,16 @@ void onSASLSuccess(ConnectService service)
         Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    immediate(service.state, "CAP END", Yes.quiet);
+    if (!--service.requestedCapabilitiesRemaining)
+    {
+        service.capabilityNegotiation = Progress.finished;
+        immediate(service.state, "CAP END", Yes.quiet);
+
+        if (service.registration == Progress.started)
+        {
+            negotiateNick(service);
+        }
+    }
 }
 
 
@@ -889,8 +886,16 @@ void onSASLFailure(ConnectService service)
     // finished auth and invoke `CAP END`
     service.authentication = Progress.finished;
 
-    // See `onSASLSuccess` for info on `CAP END`
-    immediate(service.state, "CAP END", Yes.quiet);
+    if (!--service.requestedCapabilitiesRemaining)
+    {
+        service.capabilityNegotiation = Progress.finished;
+        immediate(service.state, "CAP END", Yes.quiet);
+
+        if (service.registration == Progress.started)
+        {
+            negotiateNick(service);
+        }
+    }
 }
 
 
