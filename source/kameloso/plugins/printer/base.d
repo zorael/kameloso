@@ -310,9 +310,15 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_ENDOFQUIETLIST:
     case RPL_ENDOFINVITELIST:
     case RPL_ENDOFEXCEPTLIST:
+    case ENDOFEXEMPTOPSLIST:
     case ENDOFSPAMFILTERLIST:
     case ERR_CHANOPRIVSNEEDED:
     case RPL_AWAY:
+    case ENDOFCHANNELACCLIST:
+    case MODELIST:
+    case ENDOFMODELIST:
+    case RPL_ENDOFQLIST:
+    case RPL_ENDOFALIST:
         immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
