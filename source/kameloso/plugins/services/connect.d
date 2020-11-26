@@ -1386,5 +1386,8 @@ private:
     /// Whether or not the server seems to be supporting WHOIS queries.
     bool serverSupportsWHOIS = true;
 
+    /// Number of capabilities requested but still not awarded.
+    uint requestedCapabilitiesRemaining;
+
     mixin IRCPluginImpl;
 }
