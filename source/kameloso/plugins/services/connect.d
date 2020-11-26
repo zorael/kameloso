@@ -1336,6 +1336,7 @@ void negotiateNick(ConnectService service)
     }
 
     immediate(service.state, "NICK " ~ service.state.client.nickname);
+    service.issuedNICK = true;
 }
 
 
