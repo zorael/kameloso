@@ -701,6 +701,9 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
         case RPL_WHOISSVCMSG:
         case RPL_WHOISTEXT:
         case RPL_WHOISWEBIRC:
+        case RPL_WHOISACTUALLY:
+        case RPL_WHOISMODES:
+        case RPL_WHOWASIP:
             // Keep bot's nickname as target for these event types.
             break;
 
