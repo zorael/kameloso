@@ -1002,7 +1002,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void onEndOFMotd(ConnectService service)
+void onEndOfMotd(ConnectService service)
 {
     // Gather information about ourselves
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
