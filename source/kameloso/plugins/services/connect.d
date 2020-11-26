@@ -1369,6 +1369,9 @@ private:
     /// At what step we're currently at with regards to capabilities.
     Progress capabilityNegotiation;
 
+    /// Whether or not we have issued a NICK command during registration.
+    bool issuedNICK;
+
     /++
         Temporary: the nickname that we had to rename to, to successfully
         register on the server.
