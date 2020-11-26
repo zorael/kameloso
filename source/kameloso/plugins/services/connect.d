@@ -1369,9 +1369,6 @@ private:
     /// At what step we're currently at with regards to capabilities.
     Progress capabilityNegotiation;
 
-    /// Whether or not the server has sent at least one [dialect.defs.IRCEvent.Type.PING].
-    bool serverPinged;
-
     /++
         Temporary: the nickname that we had to rename to, to successfully
         register on the server.
