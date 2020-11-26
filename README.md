@@ -308,7 +308,7 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-The Twitch SSL port is **443**.
+The Twitch SSL port is **6697** (or **443**).
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
