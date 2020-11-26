@@ -1121,8 +1121,16 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
  +/
 void register(ConnectService service)
 {
+    import std.algorithm.searching : endsWith;
+
     service.registration = Progress.started;
-    immediate(service.state, "CAP LS 302", Yes.quiet);
+
+    immutable serverSupportsCapabilities = !service.state.server.address.endsWith(".quakenet.org");
+
+    if (serverSupportsCapabilities)
+    {
+        immediate(service.state, "CAP LS 302", Yes.quiet);
+    }
 
     version(TwitchSupport)
     {
@@ -1200,19 +1208,25 @@ void register(ConnectService service)
         }
     }
 
-    // Negotiate nick after CAP has been called.
-
-    version(TwitchSupport)
+    if (serverSupportsCapabilities)
     {
-        // Normally, registration ends when NICK and CAP END have been called.
-        // On Twitch however, NICK alone is enough, even if CAP negotiation was started
-        // with CAP LS. So on Twitch, don't NICK here; stagger it until we have some CAP ACKs.
-        // Instead return and skip the call below.
+        import kameloso.plugins.common.delayawait : delay;
 
-        if (serverIsTwitch) return;
+        void capMonitorDg()
+        {
+            if (service.capabilityNegotiation == Progress.notStarted)
+            {
+                logger.warning("CAP timeout. Does the server not support capabilities?");
+                negotiateNick(service);
+            }
+        }
+
+        delay(service, &capMonitorDg, service.capLSTimeout);
     }
-
-    negotiateNick(service);
+    else
+    {
+        negotiateNick(service);
+    }
 }
 
 
