@@ -1845,17 +1845,8 @@ Next tryConnect(ref Kameloso instance)
 
         void verboselyDelay()
         {
-            if (attempt.retryNum == 0)
-            {
-                logger.logf("Retrying in %s%d%s seconds...",
-                    Tint.info, incrementedRetryDelay, Tint.log);
-            }
-            else
-            {
-                logger.logf("Retrying in %s%d%s seconds (attempt %1$s%4$d%3$s)...",
-                    Tint.info, incrementedRetryDelay, Tint.log, attempt.retryNum+1);
-            }
-
+            logger.logf("Retrying in %s%d%s seconds...",
+                Tint.info, incrementedRetryDelay, Tint.log);
             interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
 
             import std.algorithm.comparison : min;
