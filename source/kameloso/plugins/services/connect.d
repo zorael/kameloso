@@ -1052,6 +1052,7 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
     if (!service.state.client.ident.length)
     {
         service.state.client.ident = event.target.ident;
+        service.state.clientUpdated = true;
     }
 }
 
