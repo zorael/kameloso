@@ -1021,20 +1021,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     case error:
         if (attempt.bytesReceived == 0)
         {
-            version(PrintErrnosPosix)
-            {
-                logger.errorf("Connection error: empty server response! (%s%s%s)",
-                    Tint.log, errnoStrings[attempt.errno], Tint.error);
-            }
-            else version(PrintErrnosWindows)
-            {
-                logger.errorf("Connection error: empty server response! (%s%d%s)",
-                    Tint.log, attempt.errno, Tint.error);
-            }
-            else
-            {
-                logger.error("Connection error: empty server response!");
-            }
+            logger.error("Connection error: empty server response!");
         }
         else
         {
