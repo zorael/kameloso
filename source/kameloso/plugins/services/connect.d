@@ -431,41 +431,6 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 }
 
 
-// onAuthEndNotice
-/++
-    Flags authentication as finished and join channels.
-
-    Some networks/daemons (like RusNet) send the "authentication complete"
-    message as a [dialect.defs.IRCEvent.Type.NOTICE] from `NickServ`, not a
-    [dialect.defs.IRCEvent.Type.PRIVMSG].
-
-    Whitelist more nicknames as we discover them. Also English only for now but
-    can be easily extended.
- +/
-@(IRCEvent.Type.NOTICE)
-void onAuthEndNotice(ConnectService service, const ref IRCEvent event)
-{
-    version(TwitchSupport)
-    {
-        if (service.state.server.daemon == IRCServer.Daemon.twitch) return;
-    }
-
-    import lu.string : beginsWith;
-
-    if ((event.sender.nickname == "NickServ") &&
-        event.content.beginsWith("Password accepted for nick"))
-    {
-        service.authentication = Progress.finished;
-
-        if (!service.joinedChannels)
-        {
-            service.joinChannels();
-            service.joinedChannels = true;
-        }
-    }
-}
-
-
 // onNickInUse
 /++
     Modifies the nickname by appending characters to the end of it.
