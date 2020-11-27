@@ -1152,7 +1152,7 @@ void register(ConnectService service)
         capabilityServerBlacklistSuffix
         .canFind!((a,b) => b.endsWith(a))(serverToLower);
 
-    if (!serverBlacklisted && !service.state.settings.force)
+    if (!serverBlacklisted || service.state.settings.force)
     {
         immediate(service.state, "CAP LS 302", Yes.quiet);
     }
