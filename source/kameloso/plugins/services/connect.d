@@ -478,7 +478,7 @@ void onBadNick(ConnectService service)
         }
         else
         {
-            logger.error("Your nickname is invalid. (reserved, too long, or contains invalid characters)");
+            logger.error("Your nickname is invalid: it is reserved, too long, or contains invalid characters.");
         }
 
         quit(service.state, "Invalid nickname");
@@ -583,6 +583,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             {
             case "sasl":
                 // Error: `switch` skips declaration of variable acceptsExternal
+                // https://issues.dlang.org/show_bug.cgi?id=21427
                 // feep[work] | the quick workaround is to wrap the switch body in a {}
                 {
                     immutable acceptsExternal = !sub.length || sub.contains("EXTERNAL");
@@ -786,7 +787,8 @@ bool trySASLPlain(ConnectService service)
     }
     catch (Base64Exception e)
     {
-        logger.error("Could not authenticate: malformed password");
+        logger.errorf("Could not authenticate: malformed password (%s%s%s)",
+            Tint.log, e.msg, Tint.error);
         version(PrintStacktraces) logger.trace(e.info);
         return false;
     }
