@@ -41,11 +41,11 @@ Pre-compiled binaries for Windows and Linux can be found under [releases](https:
 $ dub run kameloso -- --server irc.freenode.net --guestChannels "#d"
 
 # alternatively
+$ git clone https://github.com/zorael/kameloso.git
+$ cd kameloso
 $ git clone https://github.com/zorael/dialect.git  # necessary until the next dialect release
 $ dub add-local dialect
 
-$ git clone https://github.com/zorael/kameloso.git
-$ cd kameloso
 $ dub build
 $ ./kameloso --server irc.freenode.net --guestChannels "#d"
 ```
