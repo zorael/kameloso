@@ -762,7 +762,7 @@ bool trySASLPlain(ConnectService service)
 {
     import lu.string : beginsWith, decode64, encode64;
     import std.base64 : Base64Exception;
-    import std.format : format;
+    import std.conv : text;
 
     try
     {
@@ -774,7 +774,7 @@ bool trySASLPlain(ConnectService service)
             decode64(service.state.bot.password[7..$]) :
             service.state.bot.password;
 
-        immutable authToken = "%s%c%s%c%s".format(account_, '\0', account_, '\0', password_);
+        immutable authToken = text(account_, '\0', account_, '\0', password_);
         immutable encoded = encode64(authToken);
 
         immediate(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
