@@ -173,7 +173,7 @@ void joinChannels(ConnectService service)
 @(IRCEvent.Type.ERR_NEEDPONG)
 void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
-    immediate(service.state, event.content);
+    immediate(service.state, event.content, Yes.quiet);
 }
 
 
