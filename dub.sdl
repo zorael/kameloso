@@ -11,7 +11,7 @@ dflags "-dip25" "-dip1008"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>1.0.0"
-dependency "dialect" version="~>1.0.0"
+dependency "dialect" version="~>1.1.0"
 dependency "arsd-official:dom" version="~>8.5.0"
 dependency "requests" version="~>2.0.0"
 
