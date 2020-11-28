@@ -43,9 +43,6 @@ $ dub run kameloso -- --server irc.freenode.net --guestChannels "#d"
 # alternatively
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
-$ git clone https://github.com/zorael/dialect.git  # necessary until the next dialect release
-$ dub add-local dialect
-
 $ dub build
 $ ./kameloso --server irc.freenode.net --guestChannels "#d"
 ```
