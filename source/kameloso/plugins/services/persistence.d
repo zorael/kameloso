@@ -231,6 +231,13 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
  +/
 void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 {
+    if ((event.type == IRCEvent.Type.ERR_WASNOSUCHNICK) ||
+        (event.type == IRCEvent.Type.ERR_NOSUCHNICK))
+    {
+        // Invalid user
+        return;
+    }
+
     static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
         import std.algorithm.searching : canFind;
