@@ -123,6 +123,7 @@ void startChannelQueries(ChanQueriesService service)
             void queryAwaitAndUnlist(Types)(const string command, const Types types)
             {
                 import kameloso.messaging : raw;
+                import std.conv : text;
 
                 await(service, types);
                 scope(exit) unawait(service, types);
@@ -133,7 +134,7 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage(squelchMessage));
                 }
 
-                raw(service.state, command ~ ' ' ~ channelName,
+                raw(service.state, text(command, ' ', channelName),
                     (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
                 Fiber.yield();  // Awaiting specified types
 

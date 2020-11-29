@@ -83,6 +83,7 @@ void pipereader(shared IRCPluginState newState, const string filename,
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import std.concurrency : OwnerTerminated, receiveTimeout, send, spawn;
+    import std.conv : text;
     import std.file : FileException, exists, remove;
     import std.stdio : File;
     import std.variant : Variant;
@@ -214,7 +215,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             },
             (Variant v)
             {
-                state.askToError("Pipeline plugin received Variant: " ~ logtint ~ v.toString());
+                state.askToError(text("Pipeline plugin received Variant: ", logtint, v.toString));
                 state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
                 halt = true;
             }
@@ -230,7 +231,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
-            state.askToError("Pipeline plugin failed to reopen FIFO: " ~ logtint ~ e.msg);
+            state.askToError(text("Pipeline plugin failed to reopen FIFO: ", logtint, e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
@@ -318,9 +319,11 @@ void onWelcome(PipelinePlugin plugin)
     }
     else
     {
+        import std.conv : text;
+
         // Save the filename *once* so it persists across nick changes.
         // If !fifoInWorkingDir then in /tmp or $TMPDIR
-        plugin.fifoFilename = plugin.state.client.nickname ~ "@" ~ plugin.state.server.address;
+        plugin.fifoFilename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
 
         if (!plugin.pipelineSettings.fifoInWorkingDir)
         {

@@ -266,6 +266,7 @@ void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
     const ref IRCEvent event, const string command, const Description description)
 {
     import kameloso.irccolours : ircBold;
+    import std.conv : text;
     import std.format : format;
 
     enum pattern = "[%s] %s: %s";
@@ -290,8 +291,8 @@ void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
             udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
 
         immutable syntax = plugin.state.settings.colouredOutgoing ?
-            "Usage".ircBold ~ ": " ~ prefixedSyntax :
-            "Usage: " ~ prefixedSyntax;
+            text("Usage".ircBold, ": ", prefixedSyntax) :
+            text("Usage: ", prefixedSyntax);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, syntax);
     }

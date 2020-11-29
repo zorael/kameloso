@@ -599,9 +599,10 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 {
+    import std.conv : text;
     import std.json : JSONType, parseJSON;
 
-    immutable chattersURL = "https://tmi.twitch.tv/group/user/" ~ broadcaster ~ "/chatters";
+    immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
 
     immutable response = queryTwitch(plugin, chattersURL, plugin.authorizationBearer);
     auto json = parseJSON(response.str);
@@ -703,6 +704,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
+    import std.conv : text;
     import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
 
@@ -715,7 +717,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     do
     {
         immutable paginatedURL = after.length ?
-            (url ~ "&after=" ~ after) : url;
+            text(url, "&after=", after) : url;
 
         immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);

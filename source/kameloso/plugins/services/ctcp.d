@@ -283,7 +283,8 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        raw(service.state, ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+        import std.conv : text;
+        raw(service.state, text("NOTICE %s :", cast(char)ctcp, "CLIENTINFO ACTION %s", cast(char)ctcp)
             .format(event.sender.nickname, allCTCPTypes));
     }
 }
