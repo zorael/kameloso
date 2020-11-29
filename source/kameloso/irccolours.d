@@ -682,33 +682,40 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
             {
                 if (!slice.length) break;
                 slice = slice[1..$];
-                segment.hasBackground = true;
 
-                int bg1;
-                int bg2;
-                bool hasBg2;
-
-                bg1 = slice[0] - '0';
-                if (slice.length < 2) break;
-                slice = slice[1..$];
                 c = slice[0] - '0';
 
                 if ((c >= 0) && (c <= 9))
                 {
-                    bg2 = c;
-                    hasBg2 = true;
-                    if (!slice.length) break;
+                    segment.hasBackground = true;
+
+                    int bg1;
+                    int bg2;
+                    bool hasBg2;
+
+                    bg1 = c;
+                    if (slice.length < 2) break;
                     slice = slice[1..$];
+
+                    c = slice[0] - '0';
+
+                    if ((c >= 0) && (c <= 9))
+                    {
+                        bg2 = c;
+                        hasBg2 = true;
+                        if (!slice.length) break;
+                        slice = slice[1..$];
+                    }
+
+                    uint bg = hasBg2 ? (10*bg1 + bg2) : bg1;
+
+                    if (bg > 15)
+                    {
+                        bg %= 16;
+                    }
+
+                    segment.bg = bg;
                 }
-
-                int bg = hasBg2 ? (10*bg1 + bg2) : bg1;
-
-                if (bg > 15)
-                {
-                    bg %= 16;
-                }
-
-                segment.bg = bg;
             }
         }
         else
