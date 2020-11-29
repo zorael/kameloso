@@ -377,13 +377,12 @@ if (isOutputRange!(Sink, char[]))
         sink.put(')');
     }
 
-    if (event.errors.length && !plugin.printerSettings.silentErrors)
+    if (event.errors.length)
     {
         .put(sink, " ! ", event.errors, " !");
     }
 
-    shouldBell = shouldBell || (event.errors.length && bellOnError &&
-        !plugin.printerSettings.silentErrors);
+    shouldBell = shouldBell || (event.errors.length && bellOnError);
 
     if (shouldBell) sink.put(plugin.bell);
 }
@@ -924,7 +923,7 @@ if (isOutputRange!(Sink, char[]))
         sink.put(')');
     }
 
-    if (event.errors.length && !plugin.printerSettings.silentErrors)
+    if (event.errors.length)
     {
         .put!(Yes.colours)(sink,
             TerminalForeground(bright ? Bright.error : Dark.error),
@@ -933,8 +932,7 @@ if (isOutputRange!(Sink, char[]))
 
     sink.colourWith(FG.default_);  // same for bright and dark
 
-    shouldBell = shouldBell || (event.errors.length && bellOnError &&
-        !plugin.printerSettings.silentErrors);
+    shouldBell = shouldBell || (event.errors.length && bellOnError);
 
     if (shouldBell) sink.put(plugin.bell);
 }

@@ -89,9 +89,6 @@ public:
     /// Whether or not to bell on parsing errors.
     bool bellOnError = false;
 
-    /// Whether or not to be silent and not print error messages in the event output.
-    bool silentErrors = false;
-
     /// Whether or not to log events.
     bool logs = false;
 
