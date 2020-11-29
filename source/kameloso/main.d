@@ -1069,9 +1069,24 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
     scope(failure)
     {
+        import lu.string : contains;
+        import std.algorithm.searching : canFind;
+
         // Something asserted
         logger.error("scopeguard tripped.");
         printEventDebugDetails(event, raw);
+
+        // Print the raw line char by char if it contains non-printables
+        if (raw.canFind!((c) => c < ' '))
+        {
+            import std.stdio : writefln;
+            import std.string : representation;
+
+            foreach (immutable c; raw.representation)
+            {
+                writefln("%3d: '%c'", c, cast(char)c);
+            }
+        }
     }
 
     try
