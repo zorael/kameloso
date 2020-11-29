@@ -28,9 +28,6 @@ import std.typecons : Flag, No, Yes;
 {
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
-
-    /// Maximum allowed vote duration, in seconds.
-    int maxVoteDuration = 1800;
 }
 
 
@@ -126,15 +123,6 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     if (dur <= 0)
     {
         chan(plugin.state, event.channel, "Duration must be a positive number.");
-        return;
-    }
-    else if (dur > plugin.votesSettings.maxVoteDuration)
-    {
-        import std.format : format;
-
-        immutable message = "Votes are currently limited to a maximum duration of %d seconds."
-            .format(plugin.votesSettings.maxVoteDuration);
-        chan(plugin.state, event.channel, message);
         return;
     }
 
@@ -406,27 +394,6 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     chan(plugin.state, event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
         .format(sortedChoices, dur));
-}
-
-
-// start
-/++
-    Verifies that the setting for maximum vote length is sane.
- +/
-void start(VotesPlugin plugin)
-{
-    immutable dur = plugin.votesSettings.maxVoteDuration;
-
-    if (dur <= 0)
-    {
-        import kameloso.common : Tint, logger;
-
-        logger.warningf("The Votes plugin setting for maximum vote duration is " ~
-            "invalid (%s%d%s, expected a number greater than zero)",
-            Tint.log, dur, Tint.warning);
-
-        plugin.votesSettings.maxVoteDuration = VotesSettings.init.maxVoteDuration;
-    }
 }
 
 
