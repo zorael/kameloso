@@ -512,7 +512,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
-        import std.array : join;
+        import std.algorithm.iteration : joiner;
         import std.file : exists, mkdirRecurse;
         import std.stdio : File, writeln;
 
@@ -521,7 +521,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
             mkdirRecurse(buffer.dir);
         }
 
-        immutable lines = buffer.lines.data.join("\n");
+        auto lines = buffer.lines.data.joiner("\n");
         File(buffer.file, "a").writeln(lines);
 
         // Only clear if we managed to write everything, otherwise accumulate
