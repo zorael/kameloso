@@ -821,11 +821,19 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
         {
             if (open)
             {
-                sink.put("\033[39;49m");
-                /*fgReset.toAlphaInto(sink);
-                sink.put(';');
-                bgReset.toAlphaInto(sink);
-                sink.put('m');*/
+                if ((fgReset == 39) && (bgReset == 49))
+                {
+                    // Shortcut
+                    sink.put("\033[39;49m");
+                }
+                else
+                {
+                    sink.put("\033[");
+                    fgReset.toAlphaInto(sink);
+                    sink.put(';');
+                    bgReset.toAlphaInto(sink);
+                    sink.put('m');
+                }
             }
         }
     }
