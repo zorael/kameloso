@@ -103,7 +103,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     /// Write buffered lines.
     static void writeEventToFile(PrinterPlugin plugin, const ref IRCEvent event,
         const string key, const string givenPath = string.init,
-        Flag!"extendPath" extendPath = Yes.extendPath, Flag!"raw" raw = No.raw)
+        Flag!"extendPath" extendPath = Yes.extendPath,
+        Flag!"raw" raw = No.raw,
+        Flag!"errors" errors = No.errors)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;
@@ -134,91 +136,93 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 file.writeln(datestamp);
             }
 
-            LogLineBuffer* buffer = key in plugin.buffers;
-
-            if (!buffer)
+            if (!errors)
             {
-                if (extendPath)
-                {
-                    import std.datetime.systime : Clock;
-                    import std.file : exists, mkdirRecurse;
-                    import std.path : buildNormalizedPath;
+                LogLineBuffer* buffer = key in plugin.buffers;
 
-                    immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
-                    plugin.buffers[key] = LogLineBuffer(subdir, Clock.currTime);
-                }
-                else
+                if (!buffer)
                 {
-                    plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, path);
-                }
-
-                buffer = key in plugin.buffers;
-                if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
-            }
-
-            if (!raw)
-            {
-                // Normal buffers
-                if (plugin.printerSettings.bufferedWrites)
-                {
-                    // Normal log
-                    plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                        No.bellOnMention, No.bellOnError);
-                    buffer.lines ~= plugin.linebuffer.data.idup;
-                    plugin.linebuffer.clear();
-                }
-                else
-                {
-                    import std.file : exists, mkdirRecurse;
-                    import std.stdio : File;
-
-                    if (!buffer.dir.exists)
+                    if (extendPath)
                     {
-                        mkdirRecurse(buffer.dir);
+                        import std.datetime.systime : Clock;
+                        import std.file : exists, mkdirRecurse;
+                        import std.path : buildNormalizedPath;
+
+                        immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
+                        plugin.buffers[key] = LogLineBuffer(subdir, Clock.currTime);
+                    }
+                    else
+                    {
+                        plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, path);
                     }
 
-                    auto file = File(buffer.file, "a");
+                    buffer = key in plugin.buffers;
+                    if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
+                }
 
-                    plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                        No.bellOnMention, No.bellOnError);
-                    file.writeln(plugin.linebuffer);
-                    plugin.linebuffer.clear();
+                if (!raw)
+                {
+                    // Normal buffers
+                    if (plugin.printerSettings.bufferedWrites)
+                    {
+                        // Normal log
+                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
+                            No.bellOnMention, No.bellOnError);
+                        buffer.lines ~= plugin.linebuffer.data.idup;
+                        plugin.linebuffer.clear();
+                    }
+                    else
+                    {
+                        import std.file : exists, mkdirRecurse;
+                        import std.stdio : File;
+
+                        if (!buffer.dir.exists)
+                        {
+                            mkdirRecurse(buffer.dir);
+                        }
+
+                        auto file = File(buffer.file, "a");
+
+                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
+                            No.bellOnMention, No.bellOnError);
+                        file.writeln(plugin.linebuffer);
+                        file.flush();
+                        plugin.linebuffer.clear();
+                    }
+                }
+                else
+                {
+                    // Raw log
+                    if (plugin.printerSettings.bufferedWrites)
+                    {
+                        buffer.lines ~= event.raw;
+                    }
+                    else
+                    {
+                        import std.file : exists, mkdirRecurse;
+                        import std.stdio : File;
+
+                        if (!buffer.dir.exists)
+                        {
+                            mkdirRecurse(buffer.dir);
+                        }
+
+                        auto file = File(buffer.file, "a");
+                        file.writeln(event.raw);
+                        file.flush();
+                    }
                 }
             }
             else
             {
-                // Raw log
-                if (plugin.printerSettings.bufferedWrites)
-                {
-                    buffer.lines ~= event.raw;
-                }
-                else
-                {
-                    import std.file : exists, mkdirRecurse;
-                    import std.stdio : File;
-
-                    if (!buffer.dir.exists)
-                    {
-                        mkdirRecurse(buffer.dir);
-                    }
-
-                    auto file = File(buffer.file, "a");
-                    file.writeln(event.raw);
-                }
-            }
-
-            // Errors
-            if (plugin.printerSettings.logErrors && event.errors.length)
-            {
                 import kameloso.printing : formatObjects;
 
-                enum errorLabel = "<error>";
-                LogLineBuffer* errBuffer = errorLabel in plugin.buffers;
+                LogLineBuffer* errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
                 {
-                    plugin.buffers[errorLabel] = LogLineBuffer(plugin.logDirectory, "error.log");
-                    errBuffer = errorLabel in plugin.buffers;
+                    plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, givenPath);
+                    errBuffer = key in plugin.buffers;
                     insertDatestamp(errBuffer);  // New buffer, new "day"
                 }
 
@@ -238,6 +242,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
                             (No.brightTerminal, event.target);
                     }
+
+                    errBuffer.lines ~= "/////////////////////////////////////" ~
+                        "///////////////////////////////////////////\n";  // 80c
                 }
                 else
                 {
@@ -268,6 +275,10 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         errFile.writeln(plugin.linebuffer.data);
                         plugin.linebuffer.clear();
                     }
+
+                    errFile.writeln("/////////////////////////////////////" ~
+                        "///////////////////////////////////////////\n");  // 80c
+                    errFile.flush();
                 }
             }
         }
@@ -292,6 +303,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     if (plugin.printerSettings.logRaw)
     {
         writeEventToFile(plugin, event, "<raw>", "raw.log", No.extendPath, Yes.raw);
+    }
+
+    if (event.errors.length && plugin.printerSettings.logErrors)
+    {
+        // This logs errors in guest channels. Consider making configurable.
+        writeEventToFile(plugin, event, "<error>", "error.log", No.extendPath, No.raw, Yes.errors);
     }
 
     import std.algorithm.searching : canFind;
