@@ -152,10 +152,10 @@ void joinChannels(ConnectService service)
     // Join in two steps so home channels don't get shoved away by guest channels
     // FIXME: line should split if it reaches 512 characters
     if (service.state.bot.homeChannels.length) joinChannel(service.state,
-        homelist.join(","), string.init, Yes.quiet);
+        homelist.join(','), string.init, Yes.quiet);
 
     if (service.state.bot.guestChannels.length) joinChannel(service.state,
-        guestlist.join(","), string.init, Yes.quiet);
+        guestlist.join(','), string.init, Yes.quiet);
 }
 
 
