@@ -328,20 +328,17 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         .sort
         .release;
 
-    void dgReminder()
+    void dgReminderImpl(const long time)
     {
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
         if (!currentVoteInstance || (*currentVoteInstance != id)) return;  // Aborted
 
-        auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-
-        if ((thisFiber.payload % 60) == 0)
+        if ((time % 60) == 0)
         {
             import lu.string : plurality;
 
             // An even minute
-            immutable minutes = cast(int)(thisFiber.payload / 60);
+            immutable minutes = cast(int)(time / 60);
 
             chan(plugin.state, event.channel, "%d %s! (%-(%s, %))"
                 .format(minutes, minutes.plurality("minute", "minutes"), sortedChoices));
@@ -349,7 +346,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         else
         {
             chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
-                .format(thisFiber.payload, sortedChoices));
+                .format(time, sortedChoices));
         }
     }
 
@@ -358,37 +355,27 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (dur >= 1200)
     {
-        auto reminder600 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
-        reminder600.payload = 600;
-        delay(plugin, reminder600, dur-600);
+        delay(plugin, (() => dgReminderImpl(600)), dur-600);
     }
 
     if (dur >= 600)
     {
-        auto reminder300 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
-        reminder300.payload = 300;
-        delay(plugin, reminder300, dur-300);
+        delay(plugin, (() => dgReminderImpl(300)), dur-300);
     }
 
     if (dur >= 240)
     {
-        auto reminder60 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
-        reminder60.payload = 60;
-        delay(plugin, reminder60, dur-180);
+        delay(plugin, (() => dgReminderImpl(180)), dur-180);
     }
 
     if (dur >= 60)
     {
-        auto reminder30 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
-        reminder30.payload = 30;
-        delay(plugin, reminder30, dur-30);
+        delay(plugin, (() => dgReminderImpl(30)), dur-30);
     }
 
     if (dur >= 20)
     {
-        auto reminder10 = new CarryingFiber!int(&dgReminder, BufferSize.fiberStack);
-        reminder10.payload = 10;
-        delay(plugin, reminder10, dur-10);
+        delay(plugin, (() => dgReminderImpl(10)), dur-10);
     }
 
     chan(plugin.state, event.channel,
