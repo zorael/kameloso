@@ -43,7 +43,6 @@ environment:
       #dubArgs:
       #Ddflags:
 
-skip_tags: true
 branches:
   except:
     - /circleci-.*/
