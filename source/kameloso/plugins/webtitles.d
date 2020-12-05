@@ -22,6 +22,19 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 
+// descriptionExemptions
+/++
+    Sites explicitly exempt from having their descriptions included after the titles.
+
+    Express them in the form of `://host.tld/` for [lu.string.contains] to
+    correctly detect them (with false positives few to none).
+ +/
+static immutable descriptionExemptions =
+[
+    "://imgur.com/",
+];
+
+
 // WebtitlesSettings
 /++
     All Webtitles settings, gathered in a struct.
