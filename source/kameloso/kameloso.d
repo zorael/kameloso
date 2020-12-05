@@ -707,7 +707,7 @@ public:
     bool ssl = false;
 
     /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
-    uint receiveTimeout = Timeout.receiveMsecs;
+    @Hidden uint receiveTimeout = Timeout.receiveMsecs;
 }
 
 
