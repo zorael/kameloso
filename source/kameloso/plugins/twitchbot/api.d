@@ -386,6 +386,8 @@ void generateKey(TwitchBotPlugin plugin)
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
+        recursing = Whether or not this is a recursive call and another one should
+            not be attempted.
 
     Returns:
         The [QueryResponse] that was discovered while monitoring the `bucket`
@@ -395,12 +397,11 @@ void generateKey(TwitchBotPlugin plugin)
         [TwitchQueryException] if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const string authorisationHeader)
+    const string authorisationHeader, const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import lu.string : beginsWith;
     import std.concurrency : prioritySend, send, spawn;
     import std.datetime.systime : Clock, SysTime;
 
@@ -444,37 +445,38 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if ((response.code >= 400) || response.error.length || !response.str.length)
+    if (!response.str.length)
     {
-        if (response.str.beginsWith(`{"err`))
+        throw new TwitchQueryException("Failed to query Twitch: empty response!",
+            response.str, response.error, response.code);
+    }
+    else if ((response.code >= 500) && !recursing)
+    {
+        return queryTwitch(plugin, url, authorisationHeader, Yes.recursing);
+    }
+    else if ((response.code >= 400) || response.error.length)
+    {
+        import lu.string : unquoted;
+        import std.format : format;
+        import std.json : parseJSON;
+
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        /*
         {
-            import lu.string : unquoted;
-            import std.format : format;
-            import std.json : parseJSON;
-
-            // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-            /*
-            {
-                "error": "Unauthorized",
-                "message": "Client ID and OAuth token do not match",
-                "status": 401
-            }
-            */
-            immutable errorJSON = parseJSON(response.str);
-            enum pattern = "Failed to query Twitch! %s %3d: %s";
-
-            immutable message = pattern.format(
-                errorJSON["error"].str.unquoted,
-                errorJSON["status"].integer,
-                errorJSON["message"].str.unquoted);
-
-            throw new TwitchQueryException(message, response.str, response.error, response.code);
+            "error": "Unauthorized",
+            "message": "Client ID and OAuth token do not match",
+            "status": 401
         }
-        else
-        {
-            throw new TwitchQueryException("Failed to query Twitch!",
-                response.str, response.error, response.code);
-        }
+        */
+        immutable errorJSON = parseJSON(response.str);
+        enum pattern = "Failed to query Twitch! %s %3d: %s";
+
+        immutable message = pattern.format(
+            errorJSON["error"].str.unquoted,
+            errorJSON["status"].integer,
+            errorJSON["message"].str.unquoted);
+
+        throw new TwitchQueryException(message, response.str, response.error, response.code);
     }
 
     return response;
