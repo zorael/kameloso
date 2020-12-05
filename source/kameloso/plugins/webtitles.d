@@ -446,13 +446,29 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     if (descriptions)
     {
-        auto metaTags = doc.getElementsByTagName("meta");
+        bool foundExemption;
 
-        foreach (tag; metaTags)
+        foreach (immutable substring; descriptionExemptions)
         {
-            if (tag.name != "description") continue;
-            results.description = tag.content;
-            break;
+            if (url.contains(substring))
+            {
+                foundExemption = true;
+                break;
+            }
+        }
+
+        if (!foundExemption)
+        {
+            auto metaTags = doc.getElementsByTagName("meta");
+
+            foreach (tag; metaTags)
+            {
+                if (tag.name == "description")
+                {
+                    results.description = tag.content;
+                    break;
+                }
+            }
         }
     }
 
