@@ -291,8 +291,8 @@ void writeToDisk(const string filename, const string configurationText,
     if (banner)
     {
         import kameloso.constants : KamelosoInfo;
-        import core.time : msecs;
         import std.datetime.systime : Clock;
+        import core.time : msecs;
 
         auto timestamp = Clock.currTime;
         timestamp.fracSecs = 0.msecs;
@@ -1047,8 +1047,8 @@ final class ConfigurationFileReadFailureException : Exception
 }
 
 
-private import std.meta : allSatisfy;
 private import lu.traits : isStruct;
+private import std.meta : allSatisfy;
 
 // readConfigInto
 /++

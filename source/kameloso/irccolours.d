@@ -298,7 +298,6 @@ string ircBold(T)(T something) //pure nothrow
 unittest
 {
     import std.conv : text;
-
     alias I = IRCControlCharacter;
 
     {

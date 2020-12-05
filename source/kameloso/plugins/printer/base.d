@@ -504,8 +504,8 @@ void onISUPPORT(PrinterPlugin plugin)
  +/
 package string datestamp()
 {
-    import std.format : format;
     import std.datetime.systime : Clock;
+    import std.format : format;
 
     immutable now = Clock.currTime;
     return "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
@@ -651,7 +651,6 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
 
     default:
         import kameloso.common : logger;
-
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }

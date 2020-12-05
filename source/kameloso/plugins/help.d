@@ -84,9 +84,9 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
     void dg()
     {
         import lu.string : beginsWith, contains, nom;
-        import core.thread : Fiber;
         import std.format : format;
         import std.typecons : No, Yes;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);

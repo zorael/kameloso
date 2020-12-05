@@ -579,8 +579,8 @@ void messageFiber(ref Kameloso instance)
             *instance.abort = true;
         }
 
-        import core.time : seconds;
         import std.datetime.systime : Clock;
+        import core.time : seconds;
 
         /// Did the concurrency receive catch something?
         bool receivedSomething;
@@ -1062,8 +1062,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 {
     import dialect.common : IRCParseException;
     import lu.string : NomException;
-    import core.exception : UnicodeException;
     import std.utf : UTFException;
+    import core.exception : UnicodeException;
 
     IRCEvent event;
 
@@ -1563,10 +1563,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 void processRepeats(ref Kameloso instance, IRCPlugin plugin)
 {
     import lu.string : NomException;
+    import std.utf : UTFException;
     import core.exception : UnicodeException;
     import core.memory : GC;
     import core.thread : Fiber;
-    import std.utf : UTFException;
 
     foreach (immutable i, repeat; plugin.state.repeats)
     {
@@ -1669,8 +1669,8 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
 
         version(TraceWhois)
         {
-            import std.stdio : writef, writefln, writeln;
             import std.algorithm.iteration : map;
+            import std.stdio : writef, writefln, writeln;
 
             auto callerNames = replaysForNickname.map!(replay => replay.caller);
 
@@ -1741,6 +1741,7 @@ void resetSignals() nothrow @nogc
     version(Posix)
     {
         import core.sys.posix.signal : SIGHUP, SIGQUIT;
+
         signal(SIGHUP, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
     }
@@ -1827,8 +1828,8 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
 Next tryConnect(ref Kameloso instance)
 {
     import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
-    import kameloso.thread : interruptibleSleep;
     import kameloso.net : ConnectionAttempt, connectFiber;
+    import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
 
     version(PrintErrnosPosix)
@@ -2037,14 +2038,13 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     void delayOnNetworkDown()
     {
         import kameloso.thread : interruptibleSleep;
+        import std.algorithm.comparison : min;
         import core.time : seconds;
 
         logger.logf("Network down? Retrying in %s%d%s seconds.",
             Tint.info, incrementedRetryDelay, Tint.log);
         interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
         if (*instance.abort) return;
-
-        import std.algorithm.comparison : min;
 
         enum delayCap = 10*60;  // seconds
         incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
@@ -2447,6 +2447,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         catch (IRCPluginInitialisationException e)
         {
             import kameloso.terminal : TerminalToken;
+
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
@@ -2458,6 +2459,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
+
             logger.warningf("An error occurred while initialising the %s%s%s " ~
                 "plugin's resources: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
@@ -2481,6 +2483,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         catch (IRCPluginInitialisationException e)
         {
             import kameloso.terminal : TerminalToken;
+
             logger.warningf("The %s%s%s plugin failed to start up: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,
@@ -2492,6 +2495,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
+
             logger.warningf("An error occurred while starting up the %s%s%s plugin: %1$s%4$s%3$s " ~
                 "(at %1$s%5$s%3$s:%1$s%6$d%3$s)%7$s",
                 Tint.log, e.file.baseName[0..$-2], Tint.warning, e.msg,

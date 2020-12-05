@@ -112,8 +112,8 @@ version(Posix)
      +/
     void setThreadName(const string name)
     {
-        import core.thread : Thread;
         import std.string : toStringz;
+        import core.thread : Thread;
 
         cast(void)pthread_setname_np(Thread.getThis().id, name.toStringz);
     }
@@ -390,9 +390,9 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
  +/
 void exhaustMessages()
 {
-    import core.time : msecs;
     import std.concurrency : receiveTimeout, thisTid;
     import std.variant : Variant;
+    import core.time : msecs;
 
     // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
     // until a thread was spawned or thisTid was passed to a running thread.

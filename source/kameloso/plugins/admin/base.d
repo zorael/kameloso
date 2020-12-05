@@ -414,8 +414,8 @@ void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChann
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
 {
     import lu.string : stripped;
-    import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
+    import std.algorithm.searching : countUntil;
     import std.uni : toLower;
 
     immutable channel = rawChannel.stripped.toLower;
@@ -696,8 +696,8 @@ void onSetCommand(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     void dg()
     {
-        import core.thread : Fiber;
         import std.conv : ConvException;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1091,8 +1091,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         void dg()
         {
-            import core.thread : Fiber;
             import std.conv : ConvException;
+            import core.thread : Fiber;
 
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);

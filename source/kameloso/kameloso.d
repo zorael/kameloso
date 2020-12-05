@@ -443,9 +443,9 @@ public:
             }
             catch (ErrnoException e)
             {
-                import core.stdc.errno : ENOENT;
                 import std.file : exists;
                 import std.path : dirName;
+                import core.stdc.errno : ENOENT;
 
                 if ((e.errno == ENOENT) && !settings.resourceDirectory.dirName.exists)
                 {

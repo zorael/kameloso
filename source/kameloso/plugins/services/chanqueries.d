@@ -88,10 +88,10 @@ void startChannelQueries(ChanQueriesService service)
     void dg()
     {
         import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
-        import core.thread : Fiber;
         import std.concurrency : send;
         import std.datetime.systime : Clock;
         import std.string : representation;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);

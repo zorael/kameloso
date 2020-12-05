@@ -1107,8 +1107,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     version(SanitizeAndRetryOnUnicodeException)
                     {
-                        import core.exception : UnicodeException;
                         import std.utf : UTFException;
+                        import core.exception : UnicodeException;
 
                         immutable isRecoverableException =
                             (cast(UTFException)e !is null) ||

@@ -282,8 +282,8 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
     }
     else
     {
-        import core.sys.posix.sys.stat : S_ISFIFO;
         import std.file : getAttributes, isDir;
+        import core.sys.posix.sys.stat : S_ISFIFO;
 
         immutable attrs = cast(ushort)getAttributes(filename);
 

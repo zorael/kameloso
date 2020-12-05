@@ -21,14 +21,11 @@ public:
 version(unittest)
 shared static this()
 {
-    import kameloso.kameloso : CoreSettings;
-    import std.experimental.logger : LogLevel;
-
     // This is technically before settings have been read...
     logger = new KamelosoLogger(No.monochrome, No.brightTerminal);
 
     // settings needs instantiating now.
-    settings = new CoreSettings;
+    settings = new kameloso.kameloso.CoreSettings;
 }
 
 
@@ -132,8 +129,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 version(PrintStacktraces)
 void printStacktrace() @system
 {
-    import core.runtime : defaultTraceHandler;
     import std.stdio : writeln;
+    import core.runtime : defaultTraceHandler;
 
     writeln(defaultTraceHandler);
 }
@@ -664,8 +661,8 @@ if (isOutputRange!(Sink, char[]))
 ///
 unittest
 {
-    import core.time;
     import std.array : Appender;
+    import core.time;
 
     Appender!(char[]) sink;
     sink.reserve(64);  // workaround for formattedWrite < 2.076

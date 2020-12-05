@@ -513,10 +513,10 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 void queryTwitchImpl(const string url, const string authToken,
     const uint timeout, shared QueryResponse[string] bucket, const string caBundleFile)
 {
-    import std.net.curl : HTTP;
-    import std.datetime.systime : Clock, SysTime;
     import std.array : Appender;
+    import std.datetime.systime : Clock, SysTime;
     import std.exception : assumeUnique;
+    import std.net.curl : HTTP;
     import core.time : seconds;
 
     auto client = HTTP(url);
@@ -821,9 +821,8 @@ QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
-    import std.datetime.systime : Clock;
-
     import kameloso.plugins.common.delayawait : delay;
+    import std.datetime.systime : Clock;
 
     immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;

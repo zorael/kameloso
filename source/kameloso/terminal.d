@@ -243,8 +243,8 @@ void setTitle(const string title) @system
     }
     else version(Windows)
     {
-        import core.sys.windows.wincon : SetConsoleTitleA;
         import std.string : toStringz;
+        import core.sys.windows.wincon : SetConsoleTitleA;
 
         SetConsoleTitleA(title.toStringz);
     }

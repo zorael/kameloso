@@ -13,9 +13,9 @@ private:
 
 import kameloso.plugins.common.core : IRCPlugin;
 import dialect.defs;
-import core.thread : Fiber;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 public:
 
@@ -385,8 +385,8 @@ in ((thing !is null), "Tried to unlist a null " ~ Thing.stringof ~ " from awaiti
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")
 {
-    import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
+    import std.algorithm.searching : countUntil;
 
     void removeForType(const IRCEvent.Type type)
     {

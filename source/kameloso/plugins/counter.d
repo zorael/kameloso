@@ -80,8 +80,8 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         import kameloso.thread : CarryingFiber, ThreadMessage;
-        import core.thread : Fiber;
         import std.concurrency : send;
+        import core.thread : Fiber;
 
         void dg()
         {
