@@ -32,6 +32,7 @@ import std.typecons : Flag, No, Yes;
 static immutable descriptionExemptions =
 [
     "://imgur.com/",
+    "://www.imgur.com/",
 ];
 
 
