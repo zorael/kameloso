@@ -1362,6 +1362,8 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
     Processes the awaiting [core.thread.fiber.Fiber]s of an
     [kameloso.plugins.common.core.IRCPlugin].
 
+    Don't delete [core.thread.fiber.Fiber]s, as they can be reset and reused.
+
     Params:
         plugin = The [kameloso.plugins.common.core.IRCPlugin] whose
             [dialect.defs.IRCEvent.Type]-awaiting [core.thread.fiber.Fiber]s to
