@@ -978,6 +978,75 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 
         await(service, &twitchWarningDg, endOfMotdEventTypes[]);
     }
+    else
+    {
+        // Not on Twitch
+        if (service.connectSettings.regainNickname && !service.state.bot.hasGuestNickname &&
+            (service.state.client.nickname != service.state.client.origNickname))
+        {
+            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.constants : BufferSize;
+            import core.thread.fiber : Fiber;
+
+            void regainDg()
+            {
+                // Concatenate the verb once
+                immutable squelchVerb = "squelch " ~ service.state.client.origNickname;
+
+                while (service.state.client.nickname != service.state.client.origNickname)
+                {
+                    import kameloso.messaging : raw;
+
+                    version(WithPrinterPlugin)
+                    {
+                        import kameloso.thread : ThreadMessage, busMessage;
+                        import std.concurrency : send;
+                        service.state.mainThread.send(ThreadMessage.BusMessage(),
+                            "printer", busMessage(squelchVerb));
+                    }
+
+                    raw(service.state, "NICK " ~ service.state.client.origNickname,
+                        No.quiet, Yes.background);
+                    delay(service, service.nickRegainPeriodicity, No.msecs, Yes.yield);
+                }
+            }
+
+            auto regainFiber = new Fiber(&regainDg, BufferSize.fiberStack);
+            delay(service, regainFiber, service.nickRegainPeriodicity);
+        }
+    }
+}
+
+
+// onSelfnick
+/++
+    Resets [kameloso.plugins.printer.base.PrinterPlugin] squelching upon a
+    successful nick change.
+ +/
+version(WithPrinterPlugin)
+@(IRCEvent.Type.SELFNICK)
+void onSelfnick(ConnectService service)
+{
+    import kameloso.thread : ThreadMessage, busMessage;
+    import std.concurrency : send;
+    service.state.mainThread.send(ThreadMessage.BusMessage(),
+        "printer", busMessage("resetsquelch " ~ service.state.client.origNickname));
+}
+
+
+// onQuit
+/++
+    Regains nickname if the holder of the one we wanted during registration quit.
+ +/
+@(IRCEvent.Type.QUIT)
+void onQuit(ConnectService service, const ref IRCEvent event)
+{
+    if (service.connectSettings.regainNickname &&
+        (event.sender.nickname == service.state.client.origNickname))
+    {
+        // The regain Fiber will end itself when it is next triggered
+        raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
+    }
 }
 
 
