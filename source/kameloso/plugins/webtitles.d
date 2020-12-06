@@ -399,6 +399,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.net.curl : HTTP;
+    import std.uni : toLower;
     import core.time : seconds;
 
     enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
@@ -436,7 +437,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     string slice = url;  // mutable
     slice.nom("//");
-    string host = slice.nom!(Yes.inherit)('/');
+    string host = slice.nom!(Yes.inherit)('/').toLower;
     if (host.beginsWith("www.")) host = host[4..$];
 
     TitleLookupResults results;
