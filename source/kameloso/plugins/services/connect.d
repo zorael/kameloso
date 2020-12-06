@@ -33,6 +33,12 @@ private:
     import lu.uda : CannotContainComments, Separator, Unserialisable;
 
 public:
+    /++
+        Whether or not to try to regain nickname if there was a collision and
+        we had to rename ourselves, when registering.
+     +/
+    bool regainNickname = false;
+
     /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 
