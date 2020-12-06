@@ -147,34 +147,34 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     in ((channel.length || sender.length || target.length),
         "Tried to update squelchstamp but with no channel or user information passed")
     {
-        if (channel.length)
-        {
-            if (channel != plugin.squelchTarget) return false;
-        }
-        else if (sender.length)
-        {
-            if (sender != plugin.squelchTarget) return false;
-        }
-        else if (target.length)
-        {
-            if (target != plugin.squelchTarget) return false;
-        }
-        /*else
-        {
-            // already in in-contract
-            assert(0, "Logic error; tried to update squelchstamp but " ~
-                "no `channel`, no `sender`, no `target`");
-        }*/
+        /*import std.algorithm.comparison : either;
+        immutable key = either!(s => s.length)(channel, sender, target);*/
 
-        if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)
+        immutable key =
+            channel.length ? channel :
+            sender.length ? sender :
+            /*target.length ?*/ target;
+
+        // already in in-contract
+        /*assert(key.length, "Logic error; tried to update squelchstamp but " ~
+            "no `channel`, no `sender`, no `target`");*/
+
+        auto squelchstamp = key in plugin.squelches;
+
+        if (!squelchstamp)
         {
-            plugin.squelchstamp = time;
+            plugin.hasSquelches = (plugin.squelches.length > 0);
+            return false;
+        }
+        else if ((time - *squelchstamp) <= plugin.squelchTimeout)
+        {
+            *squelchstamp = time;
             return true;
         }
         else
         {
-            plugin.squelchstamp = 0L;
-            plugin.squelchTarget = string.init;
+            plugin.squelches.remove(key);
+            plugin.hasSquelches = (plugin.squelches.length > 0);
             return false;
         }
     }
@@ -316,7 +316,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case ENDOFMODELIST:
     case RPL_ENDOFQLIST:
     case RPL_ENDOFALIST:
-        immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
+        immutable shouldSquelch = plugin.hasSquelches &&
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
 
@@ -332,7 +332,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     case RPL_TOPIC:
     case RPL_NOTOPIC:
-        immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
+        immutable shouldSquelch = plugin.hasSquelches &&
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
 
@@ -640,13 +640,13 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     {
     case "squelch":
         import std.datetime.systime : Clock;
-        plugin.squelchstamp = Clock.currTime.toUnixTime;
-        plugin.squelchTarget = target;  // May be empty
+        plugin.squelches[target] = Clock.currTime.toUnixTime;
+        plugin.hasSquelches = true;
         break;
 
     case "resetsquelch":
-        plugin.squelchstamp = 0L;
-        plugin.squelchTarget = string.init;
+        plugin.squelches.remove(target);
+        plugin.hasSquelches = (plugin.squelches.length > 0);
         break;
 
     default:
