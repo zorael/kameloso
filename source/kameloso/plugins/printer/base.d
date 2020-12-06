@@ -804,6 +804,15 @@ package:
     /// From which channel or for which user events are being squelched.
     string squelchTarget;
 
+    /++
+        Nicknames or channels, to or from which select events should be squelched.
+        UNIX timestamp value.
+     +/
+    long[string] squelches;
+
+    /// Whether or not at least one squelch is active; whether [squelches] is non-empty.
+    bool hasSquelches;
+
     /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
