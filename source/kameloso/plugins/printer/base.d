@@ -330,6 +330,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             goto case RPL_NAMREPLY;
         }
 
+    version(WithConnectPlugin)
+    {
+        case ERR_NICKNAMEINUSE:
+            goto case;
+    }
+
     case RPL_TOPIC:
     case RPL_NOTOPIC:
         immutable shouldSquelch = plugin.hasSquelches &&
