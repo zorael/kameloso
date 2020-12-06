@@ -445,18 +445,9 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     if (descriptions)
     {
-        bool foundExemption;
+        import std.algorithm.searching : canFind;
 
-        foreach (immutable substring; descriptionExemptions)
-        {
-            if (url.contains(substring))
-            {
-                foundExemption = true;
-                break;
-            }
-        }
-
-        if (!foundExemption)
+        if (!descriptionExemptions.canFind(host))
         {
             auto metaTags = doc.getElementsByTagName("meta");
 
