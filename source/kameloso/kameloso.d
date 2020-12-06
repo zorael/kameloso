@@ -719,7 +719,7 @@ public:
 struct IRCBot
 {
 private:
-    import lu.uda : CannotContainComments, Hidden, Separator;
+    import lu.uda : CannotContainComments, Hidden, Separator, Unserialisable;
 
 public:
     /// Username to use as services account login name.
@@ -755,4 +755,10 @@ public:
         @CannotContainComments
         string[] guestChannels;
     }
+
+    /++
+        Whether or not we connected without an explicit nickname, and a random
+        guest such was generated.
+     +/
+    @Unserialisable bool hasGuestNickname;
 }
