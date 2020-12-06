@@ -802,7 +802,7 @@ package:
     PrinterSettings printerSettings;
 
     /// How many seconds before a request to squelch list events times out.
-    enum squelchTimeout = 10;  // seconds
+    enum squelchTimeout = 5;  // seconds
 
     /// How many bytes to preallocate for the [linebuffer].
     enum linebufferInitialSize = 2048;
