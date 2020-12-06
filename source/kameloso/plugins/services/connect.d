@@ -986,7 +986,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
         {
             import kameloso.plugins.common.delayawait : delay;
             import kameloso.constants : BufferSize;
-            import core.thread.fiber : Fiber;
+            import core.thread : Fiber;
 
             void regainDg()
             {
