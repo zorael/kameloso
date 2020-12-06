@@ -939,6 +939,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         import std.random : uniform;
 
         client.nickname = "guest%03d".format(uniform(0, 1000));
+        bot.hasGuestNickname = true;
     }
 
     // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults].
