@@ -1392,6 +1392,12 @@ private:
      +/
     enum capLSTimeout = 15;
 
+    /++
+        How often to attempt to regain nickname, in seconds, if there was a collision
+        and we had to rename ourselves during registration.
+     +/
+    enum nickRegainPeriodicity = 600;
+
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
 
