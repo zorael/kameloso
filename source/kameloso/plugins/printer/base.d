@@ -807,9 +807,6 @@ package:
     /// How many bytes to preallocate for the [linebuffer].
     enum linebufferInitialSize = 2048;
 
-    /// From which channel or for which user events are being squelched.
-    string squelchTarget;
-
     /++
         Nicknames or channels, to or from which select events should be squelched.
         UNIX timestamp value.
@@ -824,13 +821,6 @@ package:
 
     /// Whether or not we have printed daemon-network information.
     bool printedISUPPORT;
-
-    /++
-        UNIX timestamp of when to expect squelchable list events.
-
-        Note: repeated list events refresh the timer.
-     +/
-    long squelchstamp;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
