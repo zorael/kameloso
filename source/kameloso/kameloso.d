@@ -186,91 +186,90 @@ public:
         const Flag!"sendFaster" sendFaster = No.sendFaster,
         const Flag!"immediate" immediate = No.immediate) @system
     {
-        with (throttle)
+        import std.datetime.systime : Clock;
+
+        alias t = throttle;
+
+        immutable now = Clock.currTime;
+        if (t.t0 == SysTime.init) t.t0 = now;
+
+        double k = -connSettings.messageRate;
+        double burst = connSettings.messageBurst;
+
+        version(TwitchSupport)
         {
-            import std.datetime.systime : Clock;
+            import dialect.defs : IRCServer;
 
-            immutable now = Clock.currTime;
-            if (t0 == SysTime.init) t0 = now;
-
-            version(TwitchSupport)
+            if (parser.server.daemon == IRCServer.Daemon.twitch)
             {
-                import dialect.defs : IRCServer;
-
-                double k = throttle.k;
-                double burst = throttle.burst;
-
-                if (parser.server.daemon == IRCServer.Daemon.twitch)
+                if (sendFaster)
                 {
-                    if (sendFaster)
-                    {
-                        // FIXME: Tweak numbers.
-                        k = -3.0;
-                        burst = 10.0;
-                    }
-                    else
-                    {
-                        k = -1.0;
-                        burst = 1.0;
-                    }
+                    // FIXME: Tweak numbers.
+                    k = -3.0;
+                    burst = 10.0;
+                }
+                else
+                {
+                    k = -1.0;
+                    burst = 1.0;
                 }
             }
-
-            while (!buffer.empty || dryRun)
-            {
-                if (!immediate)
-                {
-                    double x = (now - t0).total!"msecs"/1000.0;
-                    double y = k * x + m;
-
-                    if (y < 0.0)
-                    {
-                        t0 = now;
-                        x = 0.0;
-                        y = 0.0;
-                        m = 0.0;
-                    }
-
-                    if (y >= burst)
-                    {
-                        x = (now - t0).total!"msecs"/1000.0;
-                        y = k*x + m;
-                        return y;
-                    }
-
-                    m = y + increment;
-                    t0 = now;
-                }
-
-                if (dryRun) break;
-
-                if (settings.trace || !buffer.front.quiet)
-                {
-                    bool printed;
-
-                    version(Colours)
-                    {
-                        if (!settings.monochrome)
-                        {
-                            import kameloso.irccolours : mapEffects;
-                            logger.trace("--> ", buffer.front.line.mapEffects);
-                            printed = true;
-                        }
-                    }
-
-                    if (!printed)
-                    {
-                        import kameloso.irccolours : stripEffects;
-                        logger.trace("--> ", buffer.front.line.stripEffects);
-                    }
-                }
-
-                conn.sendline(buffer.front.line);
-                buffer.popFront();
-            }
-
-            return 0.0;
         }
+
+        while (!buffer.empty || dryRun)
+        {
+            if (!immediate)
+            {
+                double x = (now - t.t0).total!"msecs"/1000.0;
+                double y = k * x + t.m;
+
+                if (y < 0.0)
+                {
+                    t.t0 = now;
+                    x = 0.0;
+                    y = 0.0;
+                    t.m = 0.0;
+                }
+
+                if (y >= burst)
+                {
+                    x = (now - t.t0).total!"msecs"/1000.0;
+                    y = k*x + t.m;
+                    return y;
+                }
+
+                t.m = y + t.increment;
+                t.t0 = now;
+            }
+
+            if (dryRun) break;
+
+            if (settings.trace || !buffer.front.quiet)
+            {
+                bool printed;
+
+                version(Colours)
+                {
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.irccolours : mapEffects;
+                        logger.trace("--> ", buffer.front.line.mapEffects);
+                        printed = true;
+                    }
+                }
+
+                if (!printed)
+                {
+                    import kameloso.irccolours : stripEffects;
+                    logger.trace("--> ", buffer.front.line.stripEffects);
+                }
+            }
+
+            conn.sendline(buffer.front.line);
+            buffer.popFront();
+        }
+
+        return 0.0;
     }
 
 

@@ -837,7 +837,7 @@ Next mainLoop(ref Kameloso instance)
         {
             immutable untilNext = sendLines(instance);
 
-            if ((untilNext > 0.0) && (untilNext < instance.throttle.burst))
+            if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
             {
                 immutable untilNextMsecs = cast(uint)(untilNext * 1000);
 
