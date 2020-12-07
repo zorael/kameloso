@@ -1018,14 +1018,15 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 }
 
 
-// onSelfnick
+// onSelfnickSuccessOrFailure
 /++
     Resets [kameloso.plugins.printer.base.PrinterPlugin] squelching upon a
-    successful nick change.
+    successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)
 @(IRCEvent.Type.SELFNICK)
-void onSelfnick(ConnectService service)
+@(IRCEvent.Type.ERR_NICKNAMEINUSE)
+void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
