@@ -139,8 +139,9 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     event.clearTargetNicknameIfUs(plugin.state);
 
     /++
-        Update the squelchstamp and return whether or not the current event
-        should be squelched.
+        Return whether or not the current event should be squelched based on
+        if the passed channel, sender or target nickname has a squelchstamp
+        that demands it. Additionally updates the squelchstamp if so.
      +/
     static bool updateSquelchstamp(PrinterPlugin plugin, const long time,
         const string channel, const string sender, const string target)
@@ -332,7 +333,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     version(WithConnectPlugin)
     {
-        case ERR_NICKNAMEINUSE:
+        case ERR_NICKNAMEINUSE:  // When failing to regain nickname
             goto case;
     }
 
