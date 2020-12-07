@@ -34,11 +34,6 @@ private:
      +/
     static struct Throttle
     {
-        /// Graph constant modifier (inclination, MUST be negative).
-        enum k = -1.2;
-
-        static assert((k < 0), "Throttle graph constant must be negative");
-
         /// Origo of x-axis (last sent message).
         SysTime t0;
 
@@ -46,13 +41,7 @@ private:
         double m = 0.0;
 
         /// Increment to y on sent message.
-        double increment = 1.0;
-
-        /++
-            Burst limit; how many messages*increment can be sent initially
-            before throttling kicks in.
-         +/
-        double burst = 3.0;
+        enum increment = 1.0;
 
         /// Don't copy this, just keep one instance.
         @disable this(this);
