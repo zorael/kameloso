@@ -683,7 +683,7 @@ public:
 struct ConnectionSettings
 {
 private:
-    import kameloso.constants : Timeout;
+    import kameloso.constants : ConnectionDefaultFloats, Timeout;
     import lu.uda : CannotContainComments, Hidden;
 
 public:
@@ -706,8 +706,17 @@ public:
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
 
-    /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
-    @Hidden uint receiveTimeout = Timeout.receiveMsecs;
+    @Hidden
+    {
+        /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
+        uint receiveTimeout = Timeout.receiveMsecs;
+
+        /// How many messages to send per second, maximum.
+        double messageRate = ConnectionDefaultFloats.messageRate;
+
+        /// How many messages to immediately send in one go, before throttling kicks in.
+        double messageBurst = ConnectionDefaultFloats.messageBurst;
+    }
 }
 
 
