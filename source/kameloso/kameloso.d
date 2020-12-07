@@ -191,16 +191,17 @@ public:
 
             if (parser.server.daemon == IRCServer.Daemon.twitch)
             {
+                import kameloso.constants : ConnectionDefaultFloats;
+
                 if (sendFaster)
                 {
-                    // FIXME: Tweak numbers.
-                    k = -3.0;
-                    burst = 10.0;
+                    k = -ConnectionDefaultFloats.messageRateTwitchFast;
+                    burst = ConnectionDefaultFloats.messageBurstTwitchFast;
                 }
                 else
                 {
-                    k = -1.0;
-                    burst = 1.0;
+                    k = -ConnectionDefaultFloats.messageRateTwitchSlow;
+                    burst = ConnectionDefaultFloats.messageBurstTwitchSlow;
                 }
             }
         }
