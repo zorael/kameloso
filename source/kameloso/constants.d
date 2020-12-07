@@ -90,8 +90,14 @@ enum KamelosoDefaults
     /// The default part reason, when the bot is asked to part a channel.
     partReason = quitReason,
 
-    /// When a nickname is taken, first append this to get a new name before trying random numbers.
-    altNickSign = "|",
+    /++
+        When a nickname was already taken during registration, append this followed
+        by some random numbers to it to generate a new one.
+
+        A separator of "|" and a taken nickname of "guest" thus gives nicknames like "guest|1".
+        A separator of "^" gives nicknames like "guest^2".
+     +/
+    altNickSeparator = "|",
 }
 
 
