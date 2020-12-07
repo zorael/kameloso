@@ -2234,6 +2234,18 @@ Next verifySettings(ref Kameloso instance)
         }
     }
 
+    // No point having these checks be bypassable with --force
+    if (instance.connSettings.messageRate <= 0)
+    {
+        logger.error("Message rate must be a number greater than zero!");
+        return Next.returnFailure;
+    }
+    else if (instance.connSettings.messageBurst <= 0)
+    {
+        logger.error("Message burst must be a number greater than zero!");
+        return Next.returnFailure;
+    }
+
     version(Posix)
     {
         import lu.string : contains;
