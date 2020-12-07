@@ -1031,7 +1031,7 @@ void onSelfnickSuccessOrFailure(ConnectService service)
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
     service.state.mainThread.send(ThreadMessage.BusMessage(),
-        "printer", busMessage("resetsquelch " ~ service.state.client.origNickname));
+        "printer", busMessage("unsquelch " ~ service.state.client.origNickname));
 }
 
 

@@ -232,7 +232,7 @@ void startChannelQueries(ChanQueriesService service)
             version(WithPrinterPlugin)
             {
                 service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("resetsquelch"));
+                    "printer", busMessage("unsquelch"));
             }
         }
 

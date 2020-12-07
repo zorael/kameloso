@@ -651,7 +651,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         plugin.hasSquelches = true;
         break;
 
-    case "resetsquelch":
+    case "unsquelch":
         plugin.squelches.remove(target);
         plugin.hasSquelches = (plugin.squelches.length > 0);
         break;
