@@ -165,6 +165,36 @@ enum ConnectionDefaultFloats : double
 
     /// How many messages to immediately send in one go, before throttling kicks in.
     messageBurst = 3.0,
+
+    /++
+        How many messages to send per second, maximum. For *fast* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageRateTwitchFast = 3.0,
+
+    /++
+        How many messages to immediately send in one go, before throttling kicks in.
+        For *fast* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageBurstTwitchFast = 10.0,
+
+    /++
+        How many messages to send per second, maximum. For *slow* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageRateTwitchSlow = 1.0,
+
+    /++
+        How many messages to immediately send in one go, before throttling kicks in.
+        For *slow* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageBurstTwitchSlow = 1.0,
 }
 
 
