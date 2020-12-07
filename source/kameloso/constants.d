@@ -153,6 +153,12 @@ enum ConnectionDefaultFloats : double
 
     /// By what to multiply [Timeout.receiveMsecs] with to shorten reads.
     receiveShorteningMultiplier = 0.25,
+
+    /// How many messages to send per second, maximum.
+    messageRate = 1.2,
+
+    /// How many messages to immediately send in one go, before throttling kicks in.
+    messageBurst = 3.0,
 }
 
 
