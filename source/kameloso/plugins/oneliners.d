@@ -138,8 +138,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (trigger !in plugin.onelinersByChannel[event.channel])
         {
-            chan(plugin.state, event.channel, "No such trigger: %s%s"
-                .format(plugin.state.settings.prefix, slice));
+            import std.conv : text;
+            chan(plugin.state, event.channel,
+                text("No such trigger: ", plugin.state.settings.prefix, slice));
             return;
         }
 

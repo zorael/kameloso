@@ -2309,7 +2309,7 @@ void resolveResourceDirectory(ref Kameloso instance)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(instance.settings.resourceDirectory);
-        logger.logf("Created resource directory %s%s", Tint.info,
+        logger.log("Created resource directory ", Tint.info,
             instance.settings.resourceDirectory);
     }
 }

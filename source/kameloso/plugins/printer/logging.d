@@ -492,7 +492,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(logLocation);
-        logger.logf("Created log directory: %s%s", Tint.info, logLocation);
+        logger.log("Created log directory: ", Tint.info, logLocation);
     }
 
     return true;

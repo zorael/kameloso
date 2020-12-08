@@ -98,7 +98,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
 
     instance.writeConfigurationFile(instance.settings.configFile);
-    logger.logf("Configuration written to %s%s", Tint.info, instance.settings.configFile);
+    logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
     {
