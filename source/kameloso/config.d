@@ -209,6 +209,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
             enum editor = "xdg-open";
 
             immutable isGraphicalEnvironment =
+                instance.settings.force ||
                 environment.get("DISPLAY", string.init).length ||
                 environment.get("WAYLAND_DISPLAY", string.init).length;
 
