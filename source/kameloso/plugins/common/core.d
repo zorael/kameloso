@@ -1248,7 +1248,22 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static if (TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
-                .postprocess(this, event);
+                import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                alias SC = ParameterStorageClass;
+                alias paramClasses = ParameterStorageClassTuple!(.postprocess);
+
+                static if (paramClasses[1] & SC.ref_)
+                {
+                    .postprocess(this, event);
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, ("`%s.postprocess` does not take its " ~
+                        "`IRCEvent` parameter by `ref`")
+                        .format(module_,));
+                }
             }
             else
             {
