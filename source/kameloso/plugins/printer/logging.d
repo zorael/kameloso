@@ -121,10 +121,18 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 assert((buffer.file.length && buffer.dir.length),
                     "Tried to add datestamp to uninitialised buffer");
 
-                import std.file : exists, mkdirRecurse;
+                import std.file : exists, isDir, mkdirRecurse;
                 import std.stdio : File, writeln;
 
-                if (!buffer.dir.exists) mkdirRecurse(buffer.dir);
+                if (!buffer.dir.exists)
+                {
+                    mkdirRecurse(buffer.dir);
+                }
+                else if (!buffer.dir.isDir)
+                {
+                    // Something is in the way of the log's directory
+                    return;
+                }
 
                 // Insert an empty space if the file exists, to separate old content from new
                 immutable addLinebreak = buffer.file.exists;
@@ -173,12 +181,17 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     }
                     else
                     {
-                        import std.file : exists, mkdirRecurse;
+                        import std.file : exists, isDir, mkdirRecurse;
                         import std.stdio : File;
 
                         if (!buffer.dir.exists)
                         {
                             mkdirRecurse(buffer.dir);
+                        }
+                        else if (!buffer.dir.isDir)
+                        {
+                            // Something is in the way of the log's directory
+                            return;
                         }
 
                         auto file = File(buffer.file, "a");
@@ -513,12 +526,19 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     try
     {
         import std.algorithm.iteration : joiner;
-        import std.file : exists, mkdirRecurse;
+        import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File, writeln;
 
         if (!buffer.dir.exists)
         {
             mkdirRecurse(buffer.dir);
+        }
+        else if (!buffer.dir.isDir)
+        {
+            // Something is in the way of the log's directory
+            // Discard accumulated lines
+            buffer.lines.clear();
+            return;
         }
 
         auto lines = buffer.lines.data.joiner("\n");
