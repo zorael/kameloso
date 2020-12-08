@@ -595,6 +595,11 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     separators and percentages for environment variables, whereas Posix uses
     forward slashes and dollar signs.
 
+    Bugs:
+        Escaped paths can collide with real files named what the original path
+        was escaped to. "%PATH%" may as such collide with "_PATH_", as the
+        former was escaped to an already valid filename.
+
     Params:
         path = A filesystem path in string form.
 
