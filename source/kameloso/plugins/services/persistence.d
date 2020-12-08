@@ -32,16 +32,50 @@ import dialect.defs;
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    if ((event.type == IRCEvent.Type.ERR_WASNOSUCHNICK) ||
-        (event.type == IRCEvent.Type.ERR_NOSUCHNICK))
+    with (IRCEvent.Type)
+    switch (event.type)
     {
-        // Invalid user, don't complete it
+    case ERR_WASNOSUCHNICK:
+    case ERR_NOSUCHNICK:
+    case RPL_LOGGEDIN:
+    case ERR_NICKNAMEINUSE:
+        // Invalid user or inapplicable, don't complete it
         return;
-    }
 
-    return service.state.settings.preferHostmasks ?
-        postprocessHostmasks(service, event) :
-        postprocessAccounts(service, event);
+    case NICK:
+    case SELFNICK:
+        // Clone the stored sender into a new stored target.
+        // Don't delete the old user yet.
+
+        if (service.state.settings.preferHostmasks)
+        {
+            if (const account = event.sender.nickname in service.accountByUser)
+            {
+                service.accountByUser[event.target.nickname] = *account;
+                //service.accountByUser.remove(event.sender.nickname);
+            }
+        }
+        else if (const stored = event.sender.nickname in service.state.users)
+        {
+            service.state.users[event.target.nickname] = *stored;
+            service.state.users[event.target.nickname].nickname = event.target.nickname;
+        }
+
+        //service.state.users.remove(event.sender.nickname);
+
+        if (const channelName = event.sender.nickname in service.userClassCurrentChannelCache)
+        {
+            service.userClassCurrentChannelCache[event.target.nickname] = *channelName;
+            //service.userClassCurrentChannelCache.remove(event.sender.nickname);
+        }
+
+        goto default;
+
+    default:
+        return service.state.settings.preferHostmasks ?
+            postprocessHostmasks(service, event) :
+            postprocessAccounts(service, event);
+    }
 }
 
 
