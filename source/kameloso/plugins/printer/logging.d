@@ -226,13 +226,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     }
                     else
                     {
-                        import std.file : exists, mkdirRecurse;
                         import std.stdio : File;
-
-                        if (!buffer.dir.exists)
-                        {
-                            mkdirRecurse(buffer.dir);
-                        }
 
                         auto file = File(buffer.file, "a");
                         file.writeln(event.raw);
