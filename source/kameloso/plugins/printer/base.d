@@ -492,7 +492,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
     logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
         Tint.info, networkName, Tint.log,
-        Tint.info, Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        Tint.info, plugin.state.server.daemon,
         tintreset, plugin.state.server.daemonstring);
 }
 
