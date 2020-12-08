@@ -334,7 +334,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             }
         }
 
-    version(WithConnectPlugin)
+    version(WithConnectService)
     {
         case ERR_NICKNAMEINUSE:  // When failing to regain nickname
             goto case;
