@@ -317,18 +317,21 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case ENDOFMODELIST:
     case RPL_ENDOFQLIST:
     case RPL_ENDOFALIST:
-        immutable shouldSquelch = plugin.hasSquelches &&
-            updateSquelchstamp(plugin, event.time, event.channel,
-                event.sender.nickname, event.target.nickname);
+        // Error: switch skips declaration of variable shouldSquelch
+        {
+            immutable shouldSquelch = plugin.hasSquelches &&
+                updateSquelchstamp(plugin, event.time, event.channel,
+                    event.sender.nickname, event.target.nickname);
 
-        if (shouldSquelch)
-        {
-            return;
-        }
-        else
-        {
-            // Obey normal filterMost rules for unsquelched
-            goto case RPL_NAMREPLY;
+            if (shouldSquelch)
+            {
+                return;
+            }
+            else
+            {
+                // Obey normal filterMost rules for unsquelched
+                goto case RPL_NAMREPLY;
+            }
         }
 
     version(WithConnectPlugin)
