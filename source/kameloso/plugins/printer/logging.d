@@ -18,6 +18,20 @@ import kameloso.plugins.printer.base;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
+
+version(PrintErrnos)
+{
+    version(Posix)
+    {
+        version = PrintErrnosPosix;
+    }
+    else version(Windows)
+    {
+        version = PrintErrnosWindows;
+    }
+}
+
+
 package:
 
 
@@ -95,7 +109,7 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
-    import kameloso.common : logger;
+    import kameloso.common : Tint, logger;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -297,17 +311,36 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (FileException e)
         {
-            logger.warning("File exception caught when writing to log: ", e.msg);
+            logger.warning("File exception caught when writing to log: ", Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (ErrnoException e)
         {
-            logger.warning("Exception caught when writing to log: ", e.msg);
+            version(PrintErrnosPosix)
+            {
+                import kameloso.common : errnoStrings;
+                import core.stdc.errno : errno;
+
+                logger.warningf("ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s",
+                    Tint.log, errnoStrings[errno], Tint.warning, e.msg);
+            }
+            else version(PrintErrnosWindows)
+            {
+                import core.stdc.errno : errno;
+
+                logger.warningf("ErrnoException (%s%ds%s) caught when writing to log: %1$s%4$s",
+                    Tint.log, errno, Tint.warning, e.msg);
+            }
+            else
+            {
+                logger.warning("ErrnoException caught when writing to log: ", Tint.log, e.msg);
+            }
+
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            logger.warning("Unhandled exception caught when writing to log: ", e.msg);
+            logger.warning("Unhandled exception caught when writing to log: ", Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
