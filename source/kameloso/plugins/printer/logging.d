@@ -152,10 +152,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 immutable addLinebreak = buffer.file.exists;
 
                 File file = File(buffer.file, "a");
-
                 if (addLinebreak) file.writeln();
-
                 file.writeln(datestamp);
+                file.flush();
             }
 
             if (!errors)
