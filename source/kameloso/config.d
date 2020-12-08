@@ -197,20 +197,27 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         import kameloso.common : Tint, logger;
         import std.process : execute;
 
-        // Let exceptions (ProcessExceptions) fall through and get caught
-        // by [kameloso.kameloso.tryGetopt].
-
-        logger.logf("Attempting to open %s%s%s in a graphical text editor...",
-            Tint.info, instance.settings.configFile, Tint.log);
-
         version(OSX)
         {
             enum editor = "open";
         }
         else version(Posix)
         {
+            import std.process : environment;
+
             // Assume XDG
             enum editor = "xdg-open";
+
+            immutable isGraphicalEnvironment =
+                environment.get("DISPLAY", string.init).length ||
+                environment.get("WAYLAND_DISPLAY", string.init).length;
+
+            if (!isGraphicalEnvironment)
+            {
+                logger.error("No graphical environment appears to be running; " ~
+                    "cannot open editor.");
+                return;
+            }
         }
         else version(Windows)
         {
@@ -220,6 +227,12 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         {
             static assert(0, "Unexpected platform, please file a bug");
         }
+
+        // Let exceptions (ProcessExceptions) fall through and get caught
+        // by [kameloso.kameloso.tryGetopt].
+
+        logger.logf("Attempting to open %s%s%s in a graphical text editor...",
+            Tint.info, instance.settings.configFile, Tint.log);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
