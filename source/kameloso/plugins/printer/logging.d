@@ -49,7 +49,6 @@ struct LogLineBuffer
 private:
     import std.array : Appender;
     import std.datetime.systime : SysTime;
-    import std.path : buildNormalizedPath;
 
 public:
     /// Basename directory this buffer will be saved to.
@@ -68,6 +67,7 @@ public:
     this(const string dir, const SysTime now)
     {
         import std.datetime.date : Date;
+        import std.path : buildNormalizedPath;
 
         static string yyyyMMOf(const SysTime date)
         {
@@ -85,6 +85,8 @@ public:
      +/
     this(const string dir, const string filename)
     {
+        import std.path : buildNormalizedPath;
+
         this.dir = dir;
         this.file = buildNormalizedPath(this.dir, filename);
     }
@@ -166,7 +168,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     if (extendPath)
                     {
                         import std.datetime.systime : Clock;
-                        import std.file : exists, mkdirRecurse;
                         import std.path : buildNormalizedPath;
 
                         immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
@@ -514,10 +515,6 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
 
-    import kameloso.terminal : TerminalToken;
-    import std.exception : ErrnoException;
-    import std.file : FileException;
-
     foreach (ref buffer; plugin.buffers)
     {
         commitLog(plugin, buffer);
@@ -543,7 +540,6 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.common : logger;
-    import kameloso.terminal : TerminalToken;
     import std.exception : ErrnoException;
     import std.file : FileException;
 
