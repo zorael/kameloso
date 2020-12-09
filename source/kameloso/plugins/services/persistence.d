@@ -90,7 +90,8 @@ void postprocessAccounts(PersistenceService service, ref IRCEvent event)
     {
         import std.algorithm.searching : canFind;
 
-        if (!user.nickname.length) return;  // Ignore server events
+        // Ignore server events and certain pre-registration events where our nick is unknown
+        if (!user.nickname.length || (user.nickname == "*")) return;
 
         /++
             Tries to apply any permanent class for a user in a channel, and if
@@ -276,14 +277,8 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
     {
         import std.algorithm.searching : canFind;
 
-        if (!user.nickname.length) return;  // Ignore server events
-
-        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
-            (user.nickname == service.state.client.nickname))
-        {
-            // On non-Twitch, ignore events originating from us
-            return;
-        }
+        // Ignore server events and certain pre-registration events where our nick is unknown
+        if (!user.nickname.length || (user.nickname == "*")) return;
 
         static string getAccount(const IRCUser user, ref string[string] aa)
         {
