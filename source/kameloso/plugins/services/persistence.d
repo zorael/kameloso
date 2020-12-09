@@ -469,6 +469,11 @@ void postprocessHostmasks(PersistenceService service, ref IRCEvent event)
 @(IRCEvent.Type.QUIT)
 void onQuit(PersistenceService service, const ref IRCEvent event)
 {
+    if (service.state.settings.preferHostmasks)
+    {
+        service.accountByUser.remove(event.sender.nickname);
+    }
+
     service.state.users.remove(event.sender.nickname);
     service.userClassCurrentChannelCache.remove(event.sender.nickname);
 }
