@@ -4,8 +4,6 @@
 
     It has no bot commands; everything is done by automatically scanning channel
     and private query messages for things that look like links.
-
-    It requires version `Web` for obvious reasons.
  +/
 module kameloso.plugins.webtitles;
 
@@ -600,7 +598,7 @@ unittest
         A [std.json.JSONValue] with fields describing the looked-up video.
 
     Throws:
-        [core.Exception] if the YouTube ID was invalid and could not be queried.
+        [object.Exception] if the YouTube ID was invalid and could not be queried.
         [std.json.JSONException] if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
