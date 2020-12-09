@@ -1046,6 +1046,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain Fiber will end itself when it is next triggered
+        logger.infof("Attempting to regain nickname %s%s%s...",
+            Tint.log, service.state.client.origNickname, Tint.info);
         raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
     }
 }
