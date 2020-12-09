@@ -776,7 +776,7 @@ private:
     import kameloso.constants : KamelosoFilenames;
 
     /// How often to rehash associative arrays, optimising access.
-    enum long timeBetweenRehashes = 3 * 3600;
+    enum timeBetweenRehashes = 3 * 3600;
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;
