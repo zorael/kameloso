@@ -20,12 +20,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     steps:
     - uses: actions/checkout@v2
     - uses: dlang-community/setup-dlang@7c3e57bdc1ff2d8994f00e61b3ef400e67d2d7ac
-    - env:
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     - name: 'Build and test'
       run: |
