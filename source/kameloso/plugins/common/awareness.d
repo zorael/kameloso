@@ -313,6 +313,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     @(IRCEvent.Type.RPL_WHOREPLY)
+    /*@(IRCEvent.Type.RPL_WHOISACCOUNT)  // Caught in MinimalAuthentication
+    @(IRCEvent.Type.RPL_WHOISREGNICK)*/
     @(IRCEvent.Type.CHGHOST)
     @channelPolicy
     void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const ref IRCEvent event)
@@ -331,6 +333,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.ACCOUNT)
     @(IRCEvent.Type.AWAY)
     @(IRCEvent.Type.BACK)
+    /*@(IRCEvent.Type.CHAN)  // Avoid these to be lean; everyone gets indexed by WHO anyway
+    @(IRCEvent.Type.EMOTE)*/
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
@@ -1320,11 +1324,11 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +/
     @(Awareness.early)
     @(Chainable)
-    @(IRCEvent.Type.CHAN)
+    @(IRCEvent.Type.CHAN)  // Catch these as we don't index people by WHO on Twitch
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.SELFJOIN)
     @(IRCEvent.Type.PART)
-    @(IRCEvent.Type.EMOTE)
+    @(IRCEvent.Type.EMOTE)  // As above
     @(IRCEvent.Type.TWITCH_SUB)
     @(IRCEvent.Type.TWITCH_CHEER)
     @(IRCEvent.Type.TWITCH_SUBGIFT)
