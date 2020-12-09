@@ -40,6 +40,7 @@ jobs:
     - name: Deploy to GitHub Pages
       uses: crazy-max/ghaction-github-pages@v2.2.0
       with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
         target_branch: gh-pages
         keep_history: false
         allow_empty_commit: true
