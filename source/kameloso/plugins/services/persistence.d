@@ -18,6 +18,7 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
+import kameloso.plugins.common.awareness : Awareness;
 import dialect.defs;
 
 
@@ -481,34 +482,18 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 
 // onNick
 /++
-    Updates the entry of someone in the `users` associative array of the current
-    [PersistenceService]'s [kameloso.plugins.common.core.IRCPluginState] when they
-    change nickname, to point to the new [dialect.defs.IRCUser].
+    Removes old user entries when someone changes nickname. The old nickname
+    no longer exists and the storage arrrays should reflect that.
 
-    Removes the old entry.
+    Annotated [kameloso.plugins.common.awareness.Awareness.cleanup] to delay execution.
  +/
+@(Awareness.cleanup)
 @(IRCEvent.Type.NICK)
 @(IRCEvent.Type.SELFNICK)
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
-    if (service.state.settings.preferHostmasks)
-    {
-        // The target is its own complete user, with account and everything.
-        // There's no point in copying anything over.
-    }
-    else if (const stored = event.sender.nickname in service.state.users)
-    {
-        service.state.users[event.target.nickname] = *stored;
-        service.state.users[event.target.nickname].nickname = event.target.nickname;
-    }
-
-    service.state.users.remove(event.sender.nickname);
-
-    if (const channel = event.sender.nickname in service.userClassCurrentChannelCache)
-    {
-        service.userClassCurrentChannelCache[event.target.nickname] = *channel;
-        service.userClassCurrentChannelCache.remove(event.sender.nickname);
-    }
+    // onQuit already doees everything this function wants to do.
+    return onQuit(service, event);
 }
 
 
