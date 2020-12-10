@@ -576,24 +576,31 @@ void initAccountResources(PersistenceService service)
 
     foreach (liststring; only("staff", "operator", "whitelist", "blacklist"))
     {
-        if ((liststring !in json) || !json[liststring].object.length)
+        enum examplePlaceholderKey = "<channel>";
+
+        if (liststring !in json)
         {
             json[liststring] = null;
             json[liststring].object = null;
-            json[liststring]["<channel>"] = null;
-            json[liststring]["<channel>"].array = null;
-            json[liststring]["<channel>"].array ~= JSONValue("<nickname1>");
-            json[liststring]["<channel>"].array ~= JSONValue("<nickname2>");
+            json[liststring][examplePlaceholderKey] = null;
+            json[liststring][examplePlaceholderKey].array = null;
+            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname1>");
+            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname2>");
         }
         else
         {
+            if ((json[liststring].object.length > 1) &&
+                (examplePlaceholderKey in json[liststring].object))
+            {
+                json[liststring].object.remove(examplePlaceholderKey);
+            }
+
             try
             {
-                foreach (immutable channel, ref channelAccountsJSON; json[liststring].object)
+                foreach (immutable channelName, ref channelAccountsJSON; json[liststring].object)
                 {
-                    import lu.string : beginsWith;
-                    if (channel.beginsWith('<')) continue;
-                    channelAccountsJSON = deduplicate(json[liststring][channel]);
+                    if (channelName == examplePlaceholderKey) continue;
+                    channelAccountsJSON = deduplicate(json[liststring][channelName]);
                 }
             }
             catch (JSONException e)
