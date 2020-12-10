@@ -649,11 +649,17 @@ void initHostmaskResources(PersistenceService service)
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
     }
 
+    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+
     if (json.object.length == 0)
     {
-        json["<nickname>!<ident>@<address>"] = null;
-        json["<nickname>!<ident>@<address>"].str = null;
-        json["<nickname>!<ident>@<address>"].str = "<account>";
+        json[examplePlaceholderKey] = null;
+        json[examplePlaceholderKey].str = null;
+        json[examplePlaceholderKey].str = "<account>";
+    }
+    else if ((json.object.length > 1) && (examplePlaceholderKey in json))
+    {
+        json.object.remove(examplePlaceholderKey);
     }
 
     // Let other Exceptions pass.
