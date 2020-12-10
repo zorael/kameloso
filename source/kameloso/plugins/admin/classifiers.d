@@ -598,7 +598,8 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
         didSomething = true;
 
         // Remove placeholder example since there should now be at least one true entry
-        aa.remove("<nickname>!<ident>@<address>");
+        enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+        aa.remove(examplePlaceholderKey);
 
         json.reset();
         json = JSONValue(aa);
