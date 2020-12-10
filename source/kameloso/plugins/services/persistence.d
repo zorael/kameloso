@@ -470,10 +470,11 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
-        import lu.string : beginsWith;
+        import lu.string : contains;
         import std.format : FormatException;
 
-        if (hostmask.beginsWith('<')) continue;  // "<hostmask>"
+        enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+        if (hostmask == examplePlaceholderKey) continue;
 
         try
         {
@@ -481,7 +482,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
             user.account = account;
             service.hostmaskUsers ~= user;
 
-            if (user.nickname.length)
+            if (user.nickname.length && !user.nickname.contains('*'))
             {
                 service.hostmaskNicknameAccountCache[user.nickname] = user.account;
             }
