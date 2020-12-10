@@ -575,6 +575,10 @@ void initAccountResources(PersistenceService service)
         {
             json[liststring] = null;
             json[liststring].object = null;
+            json[liststring]["<channel>"] = null;
+            json[liststring]["<channel>"].array = null;
+            json[liststring]["<channel>"].array ~= JSONValue("<nickname1>");
+            json[liststring]["<channel>"].array ~= JSONValue("<nickname2>");
         }
         else
         {
@@ -629,6 +633,13 @@ void initHostmaskResources(PersistenceService service)
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
+    }
+
+    if (json.length == 0)
+    {
+        json["<nickname>!<ident>@<address>"] = null;
+        json["<nickname>!<ident>@<address>"].str = null;
+        json["<nickname>!<ident>@<address>"].str = "<account>";
     }
 
     // Let other Exceptions pass.
