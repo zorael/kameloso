@@ -418,16 +418,20 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
         try
         {
-            foreach (immutable channel, const channelAccountJSON; listFromJSON.object)
+            foreach (immutable channelName, const channelAccountJSON; listFromJSON.object)
             {
+                import lu.string : beginsWith;
+
+                if (channelName.beginsWith('<')) continue;
+
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    if (channel !in service.channelUsers)
+                    if (channelName !in service.channelUsers)
                     {
-                        service.channelUsers[channel] = (IRCUser.Class[string]).init;
+                        service.channelUsers[channelName] = (IRCUser.Class[string]).init;
                     }
 
-                    service.channelUsers[channel][userJSON.str] = class_;
+                    service.channelUsers[channelName][userJSON.str] = class_;
                 }
             }
         }
@@ -571,7 +575,7 @@ void initAccountResources(PersistenceService service)
 
     foreach (liststring; only("staff", "operator", "whitelist", "blacklist"))
     {
-        if (liststring !in json)
+        if ((liststring !in json) || !json[liststring].object.length)
         {
             json[liststring] = null;
             json[liststring].object = null;
