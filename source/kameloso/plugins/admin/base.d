@@ -984,6 +984,10 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
     string[string] aa;
     aa.populateFromJSON(json);
 
+    // Remove any placeholder examples
+    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+    aa.remove(examplePlaceholderKey);
+
     if (aa.length)
     {
         import std.conv : to;
