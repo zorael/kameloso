@@ -637,7 +637,7 @@ void initHostmaskResources(PersistenceService service)
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
     }
 
-    if (json.length == 0)
+    if (json.object.length == 0)
     {
         json["<nickname>!<ident>@<address>"] = null;
         json["<nickname>!<ident>@<address>"].str = null;
