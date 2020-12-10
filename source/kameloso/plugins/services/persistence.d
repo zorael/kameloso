@@ -586,6 +586,8 @@ void initAccountResources(PersistenceService service)
             {
                 foreach (immutable channel, ref channelAccountsJSON; json[liststring].object)
                 {
+                    import lu.string : beginsWith;
+                    if (channel.beginsWith('<')) continue;
                     channelAccountsJSON = deduplicate(json[liststring][channel]);
                 }
             }
