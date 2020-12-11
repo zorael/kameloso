@@ -1300,11 +1300,10 @@ void register(ConnectService service)
 
     version(TwitchSupport)
     {
-        import std.algorithm : endsWith;
-        import std.uni : toLower;
-
         if (serverIsTwitch)
         {
+            import std.uni : toLower;
+
             // Make sure nickname is lowercase so we can rely on it as account name
             service.state.client.nickname = service.state.client.nickname.toLower;
             service.state.clientUpdated = true;
