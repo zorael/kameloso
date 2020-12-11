@@ -276,6 +276,10 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             stored.class_ = IRCUser.Class.admin;
         }
+        else if (stored.class_ == IRCUser.Class.unset)
+        {
+            applyClassifiers(service, event, *stored);
+        }
         else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
         {
             // Not a channel or not a home. Additionally not an admin nor us
