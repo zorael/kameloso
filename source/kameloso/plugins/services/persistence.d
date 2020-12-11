@@ -58,7 +58,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             if (service.state.settings.preferHostmasks)
             {
                 // Have the account get looked up in postprocessHostmasks
+                newUser.class_ = IRCUser.Class.unset;
                 newUser.account = string.init;
+                newUser.updated = 0L;
             }
         }
 
