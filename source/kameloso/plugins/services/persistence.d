@@ -362,7 +362,7 @@ void onWelcome(PersistenceService service)
     import core.thread : Fiber;
 
     service.reloadAccountClassifiersFromDisk();
-    service.reloadHostmasksFromDisk();
+    if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
 
     void periodicallyDg()
     {
@@ -387,7 +387,7 @@ void reload(PersistenceService service)
 {
     service.state.users = service.state.users.rehash();
     service.reloadAccountClassifiersFromDisk();
-    service.reloadHostmasksFromDisk();
+    if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
 }
 
 
