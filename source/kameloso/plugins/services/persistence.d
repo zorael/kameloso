@@ -87,7 +87,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
  +/
 void postprocessCommon(PersistenceService service, ref IRCEvent event)
 {
-    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
+    static void postprocessImpl(PersistenceService service, const ref IRCEvent event, ref IRCUser user)
     {
         import std.algorithm.searching : canFind;
 
