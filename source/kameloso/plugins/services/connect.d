@@ -929,6 +929,15 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
     {
         import kameloso.plugins.common.delayawait : await, unawait;
 
+        if (service.state.settings.preferHostmasks &&
+            !service.state.settings.force)
+        {
+            // We already infer account by username on Twitch;
+            // hostmasks mode makes no sense there. So disable it.
+            service.state.settings.preferHostmasks = false;
+            service.state.settingsUpdated = true;
+        }
+
         static immutable IRCEvent.Type[2] endOfMotdEventTypes =
         [
             IRCEvent.Type.RPL_ENDOFMOTD,
