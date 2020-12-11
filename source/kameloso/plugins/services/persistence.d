@@ -64,9 +64,12 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        if (const channelName = event.sender.nickname in service.userClassCurrentChannelCache)
+        if (!service.state.settings.preferHostmasks)
         {
-            service.userClassCurrentChannelCache[event.target.nickname] = *channelName;
+            if (const channelName = event.sender.nickname in service.userClassCurrentChannelCache)
+            {
+                service.userClassCurrentChannelCache[event.target.nickname] = *channelName;
+            }
         }
 
         goto default;
