@@ -586,7 +586,7 @@ void initAccountResources(PersistenceService service)
 
     foreach (liststring; only("staff", "operator", "whitelist", "blacklist"))
     {
-        enum examplePlaceholderKey = "<channel>";
+        enum examplePlaceholderKey = "<#channel>";
 
         if (liststring !in json)
         {

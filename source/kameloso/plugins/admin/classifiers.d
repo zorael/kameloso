@@ -521,7 +521,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         }
 
         // Remove placeholder example since there should now be at least one true entry
-        json[list].object.remove("<channel>");
+        enum examplePlaceholderKey = "<#channel>";
+        json[list].object.remove(examplePlaceholderKey);
     }
     else
     {
