@@ -483,7 +483,7 @@ enum AlterationResult
         [AlterationResult.success] if enlisting or delisting succeeded.
  +/
 AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string list, const string account, const string channel)
+    const string list, const string account, const string channelName)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -502,39 +502,44 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         immutable accountAsJSON = JSONValue(account);
 
-        if (channel in json[list].object)
+        if (channelName in json[list].object)
         {
-            if (json[list][channel].array.canFind(accountAsJSON))
+            if (json[list][channelName].array.canFind(accountAsJSON))
             {
                 return AlterationResult.alreadyInList;
             }
             else
             {
-                json[list][channel].array ~= accountAsJSON;
+                json[list][channelName].array ~= accountAsJSON;
             }
         }
         else
         {
-            json[list][channel] = null;
-            json[list][channel].array = null;
-            json[list][channel].array ~= accountAsJSON;
+            json[list][channelName] = null;
+            json[list][channelName].array = null;
+            json[list][channelName].array ~= accountAsJSON;
         }
+
+        // Remove placeholder example since there should now be at least one true entry
+        enum examplePlaceholderKey = "<#channel>";
+        json[list].object.remove(examplePlaceholderKey);
     }
     else
     {
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        if (channel in json[list].object)
+        if (channelName in json[list].object)
         {
-            immutable index = json[list][channel].array.countUntil(JSONValue(account));
+            immutable index = json[list][channelName].array.countUntil(JSONValue(account));
 
             if (index == -1)
             {
                 return AlterationResult.noSuchAccount;
             }
 
-            json[list][channel] = json[list][channel].array.remove!(SwapStrategy.unstable)(index);
+            json[list][channelName] = json[list][channelName].array
+                .remove!(SwapStrategy.unstable)(index);
         }
         else
         {
@@ -592,6 +597,11 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
 
         aa[mask] = account;
         didSomething = true;
+
+        // Remove placeholder example since there should now be at least one true entry
+        enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+        aa.remove(examplePlaceholderKey);
+
         json.reset();
         json = JSONValue(aa);
     }
