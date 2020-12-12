@@ -180,6 +180,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
         auto stored = user.nickname in service.state.users;
         immutable foundNoStored = stored is null;
+        if (service.state.settings.preferHostmasks) user.account = string.init;
 
         if (foundNoStored)
         {
