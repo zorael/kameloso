@@ -237,24 +237,34 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
-            service.state.settings.preferHostmasks)
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            if ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
-                (event.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
-                (event.type == IRCEvent.Type.RPL_ENDOFWHOIS))
+            if (!service.state.settings.preferHostmasks)
             {
-                // Record updated timestamp; this is the end of a WHOIS
-                stored.updated = event.time;
+                if ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
+                    (event.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
+                    (event.type == IRCEvent.Type.RPL_ENDOFWHOIS))
+                {
+                    // Record updated timestamp; this is the end of a WHOIS
+                    stored.updated = event.time;
+                }
+                else if (stored.account == "*")
+                {
+                    // An account of "*" means the user logged out of services
+                    // It's not strictly true but consider him/her as unknown again.
+                    stored.account = string.init;
+                    stored.class_ = IRCUser.Class.anyone;
+                    stored.updated = 1L;  // To facilitate melding
+                    service.userClassCurrentChannelCache.remove(stored.nickname);
+                }
             }
-            else if (stored.account == "*")
+            else /*if (service.state.settings.preferHostmasks)*/
             {
-                // An account of "*" means the user logged out of services
-                // It's not strictly true but consider him/her as unknown again.
-                stored.account = string.init;
-                stored.class_ = IRCUser.Class.anyone;
-                stored.updated = 1L;  // To facilitate melding
-                service.userClassCurrentChannelCache.remove(stored.nickname);
+                if (event.type == IRCEvent.Type.RPL_ENDOFWHOIS)
+                {
+                    // As above
+                    stored.updated = event.time;
+                }
             }
         }
 
