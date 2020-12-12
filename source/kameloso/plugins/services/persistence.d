@@ -57,10 +57,10 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
             if (service.state.settings.preferHostmasks)
             {
-                // Have the account get looked up in postprocessHostmasks
-                newUser.class_ = IRCUser.Class.unset;
+                // Drop all privileges
+                newUser.class_ = IRCUser.Class.anyone;
                 newUser.account = string.init;
-                newUser.updated = 0L;
+                newUser.updated = 1L;
             }
         }
 
@@ -276,10 +276,6 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             (stored.nickname == service.state.client.nickname))
         {
             stored.class_ = IRCUser.Class.admin;
-        }
-        else if (stored.class_ == IRCUser.Class.unset)
-        {
-            applyClassifiers(service, event, *stored);
         }
         else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
         {
