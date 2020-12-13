@@ -1018,7 +1018,7 @@ debug
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandBusImpl(plugin, event);
+    return onCommandBusImpl(plugin, event.content);
 }
 
 
