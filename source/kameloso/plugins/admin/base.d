@@ -1116,6 +1116,12 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         logger.log("Saving configuration to disk.");
         return plugin.state.mainThread.send(ThreadMessage.Save());
 
+    case "reload":
+        import kameloso.thread : ThreadMessage;
+
+        logger.log("Reloading plugins.");
+        return plugin.state.mainThread.send(ThreadMessage.Reload());
+
     case "whitelist":
     case "operator":
     case "staff":
