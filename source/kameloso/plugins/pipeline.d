@@ -22,6 +22,7 @@ import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
+import std.concurrency : Tid;
 import std.typecons : Flag, No, Yes;
 
 
@@ -304,13 +305,42 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 
 // onWelcome
 /++
+    Initialises the fifo pipe and thus the purpose of the plugin, by leveraging [initPipe].
+ +/
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(PipelinePlugin plugin)
+{
+    plugin.initPipe();
+}
+
+
+// reload
+/++
+    Reloads the plugin, initialising the fifo pipe if it was not already initialised.
+
+    This lets us remedy the "A FIFO with that name alraedy exists" error.
+ +/
+void reload(PipelinePlugin plugin)
+{
+    if (plugin.fifoThread == Tid.init)
+    {
+        plugin.initPipe();
+    }
+}
+
+
+// initPipe
+/++
     Spawns the pipereader thread.
 
     Snapshots the filename to use, as we base it on the bot's nickname, which
     may change during the connection's lifetime.
+
+    Params:
+        plugin = The current [PipelinePlugin].
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(PipelinePlugin plugin)
+void initPipe(PipelinePlugin plugin)
+in ((plugin.fifoThread == Tid.init), "Tried to double-initialise the pipereader")
 {
     if (plugin.pipelineSettings.path.length)
     {
@@ -463,8 +493,6 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
-    import std.concurrency : Tid;
-
     /// All Pipeline settings gathered.
     PipelineSettings pipelineSettings;
 
