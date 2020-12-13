@@ -540,13 +540,19 @@ void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "reload")
-@Description("Asks plugins to reload their resources and/or configuration as they see fit.")
+@Description("Asks plugins to reload their resources and/or configuration as they see fit.",
+    "$command [optional plugin name]")
 void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
+    import std.conv : text;
 
-    privmsg(plugin.state, event.channel, event.sender.nickname, "Reloading plugins.");
-    plugin.state.mainThread.send(ThreadMessage.Reload());
+    immutable message = event.content.length ?
+        text("Reloading plugin \"", event.content, "\".") :
+        "Reloading plugins.";
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    plugin.state.mainThread.send(ThreadMessage.Reload(), event.content);
 }
 
 
