@@ -246,22 +246,31 @@ void messageFiber(ref Kameloso instance)
             fiber.call();
         }
 
-        /// Reloads all plugins.
-        void reloadPlugins(ThreadMessage.Reload) scope
+        /// Reloads a particular plugin.
+        void reloadSpecificPlugin(ThreadMessage.Reload, string pluginToReload) scope
         {
             foreach (plugin; instance.plugins)
             {
                 try
                 {
-                    plugin.reload();
+                    if (!pluginToReload.length || (plugin.name == pluginToReload))
+                    {
+                        plugin.reload();
+                    }
                 }
                 catch (Exception e)
                 {
-                    logger.errorf("The %s%s%s plugin threw an exception when reloading " ~
-                        "configuration: %1$s%4$s", Tint.log, plugin.name, Tint.error, e.msg);
+                    logger.errorf("The %s%s%s plugin threw an exception when reloading: %1$s%4$s",
+                        Tint.log, plugin.name, Tint.error, e.msg);
                     version(PrintStacktraces) logger.trace(e);
                 }
             }
+        }
+
+        /// Reloads all plugins.
+        void reloadPlugins(ThreadMessage.Reload) scope
+        {
+            reloadSpecificPlugin(ThreadMessage.Reload(), string.init);
         }
 
         /// Passes a bus message to each plugin.
@@ -607,6 +616,7 @@ void messageFiber(ref Kameloso instance)
                 &quitServer,
                 &save,
                 &reloadPlugins,
+                &reloadSpecificPlugin,
                 &peekPlugins,
                 &reconnect,
                 &dispatchBusMessage,
