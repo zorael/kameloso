@@ -1119,8 +1119,16 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     case "reload":
         import kameloso.thread : ThreadMessage;
 
-        logger.log("Reloading plugins.");
-        return plugin.state.mainThread.send(ThreadMessage.Reload());
+        if (slice.length)
+        {
+            logger.logf("Reloading plugin \"%s%s%s\".", Tint.info, slice, Tint.log);
+        }
+        else
+        {
+            logger.log("Reloading plugins.");
+        }
+
+        return plugin.state.mainThread.send(ThreadMessage.Reload(), slice);
 
     case "whitelist":
     case "operator":
