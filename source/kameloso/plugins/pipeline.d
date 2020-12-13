@@ -322,7 +322,7 @@ void onWelcome(PipelinePlugin plugin)
  +/
 void reload(PipelinePlugin plugin)
 {
-    if (plugin.fifoThread == Tid.init)
+    if (!plugin.workerRunning)
     {
         plugin.initPipe();
     }
@@ -340,7 +340,7 @@ void reload(PipelinePlugin plugin)
         plugin = The current [PipelinePlugin].
  +/
 void initPipe(PipelinePlugin plugin)
-in ((plugin.fifoThread == Tid.init), "Tried to double-initialise the pipereader")
+in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 {
     if (plugin.pipelineSettings.path.length)
     {
