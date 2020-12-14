@@ -33,6 +33,9 @@ import std.typecons : Flag, No, Yes;
 
     /// Whether or not merely calling !word bumps, or if a '+' has to be appended.
     bool wordAloneIncrements = false;
+
+    /// User level required to bump a counter.
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
 }
 
 
@@ -252,7 +255,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     }
 
     // Limit modifications to whitelist and above. Insert configuration check here.
-    if (event.sender.class_ < IRCUser.Class.whitelist) return;
+    if (event.sender.class_ < plugin.counterSettings.minimumPermissionsNeeded) return;
 
     if (!slice.length) slice = "+";  // implicitly wordAloneIncrements
     immutable sign = slice[0];
