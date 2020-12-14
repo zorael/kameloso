@@ -143,7 +143,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     enum pattern = "%s%s! %s left note %s ago: %s";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircBold,
+                        pattern.format(atSign, senderName.ircColourByHash.ircBold,
                             note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
                         pattern.format(atSign, senderName, note.sender, timestamp, note.line);
 
@@ -154,7 +154,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     enum pattern = "%s%s! You have %s notes.";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircBold, noteArray.length.ircBold) :
+                        pattern.format(atSign, senderName.ircColourByHash.ircBold, noteArray.length.ircBold) :
                         pattern.format(atSign, senderName, noteArray.length);
 
                     privmsg(plugin.state, channel, user.nickname, message);
