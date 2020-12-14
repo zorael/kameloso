@@ -54,15 +54,11 @@ import std.typecons : Flag, No, Yes;
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
 void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 {
-    import std.format : format;
+    immutable message = event.content.length ?
+        event.content :
+        "Say what?";
 
-    if (!event.content.length)
-    {
-        privmsg(plugin.state, event.channel, event.sender.nickname, "Say what?");
-        return;
-    }
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, event.content);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
 
@@ -180,13 +176,15 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
     auto state = cast()sState;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :
-        "http://bash.org/?" ~ event.content;
+        ("http://bash.org/?" ~ event.content);
 
     try
     {
+        enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+
         auto client = HTTP(url);
         client.operationTimeout = Timeout.httpGET.seconds;
-        client.setUserAgent("kameloso/" ~ cast(string)KamelosoInfo.version_);
+        client.setUserAgent(userAgent);
         client.addRequestHeader("Accept", "text/html");
 
         Document doc = new Document;
@@ -221,7 +219,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
         if (!p.length) return reportLayoutError();  // Page changed layout
 
         auto b = p[0].getElementsByTagName("b");
-        if (!b.length) return reportLayoutError();  // Page changed layout
+        if (b.length < 5) return reportLayoutError();  // Page changed layout
 
         auto qt = doc.getElementsByClassName("qt");
         if (!qt.length) return reportLayoutError();  // Page changed layout
