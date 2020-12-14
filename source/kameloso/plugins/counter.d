@@ -261,7 +261,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
     case '+':
     case '-':
-        int step;
+        long step;
 
         if ((slice == "+") || (slice == "++"))
         {
@@ -278,7 +278,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
             try
             {
-                step = slice.strippedLeft.to!int * step;
+                step = slice.strippedLeft.to!long * step;
             }
             catch (ConvException e)
             {
@@ -316,11 +316,11 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        int newCount;
+        long newCount;
 
         try
         {
-            newCount = slice.to!int;
+            newCount = slice.to!long;
         }
         catch (ConvException e)
         {
@@ -336,7 +336,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         enum pattern = "%s count assigned to %s!";
 
-        immutable countText =  newCount.text;
+        immutable countText = newCount.text;
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(word.ircBold, countText.ircBold) :
             pattern.format(word, countText);
@@ -379,7 +379,7 @@ void onWelcome(CounterPlugin plugin)
         aa = The JSON-convertible resource to save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(const int[string][string] aa, const string filename)
+void saveResourceToDisk(const long[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
@@ -437,7 +437,7 @@ private:
     CounterSettings counterSettings;
 
     /// Counter integer by counter word by channel name.
-    int[string][string] counters;
+    long[string][string] counters;
 
     /// Filename of file with persistent counters.
     @Resource string countersFile = "counters.json";
