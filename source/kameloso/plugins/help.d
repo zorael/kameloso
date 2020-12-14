@@ -205,11 +205,11 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
             enum bannerUncoloured = "kameloso IRC bot v%s, built %s"
                 .format(cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.built);
+                    cast(string)KamelosoInfo.built);
 
             enum bannerColoured = ("kameloso IRC bot v%s".ircBold ~ ", built %s")
                 .format(cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.built);
+                    cast(string)KamelosoInfo.built);
 
             immutable banner = plugin.state.settings.colouredOutgoing ?
                 bannerColoured : bannerUncoloured;

@@ -61,7 +61,7 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     Do nothing if [kameloso.kameloso.CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQueries' queries.
 
-    Pass `true` to [playbackNotes] to ensure it does low-priority background
+    Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
     WHOIS queries.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
