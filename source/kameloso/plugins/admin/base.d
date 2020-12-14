@@ -279,15 +279,15 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     import std.algorithm.searching : canFind, countUntil;
     import std.uni : toLower;
 
-    immutable channel = rawChannel.stripped.toLower;
+    immutable channelName = rawChannel.stripped.toLower;
 
-    if (!channel.isValidChannel(plugin.state.server))
+    if (!channelName.isValidChannel(plugin.state.server))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
         return;
     }
 
-    if (plugin.state.bot.homeChannels.canFind(channel))
+    if (plugin.state.bot.homeChannels.canFind(channelName))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "We are already in that home channel.");
@@ -296,11 +296,11 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     // We need to add it to the homeChannels array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
-    plugin.state.bot.homeChannels ~= channel;
+    plugin.state.bot.homeChannels ~= channelName;
     plugin.state.botUpdated = true;
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
-    immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channel);
+    immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channelName);
 
     if (existingChannelIndex != -1)
     {
@@ -313,10 +313,10 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(existingChannelIndex);
 
-        return cycle(plugin, channel);
+        return cycle(plugin, channelName);
     }
 
-    join(plugin.state, channel);
+    join(plugin.state, channelName);
 
     // We have to follow up and see if we actually managed to join the channel
     // There are plenty ways for it to fail.
@@ -351,7 +351,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
             assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-            if (thisFiber.payload.channel == channel) break;
+            if (thisFiber.payload.channel == channelName) break;
 
             // Different channel; yield fiber, wait for another event
             Fiber.yield();
@@ -418,8 +418,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     import std.algorithm.searching : countUntil;
     import std.uni : toLower;
 
-    immutable channel = rawChannel.stripped.toLower;
-    immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channel);
+    immutable channelName = rawChannel.stripped.toLower;
+    immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
 
     if (homeIndex == -1)
     {
@@ -428,8 +428,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
         enum pattern = "Channel %s was not listed as a home.";
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(channel.ircBold) :
-            pattern.format(channel);
+            pattern.format(channelName.ircBold) :
+            pattern.format(channelName);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -438,9 +438,9 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
         .remove!(SwapStrategy.unstable)(homeIndex);
     plugin.state.botUpdated = true;
-    part(plugin.state, channel);
+    part(plugin.state, channelName);
 
-    if (channel != event.channel)
+    if (channelName != event.channel)
     {
         // We didn't just leave the channel, so we can report success
         // Otherwise we get ERR_CANNOTSENDTOCHAN

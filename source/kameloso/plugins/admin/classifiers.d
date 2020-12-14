@@ -66,9 +66,9 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         return plugin.delist(slice, list, event.channel, event);
 
     case "list":
-        immutable channel = slice.length ? slice : event.channel;
-        if (!channel.length) return sendUsage();
-        return plugin.listList(channel, list, event);
+        immutable channelName = slice.length ? slice : event.channel;
+        if (!channelName.length) return sendUsage();
+        return plugin.listList(channelName, list, event);
 
     default:
         return sendUsage();
