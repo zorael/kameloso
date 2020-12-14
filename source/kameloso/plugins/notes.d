@@ -34,13 +34,14 @@ import std.typecons : Flag, No, Yes;
 
 // onReplayEvent
 /++
-    Plays back notes on signs of activity.
+    Plays back notes upon someone joining or upon someone authenticating with services.
+
+    There's no need to trigger each `CHAN` since we know we enumerate all
+    users in a channel when querying `WHO`.
  +/
 @Chainable
 @(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.EMOTE)
-@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.ACCOUNT)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
