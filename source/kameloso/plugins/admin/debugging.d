@@ -206,7 +206,7 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
 
     if (!input.length) return;
 
-    if (!input.contains!(Yes.decode)(" "))
+    if (!input.contains!(Yes.decode)(' '))
     {
         logger.info("Sending bus message.");
         writeln("Header: ", input);
@@ -217,7 +217,7 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
     else
     {
         string slice = input;  // mutable
-        immutable header = slice.nom(" ");
+        immutable header = slice.nom(' ');
 
         logger.info("Sending bus message.");
         writeln("Header: ", header);

@@ -126,11 +126,11 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
-            else if (mutEvent.content.contains!(Yes.decode)(" "))
+            else if (mutEvent.content.contains!(Yes.decode)(' '))
             {
                 // Likely a plugin and a command
                 string slice = mutEvent.content;
-                immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
+                immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
                 immutable specifiedCommand = slice;
 
                 foreach (p; plugins)

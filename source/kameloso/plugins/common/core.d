@@ -691,7 +691,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         enum pattern = "`%s` has an empty `BotCommand` word";
                         static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
-                    else static if (commandUDA.word.contains(" "))
+                    else static if (commandUDA.word.contains(' '))
                     {
                         import std.format : format;
 
