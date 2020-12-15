@@ -525,7 +525,7 @@ private:
     enum replaceTimeoutSeconds = 3600;
 
     /// How often to purge the [prevlines] list of messages.
-    enum timeBetweenPurges = 3600;
+    enum timeBetweenPurges = replaceTimeoutSeconds * 3;
 
     /++
         A `Line[string]` buffer of the previous line every user said, with
