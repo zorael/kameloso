@@ -223,6 +223,7 @@ in (line.length, "Tried to `sedReplaceImpl` on an empty line")
 in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
 in (expr.beginsWith("s" ~ char_), "Tried to `sedReplaceImpl` with an invalid expression")
 {
+    import lu.string : strippedRight;
     import std.array : replace;
     import std.string : indexOf;
 
@@ -254,7 +255,7 @@ in (expr.beginsWith("s" ~ char_), "Tried to `sedReplaceImpl` with an invalid exp
         return -1;
     }
 
-    string slice = expr;  // mutable
+    string slice = (char_ == ' ') ? expr : expr.strippedRight;  // mutable
     slice = slice[2..$];  // nom 's' ~ char_
 
     bool global;
