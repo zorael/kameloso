@@ -472,9 +472,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
         throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
     }
 
-    immutable httpCode = client.statusLine.code;
-
-    if (httpCode >= 400)
+    if (client.statusLine.code >= 400)
     {
         throw new TitleFetchException("Failed to fetch URL", url, client.statusLine.code, errorCode);
     }
