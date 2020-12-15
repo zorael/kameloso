@@ -39,7 +39,7 @@ import std.typecons : Flag, No, Yes;
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "poll")
 @BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)

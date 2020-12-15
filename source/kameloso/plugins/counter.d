@@ -46,7 +46,7 @@ import std.typecons : Flag, No, Yes;
 @Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PermissionsRequired.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
@@ -188,7 +188,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 @Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
 void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {

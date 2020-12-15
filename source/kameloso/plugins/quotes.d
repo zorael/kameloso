@@ -110,7 +110,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PermissionsRequired.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname, " ~

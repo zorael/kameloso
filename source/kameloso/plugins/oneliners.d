@@ -42,7 +42,7 @@ import dialect.defs;
 @Chainable
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
@@ -87,7 +87,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
 @Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
@@ -168,7 +168,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "commands")
 @Description("Lists all available oneliners.")

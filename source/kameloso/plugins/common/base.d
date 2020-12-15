@@ -262,12 +262,12 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
         subPlugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
             function pointer `fn` with as first argument.
         event = [dialect.defs.IRCEvent] to queue up to replay.
-        privilegeLevel = Privilege level to match the results from the WHOIS query with.
+        perms = Permissions level to match the results from the WHOIS query with.
         fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
 void enqueue(SubPlugin, Fn)(IRCPlugin plugin, SubPlugin subPlugin, const ref IRCEvent event,
-    const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
+    const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
 in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 {
@@ -298,12 +298,12 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     static if (is(SubPlugin == typeof(null)))
     {
         plugin.state.replays[user.nickname] ~=
-            replay(event, privilegeLevel, fn, caller);
+            replay(event, perms, fn, caller);
     }
     else
     {
         plugin.state.replays[user.nickname] ~=
-            replay(subPlugin, event, privilegeLevel, fn, caller);
+            replay(subPlugin, event, perms, fn, caller);
     }
 
     plugin.state.hasReplays = true;
@@ -321,14 +321,14 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     Params:
         plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
         event = [dialect.defs.IRCEvent] to queue up to replay.
-        privilegeLevel = Privilege level to match the results from the WHOIS query with.
+        perms = Permissions level to match the results from the WHOIS query with.
         fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
 void enqueue(Fn)(IRCPlugin plugin, const ref IRCEvent event,
-    const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__)
+    const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__)
 {
-    return enqueue(plugin, null, event, privilegeLevel, fn, caller);
+    return enqueue(plugin, null, event, perms, fn, caller);
 }
 
 

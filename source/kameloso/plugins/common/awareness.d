@@ -13,8 +13,8 @@
 
     @(IRCEvent.Type.CHAN)
     @(ChannelPolicy.home)
-    @(PrefixPolicy.prefixed)
-    @BotCommand(PrivilegeLevel.anyone, "foo")
+    @(PermissionsRequired.anyone)
+    @BotCommand(PrefixPolicy.prefixed, "foo")
     void onFoo(FooPlugin plugin, const ref IRCEvent event)
     {
         // ...
@@ -159,8 +159,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     [dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS] is also handled, to
     cover the case where a user without an account triggering
-    [kameloso.plugins.common.core.PrivilegeLevel.anyone]- or
-    [kameloso.plugins.common.core.PrivilegeLevel.ignore]-level commands.
+    [kameloso.plugins.common.core.PermissionsRequired.anyone]- or
+    [kameloso.plugins.common.core.PermissionsRequired.ignore]-level commands.
 
     This function was part of [UserAwareness] but triggering queued replays
     is too common to conflate with it.
@@ -213,8 +213,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     if (event.aux != "WHOIS") return;
 
     // We're on a server that doesn't support WHOIS
-    // Trigger queued replays of a PrivilegeLevel.anyone nature, since
-    // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
+    // Trigger queued replays of a PermissionsRequired.anyone nature, since
+    // they're just PermissionsRequired.ignore plus a WHOIS lookup just in case
     // Then clear everything
 
     mixin Repeater;

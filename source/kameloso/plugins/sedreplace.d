@@ -371,7 +371,7 @@ unittest
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
