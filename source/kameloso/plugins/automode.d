@@ -101,7 +101,7 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
@@ -160,7 +160,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     arguments and let it look things up.
  +/
 @(IRCEvent.Type.JOIN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
 void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
@@ -266,7 +266,7 @@ unittest
     or adds new ones depending on the verb passed.
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "automode")
 @Description("Adds, lists or removes automode definitions for the current channel.",
@@ -440,7 +440,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
     Triggers a WHOIS of the user invoking it with bot commands.
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "op")
 @Description("Forces the bot to attempt to apply automodes.")

@@ -37,7 +37,7 @@ import std.typecons : Flag, No, Yes;
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PermissionsRequired.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stopwatch")
 @BotCommand(PrefixPolicy.prefixed, "sw", Yes.hidden)

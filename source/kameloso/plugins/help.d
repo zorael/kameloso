@@ -56,7 +56,7 @@ import dialect.defs;
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @BotCommand(PrefixPolicy.prefixed, "help")
 @Description("Shows a list of all available commands.", "$command [plugin] [command]")
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
