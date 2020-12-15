@@ -639,6 +639,46 @@ JSONValue getYouTubeInfo(const string url)
 }
 
 
+// TitleFetchException
+/++
+    A normal [object.Exception] but with an HTTP status code and a cURL error code attached.
+ +/
+final class TitleFetchException : Exception
+{
+@safe:
+    /// The URL that was attempted to fetch the title of.
+    string url;
+
+    /// The HTTP status code that was returned when attempting to fetch a title.
+    uint httpCode;
+
+    /// The cURL error code that was returned when attempting to fetch a title.
+    uint errorCode;
+
+    /++
+        Create a new [TitleFetchException], attaching an URL, a HTTP status code and
+        a cURL error code.
+     +/
+    this(const string message, const string url, const uint httpCode, const uint errorCode,
+        const string file = __FILE__, const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.httpCode = httpCode;
+        this.errorCode = errorCode;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [TitleFetchException], without attaching anything.
+     +/
+    this(const string message, const string file = __FILE__, const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
 // decodeTitle
 /++
     Removes unwanted characters from a title, and decodes HTML entities in it
