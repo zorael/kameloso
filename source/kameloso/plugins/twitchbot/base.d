@@ -1466,14 +1466,16 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                import lu.string : beginsWith;
+                import kameloso.common : curlErrorStrings;
+                import etc.c.curl : CurlError;
 
                 // Something is deeply wrong.
-                logger.error("Failed to validate API keys: ", Tint.log, e.error);
+                logger.errorf("Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)",
+                    e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
 
-                if (e.error.beginsWith("Peer certificate cannot be " ~
-                    "authenticated with given CA certificates"))
+                if (e.errorCode == CurlError.ssl_cacert)
                 {
+                    // Peer certificate cannot be authenticated with given CA certificates
                     logger.errorf("You may need to supply a CA bundle file " ~
                         "(e.g. %scacert.pem%s) in the configuration file.",
                         Tint.log, Tint.error);

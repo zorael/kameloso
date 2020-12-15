@@ -407,6 +407,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, send, spawn;
     import std.datetime.systime : Clock, SysTime;
+    import etc.c.curl : CurlError;
 
     SysTime pre;
 
@@ -450,14 +451,14 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     if (!response.str.length)
     {
-        throw new TwitchQueryException("Failed to query Twitch: empty response!",
-            response.str, response.error, response.code);
+        throw new TwitchQueryException("Empty response", response.str,
+            response.error, response.code, response.errorCode);
     }
     else if ((response.code >= 500) && !recursing)
     {
         return queryTwitch(plugin, url, authorisationHeader, Yes.recursing);
     }
-    else if ((response.code >= 400) || response.error.length)
+    else if (response.code >= 400)
     {
         import lu.string : unquoted;
         import std.format : format;
@@ -472,14 +473,20 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         }
         */
         immutable errorJSON = parseJSON(response.str);
-        enum pattern = "Failed to query Twitch! %s %3d: %s";
+        enum pattern = "%s %3d: %s";
 
         immutable message = pattern.format(
             errorJSON["error"].str.unquoted,
             errorJSON["status"].integer,
             errorJSON["message"].str.unquoted);
 
-        throw new TwitchQueryException(message, response.str, response.error, response.code);
+        throw new TwitchQueryException(message, response.str,
+            response.error, response.code, response.errorCode);
+    }
+    else if (response.errorCode != CurlError.ok)
+    {
+        throw new TwitchQueryException("cURL error", response.str,
+            response.error, response.code, response.errorCode);
     }
 
     return response;
@@ -521,6 +528,7 @@ void queryTwitchImpl(const string url, const string authToken,
     import std.exception : assumeUnique;
     import std.net.curl : HTTP;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     auto client = HTTP(url);
     client.operationTimeout = timeout.seconds;
@@ -540,20 +548,19 @@ void queryTwitchImpl(const string url, const string authToken,
     QueryResponse response;
     immutable pre = Clock.currTime;
 
-    try
+    // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
+    response.errorCode = client.perform(No.throwOnError);
+
+    if (response.errorCode != CurlError.ok)
     {
-        // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
-        /*immutable curlCode =*/ client.perform();//(No.throwOnError);
-    }
-    catch (Exception e)
-    {
-        response.error = e.msg;
+        import std.string : fromStringz;
+        import etc.c.curl : curl_easy_strerror;
+        response.error = fromStringz(curl_easy_strerror(response.errorCode)).idup;
     }
 
     immutable post = Clock.currTime;
-
-    response.code = client.statusLine.code;
     immutable delta = (post - pre);
+    response.code = client.statusLine.code;
     response.msecs = delta.total!"msecs";
     response.str = assumeUnique(cast(char[])sink.data);
 
@@ -684,7 +691,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
         throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
-            "token; unknown JSON", response.str, response.error, response.code);
+            "token; unknown JSON", response.str, response.error, response.code, response.errorCode);
     }
 
     return validationJSON;
