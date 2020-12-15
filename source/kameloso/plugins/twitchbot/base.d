@@ -579,7 +579,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
         }
 
-        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, BufferSize.fiberStack);
+        Fiber chattersCheckFiber =
+            new Fiber(&twitchTryCatchDg!periodicalChattersCheckDg, BufferSize.fiberStack);
         chattersCheckFiber.call();
     }
 }
@@ -1090,7 +1091,7 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    Fiber followageFiber = new Fiber(&followageDg, BufferSize.fiberStack);
+    Fiber followageFiber = new Fiber(&twitchTryCatchDg!followageDg, BufferSize.fiberStack);
     followageFiber.call();
 }
 
@@ -1135,7 +1136,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
-    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, BufferSize.fiberStack);
+    Fiber getDisplayNameFiber = new Fiber(&twitchTryCatchDg!getDisplayNameDg, BufferSize.fiberStack);
     getDisplayNameFiber.call();
 
     // Always cache as soon as possible, before we get any !followage requests
@@ -1144,7 +1145,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.follows = getFollows(plugin, room.id);
     }
 
-    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, BufferSize.fiberStack);
+    Fiber cacheFollowsFiber = new Fiber(&twitchTryCatchDg!cacheFollowsDg, BufferSize.fiberStack);
     cacheFollowsFiber.call();
 }
 
@@ -1221,7 +1222,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .format(broadcasterName, login, gameName));
     }
 
-    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, BufferSize.fiberStack);
+    Fiber shoutoutFiber = new Fiber(&twitchTryCatchDg!shoutoutQueryDg, BufferSize.fiberStack);
     shoutoutFiber.call();
 }
 
@@ -1709,8 +1710,8 @@ void onMyInfo(TwitchBotPlugin plugin)
                     }
                 }
 
-                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg,
-                    BufferSize.fiberStack);
+                Fiber cacheFollowsAnewFiber =
+                    new Fiber(&twitchTryCatchDg!cacheFollowsAnewDg, BufferSize.fiberStack);
                 cacheFollowsAnewFiber.call();
             }
         }
