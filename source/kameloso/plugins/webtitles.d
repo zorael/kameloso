@@ -138,8 +138,6 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
-    if (!urls.length) return;
-
     immutable descriptionsFlag = plugin.webtitlesSettings.descriptions ?
         Yes.descriptions : No.descriptions;
     bool[string] uniques;
@@ -333,21 +331,29 @@ void worker(shared TitleLookupRequest sRequest,
                     cache[request.url] = cast(shared)request.results;
                 }
             }
-            catch (CurlException e)
+            catch (TitleFetchException e)
             {
-                request.state.askToError("Webtitles worker cURL exception: " ~ e.msg);
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
-            }
-            catch (UnicodeException e)
-            {
-                request.state.askToError("Webtitles worker Unicode exception: " ~
-                    e.msg ~ " (link is probably to an image or similar)");
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
-            }
-            catch (Exception e)
-            {
-                request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
+                import std.format : format;
+                import etc.c.curl : CurlError;
+
+                if (e.errorCode != CurlError.ok)
+                {
+                    import kameloso.common : curlErrorStrings;
+
+                    // cURL error
+                    request.state.askToError("Webtitles worker cURL exception %s: %s"
+                        .format(curlErrorStrings[e.errorCode], e.msg));
+                }
+                else if (e.httpCode >= 400)
+                {
+                    // Simply failed to fetch
+                    request.state.askToWarn("Webtitles worker saw HTTP %d.".format(e.httpCode));
+                }
+                else
+                {
+                    // No title tag found
+                    request.state.askToWarn("No title tag found.");
+                }
 
                 if (firstTime)
                 {
@@ -361,9 +367,19 @@ void worker(shared TitleLookupRequest sRequest,
                     {
                         request.url ~= '/';
                     }
-
                     continue;
                 }
+            }
+            catch (UnicodeException e)
+            {
+                request.state.askToError("Webtitles worker Unicode exception: " ~
+                    e.msg ~ " (link is probably to an image or similar)");
+                //version(PrintStacktraces) request.state.askToTrace(e.info);
+            }
+            catch (Exception e)
+            {
+                request.state.askToWarn("Webtitles saw unexpected exception: " ~ e.msg);
+                version(PrintStacktraces) request.state.askToTrace(e.toString);
             }
 
             // Dropped down; end foreach by returning
@@ -399,6 +415,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     import std.net.curl : HTTP;
     import std.uni : toLower;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
 
@@ -420,17 +437,25 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
         return doc.title.length ? HTTP.requestAbort : data.length;
     };
 
-    client.perform(No.throwOnError);
-    immutable code = client.statusLine.code;
+    immutable errorCode = client.perform(No.throwOnError);
 
-    if (code >= 400)
+    if (errorCode != CurlError.ok)
     {
-        import std.conv : text;
-        throw new Exception(text(code, " fetching URL ", url));
+        import std.string : fromStringz;
+        import etc.c.curl : curl_easy_strerror;
+        immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
+        throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+    }
+
+    immutable httpCode = client.statusLine.code;
+
+    if (httpCode >= 400)
+    {
+        throw new TitleFetchException("Failed to fetch URL", url, client.statusLine.code, errorCode);
     }
     else if (!doc.title.length)
     {
-        throw new Exception("No title tag found");
+        throw new TitleFetchException("No title tag found", url, client.statusLine.code, errorCode);
     }
 
     string slice = url;  // mutable
