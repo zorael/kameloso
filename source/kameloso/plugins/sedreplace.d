@@ -39,7 +39,7 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import lu.string : beginsWith;
-import std.meta : AliasSeq;
+import std.meta : aliasSeqOf;
 import std.typecons : Flag, No, Yes;
 
 
@@ -48,7 +48,7 @@ import std.typecons : Flag, No, Yes;
 
     More can be added but if any are removed unittests will need to be updated.
  +/
-alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
+alias DelimiterCharacters = aliasSeqOf!("/|#@ _;");
 
 
 // SedReplaceSettings
