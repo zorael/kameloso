@@ -440,15 +440,25 @@ private:
 void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 {
     /+
-        Updates the user's timestamp to the current time.
+        Updates the user's timestamp to the current time, both sender and target.
 
         This will be automatically called on any and all the kinds of
         [dialect.defs.IRCEvent.Type]s it is annotated with. Furthermore, it will
         only trigger if it took place in a home channel.
+
+        There's no need to check for whether the sender/target is us, as
+        [updateUser] will do it more thoroughly (by stripping any extra modesigns).
      +/
 
-    if (!event.sender.nickname) return;  // MODE can be server-sent
-    plugin.updateUser(event.sender.nickname, event.time);
+    if (event.sender.nickname)
+    {
+        plugin.updateUser(event.sender.nickname, event.time);
+    }
+
+    if (event.target.nickname)
+    {
+        plugin.updateUser(event.target.nickname, event.time);
+    }
 }
 
 
@@ -469,9 +479,11 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.QUIT)
 void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 {
-    if (event.sender.nickname in plugin.seenUsers)
+    auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
+
+    if (seenTimestamp)
     {
-        plugin.updateUser(event.sender.nickname, event.time);
+        *seenTimestamp = event.time;
     }
 }
 
@@ -496,9 +508,11 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 @(PermissionsRequired.ignore)
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
-    if (event.sender.nickname in plugin.seenUsers)
+    auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
+
+    if (seenTimestamp)
     {
-        plugin.seenUsers[event.target.nickname] = event.time;
+        *seenTimestamp = event.time;
         plugin.seenUsers.remove(event.sender.nickname);
     }
 }
@@ -553,8 +567,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
-        immutable nickname = slice.stripModesign(plugin.state.server);
-        plugin.updateUser(nickname, event.time);
+        plugin.updateUser(slice, event.time);
     }
 }
 
@@ -772,13 +785,14 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
             (`@`, `+`, `%`, ...).
         time = UNIX timestamp of when the user was seen.
  +/
-void updateUser(SeenPlugin plugin, const string signed, const long time)
+void updateUser(SeenPlugin plugin, const string signed, const long time,
+    const Flag!"skipModesignStrip" skipModesignStrip = No.skipModesignStrip)
 in (signed.length, "Tried to update a user with an empty (signed) nickname")
 {
     import dialect.common : stripModesign;
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
-    immutable nickname = signed.stripModesign(plugin.state.server);
+    immutable nickname = skipModesignStrip ? signed : signed.stripModesign(plugin.state.server);
     if (nickname == plugin.state.client.nickname) return;
     plugin.seenUsers[nickname] = time;
 }
@@ -810,7 +824,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     foreach (immutable nickname; uniqueUsers.byKey)
     {
-        plugin.updateUser(nickname, now);
+        plugin.updateUser(nickname, now, Yes.skipModesignStrip);
     }
 }
 
