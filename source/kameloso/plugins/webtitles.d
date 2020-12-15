@@ -293,6 +293,31 @@ void worker(shared TitleLookupRequest sRequest,
                 }
                 return;
             }
+            catch (TitleFetchException e)
+            {
+                import std.format : format;
+                import etc.c.curl : CurlError;
+
+                if (e.errorCode != CurlError.ok)
+                {
+                    import kameloso.common : curlErrorStrings;
+
+                    // cURL error
+                    request.state.askToError("Webtitles worker cURL exception %s: %s"
+                        .format(curlErrorStrings[e.errorCode], e.msg));
+                }
+                else if (e.httpCode >= 400)
+                {
+                    // Simply failed to fetch
+                    request.state.askToWarn("Webtitles worker saw HTTP %d.".format(e.httpCode));
+                }
+                else
+                {
+                    request.state.askToWarn("Error fetching YouTube video information: " ~ e.msg);
+                    //version(PrintStacktraces) request.state.askToTrace(e.info);
+                    // Drop down
+                }
+            }
             catch (JSONException e)
             {
                 request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
@@ -301,7 +326,7 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
+                request.state.askToError("Unexpected exception fetching YouTube video information: " ~ e.msg);
                 version(PrintStacktraces) request.state.askToTrace(e.toString);
                 // Drop down
             }
@@ -634,6 +659,7 @@ JSONValue getYouTubeInfo(const string url)
     import std.json : parseJSON;
     import std.net.curl : HTTP;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
@@ -651,12 +677,20 @@ JSONValue getYouTubeInfo(const string url)
         return data.length;
     };
 
-    client.perform();
+    immutable errorCode = client.perform(No.throwOnError);
+
+    if (errorCode != CurlError.ok)
+    {
+        import std.string : fromStringz;
+        import etc.c.curl : curl_easy_strerror;
+        immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
+        throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+    }
 
     if (sink.data == "Not Found")
     {
-        // Invalid video ID
-        throw new Exception("Invalid YouTube video ID");
+        throw new TitleFetchException("Invalid YouTube video ID",
+            url, client.statusLine.code, errorCode);
     }
 
     immutable received = assumeUnique(cast(char[])sink.data);
