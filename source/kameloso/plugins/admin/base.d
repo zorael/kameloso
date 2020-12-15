@@ -1091,9 +1091,6 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         case "printbytes":
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             return;
-
-        case "bus":
-            return onCommandBusImpl(plugin, slice);
     }
 
     case "resetterm":
