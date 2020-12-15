@@ -103,7 +103,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     {
         chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
             .format(plugin.state.settings.prefix, event.aux, verb,
-            includeText ? " [text]" : string.init));
+                includeText ? " [text]" : string.init));
     }
 
     if (!event.content.length) return sendUsage();
@@ -219,7 +219,7 @@ void onWelcome(OnelinersPlugin plugin)
     //plugin.onelinersByChannel.clear();
     plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON,
         plugin.onelinersSettings.caseSensitiveTriggers ?
-        No.lowercaseKeys : Yes.lowercaseKeys);
+            No.lowercaseKeys : Yes.lowercaseKeys);
     plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
 }
 

@@ -417,13 +417,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
             case c:
                 goto case DelimiterCharacters[0];
         }
-        /*case '/':
-        case '|':
-        case '#':
-        case '@':
-        case ' ':
-        case '_':
-        case ';':*/
+
         case DelimiterCharacters[0]:
             if (const senderLines = event.sender.nickname in plugin.prevlines)
             {
