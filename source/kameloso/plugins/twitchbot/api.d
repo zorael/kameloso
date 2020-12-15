@@ -15,6 +15,7 @@ import kameloso.plugins.twitchbot.base;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
+import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -45,6 +46,26 @@ struct QueryResponse
 
     /// The cURL error code returned.
     uint errorCode;
+}
+
+
+// twitchTryCatchDg
+/++
+    Calls a passed delegate in a try-catch. Allows us to have consistent error messages.
+ +/
+void twitchTryCatchDg(alias dg)()
+if (isSomeFunction!dg)
+{
+    try
+    {
+        dg();
+    }
+    catch (TwitchQueryException e)
+    {
+        import kameloso.common : Tint, curlErrorStrings, logger;
+        logger.errorf("Failed to query Twitch: %s (%s%s%s) (%2$s%5$s%4$s)",
+            e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+    }
 }
 
 
