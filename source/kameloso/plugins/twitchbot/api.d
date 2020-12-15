@@ -881,17 +881,22 @@ final class TwitchQueryException : Exception
     /// The HTTP code that was received.
     uint code;
 
+    /// The cURL error code that was returned when performing the query.
+    uint errorCode;
+
     /++
         Create a new [TwitchQueryException], attaching a response body and a
         HTTP return code.
      +/
-    this(const string message, const string responseBody, const string error, const uint code,
+    this(const string message, const string responseBody, const string error,
+        const uint code, const uint errorCode,
         const string file = __FILE__, const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.responseBody = responseBody;
         this.error = error;
         this.code = code;
+        this.errorCode = errorCode;
         super(message, file, line, nextInChain);
     }
 
