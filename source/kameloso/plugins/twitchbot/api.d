@@ -42,6 +42,9 @@ struct QueryResponse
 
     /// The message of any exception thrown while querying.
     string error;
+
+    /// The cURL error code returned.
+    uint errorCode;
 }
 
 
