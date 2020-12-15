@@ -166,6 +166,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
     import std.format : format;
     import std.net.curl : HTTP;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     version(Posix)
     {
@@ -197,7 +198,19 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
             return data.length;
         };
 
-        client.perform();
+        immutable errorCode = client.perform(No.throwOnError);
+
+        if (errorCode != CurlError.ok)
+        {
+            import kameloso.common : curlErrorStrings;
+            import std.string : fromStringz;
+            import etc.c.curl : curl_easy_strerror;
+
+            askToError(state, "Chatbot got cURL error %s (%d) when fetching %s: %s"
+                .format(curlErrorStrings[errorCode], errorCode, url,
+                    fromStringz(curl_easy_strerror(errorCode))));
+            return;
+        }
 
         immutable received = assumeUnique(cast(char[])sink.data);
         doc.parseGarbage(received);
