@@ -221,6 +221,10 @@ string[] findURLs(const string line) @safe pure
             httpPos = slice.indexOf("http");
             continue;
         }
+        else if ((slice[7] == ' ') || (slice[8] == ' '))
+        {
+            break;
+        }
         else if (!slice[8..$].contains('.'))
         {
             break;
@@ -286,6 +290,14 @@ unittest
     {
         const urls = findURLs("https://google.se httpx://google.se https://google.se");
         assert((urls == [ "https://google.se", "https://google.se" ]), urls.text);
+    }
+    {
+        const urls = findURLs("https://               ");
+        assert(!urls.length, urls.text);
+    }
+    {
+        const urls = findURLs("http://               ");
+        assert(!urls.length, urls.text);
     }
 }
 
