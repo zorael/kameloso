@@ -1293,7 +1293,6 @@ unittest
     ---
  +/
 version(Posix)
-version(PrintErrnos)
 static immutable string[134] errnoStrings =
 [
     0   : "<unset>",

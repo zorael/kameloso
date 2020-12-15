@@ -19,19 +19,6 @@ import lu.common : Next;
 import std.typecons : Flag, No, Yes;
 
 
-version(PrintErrnos)
-{
-    version(Posix)
-    {
-        version = PrintErrnosPosix;
-    }
-    else version(Windows)
-    {
-        version = PrintErrnosWindows;
-    }
-}
-
-
 version(ProfileGC)
 {
     static if (__VERSION__ >= 2085L)
@@ -976,11 +963,6 @@ import kameloso.net : ListenAttempt;
  +/
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
-    version(PrintErrnosPosix)
-    {
-        import kameloso.common : errnoStrings;
-    }
-
     // Handle the attempt; switch on its state
     with (ListenAttempt.State)
     final switch (attempt.state)
@@ -1002,12 +984,13 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         import core.thread : Thread;
         import core.time : msecs;
 
-        version(PrintErrnosPosix)
+        version(Posix)
         {
+            import kameloso.common : errnoStrings;
             logger.warningf("Connection error! (%s%s%s) (%1$s%4$s%3$s)",
                 Tint.log, attempt.error, Tint.warning, errnoStrings[attempt.errno]);
         }
-        else version(PrintErrnosWindows)
+        else version(Windows)
         {
             logger.warningf("Connection error! (%s%s%s) (%1$s%4$d%3$s)",
                 Tint.log, attempt.error, Tint.warning, attempt.errno);
@@ -1035,12 +1018,13 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         }
         else
         {
-            version(PrintErrnosPosix)
+            version(Posix)
             {
+                import kameloso.common : errnoStrings;
                 logger.errorf("Connection error: invalid server response! (%s%s%s) (%1$s%4$s%3$s)",
                     Tint.log, attempt.error, Tint.error, errnoStrings[attempt.errno]);
             }
-            else version(PrintErrnosWindows)
+            else version(Windows)
             {
                 logger.errorf("Connection error: invalid server response! (%s%s%s) (%1$s%4$d%3$s)",
                     Tint.log, attempt.error, Tint.error, attempt.errno);
@@ -1844,11 +1828,6 @@ Next tryConnect(ref Kameloso instance)
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
 
-    version(PrintErrnosPosix)
-    {
-        import kameloso.common : errnoStrings;
-    }
-
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
     scope(exit) connector.reset();
@@ -1934,12 +1913,13 @@ Next tryConnect(ref Kameloso instance)
         case delayThenReconnect:
             import core.time : seconds;
 
-            version(PrintErrnosPosix)
+            version(Posix)
             {
+                import kameloso.common : errnoStrings;
                 logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
                     Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
             }
-            else version(PrintErrnosWindows)
+            else version(Windows)
             {
                 logger.warningf("Connection failed with error %s%d%s: %1$s%4$s",
                     Tint.log, attempt.errno, Tint.warning, errorString);
@@ -1962,20 +1942,16 @@ Next tryConnect(ref Kameloso instance)
             return Next.returnFailure;
 
         case ipv6Failure:
-            version(PrintErrnos)
+            version(Posix)
             {
-                version(PrintErrnosPosix)
-                {
-                    logger.warning("IPv6 connection failed with %s%s%s: %1$s%4$s",
-                        Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
-                }
-                else version(PrintErrnosWindows)
-                {
-                    logger.warning("IPv6 connection failed with error %s%d%s: %1$s%4$s",
-                        Tint.log, attempt.errno, Tint.warning, errorString);
-                }
-
-                logger.warning("Disabling IPv6.");
+                import kameloso.common : errnoStrings;
+                logger.warning("IPv6 connection failed with %s%s%s: %1$s%4$s",
+                    Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
+            }
+            else version(Windows)
+            {
+                logger.warning("IPv6 connection failed with error %s%d%s: %1$s%4$s",
+                    Tint.log, attempt.errno, Tint.warning, errorString);
             }
             else
             {
@@ -1992,12 +1968,13 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case error:
-            version(PrintErrnosPosix)
+            version(Posix)
             {
+                import kameloso.common : errnoStrings;
                 logger.errorf("Failed to connect: %s%s%s (%1$s%4$s%3$s)",
                     Tint.log, errorString, Tint.error, errnoStrings[attempt.errno]);
             }
-            else version(PrintErrnosWindows)
+            else version(Windows)
             {
                 logger.errorf("Failed to connect: %s%s%s (%1$s%4$d%3$s)",
                     Tint.log, errorString, Tint.error, attempt.errno);
@@ -2033,11 +2010,6 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
-
-    version(ShouldPrintErrnos)
-    {
-        import kameloso.common : errnoStrings;
-    }
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
@@ -2089,30 +2061,15 @@ Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
             return Next.continue_;
 
         case exception:
-            version(PrintErrnos)
-            {
-                logger.warningf("Could not resolve server address: %s%s%s (%1$s%4$d%3$s)",
-                    Tint.log, errorString, Tint.warning, attempt.errno);
-            }
-            else
-            {
-                logger.warning("Could not resolve server address: ", Tint.log, errorString);
-            }
-
+            logger.warningf("Could not resolve server address: %s%s%s (%1$s%4$d%3$s)",
+                Tint.log, errorString, Tint.warning, attempt.errno);
             delayOnNetworkDown();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
-            version(PrintErrnos)
-            {
-                logger.errorf("Could not resolve server address: %s%s%s (%1$s%4$d%3$s)",
-                    Tint.log, errorString, Tint.error, attempt.errno);
-            }
-            else
-            {
-                logger.error("Could not resolve server address: ", Tint.log, errorString);
-            }
+            logger.errorf("Could not resolve server address: %s%s%s (%1$s%4$d%3$s)",
+                Tint.log, errorString, Tint.error, attempt.errno);
 
             if (firstConnect)
             {

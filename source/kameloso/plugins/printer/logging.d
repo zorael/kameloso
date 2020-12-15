@@ -19,19 +19,6 @@ import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
 
-version(PrintErrnos)
-{
-    version(Posix)
-    {
-        version = PrintErrnosPosix;
-    }
-    else version(Windows)
-    {
-        version = PrintErrnosWindows;
-    }
-}
-
-
 package:
 
 
@@ -310,7 +297,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (ErrnoException e)
         {
-            version(PrintErrnosPosix)
+            version(Posix)
             {
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
@@ -318,7 +305,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 logger.warningf("ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s",
                     Tint.log, errnoStrings[errno], Tint.warning, e.msg);
             }
-            else version(PrintErrnosWindows)
+            else version(Windows)
             {
                 import core.stdc.errno : errno;
 
