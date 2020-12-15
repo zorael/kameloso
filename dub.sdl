@@ -8,6 +8,7 @@ license "MIT"
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
+libs "curl"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>1.0.0"
