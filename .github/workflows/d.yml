@@ -30,6 +30,8 @@ jobs:
 
     - name: 'Build and test'
       run: |
+        sudo apt update
+        sudo apt install libcurl-dev
         time dub test  --compiler=$DC
         time dub build --compiler=$DC --nodeps -b debug   -c dev
         time dub build --compiler=$DC --nodeps -b plain   -c dev
