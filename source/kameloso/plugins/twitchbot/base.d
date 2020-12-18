@@ -2010,8 +2010,8 @@ package:
         if (this.twitchBotSettings.promoteBroadcasters)
         {
             if (event.sender.nickname.length && event.channel.length &&
-                (event.sender.nickname == event.channel[1..$]) &&
-                (event.sender.class_ < IRCUser.Class.staff))
+                (event.sender.class_ < IRCUser.Class.staff) &&
+                (event.sender.nickname == event.channel[1..$]))
             {
                 // Sender is broadcaster but is not registered as staff
                 event.sender.class_ = IRCUser.Class.staff;
