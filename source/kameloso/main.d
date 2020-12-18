@@ -1774,33 +1774,40 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     catch (GetOptException e)
     {
         logger.error("Error parsing command-line arguments: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConvException e)
     {
         logger.error("Error converting command-line arguments: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
         logger.errorf("Specified configuration file %s%s%s is not a file!",
             Tint.log, e.filename, Tint.error);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConfigurationFileReadFailureException e)
     {
         logger.errorf("Error reading and decoding configuration file [%s%s%s]: %1$s%4$s",
             Tint.log, e.filename, Tint.error, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (DeserialisationException e)
     {
         logger.error("Error parsing configuration file: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ProcessException e)
     {
-        logger.errorf("Failed to open %s%s%s in a text editor: %1$s%4$s",
+        logger.errorf("Failed to open %s%s%s in an editor: %1$s%4$s",
             Tint.log, instance.settings.configFile, Tint.error, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        logger.error("Unhandled exception handling command-line arguments: ", Tint.log, e.msg);
+        logger.error("Unexpected exception: ", Tint.log, e.msg);
+        version(PrintStacktraces) logger.trace(e);
     }
 
     return Next.returnFailure;
