@@ -408,7 +408,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
                 immutable maxLen = min(phrase.length, maxLineLength);
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "%d: %s%s".format(start+i+1, phrase[0..maxLen],
-                    (phrase.length > maxLen) ? " ...  [truncated]" : string.init));
+                        (phrase.length > maxLen) ? " ...  [truncated]" : string.init));
             }
         }
         else

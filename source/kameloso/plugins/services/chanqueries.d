@@ -47,10 +47,10 @@ else
  +/
 enum ChannelState : ubyte
 {
-    unset = 1 << 0,      /// Initial value, invalid state.
-    topicKnown = 1 << 1, /// Topic has been sent once, it is known.
-    queued = 1 << 2,     /// Channel queued to be queried.
-    queried = 1 << 3,    /// Channel has been queried.
+    unset      = 1 << 0,  /// Initial value, invalid state.
+    topicKnown = 1 << 1,  /// Topic has been sent once, it is known.
+    queued     = 1 << 2,  /// Channel queued to be queried.
+    queried    = 1 << 3,  /// Channel has been queried.
 }
 
 
