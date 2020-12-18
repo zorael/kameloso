@@ -260,7 +260,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
     catch (Exception e)
     {
         askToWarn(state, "Chatbot could not fetch bash.org quote at %s: %s".format(url, e.msg));
-        askToTrace(state, e.toString);
+        version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }
 
