@@ -589,9 +589,6 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 // onCommandStop
 /++
     Marks the stop of a broadcast.
-
-    The streamer's name is divined from the `plugin.state.users` associative
-    array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
