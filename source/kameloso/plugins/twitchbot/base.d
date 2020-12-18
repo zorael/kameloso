@@ -738,7 +738,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
             else
             {
                 enum pattern = "%s is currently not streaming. " ~
-                    "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.";
+                    "Previous session ended %d-%02d-%02d %02d:%02d with an uptime of %s.";
 
                 chan(plugin.state, room.name, pattern.format(streamer,
                     end.year, end.month, end.day, end.hour, end.minute, timestring));
