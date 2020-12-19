@@ -2504,6 +2504,12 @@ enum ChannelPolicy
     home,
 
     /++
+        The annotated function will only be allowed to triger if the event
+        happened in a guest channel, where applicable. Not all events carry channels.
+     +/
+    guest,
+
+    /++
         The annotated function will be allowed to trigger regardless of channel.
      +/
     any,
