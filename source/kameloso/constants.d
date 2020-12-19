@@ -259,7 +259,7 @@ enum Timeout
     /++
         The send attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
      +/
-    sendMsecs = 5000,
+    sendMsecs = 15_000,
 
     /++
         The receive attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
