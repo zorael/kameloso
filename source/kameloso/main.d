@@ -1970,7 +1970,6 @@ Next tryConnect(ref Kameloso instance)
             // This can be transient?
             // "Failed to establish SSL connection after successful connect (system lib)"
             logger.error("Failed to connect: ", Tint.log, attempt.error);
-            verboselyDelay();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
