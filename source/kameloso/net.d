@@ -796,15 +796,15 @@ struct ConnectionAttempt
      +/
     enum State
     {
-        preconnect,         /// About to connect.
-        connected,          /// Successfully connected.
-        delayThenReconnect, /// Failed to connect; should delay and retry.
-        delayThenNextIP,    /// Failed to reconnect several times; next IP.
-        noMoreIPs,          /// Exhausted all IPs and could not connect.
-        ipv6Failure,        /// IPv6 connection failed.
-        sslFailure,         /// Failure establishing an SSL connection.
-        recoverableError,   /// A non-critical error occured.
-        error,              /// Error connecting; should abort.
+        preconnect,              /// About to connect.
+        connected,               /// Successfully connected.
+        delayThenReconnect,      /// Failed to connect; should delay and retry.
+        delayThenNextIP,         /// Failed to reconnect several times; next IP.
+        noMoreIPs,               /// Exhausted all IPs and could not connect.
+        ipv6Failure,             /// IPv6 connection failed.
+        sslFailure,              /// Failure establishing an SSL connection.
+        invalidConnectionError,  /// The current IP cannot be connected to.
+        error,                   /// Error connecting; should abort.
     }
 
     /// The current state of the attempt.
@@ -1013,7 +1013,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     case connectionRefused:
                         // Connection refused
                         // No connection could be made because the target machine actively refused it.
-                        attempt.state = State.recoverableError;
+                        attempt.state = State.invalidConnectionError;
                         attempt.error = e.msg;
                         yield(attempt);
                         continue iploop;

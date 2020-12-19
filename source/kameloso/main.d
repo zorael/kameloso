@@ -1986,7 +1986,7 @@ Next tryConnect(ref Kameloso instance)
             if (!lastRetry) verboselyDelay();
             continue;
 
-        case recoverableError:
+        case invalidConnectionError:
         case error:
             version(Posix)
             {
@@ -2004,7 +2004,7 @@ Next tryConnect(ref Kameloso instance)
                 logger.error("Failed to connect: ", Tint.log, errorString);
             }
 
-            if (attempt.state == recoverableError)
+            if (attempt.state == invalidConnectionError)
             {
                 goto case delayThenNextIP;
             }
