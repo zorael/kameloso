@@ -803,6 +803,7 @@ struct ConnectionAttempt
         noMoreIPs,          /// Exhausted all IPs and could not connect.
         ipv6Failure,        /// IPv6 connection failed.
         sslFailure,         /// Failure establishing an SSL connection.
+        recoverableError,   /// A non-critical error occured.
         error,              /// Error connecting; should abort.
     }
 
