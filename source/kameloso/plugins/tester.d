@@ -26,6 +26,20 @@ import core.thread : Fiber;
 pragma(msg, "Compiling tester plugin");
 
 
+version(DigitalMars)
+{
+    debug
+    {
+        // Everything seems okay
+    }
+    else
+    {
+        pragma(msg, "WARNING: The test suite may segfault on dmd with -release.");
+        pragma(msg, "Use ldc for better results.");
+    }
+}
+
+
 // onCommandTest
 /++
  +
