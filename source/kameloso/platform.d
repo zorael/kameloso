@@ -35,11 +35,11 @@ public:
  +/
 auto currentPlatform()
 {
-    import std.conv : text;
+    import lu.conv : Enum;
     import std.process : environment;
     import std.system : os;
 
-    enum osName = os.text;
+    enum osName = Enum!(typeof(os)).toString(os);
 
     version(Windows)
     {
@@ -52,7 +52,8 @@ auto currentPlatform()
                 import std.process : execute;
 
                 // Get the uname and strip the newline
-                immutable uname = execute([ "uname", "-o" ]).output;
+                static immutable unameCommand = [ "uname", "-o" ];
+                immutable uname = execute(unameCommand).output;
                 return uname.length ? uname[0..$-1] : osName;
             }
             catch (Exception e)
