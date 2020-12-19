@@ -1477,6 +1477,12 @@ private:
      +/
     enum nickRegainPeriodicity = 600;
 
+    /++
+        Whether or not to append the alt nick sign as a separate step, or to
+        do it in combination with adding the incremented number.
+     +/
+    enum appendAltNickSignSeparately = false;
+
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
 
