@@ -50,11 +50,24 @@ mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
+    import kameloso.plugins.common.core : IRCPlugin;
     import lu.traits : MixinConstraints, MixinScope;
-    import std.conv : text;
+    import std.traits : ParameterIdentifierTuple;
     import std.typecons : Flag, No, Yes;
 
     mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
+
+    alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
+
+    static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
+    {
+        static assert(0, "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
+            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin`)");
+    }
+    else
+    {
+        alias context = mixin(paramNames[0]);
+    }
 
     static if (__traits(compiles, hasWHOISFiber))
     {
@@ -65,22 +78,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     else
     {
         /// Flag denoting that [WHOISFiberDelegate] has been mixed in.
-        private enum hasWHOISFiber = true;
-    }
-
-    static if (__traits(compiles, plugin))
-    {
-        alias context = plugin;
-    }
-    else static if (__traits(compiles, service))
-    {
-        alias context = service;
-    }
-    else
-    {
-        static assert(0, "`WHOISFiberDelegate` should be mixed into the context " ~
-            "of an event handler. (Could not access variables named neither " ~
-            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
+        enum hasWHOISFiber = true;
     }
 
     static if (!alwaysLookup && !__traits(compiles, .hasUserAwareness))
@@ -227,7 +225,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
             }
 
-            immutable m = plugin.state.server.caseMapping;
+            immutable m = context.state.server.caseMapping;
 
             if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
             {
@@ -307,7 +305,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         version(TwitchSupport)
         {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            if (context.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Define Twitch queries as always succeeding, since WHOIS isn't applicable
 
