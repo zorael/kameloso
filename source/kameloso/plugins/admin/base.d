@@ -34,6 +34,21 @@ import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
+version(OmniscientAdmin)
+{
+    /++
+        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
+        on whether version `OmniscientAdmin` is set or not.
+     +/
+    enum omniscientChannelPolicy = ChannelPolicy.any;
+}
+else
+{
+    /// Ditto
+    enum omniscientChannelPolicy = ChannelPolicy.home;
+}
+
+
 // AdminSettings
 /++
     All Admin plugin settings, gathered in a struct.
@@ -169,7 +184,7 @@ debug
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.admin)
-@(ChannelPolicy.home)
+@omniscientChannelPolicy
 @BotCommand(PrefixPolicy.nickname, "sudo")
 @Description("[debug] Sends supplied text to the server, verbatim.",
     "$command [raw string]")
@@ -1193,21 +1208,6 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         logger.error("[admin] Unimplemented bus message verb: ", verb);
         break;
     }
-}
-
-
-version(OmniscientAdmin)
-{
-    /++
-        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientAdmin` is set or not.
-     +/
-    enum omniscientChannelPolicy = ChannelPolicy.any;
-}
-else
-{
-    /// Ditto
-    enum omniscientChannelPolicy = ChannelPolicy.home;
 }
 
 
