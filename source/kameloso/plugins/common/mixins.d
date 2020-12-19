@@ -66,7 +66,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        alias context = mixin(paramNames[0]);
+        //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
+        // The mixin must be a concatenated string for 2.083 and earlier,
+        // but we only support 2.084+
+        mixin("alias context = ", paramNames[0], ";");
     }
 
     static if (__traits(compiles, hasWHOISFiber))
