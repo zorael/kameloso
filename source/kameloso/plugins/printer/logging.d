@@ -534,7 +534,6 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
-        import std.algorithm.iteration : joiner;
         import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File, writeln;
 
@@ -550,8 +549,13 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
             return;
         }
 
-        auto lines = buffer.lines.data.joiner("\n");
-        File(buffer.file, "a").writeln(lines);
+        auto file = File(buffer.file, "a");
+
+        foreach (line; buffer.lines.data)
+        {
+            import std.encoding : sanitize;
+            file.writeln(sanitize(line));
+        }
 
         // Only clear if we managed to write everything, otherwise accumulate
         buffer.lines.clear();
