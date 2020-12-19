@@ -232,7 +232,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
-    private static enum mixinSentinel = true;
+    private enum mixinSentinel = true;
 
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if (!is(__traits(parent, mixinSentinel) : IRCPlugin))
