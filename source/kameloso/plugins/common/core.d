@@ -2550,18 +2550,18 @@ enum PermissionsRequired
         blacklisted, unknown users will first be looked up with a WHOIS query
         before allowing the function to trigger.
      +/
-    anyone = 1,
+    anyone = 10,
 
     /++
         Anyone logged onto services may trigger the annotated function.
      +/
-    registered = 2,
+    registered = 20,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.whitelist] classifier
         may trigger the annotated function.
      +/
-    whitelist = 3,
+    whitelist = 30,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.operator] classifier
@@ -2569,19 +2569,19 @@ enum PermissionsRequired
 
         Note: this does not mean IRC "+o" operators.
      +/
-    operator = 4,
+    operator = 40,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.staff] classifier may
         trigger the annotated function. These are channel owners.
      +/
-    staff = 5,
+    staff = 50,
 
     /++
         Only users defined in the configuration file as an administrator may
         trigger the annotated function.
      +/
-    admin = 10,
+    admin = 100,
 }
 
 
