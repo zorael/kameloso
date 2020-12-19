@@ -1345,23 +1345,19 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 (hasUDA!(this.tupleof[i], Settings) ||
                 hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
-                alias T = typeof(symbol);
-
-                if (symbol != T.init)
+                if (symbol != typeof(symbol).init)
                 {
                     // This symbol has had configuration applied to it already
                     continue;
                 }
 
-                T tempSymbol;
                 string[][string] theseMissingEntries;
                 string[][string] theseInvalidEntries;
 
-                configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, tempSymbol);
+                configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
 
                 theseMissingEntries.meldInto(missingEntries);
                 theseInvalidEntries.meldInto(invalidEntries);
-                tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
             }
         }
     }
