@@ -1125,8 +1125,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         import core.exception : UnicodeException;
 
                         immutable isRecoverableException =
-                            (cast(UTFException)e !is null) ||
-                            (cast(UnicodeException)e !is null);
+                            (cast(UnicodeException)e !is null) ||
+                            (cast(UTFException)e !is null);
 
                         if (!isRecoverableException) throw e;
 
