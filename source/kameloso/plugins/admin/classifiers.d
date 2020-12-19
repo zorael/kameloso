@@ -624,9 +624,11 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     immutable message = didSomething ?
         "Hostmask list updated." :
         "No such hostmask on file.";
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
-    // Force persistence to reload the file with the new changes
-    plugin.state.mainThread.send(ThreadMessage.Reload());
+    if (didSomething)
+    {
+        // Force persistence to reload the file with the new changes
+        plugin.state.mainThread.send(ThreadMessage.Reload());
+    }
 }
