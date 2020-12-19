@@ -22,6 +22,7 @@ import kameloso.common : Tint, logger;
 import kameloso.messaging;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
+import std.concurrency : Tid;
 import std.typecons : Flag, No, Yes;
 
 
@@ -83,6 +84,7 @@ void pipereader(shared IRCPluginState newState, const string filename,
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import std.concurrency : OwnerTerminated, receiveTimeout, send, spawn;
+    import std.conv : text;
     import std.file : FileException, exists, remove;
     import std.stdio : File;
     import std.variant : Variant;
@@ -214,7 +216,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             },
             (Variant v)
             {
-                state.askToError("Pipeline plugin received Variant: " ~ logtint ~ v.toString());
+                state.askToError(text("Pipeline plugin received Variant: ", logtint, v.toString));
                 state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
                 halt = true;
             }
@@ -230,7 +232,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
-            state.askToError("Pipeline plugin failed to reopen FIFO: " ~ logtint ~ e.msg);
+            state.askToError(text("Pipeline plugin failed to reopen FIFO: ", logtint, e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
@@ -281,8 +283,8 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
     }
     else
     {
-        import core.sys.posix.sys.stat : S_ISFIFO;
         import std.file : getAttributes, isDir;
+        import core.sys.posix.sys.stat : S_ISFIFO;
 
         immutable attrs = cast(ushort)getAttributes(filename);
 
@@ -303,13 +305,42 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 
 // onWelcome
 /++
+    Initialises the fifo pipe and thus the purpose of the plugin, by leveraging [initPipe].
+ +/
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(PipelinePlugin plugin)
+{
+    plugin.initPipe();
+}
+
+
+// reload
+/++
+    Reloads the plugin, initialising the fifo pipe if it was not already initialised.
+
+    This lets us remedy the "A FIFO with that name alraedy exists" error.
+ +/
+void reload(PipelinePlugin plugin)
+{
+    if (!plugin.workerRunning)
+    {
+        plugin.initPipe();
+    }
+}
+
+
+// initPipe
+/++
     Spawns the pipereader thread.
 
     Snapshots the filename to use, as we base it on the bot's nickname, which
     may change during the connection's lifetime.
+
+    Params:
+        plugin = The current [PipelinePlugin].
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(PipelinePlugin plugin)
+void initPipe(PipelinePlugin plugin)
+in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 {
     if (plugin.pipelineSettings.path.length)
     {
@@ -318,9 +349,11 @@ void onWelcome(PipelinePlugin plugin)
     }
     else
     {
+        import std.conv : text;
+
         // Save the filename *once* so it persists across nick changes.
         // If !fifoInWorkingDir then in /tmp or $TMPDIR
-        plugin.fifoFilename = plugin.state.client.nickname ~ "@" ~ plugin.state.server.address;
+        plugin.fifoFilename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
 
         if (!plugin.pipelineSettings.fifoInWorkingDir)
         {
@@ -460,8 +493,6 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
-    import std.concurrency : Tid;
-
     /// All Pipeline settings gathered.
     PipelineSettings pipelineSettings;
 

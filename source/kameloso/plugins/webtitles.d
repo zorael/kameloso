@@ -4,8 +4,6 @@
 
     It has no bot commands; everything is done by automatically scanning channel
     and private query messages for things that look like links.
-
-    It requires version `Web` for obvious reasons.
  +/
 module kameloso.plugins.webtitles;
 
@@ -20,6 +18,18 @@ import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
+
+
+// descriptionExemptions
+/++
+    Hostnames explicitly exempt from having their descriptions included after the titles.
+
+    Must be in lowercase.
+ +/
+static immutable descriptionExemptions =
+[
+    "imgur.com",
+];
 
 
 // WebtitlesSettings
@@ -99,7 +109,7 @@ struct TitleLookupRequest
 @Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
@@ -127,8 +137,6 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     import kameloso.common : Tint, logger;
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
-
-    if (!urls.length) return;
 
     immutable descriptionsFlag = plugin.webtitlesSettings.descriptions ?
         Yes.descriptions : No.descriptions;
@@ -285,6 +293,31 @@ void worker(shared TitleLookupRequest sRequest,
                 }
                 return;
             }
+            catch (TitleFetchException e)
+            {
+                import std.format : format;
+                import etc.c.curl : CurlError;
+
+                if (e.errorCode != CurlError.ok)
+                {
+                    import kameloso.common : curlErrorStrings;
+
+                    // cURL error
+                    request.state.askToError("Webtitles worker cURL exception %s: %s"
+                        .format(curlErrorStrings[e.errorCode], e.msg));
+                }
+                else if (e.httpCode >= 400)
+                {
+                    // Simply failed to fetch
+                    request.state.askToWarn("Webtitles worker saw HTTP %d.".format(e.httpCode));
+                }
+                else
+                {
+                    request.state.askToWarn("Error fetching YouTube video information: " ~ e.msg);
+                    //version(PrintStacktraces) request.state.askToTrace(e.info);
+                    // Drop down
+                }
+            }
             catch (JSONException e)
             {
                 request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
@@ -293,7 +326,7 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                request.state.askToError("Error parsing YouTube video information: " ~ e.msg);
+                request.state.askToError("Unexpected exception fetching YouTube video information: " ~ e.msg);
                 version(PrintStacktraces) request.state.askToTrace(e.toString);
                 // Drop down
             }
@@ -323,21 +356,29 @@ void worker(shared TitleLookupRequest sRequest,
                     cache[request.url] = cast(shared)request.results;
                 }
             }
-            catch (CurlException e)
+            catch (TitleFetchException e)
             {
-                request.state.askToError("Webtitles worker cURL exception: " ~ e.msg);
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
-            }
-            catch (UnicodeException e)
-            {
-                request.state.askToError("Webtitles worker Unicode exception: " ~
-                    e.msg ~ " (link is probably to an image or similar)");
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
-            }
-            catch (Exception e)
-            {
-                request.state.askToWarn("Webtitles worker exception: " ~ e.msg);
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
+                import std.format : format;
+                import etc.c.curl : CurlError;
+
+                if (e.errorCode != CurlError.ok)
+                {
+                    import kameloso.common : curlErrorStrings;
+
+                    // cURL error
+                    request.state.askToError("Webtitles worker cURL exception %s: %s"
+                        .format(curlErrorStrings[e.errorCode], e.msg));
+                }
+                else if (e.httpCode >= 400)
+                {
+                    // Simply failed to fetch
+                    request.state.askToWarn("Webtitles worker saw HTTP %d.".format(e.httpCode));
+                }
+                else
+                {
+                    // No title tag found
+                    request.state.askToWarn("No title tag found.");
+                }
 
                 if (firstTime)
                 {
@@ -351,9 +392,19 @@ void worker(shared TitleLookupRequest sRequest,
                     {
                         request.url ~= '/';
                     }
-
                     continue;
                 }
+            }
+            catch (UnicodeException e)
+            {
+                request.state.askToError("Webtitles worker Unicode exception: " ~
+                    e.msg ~ " (link is probably to an image or similar)");
+                //version(PrintStacktraces) request.state.askToTrace(e.info);
+            }
+            catch (Exception e)
+            {
+                request.state.askToWarn("Webtitles saw unexpected exception: " ~ e.msg);
+                version(PrintStacktraces) request.state.askToTrace(e.toString);
             }
 
             // Dropped down; end foreach by returning
@@ -387,7 +438,9 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.net.curl : HTTP;
+    import std.uni : toLower;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
 
@@ -409,22 +462,28 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
         return doc.title.length ? HTTP.requestAbort : data.length;
     };
 
-    client.perform(No.throwOnError);
-    immutable code = client.statusLine.code;
+    immutable errorCode = client.perform(No.throwOnError);
 
-    if (code >= 400)
+    if (errorCode != CurlError.ok)
     {
-        import std.conv : text;
-        throw new Exception(text(code, " fetching URL ", url));
+        import std.string : fromStringz;
+        import etc.c.curl : curl_easy_strerror;
+        immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
+        throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+    }
+
+    if (client.statusLine.code >= 400)
+    {
+        throw new TitleFetchException("Failed to fetch URL", url, client.statusLine.code, errorCode);
     }
     else if (!doc.title.length)
     {
-        throw new Exception("No title tag found");
+        throw new TitleFetchException("No title tag found", url, client.statusLine.code, errorCode);
     }
 
     string slice = url;  // mutable
     slice.nom("//");
-    string host = slice.nom!(Yes.inherit)('/');
+    string host = slice.nom!(Yes.inherit)('/').toLower;
     if (host.beginsWith("www.")) host = host[4..$];
 
     TitleLookupResults results;
@@ -433,13 +492,20 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     if (descriptions)
     {
-        auto metaTags = doc.getElementsByTagName("meta");
+        import std.algorithm.searching : canFind;
 
-        foreach (tag; metaTags)
+        if (!descriptionExemptions.canFind(host))
         {
-            if (tag.name != "description") continue;
-            results.description = tag.content;
-            break;
+            auto metaTags = doc.getElementsByTagName("meta");
+
+            foreach (tag; metaTags)
+            {
+                if (tag.name == "description")
+                {
+                    results.description = tag.content;
+                    break;
+                }
+            }
         }
     }
 
@@ -580,7 +646,7 @@ unittest
         A [std.json.JSONValue] with fields describing the looked-up video.
 
     Throws:
-        [core.Exception] if the YouTube ID was invalid and could not be queried.
+        [object.Exception] if the YouTube ID was invalid and could not be queried.
         [std.json.JSONException] if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
@@ -591,6 +657,7 @@ JSONValue getYouTubeInfo(const string url)
     import std.json : parseJSON;
     import std.net.curl : HTTP;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
@@ -608,16 +675,64 @@ JSONValue getYouTubeInfo(const string url)
         return data.length;
     };
 
-    client.perform();
+    immutable errorCode = client.perform(No.throwOnError);
+
+    if (errorCode != CurlError.ok)
+    {
+        import std.string : fromStringz;
+        import etc.c.curl : curl_easy_strerror;
+        immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
+        throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+    }
 
     if (sink.data == "Not Found")
     {
-        // Invalid video ID
-        throw new Exception("Invalid YouTube video ID");
+        throw new TitleFetchException("Invalid YouTube video ID",
+            url, client.statusLine.code, errorCode);
     }
 
     immutable received = assumeUnique(cast(char[])sink.data);
     return parseJSON(received);
+}
+
+
+// TitleFetchException
+/++
+    A normal [object.Exception] but with an HTTP status code and a cURL error code attached.
+ +/
+final class TitleFetchException : Exception
+{
+@safe:
+    /// The URL that was attempted to fetch the title of.
+    string url;
+
+    /// The HTTP status code that was returned when attempting to fetch a title.
+    uint httpCode;
+
+    /// The cURL error code that was returned when attempting to fetch a title.
+    uint errorCode;
+
+    /++
+        Create a new [TitleFetchException], attaching an URL, a HTTP status code and
+        a cURL error code.
+     +/
+    this(const string message, const string url, const uint httpCode, const uint errorCode,
+        const string file = __FILE__, const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.httpCode = httpCode;
+        this.errorCode = errorCode;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [TitleFetchException], without attaching anything.
+     +/
+    this(const string message, const string file = __FILE__, const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
 }
 
 

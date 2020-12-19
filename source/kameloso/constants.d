@@ -90,8 +90,14 @@ enum KamelosoDefaults
     /// The default part reason, when the bot is asked to part a channel.
     partReason = quitReason,
 
-    /// When a nickname is taken, first append this to get a new name before trying random numbers.
-    altNickSign = "|",
+    /++
+        When a nickname was already taken during registration, append this followed
+        by some random numbers to it to generate a new one.
+
+        A separator of "|" and a taken nickname of "guest" thus gives nicknames like "guest|1".
+        A separator of "^" gives nicknames like "guest^2".
+     +/
+    altNickSeparator = "|",
 }
 
 
@@ -153,6 +159,42 @@ enum ConnectionDefaultFloats : double
 
     /// By what to multiply [Timeout.receiveMsecs] with to shorten reads.
     receiveShorteningMultiplier = 0.25,
+
+    /// How many messages to send per second, maximum.
+    messageRate = 1.2,
+
+    /// How many messages to immediately send in one go, before throttling kicks in.
+    messageBurst = 3.0,
+
+    /++
+        How many messages to send per second, maximum. For *fast* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageRateTwitchFast = 3.0,
+
+    /++
+        How many messages to immediately send in one go, before throttling kicks in.
+        For *fast* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageBurstTwitchFast = 10.0,
+
+    /++
+        How many messages to send per second, maximum. For *slow* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageRateTwitchSlow = 1.0,
+
+    /++
+        How many messages to immediately send in one go, before throttling kicks in.
+        For *slow* sends on Twitch servers.
+
+        FIXME: Tweak value.
+     +/
+    messageBurstTwitchSlow = 1.0,
 }
 
 
@@ -217,7 +259,7 @@ enum Timeout
     /++
         The send attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
      +/
-    sendMsecs = 5000,
+    sendMsecs = 15_000,
 
     /++
         The receive attempt timeout as set as a [std.socket.SocketOption], in milliseconds.

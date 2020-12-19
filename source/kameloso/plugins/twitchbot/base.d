@@ -98,7 +98,7 @@ public:
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "permit")
 @Description("Permits a specified user to post links for a brief period of time.",
@@ -176,7 +176,7 @@ void onCommandPermit(TwitchBotPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
 @(IRCEvent.Type.TWITCH_PAYFORWARD)
 @(IRCEvent.Type.TWITCH_RAID)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onImportant(TwitchBotPlugin plugin)
 {
@@ -261,7 +261,7 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "phrase")
 @Description("Adds, removes, lists or clears phrases from the list of banned such.",
@@ -408,7 +408,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
                 immutable maxLen = min(phrase.length, maxLineLength);
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "%d: %s%s".format(start+i+1, phrase[0..maxLen],
-                    (phrase.length > maxLen) ? " ...  [truncated]" : string.init));
+                        (phrase.length > maxLen) ? " ...  [truncated]" : string.init));
             }
         }
         else
@@ -441,7 +441,7 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "timer")
 @Description("Adds, removes, lists or clears timered lines.",
@@ -458,7 +458,7 @@ void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "enable")
 @BotCommand(PrefixPolicy.prefixed, "disable")
@@ -489,7 +489,7 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "uptime")
 @Description("Reports how long the streamer has been streaming.")
@@ -513,7 +513,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "start")
 @Description("Marks the start of a broadcast.")
@@ -579,7 +579,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
         }
 
-        Fiber chattersCheckFiber = new Fiber(&periodicalChattersCheckDg, BufferSize.fiberStack);
+        Fiber chattersCheckFiber =
+            new Fiber(&twitchTryCatchDg!periodicalChattersCheckDg, BufferSize.fiberStack);
         chattersCheckFiber.call();
     }
 }
@@ -588,13 +589,10 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 // onCommandStop
 /++
     Marks the stop of a broadcast.
-
-    The streamer's name is divined from the `plugin.state.users` associative
-    array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stop")
 @Description("Marks the stop of a broadcast.")
@@ -737,7 +735,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
             else
             {
                 enum pattern = "%s is currently not streaming. " ~
-                    "Previous session ended %02d-%02d-%02d %02d:%02d with an uptime of %s.";
+                    "Previous session ended %d-%02d-%02d %02d:%02d with an uptime of %s.";
 
                 chan(plugin.state, room.name, pattern.format(streamer,
                     end.year, end.month, end.day, end.hour, end.minute, timestring));
@@ -769,7 +767,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
  +/
 @Chainable
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
@@ -928,7 +926,7 @@ void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "followage")
 @Description("Queries the server for how long you have been a follower of the " ~
@@ -1090,7 +1088,7 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    Fiber followageFiber = new Fiber(&followageDg, BufferSize.fiberStack);
+    Fiber followageFiber = new Fiber(&twitchTryCatchDg!followageDg, BufferSize.fiberStack);
     followageFiber.call();
 }
 
@@ -1135,7 +1133,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
-    Fiber getDisplayNameFiber = new Fiber(&getDisplayNameDg, BufferSize.fiberStack);
+    Fiber getDisplayNameFiber = new Fiber(&twitchTryCatchDg!getDisplayNameDg, BufferSize.fiberStack);
     getDisplayNameFiber.call();
 
     // Always cache as soon as possible, before we get any !followage requests
@@ -1144,7 +1142,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         room.follows = getFollows(plugin, room.id);
     }
 
-    Fiber cacheFollowsFiber = new Fiber(&cacheFollowsDg, BufferSize.fiberStack);
+    Fiber cacheFollowsFiber = new Fiber(&twitchTryCatchDg!cacheFollowsDg, BufferSize.fiberStack);
     cacheFollowsFiber.call();
 }
 
@@ -1158,7 +1156,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "shoutout")
 @BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
@@ -1221,7 +1219,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .format(broadcasterName, login, gameName));
     }
 
-    Fiber shoutoutFiber = new Fiber(&shoutoutQueryDg, BufferSize.fiberStack);
+    Fiber shoutoutFiber = new Fiber(&twitchTryCatchDg!shoutoutQueryDg, BufferSize.fiberStack);
     shoutoutFiber.call();
 }
 
@@ -1245,7 +1243,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.EMOTE)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
@@ -1466,14 +1464,16 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                import lu.string : beginsWith;
+                import kameloso.common : curlErrorStrings;
+                import etc.c.curl : CurlError;
 
                 // Something is deeply wrong.
-                logger.error("Failed to validate API keys: ", Tint.log, e.error);
+                logger.errorf("Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)",
+                    e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
 
-                if (e.error.beginsWith("Peer certificate cannot be " ~
-                    "authenticated with given CA certificates"))
+                if (e.errorCode == CurlError.ssl_cacert)
                 {
+                    // Peer certificate cannot be authenticated with given CA certificates
                     logger.errorf("You may need to supply a CA bundle file " ~
                         "(e.g. %scacert.pem%s) in the configuration file.",
                         Tint.log, Tint.error);
@@ -1707,8 +1707,8 @@ void onMyInfo(TwitchBotPlugin plugin)
                     }
                 }
 
-                Fiber cacheFollowsAnewFiber = new Fiber(&cacheFollowsAnewDg,
-                    BufferSize.fiberStack);
+                Fiber cacheFollowsAnewFiber =
+                    new Fiber(&twitchTryCatchDg!cacheFollowsAnewDg, BufferSize.fiberStack);
                 cacheFollowsAnewFiber.call();
             }
         }
@@ -2007,8 +2007,8 @@ package:
         if (this.twitchBotSettings.promoteBroadcasters)
         {
             if (event.sender.nickname.length && event.channel.length &&
-                (event.sender.nickname == event.channel[1..$]) &&
-                (event.sender.class_ < IRCUser.Class.staff))
+                (event.sender.class_ < IRCUser.Class.staff) &&
+                (event.sender.nickname == event.channel[1..$]))
             {
                 // Sender is broadcaster but is not registered as staff
                 event.sender.class_ = IRCUser.Class.staff;

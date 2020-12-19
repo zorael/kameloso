@@ -87,10 +87,7 @@ public:
     bool bellOnMention = true;
 
     /// Whether or not to bell on parsing errors.
-    bool bellOnError = true;
-
-    /// Whether or not to be silent and not print error messages in the event output.
-    bool silentErrors = false;
+    bool bellOnError = false;
 
     /// Whether or not to log events.
     bool logs = false;
@@ -142,42 +139,43 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     event.clearTargetNicknameIfUs(plugin.state);
 
     /++
-        Update the squelchstamp and return whether or not the current event
-        should be squelched.
+        Return whether or not the current event should be squelched based on
+        if the passed channel, sender or target nickname has a squelchstamp
+        that demands it. Additionally updates the squelchstamp if so.
      +/
     static bool updateSquelchstamp(PrinterPlugin plugin, const long time,
         const string channel, const string sender, const string target)
     in ((channel.length || sender.length || target.length),
         "Tried to update squelchstamp but with no channel or user information passed")
     {
-        if (channel.length)
-        {
-            if (channel != plugin.squelchTarget) return false;
-        }
-        else if (sender.length)
-        {
-            if (sender != plugin.squelchTarget) return false;
-        }
-        else if (target.length)
-        {
-            if (target != plugin.squelchTarget) return false;
-        }
-        /*else
-        {
-            // already in in-contract
-            assert(0, "Logic error; tried to update squelchstamp but " ~
-                "no `channel`, no `sender`, no `target`");
-        }*/
+        /*import std.algorithm.comparison : either;
+        immutable key = either!(s => s.length)(channel, sender, target);*/
 
-        if ((time - plugin.squelchstamp) <= plugin.squelchTimeout)
+        immutable key =
+            channel.length ? channel :
+            sender.length ? sender :
+            /*target.length ?*/ target;
+
+        // already in in-contract
+        /*assert(key.length, "Logic error; tried to update squelchstamp but " ~
+            "no `channel`, no `sender`, no `target`");*/
+
+        auto squelchstamp = key in plugin.squelches;
+
+        if (!squelchstamp)
         {
-            plugin.squelchstamp = time;
+            plugin.hasSquelches = (plugin.squelches.length > 0);
+            return false;
+        }
+        else if ((time - *squelchstamp) <= plugin.squelchTimeout)
+        {
+            *squelchstamp = time;
             return true;
         }
         else
         {
-            plugin.squelchstamp = 0L;
-            plugin.squelchTarget = string.init;
+            plugin.squelches.remove(key);
+            plugin.hasSquelches = (plugin.squelches.length > 0);
             return false;
         }
     }
@@ -310,26 +308,41 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_ENDOFQUIETLIST:
     case RPL_ENDOFINVITELIST:
     case RPL_ENDOFEXCEPTLIST:
+    case ENDOFEXEMPTOPSLIST:
     case ENDOFSPAMFILTERLIST:
     case ERR_CHANOPRIVSNEEDED:
     case RPL_AWAY:
-        immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
-            updateSquelchstamp(plugin, event.time, event.channel,
-                event.sender.nickname, event.target.nickname);
+    case ENDOFCHANNELACCLIST:
+    case MODELIST:
+    case ENDOFMODELIST:
+    case RPL_ENDOFQLIST:
+    case RPL_ENDOFALIST:
+        // Error: switch skips declaration of variable shouldSquelch
+        {
+            immutable shouldSquelch = plugin.hasSquelches &&
+                updateSquelchstamp(plugin, event.time, event.channel,
+                    event.sender.nickname, event.target.nickname);
 
-        if (shouldSquelch)
-        {
-            return;
+            if (shouldSquelch)
+            {
+                return;
+            }
+            else
+            {
+                // Obey normal filterMost rules for unsquelched
+                goto case RPL_NAMREPLY;
+            }
         }
-        else
-        {
-            // Obey normal filterMost rules for unsquelched
-            goto case RPL_NAMREPLY;
-        }
+
+    version(WithConnectService)
+    {
+        case ERR_NICKNAMEINUSE:  // When failing to regain nickname
+            goto case;
+    }
 
     case RPL_TOPIC:
     case RPL_NOTOPIC:
-        immutable shouldSquelch = (plugin.squelchstamp > 0L) &&
+        immutable shouldSquelch = plugin.hasSquelches &&
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
 
@@ -431,8 +444,6 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         [kameloso.plugins.printer.logging.commitLog]
  +/
 @(IRCEvent.Type.PING)
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
 void commitAllLogs(PrinterPlugin plugin)
 {
     return commitAllLogsImpl(plugin);
@@ -450,6 +461,8 @@ void commitAllLogs(PrinterPlugin plugin)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
+    import kameloso.common : Tint, logger;
+
     if (plugin.printedISUPPORT || !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
@@ -458,32 +471,10 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    import lu.conv : Enum;
-    import std.string : capitalize;
-    import std.uni : isLower;
-
-    immutable networkName = plugin.state.server.network[0].isLower ?
-        capitalize(plugin.state.server.network) :
-        plugin.state.server.network;
-
-    string tintreset;
-
-    version(Colours)
-    {
-        if (!plugin.state.settings.monochrome)
-        {
-            import kameloso.terminal : TerminalReset, colour;
-            enum tintresetColour = TerminalReset.all.colour.idup;
-            tintreset = tintresetColour;
-        }
-    }
-
-    import kameloso.common : Tint, logger;
-
     logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
-        Tint.info, networkName, Tint.log,
-        Tint.info, Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
-        tintreset, plugin.state.server.daemonstring);
+        Tint.info, plugin.state.server.network, Tint.log,
+        Tint.info, plugin.state.server.daemon,
+        Tint.off, plugin.state.server.daemonstring);
 }
 
 
@@ -501,8 +492,8 @@ void onISUPPORT(PrinterPlugin plugin)
  +/
 package string datestamp()
 {
-    import std.format : format;
     import std.datetime.systime : Clock;
+    import std.format : format;
 
     immutable now = Clock.currTime;
     return "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
@@ -637,18 +628,17 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     {
     case "squelch":
         import std.datetime.systime : Clock;
-        plugin.squelchstamp = Clock.currTime.toUnixTime;
-        plugin.squelchTarget = target;  // May be empty
+        plugin.squelches[target] = Clock.currTime.toUnixTime;
+        plugin.hasSquelches = true;
         break;
 
-    case "resetsquelch":
-        plugin.squelchstamp = 0L;
-        plugin.squelchTarget = string.init;
+    case "unsquelch":
+        plugin.squelches.remove(target);
+        plugin.hasSquelches = (plugin.squelches.length > 0);
         break;
 
     default:
         import kameloso.common : logger;
-
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }
@@ -695,6 +685,9 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
         case RPL_WHOISSVCMSG:
         case RPL_WHOISTEXT:
         case RPL_WHOISWEBIRC:
+        case RPL_WHOISACTUALLY:
+        case RPL_WHOISMODES:
+        case RPL_WHOWASIP:
             // Keep bot's nickname as target for these event types.
             break;
 
@@ -791,26 +784,25 @@ package:
     PrinterSettings printerSettings;
 
     /// How many seconds before a request to squelch list events times out.
-    enum squelchTimeout = 10;  // seconds
+    enum squelchTimeout = 5;  // seconds
 
     /// How many bytes to preallocate for the [linebuffer].
     enum linebufferInitialSize = 2048;
 
-    /// From which channel or for which user events are being squelched.
-    string squelchTarget;
+    /++
+        Nicknames or channels, to or from which select events should be squelched.
+        UNIX timestamp value.
+     +/
+    long[string] squelches;
+
+    /// Whether or not at least one squelch is active; whether [squelches] is non-empty.
+    bool hasSquelches;
 
     /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
     /// Whether or not we have printed daemon-network information.
     bool printedISUPPORT;
-
-    /++
-        UNIX timestamp of when to expect squelchable list events.
-
-        Note: repeated list events refresh the timer.
-     +/
-    long squelchstamp;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;

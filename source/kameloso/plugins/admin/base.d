@@ -34,6 +34,21 @@ import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
+version(OmniscientAdmin)
+{
+    /++
+        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
+        on whether version `OmniscientAdmin` is set or not.
+     +/
+    enum omniscientChannelPolicy = ChannelPolicy.any;
+}
+else
+{
+    /// Ditto
+    enum omniscientChannelPolicy = ChannelPolicy.home;
+}
+
+
 // AdminSettings
 /++
     All Admin plugin settings, gathered in a struct.
@@ -105,7 +120,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "user")
 @Description("[debug] Prints out information about one or more specific users " ~
@@ -126,7 +141,7 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "save")
 @Description("Saves current configuration to disk.")
@@ -148,7 +163,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "users")
 @Description("[debug] Prints out the current users array to the local terminal.")
@@ -168,8 +183,8 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
+@(PermissionsRequired.admin)
+@omniscientChannelPolicy
 @BotCommand(PrefixPolicy.nickname, "sudo")
 @Description("[debug] Sends supplied text to the server, verbatim.",
     "$command [raw string]")
@@ -189,7 +204,7 @@ void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "quit")
 @Description("Send a QUIT event to the server and exits the program.",
@@ -211,7 +226,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "home")
 @Description("Adds or removes a channel to/from the list of home channels.",
@@ -279,15 +294,15 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     import std.algorithm.searching : canFind, countUntil;
     import std.uni : toLower;
 
-    immutable channel = rawChannel.stripped.toLower;
+    immutable channelName = rawChannel.stripped.toLower;
 
-    if (!channel.isValidChannel(plugin.state.server))
+    if (!channelName.isValidChannel(plugin.state.server))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
         return;
     }
 
-    if (plugin.state.bot.homeChannels.canFind(channel))
+    if (plugin.state.bot.homeChannels.canFind(channelName))
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "We are already in that home channel.");
@@ -296,11 +311,11 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     // We need to add it to the homeChannels array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
-    plugin.state.bot.homeChannels ~= channel;
+    plugin.state.bot.homeChannels ~= channelName;
     plugin.state.botUpdated = true;
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
-    immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channel);
+    immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channelName);
 
     if (existingChannelIndex != -1)
     {
@@ -313,10 +328,10 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(existingChannelIndex);
 
-        return cycle(plugin, channel);
+        return cycle(plugin, channelName);
     }
 
-    join(plugin.state, channel);
+    join(plugin.state, channelName);
 
     // We have to follow up and see if we actually managed to join the channel
     // There are plenty ways for it to fail.
@@ -351,7 +366,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
             assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-            if (thisFiber.payload.channel == channel) break;
+            if (thisFiber.payload.channel == channelName) break;
 
             // Different channel; yield fiber, wait for another event
             Fiber.yield();
@@ -414,12 +429,12 @@ void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChann
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
 {
     import lu.string : stripped;
-    import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
+    import std.algorithm.searching : countUntil;
     import std.uni : toLower;
 
-    immutable channel = rawChannel.stripped.toLower;
-    immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channel);
+    immutable channelName = rawChannel.stripped.toLower;
+    immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
 
     if (homeIndex == -1)
     {
@@ -428,8 +443,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
         enum pattern = "Channel %s was not listed as a home.";
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(channel.ircBold) :
-            pattern.format(channel);
+            pattern.format(channelName.ircBold) :
+            pattern.format(channelName);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -438,9 +453,9 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
         .remove!(SwapStrategy.unstable)(homeIndex);
     plugin.state.botUpdated = true;
-    part(plugin.state, channel);
+    part(plugin.state, channelName);
 
-    if (channel != event.channel)
+    if (channelName != event.channel)
     {
         // We didn't just leave the channel, so we can report success
         // Otherwise we get ERR_CANNOTSENDTOCHAN
@@ -455,12 +470,12 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     [dialect.defs.IRCClient.Class.whitelist] of the current [AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState].
 
-    This is on a [kameloso.plugins.common.core.PrivilegeLevel.operator] level.
+    This is on a [kameloso.plugins.common.core.PermissionsRequired.operator] level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "whitelist")
 @Description("Add or remove an account to/from the whitelist of users who may trigger the bot.",
@@ -479,7 +494,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.staff)
+@(PermissionsRequired.staff)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "operator")
 @Description("Add or remove an account to/from the operator list of operators/moderators.",
@@ -499,7 +514,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "staff")
 @Description("Add or remove an account to/from the staff list.",
@@ -513,14 +528,14 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated [kameloso.plugins.common.core.PrivilegeLevel.ignore].
+    except on actions annotated [kameloso.plugins.common.core.PermissionsRequired.ignore].
 
-    This is on a [kameloso.plugins.common.core.PrivilegeLevel.operator] level.
+    This is on a [kameloso.plugins.common.core.PermissionsRequired.operator] level.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "blacklist")
 @Description("Add or remove an account to/from the blacklist of people who may " ~
@@ -537,16 +552,23 @@ void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
+@(IRCEvent.Type.SELFCHAN)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "reload")
-@Description("Asks plugins to reload their resources and/or configuration as they see fit.")
-void onCommandReload(AdminPlugin plugin)
+@Description("Asks plugins to reload their resources and/or configuration as they see fit.",
+    "$command [optional plugin name]")
+void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
+    import std.conv : text;
 
-    logger.info("Reloading plugins.");
-    plugin.state.mainThread.send(ThreadMessage.Reload());
+    immutable message = event.content.length ?
+        text("Reloading plugin \"", event.content, "\".") :
+        "Reloading plugins.";
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    plugin.state.mainThread.send(ThreadMessage.Reload(), event.content);
 }
 
 
@@ -561,7 +583,7 @@ void onCommandReload(AdminPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "resetterm")
 @Description("Outputs the ASCII control character 15 to the local terminal, " ~
@@ -586,7 +608,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printraw")
 @Description("[debug] Toggles a flag to print all incoming events raw.")
@@ -606,7 +628,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "printbytes")
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
@@ -623,7 +645,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "join")
 @Description("Joins a guest channel.", "$command [channel]")
@@ -654,7 +676,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "part")
 @Description("Parts a guest channel.", "$command [channel]")
@@ -685,7 +707,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "set")
 @Description("Changes a plugin's settings.", "$command [plugin.setting=value]")
@@ -696,8 +718,8 @@ void onSetCommand(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     void dg()
     {
-        import core.thread : Fiber;
         import std.conv : ConvException;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -738,7 +760,7 @@ version(WithConnectService)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "auth")
 @Description("(Re-)authenticates with services. Useful if the server has " ~
@@ -767,7 +789,7 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "status")
 @Description("[debug] Dumps information about the current state of the bot to the local terminal.")
@@ -784,7 +806,7 @@ void onCommandStatus(AdminPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "summary")
 @Description("Causes a connection summary to be printed to the terminal.")
@@ -801,7 +823,8 @@ void onCommandSummary(AdminPlugin plugin)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
+@(IRCEvent.Type.SELFCHAN)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "cycle")
 @Description("Cycles (parts and rejoins) a channel.",
@@ -911,12 +934,12 @@ void cycle(AdminPlugin plugin, const string channelName,
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "hostmask")
 @BotCommand(PrefixPolicy.prefixed, "mask", Yes.hidden)
 @Description("Modifies a hostmask definition, for use on servers without services accounts.",
-    "$command [add|del|list] [account] [hostmask if adding]")
+    "$command [add|del|list] [account] [hostmask]")
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, contains, nom, splitInto;
@@ -984,6 +1007,10 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
     string[string] aa;
     aa.populateFromJSON(json);
 
+    // Remove any placeholder examples
+    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+    aa.remove(examplePlaceholderKey);
+
     if (aa.length)
     {
         import std.conv : to;
@@ -1008,13 +1035,13 @@ debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "bus")
 @Description("[DEBUG] Sends an internal bus message.", "$command [header] [content...]")
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandBusImpl(plugin, event);
+    return onCommandBusImpl(plugin, event.content);
 }
 
 
@@ -1091,8 +1118,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         void dg()
         {
-            import core.thread : Fiber;
             import std.conv : ConvException;
+            import core.thread : Fiber;
 
             auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1111,6 +1138,20 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         logger.log("Saving configuration to disk.");
         return plugin.state.mainThread.send(ThreadMessage.Save());
+
+    case "reload":
+        import kameloso.thread : ThreadMessage;
+
+        if (slice.length)
+        {
+            logger.logf("Reloading plugin \"%s%s%s\".", Tint.info, slice, Tint.log);
+        }
+        else
+        {
+            logger.log("Reloading plugins.");
+        }
+
+        return plugin.state.mainThread.send(ThreadMessage.Reload(), slice);
 
     case "whitelist":
     case "operator":
@@ -1169,21 +1210,6 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         logger.error("[admin] Unimplemented bus message verb: ", verb);
         break;
     }
-}
-
-
-version(OmniscientAdmin)
-{
-    /++
-        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientAdmin` is set or not.
-     +/
-    enum omniscientChannelPolicy = ChannelPolicy.any;
-}
-else
-{
-    /// Ditto
-    enum omniscientChannelPolicy = ChannelPolicy.home;
 }
 
 

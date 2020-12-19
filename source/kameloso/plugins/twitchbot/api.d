@@ -15,6 +15,7 @@ import kameloso.plugins.twitchbot.base;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
+import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -42,6 +43,29 @@ struct QueryResponse
 
     /// The message of any exception thrown while querying.
     string error;
+
+    /// The cURL error code returned.
+    uint errorCode;
+}
+
+
+// twitchTryCatchDg
+/++
+    Calls a passed delegate in a try-catch. Allows us to have consistent error messages.
+ +/
+void twitchTryCatchDg(alias dg)()
+if (isSomeFunction!dg)
+{
+    try
+    {
+        dg();
+    }
+    catch (TwitchQueryException e)
+    {
+        import kameloso.common : Tint, curlErrorStrings, logger;
+        logger.errorf("Failed to query Twitch: %s (%s%s%s) (%2$s%5$s%4$s)",
+            e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+    }
 }
 
 
@@ -386,6 +410,8 @@ void generateKey(TwitchBotPlugin plugin)
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
+        recursing = Whether or not this is a recursive call and another one should
+            not be attempted.
 
     Returns:
         The [QueryResponse] that was discovered while monitoring the `bucket`
@@ -395,14 +421,14 @@ void generateKey(TwitchBotPlugin plugin)
         [TwitchQueryException] if there were unrecoverable errors.
  +/
 QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const string authorisationHeader)
+    const string authorisationHeader, const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import lu.string : beginsWith;
     import std.concurrency : prioritySend, send, spawn;
     import std.datetime.systime : Clock, SysTime;
+    import etc.c.curl : CurlError;
 
     SysTime pre;
 
@@ -444,37 +470,44 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if ((response.code >= 400) || response.error.length || !response.str.length)
+    if (!response.str.length)
     {
-        if (response.str.beginsWith(`{"err`))
+        throw new TwitchQueryException("Empty response", response.str,
+            response.error, response.code, response.errorCode);
+    }
+    else if ((response.code >= 500) && !recursing)
+    {
+        return queryTwitch(plugin, url, authorisationHeader, Yes.recursing);
+    }
+    else if (response.code >= 400)
+    {
+        import lu.string : unquoted;
+        import std.format : format;
+        import std.json : parseJSON;
+
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        /*
         {
-            import lu.string : unquoted;
-            import std.format : format;
-            import std.json : parseJSON;
-
-            // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-            /*
-            {
-                "error": "Unauthorized",
-                "message": "Client ID and OAuth token do not match",
-                "status": 401
-            }
-            */
-            immutable errorJSON = parseJSON(response.str);
-            enum pattern = "Failed to query Twitch! %s %3d: %s";
-
-            immutable message = pattern.format(
-                errorJSON["error"].str.unquoted,
-                errorJSON["status"].integer,
-                errorJSON["message"].str.unquoted);
-
-            throw new TwitchQueryException(message, response.str, response.error, response.code);
+            "error": "Unauthorized",
+            "message": "Client ID and OAuth token do not match",
+            "status": 401
         }
-        else
-        {
-            throw new TwitchQueryException("Failed to query Twitch!",
-                response.str, response.error, response.code);
-        }
+        */
+        immutable errorJSON = parseJSON(response.str);
+        enum pattern = "%s %3d: %s";
+
+        immutable message = pattern.format(
+            errorJSON["error"].str.unquoted,
+            errorJSON["status"].integer,
+            errorJSON["message"].str.unquoted);
+
+        throw new TwitchQueryException(message, response.str,
+            response.error, response.code, response.errorCode);
+    }
+    else if (response.errorCode != CurlError.ok)
+    {
+        throw new TwitchQueryException("cURL error", response.str,
+            response.error, response.code, response.errorCode);
     }
 
     return response;
@@ -511,11 +544,12 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 void queryTwitchImpl(const string url, const string authToken,
     const uint timeout, shared QueryResponse[string] bucket, const string caBundleFile)
 {
-    import std.net.curl : HTTP;
-    import std.datetime.systime : Clock, SysTime;
     import std.array : Appender;
+    import std.datetime.systime : Clock, SysTime;
     import std.exception : assumeUnique;
+    import std.net.curl : HTTP;
     import core.time : seconds;
+    import etc.c.curl : CurlError;
 
     auto client = HTTP(url);
     client.operationTimeout = timeout.seconds;
@@ -535,20 +569,19 @@ void queryTwitchImpl(const string url, const string authToken,
     QueryResponse response;
     immutable pre = Clock.currTime;
 
-    try
+    // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
+    response.errorCode = client.perform(No.throwOnError);
+
+    if (response.errorCode != CurlError.ok)
     {
-        // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
-        /*immutable curlCode =*/ client.perform();//(No.throwOnError);
-    }
-    catch (Exception e)
-    {
-        response.error = e.msg;
+        import std.string : fromStringz;
+        import etc.c.curl : curl_easy_strerror;
+        response.error = fromStringz(curl_easy_strerror(response.errorCode)).idup;
     }
 
     immutable post = Clock.currTime;
-
-    response.code = client.statusLine.code;
     immutable delta = (post - pre);
+    response.code = client.statusLine.code;
     response.msecs = delta.total!"msecs";
     response.str = assumeUnique(cast(char[])sink.data);
 
@@ -599,9 +632,10 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 {
+    import std.conv : text;
     import std.json : JSONType, parseJSON;
 
-    immutable chattersURL = "https://tmi.twitch.tv/group/user/" ~ broadcaster ~ "/chatters";
+    immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
 
     immutable response = queryTwitch(plugin, chattersURL, plugin.authorizationBearer);
     auto json = parseJSON(response.str);
@@ -678,7 +712,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
         throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
-            "token; unknown JSON", response.str, response.error, response.code);
+            "token; unknown JSON", response.str, response.error, response.code, response.errorCode);
     }
 
     return validationJSON;
@@ -703,6 +737,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
+    import std.conv : text;
     import std.json : JSONValue, parseJSON;
     import core.thread : Fiber;
 
@@ -715,7 +750,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     do
     {
         immutable paginatedURL = after.length ?
-            (url ~ "&after=" ~ after) : url;
+            text(url, "&after=", after) : url;
 
         immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
         auto followsJSON = parseJSON(response.str);
@@ -817,9 +852,8 @@ QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
-    import std.datetime.systime : Clock;
-
     import kameloso.plugins.common.delayawait : delay;
+    import std.datetime.systime : Clock;
 
     immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;
@@ -875,17 +909,22 @@ final class TwitchQueryException : Exception
     /// The HTTP code that was received.
     uint code;
 
+    /// The cURL error code that was returned when performing the query.
+    uint errorCode;
+
     /++
         Create a new [TwitchQueryException], attaching a response body and a
         HTTP return code.
      +/
-    this(const string message, const string responseBody, const string error, const uint code,
+    this(const string message, const string responseBody, const string error,
+        const uint code, const uint errorCode,
         const string file = __FILE__, const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.responseBody = responseBody;
         this.error = error;
         this.code = code;
+        this.errorCode = errorCode;
         super(message, file, line, nextInChain);
     }
 

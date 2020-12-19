@@ -98,7 +98,7 @@ void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer serv
     printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
 
     instance.writeConfigurationFile(instance.settings.configFile);
-    logger.logf("Configuration written to %s%s", Tint.info, instance.settings.configFile);
+    logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
 
     if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
     {
@@ -146,7 +146,10 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     Params:
         instance = The current [kameloso.kameloso.Kameloso] instance.
         shouldWriteConfig = Writing to the configuration file was requested.
-        shouldOpenEditor = Opening the configuration file in a text editor was requested.
+        shouldOpenTerminalEditor = Opening the configuration file in a
+            terminal text editor was requested.
+        shouldOpenGraphicalEditor = Opening the configuration file in a
+            graphical text editor was requested.
         customSettings = Custom settings supplied at the command line, to be
             passed to [writeConfig] when writing to the configuration file.
 
@@ -155,42 +158,85 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
         open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
-    const bool shouldOpenEditor, ref string[] customSettings) @system
+    const bool shouldOpenTerminalEditor,
+    const bool shouldOpenGraphicalEditor,
+    ref string[] customSettings) @system
 {
     /++
-        Opens up the configuration file in a text editor.
+        Opens up the configuration file in a terminal text editor.
      +/
-    void openEditor()
+    void openTerminalEditor()
     {
         import kameloso.common : Tint, logger;
-        import std.process : execute;
+        import std.process : environment, spawnProcess, wait;
 
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by [kameloso.kameloso.tryGetopt].
 
-        logger.logf("Attempting to open %s%s%s in a text editor...",
-            Tint.info, instance.settings.configFile, Tint.log);
+        immutable editor = environment.get("EDITOR", string.init);
+
+        if (!editor.length)
+        {
+            logger.errorf("Missing %s$EDITOR%s environment variable; " ~
+                "cannot guess editor.", Tint.log, Tint.error);
+            return;
+        }
+
+        logger.logf("Attempting to open %s%s%s in %1$s%4$s%3$s...",
+            Tint.info, instance.settings.configFile, Tint.log, editor);
+
+        immutable command = [ editor, instance.settings.configFile ];
+        spawnProcess(command).wait;
+    }
+
+    /++
+        Opens up the configuration file in a graphical text editor.
+     +/
+    void openGraphicalEditor()
+    {
+        import kameloso.common : Tint, logger;
+        import std.process : execute;
 
         version(OSX)
         {
-            immutable command = [ "open", instance.settings.configFile ];
-            execute(command);
+            enum editor = "open";
         }
         else version(Posix)
         {
+            import std.process : environment;
+
             // Assume XDG
-            immutable command = [ "xdg-open", instance.settings.configFile ];
-            execute(command);
+            enum editor = "xdg-open";
+
+            immutable isGraphicalEnvironment =
+                instance.settings.force ||
+                environment.get("DISPLAY", string.init).length ||
+                environment.get("WAYLAND_DISPLAY", string.init).length;
+
+            if (!isGraphicalEnvironment)
+            {
+                logger.error("No graphical environment appears to be running; " ~
+                    "cannot open editor.");
+                return;
+            }
         }
         else version(Windows)
         {
-            immutable command = [ "explorer", instance.settings.configFile ];
-            execute(command);
+            enum editor = "explorer.exe";
         }
         else
         {
-            throw new Exception("Unexpected platform");
+            static assert(0, "Unexpected platform, please file a bug");
         }
+
+        // Let exceptions (ProcessExceptions) fall through and get caught
+        // by [kameloso.kameloso.tryGetopt].
+
+        logger.logf("Attempting to open %s%s%s in a graphical text editor...",
+            Tint.info, instance.settings.configFile, Tint.log);
+
+        immutable command = [ editor, instance.settings.configFile ];
+        execute(command);
     }
 
     if (shouldWriteConfig)
@@ -198,19 +244,13 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         // --save was passed; write configuration to file and quit
         writeConfig(instance, instance.parser.client, instance.parser.server,
             instance.bot, customSettings);
-
-        if (shouldOpenEditor)
-        {
-            // Additionally --edit was passed, so edit the file after writing to it
-            openEditor();
-        }
     }
 
-    if (shouldOpenEditor)
+    if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
         import std.file : exists;
 
-        // --edit was passed, so open up a text editor before exiting
+        // --edit or --gedit was passed, so open up a text editor before exiting
 
         if (!instance.settings.configFile.exists)
         {
@@ -219,7 +259,14 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
                 instance.bot, customSettings, No.giveInstructions);
         }
 
-        openEditor();
+        if (shouldOpenTerminalEditor)
+        {
+            openTerminalEditor();
+        }
+        else /*if (shouldOpenGraphicalEditor)*/
+        {
+            openGraphicalEditor();
+        }
     }
 }
 
@@ -258,8 +305,8 @@ void writeToDisk(const string filename, const string configurationText,
     if (banner)
     {
         import kameloso.constants : KamelosoInfo;
-        import core.time : msecs;
         import std.datetime.systime : Clock;
+        import core.time : msecs;
 
         auto timestamp = Clock.currTime;
         timestamp.fracSecs = 0.msecs;
@@ -383,7 +430,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
-        bool shouldOpenEditor;
+        bool shouldOpenTerminalEditor;
+        bool shouldOpenGraphicalEditor;
         bool shouldShowVersion;
         bool shouldShowSettings;
         bool shouldAppendToArrays;
@@ -450,6 +498,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         {
             import std.conv : text, to;
             import std.format : format;
+            import std.process : environment;
             import std.random : uniform;
             import std.range : repeat;
 
@@ -469,6 +518,14 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
             immutable passMask = quiet ? string.init :
                 bot.pass.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
+
+            immutable editorCommand = quiet ? string.init :
+                environment.get("EDITOR", string.init);
+
+            immutable editorVariableValue = quiet ? string.init :
+                editorCommand.length ?
+                    " [%s%s%s]".format(Tint.info, editorCommand, Tint.off) :
+                    string.init;
 
             string formatNum(const size_t num)
             {
@@ -607,7 +664,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                 "flush",
                     quiet ? string.init :
                         "Set terminal mode to flush screen output after each line written to it. " ~
-                            "(Use this if the screen only occasionally updates.)",
+                            "(Use this if the screen only occasionally updates)",
                     &settings.flush,
                 "w|save",
                     quiet ? string.init :
@@ -615,10 +672,16 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
                     &shouldWriteConfig,
                 "edit",
                     quiet ? string.init :
-                        text("Open the configuration file in a text editor " ~
+                        text("Open the configuration file in a *terminal* text editor " ~
+                            "(or the application defined in the ", Tint.info,
+                            "$EDITOR", Tint.off, " environment variable)", editorVariableValue),
+                    &shouldOpenTerminalEditor,
+                "gedit",
+                    quiet ? string.init :
+                        text("Open the configuration file in a *graphical* text editor " ~
                             "(or the default application used to open ", Tint.info,
                             "*.conf", Tint.off, " files on your system)"),
-                    &shouldOpenEditor,
+                    &shouldOpenGraphicalEditor,
                 "version",
                     quiet ? string.init :
                         "Show version information",
@@ -708,12 +771,13 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
             return Next.returnSuccess;
         }
 
-        if (shouldWriteConfig || shouldOpenEditor)
+        if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
             import std.stdio : writeln;
 
             // --save and/or --edit was passed; defer to manageConfigFile
-            manageConfigFile(instance, shouldWriteConfig, shouldOpenEditor, customSettings);
+            manageConfigFile(instance, shouldWriteConfig, shouldOpenTerminalEditor,
+                shouldOpenGraphicalEditor, customSettings);
             return Next.returnSuccess;
         }
 
@@ -889,6 +953,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         import std.random : uniform;
 
         client.nickname = "guest%03d".format(uniform(0, 1000));
+        bot.hasGuestNickname = true;
     }
 
     // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults].
@@ -997,8 +1062,8 @@ final class ConfigurationFileReadFailureException : Exception
 }
 
 
-private import std.meta : allSatisfy;
 private import lu.traits : isStruct;
+private import std.meta : allSatisfy;
 
 // readConfigInto
 /++

@@ -8,11 +8,12 @@ license "MIT"
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
+libs "curl"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>1.0.0"
-dependency "dialect" version="~>1.0.0"
-dependency "arsd-official:dom" version="~>8.5.0"
+dependency "dialect" version="~>1.1.0"
+dependency "arsd-official:dom" version="~>9.0.0"
 dependency "requests" version="~>2.0.0"
 
 sourcePaths "source"
@@ -77,8 +78,7 @@ versions \
     "OmniscientQueries" \
     "TraceWhois" \
     "GCStatsOnExit" \
-    "ProfileGC" \
-    "PrintErrnos"
+    "ProfileGC"
 */
 
 configuration "application" {
@@ -117,8 +117,7 @@ configuration "dev" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "GCStatsOnExit" \
-        "PrintErrnos"
+        "GCStatsOnExit"
         //"TraceWhois" \
 }
 
@@ -133,8 +132,7 @@ configuration "dev-lowmem" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "GCStatsOnExit" \
-        "PrintErrnos"
+        "GCStatsOnExit"
         //"TraceWhois" \
 }
 
@@ -150,7 +148,6 @@ configuration "unittest" {
         "PrintStacktraces" \
         "ExplainRepeat" \
         "GCStatsOnExit" \
-        "PrintErrnos" \
         "ProfileGC"
 }
 
@@ -167,6 +164,5 @@ configuration "unittest-lowmem" {
         "PrintStacktraces" \
         "ExplainRepeat" \
         "GCStatsOnExit" \
-        "PrintErrnos" \
         "ProfileGC"
 }

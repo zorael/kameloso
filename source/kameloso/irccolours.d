@@ -36,24 +36,24 @@ public:
  +/
 enum IRCColour
 {
-    unset    = -1,  /// Unset
-    white    = 0,   /// White
-    black    = 1,   /// Black
-    blue     = 2,   /// Blue
-    green    = 3,   /// Green
-    red      = 4,   /// Red
-    brown    = 5,   /// Brown
-    purple   = 6,   /// Purple
-    orange   = 7,   /// Orange
-    yellow   = 8,   /// Yellow
-    lightgreen = 9, /// Light green
-    cyan      = 10, /// Cyan
-    lightcyan = 11, /// Light cyan
-    lightblue = 12, /// Light blue
-    pink      = 13, /// Pink
-    grey      = 14, /// Grey
-    lightgrey = 15, /// Light grey
-    transparent = 99, /// "Transparent"
+    unset       = -1,  /// Unset
+    white       = 0,   /// White
+    black       = 1,   /// Black
+    blue        = 2,   /// Blue
+    green       = 3,   /// Green
+    red         = 4,   /// Red
+    brown       = 5,   /// Brown
+    purple      = 6,   /// Purple
+    orange      = 7,   /// Orange
+    yellow      = 8,   /// Yellow
+    lightgreen  = 9,   /// Light green
+    cyan        = 10,  /// Cyan
+    lightcyan   = 11,  /// Light cyan
+    lightblue   = 12,  /// Light blue
+    pink        = 13,  /// Pink
+    grey        = 14,  /// Grey
+    lightgrey   = 15,  /// Light grey
+    transparent = 99,  /// "Transparent"
 }
 
 
@@ -298,7 +298,6 @@ string ircBold(T)(T something) //pure nothrow
 unittest
 {
     import std.conv : text;
-
     alias I = IRCControlCharacter;
 
     {
@@ -682,33 +681,40 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
             {
                 if (!slice.length) break;
                 slice = slice[1..$];
-                segment.hasBackground = true;
 
-                int bg1;
-                int bg2;
-                bool hasBg2;
-
-                bg1 = slice[0] - '0';
-                if (slice.length < 2) break;
-                slice = slice[1..$];
                 c = slice[0] - '0';
 
                 if ((c >= 0) && (c <= 9))
                 {
-                    bg2 = c;
-                    hasBg2 = true;
-                    if (!slice.length) break;
+                    segment.hasBackground = true;
+
+                    int bg1;
+                    int bg2;
+                    bool hasBg2;
+
+                    bg1 = c;
+                    if (slice.length < 2) break;
                     slice = slice[1..$];
+
+                    c = slice[0] - '0';
+
+                    if ((c >= 0) && (c <= 9))
+                    {
+                        bg2 = c;
+                        hasBg2 = true;
+                        if (!slice.length) break;
+                        slice = slice[1..$];
+                    }
+
+                    uint bg = hasBg2 ? (10*bg1 + bg2) : bg1;
+
+                    if (bg > 15)
+                    {
+                        bg %= 16;
+                    }
+
+                    segment.bg = bg;
                 }
-
-                int bg = hasBg2 ? (10*bg1 + bg2) : bg1;
-
-                if (bg > 15)
-                {
-                    bg %= 16;
-                }
-
-                segment.bg = bg;
             }
         }
         else
@@ -740,16 +746,16 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
 
             static immutable TerminalForeground[16] weechatForegroundMap =
             [
-                0 : F.white,
-                1 : F.darkgrey,
-                2 : F.blue,
-                3 : F.green,
-                4 : F.lightred,
-                5 : F.red,
-                6 : F.magenta,
-                7 : F.yellow,
-                8 : F.lightyellow,
-                9 : F.lightgreen,
+                 0 : F.white,
+                 1 : F.darkgrey,
+                 2 : F.blue,
+                 3 : F.green,
+                 4 : F.lightred,
+                 5 : F.red,
+                 6 : F.magenta,
+                 7 : F.yellow,
+                 8 : F.lightyellow,
+                 9 : F.lightgreen,
                 10 : F.cyan,
                 11 : F.lightcyan,
                 12 : F.lightblue,
@@ -760,16 +766,16 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
 
             static immutable TerminalBackground[16] weechatBackgroundMap =
             [
-                0 : B.white,
-                1 : B.black,
-                2 : B.blue,
-                3 : B.green,
-                4 : B.red,
-                5 : B.red,
-                6 : B.magenta,
-                7 : B.yellow,
-                8 : B.yellow,
-                9 : B.green,
+                 0 : B.white,
+                 1 : B.black,
+                 2 : B.blue,
+                 3 : B.green,
+                 4 : B.red,
+                 5 : B.red,
+                 6 : B.magenta,
+                 7 : B.yellow,
+                 8 : B.yellow,
+                 9 : B.green,
                 10 : B.cyan,
                 11 : B.cyan,
                 12 : B.blue,
@@ -821,11 +827,19 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
         {
             if (open)
             {
-                sink.put("\033[39;49m");
-                /*fgReset.toAlphaInto(sink);
-                sink.put(';');
-                bgReset.toAlphaInto(sink);
-                sink.put('m');*/
+                if ((fgReset == 39) && (bgReset == 49))
+                {
+                    // Shortcut
+                    sink.put("\033[39;49m");
+                }
+                else
+                {
+                    sink.put("\033[");
+                    fgReset.toAlphaInto(sink);
+                    sink.put(';');
+                    bgReset.toAlphaInto(sink);
+                    sink.put('m');
+                }
             }
         }
     }

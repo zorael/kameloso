@@ -2,18 +2,30 @@
 
 set -uexo pipefail
 
+get_apt_list() {
+    sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list \
+        -O /etc/apt/sources.list.d/d-apt.list
+}
+
+install_keyring() {
+    sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
+}
+
+install_dmd_dub() {
+    sudo apt install -y --allow-unauthenticated dmd-compiler dub libcurl4-openssl-dev
+}
+
 install_deps() {
     sudo apt update
     sudo apt install -y apt-transport-https
 
-    sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list \
-        -O /etc/apt/sources.list.d/d-apt.list
+    get_apt_list || get_apt_list || get_apt_list || get_apt_list || get_apt_list
     sudo apt update --allow-insecure-repositories
 
     # fingerprint 0xEBCF975E5BA24D5E
-    sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
-    sudo apt update
-    sudo apt install -y --allow-unauthenticated dmd-compiler dub libcurl4-openssl-dev
+    install_keyring || install_keyring || install_keyring || install_keyring || install_keyring
+    sudo apt update --allow-insecure-repositories
+    install_dmd_dub || install_dmd_dub || install_dmd_dub || install_dmd_dub || install_dmd_dub
 
     #git clone https://github.com/zorael/lu.git
     #git clone https://github.com/zorael/dialect.git

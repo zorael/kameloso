@@ -101,11 +101,13 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
-    if (event.sender.nickname == plugin.state.client.nickname) return;
+    // target for WHOIS, sender for ACCOUNT
+    if ((event.target.nickname == plugin.state.client.nickname) ||
+        (event.sender.nickname == plugin.state.client.nickname)) return;
 
     string account;
     string nickname;
@@ -158,7 +160,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     arguments and let it look things up.
  +/
 @(IRCEvent.Type.JOIN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
 void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
@@ -264,7 +266,7 @@ unittest
     or adds new ones depending on the verb passed.
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "automode")
 @Description("Adds, lists or removes automode definitions for the current channel.",
@@ -302,7 +304,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
             return;
         }
 
-        while (mode.length && (mode[0] == '+'))
+        while (mode.beginsWith('+'))
         {
             mode = mode[1..$];
         }
@@ -436,12 +438,9 @@ in ((!add || mode.length), "Tried to add an empty automode")
 // onCommandOp
 /++
     Triggers a WHOIS of the user invoking it with bot commands.
-
-    The [kameloso.plugins.common.core.PrivilegeLevel.anyone] annotation is to
-    force the bot to evaluate whether an automode should be applied or not.
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "op")
 @Description("Forces the bot to attempt to apply automodes.")
@@ -454,7 +453,7 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
     else
     {
         import kameloso.messaging : whois;
-        whois(plugin.state, event.sender.nickname);
+        whois(plugin.state, event.sender.nickname, Yes.force);
     }
 }
 
@@ -463,7 +462,7 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_MYINFO)
+@(IRCEvent.Type.RPL_WELCOME)
 void onMyInfo(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;

@@ -56,7 +56,7 @@ import dialect.defs;
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @BotCommand(PrefixPolicy.prefixed, "help")
 @Description("Shows a list of all available commands.", "$command [plugin] [command]")
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
@@ -84,9 +84,9 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
     void dg()
     {
         import lu.string : beginsWith, contains, nom;
-        import core.thread : Fiber;
         import std.format : format;
         import std.typecons : No, Yes;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -126,11 +126,11 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
-            else if (mutEvent.content.contains!(Yes.decode)(" "))
+            else if (mutEvent.content.contains!(Yes.decode)(' '))
             {
                 // Likely a plugin and a command
                 string slice = mutEvent.content;
-                immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
+                immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
                 immutable specifiedCommand = slice;
 
                 foreach (p; plugins)
@@ -205,11 +205,11 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
             enum bannerUncoloured = "kameloso IRC bot v%s, built %s"
                 .format(cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.built);
+                    cast(string)KamelosoInfo.built);
 
             enum bannerColoured = ("kameloso IRC bot v%s".ircBold ~ ", built %s")
                 .format(cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.built);
+                    cast(string)KamelosoInfo.built);
 
             immutable banner = plugin.state.settings.colouredOutgoing ?
                 bannerColoured : bannerUncoloured;
@@ -266,6 +266,7 @@ void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
     const ref IRCEvent event, const string command, const Description description)
 {
     import kameloso.irccolours : ircBold;
+    import std.conv : text;
     import std.format : format;
 
     enum pattern = "[%s] %s: %s";
@@ -290,8 +291,8 @@ void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
             udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
 
         immutable syntax = plugin.state.settings.colouredOutgoing ?
-            "Usage".ircBold ~ ": " ~ prefixedSyntax :
-            "Usage: " ~ prefixedSyntax;
+            text("Usage".ircBold, ": ", prefixedSyntax) :
+            text("Usage: ", prefixedSyntax);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, syntax);
     }

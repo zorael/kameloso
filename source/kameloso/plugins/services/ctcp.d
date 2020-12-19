@@ -200,7 +200,6 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
     else
     {
         import dialect.common : I = IRCControlCharacter;
-
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
         raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), Yes.quiet);
@@ -283,7 +282,8 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        raw(service.state, ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+        import std.conv : text;
+        raw(service.state, text("NOTICE %s :", cast(char)ctcp, "CLIENTINFO ACTION %s", cast(char)ctcp)
             .format(event.sender.nickname, allCTCPTypes));
     }
 }

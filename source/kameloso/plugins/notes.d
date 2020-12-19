@@ -34,14 +34,15 @@ import std.typecons : Flag, No, Yes;
 
 // onReplayEvent
 /++
-    Plays back notes on signs of activity.
+    Plays back notes upon someone joining or upon someone authenticating with services.
+
+    There's no need to trigger each `CHAN` since we know we enumerate all
+    users in a channel when querying `WHO`.
  +/
 @Chainable
 @(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.EMOTE)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.anyone)
+@(IRCEvent.Type.ACCOUNT)
+@(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
@@ -60,7 +61,7 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     Do nothing if [kameloso.kameloso.CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQueries' queries.
 
-    Pass `true` to [playbackNotes] to ensure it does low-priority background
+    Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
     WHOIS queries.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
@@ -116,7 +117,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 
     uint i;
 
-    foreach (immutable channel; only(givenChannel, string.init))
+    foreach (immutable channelName; only(givenChannel, string.init))
     {
         void onSuccess(const IRCUser user)
         {
@@ -126,7 +127,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
 
             try
             {
-                const noteArray = plugin.getNotes(channel, id);
+                const noteArray = plugin.getNotes(channelName, id);
 
                 if (!noteArray.length) return;
 
@@ -142,21 +143,21 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                     enum pattern = "%s%s! %s left note %s ago: %s";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircBold,
+                        pattern.format(atSign, senderName.ircColourByHash.ircBold,
                             note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
                         pattern.format(atSign, senderName, note.sender, timestamp, note.line);
 
-                    privmsg(plugin.state, channel, user.nickname, message);
+                    privmsg(plugin.state, channelName, user.nickname, message);
                 }
                 else
                 {
                     enum pattern = "%s%s! You have %s notes.";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircBold, noteArray.length.ircBold) :
+                        pattern.format(atSign, senderName.ircColourByHash.ircBold, noteArray.length.ircBold) :
                         pattern.format(atSign, senderName, noteArray.length);
 
-                    privmsg(plugin.state, channel, user.nickname, message);
+                    privmsg(plugin.state, channelName, user.nickname, message);
 
                     foreach (const note; noteArray)
                     {
@@ -170,18 +171,18 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
                                 timestamp, note.line) :
                             entryPattern.format(note.sender, timestamp, note.line);
 
-                        privmsg(plugin.state, channel, user.nickname, report);
+                        privmsg(plugin.state, channelName, user.nickname, report);
                     }
                 }
 
-                plugin.clearNotes(id, channel);
+                plugin.clearNotes(id, channelName);
                 plugin.notes.save(plugin.notesFile);
             }
             catch (JSONException e)
             {
                 logger.errorf("Failed to fetch, replay and clear notes for " ~
                     "%s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-                    Tint.log, id, Tint.error, channel.length ? channel : "<no channel>", e.msg);
+                    Tint.log, id, Tint.error, (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
                 {
@@ -237,7 +238,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
             ((i++ == 0) ? Yes.issueWhois : No.issueWhois), background);
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
-        if (!channel.length) break;
+        if (!channelName.length) break;
     }
 }
 
@@ -282,7 +283,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
             fakeEvent.channel = event.channel;
 
             // Use a replay to fill in known information about the user by use of Persistence
-            auto req = replay(plugin, fakeEvent, PrivilegeLevel.anyone, &onReplayEvent);
+            auto req = replay(plugin, fakeEvent, PermissionsRequired.anyone, &onReplayEvent);
             repeat(req);
         }
     }
@@ -300,7 +301,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PermissionsRequired.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "note")
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
@@ -480,12 +481,12 @@ void pruneNotes(NotesPlugin plugin)
 {
     string[] garbageKeys;
 
-    foreach (immutable channel, channelNotes; plugin.notes.object)
+    foreach (immutable channelName, channelNotes; plugin.notes.object)
     {
         if (!channelNotes.object.length)
         {
             // Dead channel
-            garbageKeys ~= channel;
+            garbageKeys ~= channelName;
         }
     }
 

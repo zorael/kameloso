@@ -50,11 +50,27 @@ mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
+    import kameloso.plugins.common.core : IRCPlugin;
     import lu.traits : MixinConstraints, MixinScope;
-    import std.conv : text;
+    import std.traits : ParameterIdentifierTuple;
     import std.typecons : Flag, No, Yes;
 
     mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
+
+    alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
+
+    static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
+    {
+        static assert(0, "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
+            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin`)");
+    }
+    else
+    {
+        //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
+        // The mixin must be a concatenated string for 2.083 and earlier,
+        // but we only support 2.084+
+        mixin("alias context = ", paramNames[0], ";");
+    }
 
     static if (__traits(compiles, hasWHOISFiber))
     {
@@ -65,22 +81,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     else
     {
         /// Flag denoting that [WHOISFiberDelegate] has been mixed in.
-        private enum hasWHOISFiber = true;
-    }
-
-    static if (__traits(compiles, plugin))
-    {
-        alias context = plugin;
-    }
-    else static if (__traits(compiles, service))
-    {
-        alias context = service;
-    }
-    else
-    {
-        static assert(0, "`WHOISFiberDelegate` should be mixed into the context " ~
-            "of an event handler. (Could not access variables named neither " ~
-            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
+        enum hasWHOISFiber = true;
     }
 
     static if (!alwaysLookup && !__traits(compiles, .hasUserAwareness))
@@ -227,7 +228,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
             }
 
-            immutable m = plugin.state.server.caseMapping;
+            immutable m = context.state.server.caseMapping;
 
             if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
             {
@@ -307,7 +308,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         version(TwitchSupport)
         {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            if (context.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Define Twitch queries as always succeeding, since WHOIS isn't applicable
 
@@ -795,7 +796,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     else
     {
         /// Flag denoting that [Repeater] has been mixed in.
-        private enum hasRepeater = true;
+        enum hasRepeater = true;
     }
 
     static if (__traits(compiles, plugin))
@@ -819,7 +820,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     // explainRepeat
     /++
         Verbosely explains a repeat, including what
-        [kameloso.plugins.common.core.PrivilegeLevel] and
+        [kameloso.plugins.common.core.PermissionsRequired] and
         [dialect.defs.IRCUser.Class] were involved.
 
         Gated behind version `ExplainRepeat`.
@@ -835,7 +836,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.privilegeLevel,
+            repeat.replay.perms,
             repeat.replay.caller, repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_);
     }
@@ -859,7 +860,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.privilegeLevel,
+            repeat.replay.perms,
             repeat.replay.caller, repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_,
             Tint.warning);
@@ -882,8 +883,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         Repeat repeat = thisFiber.payload;
 
-        with (PrivilegeLevel)
-        final switch (repeat.replay.privilegeLevel)
+        with (PermissionsRequired)
+        final switch (repeat.replay.perms)
         {
         case admin:
             if (repeat.replay.event.sender.class_ >= IRCUser.Class.admin)

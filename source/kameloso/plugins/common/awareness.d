@@ -13,8 +13,8 @@
 
     @(IRCEvent.Type.CHAN)
     @(ChannelPolicy.home)
-    @(PrefixPolicy.prefixed)
-    @BotCommand(PrivilegeLevel.anyone, "foo")
+    @(PermissionsRequired.anyone)
+    @BotCommand(PrefixPolicy.prefixed, "foo")
     void onFoo(FooPlugin plugin, const ref IRCEvent event)
     {
         // ...
@@ -159,8 +159,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     [dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS] is also handled, to
     cover the case where a user without an account triggering
-    [kameloso.plugins.common.core.PrivilegeLevel.anyone]- or
-    [kameloso.plugins.common.core.PrivilegeLevel.ignore]-level commands.
+    [kameloso.plugins.common.core.PermissionsRequired.anyone]- or
+    [kameloso.plugins.common.core.PermissionsRequired.ignore]-level commands.
 
     This function was part of [UserAwareness] but triggering queued replays
     is too common to conflate with it.
@@ -213,8 +213,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     if (event.aux != "WHOIS") return;
 
     // We're on a server that doesn't support WHOIS
-    // Trigger queued replays of a PrivilegeLevel.anyone nature, since
-    // they're just PrivilegeLevel.ignore plus a WHOIS lookup just in case
+    // Trigger queued replays of a PermissionsRequired.anyone nature, since
+    // they're just PermissionsRequired.ignore plus a WHOIS lookup just in case
     // Then clear everything
 
     mixin Repeater;
@@ -313,6 +313,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     @(IRCEvent.Type.RPL_WHOREPLY)
+    /*@(IRCEvent.Type.RPL_WHOISACCOUNT)  // Caught in MinimalAuthentication
+    @(IRCEvent.Type.RPL_WHOISREGNICK)*/
     @(IRCEvent.Type.CHGHOST)
     @channelPolicy
     void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const ref IRCEvent event)
@@ -331,6 +333,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.ACCOUNT)
     @(IRCEvent.Type.AWAY)
     @(IRCEvent.Type.BACK)
+    /*@(IRCEvent.Type.CHAN)  // Avoid these to be lean; everyone gets indexed by WHO anyway
+    @(IRCEvent.Type.EMOTE)*/ // ...except on Twitch, but TwitchAwareness has these annotations
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
@@ -1320,11 +1324,11 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +/
     @(Awareness.early)
     @(Chainable)
-    @(IRCEvent.Type.CHAN)
+    @(IRCEvent.Type.CHAN)  // Catch these as we don't index people by WHO on Twitch
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.SELFJOIN)
     @(IRCEvent.Type.PART)
-    @(IRCEvent.Type.EMOTE)
+    @(IRCEvent.Type.EMOTE)  // As above
     @(IRCEvent.Type.TWITCH_SUB)
     @(IRCEvent.Type.TWITCH_CHEER)
     @(IRCEvent.Type.TWITCH_SUBGIFT)

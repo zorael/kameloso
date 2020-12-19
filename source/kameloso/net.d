@@ -226,8 +226,8 @@ public:
      +/
     void reset()
     {
-        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
         import std.range : only;
+        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
 
         foreach (thisSocket; only(socket4, socket6))
         {
@@ -569,7 +569,7 @@ struct ListenAttempt
 
         case error:
             // Unrecoverable
-            dealWitError(attempt.error);
+            dealWithError(attempt.error);
             return;
         }
     }

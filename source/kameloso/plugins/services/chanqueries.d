@@ -47,10 +47,10 @@ else
  +/
 enum ChannelState : ubyte
 {
-    unset = 1 << 0,      /// Initial value, invalid state.
-    topicKnown = 1 << 1, /// Topic has been sent once, it is known.
-    queued = 1 << 2,     /// Channel queued to be queried.
-    queried = 1 << 3,    /// Channel has been queried.
+    unset      = 1 << 0,  /// Initial value, invalid state.
+    topicKnown = 1 << 1,  /// Topic has been sent once, it is known.
+    queued     = 1 << 2,  /// Channel queued to be queried.
+    queried    = 1 << 3,  /// Channel has been queried.
 }
 
 
@@ -88,10 +88,10 @@ void startChannelQueries(ChanQueriesService service)
     void dg()
     {
         import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
-        import core.thread : Fiber;
         import std.concurrency : send;
         import std.datetime.systime : Clock;
         import std.string : representation;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -123,6 +123,7 @@ void startChannelQueries(ChanQueriesService service)
             void queryAwaitAndUnlist(Types)(const string command, const Types types)
             {
                 import kameloso.messaging : raw;
+                import std.conv : text;
 
                 await(service, types);
                 scope(exit) unawait(service, types);
@@ -133,8 +134,7 @@ void startChannelQueries(ChanQueriesService service)
                         "printer", busMessage(squelchMessage));
                 }
 
-                raw(service.state, command ~ ' ' ~ channelName,
-                    (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
+                raw(service.state, text(command, ' ', channelName), Yes.quiet, Yes.background);
                 Fiber.yield();  // Awaiting specified types
 
                 while (thisFiber.payload.channel != channelName) Fiber.yield();
@@ -176,8 +176,8 @@ void startChannelQueries(ChanQueriesService service)
                 }
 
                 import kameloso.messaging : mode;
-                mode(service.state, channelName, "+%c".format((cast(char)modechar)), string.init,
-                    (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
+                mode(service.state, channelName, "+%c".format((cast(char)modechar)),
+                    string.init, Yes.quiet, Yes.background);
             }
 
             if (channelName !in service.channelStates) continue;
@@ -231,7 +231,7 @@ void startChannelQueries(ChanQueriesService service)
             version(WithPrinterPlugin)
             {
                 service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("resetsquelch"));
+                    "printer", busMessage("unsquelch"));
             }
         }
 
@@ -264,8 +264,7 @@ void startChannelQueries(ChanQueriesService service)
                     "printer", busMessage("squelch " ~ nickname));
             }
 
-            whois(service.state, nickname, No.force,
-                (service.hideOutgoingQueries ? Yes.quiet : No.quiet), Yes.background);
+            whois(service.state, nickname, No.force, Yes.quiet, Yes.background);
             Fiber.yield();  // Await whois types registered above
 
             enum maxConsecutiveUnknownCommands = 3;
@@ -470,9 +469,6 @@ private:
 
     /// Whether or not the server is known to support WHOIS queries. (Default to true.)
     bool serverSupportsWHOIS = true;
-
-    /// Whether or not to display outgoing queries, as a debugging tool.
-    enum hideOutgoingQueries = true;
 
 
     // isEnabled

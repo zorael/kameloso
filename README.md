@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Linux/macOS](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.com/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.2.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.2...master)
+# kameloso [![Linux](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.3.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.3...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -93,7 +93,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ## Downloading
 
-Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, compile it yourself.
+Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, download and compile it yourself.
 
 ### Fetching a copy of the source
 
@@ -109,8 +109,6 @@ $ dub build
 
 This will compile the bot in the default *debug* mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in *release* mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --help` for more build types.
 
-See the [known issues](#known-issues) section for compilation caveats.
-
 ### Build configurations
 
 There are several configurations in which the bot may be built.
@@ -119,7 +117,7 @@ There are several configurations in which the bot may be built.
 * `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
-All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...} that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
+All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...) that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -133,7 +131,7 @@ $ dub build -c twitch
 
 ## Configuration
 
-The bot ideally needs the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these accounts you can either specify them on the command line, or generate a configuration file and input them there.
+The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file and input them there.
 
 ```sh
 $ ./kameloso --save
@@ -145,11 +143,11 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 * **Windows**: `%APPDATA%\kameloso`
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 
-Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can do so by passing `--edit`.
+Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can pass `--gedit` to attempt to open it in a graphical editor, or `--edit` to open it in your default terminal one (as defined in the `$EDITOR` environment variable).
 
 ### Command-line arguments
 
-You can set or override settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--save`, it will apply the changes to your configuration file in-place.
+Settings provided at the command line override any such already defined in your configuration file. If you specify some and also add `--save`, it will apply the changes to your file in-place.
 
 ```sh
 $ ./kameloso \
@@ -308,7 +306,7 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-The Twitch SSL port is **443**.
+The Twitch SSL port is **6697** (or **443**).
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
@@ -345,13 +343,9 @@ Compiling in a non-`debug` build mode *may* fail (bug [#18026](https://issues.dl
 
 ## Windows
 
-On Windows with **dmd 2.089 and above** builds *may* fail, either silently with no output, or with an `OutOfMemoryError` being thrown. See [issue #83](https://github.com/zorael/kameloso/issues/83). The workarounds are to either use the **ldc** compiler with `--compiler=ldc2`, or to build with the `--build-mode=singleFile` flag.
+If SSL doesn't work at all, you may simply be missing the required libraries. Download and install **OpenSSL** "Light" from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
 
-> While **ldc** is slower to compile than the default **dmd**, it's not `singleFile`-level slow. In addition it also produces faster binaries, so if you hit this bug **ldc** might be the better alternative, over `singleFile`.
-
-If SSL flat doesn't work at all, you may simply be missing the necessary libraries. Download and install **OpenSSL** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
-
-Even with SSL working, you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
+Even with SSL seemingly properly set up you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
 # Roadmap
 

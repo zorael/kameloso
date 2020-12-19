@@ -342,8 +342,8 @@ void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
-    import lu.string : contains;
     static if (priority) import std.concurrency : send = prioritySend;
+    import lu.string : contains;
 
     Message m;
 
@@ -799,8 +799,8 @@ void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
     const string reason = string.init, const Flag!"quiet" quiet = No.quiet)
 {
     static if (priority) import std.concurrency : send = prioritySend;
-
     import kameloso.thread : ThreadMessage;
+
     state.mainThread.send(ThreadMessage.Quit(),
         reason.length ? reason : state.bot.quitReason, cast()quiet);
 }
@@ -1091,10 +1091,10 @@ unittest
 
     foreach (immutable i; 0..expectedMessages.length)
     {
-        import core.time : seconds;
         import std.concurrency : receiveTimeout;
         import std.conv : text;
         import std.variant : Variant;
+        import core.time : seconds;
 
         receiveTimeout((-1).seconds,
             (ThreadMessage.TerminalOutput logLevel, string message)

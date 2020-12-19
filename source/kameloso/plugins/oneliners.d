@@ -42,7 +42,7 @@ import dialect.defs;
 @Chainable
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
@@ -87,7 +87,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.operator)
+@(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
 @Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
@@ -103,7 +103,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     {
         chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
             .format(plugin.state.settings.prefix, event.aux, verb,
-            includeText ? " [text]" : string.init));
+                includeText ? " [text]" : string.init));
     }
 
     if (!event.content.length) return sendUsage();
@@ -120,7 +120,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (!trigger.length) return sendUsage(verb);
 
-        if (plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
+        if (!plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
 
         plugin.onelinersByChannel[event.channel][trigger] = slice;
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
@@ -128,18 +128,19 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, "Oneliner %s%s added%s."
             .format(plugin.state.settings.prefix, trigger,
                 plugin.onelinersSettings.caseSensitiveTriggers ?
-                " (made lowercase)" : string.init));
+                    string.init : " (made lowercase)"));
         break;
 
     case "del":
         if (!slice.length) return sendUsage(verb, No.includeText);
 
-        immutable trigger = plugin.onelinersSettings.caseSensitiveTriggers ? slice.toLower : slice;
+        immutable trigger = plugin.onelinersSettings.caseSensitiveTriggers ? slice : slice.toLower;
 
         if (trigger !in plugin.onelinersByChannel[event.channel])
         {
-            chan(plugin.state, event.channel, "No such trigger: %s%s"
-                .format(plugin.state.settings.prefix, slice));
+            import std.conv : text;
+            chan(plugin.state, event.channel,
+                text("No such trigger: ", plugin.state.settings.prefix, slice));
             return;
         }
 
@@ -167,7 +168,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "commands")
 @Description("Lists all available oneliners.")
@@ -218,7 +219,7 @@ void onWelcome(OnelinersPlugin plugin)
     //plugin.onelinersByChannel.clear();
     plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON,
         plugin.onelinersSettings.caseSensitiveTriggers ?
-        Yes.lowercaseKeys : No.lowercaseKeys);
+            No.lowercaseKeys : Yes.lowercaseKeys);
     plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
 }
 

@@ -33,6 +33,9 @@ import std.typecons : Flag, No, Yes;
 
     /// Whether or not merely calling !word bumps, or if a '+' has to be appended.
     bool wordAloneIncrements = false;
+
+    /// User level required to bump a counter.
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
 }
 
 
@@ -43,7 +46,7 @@ import std.typecons : Flag, No, Yes;
 @Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.whitelist)
+@(PermissionsRequired.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
@@ -80,8 +83,8 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         import kameloso.thread : CarryingFiber, ThreadMessage;
-        import core.thread : Fiber;
         import std.concurrency : send;
+        import core.thread : Fiber;
 
         void dg()
         {
@@ -185,7 +188,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 @Terminating
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
 void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
@@ -252,7 +255,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     }
 
     // Limit modifications to whitelist and above. Insert configuration check here.
-    if (event.sender.class_ < IRCUser.Class.whitelist) return;
+    if (event.sender.class_ < plugin.counterSettings.minimumPermissionsNeeded) return;
 
     if (!slice.length) slice = "+";  // implicitly wordAloneIncrements
     immutable sign = slice[0];
@@ -261,7 +264,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
     case '+':
     case '-':
-        int step;
+        long step;
 
         if ((slice == "+") || (slice == "++"))
         {
@@ -278,7 +281,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
             try
             {
-                step = slice.strippedLeft.to!int * step;
+                step = slice.strippedLeft.to!long * step;
             }
             catch (ConvException e)
             {
@@ -316,11 +319,11 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        int newCount;
+        long newCount;
 
         try
         {
-            newCount = slice.to!int;
+            newCount = slice.to!long;
         }
         catch (ConvException e)
         {
@@ -336,7 +339,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         enum pattern = "%s count assigned to %s!";
 
-        immutable countText =  newCount.text;
+        immutable countText = newCount.text;
         immutable message = plugin.state.settings.colouredOutgoing ?
             pattern.format(word.ircBold, countText.ircBold) :
             pattern.format(word, countText);
@@ -379,7 +382,7 @@ void onWelcome(CounterPlugin plugin)
         aa = The JSON-convertible resource to save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(const int[string][string] aa, const string filename)
+void saveResourceToDisk(const long[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
@@ -437,7 +440,7 @@ private:
     CounterSettings counterSettings;
 
     /// Counter integer by counter word by channel name.
-    int[string][string] counters;
+    long[string][string] counters;
 
     /// Filename of file with persistent counters.
     @Resource string countersFile = "counters.json";

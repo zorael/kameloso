@@ -34,11 +34,6 @@ private:
      +/
     static struct Throttle
     {
-        /// Graph constant modifier (inclination, MUST be negative).
-        enum k = -1.2;
-
-        static assert((k < 0), "Throttle graph constant must be negative");
-
         /// Origo of x-axis (last sent message).
         SysTime t0;
 
@@ -46,13 +41,7 @@ private:
         double m = 0.0;
 
         /// Increment to y on sent message.
-        double increment = 1.0;
-
-        /++
-            Burst limit; how many messages*increment can be sent initially
-            before throttling kicks in.
-         +/
-        double burst = 3.0;
+        enum increment = 1.0;
 
         /// Don't copy this, just keep one instance.
         @disable this(this);
@@ -186,91 +175,91 @@ public:
         const Flag!"sendFaster" sendFaster = No.sendFaster,
         const Flag!"immediate" immediate = No.immediate) @system
     {
-        with (throttle)
+        import std.datetime.systime : Clock;
+
+        alias t = throttle;
+
+        immutable now = Clock.currTime;
+        if (t.t0 == SysTime.init) t.t0 = now;
+
+        double k = -connSettings.messageRate;
+        double burst = connSettings.messageBurst;
+
+        version(TwitchSupport)
         {
-            import std.datetime.systime : Clock;
+            import dialect.defs : IRCServer;
 
-            immutable now = Clock.currTime;
-            if (t0 == SysTime.init) t0 = now;
-
-            version(TwitchSupport)
+            if (parser.server.daemon == IRCServer.Daemon.twitch)
             {
-                import dialect.defs : IRCServer;
+                import kameloso.constants : ConnectionDefaultFloats;
 
-                double k = throttle.k;
-                double burst = throttle.burst;
-
-                if (parser.server.daemon == IRCServer.Daemon.twitch)
+                if (sendFaster)
                 {
-                    if (sendFaster)
-                    {
-                        // FIXME: Tweak numbers.
-                        k = -3.0;
-                        burst = 10.0;
-                    }
-                    else
-                    {
-                        k = -1.0;
-                        burst = 1.0;
-                    }
+                    k = -ConnectionDefaultFloats.messageRateTwitchFast;
+                    burst = ConnectionDefaultFloats.messageBurstTwitchFast;
+                }
+                else
+                {
+                    k = -ConnectionDefaultFloats.messageRateTwitchSlow;
+                    burst = ConnectionDefaultFloats.messageBurstTwitchSlow;
                 }
             }
-
-            while (!buffer.empty || dryRun)
-            {
-                if (!immediate)
-                {
-                    double x = (now - t0).total!"msecs"/1000.0;
-                    double y = k * x + m;
-
-                    if (y < 0.0)
-                    {
-                        t0 = now;
-                        x = 0.0;
-                        y = 0.0;
-                        m = 0.0;
-                    }
-
-                    if (y >= burst)
-                    {
-                        x = (now - t0).total!"msecs"/1000.0;
-                        y = k*x + m;
-                        return y;
-                    }
-
-                    m = y + increment;
-                    t0 = now;
-                }
-
-                if (dryRun) break;
-
-                if (settings.trace || !buffer.front.quiet)
-                {
-                    bool printed;
-
-                    version(Colours)
-                    {
-                        if (!settings.monochrome)
-                        {
-                            import kameloso.irccolours : mapEffects;
-                            logger.trace("--> ", buffer.front.line.mapEffects);
-                            printed = true;
-                        }
-                    }
-
-                    if (!printed)
-                    {
-                        import kameloso.irccolours : stripEffects;
-                        logger.trace("--> ", buffer.front.line.stripEffects);
-                    }
-                }
-
-                conn.sendline(buffer.front.line);
-                buffer.popFront();
-            }
-
-            return 0.0;
         }
+
+        while (!buffer.empty || dryRun)
+        {
+            if (!immediate)
+            {
+                double x = (now - t.t0).total!"msecs"/1000.0;
+                double y = k * x + t.m;
+
+                if (y < 0.0)
+                {
+                    t.t0 = now;
+                    x = 0.0;
+                    y = 0.0;
+                    t.m = 0.0;
+                }
+
+                if (y >= burst)
+                {
+                    x = (now - t.t0).total!"msecs"/1000.0;
+                    y = k*x + t.m;
+                    return y;
+                }
+
+                t.m = y + t.increment;
+                t.t0 = now;
+            }
+
+            if (dryRun) break;
+
+            if (settings.trace || !buffer.front.quiet)
+            {
+                bool printed;
+
+                version(Colours)
+                {
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.irccolours : mapEffects;
+                        logger.trace("--> ", buffer.front.line.mapEffects);
+                        printed = true;
+                    }
+                }
+
+                if (!printed)
+                {
+                    import kameloso.irccolours : stripEffects;
+                    logger.trace("--> ", buffer.front.line.stripEffects);
+                }
+            }
+
+            conn.sendline(buffer.front.line);
+            buffer.popFront();
+        }
+
+        return 0.0;
     }
 
 
@@ -443,9 +432,9 @@ public:
             }
             catch (ErrnoException e)
             {
-                import core.stdc.errno : ENOENT;
                 import std.file : exists;
                 import std.path : dirName;
+                import core.stdc.errno : ENOENT;
 
                 if ((e.errno == ENOENT) && !settings.resourceDirectory.dirName.exists)
                 {
@@ -683,7 +672,7 @@ public:
 struct ConnectionSettings
 {
 private:
-    import kameloso.constants : Timeout;
+    import kameloso.constants : ConnectionDefaultFloats, Timeout;
     import lu.uda : CannotContainComments, Hidden;
 
 public:
@@ -706,8 +695,17 @@ public:
     /// Whether or not to attempt an SSL connection.
     bool ssl = false;
 
-    /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
-    uint receiveTimeout = Timeout.receiveMsecs;
+    @Hidden
+    {
+        /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
+        uint receiveTimeout = Timeout.receiveMsecs;
+
+        /// How many messages to send per second, maximum.
+        double messageRate = ConnectionDefaultFloats.messageRate;
+
+        /// How many messages to immediately send in one go, before throttling kicks in.
+        double messageBurst = ConnectionDefaultFloats.messageBurst;
+    }
 }
 
 
@@ -719,7 +717,7 @@ public:
 struct IRCBot
 {
 private:
-    import lu.uda : CannotContainComments, Hidden, Separator;
+    import lu.uda : CannotContainComments, Hidden, Separator, Unserialisable;
 
 public:
     /// Username to use as services account login name.
@@ -755,4 +753,10 @@ public:
         @CannotContainComments
         string[] guestChannels;
     }
+
+    /++
+        Whether or not we connected without an explicit nickname, and a random
+        guest such was generated.
+     +/
+    @Unserialisable bool hasGuestNickname;
 }

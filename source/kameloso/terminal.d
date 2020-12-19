@@ -243,8 +243,8 @@ void setTitle(const string title) @system
     }
     else version(Windows)
     {
-        import core.sys.windows.wincon : SetConsoleTitleA;
         import std.string : toStringz;
+        import core.sys.windows.wincon : SetConsoleTitleA;
 
         SetConsoleTitleA(title.toStringz);
     }
@@ -262,13 +262,13 @@ version(Colours):
  +/
 enum TerminalFormat
 {
-    bold = 1,       /// Bold.
-    dim  = 2,       /// Dim, darkens it a bit.
-    italics = 3,    /// Italics; usually has some other effect.
-    underlined = 4, /// Underlined.
-    blink   = 5,    /// Blinking text.
-    reverse = 7,    /// Inverts text foreground and background.
-    hidden  = 8,    /// "Hidden" text.
+    bold        = 1,  /// Bold.
+    dim         = 2,  /// Dim, darkens it a bit.
+    italics     = 3,  /// Italics; usually has some other effect.
+    underlined  = 4,  /// Underlined.
+    blink       = 5,  /// Blinking text.
+    reverse     = 7,  /// Inverts text foreground and background.
+    hidden      = 8,  /// "Hidden" text.
 }
 
 /// Foreground colour codes for terminal colouring.

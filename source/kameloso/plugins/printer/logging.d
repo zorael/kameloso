@@ -18,6 +18,7 @@ import kameloso.plugins.printer.base;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
+
 package:
 
 
@@ -35,7 +36,6 @@ struct LogLineBuffer
 private:
     import std.array : Appender;
     import std.datetime.systime : SysTime;
-    import std.path : buildNormalizedPath;
 
 public:
     /// Basename directory this buffer will be saved to.
@@ -54,6 +54,7 @@ public:
     this(const string dir, const SysTime now)
     {
         import std.datetime.date : Date;
+        import std.path : buildNormalizedPath;
 
         static string yyyyMMOf(const SysTime date)
         {
@@ -71,6 +72,8 @@ public:
      +/
     this(const string dir, const string filename)
     {
+        import std.path : buildNormalizedPath;
+
         this.dir = dir;
         this.file = buildNormalizedPath(this.dir, filename);
     }
@@ -95,7 +98,7 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
-    import kameloso.common : logger;
+    import kameloso.common : Tint, logger;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -103,7 +106,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     /// Write buffered lines.
     static void writeEventToFile(PrinterPlugin plugin, const ref IRCEvent event,
         const string key, const string givenPath = string.init,
-        Flag!"extendPath" extendPath = Yes.extendPath, Flag!"raw" raw = No.raw)
+        Flag!"extendPath" extendPath = Yes.extendPath,
+        Flag!"raw" raw = No.raw,
+        Flag!"errors" errors = No.errors)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;
@@ -119,106 +124,113 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 assert((buffer.file.length && buffer.dir.length),
                     "Tried to add datestamp to uninitialised buffer");
 
-                import std.file : exists, mkdirRecurse;
+                import std.file : exists, isDir, mkdirRecurse;
                 import std.stdio : File, writeln;
 
-                if (!buffer.dir.exists) mkdirRecurse(buffer.dir);
+                if (!buffer.dir.exists)
+                {
+                    mkdirRecurse(buffer.dir);
+                }
+                else if (!buffer.dir.isDir)
+                {
+                    // Something is in the way of the log's directory
+                    return;
+                }
 
                 // Insert an empty space if the file exists, to separate old content from new
                 immutable addLinebreak = buffer.file.exists;
 
                 File file = File(buffer.file, "a");
-
                 if (addLinebreak) file.writeln();
-
                 file.writeln(datestamp);
+                file.flush();
             }
 
-            LogLineBuffer* buffer = key in plugin.buffers;
-
-            if (!buffer)
+            if (!errors)
             {
-                if (extendPath)
-                {
-                    import std.datetime.systime : Clock;
-                    import std.file : exists, mkdirRecurse;
-                    import std.path : buildNormalizedPath;
+                LogLineBuffer* buffer = key in plugin.buffers;
 
-                    immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
-                    plugin.buffers[key] = LogLineBuffer(subdir, Clock.currTime);
-                }
-                else
+                if (!buffer)
                 {
-                    plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, path);
-                }
-
-                buffer = key in plugin.buffers;
-                if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
-            }
-
-            if (!raw)
-            {
-                // Normal buffers
-                if (plugin.printerSettings.bufferedWrites)
-                {
-                    // Normal log
-                    plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                        No.bellOnMention, No.bellOnError);
-                    buffer.lines ~= plugin.linebuffer.data.idup;
-                    plugin.linebuffer.clear();
-                }
-                else
-                {
-                    import std.file : exists, mkdirRecurse;
-                    import std.stdio : File;
-
-                    if (!buffer.dir.exists)
+                    if (extendPath)
                     {
-                        mkdirRecurse(buffer.dir);
+                        import std.datetime.systime : Clock;
+                        import std.path : buildNormalizedPath;
+
+                        immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
+                        plugin.buffers[key] = LogLineBuffer(subdir, Clock.currTime);
+                    }
+                    else
+                    {
+                        plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, path);
                     }
 
-                    auto file = File(buffer.file, "a");
+                    buffer = key in plugin.buffers;
+                    if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
+                }
 
-                    plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                        No.bellOnMention, No.bellOnError);
-                    file.writeln(plugin.linebuffer);
-                    plugin.linebuffer.clear();
+                if (!raw)
+                {
+                    // Normal buffers
+                    if (plugin.printerSettings.bufferedWrites)
+                    {
+                        // Normal log
+                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
+                            No.bellOnMention, No.bellOnError);
+                        buffer.lines ~= plugin.linebuffer.data.idup;
+                        plugin.linebuffer.clear();
+                    }
+                    else
+                    {
+                        import std.file : exists, isDir, mkdirRecurse;
+                        import std.stdio : File;
+
+                        if (!buffer.dir.exists)
+                        {
+                            mkdirRecurse(buffer.dir);
+                        }
+                        else if (!buffer.dir.isDir)
+                        {
+                            // Something is in the way of the log's directory
+                            return;
+                        }
+
+                        auto file = File(buffer.file, "a");
+
+                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
+                            No.bellOnMention, No.bellOnError);
+                        file.writeln(plugin.linebuffer);
+                        file.flush();
+                        plugin.linebuffer.clear();
+                    }
+                }
+                else
+                {
+                    // Raw log
+                    if (plugin.printerSettings.bufferedWrites)
+                    {
+                        buffer.lines ~= event.raw;
+                    }
+                    else
+                    {
+                        import std.stdio : File;
+
+                        auto file = File(buffer.file, "a");
+                        file.writeln(event.raw);
+                        file.flush();
+                    }
                 }
             }
             else
             {
-                // Raw log
-                if (plugin.printerSettings.bufferedWrites)
-                {
-                    buffer.lines ~= event.raw;
-                }
-                else
-                {
-                    import std.file : exists, mkdirRecurse;
-                    import std.stdio : File;
-
-                    if (!buffer.dir.exists)
-                    {
-                        mkdirRecurse(buffer.dir);
-                    }
-
-                    auto file = File(buffer.file, "a");
-                    file.writeln(event.raw);
-                }
-            }
-
-            // Errors
-            if (plugin.printerSettings.logErrors && event.errors.length)
-            {
                 import kameloso.printing : formatObjects;
 
-                enum errorLabel = "<error>";
-                LogLineBuffer* errBuffer = errorLabel in plugin.buffers;
+                LogLineBuffer* errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
                 {
-                    plugin.buffers[errorLabel] = LogLineBuffer(plugin.logDirectory, "error.log");
-                    errBuffer = errorLabel in plugin.buffers;
+                    plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, givenPath);
+                    errBuffer = key in plugin.buffers;
                     insertDatestamp(errBuffer);  // New buffer, new "day"
                 }
 
@@ -238,6 +250,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
                             (No.brightTerminal, event.target);
                     }
+
+                    errBuffer.lines ~= "/////////////////////////////////////" ~
+                        "///////////////////////////////////////////\n";  // 80c
                 }
                 else
                 {
@@ -268,22 +283,45 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         errFile.writeln(plugin.linebuffer.data);
                         plugin.linebuffer.clear();
                     }
+
+                    errFile.writeln("/////////////////////////////////////" ~
+                        "///////////////////////////////////////////\n");  // 80c
+                    errFile.flush();
                 }
             }
         }
         catch (FileException e)
         {
-            logger.warning("File exception caught when writing to log: ", e.msg);
+            logger.warning("File exception caught when writing to log: ", Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (ErrnoException e)
         {
-            logger.warning("Exception caught when writing to log: ", e.msg);
+            version(Posix)
+            {
+                import kameloso.common : errnoStrings;
+                import core.stdc.errno : errno;
+
+                logger.warningf("ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s",
+                    Tint.log, errnoStrings[errno], Tint.warning, e.msg);
+            }
+            else version(Windows)
+            {
+                import core.stdc.errno : errno;
+
+                logger.warningf("ErrnoException (%s%ds%s) caught when writing to log: %1$s%4$s",
+                    Tint.log, errno, Tint.warning, e.msg);
+            }
+            else
+            {
+                logger.warning("ErrnoException caught when writing to log: ", Tint.log, e.msg);
+            }
+
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            logger.warning("Unhandled exception caught when writing to log: ", e.msg);
+            logger.warning("Unhandled exception caught when writing to log: ", Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -292,6 +330,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     if (plugin.printerSettings.logRaw)
     {
         writeEventToFile(plugin, event, "<raw>", "raw.log", No.extendPath, Yes.raw);
+    }
+
+    if (event.errors.length && plugin.printerSettings.logErrors)
+    {
+        // This logs errors in guest channels. Consider making configurable.
+        writeEventToFile(plugin, event, "<error>", "error.log", No.extendPath, No.raw, Yes.errors);
     }
 
     import std.algorithm.searching : canFind;
@@ -435,7 +479,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(logLocation);
-        logger.logf("Created log directory: %s%s", Tint.info, logLocation);
+        logger.log("Created log directory: ", Tint.info, logLocation);
     }
 
     return true;
@@ -457,10 +501,6 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 void commitAllLogsImpl(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
-
-    import kameloso.terminal : TerminalToken;
-    import std.exception : ErrnoException;
-    import std.file : FileException;
 
     foreach (ref buffer; plugin.buffers)
     {
@@ -486,43 +526,69 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
-    import kameloso.common : logger;
-    import kameloso.terminal : TerminalToken;
+    import kameloso.common : Tint, logger;
     import std.exception : ErrnoException;
     import std.file : FileException;
+    import std.utf : UTFException;
 
     if (!buffer.lines.data.length) return;
 
     try
     {
-        import std.array : join;
-        import std.file : exists, mkdirRecurse;
+        import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File, writeln;
 
         if (!buffer.dir.exists)
         {
             mkdirRecurse(buffer.dir);
         }
+        else if (!buffer.dir.isDir)
+        {
+            // Something is in the way of the log's directory
+            // Discard accumulated lines
+            buffer.lines.clear();
+            return;
+        }
 
-        immutable lines = buffer.lines.data.join("\n");
-        File(buffer.file, "a").writeln(lines);
+        auto file = File(buffer.file, "a");
+
+        foreach (line; buffer.lines.data)
+        {
+            import std.encoding : sanitize;
+            file.writeln(sanitize(line));
+        }
 
         // Only clear if we managed to write everything, otherwise accumulate
         buffer.lines.clear();
     }
     catch (FileException e)
     {
-        logger.warning("File exception caught when committing log: ", e.msg, plugin.bell);
+        logger.warningf("File exception caught when committing log %s%s%s: %1$s%4$s%5$s",
+            Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
     {
-        logger.warning("Exception caught when committing log: ", e.msg, plugin.bell);
+        version(Posix)
+        {
+            import kameloso.common : errnoStrings;
+            logger.warningf("ErrnoException %s%s%s caught when committing " ~
+                "log to %1$s%4$s%3$s: %1$s%5$s%6$s",
+                Tint.log, errnoStrings[e.errno], Tint.warning, buffer.file, e.msg, plugin.bell);
+        }
+        else
+        {
+            logger.warningf("ErrnoException %s%d%s caught when committing " ~
+                "log to %1$s%4$s%3$s: %1$s%5$s%6$s",
+                Tint.log, e.errno, Tint.warning, buffer.file, e.msg, plugin.bell);
+        }
+
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        logger.warning("Unhandled exception caught when committing log: ", e.msg, plugin.bell);
+        logger.warningf("Unexpected exception caught when committing log %s%s%s: %1$s%4$s%5$s",
+            Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }
@@ -535,6 +601,11 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     This is platform-specific, as Windows uses backslashes as directory
     separators and percentages for environment variables, whereas Posix uses
     forward slashes and dollar signs.
+
+    Bugs:
+        Escaped paths can collide with real files named what the original path
+        was escaped to. "%PATH%" may as such collide with "_PATH_", as the
+        former was escaped to an already valid filename.
 
     Params:
         path = A filesystem path in string form.

@@ -339,8 +339,8 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 immutable maxLen = min(timer.line.length, maxLineLength);
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "%d: %s%s (%d:%d:%d)".format(start+i+1, timer.line[0..maxLen],
-                    (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
-                    timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
+                        (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
+                        timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
             }
         }
         else

@@ -196,7 +196,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
     Sends an internal bus message to other plugins, much like how such can be
     sent with the Pipeline plugin.
  +/
-void onCommandBusImpl(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandBusImpl(AdminPlugin plugin, const string input)
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage, busMessage;
@@ -204,20 +204,20 @@ void onCommandBusImpl(AdminPlugin plugin, const ref IRCEvent event)
     import std.concurrency : send;
     import std.stdio : writeln;
 
-    if (!event.content.length) return;
+    if (!input.length) return;
 
-    if (!event.content.contains!(Yes.decode)(" "))
+    if (!input.contains!(Yes.decode)(' '))
     {
         logger.info("Sending bus message.");
-        writeln("Header: ", event.content);
+        writeln("Header: ", input);
         writeln("Content: (empty)");
 
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(), event.content);
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(), input);
     }
     else
     {
-        string slice = event.content;  // mutable
-        immutable header = slice.nom(" ");
+        string slice = input;  // mutable
+        immutable header = slice.nom(' ');
 
         logger.info("Sending bus message.");
         writeln("Header: ", header);

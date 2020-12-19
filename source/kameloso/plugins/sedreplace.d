@@ -39,7 +39,7 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import lu.string : beginsWith;
-import std.meta : AliasSeq;
+import std.meta : aliasSeqOf;
 import std.typecons : Flag, No, Yes;
 
 
@@ -48,7 +48,7 @@ import std.typecons : Flag, No, Yes;
 
     More can be added but if any are removed unittests will need to be updated.
  +/
-alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
+alias DelimiterCharacters = aliasSeqOf!("/|#@ _;");
 
 
 // SedReplaceSettings
@@ -223,6 +223,7 @@ in (line.length, "Tried to `sedReplaceImpl` on an empty line")
 in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
 in (expr.beginsWith("s" ~ char_), "Tried to `sedReplaceImpl` with an invalid expression")
 {
+    import lu.string : strippedRight;
     import std.array : replace;
     import std.string : indexOf;
 
@@ -254,7 +255,7 @@ in (expr.beginsWith("s" ~ char_), "Tried to `sedReplaceImpl` with an invalid exp
         return -1;
     }
 
-    string slice = expr;  // mutable
+    string slice = (char_ == ' ') ? expr : expr.strippedRight;  // mutable
     slice = slice[2..$];  // nom 's' ~ char_
 
     bool global;
@@ -371,7 +372,7 @@ unittest
  +/
 @Terminating
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
@@ -416,13 +417,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
             case c:
                 goto case DelimiterCharacters[0];
         }
-        /*case '/':
-        case '|':
-        case '#':
-        case '@':
-        case ' ':
-        case '_':
-        case ';':*/
+
         case DelimiterCharacters[0]:
             if (const senderLines = event.sender.nickname in plugin.prevlines)
             {
@@ -524,7 +519,7 @@ private:
     enum replaceTimeoutSeconds = 3600;
 
     /// How often to purge the [prevlines] list of messages.
-    enum timeBetweenPurges = 3600;
+    enum timeBetweenPurges = replaceTimeoutSeconds * 3;
 
     /++
         A `Line[string]` buffer of the previous line every user said, with

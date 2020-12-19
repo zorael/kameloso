@@ -370,49 +370,49 @@ private:
     in which case anywhere goes. For events that don't correspond to a channel (such as
     [dialect.defs.IRCEvent.Type.QUERY]) the setting is ignored.
 
-    The [kameloso.plugins.common.core.PrivilegeLevel] annotation dictates who is
+    The [kameloso.plugins.common.core.PermissionsRequired] annotation dictates who is
     authorised to trigger the function. It has six policies, in increasing
     order of importance:
-    [kameloso.plugins.common.core.PrivilegeLevel.ignore],
-    [kameloso.plugins.common.core.PrivilegeLevel.anyone],
-    [kameloso.plugins.common.core.PrivilegeLevel.registered],
-    [kameloso.plugins.common.core.PrivilegeLevel.whitelist],
-    [kameloso.plugins.common.core.PrivilegeLevel.operator],
-    [kameloso.plugins.common.core.PrivilegeLevel.staff] and
-    [kameloso.plugins.common.core.PrivilegeLevel.admin].
+    [kameloso.plugins.common.core.PermissionsRequired.ignore],
+    [kameloso.plugins.common.core.PermissionsRequired.anyone],
+    [kameloso.plugins.common.core.PermissionsRequired.registered],
+    [kameloso.plugins.common.core.PermissionsRequired.whitelist],
+    [kameloso.plugins.common.core.PermissionsRequired.operator],
+    [kameloso.plugins.common.core.PermissionsRequired.staff] and
+    [kameloso.plugins.common.core.PermissionsRequired.admin].
 
-    * [kameloso.plugins.common.core.PrivilegeLevel.ignore] will let precisely anyone
+    * [kameloso.plugins.common.core.PermissionsRequired.ignore] will let precisely anyone
         trigger it, without looking them up.<br>
-    * [kameloso.plugins.common.core.PrivilegeLevel.anyone] will let precisely anyone
+    * [kameloso.plugins.common.core.PermissionsRequired.anyone] will let precisely anyone
         trigger it, but only after having looked them up.<br>
-    * [kameloso.plugins.common.core.PrivilegeLevel.registered] will let anyone logged
+    * [kameloso.plugins.common.core.PermissionsRequired.registered] will let anyone logged
         into a services account trigger it.<br>
-    * [kameloso.plugins.common.core.PrivilegeLevel.whitelist] will only allow users
+    * [kameloso.plugins.common.core.PermissionsRequired.whitelist] will only allow users
         in the whitelist section of the `users.json` resource file. Consider this
         to correspond to "regulars" in the channel.<br>
-    * [kameloso.plugins.common.core.PrivilegeLevel.operator] will only allow users
+    * [kameloso.plugins.common.core.PermissionsRequired.operator] will only allow users
         in the operator section of the `users.json` resource file. Consider this
         to correspond to "moderators" in the channel.<br>
-    * [kameloso.plugins.common.core.PrivilegeLevel.staff] will only allow users
+    * [kameloso.plugins.common.core.PermissionsRequired.staff] will only allow users
         in the staff section of the `users.json` resource file. Consider this
         to correspond to channel owners.<br>
-    * [kameloso.plugins.common.core.PrivilegeLevel.admin] will allow only you and
+    * [kameloso.plugins.common.core.PermissionsRequired.admin] will allow only you and
         your other superuser administrators, as defined in the configuration file.
 
-    In the case of [kameloso.plugins.common.core.PrivilegeLevel.whitelist],
-    [kameloso.plugins.common.core.PrivilegeLevel.operator],
-    [kameloso.plugins.common.core.PrivilegeLevel.staff] and
-    [kameloso.plugins.common.core.PrivilegeLevel.admin] it will look you up and
+    In the case of [kameloso.plugins.common.core.PermissionsRequired.whitelist],
+    [kameloso.plugins.common.core.PermissionsRequired.operator],
+    [kameloso.plugins.common.core.PermissionsRequired.staff] and
+    [kameloso.plugins.common.core.PermissionsRequired.admin] it will look you up and
     compare your *services account name* to those known good before doing
-    anything. In the case of [kameloso.plugins.common.core.PrivilegeLevel.registered],
+    anything. In the case of [kameloso.plugins.common.core.PermissionsRequired.registered],
     merely being logged in is enough. In the case of
-    [kameloso.plugins.common.core.PrivilegeLevel.anyone], the WHOIS results won't
+    [kameloso.plugins.common.core.PermissionsRequired.anyone], the WHOIS results won't
     matter and it will just let it pass, but it will check all the same.
     In the other cases, if you aren't logged into services or if your account
     name isn't included in the lists, the function will not trigger.
 
     This particular function doesn't care at all, so it is
-    [kameloso.plugins.common.core.PrivilegeLevel.ignore].
+    [kameloso.plugins.common.core.PermissionsRequired.ignore].
  +/
 @Chainable
 @(IRCEvent.Type.CHAN)
@@ -435,20 +435,30 @@ private:
 @(IRCEvent.Type.TWITCH_SUBGIFT)
 @(IRCEvent.Type.TWITCH_SUBUPGRADE)
 @(IRCEvent.Type.TWITCH_TIMEOUT)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 {
     /+
-        Updates the user's timestamp to the current time.
+        Updates the user's timestamp to the current time, both sender and target.
 
         This will be automatically called on any and all the kinds of
         [dialect.defs.IRCEvent.Type]s it is annotated with. Furthermore, it will
         only trigger if it took place in a home channel.
+
+        There's no need to check for whether the sender/target is us, as
+        [updateUser] will do it more thoroughly (by stripping any extra modesigns).
      +/
 
-    if (!event.sender.nickname) return;  // MODE can be server-sent
-    plugin.updateUser(event.sender.nickname, event.time);
+    if (event.sender.nickname)
+    {
+        plugin.updateUser(event.sender.nickname, event.time);
+    }
+
+    if (event.target.nickname)
+    {
+        plugin.updateUser(event.target.nickname, event.time);
+    }
 }
 
 
@@ -467,12 +477,13 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
     Do nothing if an entry was not found.
  +/
 @(IRCEvent.Type.QUIT)
-@(PrivilegeLevel.ignore)
 void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 {
-    if (event.sender.nickname in plugin.seenUsers)
+    auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
+
+    if (seenTimestamp)
     {
-        plugin.updateUser(event.sender.nickname, event.time);
+        *seenTimestamp = event.time;
     }
 }
 
@@ -494,12 +505,14 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
  +/
 @Chainable
 @(IRCEvent.Type.NICK)
-@(PrivilegeLevel.ignore)
+@(PermissionsRequired.ignore)
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
-    if (event.sender.nickname in plugin.seenUsers)
+    auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
+
+    if (seenTimestamp)
     {
-        plugin.seenUsers[event.target.nickname] = event.time;
+        *seenTimestamp = event.time;
         plugin.seenUsers.remove(event.sender.nickname);
     }
 }
@@ -554,8 +567,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
-        immutable nickname = slice.stripModesign(plugin.state.server);
-        plugin.updateUser(nickname, event.time);
+        plugin.updateUser(slice, event.time);
     }
 }
 
@@ -627,7 +639,7 @@ void onEndOfList(SeenPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.anyone)
+@(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
@@ -773,13 +785,14 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
             (`@`, `+`, `%`, ...).
         time = UNIX timestamp of when the user was seen.
  +/
-void updateUser(SeenPlugin plugin, const string signed, const long time)
+void updateUser(SeenPlugin plugin, const string signed, const long time,
+    const Flag!"skipModesignStrip" skipModesignStrip = No.skipModesignStrip)
 in (signed.length, "Tried to update a user with an empty (signed) nickname")
 {
     import dialect.common : stripModesign;
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
-    immutable nickname = signed.stripModesign(plugin.state.server);
+    immutable nickname = skipModesignStrip ? signed : signed.stripModesign(plugin.state.server);
     if (nickname == plugin.state.client.nickname) return;
     plugin.seenUsers[nickname] = time;
 }
@@ -811,7 +824,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     foreach (immutable nickname; uniqueUsers.byKey)
     {
-        plugin.updateUser(nickname, now);
+        plugin.updateUser(nickname, now, Yes.skipModesignStrip);
     }
 }
 

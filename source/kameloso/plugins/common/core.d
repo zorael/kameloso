@@ -12,8 +12,8 @@
 
     @(IRCEvent.Type.CHAN)
     @(ChannelPolicy.home)
-    @(PrefixPolicy.prefixed)
-    @BotCommand(PrivilegeLevel.anyone, "foo")
+    @(PermissionsRequired.anyone)
+    @BotCommand(PrefixPolicy.prefixed, "foo")
     void onFoo(FooPlugin plugin, const ref IRCEvent event)
     {
         // ...
@@ -160,7 +160,7 @@ public:
 
     // name
     /++
-        Returns the name of the plugin, sliced off the module name.
+        Returns the name of the plugin.
 
         Returns:
             The string name of the plugin.
@@ -227,12 +227,12 @@ public:
 version(WithPlugins)
 mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, PrivilegeLevel;
+    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, PermissionsRequired;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
-    private static enum mixinSentinel = true;
+    private enum mixinSentinel = true;
 
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if (!is(__traits(parent, mixinSentinel) : IRCPlugin))
@@ -325,37 +325,37 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     // allow
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [PrivilegeLevel] of the handler in question. Wrapper function
+        the annotated [PermissionsRequired] of the handler in question. Wrapper function
         that merely calls [allowImpl]. The point behind it is to make something
         that can be overridden and still allow it to call the original logic (below).
 
         Params:
             event = [dialect.defs.IRCEvent] to allow, or not.
-            privilegeLevel = [PrivilegeLevel] of the handler in question.
+            perms = [PermissionsRequired] of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    private FilterResult allow(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
+    private FilterResult allow(const ref IRCEvent event, const PermissionsRequired perms)
     {
-        return allowImpl(event, privilegeLevel);
+        return allowImpl(event, perms);
     }
 
 
     // allowImpl
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [PrivilegeLevel] of the handler in question. Implementation function.
+        the annotated [PermissionsRequired] of the handler in question. Implementation function.
 
         Params:
             event = [dialect.defs.IRCEvent] to allow, or not.
-            privilegeLevel = [PrivilegeLevel] of the handler in question.
+            perms = [PermissionsRequired] of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
      +/
-    private FilterResult allowImpl(const ref IRCEvent event, const PrivilegeLevel privilegeLevel)
+    private FilterResult allowImpl(const ref IRCEvent event, const PermissionsRequired perms)
     {
         import kameloso.plugins.common.core : filterSender;
         import std.typecons : Flag, No, Yes;
@@ -364,21 +364,21 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         {
             if (state.server.daemon == IRCServer.Daemon.twitch)
             {
-                if (((privilegeLevel == PrivilegeLevel.anyone) ||
-                    (privilegeLevel == PrivilegeLevel.registered)) &&
+                if (((perms == PermissionsRequired.anyone) ||
+                    (perms == PermissionsRequired.registered)) &&
                     (event.sender.class_ != IRCUser.Class.blacklist))
                 {
-                    // We can't WHOIS on Twitch, and PrivilegeLevel.anyone is just
-                    // PrivilegeLevel.ignore with an extra WHOIS for good measure.
+                    // We can't WHOIS on Twitch, and PermissionsRequired.anyone is just
+                    // PermissionsRequired.ignore with an extra WHOIS for good measure.
                     // Also everyone is registered on Twitch, by definition.
                     return FilterResult.pass;
                 }
             }
         }
 
-        // PrivilegeLevel.ignore always passes, even for Class.blacklist.
-        return (privilegeLevel == PrivilegeLevel.ignore) ? FilterResult.pass :
-            filterSender(event, privilegeLevel, state.settings.preferHostmasks);
+        // PermissionsRequired.ignore always passes, even for Class.blacklist.
+        return (perms == PermissionsRequired.ignore) ? FilterResult.pass :
+            filterSender(event, perms, state.settings.preferHostmasks);
     }
 
 
@@ -409,7 +409,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         annotated with the matching [dialect.defs.IRCEvent.Type]s.
 
         It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
-        [kameloso.plugins.common.core.PrivilegeLevel], [kameloso.plugins.common.core.PrefixPolicy],
+        [kameloso.plugins.common.core.PermissionsRequired], [kameloso.plugins.common.core.PrefixPolicy],
         [kameloso.plugins.common.core.BotCommand], [kameloso.plugins.common.core.BotRegex]
         etc; where such is applicable.
 
@@ -544,7 +544,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                             Enum!(IRCEvent.Type).toString(eventTypeUDA)));
                     }
 
-                    static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
+                    static if (!hasUDA!(fun, PermissionsRequired) && !isAwarenessFunction!fun)
                     {
                         with (IRCEvent.Type)
                         {
@@ -560,9 +560,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                             {
                                 import std.format : format;
 
-                                enum missingPrivilegePattern = "`%s` is annotated with " ~
-                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`";
-                                pragma(msg, missingPrivilegeLevelPattern
+                                enum missingPermsPattern = "`%s` is annotated with " ~
+                                    "`IRCEvent.Type.%s` but is missing a `PermissionsRequired`";
+                                pragma(msg, missingPermsPattern
                                     .format(fullyQualifiedName!fun,
                                     Enum!(IRCEvent.Type).toString(U)));
                             }*/
@@ -582,7 +582,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                                 import std.format : format;
 
                                 enum pattern = "`%s` is annotated with a user-facing " ~
-                                    "`IRCEvent.Type.%s` but is missing a `PrivilegeLevel`";
+                                    "`IRCEvent.Type.%s` but is missing a `PermissionsRequired`";
                                 static assert(0, pattern.format(fullyQualifiedName!fun,
                                     Enum!(IRCEvent.Type).toString(U)));
                             }
@@ -622,38 +622,51 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
             }
 
-            static if (!hasUDA!(fun, ChannelPolicy) ||
-                getUDAs!(fun, ChannelPolicy)[0] == ChannelPolicy.home)
+            static if (!hasUDA!(fun, ChannelPolicy))
+            {
+                // Default policy if none given is ChannelPolicy.home
+                enum channelPolicy = ChannelPolicy.home;
+            }
+            else
+            {
+                enum channelPolicy = getUDAs!(fun, ChannelPolicy)[0];
+            }
+
+            static if (verbose)
+            {
+                writeln("...", Enum!ChannelPolicy.toString(channelPolicy));
+            }
+
+            if (!event.channel.length)
+            {
+                // it is a non-channel event, like an IRCEvent.Type.QUERY
+            }
+            else
             {
                 import std.algorithm.searching : canFind;
 
-                // Default policy if none given is ChannelPolicy.home
-
-                static if (verbose)
+                static if (channelPolicy == ChannelPolicy.home)
                 {
-                    writeln("...ChannelPolicy.home");
+                    immutable channelMatch = state.bot.homeChannels.canFind(event.channel);
+                }
+                else static if (channelPolicy == ChannelPolicy.guest)
+                {
+                    immutable channelMatch = !state.bot.homeChannels.canFind(event.channel);
+                }
+                else /*if (channelPolicy == ChannelPolicy.any)*/
+                {
+                    enum channelMatch = true;
                 }
 
-                if (!event.channel.length)
-                {
-                    // it is a non-channel event, like an IRCEvent.Type.QUERY
-                }
-                else if (!state.bot.homeChannels.canFind(event.channel))
+                if (!channelMatch)
                 {
                     static if (verbose)
                     {
-                        writeln("...ignore non-home channel ", event.channel);
+                        writeln("...ignore non-matching channel ", event.channel);
                     }
 
                     // channel policy does not match
                     return NextStep.continue_;  // next fun
-                }
-            }
-            else
-            {
-                static if (verbose)
-                {
-                    writeln("...ChannelPolicy.any");
                 }
             }
 
@@ -691,7 +704,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         enum pattern = "`%s` has an empty `BotCommand` word";
                         static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
-                    else static if (commandUDA.word.contains(" "))
+                    else static if (commandUDA.word.contains(' '))
                     {
                         import std.format : format;
 
@@ -719,7 +732,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     import lu.string : strippedLeft;
                     import std.algorithm.comparison : equal;
                     import std.typecons : No, Yes;
-                    import std.uni : asLowerCase;
+                    import std.uni : asLowerCase, toLower;
 
                     // If we don't strip left as a separate step, nom won't alter
                     // event.content by ref (as it will be an rvalue).
@@ -727,8 +740,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     immutable thisCommand = event.content
                         .nom!(Yes.inherit, Yes.decode)(' ');
+                    enum lowerWord = commandUDA.word.toLower;
 
-                    if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
+                    if (thisCommand.asLowerCase.equal(lowerWord))
                     {
                         static if (verbose)
                         {
@@ -845,28 +859,28 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             import std.meta : AliasSeq, staticMap;
             import std.traits : Parameters, Unqual, arity;
 
-            static if (hasUDA!(fun, PrivilegeLevel))
+            static if (hasUDA!(fun, PermissionsRequired))
             {
-                enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
+                enum perms = getUDAs!(fun, PermissionsRequired)[0];
 
-                static if (privilegeLevel != PrivilegeLevel.ignore)
+                static if (perms != PermissionsRequired.ignore)
                 {
                     static if (!__traits(compiles, .hasMinimalAuthentication))
                     {
                         import std.format : format;
 
                         enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
-                            "mixin (needed for `PrivilegeLevel` checks)";
+                            "mixin (needed for `PermissionsRequired` checks)";
                         static assert(0, pattern.format(module_));
                     }
                 }
 
                 static if (verbose)
                 {
-                    writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
+                    writeln("...PermissionsRequired.", Enum!PermissionsRequired.toString(perms));
                 }
 
-                immutable result = this.allow(event, privilegeLevel);
+                immutable result = this.allow(event, perms);
 
                 static if (verbose)
                 {
@@ -891,7 +905,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.enqueue(event, privilegeLevel, &fun, fullyQualifiedName!fun);
+                        this.enqueue(event, perms, &fun, fullyQualifiedName!fun);
 
                         static if (hasUDA!(fun, Chainable) ||
                             (isAwarenessFunction!fun && !hasUDA!(fun, Terminating)))
@@ -906,7 +920,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
-                        this.enqueue(this, event, privilegeLevel, &fun, fullyQualifiedName!fun);
+                        this.enqueue(this, event, perms, &fun, fullyQualifiedName!fun);
 
                         static if (hasUDA!(fun, Chainable) ||
                             (isAwarenessFunction!fun && !hasUDA!(fun, Terminating)))
@@ -1107,12 +1121,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     version(SanitizeAndRetryOnUnicodeException)
                     {
-                        import core.exception : UnicodeException;
                         import std.utf : UTFException;
+                        import core.exception : UnicodeException;
 
                         immutable isRecoverableException =
-                            (cast(UTFException)e !is null) ||
-                            (cast(UnicodeException)e !is null);
+                            (cast(UnicodeException)e !is null) ||
+                            (cast(UTFException)e !is null);
 
                         if (!isRecoverableException) throw e;
 
@@ -1248,7 +1262,22 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static if (TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
-                .postprocess(this, event);
+                import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                alias SC = ParameterStorageClass;
+                alias paramClasses = ParameterStorageClassTuple!(.postprocess);
+
+                static if (paramClasses[1] & SC.ref_)
+                {
+                    .postprocess(this, event);
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, ("`%s.postprocess` does not take its " ~
+                        "`IRCEvent` parameter by `ref`")
+                        .format(module_,));
+                }
             }
             else
             {
@@ -1316,23 +1345,19 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 (hasUDA!(this.tupleof[i], Settings) ||
                 hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
-                alias T = typeof(symbol);
-
-                if (symbol != T.init)
+                if (symbol != typeof(symbol).init)
                 {
                     // This symbol has had configuration applied to it already
                     continue;
                 }
 
-                T tempSymbol;
                 string[][string] theseMissingEntries;
                 string[][string] theseInvalidEntries;
 
-                configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, tempSymbol);
+                configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
 
                 theseMissingEntries.meldInto(missingEntries);
                 theseInvalidEntries.meldInto(invalidEntries);
-                tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
             }
         }
     }
@@ -1405,7 +1430,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import std.typecons : No, Yes;
-
                 printObject!(No.all)(symbol);
                 break;
             }
@@ -1885,14 +1909,14 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
 
 // filterSender
 /++
-    Decides if a sender meets a [PrivilegeLevel] and is allowed to trigger an event
+    Decides if a sender meets a [PermissionsRequired] and is allowed to trigger an event
     handler, or if a WHOIS query is needed to be able to tell.
 
     This requires the Persistence service to be active to work.
 
     Params:
         event = [dialect.defs.IRCEvent] to filter.
-        level = The [PrivilegeLevel] context in which this user should be filtered.
+        level = The [PermissionsRequired] context in which this user should be filtered.
         preferHostmasks = Whether to rely on hostmasks for user identification,
             or to use services account logins, which need to be issued WHOIS
             queries to divine.
@@ -1901,7 +1925,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
  +/
-FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
+FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired level,
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
@@ -1936,29 +1960,29 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
         {
             return FilterResult.pass;
         }
-        else if (isStaff && (level <= PrivilegeLevel.staff))
+        else if (isStaff && (level <= PermissionsRequired.staff))
         {
             return FilterResult.pass;
         }
-        else if (isOperator && (level <= PrivilegeLevel.operator))
+        else if (isOperator && (level <= PermissionsRequired.operator))
         {
             return FilterResult.pass;
         }
-        else if (isWhitelisted && (level <= PrivilegeLevel.whitelist))
+        else if (isWhitelisted && (level <= PermissionsRequired.whitelist))
         {
             return FilterResult.pass;
         }
-        else if (/*event.sender.account.length &&*/ level <= PrivilegeLevel.registered)
+        else if (/*event.sender.account.length &&*/ level <= PermissionsRequired.registered)
         {
             return FilterResult.pass;
         }
-        else if (isAnyone && (level <= PrivilegeLevel.anyone))
+        else if (isAnyone && (level <= PermissionsRequired.anyone))
         {
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
-        else if (level == PrivilegeLevel.ignore)
+        else if (level == PermissionsRequired.ignore)
         {
-            /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
+            /*assert(0, "`filterSender` saw a `PermissionsRequired.ignore` and the call " ~
                 "to it could have been skipped");*/
             return FilterResult.pass;
         }
@@ -1969,7 +1993,7 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
     }
     else
     {
-        with (PrivilegeLevel)
+        with (PermissionsRequired)
         final switch (level)
         {
         case admin:
@@ -1985,7 +2009,7 @@ FilterResult filterSender(const ref IRCEvent event, const PrivilegeLevel level,
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
 
         case ignore:
-            /*assert(0, "`filterSender` saw a `PrivilegeLevel.ignore` and the call " ~
+            /*assert(0, "`filterSender` saw a `PermissionsRequired.ignore` and the call " ~
                 "to it could have been skipped");*/
             return FilterResult.pass;
         }
@@ -2166,8 +2190,8 @@ abstract class Replay
     /// Stored [dialect.defs.IRCEvent] to replay.
     IRCEvent event;
 
-    /// [PrivilegeLevel] of the function to replay.
-    PrivilegeLevel privilegeLevel;
+    /// [PermissionsRequired] of the function to replay.
+    PermissionsRequired perms;
 
     /// When this request was issued.
     long when;
@@ -2216,19 +2240,19 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
             Params:
                 payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
                 event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
-                privilegeLevel = The privilege level required to replay the
+                perms = The permissions level required to replay the
                     passed function.
                 fn = Function pointer to call with the attached payloads when
                     the replay is triggered.
          +/
-        this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel,
+        this(Payload payload, IRCEvent event, PermissionsRequired perms,
             F fn, const string caller)
         {
             super();
 
             this.payload = payload;
             this.event = event;
-            this.privilegeLevel = privilegeLevel;
+            this.perms = perms;
             this.fn = fn;
             this.caller = caller;
         }
@@ -2243,12 +2267,12 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
                 fn = Function pointer to call with the attached payloads when
                     the replay is triggered.
          +/
-        this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn, const string caller)
+        this(IRCEvent event, PermissionsRequired perms, F fn, const string caller)
         {
             super();
 
             this.event = event;
-            this.privilegeLevel = privilegeLevel;
+            this.perms = perms;
             this.fn = fn;
             this.caller = caller;
         }
@@ -2303,7 +2327,7 @@ unittest
     event.target.nickname = "kameloso";
     event.content = "hirrpp";
     event.sender.nickname = "zorael";
-    PrivilegeLevel pl = PrivilegeLevel.admin;
+    PermissionsRequired pl = PermissionsRequired.admin;
 
     // delegate()
 
@@ -2489,24 +2513,30 @@ enum ChannelPolicy
     home,
 
     /++
+        The annotated function will only be allowed to triger if the event
+        happened in a guest channel, where applicable. Not all events carry channels.
+     +/
+    guest,
+
+    /++
         The annotated function will be allowed to trigger regardless of channel.
      +/
     any,
 }
 
 
-// PrivilegeLevel
+// PermissionsRequired
 /++
-    What level of privilege is needed to trigger an event handler.
+    What level of permissions is needed to trigger an event handler.
 
     In any event handler context, the triggering user has a *level of privilege*.
     This decides whether or not they are allowed to trigger the function.
     Put simply this is the "barrier of entry" for event handlers.
 
-    Privileges are set on a per-channel basis and are stored in the "users.json"
+    Permissions are set on a per-channel basis and are stored in the "users.json"
     file in the resource directory.
  +/
-enum PrivilegeLevel
+enum PermissionsRequired
 {
     /++
         Override privilege checks, allowing anyone to trigger the annotated function.
@@ -2519,18 +2549,18 @@ enum PrivilegeLevel
         blacklisted, unknown users will first be looked up with a WHOIS query
         before allowing the function to trigger.
      +/
-    anyone = 1,
+    anyone = 10,
 
     /++
         Anyone logged onto services may trigger the annotated function.
      +/
-    registered = 2,
+    registered = 20,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.whitelist] classifier
         may trigger the annotated function.
      +/
-    whitelist = 3,
+    whitelist = 30,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.operator] classifier
@@ -2538,20 +2568,28 @@ enum PrivilegeLevel
 
         Note: this does not mean IRC "+o" operators.
      +/
-    operator = 4,
+    operator = 40,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.staff] classifier may
         trigger the annotated function. These are channel owners.
      +/
-    staff = 5,
+    staff = 50,
 
     /++
         Only users defined in the configuration file as an administrator may
         trigger the annotated function.
      +/
-    admin = 10,
+    admin = 100,
 }
+
+
+// PrivilegeLevel
+/++
+    Deprecated alias to [PermissionsRequired].
+ +/
+deprecated("Use `PermissionsRequired` instead")
+alias PrivilegeLevel = PermissionsRequired;
 
 
 // replay
@@ -2563,7 +2601,7 @@ enum PrivilegeLevel
         subPlugin = Subclass [IRCPlugin] to call the function pointer `fn` with
             as first argument, when the WHOIS results return.
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        privilegeLevel = The privilege level policy to apply to the WHOIS results.
+        perms = The permissions level policy to apply to the WHOIS results.
         fn = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
@@ -2572,10 +2610,9 @@ enum PrivilegeLevel
         passed to this function.
  +/
 Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
-    const PrivilegeLevel privilegeLevel, Fn fn, const string caller = __FUNCTION__) @safe
+    const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__) @safe
 {
-    return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event,
-        privilegeLevel, fn, caller);
+    return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event, perms, fn, caller);
 }
 
 
@@ -2586,7 +2623,7 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
 
     Params:
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        privilegeLevel = The privilege level policy to apply to the WHOIS results.
+        perms = The permissions level policy to apply to the WHOIS results.
         fn = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
@@ -2594,10 +2631,10 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
         A [Replay] with template parameters inferred from the arguments
         passed to this function.
  +/
-Replay replay(Fn)(const ref IRCEvent event, const PrivilegeLevel privilegeLevel,
+Replay replay(Fn)(const ref IRCEvent event, const PermissionsRequired perms,
     Fn fn, const string caller = __FUNCTION__) @safe
 {
-    return new ReplayImpl!Fn(event, privilegeLevel, fn, caller);
+    return new ReplayImpl!Fn(event, perms, fn, caller);
 }
 
 
@@ -2652,7 +2689,7 @@ struct BotCommand
         Create a new [BotCommand] with a default [PrefixPolicy.prefixed] policy
         and the passed trigger word.
      +/
-    this(const string word) pure
+    this(const string word, const Flag!"hidden" hidden = No.hidden) pure
     {
         this.word = word;
     }
@@ -2722,7 +2759,7 @@ public:
     /++
         Creates a new [BotRegex] with the passed regex expression.
      +/
-    this(const string expression)
+    this(const string expression, const Flag!"hidden" hidden = No.hidden)
     {
         if (!expression.length) return;
 
