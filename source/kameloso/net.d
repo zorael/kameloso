@@ -803,6 +803,7 @@ struct ConnectionAttempt
         noMoreIPs,          /// Exhausted all IPs and could not connect.
         ipv6Failure,        /// IPv6 connection failed.
         sslFailure,         /// Failure establishing an SSL connection.
+        recoverableError,   /// A non-critical error occured.
         error,              /// Error connecting; should abort.
     }
 
@@ -1012,11 +1013,10 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     case connectionRefused:
                         // Connection refused
                         // No connection could be made because the target machine actively refused it.
-                        attempt.state = State.error;
+                        attempt.state = State.recoverableError;
                         attempt.error = e.msg;
                         yield(attempt);
-                        // Should never get here
-                        assert(0, "Dead `connectFiber` resumed after yield");
+                        continue iploop;
 
                     //case noRouteToHost:
                         // No route to host

@@ -1850,6 +1850,8 @@ Next tryConnect(ref Kameloso instance)
 
         if (*instance.abort) return Next.returnFailure;
 
+        immutable lastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.retries);
+
         enum unableToConnectString = "Unable to connect socket: ";
         immutable errorString = attempt.error.length ?
             (attempt.error.beginsWith(unableToConnectString) ?
@@ -1867,6 +1869,14 @@ Next tryConnect(ref Kameloso instance)
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
                 ConnectionDefaultFloats.delayIncrementMultiplier);
             incrementedRetryDelay = min(incrementedRetryDelay, Timeout.connectionDelayCap);
+        }
+
+        void verboselyDelayToNextIP()
+        {
+            logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
+                Tint.info, Timeout.connectionRetry, Tint.log);
+            incrementedRetryDelay = Timeout.connectionRetry;
+            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
         }
 
         with (ConnectionAttempt.State)
@@ -1932,15 +1942,14 @@ Next tryConnect(ref Kameloso instance)
                     Tint.log, attempt.errno, Tint.warning, errorString);
             }
 
-            verboselyDelay();
             if (*instance.abort) return Next.returnFailure;
+            if (!lastRetry) verboselyDelay();
             continue;
 
         case delayThenNextIP:
-            logger.logf("Failed to connect to IP. Trying next IP in %s%d%s seconds.",
-                Tint.info, Timeout.connectionRetry, Tint.log);
-            incrementedRetryDelay = Timeout.connectionRetry;
-            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
+            // Check abort before delaying and then again after
+            if (*instance.abort) return Next.returnFailure;
+            verboselyDelayToNextIP();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
@@ -1964,6 +1973,9 @@ Next tryConnect(ref Kameloso instance)
             {
                 logger.warning("IPv6 connection failed. Disabling IPv6.");
             }
+
+            if (*instance.abort) return Next.returnFailure;
+            if (!lastRetry) goto case delayThenNextIP;
             continue;
 
         case sslFailure:
@@ -1971,8 +1983,10 @@ Next tryConnect(ref Kameloso instance)
             // "Failed to establish SSL connection after successful connect (system lib)"
             logger.error("Failed to connect: ", Tint.log, attempt.error);
             if (*instance.abort) return Next.returnFailure;
+            if (!lastRetry) verboselyDelay();
             continue;
 
+        case recoverableError:
         case error:
             version(Posix)
             {
@@ -1989,7 +2003,15 @@ Next tryConnect(ref Kameloso instance)
             {
                 logger.error("Failed to connect: ", Tint.log, errorString);
             }
-            return Next.returnFailure;
+
+            if (attempt.state == recoverableError)
+            {
+                goto case delayThenNextIP;
+            }
+            else
+            {
+                return Next.returnFailure;
+            }
         }
     }
 
