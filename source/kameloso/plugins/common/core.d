@@ -732,7 +732,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     import lu.string : strippedLeft;
                     import std.algorithm.comparison : equal;
                     import std.typecons : No, Yes;
-                    import std.uni : asLowerCase;
+                    import std.uni : asLowerCase, toLower;
 
                     // If we don't strip left as a separate step, nom won't alter
                     // event.content by ref (as it will be an rvalue).
@@ -740,8 +740,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     immutable thisCommand = event.content
                         .nom!(Yes.inherit, Yes.decode)(' ');
+                    enum lowerWord = commandUDA.word.toLower;
 
-                    if (thisCommand.asLowerCase.equal(commandUDA.word.asLowerCase))
+                    if (thisCommand.asLowerCase.equal(lowerWord))
                     {
                         static if (verbose)
                         {
