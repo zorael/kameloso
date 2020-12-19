@@ -461,6 +461,8 @@ void commitAllLogs(PrinterPlugin plugin)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
+    import kameloso.common : Tint, logger;
+
     if (plugin.printedISUPPORT || !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
@@ -469,32 +471,10 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    import lu.conv : Enum;
-    import std.string : capitalize;
-    import std.uni : isLower;
-
-    immutable networkName = plugin.state.server.network[0].isLower ?
-        capitalize(plugin.state.server.network) :
-        plugin.state.server.network;
-
-    string tintreset;
-
-    version(Colours)
-    {
-        if (!plugin.state.settings.monochrome)
-        {
-            import kameloso.terminal : TerminalReset, colour;
-            enum tintresetColour = TerminalReset.all.colour.idup;
-            tintreset = tintresetColour;
-        }
-    }
-
-    import kameloso.common : Tint, logger;
-
     logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
-        Tint.info, networkName, Tint.log,
+        Tint.info, plugin.state.server.network, Tint.log,
         Tint.info, plugin.state.server.daemon,
-        tintreset, plugin.state.server.daemonstring);
+        Tint.off, plugin.state.server.daemonstring);
 }
 
 
