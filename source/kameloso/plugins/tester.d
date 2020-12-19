@@ -168,23 +168,23 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             expect("Setting changed.");
 
             runTestAndReport!testAdminFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testAutomodesFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testChatbotFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testNotesFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testOnelinersFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testQuotesFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testSedReplaceFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testSeenFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testCounterFiber();
-            delay(plugin, 3);
+            delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testStopwatchFiber();
 
             logger.info("All tests passed!");
