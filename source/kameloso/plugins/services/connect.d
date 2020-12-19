@@ -456,6 +456,11 @@ void onNickInUse(ConnectService service)
             import kameloso.constants : KamelosoDefaults;
             service.renameDuringRegistration = service.state.client.nickname ~
                 KamelosoDefaults.altNickSeparator;
+
+            static if (ConnectService.appendAltNickSignSeparately)
+            {
+                return;
+            }
         }
 
         service.renameDuringRegistration ~= uniform(0, 10).text;
