@@ -795,7 +795,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     else
     {
         /// Flag denoting that [Repeater] has been mixed in.
-        private enum hasRepeater = true;
+        enum hasRepeater = true;
     }
 
     static if (__traits(compiles, plugin))
