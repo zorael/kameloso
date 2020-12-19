@@ -1975,7 +1975,7 @@ Next tryConnect(ref Kameloso instance)
             }
 
             if (*instance.abort) return Next.returnFailure;
-            if (!lastRetry) goto delayThenNextIP;
+            if (!lastRetry) goto case delayThenNextIP;
             continue;
 
         case sslFailure:
@@ -2006,7 +2006,7 @@ Next tryConnect(ref Kameloso instance)
 
             if (attempt.state == recoverableError)
             {
-                goto delayThenNextIP;
+                goto case delayThenNextIP;
             }
             else
             {
