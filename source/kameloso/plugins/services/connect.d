@@ -540,7 +540,7 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        logger.logf("Invited, but the %sjoinOnInvite%s setting is false so not joining.",
+        logger.logf("Invited, but %sjoinOnInvite%s is set to false.",
             Tint.info, Tint.log);
         return;
     }
