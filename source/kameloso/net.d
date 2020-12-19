@@ -1043,9 +1043,8 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     attempt.error = "%s (%s)"
                         .format(e.msg, conn.getSSLErrorMessage(e.code));
                     yield(attempt);
-                    // Should never get here
-                    assert(0, "Dead `connectFiber` resumed after yield");
                 }
+                break;
             }
 
             if (i+1 <= conn.ips.length)
