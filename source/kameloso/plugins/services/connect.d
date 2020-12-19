@@ -562,8 +562,8 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : strippedRight;
 
-    // - http://ircv3.net/irc
-    // - https://blog.irccloud.com/ircv3
+    // http://ircv3.net/irc
+    // https://blog.irccloud.com/ircv3
 
     if (service.registration == Progress.finished)
     {

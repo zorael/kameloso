@@ -133,6 +133,8 @@ in ((dg !is null), "Tried to delay a null delegate")
     Updates the `nextScheduledTimestamp` UNIX timestamp so that the main loop knows
     when to process the array of [core.thread.fiber.Fiber]s.
 
+    Do not destroy and free the removed [core.thread.fiber.Fiber], as it may be reused.
+
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         fiber = [core.thread.fiber.Fiber] to dequeue from being executed at a later point in time.

@@ -160,7 +160,7 @@ public:
 
     // name
     /++
-        Returns the name of the plugin, sliced off the module name.
+        Returns the name of the plugin.
 
         Returns:
             The string name of the plugin.
@@ -1430,7 +1430,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import std.typecons : No, Yes;
-
                 printObject!(No.all)(symbol);
                 break;
             }

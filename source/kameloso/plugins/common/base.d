@@ -1,9 +1,6 @@
 /++
     The is not a plugin by itself but contains code common to all plugins,
     without which they will *not* function.
-
-    It is mandatory if you plan to use any form of plugin. Indeed, the very
-    definition of an [kameloso.plugins.common.core.IRCPlugin] is in here.
  +/
 module kameloso.plugins.common.base;
 

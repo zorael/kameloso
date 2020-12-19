@@ -939,7 +939,7 @@ void cycle(AdminPlugin plugin, const string channelName,
 @BotCommand(PrefixPolicy.prefixed, "hostmask")
 @BotCommand(PrefixPolicy.prefixed, "mask", Yes.hidden)
 @Description("Modifies a hostmask definition, for use on servers without services accounts.",
-    "$command [add|del|list] [account] [hostmask if adding]")
+    "$command [add|del|list] [account] [hostmask]")
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, contains, nom, splitInto;

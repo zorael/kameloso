@@ -334,7 +334,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.AWAY)
     @(IRCEvent.Type.BACK)
     /*@(IRCEvent.Type.CHAN)  // Avoid these to be lean; everyone gets indexed by WHO anyway
-    @(IRCEvent.Type.EMOTE)*/
+    @(IRCEvent.Type.EMOTE)*/ // ...except on Twitch, but TwitchAwareness has these annotations
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
