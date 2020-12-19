@@ -622,38 +622,51 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
             }
 
-            static if (!hasUDA!(fun, ChannelPolicy) ||
-                getUDAs!(fun, ChannelPolicy)[0] == ChannelPolicy.home)
+            static if (!hasUDA!(fun, ChannelPolicy))
+            {
+                // Default policy if none given is ChannelPolicy.home
+                enum channelPolicy = ChannelPolicy.home;
+            }
+            else
+            {
+                enum channelPolicy = getUDAs!(fun, ChannelPolicy)[0];
+            }
+
+            static if (verbose)
+            {
+                writeln("...", Enum!ChannelPolicy.toString(channelPolicy));
+            }
+
+            if (!event.channel.length)
+            {
+                // it is a non-channel event, like an IRCEvent.Type.QUERY
+            }
+            else
             {
                 import std.algorithm.searching : canFind;
 
-                // Default policy if none given is ChannelPolicy.home
-
-                static if (verbose)
+                static if (channelPolicy == ChannelPolicy.home)
                 {
-                    writeln("...ChannelPolicy.home");
+                    immutable channelMatch = state.bot.homeChannels.canFind(event.channel);
+                }
+                else static if (channelPolicy == ChannelPolicy.guest)
+                {
+                    immutable channelMatch = !state.bot.homeChannels.canFind(event.channel);
+                }
+                else /*if (channelPolicy == ChannelPolicy.any)*/
+                {
+                    enum channelMatch = true;
                 }
 
-                if (!event.channel.length)
-                {
-                    // it is a non-channel event, like an IRCEvent.Type.QUERY
-                }
-                else if (!state.bot.homeChannels.canFind(event.channel))
+                if (!channelMatch)
                 {
                     static if (verbose)
                     {
-                        writeln("...ignore non-home channel ", event.channel);
+                        writeln("...ignore non-matching channel ", event.channel);
                     }
 
                     // channel policy does not match
                     return NextStep.continue_;  // next fun
-                }
-            }
-            else
-            {
-                static if (verbose)
-                {
-                    writeln("...ChannelPolicy.any");
                 }
             }
 
