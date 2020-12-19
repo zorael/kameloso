@@ -280,7 +280,7 @@ void tryAuth(ConnectService service)
     case snircd:
     case ircdseven:
     case u2:
-        import std.format : format;
+        import std.conv : text;
 
         // Accepts auth login
         // GameSurge is AuthServ
@@ -293,8 +293,7 @@ void tryAuth(ConnectService service)
             account = service.state.client.origNickname;
         }
 
-        query(service.state, serviceNick, "%s %s %s"
-            .format(verb, account, password), Yes.quiet);
+        query(service.state, serviceNick, text(verb, ' ', account, ' ', password), Yes.quiet);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
