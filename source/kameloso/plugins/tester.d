@@ -31,7 +31,7 @@ pragma(msg, "Compiling tester plugin");
  +
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.admin)
+@(PermissionsRequired.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.nickname, "test")
 @Description("Runs tests.")
