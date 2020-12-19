@@ -598,10 +598,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 {
                     immutable acceptsExternal = !sub.length || sub.contains("EXTERNAL");
                     immutable acceptsPlain = !sub.length || sub.contains("PLAIN");
+                    immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
+                        service.state.connSettings.certFile.length);
 
-                    if (service.state.connSettings.ssl && acceptsExternal &&
-                        (service.state.connSettings.privateKeyFile.length ||
-                        service.state.connSettings.certFile.length))
+                    if (service.state.connSettings.ssl && acceptsExternal && hasKey)
                     {
                         // Proceed
                     }
@@ -1284,22 +1284,14 @@ void register(ConnectService service)
 
         version(TwitchSupport)
         {
-            import lu.string : beginsWith;
-
             if (serverIsTwitch)
             {
+                import lu.string : beginsWith;
                 service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
             }
-            else
-            {
-                service.state.bot.pass = decoded;
-            }
-        }
-        else
-        {
-            service.state.bot.pass = decoded;
         }
 
+        if (!service.state.bot.pass.length) service.state.bot.pass = decoded;
         service.state.botUpdated = true;
 
         immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
