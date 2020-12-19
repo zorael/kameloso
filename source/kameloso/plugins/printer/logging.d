@@ -526,9 +526,10 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
-    import kameloso.common : logger;
+    import kameloso.common : Tint, logger;
     import std.exception : ErrnoException;
     import std.file : FileException;
+    import std.utf : UTFException;
 
     if (!buffer.lines.data.length) return;
 
@@ -562,17 +563,32 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        logger.warning("File exception caught when committing log: ", e.msg, plugin.bell);
+        logger.warningf("File exception caught when committing log %s%s%s: %1$s%4$s%5$s",
+            Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
     {
-        logger.warning("Exception caught when committing log: ", e.msg, plugin.bell);
+        version(Posix)
+        {
+            import kameloso.common : errnoStrings;
+            logger.warningf("ErrnoException %s%s%s caught when committing " ~
+                "log to %1$s%4$s%3$s: %1$s%5$s%6$s",
+                Tint.log, errnoStrings[e.errno], Tint.warning, buffer.file, e.msg, plugin.bell);
+        }
+        else
+        {
+            logger.warningf("ErrnoException %s%d%s caught when committing " ~
+                "log to %1$s%4$s%3$s: %1$s%5$s%6$s",
+                Tint.log, e.errno, Tint.warning, buffer.file, e.msg, plugin.bell);
+        }
+
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        logger.warning("Unhandled exception caught when committing log: ", e.msg, plugin.bell);
+        logger.warningf("Unexpected exception caught when committing log %s%s%s: %1$s%4$s%5$s",
+            Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }
