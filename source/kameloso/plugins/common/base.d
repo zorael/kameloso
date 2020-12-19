@@ -374,13 +374,10 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
     {
         plugin.state.users = plugin.state.users.rehash();
     }
-    else
+    else if (auto channel = channelName in plugin.state.channels)
     {
-        foreach (ref channel; plugin.state.channels)
-        {
-            if (channelName != channel.name) continue;
-            channel.users = channel.users.rehash();
-        }
+        // created in `onChannelAwarenessSelfjoin`
+        channel.users = channel.users.rehash();
     }
 }
 
