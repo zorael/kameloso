@@ -444,8 +444,6 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         [kameloso.plugins.printer.logging.commitLog]
  +/
 @(IRCEvent.Type.PING)
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
 void commitAllLogs(PrinterPlugin plugin)
 {
     return commitAllLogsImpl(plugin);
