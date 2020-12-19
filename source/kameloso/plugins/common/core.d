@@ -2690,7 +2690,7 @@ struct BotCommand
         Create a new [BotCommand] with a default [PrefixPolicy.prefixed] policy
         and the passed trigger word.
      +/
-    this(const string word) pure
+    this(const string word, const Flag!"hidden" hidden = No.hidden) pure
     {
         this.word = word;
     }
@@ -2760,7 +2760,7 @@ public:
     /++
         Creates a new [BotRegex] with the passed regex expression.
      +/
-    this(const string expression)
+    this(const string expression, const Flag!"hidden" hidden = No.hidden)
     {
         if (!expression.length) return;
 
