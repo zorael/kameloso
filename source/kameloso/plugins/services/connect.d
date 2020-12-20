@@ -444,6 +444,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
+@(IRCEvent.Type.ERR_NICKCOLLISION)
 void onNickInUse(ConnectService service)
 {
     import std.conv : text;
