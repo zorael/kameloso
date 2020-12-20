@@ -464,21 +464,27 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     immutable errorCode = client.perform(No.throwOnError);
 
-    if (!sink.data.length && (errorCode != CurlError.ok))
+    if (!doc.title.length)
     {
-        import std.string : fromStringz;
-        import etc.c.curl : curl_easy_strerror;
-        immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
-        throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+        if (errorCode != CurlError.ok)
+        {
+            import std.string : fromStringz;
+            import etc.c.curl : curl_easy_strerror;
+            immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
+            throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+        }
+        else
+        {
+            throw new TitleFetchException("No title tag found",
+                url, client.statusLine.code, errorCode);
+        }
     }
-
-    if (client.statusLine.code >= 400)
+    else if (client.statusLine.code >= 400)
     {
-        throw new TitleFetchException("Failed to fetch URL", url, client.statusLine.code, errorCode);
-    }
-    else if (!doc.title.length)
-    {
-        throw new TitleFetchException("No title tag found", url, client.statusLine.code, errorCode);
+        // onReceive will never have aborted with HTTP.requestAbort if status >= 400
+        // as such errorCode shouldn't always be CurlError.write_error
+        throw new TitleFetchException("Failed to fetch URL",
+            url, client.statusLine.code, errorCode);
     }
 
     string slice = url;  // mutable
