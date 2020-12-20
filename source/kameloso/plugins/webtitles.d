@@ -464,7 +464,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     immutable errorCode = client.perform(No.throwOnError);
 
-    if (errorCode != CurlError.ok)
+    if (!sink.data.length && (errorCode != CurlError.ok))
     {
         import std.string : fromStringz;
         import etc.c.curl : curl_easy_strerror;

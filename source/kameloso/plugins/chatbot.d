@@ -200,7 +200,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
 
         immutable errorCode = client.perform(No.throwOnError);
 
-        if (errorCode != CurlError.ok)
+        if (!sink.data.length && (errorCode != CurlError.ok))
         {
             import kameloso.common : curlErrorStrings;
             import std.string : fromStringz;
