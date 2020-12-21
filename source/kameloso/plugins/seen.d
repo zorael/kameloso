@@ -892,9 +892,11 @@ in (filename.length, "Tried to save seen users to an empty filename")
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    auto file = File(filename, "w");
+    if (!seenUsers.length) return;
 
+    auto file = File(filename, "w");
     file.writeln(JSONValue(seenUsers).toPrettyString);
+    file.flush();
 }
 
 
