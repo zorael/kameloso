@@ -1822,24 +1822,12 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         }
         else
         {
-            version(PrefixedCommandsFallBackToNickname)
+            static if (verbose)
             {
-                static if (verbose)
-                {
-                    writeln("did not start with prefix but falling back to nickname check");
-                }
-
-                goto case nickname;
+                writeln("did not start with prefix but falling back to nickname check");
             }
-            else
-            {
-                static if (verbose)
-                {
-                    writeln("did not start with prefix, returning false");
-                }
 
-                return false;
-            }
+            goto case nickname;
         }
         break;
 
