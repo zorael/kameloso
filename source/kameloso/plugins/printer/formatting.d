@@ -225,6 +225,16 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(event.sender.nickname);
             }
 
+            version(PrintAccountNamesToo)
+            {
+                // No need to check for nickname.length, I think
+                if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
+                    event.sender.account.length)
+                {
+                    .put(sink, '(', event.sender.account, ')');
+                }
+            }
+
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -275,6 +285,16 @@ if (isOutputRange!(Sink, char[]))
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
+        }
+
+        version(PrintAccountNamesToo)
+        {
+            // No need to check for nickname.length, I think
+            if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
+                event.target.account.length)
+            {
+                .put(sink, '(', event.target.account, ')');
+            }
         }
 
         version(TwitchSupport)
@@ -669,6 +689,16 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(event.sender.nickname);
             }
 
+            version(PrintAccountNamesToo)
+            {
+                // No need to check for nickname.length, I think
+                if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
+                    event.sender.account.length)
+                {
+                    .put!(Yes.colours)(sink, FG.default_, '(', event.sender.account, ')');
+                }
+            }
+
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -726,6 +756,16 @@ if (isOutputRange!(Sink, char[]))
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
+        }
+
+        version(PrintAccountNamesToo)
+        {
+            // No need to check for nickname.length, I think
+            if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
+                event.target.account.length)
+            {
+                .put!(Yes.colours)(sink, FG.default_, '(', event.target.account, ')');
+            }
         }
 
         version(TwitchSupport)

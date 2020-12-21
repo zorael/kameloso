@@ -67,7 +67,8 @@ versions \
 
     May be enabled in some configurations.
  */
-/* versions \
+/*
+versions \
     "TwitchSupport" \
     "WithTwitchBotPlugin" \
     "OmniscientAdmin" \
@@ -78,6 +79,7 @@ versions \
     "OmniscientQueries" \
     "TraceWhois" \
     "GCStatsOnExit" \
+    "PrintAccountNamesToo" \
     "ProfileGC"
 */
 
