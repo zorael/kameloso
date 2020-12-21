@@ -238,6 +238,8 @@ void messageFiber(ref Kameloso instance)
         {
             foreach (plugin; instance.plugins)
             {
+                if (!plugin.isEnabled) continue;
+
                 try
                 {
                     if (!pluginToReload.length || (plugin.name == pluginToReload))
@@ -260,7 +262,7 @@ void messageFiber(ref Kameloso instance)
             reloadSpecificPlugin(ThreadMessage.Reload(), string.init);
         }
 
-        /// Passes a bus message to each plugin.
+        /// Passes a bus message to each plugin. Send to disabled plugins too.
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
             foreach (plugin; instance.plugins)
@@ -269,7 +271,7 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Passes an empty header-only bus message to each plugin.
+        /// Passes an empty header-only bus message to each plugin. Send to disabled plugins too.
         void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header) scope
         {
             foreach (plugin; instance.plugins)
@@ -717,6 +719,8 @@ Next mainLoop(ref Kameloso instance)
 
         foreach (plugin; instance.plugins)
         {
+            if (!plugin.isEnabled) continue;
+
             if (!plugin.state.scheduledFibers.length &&
                 !plugin.state.scheduledDelegates.length) continue;
 
