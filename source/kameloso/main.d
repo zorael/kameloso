@@ -1928,18 +1928,38 @@ Next tryConnect(ref Kameloso instance)
             return Next.continue_;
 
         case delayThenReconnect:
-            import core.time : seconds;
-
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
-                logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
-                    Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
+                import core.stdc.errno : EINPROGRESS;
+                enum errnoInProgress = EINPROGRESS;
             }
             else version(Windows)
             {
-                logger.warningf("Connection failed with error %s%d%s: %1$s%4$s",
-                    Tint.log, attempt.errno, Tint.warning, errorString);
+                import core.sys.windows.winsock2 : WSAEINPROGRESS;
+                enum errnoInProgress = WSAEINPROGRESS;
+            }
+
+            if (attempt.errno == errnoInProgress)
+            {
+                logger.warning("Connection timed out.");
+            }
+            else if (attempt.errno == 0)
+            {
+                logger.warning("Connection failed.");
+            }
+            else
+            {
+                version(Posix)
+                {
+                    import kameloso.common : errnoStrings;
+                    logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
+                        Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
+                }
+                else version(Windows)
+                {
+                    logger.warningf("Connection failed with error %s%d%s: %1$s%4$s",
+                        Tint.log, attempt.errno, Tint.warning, errorString);
+                }
             }
 
             if (*instance.abort) return Next.returnFailure;
@@ -1961,12 +1981,12 @@ Next tryConnect(ref Kameloso instance)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                logger.warning("IPv6 connection failed with %s%s%s: %1$s%4$s",
+                logger.warningf("IPv6 connection failed with %s%s%s: %1$s%4$s",
                     Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
             }
             else version(Windows)
             {
-                logger.warning("IPv6 connection failed with error %s%d%s: %1$s%4$s",
+                logger.warningf("IPv6 connection failed with error %s%d%s: %1$s%4$s",
                     Tint.log, attempt.errno, Tint.warning, errorString);
             }
             else
