@@ -1063,7 +1063,10 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     import std.utf : UTFException;
     import core.exception : UnicodeException;
 
-    IRCEvent event;
+    // Delay initialising the event so we don't do it twice;
+    // once here, once in toIRCEvent
+    IRCEvent event = void;
+    bool eventWasInitialised;
 
     scope(failure)
     {
@@ -1072,7 +1075,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         // Something asserted
         logger.error("scopeguard tripped.");
-        printEventDebugDetails(event, raw);
+        printEventDebugDetails(event, raw, eventWasInitialised);
 
         // Print the raw line char by char if it contains non-printables
         if (raw.canFind!((c) => c < ' '))
@@ -1090,7 +1093,6 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     try
     {
         // Sanitise and try again once on UTF/Unicode exceptions
-        import std.datetime.systime : Clock;
         import std.encoding : sanitize;
 
         try
@@ -1109,6 +1111,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             event.errors ~= (event.errors.length ? ". " : string.init) ~
                 "UnicodeException: " ~ e.msg;
         }
+
+        eventWasInitialised = true;
 
         if (instance.parser.clientUpdated)
         {
@@ -2560,12 +2564,15 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
     Params:
         event = The [dialect.defs.IRCEvent] in question.
         raw = The raw string that `event` was parsed from, as read from the IRC server.
+        eventWasInitialised = Whether the [dialect.defs.IRCEvent] was initialised
+            or if it was only ever set to `void`.
  +/
-void printEventDebugDetails(const ref IRCEvent event, const string raw)
+void printEventDebugDetails(const ref IRCEvent event, const string raw,
+    const bool eventWasInitialised = true)
 {
     if (!raw.length) return;
 
-    if (event == IRCEvent.init)
+    if (!eventWasInitialised || (event == IRCEvent.init))
     {
         logger.warningf(`Offending line: "%s%s%s"`, Tint.log, raw, Tint.warning);
     }
