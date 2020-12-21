@@ -434,6 +434,12 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
+    if (plugin.state.settings.trace)
+    {
+        import kameloso.common : Tint, logger;
+        logger.trace("GET: ", Tint.info, url);
+    }
+
     if (plugin.twitchBotSettings.singleWorkerThread)
     {
         pre = Clock.currTime;
