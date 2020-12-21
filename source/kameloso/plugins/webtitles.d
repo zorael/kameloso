@@ -280,7 +280,7 @@ void worker(shared TitleLookupRequest sRequest,
 
                 // Let's assume all YouTube clips have titles and authors
                 // Should we decode the author too?
-                request.results.youtubeTitle = decodeTitle(info["title"].str);
+                request.results.youtubeTitle = decodeEntities(info["title"].str);
                 request.results.youtubeAuthor = info["author_name"].str;
 
                 reportYouTubeTitle(request, colouredFlag);
@@ -493,7 +493,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     if (host.beginsWith("www.")) host = host[4..$];
 
     TitleLookupResults results;
-    results.title = decodeTitle(doc.title);
+    results.title = decodeEntities(doc.title);
     results.domain = host;
 
     if (descriptions)
@@ -742,24 +742,24 @@ final class TitleFetchException : Exception
 }
 
 
-// decodeTitle
+// decodeEntities
 /++
-    Removes unwanted characters from a title, and decodes HTML entities in it
+    Removes unwanted characters from a string, and decodes HTML entities in it
     (like `&mdash;` and `&nbsp;`).
 
     Params:
         title = Title string to decode entities and remove tags from.
 
     Returns:
-        A modified title string, with unwanted bits stripped out.
+        A modified string, with unwanted bits stripped out and/or decoded.
  +/
-string decodeTitle(const string title)
+string decodeEntities(const string line)
 {
     import lu.string : stripped;
     import arsd.dom : htmlEntitiesDecode;
     import std.array : replace;
 
-    return title
+    return line
         .replace("\r", string.init)
         .replace("\n", " ")
         .stripped
@@ -770,23 +770,23 @@ string decodeTitle(const string title)
 unittest
 {
     immutable t1 = "&quot;Hello&nbsp;world!&quot;";
-    immutable t1p = decodeTitle(t1);
+    immutable t1p = decodeEntities(t1);
     assert((t1p == "\"Hello\u00A0world!\""), t1p);  // not a normal space
 
     immutable t2 = "&lt;/title&gt;";
-    immutable t2p = decodeTitle(t2);
+    immutable t2p = decodeEntities(t2);
     assert((t2p == "</title>"), t2p);
 
     immutable t3 = "&mdash;&micro;&acute;&yen;&euro;";
-    immutable t3p = decodeTitle(t3);
+    immutable t3p = decodeEntities(t3);
     assert((t3p == "—µ´¥€"), t3p);  // not a normal dash
 
     immutable t4 = "&quot;Se&ntilde;or &THORN;&quot; &copy;2017";
-    immutable t4p = decodeTitle(t4);
+    immutable t4p = decodeEntities(t4);
     assert((t4p == `"Señor Þ" ©2017`), t4p);
 
     immutable t5 = "\n        Nyheter - NSD.se        \n";
-    immutable t5p = decodeTitle(t5);
+    immutable t5p = decodeEntities(t5);
     assert(t5p == "Nyheter - NSD.se");
 }
 
