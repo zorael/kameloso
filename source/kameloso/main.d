@@ -1973,9 +1973,9 @@ Next tryConnect(ref Kameloso instance)
             if (*instance.abort) return Next.returnFailure;
             continue;
 
-        case noMoreIPs:
+        /*case noMoreIPs:
             logger.warning("Could not connect to server!");
-            return Next.returnFailure;
+            return Next.returnFailure;*/
 
         case ipv6Failure:
             version(Posix)

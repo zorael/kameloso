@@ -800,7 +800,7 @@ struct ConnectionAttempt
         connected,               /// Successfully connected.
         delayThenReconnect,      /// Failed to connect; should delay and retry.
         delayThenNextIP,         /// Failed to reconnect several times; next IP.
-        noMoreIPs,               /// Exhausted all IPs and could not connect.
+        //noMoreIPs,             /// Exhausted all IPs and could not connect.
         ipv6Failure,             /// IPv6 connection failed.
         sslFailure,              /// Failure establishing an SSL connection.
         invalidConnectionError,  /// The current IP cannot be connected to.
