@@ -508,7 +508,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
             {
                 if (tag.name == "description")
                 {
-                    results.description = tag.content;
+                    results.description = decodeEntities(tag.content);
                     break;
                 }
             }
