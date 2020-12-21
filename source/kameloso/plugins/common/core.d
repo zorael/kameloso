@@ -2561,14 +2561,6 @@ enum PermissionsRequired
 }
 
 
-// PrivilegeLevel
-/++
-    Deprecated alias to [PermissionsRequired].
- +/
-deprecated("Use `PermissionsRequired` instead")
-alias PrivilegeLevel = PermissionsRequired;
-
-
 // replay
 /++
     Convenience function that returns a [ReplayImpl] of the right type,
