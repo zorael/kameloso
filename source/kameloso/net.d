@@ -893,8 +893,6 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
     alias State = ConnectionAttempt.State;
 
-    bool ipv6IsFailing;
-
     yield(ConnectionAttempt.init);
 
     do
@@ -903,11 +901,11 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
         foreach (immutable i, ip; conn.ips)
         {
             immutable isIPv6 = (ip.addressFamily == AddressFamily.INET6);
-            if (isIPv6 && ipv6IsFailing) continue;  // Continue until IPv4 IP
 
             ConnectionAttempt attempt;
             attempt.ip = ip;
 
+            attemptloop:
             foreach (immutable retry; 0..connectionRetries)
             {
                 if (abort) return;
@@ -925,6 +923,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
                     attempt.retryNum = retry;
                     attempt.state = State.preconnect;
+                    attempt.errno = 0;  // reset
                     yield(attempt);
 
                     conn.socket.connect(ip);
@@ -998,10 +997,22 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                         // An address incompatible with the requested protocol was used.
                         if (isIPv6)
                         {
-                            ipv6IsFailing = true;
                             attempt.state = State.ipv6Failure;
                             attempt.error = e.msg;
                             yield(attempt);
+
+                            // Remove IPv6 addresses from conn.ips
+                            foreach_reverse (immutable n, const arrayIP; conn.ips)
+                            {
+                                if (n == i) break;  // caught up to current
+
+                                if (arrayIP.addressFamily == AddressFamily.INET6)
+                                {
+                                    import std.algorithm.mutation : SwapStrategy, remove;
+                                    conn.ips = conn.ips
+                                        .remove!(SwapStrategy.unstable)(n);
+                                }
+                            }
                             continue iploop;
                         }
                         else
@@ -1032,7 +1043,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                             attempt.error = e.msg;
                             yield(attempt);
                         }
-                        break;
+                        continue attemptloop;
                     }
                 }
                 catch (SSLException e)
@@ -1043,26 +1054,19 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     attempt.error = "%s (%s)"
                         .format(e.msg, conn.getSSLErrorMessage(e.code));
                     yield(attempt);
+                    continue attemptloop;
                 }
-                break;
             }
 
-            if (i+1 <= conn.ips.length)
-            {
-                // Not last IP
-                attempt.state = State.delayThenNextIP;
-                yield(attempt);
-            }
+            // foreach ended; connectionRetries reached.
+            // Move on to next IP (or same again if only one)
+            attempt.state = (conn.ips.length > 1) ?
+                State.delayThenNextIP :
+                State.delayThenReconnect;
+            yield(attempt);
         }
     }
     while (!abort);
-
-    // All IPs exhausted
-    ConnectionAttempt endAttempt;
-    endAttempt.state = State.noMoreIPs;
-    yield(endAttempt);
-    // Should never get here
-    assert(0, "Dead `connectFiber` resumed after yield");
 }
 
 
