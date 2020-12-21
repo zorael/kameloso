@@ -144,22 +144,15 @@ public:
          +/
         private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
-            version(CtTints)
+            if (brightTerminal)
             {
-                if (brightTerminal)
-                {
-                    enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
-                    return ctTintBright;
-                }
-                else
-                {
-                    enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
-                    return ctTintDark;
-                }
+                enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
+                return ctTintBright;
             }
             else
             {
-                return tint(level, brightTerminal ? Yes.brightTerminal : No.brightTerminal).colour;
+                enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
+                return ctTintDark;
             }
         }
 

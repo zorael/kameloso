@@ -59,8 +59,7 @@ versions \
     "Colours" \
     "PrefixedCommandsFallBackToNickname" \
     "SanitizeAndRetryOnUnicodeException" \
-    "TwitchAPIFeatures" \
-    "CtTints"
+    "TwitchAPIFeatures"
 
 /**
     Non-default features.
