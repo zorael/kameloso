@@ -1170,6 +1170,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         // Let each plugin process the event
         foreach (plugin; instance.plugins)
         {
+            if (!plugin.isEnabled) continue;
+
             try
             {
                 plugin.onEvent(event);

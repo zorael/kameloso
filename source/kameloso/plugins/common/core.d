@@ -427,8 +427,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
         import std.typecons : Flag, No, Yes;
 
-        if (!this.isEnabled) return;
-
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
         alias lateAwareness(alias T) = hasUDA!(T, Awareness.late);
