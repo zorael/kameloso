@@ -1774,18 +1774,18 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     catch (GetOptException e)
     {
         logger.error("Error parsing command-line arguments: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConvException e)
     {
         logger.error("Error converting command-line arguments: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
         logger.errorf("Specified configuration file %s%s%s is not a file!",
             Tint.log, e.filename, Tint.error);
-        version(PrintStacktraces) logger.trace(e.info);
+        //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConfigurationFileReadFailureException e)
     {
