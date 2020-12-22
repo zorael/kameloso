@@ -201,13 +201,14 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         (cast(DateTime)Clock.currTime).timeOfDay.toString(linebuffer);
         linebuffer.put("] ");
 
-        if (monochrome) return;
-
         version(Colours)
         {
-            linebuffer.colourWith(brightTerminal ?
-                logcoloursBright[logLevel] :
-                logcoloursDark[logLevel]);
+            if (!monochrome)
+            {
+                linebuffer.colourWith(brightTerminal ?
+                    logcoloursBright[logLevel] :
+                    logcoloursDark[logLevel]);
+            }
         }
     }
 
