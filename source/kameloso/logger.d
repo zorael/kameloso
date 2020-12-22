@@ -249,6 +249,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
      +/
     private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
+        import std.traits : isAggregateType;
+
         beginLogMsg(logLevel);
 
         foreach (ref arg; args)
@@ -264,8 +266,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
                 import lu.conv : Enum;
                 linebuffer.put(Enum!T.toString(arg));
             }
-            else static if ((is(T == struct) || is(T == class) || is(T == interface)) &&
-                is(typeof(T.toString)))
+            else static if (isAggregateType!T && is(typeof(T.toString)))
             {
                 import std.traits : isSomeFunction;
 
