@@ -617,11 +617,11 @@ void onEndOfList(SeenPlugin plugin)
 
     If this is a [dialect.defs.IRCEvent.Type.CHAN] event, the original lines
     could (for example) have been "`kameloso: seen Joe`", or merely "`!seen Joe`"
-    (assuming a "`!`" prefix). If it was a private `dialect.defs.IRCEvent.Type.QUERY`
+    (assuming a "`!`" prefix). If it was a private [dialect.defs.IRCEvent.Type.QUERY]
     message, the `kameloso:` prefix will have been removed. In either case, we're
     left with only the parts we're interested in, and the rest sliced off.
 
-    As a result, the `dialect.defs.IRCEvent` `event` would look something like this
+    As a result, the [dialect.defs.IRCEvent] `event` would look something like this
     (given a user `foo` querying "`!seen Joe`" or "`kameloso: seen Joe`"):
 
     ---

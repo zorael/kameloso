@@ -629,6 +629,6 @@ struct EventURLs
     /// The [dialect.defs.IRCEvent] that should trigger a Webtitles lookup.
     IRCEvent event;
 
-    /// The URLs discovered inside `dialect.defs.IRCEvent.content`.
+    /// The URLs discovered inside [dialect.defs.IRCEvent.content].
     string[] urls;
 }
