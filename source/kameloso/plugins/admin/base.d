@@ -10,6 +10,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#admin
+        [kameloso.common.base]
+        [kameloso.common.core]
  +/
 module kameloso.plugins.admin.base;
 

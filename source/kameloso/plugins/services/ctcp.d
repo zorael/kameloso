@@ -4,6 +4,10 @@
 
     It has no commands and is not aware in the normal sense; it only blindly
     responds to requests.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.services.ctcp;
 

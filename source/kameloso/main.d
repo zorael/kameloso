@@ -6,6 +6,7 @@
     See_Also:
         [kameloso.kameloso]
         [kameloso.common]
+        [kameloso.config]
  +/
 module kameloso.main;
 

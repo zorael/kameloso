@@ -1,6 +1,9 @@
 /++
     The is not a plugin by itself but contains code common to all plugins,
     without which they will *not* function.
+
+    See_Also:
+        [kameloso.plugins.common.core]
  +/
 module kameloso.plugins.common.base;
 

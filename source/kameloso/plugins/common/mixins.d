@@ -2,6 +2,10 @@
     The section of [kameloso.plugins.common] that involves mixins.
 
     This was all in one `plugins/common.d` file that just grew too big.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.common.mixins;
 

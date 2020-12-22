@@ -7,6 +7,8 @@
 
     See_Also:
         [kameloso.net]
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.services.connect;
 

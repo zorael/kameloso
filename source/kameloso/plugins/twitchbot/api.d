@@ -1,5 +1,8 @@
 /++
     Functions for accessing the Twitch API. For internal use.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.base]
  +/
 module kameloso.plugins.twitchbot.api;
 

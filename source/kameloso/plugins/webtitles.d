@@ -4,6 +4,10 @@
 
     It has no bot commands; everything is done by automatically scanning channel
     and private query messages for things that look like links.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.webtitles;
 

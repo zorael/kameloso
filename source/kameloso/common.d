@@ -1,6 +1,9 @@
 /++
     Common functions used throughout the program, generic enough to be used in
     several places, not fitting into any specific one.
+
+    See_Also:
+        [kameloso.kameloso]
  +/
 module kameloso.common;
 

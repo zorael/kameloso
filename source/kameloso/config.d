@@ -6,6 +6,10 @@
     to construct and populate instances of the structs needed for the bot to
     function, like [dialect.defs.IRCClient], [dialect.defs.IRCServer],
     [kameloso.kameloso.IRCBot] and [kameloso.kameloso.CoreSettings].
+
+    See_Also:
+        [kameloso.kameloso]
+        [kameloso.common]
  +/
 module kameloso.config;
 
