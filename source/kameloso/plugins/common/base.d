@@ -23,7 +23,8 @@ public:
     Changes a setting of a plugin, given both the names of the plugin and the
     setting, in string form.
 
-    This merely iterates the passed `plugins` and calls their [setSettingByName] methods.
+    This merely iterates the passed `plugins` and calls their
+    [kameloso.plugins.common.core.IRCPlugin.setSettingByName] methods.
 
     Params:
         plugins = Array of all [kameloso.plugins.common.core.IRCPlugin]s.
