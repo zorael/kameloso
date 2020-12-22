@@ -92,14 +92,14 @@ public:
     /++
         Executed to let plugins modify an event mid-parse.
      +/
-    void postprocess(ref IRCEvent) @system;
+    void postprocess(ref IRCEvent event) @system;
 
 
     // onEvent
     /++
         Executed upon new IRC event parsed from the server.
      +/
-    void onEvent(const ref IRCEvent) @system;
+    void onEvent(const ref IRCEvent event) @system;
 
 
     // initResources
@@ -117,14 +117,16 @@ public:
         first `out string[][string]` parameter, and the invalid encountered
         entries in the second.
      +/
-    void deserialiseConfigFrom(const string, out string[][string], out string[][string]);
+    void deserialiseConfigFrom(const string configFile,
+        out string[][string] missingEntries,
+        out string[][string] invalidEntries);
 
 
     // serialiseConfigInto
     /++
         Executed when gathering things to put in the configuration file.
      +/
-    bool serialiseConfigInto(ref Appender!(char[])) const;
+    bool serialiseConfigInto(ref Appender!(char[]) sink) const;
 
 
     // setSettingByName
@@ -134,7 +136,7 @@ public:
         Returns:
             Boolean of whether the set succeeded or not.
      +/
-    bool setSettingByName(const string, const string);
+    bool setSettingByName(const string setting, const string value);
 
 
     // start
@@ -189,7 +191,7 @@ public:
     /++
         Executed when a bus message arrives from another plugin.
      +/
-    void onBusMessage(const string, shared Sendable content) @system;
+    void onBusMessage(const string header, shared Sendable content) @system;
 
 
     // isEnabled
