@@ -56,7 +56,6 @@ If there's anyone talking it should show up on your screen.
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
-    * [Fetching a copy of the source](#fetching-a-copy-of-the-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
@@ -83,6 +82,8 @@ If there's anyone talking it should show up on your screen.
 
 # Getting started
 
+Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, download the source and compile it yourself.
+
 ## Prerequisites
 
 There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019).
@@ -93,13 +94,11 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ## Downloading
 
-Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, download and compile it yourself.
-
-### Fetching a copy of the source
-
 ```sh
 $ git clone https://github.com/zorael/kameloso.git
 ```
+
+It can also be downloaded [as a `.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
 
 ## Compiling
 
