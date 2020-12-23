@@ -441,7 +441,7 @@ unittest
 
     struct S2
     {
-        void toString(scope void delegate(const(char)[]) dg)
+        void toString(scope void delegate(const(char)[]) dg) const
         {
             dg("delegate toString");
         }
@@ -461,7 +461,7 @@ unittest
 
     struct S5
     {
-        string toString()()
+        string toString()() const
         {
             return "template toString";
         }
@@ -469,7 +469,7 @@ unittest
 
     class C
     {
-        override string toString()
+        override string toString() const
         {
             return "plain toString";
         }
