@@ -46,13 +46,13 @@ jobs:
 
     - name: 'Build and test'
       run: |
-        time dub test  --compiler=$DC
-        time dub build --compiler=$DC --nodeps -b debug   -c dev
-        time dub build --compiler=$DC --nodeps -b plain   -c dev
-        time dub build --compiler=$DC --nodeps -b release -c dev
+        dub test  --compiler=$DC
+        dub build --compiler=$DC --nodeps -b debug   -c dev
+        dub build --compiler=$DC --nodeps -b plain   -c dev
+        dub build --compiler=$DC --nodeps -b release -c dev
 
     - name: 'Generate documenation'
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' && success()
       run: |
         dub fetch adrdox
         dub run adrdox -- -ip --header-title="kameloso IRC bot" source
