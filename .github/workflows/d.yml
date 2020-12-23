@@ -24,6 +24,9 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macOS-latest, windows-latest ]
         dc: [ dmd-latest, dmd-2.084.0, ldc-latest, ldc-1.14.0 ]
+        exclude:
+          - { os: macOS-latest, dc: dmd-2.084.0 }
+          - { os: macOS-latest, dc: ldc-1.14.0 }
 
     runs-on: ${{ matrix.os }}
     env:
@@ -33,13 +36,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install cURL on Linux
+    - name: 'Install cURL on Linux'
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
         sudo apt install libcurl4-openssl-dev
 
-    - name: Install D compiler
+    - name: 'Install D compiler'
       uses: dlang-community/setup-dlang@v1
       with:
         compiler: ${{ matrix.dc }}
@@ -58,7 +61,7 @@ jobs:
         dub run adrdox -- -ip --header-title="kameloso IRC bot" source
         cp -rv .circleci generated-docs
 
-    - name: Deploy documentation to GitHub Pages
+    - name: 'Deploy documentation to GitHub Pages'
       if: matrix.os == 'ubuntu-latest' && success()
       uses: crazy-max/ghaction-github-pages@v2.2.0
       with:
