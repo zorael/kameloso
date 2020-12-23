@@ -49,10 +49,10 @@ jobs:
 
     - name: 'Build and test'
       run: |
-        dub test  --compiler=$DC
-        dub build --compiler=$DC --nodeps -b debug   -c dev
-        dub build --compiler=$DC --nodeps -b plain   -c dev
-        dub build --compiler=$DC --nodeps -b release -c dev
+        dub test
+        dub build --nodeps -b debug   -c dev
+        dub build --nodeps -b plain   -c dev
+        dub build --nodeps -b release -c dev
 
     - name: 'Generate documenation'
       if: matrix.os == 'ubuntu-latest' && success()
