@@ -288,7 +288,7 @@ enum Timeout
         This is merely to stop us from spamming queries for the same person
         without hysteresis.
      +/
-    whoisRetry = 300,
+    whoisRetry = 30,
 
     /++
         How long to wait after encountering an error when reading from the server,
