@@ -118,6 +118,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     switch (event.type)
     {
     case ACCOUNT:
+        if (!event.sender.account.length) return;
         account = event.sender.account;
         nickname = event.sender.nickname;
         break;
