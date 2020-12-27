@@ -1,4 +1,4 @@
-# kameloso [![Linux](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.4.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.4...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.4.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.4...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -82,7 +82,7 @@ If there's anyone talking it should show up on your screen.
 
 # Getting started
 
-Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, download the source and compile it yourself.
+Grab a pre-compiled binary from under [releases](https://github.com/zorael/kameloso/releases); alternatively, download the source and compile it yourself.
 
 ## Prerequisites
 
