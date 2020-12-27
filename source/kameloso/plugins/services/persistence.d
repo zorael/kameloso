@@ -252,6 +252,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     break;
 
                 case ACCOUNT:
+                case JOIN:
+                case QUIT:  // Technically superfluous
                     if (stored.account == "*")
                     {
                         // An account of "*" means the user logged out of services
