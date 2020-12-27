@@ -1972,6 +1972,8 @@ FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired le
     }
     else
     {
+        immutable isLogoutEvent = (event.type == IRCEvent.Type.ACCOUNT);
+
         with (PermissionsRequired)
         final switch (level)
         {
@@ -1981,11 +1983,11 @@ FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired le
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
-            return whoisExpired ? FilterResult.whois : FilterResult.fail;
+            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.fail;
 
         case anyone:
             // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
-            return whoisExpired ? FilterResult.whois : FilterResult.pass;
+            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.pass;
 
         case ignore:
             /*assert(0, "`filterSender` saw a `PermissionsRequired.ignore` and the call " ~
