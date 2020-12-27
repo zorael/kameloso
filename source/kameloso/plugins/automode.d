@@ -208,7 +208,7 @@ in (account.length, "Tried to apply automodes to an empty account")
     {
         if (const usersWithThisMode = cast(char)mode in channel.mods)
         {
-            if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(account))
+            if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(nickname))
             {
                 // User doesn't have this mode
                 missingModes ~= mode;
