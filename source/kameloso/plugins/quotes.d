@@ -80,12 +80,12 @@ enum ManageQuoteAction
 
 // getRandomQuote
 /++
-    Fetches a quote for the specified nickname from the in-memory JSON array.
+    Fetches a random quote for the specified nickname from the in-memory JSON array.
 
     Example:
     ---
-    string quote = plugin.getRandomQuote(event.sender.nickame);
-    if (!quote.length) return;
+    Quote quote = plugin.getRandomQuote(event.sender.nickame);
+    if (quote == Quote.init) return;
     // ...
     ---
 
