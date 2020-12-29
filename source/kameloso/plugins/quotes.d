@@ -20,7 +20,6 @@ private:
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : Tint, logger;
-import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
@@ -126,7 +125,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 
     On Twitch, picks a quote from the stored quotes of the current channel owner.
 
-    The quote is read from in-memory JSON storage, and it is sent to the
+    The quote is read from the in-memory JSON storage, and it is sent to the
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
@@ -161,6 +160,7 @@ void addQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
 in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")
 {
+    import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : unquoted;
     import std.json : JSONException, JSONValue;
 
