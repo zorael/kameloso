@@ -631,10 +631,32 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
                 {
                     import lu.string : contains;
 
-                    if (!slice.contains(' ')) return sendUsage();
+                    if (!slice.contains(' '))
+                    {
+                        immutable index = slice.to!size_t;
+                        immutable quote = getSpecificQuote(plugin, id, index);
 
-                    immutable index = slice.nom(' ').to!size_t;
-                    return modQuoteAndReport(plugin, event, id, index, slice);
+                        if (quote.line.length)
+                        {
+                            return playQuote(id, quote);
+                        }
+                        else
+                        {
+                            enum pattern = "No such quote: %s #%s";
+
+                            immutable message = plugin.state.settings.colouredOutgoing ?
+                                pattern.format(id.ircColourByHash, index.ircBold) :
+                                pattern.format(id, index);
+
+                            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        immutable index = slice.nom(' ').to!size_t;
+                        return modQuoteAndReport(plugin, event, id, index, slice);
+                    }
                 }
                 catch (ConvException e)
                 {
