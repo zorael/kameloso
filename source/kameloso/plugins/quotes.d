@@ -54,12 +54,28 @@ public:
     /// When the line was uttered, expressed in UNIX time.
     long timestamp;
 
-    /// Constructor taking a [std.json.JSONValue].
-    this(const JSONValue json)
+    /// The index of the quote in the quote array.
+    size_t index;
+
+    /// Constructor taking a [std.json.JSONValue] and an index.
+    this(const JSONValue json, const size_t index)
     {
         this.line = json["line"].str;
         this.timestamp = json["timestamp"].integer;
+        this.index = index;
     }
+}
+
+
+// ManageQuoteAction
+/++
+    What kind of action to take inside [manageQuoteImpl].
+ +/
+enum ManageQuoteAction
+{
+    addOrReplay,  /// Add a quote, or replay one.
+    mod,          /// Modify a quote's text.
+    del,          /// Remove a quote by index.
 }
 
 
@@ -322,6 +338,90 @@ in (rawLine.length, "Tried to add an empty quote")
 }
 
 
+// modQuoteAndReport
+/++
+    Modifies a report in the quote database and reports success to the channel.
+
+    Params:
+        plugin = The current [QuotesPlugin].
+        event = The triggering [dialect.defs.IRCEvent].
+        id = The identifier (nickname or account) of the quoted user.
+        index = The index of the quote to modify or remove.
+        newText = Optional new text to assign to the quote index; implies
+            a modification is requested, not a removal.
+ +/
+void modQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
+    const string id, const size_t index, const string newText = string.init)
+{
+    import kameloso.irccolours : ircBold, ircColourByHash;
+    import std.algorithm.mutation : SwapStrategy, remove;
+    import std.format : format;
+    import std.json : JSONException, JSONValue;
+
+    try
+    {
+        if ((id !in plugin.quotes) || !plugin.quotes[id].array.length)
+        {
+            enum pattern = "No quotes on record for user %s.";
+            immutable message = plugin.state.settings.colouredOutgoing ?
+                pattern.format(id.ircColourByHash) :
+                pattern.format(id);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return;
+        }
+
+        immutable len = plugin.quotes[id].array.length;
+
+        if (index >= len)
+        {
+            enum pattern = "Index %s is out of range. (%d >= %d)";
+            immutable message = plugin.state.settings.colouredOutgoing ?
+                pattern.format(index.ircBold, index, len) :
+                pattern.format(index, index, len);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return;
+        }
+
+        string pattern;
+
+        if (newText.length)
+        {
+            // Quote is to be modified
+            plugin.quotes[id].array[index]["line"].str = newText;
+            pattern = "Quote %s #%s modified.";
+        }
+        else
+        {
+            // Quote is to be removed
+            plugin.quotes[id].array = plugin.quotes[id].array
+                .remove!(SwapStrategy.unstable)(index);
+
+            if (!plugin.quotes[id].array.length)
+            {
+                plugin.quotes.object.remove(id);
+                pattern = "Quote %s #%s removed.";
+            }
+            else
+            {
+                pattern = "Quote %s #%s removed. Other quotes may have been reordered.";
+            }
+        }
+
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(id.ircColourByHash, index.ircBold) :
+            pattern.format(id, index);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        plugin.quotes.save(plugin.quotesFile);
+    }
+    catch (JSONException e)
+    {
+        logger.errorf("Could not remove quote for %s%s%s: %1$s%4$s",
+            Tint.log, id, Tint.error, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+}
+
+
 // removeWeeChatHead
 /++
     Removes the WeeChat timestamp and nickname from the front of a string.
@@ -440,6 +540,262 @@ unittest
             "has quit (Remote host closed the connection)";
         immutable modified = removeWeeChatHead(line, "kameloso", prefixes);
         assert((modified == line), modified);
+    }
+}
+
+
+// onCommandDelQuote
+/++
+    Removes a quote from the quote database.
+
+    On Twitch, selects a quote from the stored quotes of the current channel owner.
+
+    The quote is read from the in-memory JSON storage, and it is sent to the
+    channel the triggering event occurred in, alternatively in a private message
+    if the request was sent in one such.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PermissionsRequired.operator)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "delquote")
+@Description("Removes a quote from the quote database.", "$command [nickname] [quote index]")
+void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
+{
+    manageQuoteImpl(plugin, event, ManageQuoteAction.del);
+}
+
+
+// onCommandModQuote
+/++
+    Modifies a quote's text in the quote database.
+
+    On Twitch, selects a quote from the stored quotes of the current channel owner.
+
+    The quote is read from the in-memory JSON storage, and it is sent to the
+    channel the triggering event occurred in, alternatively in a private message
+    if the request was sent in one such.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PermissionsRequired.operator)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "modquote")
+@Description("Modifies a quote's text in the quote database.",
+    "$command [nickname] [quote index] [next quote text]")
+void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
+{
+    manageQuoteImpl(plugin, event, ManageQuoteAction.mod);
+}
+
+
+// manageQuoteImpl
+/++
+    Manages the quote database by either adding a new one (or replaying an
+    existing one), modifying one in-place, or removing an existing one.
+
+    Which action to take depends on the value of the passed `action` [ManageQuoteAction].
+
+    Params:
+        plugin = The current [QuotesPlugin].
+        event = The triggering [dialect.defs.IRCEvent].
+        action = What action to take; add (or replay), modify or remove.
+ +/
+void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
+    const ManageQuoteAction action)
+{
+    import kameloso.irccolours : ircBold, ircColourByHash;
+    import dialect.common : isValidNickname, stripModesign, toLowerCase;
+    import lu.string : nom, stripped, strippedLeft;
+    import std.format : format;
+    import std.json : JSONException;
+
+    string slice = event.content.stripped;  // mutable
+
+    void sendUsage()
+    {
+        string pattern;
+
+        with (ManageQuoteAction)
+        final switch (action)
+        {
+        case addOrReplay:
+            pattern = "Usage: %s%s [nickname] [text to add a new quote]";
+            break;
+
+        case mod:
+            pattern = "Usage: %s%s [nickname] [quote index to modify] [new quote text]";
+            break;
+
+        case del:
+            pattern = "Usage: %s%s [nickname] [quote index to remove]";
+            break;
+        }
+
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    if (!slice.length && (plugin.state.server.daemon != IRCServer.Daemon.twitch))
+    {
+        return sendUsage();
+    }
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import kameloso.plugins.common.base : nameOf;
+
+            if ((slice == event.channel[1..$]) ||
+                (slice == plugin.nameOf(event.channel[1..$])))
+            {
+                // Line was "!quote streamername";
+                // Slice away the name so a new one-word quote isn't added
+                slice = string.init;
+            }
+        }
+    }
+
+    immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
+        event.channel[1..$] :
+        slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
+    immutable trailing = slice.strippedLeft;  // Already strippedRight earlier
+
+    if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
+        !specified.isValidNickname(plugin.state.server))
+    {
+        enum pattern = `"%s" is not a valid account or nickname.`;
+
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(specified.ircBold) :
+            pattern.format(specified);
+
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    /// Quote a quote
+    void playQuote(const string nickname, const Quote quote)
+    {
+        import std.datetime.systime : SysTime;
+
+        enum pattern = "#%d [%d-%02d-%02d %02d:%02d] %s | %s";
+
+        SysTime when = SysTime.fromUnixTime(quote.timestamp);
+
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(quote.index, when.year, when.month, when.day, when.hour, when.minute,
+                nickname.ircColourByHash, quote.line) :
+            pattern.format(quote.index, when.year, when.month, when.day, when.hour, when.minute,
+                nickname, quote.line);
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    try
+    {
+        void onSuccess(const IRCUser replyUser)
+        {
+            import kameloso.plugins.common.base : idOf;
+            import std.conv : ConvException, to;
+
+            immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
+
+            with (ManageQuoteAction)
+            final switch (action)
+            {
+            case addOrReplay:
+                if (trailing.length)
+                {
+                    // There is trailing text, assume it was a quote to be added
+                    return addQuoteAndReport(plugin, event, id, trailing);
+                }
+
+                // No point looking up if we already did before onSuccess
+                if (id != specified)
+                {
+                    immutable quote = plugin.getRandomQuote(id);
+
+                    if (quote.line.length)
+                    {
+                        return playQuote(id, quote);
+                    }
+                }
+                break;
+
+            case mod:
+                try
+                {
+                    import lu.string : contains;
+
+                    if (!slice.contains(' ')) return sendUsage();
+
+                    immutable index = slice.nom(' ').to!size_t;
+                    return modQuoteAndReport(plugin, event, id, index, slice);
+                }
+                catch (ConvException e)
+                {
+                    return sendUsage();
+                }
+
+            case del:
+                try
+                {
+                    immutable index = trailing.stripped.to!size_t;
+                    return modQuoteAndReport(plugin, event, id, index);
+                }
+                catch (ConvException e)
+                {
+                    return sendUsage();
+                }
+            }
+
+            enum pattern = "No quote on record for %s";
+
+            immutable message = plugin.state.settings.colouredOutgoing ?
+                pattern.format(replyUser.nickname.ircColourByHash) :
+                pattern.format(replyUser.nickname);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+
+        void onFailure(const IRCUser failureUser)
+        {
+            logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+            return onSuccess(failureUser);
+        }
+
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                return onSuccess(event.sender);
+            }
+        }
+
+        // Try the specified nickname/account first, in case it's a nickname that
+        // has quotes but resolve to a different account that doesn't.
+        // But only if there's no trailing text; would mean it's a new quote
+        if ((action == ManageQuoteAction.addOrReplay) && !trailing.length)
+        {
+            immutable quote = plugin.getRandomQuote(specified);
+
+            if (quote.line.length)
+            {
+                return playQuote(specified, quote);
+            }
+        }
+
+        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
+
+        mixin WHOISFiberDelegate!(onSuccess, onFailure);
+
+        enqueueAndWHOIS(specified);
+    }
+    catch (JSONException e)
+    {
+        logger.errorf("Could not quote %s%s%s: %1$s%4$s", Tint.log, specified, Tint.error, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
     }
 }
 
