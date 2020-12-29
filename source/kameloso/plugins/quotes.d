@@ -109,7 +109,42 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
 
         immutable index = uniform(0, len);
         immutable storedQuoteJSON = quotesForNickname.array[index];
+        return Quote(storedQuoteJSON, index);
+    }
+    else
+    {
+        return Quote.init;
+    }
+}
 
+
+// getSpecificQuote
+/++
+    Fetches a specific quote for the specified nickname from the in-memory JSON array.
+
+    Example:
+    ---
+    Quote quote = plugin.getSpecificQuote(event.sender.nickame, 2);
+    if (quote == Quote.init) return;
+    // ...
+    ---
+
+    Params:
+        plugin = Current [QuotesPlugin].
+        nickname = Nickname of the user to fetch quotes for.
+        index = Index of quote to fetch.
+
+    Returns:
+        A [Quote] containing a the quote string of a specific quote.
+        If no such quote is available it returns an empty `Quote.init` instead.
+ +/
+Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t index)
+{
+    if (const quotesForNickname = nickname in plugin.quotes)
+    {
+        if (index >= quotesForNickname.array.length) return Quote.init;
+
+        immutable storedQuoteJSON = quotesForNickname.array[index];
         return Quote(storedQuoteJSON, index);
     }
     else
