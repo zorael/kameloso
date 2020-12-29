@@ -55,14 +55,14 @@ jobs:
         dub build --nodeps -b release -c dev
 
     - name: 'Generate documenation'
-      if: matrix.os == 'ubuntu-latest' && success()
+      if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       run: |
         dub fetch adrdox
         dub run adrdox -- -ip --header-title="kameloso IRC bot" source
         cp -rv .circleci generated-docs
 
     - name: 'Deploy documentation to GitHub Pages'
-      if: matrix.os == 'ubuntu-latest' && success()
+      if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       uses: crazy-max/ghaction-github-pages@v2.2.0
       with:
         target_branch: gh-pages
