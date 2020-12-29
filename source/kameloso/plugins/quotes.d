@@ -185,15 +185,15 @@ in (rawLine.length, "Tried to add an empty quote")
             plugin.quotes[id].array = null;
         }
 
+        immutable index = plugin.quotes[id].array.length;
         plugin.quotes[id].array ~= newQuote;
         plugin.quotes.save(plugin.quotesFile);
 
-        enum pattern = "Quote for %s saved (%s on record)";
+        enum pattern = "Quote %s #%s saved.";
 
         immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(id.ircColourByHash.ircBold,
-                plugin.quotes[id].array.length.ircBold) :
-            pattern.format(id, plugin.quotes[id].array.length);
+            pattern.format(id.ircColourByHash, index.ircBold) :
+            pattern.format(id, index);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
