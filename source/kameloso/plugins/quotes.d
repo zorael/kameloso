@@ -105,9 +105,13 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
         import std.random : uniform;
 
         immutable len = quotesForNickname.array.length;
-        immutable storedQuoteJSON = quotesForNickname.array[uniform(0, len)];
 
-        return Quote(storedQuoteJSON);
+        if (len == 0) return Quote.init;
+
+        immutable index = uniform(0, len);
+        immutable storedQuoteJSON = quotesForNickname.array[index];
+
+        return Quote(storedQuoteJSON, index);
     }
     else
     {
