@@ -725,6 +725,79 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
 }
 
 
+// onCommandMergeQuote
+/++
+    Merges the quotes of two users, copying them from one to the other and then
+    removing the originals.
+
+    Does not perform account lookups.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PermissionsRequired.operator)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "mergequotes")
+@Description("Merges the quotes of two users.", "$command [source] [target]")
+void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.irccolours : ircBold, ircColourByHash;
+    import lu.string : SplitResults, splitInto;
+    import std.conv : text;
+    import std.format : format;
+
+    string slice = event.content;  // mutable
+    string source;
+    string target;
+
+    immutable results = slice.splitInto(source, target);
+
+    if (results != SplitResults.match)
+    {
+        enum pattern = "Usage: %s%s [source] [target]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return;
+    }
+
+    if (source == target)
+    {
+        enum message = "Cannot merge quotes from one user into the same one.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return;
+    }
+
+    if ((source !in plugin.quotes) || !plugin.quotes[source].array.length)
+    {
+        enum pattern = "%s has no quotes to merge.";
+        immutable message = plugin.state.settings.colouredOutgoing ?
+            pattern.format(source.ircColourByHash) :
+            pattern.format(source);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return;
+    }
+
+    if (target !in plugin.quotes)
+    {
+        // No previous quotes for nickname
+        // Initialise the JSONValue as an array
+        plugin.quotes[target] = null;
+        plugin.quotes[target].array = null;
+    }
+
+    immutable numToMerge = plugin.quotes[source].array.length;
+    plugin.quotes[target].array ~= plugin.quotes[source].array;
+    plugin.quotes.object.remove(source);
+    plugin.quotes.save(plugin.quotesFile);
+
+    enum pattern = "%s quotes merged from %s into %s.";
+    immutable message = plugin.state.settings.colouredOutgoing ?
+        pattern.format(numToMerge.text.ircBold, source.ircColourByHash, target.ircColourByHash) :
+        pattern.format(numToMerge, source, target);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+}
+
+
 // reload
 /++
     Reloads the JSON quotes from disk.
