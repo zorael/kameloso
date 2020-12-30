@@ -165,6 +165,7 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
     if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.whitelist)
 @(ChannelPolicy.home)
@@ -458,6 +459,7 @@ unittest
     if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.operator)
 @(ChannelPolicy.home)
@@ -480,6 +482,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.operator)
 @(ChannelPolicy.home)
