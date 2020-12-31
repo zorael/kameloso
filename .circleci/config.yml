@@ -27,3 +27,4 @@ workflows:
                 - /travis-.*/
                 - gh-pages
                 - /dustmite-.*/
+                - /github-.*/

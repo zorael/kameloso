@@ -6,6 +6,7 @@
     See_Also:
         [kameloso.kameloso]
         [kameloso.common]
+        [kameloso.config]
  +/
 module kameloso.main;
 
@@ -238,6 +239,8 @@ void messageFiber(ref Kameloso instance)
         {
             foreach (plugin; instance.plugins)
             {
+                if (!plugin.isEnabled) continue;
+
                 try
                 {
                     if (!pluginToReload.length || (plugin.name == pluginToReload))
@@ -260,7 +263,7 @@ void messageFiber(ref Kameloso instance)
             reloadSpecificPlugin(ThreadMessage.Reload(), string.init);
         }
 
-        /// Passes a bus message to each plugin.
+        /// Passes a bus message to each plugin. Send to disabled plugins too.
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
             foreach (plugin; instance.plugins)
@@ -269,7 +272,7 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Passes an empty header-only bus message to each plugin.
+        /// Passes an empty header-only bus message to each plugin. Send to disabled plugins too.
         void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header) scope
         {
             foreach (plugin; instance.plugins)
@@ -717,6 +720,8 @@ Next mainLoop(ref Kameloso instance)
 
         foreach (plugin; instance.plugins)
         {
+            if (!plugin.isEnabled) continue;
+
             if (!plugin.state.scheduledFibers.length &&
                 !plugin.state.scheduledDelegates.length) continue;
 
@@ -1059,7 +1064,10 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     import std.utf : UTFException;
     import core.exception : UnicodeException;
 
-    IRCEvent event;
+    // Delay initialising the event so we don't do it twice;
+    // once here, once in toIRCEvent
+    IRCEvent event = void;
+    bool eventWasInitialised;
 
     scope(failure)
     {
@@ -1068,7 +1076,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         // Something asserted
         logger.error("scopeguard tripped.");
-        printEventDebugDetails(event, raw);
+        printEventDebugDetails(event, raw, eventWasInitialised);
 
         // Print the raw line char by char if it contains non-printables
         if (raw.canFind!((c) => c < ' '))
@@ -1086,7 +1094,6 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     try
     {
         // Sanitise and try again once on UTF/Unicode exceptions
-        import std.datetime.systime : Clock;
         import std.encoding : sanitize;
 
         try
@@ -1105,6 +1112,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             event.errors ~= (event.errors.length ? ". " : string.init) ~
                 "UnicodeException: " ~ e.msg;
         }
+
+        eventWasInitialised = true;
 
         if (instance.parser.clientUpdated)
         {
@@ -1125,6 +1134,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         foreach (plugin; instance.plugins)
         {
+            if (!plugin.isEnabled) continue;
+
             try
             {
                 plugin.postprocess(event);
@@ -1170,6 +1181,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         // Let each plugin process the event
         foreach (plugin; instance.plugins)
         {
+            if (!plugin.isEnabled) continue;
+
             try
             {
                 plugin.onEvent(event);
@@ -1774,18 +1787,18 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     catch (GetOptException e)
     {
         logger.error("Error parsing command-line arguments: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConvException e)
     {
         logger.error("Error converting command-line arguments: ", Tint.log, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
         logger.errorf("Specified configuration file %s%s%s is not a file!",
             Tint.log, e.filename, Tint.error);
-        version(PrintStacktraces) logger.trace(e.info);
+        //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConfigurationFileReadFailureException e)
     {
@@ -1928,18 +1941,38 @@ Next tryConnect(ref Kameloso instance)
             return Next.continue_;
 
         case delayThenReconnect:
-            import core.time : seconds;
-
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
-                logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
-                    Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
+                import core.stdc.errno : EINPROGRESS;
+                enum errnoInProgress = EINPROGRESS;
             }
             else version(Windows)
             {
-                logger.warningf("Connection failed with error %s%d%s: %1$s%4$s",
-                    Tint.log, attempt.errno, Tint.warning, errorString);
+                import core.sys.windows.winsock2 : WSAEINPROGRESS;
+                enum errnoInProgress = WSAEINPROGRESS;
+            }
+
+            if (attempt.errno == errnoInProgress)
+            {
+                logger.warning("Connection timed out.");
+            }
+            else if (attempt.errno == 0)
+            {
+                logger.warning("Connection failed.");
+            }
+            else
+            {
+                version(Posix)
+                {
+                    import kameloso.common : errnoStrings;
+                    logger.warningf("Connection failed with %s%s%s: %1$s%4$s",
+                        Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
+                }
+                else version(Windows)
+                {
+                    logger.warningf("Connection failed with error %s%d%s: %1$s%4$s",
+                        Tint.log, attempt.errno, Tint.warning, errorString);
+                }
             }
 
             if (*instance.abort) return Next.returnFailure;
@@ -1953,20 +1986,20 @@ Next tryConnect(ref Kameloso instance)
             if (*instance.abort) return Next.returnFailure;
             continue;
 
-        case noMoreIPs:
+        /*case noMoreIPs:
             logger.warning("Could not connect to server!");
-            return Next.returnFailure;
+            return Next.returnFailure;*/
 
         case ipv6Failure:
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                logger.warning("IPv6 connection failed with %s%s%s: %1$s%4$s",
+                logger.warningf("IPv6 connection failed with %s%s%s: %1$s%4$s",
                     Tint.log, errnoStrings[attempt.errno], Tint.warning, errorString);
             }
             else version(Windows)
             {
-                logger.warning("IPv6 connection failed with error %s%d%s: %1$s%4$s",
+                logger.warningf("IPv6 connection failed with error %s%d%s: %1$s%4$s",
                     Tint.log, attempt.errno, Tint.warning, errorString);
             }
             else
@@ -1986,7 +2019,7 @@ Next tryConnect(ref Kameloso instance)
             if (!lastRetry) verboselyDelay();
             continue;
 
-        case recoverableError:
+        case invalidConnectionError:
         case error:
             version(Posix)
             {
@@ -2004,7 +2037,7 @@ Next tryConnect(ref Kameloso instance)
                 logger.error("Failed to connect: ", Tint.log, errorString);
             }
 
-            if (attempt.state == recoverableError)
+            if (attempt.state == invalidConnectionError)
             {
                 goto case delayThenNextIP;
             }
@@ -2532,12 +2565,15 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
     Params:
         event = The [dialect.defs.IRCEvent] in question.
         raw = The raw string that `event` was parsed from, as read from the IRC server.
+        eventWasInitialised = Whether the [dialect.defs.IRCEvent] was initialised
+            or if it was only ever set to `void`.
  +/
-void printEventDebugDetails(const ref IRCEvent event, const string raw)
+void printEventDebugDetails(const ref IRCEvent event, const string raw,
+    const bool eventWasInitialised = true)
 {
     if (!raw.length) return;
 
-    if (event == IRCEvent.init)
+    if (!eventWasInitialised || (event == IRCEvent.init))
     {
         logger.warningf(`Offending line: "%s%s%s"`, Tint.log, raw, Tint.warning);
     }

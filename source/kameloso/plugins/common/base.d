@@ -1,6 +1,9 @@
 /++
     The is not a plugin by itself but contains code common to all plugins,
     without which they will *not* function.
+
+    See_Also:
+        [kameloso.plugins.common.core]
  +/
 module kameloso.plugins.common.base;
 
@@ -20,7 +23,8 @@ public:
     Changes a setting of a plugin, given both the names of the plugin and the
     setting, in string form.
 
-    This merely iterates the passed `plugins` and calls their [setSettingByName] methods.
+    This merely iterates the passed `plugins` and calls their
+    [kameloso.plugins.common.core.IRCPlugin.setSettingByName] methods.
 
     Params:
         plugins = Array of all [kameloso.plugins.common.core.IRCPlugin]s.
@@ -626,6 +630,6 @@ struct EventURLs
     /// The [dialect.defs.IRCEvent] that should trigger a Webtitles lookup.
     IRCEvent event;
 
-    /// The URLs discovered inside `dialect.defs.IRCEvent.content`.
+    /// The URLs discovered inside [dialect.defs.IRCEvent.content].
     string[] urls;
 }

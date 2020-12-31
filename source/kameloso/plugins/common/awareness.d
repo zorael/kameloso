@@ -32,6 +32,10 @@
         mixin IRCPluginImpl;
     }
     ---
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.common.awareness;
 

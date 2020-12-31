@@ -10,6 +10,10 @@
     It is not technically necessary, but it is the main form of feedback you
     get from the plugin, so you will only want to disable it if you want a
     really "headless" environment.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.printer.base;
 

@@ -5,6 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#help
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.help;
 

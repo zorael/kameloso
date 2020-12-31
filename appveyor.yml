@@ -49,6 +49,7 @@ branches:
     - /travis-.*/
     - gh-pages
     - /dustmite-.*/
+    - /github-.*/
 
 install:
   - ps: function SetUpDCompiler
@@ -125,7 +126,7 @@ test_script:
 
 after_test:
  - ps: if($env:APPVEYOR_REPO_TAG -eq "True"){
-         Push-AppveyorArtifact kameloso.exe -DeploymentName "Full build"
+         Push-AppveyorArtifact kameloso.exe -DeploymentName "Full build";
          Push-AppveyorArtifact kameloso-dev.exe -DeploymentName "Development build";
        }
        else{

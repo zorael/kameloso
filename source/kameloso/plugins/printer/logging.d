@@ -5,6 +5,10 @@
     The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
     as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
+
+    See_Also:
+        [kameloso.plugins.printer.base]
+        [kameloso.plugins.printer.formatting]
  +/
 module kameloso.plugins.printer.logging;
 

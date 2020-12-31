@@ -416,6 +416,8 @@ public:
         settings for a clean shutdown. Calls module-level `teardown` functions.
 
         Think of it as a plugin destructor.
+
+        Don't teardown disabled plugins as they may not have been initialised fully.
      +/
     void teardownPlugins() @system
     {
@@ -425,6 +427,8 @@ public:
         {
             import std.exception : ErrnoException;
             import core.memory : GC;
+
+            if (!plugin.isEnabled) continue;
 
             try
             {
@@ -469,11 +473,15 @@ public:
 
         This has to happen after [initPlugins] or there will not be any plugins
         in the [plugins] array.
+
+        Don't start disabled plugins.
      +/
     void startPlugins() @system
     {
         foreach (plugin; plugins)
         {
+            if (!plugin.isEnabled) continue;
+
             plugin.start();
             checkPluginForUpdates(plugin);
         }

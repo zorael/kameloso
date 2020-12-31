@@ -144,22 +144,15 @@ public:
          +/
         private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
-            version(CtTints)
+            if (brightTerminal)
             {
-                if (brightTerminal)
-                {
-                    enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
-                    return ctTintBright;
-                }
-                else
-                {
-                    enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
-                    return ctTintDark;
-                }
+                enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
+                return ctTintBright;
             }
             else
             {
-                return tint(level, brightTerminal ? Yes.brightTerminal : No.brightTerminal).colour;
+                enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
+                return ctTintDark;
             }
         }
 
@@ -208,13 +201,14 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         (cast(DateTime)Clock.currTime).timeOfDay.toString(linebuffer);
         linebuffer.put("] ");
 
-        if (monochrome) return;
-
         version(Colours)
         {
-            linebuffer.colourWith(brightTerminal ?
-                logcoloursBright[logLevel] :
-                logcoloursDark[logLevel]);
+            if (!monochrome)
+            {
+                linebuffer.colourWith(brightTerminal ?
+                    logcoloursBright[logLevel] :
+                    logcoloursDark[logLevel]);
+            }
         }
     }
 
@@ -255,6 +249,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
      +/
     private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
+        import std.traits : isAggregateType;
+
         beginLogMsg(logLevel);
 
         foreach (ref arg; args)
@@ -270,8 +266,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
                 import lu.conv : Enum;
                 linebuffer.put(Enum!T.toString(arg));
             }
-            else static if ((is(T == struct) || is(T == class) || is(T == interface)) &&
-                is(typeof(T.toString)))
+            else static if (isAggregateType!T && is(typeof(T.toString)))
             {
                 import std.traits : isSomeFunction;
 
@@ -446,7 +441,7 @@ unittest
 
     struct S2
     {
-        void toString(scope void delegate(const(char)[]) dg)
+        void toString(scope void delegate(const(char)[]) dg) const
         {
             dg("delegate toString");
         }
@@ -466,7 +461,7 @@ unittest
 
     struct S5
     {
-        string toString()()
+        string toString()() const
         {
             return "template toString";
         }
@@ -474,7 +469,7 @@ unittest
 
     class C
     {
-        override string toString()
+        override string toString() const
         {
             return "plain toString";
         }

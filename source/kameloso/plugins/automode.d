@@ -5,6 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.automode;
 
@@ -116,6 +118,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     switch (event.type)
     {
     case ACCOUNT:
+        if (!event.sender.account.length) return;
         account = event.sender.account;
         nickname = event.sender.nickname;
         break;
@@ -205,7 +208,7 @@ in (account.length, "Tried to apply automodes to an empty account")
     {
         if (const usersWithThisMode = cast(char)mode in channel.mods)
         {
-            if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(account))
+            if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(nickname))
             {
                 // User doesn't have this mode
                 missingModes ~= mode;

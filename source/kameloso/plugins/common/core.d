@@ -92,14 +92,14 @@ public:
     /++
         Executed to let plugins modify an event mid-parse.
      +/
-    void postprocess(ref IRCEvent) @system;
+    void postprocess(ref IRCEvent event) @system;
 
 
     // onEvent
     /++
         Executed upon new IRC event parsed from the server.
      +/
-    void onEvent(const ref IRCEvent) @system;
+    void onEvent(const ref IRCEvent event) @system;
 
 
     // initResources
@@ -117,14 +117,16 @@ public:
         first `out string[][string]` parameter, and the invalid encountered
         entries in the second.
      +/
-    void deserialiseConfigFrom(const string, out string[][string], out string[][string]);
+    void deserialiseConfigFrom(const string configFile,
+        out string[][string] missingEntries,
+        out string[][string] invalidEntries);
 
 
     // serialiseConfigInto
     /++
         Executed when gathering things to put in the configuration file.
      +/
-    bool serialiseConfigInto(ref Appender!(char[])) const;
+    bool serialiseConfigInto(ref Appender!(char[]) sink) const;
 
 
     // setSettingByName
@@ -134,7 +136,7 @@ public:
         Returns:
             Boolean of whether the set succeeded or not.
      +/
-    bool setSettingByName(const string, const string);
+    bool setSettingByName(const string setting, const string value);
 
 
     // start
@@ -189,7 +191,7 @@ public:
     /++
         Executed when a bus message arrives from another plugin.
      +/
-    void onBusMessage(const string, shared Sendable content) @system;
+    void onBusMessage(const string header, shared Sendable content) @system;
 
 
     // isEnabled
@@ -426,8 +428,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
         import std.typecons : Flag, No, Yes;
-
-        if (!this.isEnabled) return;
 
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
@@ -1051,7 +1051,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         alias pluginFuns = Filter!(isNormalPluginFunction, funs);
 
         /// Sanitise and try again once on UTF/Unicode exceptions
-        version(SanitizeAndRetryOnUnicodeException)
         static void sanitizeEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
@@ -1119,51 +1118,43 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     /*logger.warningf("tryProcess some exception on %s: %s",
                         __traits(identifier, fun), e.msg);*/
 
-                    version(SanitizeAndRetryOnUnicodeException)
+                    import std.utf : UTFException;
+                    import core.exception : UnicodeException;
+
+                    immutable isRecoverableException =
+                        (cast(UnicodeException)e !is null) ||
+                        (cast(UTFException)e !is null);
+
+                    if (!isRecoverableException) throw e;
+
+                    sanitizeEvent(event);
+
+                    // Copy-paste, not much we can do otherwise
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
                     {
-                        import std.utf : UTFException;
-                        import core.exception : UnicodeException;
-
-                        immutable isRecoverableException =
-                            (cast(UnicodeException)e !is null) ||
-                            (cast(UTFException)e !is null);
-
-                        if (!isRecoverableException) throw e;
-
-                        sanitizeEvent(event);
-
-                        // Copy-paste, not much we can do otherwise
-                        immutable next = process!fun(event);
-
-                        if (next == NextStep.continue_)
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
                         {
                             continue;
                         }
-                        else if (next == NextStep.repeat)
-                        {
-                            // only repeat once so we don't endlessly loop
-                            if (process!fun(event) == NextStep.continue_)
-                            {
-                                continue;
-                            }
-                            else
-                            {
-                                return;
-                            }
-                        }
-                        else if (next == NextStep.return_)
+                        else
                         {
                             return;
                         }
-                        else
-                        {
-                            assert(0);
-                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
                     }
                     else
                     {
-                        // noop, just rethrow
-                        throw e;
+                        assert(0);
                     }
                 }
             }
@@ -1824,24 +1815,12 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         }
         else
         {
-            version(PrefixedCommandsFallBackToNickname)
+            static if (verbose)
             {
-                static if (verbose)
-                {
-                    writeln("did not start with prefix but falling back to nickname check");
-                }
-
-                goto case nickname;
+                writeln("did not start with prefix but falling back to nickname check");
             }
-            else
-            {
-                static if (verbose)
-                {
-                    writeln("did not start with prefix, returning false");
-                }
 
-                return false;
-            }
+            goto case nickname;
         }
         break;
 
@@ -1993,6 +1972,8 @@ FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired le
     }
     else
     {
+        immutable isLogoutEvent = (event.type == IRCEvent.Type.ACCOUNT);
+
         with (PermissionsRequired)
         final switch (level)
         {
@@ -2002,11 +1983,11 @@ FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired le
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
-            return whoisExpired ? FilterResult.whois : FilterResult.fail;
+            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.fail;
 
         case anyone:
             // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
-            return whoisExpired ? FilterResult.whois : FilterResult.pass;
+            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.pass;
 
         case ignore:
             /*assert(0, "`filterSender` saw a `PermissionsRequired.ignore` and the call " ~
@@ -2582,14 +2563,6 @@ enum PermissionsRequired
      +/
     admin = 100,
 }
-
-
-// PrivilegeLevel
-/++
-    Deprecated alias to [PermissionsRequired].
- +/
-deprecated("Use `PermissionsRequired` instead")
-alias PrivilegeLevel = PermissionsRequired;
 
 
 // replay

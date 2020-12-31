@@ -24,6 +24,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#seen
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.seen;
 
@@ -615,11 +617,11 @@ void onEndOfList(SeenPlugin plugin)
 
     If this is a [dialect.defs.IRCEvent.Type.CHAN] event, the original lines
     could (for example) have been "`kameloso: seen Joe`", or merely "`!seen Joe`"
-    (assuming a "`!`" prefix). If it was a private `dialect.defs.IRCEvent.Type.QUERY`
+    (assuming a "`!`" prefix). If it was a private [dialect.defs.IRCEvent.Type.QUERY]
     message, the `kameloso:` prefix will have been removed. In either case, we're
     left with only the parts we're interested in, and the rest sliced off.
 
-    As a result, the `dialect.defs.IRCEvent` `event` would look something like this
+    As a result, the [dialect.defs.IRCEvent] `event` would look something like this
     (given a user `foo` querying "`!seen Joe`" or "`kameloso: seen Joe`"):
 
     ---
@@ -892,9 +894,11 @@ in (filename.length, "Tried to save seen users to an empty filename")
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    auto file = File(filename, "w");
+    if (!seenUsers.length) return;
 
+    auto file = File(filename, "w");
     file.writeln(JSONValue(seenUsers).toPrettyString);
+    file.flush();
 }
 
 

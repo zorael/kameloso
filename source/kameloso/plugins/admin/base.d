@@ -10,6 +10,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#admin
+        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.core]
  +/
 module kameloso.plugins.admin.base;
 
@@ -572,32 +574,6 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onCommandResetTerminal
-/++
-    Outputs the ASCII control character *`15`* to the terminal.
-
-    This helps with restoring it if the bot has accidentally printed a different
-    control character putting it would-be binary mode, like what happens when
-    you try to `cat` a binary file.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "resetterm")
-@Description("Outputs the ASCII control character 15 to the local terminal, " ~
-    "to recover from binary garbage mode.")
-void onCommandResetTerminal()
-{
-    import kameloso.terminal : TerminalToken;
-    import std.stdio : stdout, write;
-
-    write(cast(char)TerminalToken.reset);
-    stdout.flush();
-}
-
-
 // onCommandPrintRaw
 /++
     Toggles a flag to print all incoming events *raw*.
@@ -1109,9 +1085,6 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             return;
     }
-
-    case "resetterm":
-        return onCommandResetTerminal();
 
     case "set":
         import kameloso.thread : CarryingFiber, ThreadMessage;

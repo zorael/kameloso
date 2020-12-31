@@ -1,4 +1,4 @@
-# kameloso [![Linux](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.3.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.3...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.4.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.4...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -56,7 +56,6 @@ If there's anyone talking it should show up on your screen.
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
-    * [Fetching a copy of the source](#fetching-a-copy-of-the-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
@@ -83,6 +82,8 @@ If there's anyone talking it should show up on your screen.
 
 # Getting started
 
+Grab a pre-compiled binary from under [releases](https://github.com/zorael/kameloso/releases); alternatively, download the source and compile it yourself.
+
 ## Prerequisites
 
 There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019).
@@ -93,13 +94,11 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ## Downloading
 
-Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases). Alternatively, download and compile it yourself.
-
-### Fetching a copy of the source
-
 ```sh
 $ git clone https://github.com/zorael/kameloso.git
 ```
+
+It can also be downloaded [as a `.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
 
 ## Compiling
 

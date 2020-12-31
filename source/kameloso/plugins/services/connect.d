@@ -7,6 +7,8 @@
 
     See_Also:
         [kameloso.net]
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.services.connect;
 
@@ -444,6 +446,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
+@(IRCEvent.Type.ERR_NICKCOLLISION)
 void onNickInUse(ConnectService service)
 {
     import std.conv : text;
@@ -1055,7 +1058,8 @@ void onSelfnickSuccessOrFailure(ConnectService service)
 @(IRCEvent.Type.QUIT)
 void onQuit(ConnectService service, const ref IRCEvent event)
 {
-    if (service.connectSettings.regainNickname &&
+    if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
+        service.connectSettings.regainNickname &&
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain Fiber will end itself when it is next triggered

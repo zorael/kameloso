@@ -8,6 +8,10 @@
 
     This requires version `Posix`, which is true for UNIX-like systems (like
     Linux and macOS).
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.pipeline;
 

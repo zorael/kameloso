@@ -26,6 +26,10 @@
         $ echo "foo bar baz" | sed "s_bar_qux_"
         $ echo "foo bar baz" | sed "s;bar;qux"  // only if relaxSyntax is true
     )
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.sedreplace;
 

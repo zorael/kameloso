@@ -65,9 +65,6 @@ enum TerminalToken
 
     /// Terminal bell/beep.
     bell = '\007',
-
-    /// Character that resets a terminal that has entered "binary" mode.
-    reset = 15,
 }
 
 version(Windows)

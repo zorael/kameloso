@@ -241,21 +241,36 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             if (!service.state.settings.preferHostmasks)
             {
-                if ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
-                    (event.type == IRCEvent.Type.RPL_WHOISREGNICK) ||
-                    (event.type == IRCEvent.Type.RPL_ENDOFWHOIS))
+                with (IRCEvent.Type)
+                switch (event.type)
                 {
+                case RPL_WHOISACCOUNT:
+                case RPL_WHOISREGNICK:
+                case RPL_ENDOFWHOIS:
                     // Record updated timestamp; this is the end of a WHOIS
                     stored.updated = event.time;
-                }
-                else if (stored.account == "*")
-                {
-                    // An account of "*" means the user logged out of services
-                    // It's not strictly true but consider him/her as unknown again.
-                    stored.account = string.init;
-                    stored.class_ = IRCUser.Class.anyone;
-                    stored.updated = 1L;  // To facilitate melding
-                    service.userClassCurrentChannelCache.remove(stored.nickname);
+                    break;
+
+                case ACCOUNT:
+                case JOIN:
+                    if (stored.account == "*")
+                    {
+                        // An account of "*" means the user logged out of services
+                        // It's not strictly true but consider him/her as unknown again.
+                        stored.account = string.init;
+                        stored.class_ = IRCUser.Class.anyone;
+                        stored.updated = 1L;  // To facilitate melding
+                        service.userClassCurrentChannelCache.remove(stored.nickname);
+                    }
+                    else
+                    {
+                        // Record updated timestamp; new account known
+                        stored.updated = event.time;
+                    }
+                    break;
+
+                default:
+                    break;
                 }
             }
             else /*if (service.state.settings.preferHostmasks)*/

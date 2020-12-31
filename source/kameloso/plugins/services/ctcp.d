@@ -4,6 +4,10 @@
 
     It has no commands and is not aware in the normal sense; it only blindly
     responds to requests.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.services.ctcp;
 
@@ -228,7 +232,7 @@ unittest
 /++
     Sends a list of which `CTCP` events we understand.
 
-    This builds a string of the names of all `dialect.defs.IRCEvent.Type`s
+    This builds a string of the names of all [dialect.defs.IRCEvent.Type]s
     that begin with `CTCP_`, at compile-time. As such, as long as we name any
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/

@@ -4,6 +4,10 @@
     such to await a specific type of [dialect.defs.IRCEvent].
 
     This was all in one `plugins/common.d` file that just grew too big.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.base]
  +/
 module kameloso.plugins.common.delayawait;
 

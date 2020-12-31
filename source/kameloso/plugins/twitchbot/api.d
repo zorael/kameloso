@@ -1,5 +1,8 @@
 /++
     Functions for accessing the Twitch API. For internal use.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.base]
  +/
 module kameloso.plugins.twitchbot.api;
 
@@ -433,6 +436,12 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     SysTime pre;
 
     plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+
+    if (plugin.state.settings.trace)
+    {
+        import kameloso.common : Tint, logger;
+        logger.trace("GET: ", Tint.info, url);
+    }
 
     if (plugin.twitchBotSettings.singleWorkerThread)
     {
