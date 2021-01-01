@@ -127,10 +127,15 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         plugin.onelinersByChannel[event.channel][trigger] = slice;
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
+        import std.algorithm.comparison : equal;
+        import std.uni : asLowerCase;
+
+        immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
+            !trigger.equal(trigger.asLowerCase);
+
         chan(plugin.state, event.channel, "Oneliner %s%s added%s."
             .format(plugin.state.settings.prefix, trigger,
-                plugin.onelinersSettings.caseSensitiveTriggers ?
-                    string.init : " (made lowercase)"));
+                wasMadeLowerCase ? " (made lowercase)" : string.init));
         break;
 
     case "del":
