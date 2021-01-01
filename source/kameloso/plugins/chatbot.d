@@ -234,7 +234,7 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
         if (!p.length) return reportLayoutError();  // Page changed layout
 
         auto b = p[0].getElementsByTagName("b");
-        if (b.length < 5) return reportLayoutError();  // Page changed layout
+        if (!b.length || (b[0].toString.length < 5)) return reportLayoutError();  // Page changed layout
 
         auto qt = doc.getElementsByClassName("qt");
         if (!qt.length) return reportLayoutError();  // Page changed layout
