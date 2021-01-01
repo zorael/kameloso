@@ -674,24 +674,44 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     // ------------ !quote
 
     send("quote");
-    expect("Usage: %squote [nickname] [optional text to add a new quote]"
+    expect("Usage: %squote [nickname] [text to add a new quote]"
         .format(plugin.state.settings.prefix));
 
     send("quote $¡$¡");
     expect(`"$¡$¡" is not a valid account or nickname.`);
 
     send("quote flerrp");
-    awaitReply();
-    //expect("No quote on record for flerrp.");
+    expect("No quote on record for flerrp.");
 
     send("quote flerrp flirrp flarrp flurble");
-    awaitReply();
-    //expect("Quote for flerrp saved (1 on record)");
+    expect("Quote flerrp #0 saved.");
 
     send("quote flerrp");
     awaitReply();
     enforce(thisFiber.payload.content.endsWith("] flerrp | flirrp flarrp flurble"),
         thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("modquote flerrp 0 KAAS FLAAS");
+    expect("Quote flerrp #0 modified.");
+
+    send("modquote flerrp 0");
+    awaitReply();
+    enforce(thisFiber.payload.content.endsWith("] flerrp | KAAS FLAAS"),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("mergequotes flerrp flirrp");
+    expect("1 quote merged from flerrp into flirrp.");
+
+    send("quote flirrp");
+    awaitReply();
+    enforce(thisFiber.payload.content.endsWith("] flirrp | KAAS FLAAS"),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("delquote flirrp 0");
+    expect("Quote flirrp #0 removed.");
+
+    send("delquote flirrp 0");
+    expect("No quotes on record for user flirrp.");
 
     logger.info("Quotes tests passed!");
     return true;
