@@ -678,7 +678,7 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
                 }
             }
 
-            enum pattern = "No quote on record for %s";
+            enum pattern = "No quote on record for %s.";
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(replyUser.nickname.ircColourByHash) :
