@@ -403,6 +403,38 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                         // Will already have asserted previously
                     }
                 }
+                else
+                {
+                    static if (!is(typeof(onFailure) == typeof(null)))
+                    {
+                        import kameloso.constants : Timeout;
+                        import std.datetime.systime : Clock;
+
+                        if ((Clock.currTime.toUnixTime - user.updated) <= Timeout.whoisRetry)
+                        {
+                            static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                            {
+                                // No can do, drop down and WHOIS
+                            }
+                            else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                            {
+                                return onFailure(*user);
+                            }
+                            else static if (TakesParams!(onFailure, AliasSeq!string))
+                            {
+                                return onFailure(user.account);
+                            }
+                            else static if (arity!onSuccess == 0)
+                            {
+                                return onFailure();
+                            }
+                            else
+                            {
+                                // Will already have asserted previously?
+                            }
+                        }
+                    }
+                }
             }
         }
 
