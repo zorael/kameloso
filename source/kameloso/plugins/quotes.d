@@ -746,7 +746,7 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
-    import lu.string : SplitResults, splitInto;
+    import lu.string : SplitResults, plurality, splitInto;
     import std.conv : text;
     import std.format : format;
 
@@ -794,10 +794,11 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     plugin.quotes.object.remove(source);
     plugin.quotes.save(plugin.quotesFile);
 
-    enum pattern = "%s quotes merged from %s into %s.";
+    enum pattern = "%s %s merged from %s into %s.";
+    immutable quoteNoun = numToMerge.plurality("quote", "quotes");
     immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(numToMerge.text.ircBold, source.ircColourByHash, target.ircColourByHash) :
-        pattern.format(numToMerge, source, target);
+        pattern.format(numToMerge.text.ircBold, quoteNoun, source.ircColourByHash, target.ircColourByHash) :
+        pattern.format(numToMerge, quoteNoun, source, target);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
