@@ -334,7 +334,7 @@ Properly enabled and assuming a prefix of `!`, commands to test are:
 
 ## Further help
 
-For more information and help see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
+For more information and help see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new). There is also a [`#kameloso`](irc://irc.freenode.net/kameloso) channel on freenode if you still have questions.
 
 # Known issues
 
