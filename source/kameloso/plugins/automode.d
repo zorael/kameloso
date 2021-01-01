@@ -416,7 +416,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
 
     void onFailure(const IRCUser failureUser)
     {
-        logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+        logger.trace("(Assuming unauthenticated nickname or offline account was specified)");
         return onSuccess(failureUser.nickname);
     }
 
