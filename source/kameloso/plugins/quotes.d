@@ -741,6 +741,7 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
 @(PermissionsRequired.operator)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "mergequotes")
+@BotCommand(PrefixPolicy.prefixed, "mergequote", Yes.hidden)
 @Description("Merges the quotes of two users.", "$command [source] [target]")
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
