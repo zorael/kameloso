@@ -103,6 +103,16 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     void runTestAndReport(alias fun)()
     {
         immutable success = fun(plugin, event, botNickname);
+
+        if (success)
+        {
+            logger.info(__traits(identifier, fun), " tests PASSED");
+        }
+        else
+        {
+            logger.warning(__traits(identifier, fun), " tests FAILED");
+        }
+
         immutable results = success ? "passed" : "FAILED";
         chan(plugin.state, event.channel, __traits(identifier, fun) ~ " tests: " ~ results);
     }
@@ -201,7 +211,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             delay(plugin, 3, No.msecs, Yes.yield);
             runTestAndReport!testStopwatchFiber();
 
-            logger.info("All tests passed!");
+            logger.info("All tests finished!");
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&allDg, 32_768*3);
@@ -334,7 +344,6 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         expect("No such hostmask on file.");
     }
 
-    logger.info("Admin tests passed!");
     return true;
 }
 
@@ -415,7 +424,6 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
     send("automode del flerrp");
     expect("Automode for flerrp cleared.");
 
-    logger.info("Automode tests passed!");
     return true;
 }
 
@@ -504,7 +512,6 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     unawait(plugin, IRCEvent.Type.EMOTE);
 
-    logger.info("Chatbot tests passed!");
     return true;
 }
 
@@ -568,7 +575,6 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
         thisFiber.payload.content.endsWith("ago: test"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    logger.info("Notes tests passed!");
     return true;
 }
 
@@ -633,7 +639,6 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     send("oneliner del herp");
     expect("Oneliner %sherp removed.".format(plugin.state.settings.prefix));
 
-    logger.info("Oneliners tests passed!");
     return true;
 }
 
@@ -713,7 +718,6 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     send("delquote flirrp 0");
     expect("No quotes on record for user flirrp.");
 
-    logger.info("Quotes tests passed!");
     return true;
 }
 
@@ -768,7 +772,6 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     sendNoPrefix("s_fish_snek_g");
     expect("%s | I am a snek snek".format(plugin.state.client.nickname));
 
-    logger.info("SedReplace tests passed!");
     return true;
 }
 
@@ -821,7 +824,6 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
     send("!seen " ~ botNickname);
     expect("T-that's me though...");
 
-    logger.info("Seen tests passed!");
     return true;
 }
 
@@ -962,7 +964,6 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
         thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
 
-    logger.info("Counter tests passed!");
     return true;
 }
 
@@ -1042,7 +1043,6 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
     send("stopwatch");
     expect("You do not have a stopwatch running.");
 
-    logger.info("Stopwatch tests passed!");
     return true;
 }
 
