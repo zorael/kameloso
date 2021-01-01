@@ -689,7 +689,7 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
 
         void onFailure(const IRCUser failureUser)
         {
-            logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+            //logger.trace("(Assuming unauthenticated nickname or offline account was specified)");
             return onSuccess(failureUser);
         }
 
