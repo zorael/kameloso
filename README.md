@@ -334,7 +334,13 @@ Properly enabled and assuming a prefix of `!`, commands to test are:
 
 ## Further help
 
-For more information and help see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new). There is also a [`#kameloso`](irc://irc.freenode.net/kameloso) channel on freenode if you still have questions.
+For more information and help, first see [the wiki](https://github.com/zorael/kameloso/wiki).
+
+If you still can't find what you're looking for, or if you have suggestions on how to improve the bot, you can...
+
+* ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
+* ...pop by the [`#kameloso`](irc://irc.freenode.net/kameloso) channel on freenode
+* ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new)
 
 # Known issues
 
