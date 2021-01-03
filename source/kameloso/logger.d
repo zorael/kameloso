@@ -160,7 +160,7 @@ public:
         /+
             Generate *tint functions for each [std.experimental.logger.LogLevel].
          +/
-        static foreach (const lv; [ EnumMembers!LogLevel ])
+        static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
 q{/// Provides an easy way to get a %1$s tint.
