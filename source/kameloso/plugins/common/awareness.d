@@ -1391,6 +1391,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
 
 
+@safe:
+
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent].
