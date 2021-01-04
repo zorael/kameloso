@@ -6,7 +6,7 @@
     ---
     auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal);
 
-    logger.log("This is LogLevel.log");
+    logger.log("This is LogLevel.all");
     logger.info("LogLevel.info");
     logger.warn(".warn");
     logger.error(".error");

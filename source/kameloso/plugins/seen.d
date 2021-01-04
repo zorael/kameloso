@@ -6,9 +6,9 @@
     array of timestamps keyed by nickname. Whenever we see a user do something,
     we will update his or her timestamp to the current time. We'll save this
     array to disk when closing the program and read it from file when starting
-    it, as well as saving occasionally once every few (configurable) hours.
+    it, as well as saving occasionally once every few (compile time-configurable) minutes.
 
-    We will rely on the `kameloso.plugins.chanqueries.ChanQueriesService` to query
+    We will rely on the [kameloso.plugins.chanqueries.ChanQueriesService] to query
     channels for full lists of users upon joining new ones, including the
     ones we join upon connecting. Elsewise, a completely silent user will never
     be recorded as having been seen, as they would never be triggering any of
@@ -18,7 +18,8 @@
     with `UDA`s of IRC event *types*. When an event is incoming it will trigger
     the function(s) annotated with its type.
 
-    Callback delegates and [core.thread.fiber.Fiber]s *are* supported. They can
+    Callback delegates and [core.thread.fiber.Fiber]s *are* supported but are not
+    the primary way to trigger event handler functions. Such can however
     be registered to process on incoming events, or scheduled with a reasonably
     high degree of precision.
 
@@ -172,7 +173,7 @@ public:
         it again. This can only be done outside of plugins.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers] is an associative
-        array of [core.thread.fiber.Fiber]s keyed by [kameloso.ircdefs.IRCEvent.Type]s.
+        array of [core.thread.fiber.Fiber]s keyed by [dialect.ircdefs.IRCEvent.Type]s.
         Fibers in the array of a particular event type will be executed the next
         time such an event is incoming. Think of it as Fiber callbacks.
 

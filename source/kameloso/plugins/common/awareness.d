@@ -120,7 +120,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     }
     else
     {
-        /// Flag denoting that [MinimalAuthentication] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.MinimalAuthentication] has been mixed in.
         package enum hasMinimalAuthentication = true;
     }
 
@@ -128,6 +128,9 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -143,6 +146,9 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -271,7 +277,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        /// Flag denoting that [UserAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.UserAwareness] has been mixed in.
         package enum hasUserAwareness = true;
     }
 
@@ -286,6 +292,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessQuitMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessQuit].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessQuit]
      +/
     @(Awareness.cleanup)
     @(Chainable)
@@ -299,6 +308,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessNick]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -312,6 +324,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessCatchTargetMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -330,6 +345,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessCatchSenderMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchSender].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessCatchSender]
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -349,6 +367,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessNamesReplyMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNamesReply].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -363,6 +384,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessEndOfListMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessEndOfList].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessEndOfList]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -378,6 +402,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessPingMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessPing].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onUserAwarenessPing]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -393,6 +420,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     /++
         UNIX timestamp of when the [kameloso.plugins.common.core.IRCPluginState.users]
         array is next to be rehashed in [onUserAwarenessPingMixin].
+
+        See_Also:
+            [onUserAwarenessPingMixin]
      +/
     long _kamelosoNextPingRehashTimestamp;
 }
@@ -666,7 +696,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
     else
     {
-        /// Flag denoting that [ChannelAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness] has been mixed in.
         package enum hasChannelAwareness = true;
     }
 
@@ -685,6 +715,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessSelfjoinMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin]
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -699,6 +732,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessSelfpartMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart]
      +/
     @(Awareness.cleanup)
     @(Chainable)
@@ -714,6 +750,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessJoinMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessJoin].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessJoin]
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -728,6 +767,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessPartMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessPart].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessPart]
      +/
     @(Awareness.late)
     @(Chainable)
@@ -742,6 +784,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNick].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessNick]
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -755,6 +800,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessQuitMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessQuit].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessQuit]
      +/
     @(Awareness.late)
     @(Chainable)
@@ -768,6 +816,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessTopicMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessTopic].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessTopic]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -783,6 +834,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessCreationTimeMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -797,6 +851,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessModeMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessMode].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessMode]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -811,6 +868,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessWhoReplyMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -825,6 +885,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessNamesReplyMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -839,6 +902,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessModeListsMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessModeLists].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessModeLists]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -857,6 +923,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessChannelModeIsMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1308,7 +1377,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        /// Flag denoting that [TwitchAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness] has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 
@@ -1325,6 +1394,9 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent].
+
+        See_Also:
+            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1368,7 +1440,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         we ensure we do our best to scrape the channels.
 
         See_Also:
-            [onTwitchAwarenessSenderCarryingEvent]
+            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
      +/
     @(Awareness.early)
     @(Chainable)
@@ -1397,7 +1469,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     do our best to scrape the channels.
 
     See_Also:
-        [onTwitchAwarenessTargetCarryingEvent]
+        [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1433,7 +1505,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
     we ensure we do our best to scrape the channels.
 
     See_Also:
-        [onTwitchAwarenessSenderCarryingEvent]
+        [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1462,7 +1534,7 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
 version(TwitchSupport) {}
 else
 /++
-    No-op mixin of version `!TwitchSupport` [TwitchAwareness].
+    No-op mixin of version `!TwitchSupport` [kameloso.plugins.common.awareness.TwitchAwareness].
  +/
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
@@ -1479,7 +1551,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
     else
     {
-        /// Flag denoting that [TwitchAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness] has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 
