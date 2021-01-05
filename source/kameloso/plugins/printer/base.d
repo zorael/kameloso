@@ -93,6 +93,9 @@ public:
     /// Whether or not to bell on parsing errors.
     bool bellOnError = false;
 
+    /// Whether or not to hide events from blacklisted users.
+    bool hideBlacklistedUsers = false;
+
     /// Whether or not to log events.
     bool logs = false;
 
@@ -391,8 +394,15 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             if (!plugin.state.settings.monochrome)
             {
                 plugin.formatMessageColoured(plugin.linebuffer, event,
-                    (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
-                    (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
+                    (plugin.printerSettings.bellOnMention ?
+                        Yes.bellOnMention :
+                        No.bellOnMention),
+                    (plugin.printerSettings.bellOnError ?
+                        Yes.bellOnError :
+                        No.bellOnError),
+                    (plugin.printerSettings.hideBlacklistedUsers ?
+                        Yes.hideBlacklistedUsers :
+                        No.hideBlacklistedUsers));
                 put = true;
             }
         }
@@ -400,8 +410,15 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if (!put)
         {
             plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                (plugin.printerSettings.bellOnMention ? Yes.bellOnMention : No.bellOnMention),
-                (plugin.printerSettings.bellOnError ? Yes.bellOnError : No.bellOnError));
+                (plugin.printerSettings.bellOnMention ?
+                    Yes.bellOnMention :
+                    No.bellOnMention),
+                (plugin.printerSettings.bellOnError ?
+                    Yes.bellOnError :
+                    No.bellOnError),
+                (plugin.printerSettings.hideBlacklistedUsers ?
+                    Yes.hideBlacklistedUsers :
+                    No.hideBlacklistedUsers));
         }
 
         writeln(plugin.linebuffer.data);

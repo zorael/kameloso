@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.4.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.4...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.0-rc.5.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.0-rc.5...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -334,7 +334,13 @@ Properly enabled and assuming a prefix of `!`, commands to test are:
 
 ## Further help
 
-For more information and help see [the wiki](https://github.com/zorael/kameloso/wiki), or [file an issue](https://github.com/zorael/kameloso/issues/new).
+For more information and help, first see [the wiki](https://github.com/zorael/kameloso/wiki).
+
+If you still can't find what you're looking for, or if you have suggestions on how to improve the bot, you can...
+
+* ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
+* ...pop by the [`#kameloso`](irc://irc.freenode.net/kameloso) channel on freenode
+* ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new)
 
 # Known issues
 

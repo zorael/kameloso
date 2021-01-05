@@ -333,11 +333,14 @@ unittest
             Passing 1 will express it in only seconds.
         truncateUnits = Number of units to skip from output, going from least
             significant (seconds) to most significant (years).
+        roundUp = Whether to round up or floor seconds, minutes and hours.
+            Larger units are floored regardless of this setting.
         signedDuration = A period of time.
         sink = Output buffer sink to write to.
  +/
 void timeSinceInto(Flag!"abbreviate" abbreviate = No.abbreviate,
-    uint numUnits = 7, uint truncateUnits = 0, Sink)
+    uint numUnits = 7, uint truncateUnits = 0,
+    Flag!"roundUp" roundUp = Yes.roundUp, Sink)
     (const Duration signedDuration, auto ref Sink sink) pure
 if (isOutputRange!(Sink, char[]))
 {
@@ -381,23 +384,64 @@ if (isOutputRange!(Sink, char[]))
     static if (numUnits >= 2)
     {
         immutable trailingMinutes = (diff.minutes && (truncateUnits < 2));
+        long minutes = diff.minutes;
+
+        static if (roundUp)
+        {
+            if ((diff.seconds >= 30) && (truncateUnits > 0))
+            {
+                ++minutes;
+            }
+        }
     }
 
     static if (numUnits >= 3)
     {
         immutable trailingHours = (diff.hours && (truncateUnits < 3));
+        long hours = diff.hours;
+
+        static if (roundUp)
+        {
+            if (minutes == 60)
+            {
+                minutes = 0;
+                ++hours;
+            }
+            else if ((minutes >= 30) && (truncateUnits > 1))
+            {
+                ++hours;
+            }
+        }
     }
 
     static if (numUnits >= 4)
     {
         immutable trailingDays = (diff.days && (truncateUnits < 4));
         long days = diff.days;
+
+        static if (roundUp)
+        {
+            if (hours == 24)
+            {
+                hours = 0;
+                ++days;
+            }
+        }
     }
 
     static if (numUnits >= 5)
     {
         immutable trailingWeeks = (diff.weeks && (truncateUnits < 5));
         long weeks = diff.weeks;
+
+        static if (roundUp)
+        {
+            if (days == 7)
+            {
+                days = 0;
+                ++weeks;
+            }
+        }
     }
 
     static if (numUnits >= 6)
@@ -405,7 +449,7 @@ if (isOutputRange!(Sink, char[]))
         uint months;
 
         {
-            immutable totalDays = (diff.weeks * 7) + diff.days;
+            immutable totalDays = (weeks * 7) + days;
             months = cast(uint)(totalDays / daysInAMonth);
             days = cast(uint)(totalDays % daysInAMonth);
             weeks = (days / 7);
@@ -574,7 +618,7 @@ if (isOutputRange!(Sink, char[]))
 
     static if (numUnits >= 3)
     {
-        if (diff.hours && (!putSomething || (truncateUnits < 3)))
+        if (hours && (!putSomething || (truncateUnits < 3)))
         {
             static if (abbreviate)
             {
@@ -583,7 +627,7 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dh", diff.hours);
+                sink.formattedWrite("%dh", hours);
             }
             else
             {
@@ -603,8 +647,8 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", diff.hours,
-                    diff.hours.plurality("hour", "hours"));
+                sink.formattedWrite("%d %s", hours,
+                    hours.plurality("hour", "hours"));
             }
 
             putSomething = true;
@@ -613,7 +657,7 @@ if (isOutputRange!(Sink, char[]))
 
     static if (numUnits >= 2)
     {
-        if (diff.minutes && (!putSomething || (truncateUnits < 2)))
+        if (minutes && (!putSomething || (truncateUnits < 2)))
         {
             static if (abbreviate)
             {
@@ -622,7 +666,7 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dm", diff.minutes);
+                sink.formattedWrite("%dm", minutes);
             }
             else
             {
@@ -641,8 +685,8 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", diff.minutes,
-                    diff.minutes.plurality("minute", "minutes"));
+                sink.formattedWrite("%d %s", minutes,
+                    minutes.plurality("minute", "minutes"));
             }
 
             putSomething = true;
@@ -693,29 +737,65 @@ unittest
     }
     {
         immutable dur = 3_141_519_265.msecs;
-        dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
+        dur.timeSinceInto!(No.abbreviate, 4, 1, No.roundUp)(sink);
         assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate, 4, 1)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1, No.roundUp)(sink);
         assert((sink.data == "36d 8h 38m"), sink.data);
         sink.clear();
     }
     {
+        immutable dur = 3_141_519_265.msecs;
+        dur.timeSinceInto!(No.abbreviate, 4, 1, Yes.roundUp)(sink);
+        assert((sink.data == "36 days, 8 hours and 39 minutes"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1, Yes.roundUp)(sink);
+        assert((sink.data == "36d 8h 39m"), sink.data);
+        sink.clear();
+    }
+    {
         immutable dur = 3599.seconds;
-        dur.timeSinceInto!(No.abbreviate, 2, 1)(sink);
+        dur.timeSinceInto!(No.abbreviate, 2, 1, No.roundUp)(sink);
         assert((sink.data == "59 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate, 2, 1)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 2, 1, No.roundUp)(sink);
         assert((sink.data == "59m"), sink.data);
         sink.clear();
     }
     {
+        immutable dur = 3599.seconds;
+        dur.timeSinceInto!(No.abbreviate, 2, 1, Yes.roundUp)(sink);
+        assert((sink.data == "60 minutes"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 2, 1, Yes.roundUp)(sink);
+        assert((sink.data == "60m"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = 3599.seconds;
+        dur.timeSinceInto!(No.abbreviate, 3, 1, Yes.roundUp)(sink);
+        assert((sink.data == "1 hour"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 3, 1, Yes.roundUp)(sink);
+        assert((sink.data == "1h"), sink.data);
+        sink.clear();
+    }
+    {
         immutable dur = 3.days + 35.minutes;
-        dur.timeSinceInto!(No.abbreviate, 4, 1)(sink);
+        dur.timeSinceInto!(No.abbreviate, 4, 1, No.roundUp)(sink);
         assert((sink.data == "3 days and 35 minutes"), sink.data);
         sink.clear();
-        dur.timeSinceInto!(Yes.abbreviate, 4, 1)(sink);
+        dur.timeSinceInto!(Yes.abbreviate, 4, 1, No.roundUp)(sink);
         assert((sink.data == "3d 35m"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = 3.days + 35.minutes;
+        dur.timeSinceInto!(No.abbreviate, 4, 2, Yes.roundUp)(sink);
+        assert((sink.data == "3 days and 1 hour"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 4, 2, Yes.roundUp)(sink);
+        assert((sink.data == "3d 1h"), sink.data);
         sink.clear();
     }
     {
@@ -754,6 +834,51 @@ unittest
         assert((sink.data == "-1m 1s"), sink.data);
         sink.clear();
     }
+    {
+        immutable dur = 30.seconds;
+        dur.timeSinceInto!(No.abbreviate, 3, 1, No.roundUp)(sink);
+        assert((sink.data == "30 seconds"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 3, 1, No.roundUp)(sink);
+        assert((sink.data == "30s"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = 30.seconds;
+        dur.timeSinceInto!(No.abbreviate, 3, 1, Yes.roundUp)(sink);
+        assert((sink.data == "1 minute"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 3, 1, Yes.roundUp)(sink);
+        assert((sink.data == "1m"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = 23.hours + 59.minutes + 59.seconds;
+        dur.timeSinceInto!(No.abbreviate, 5, 3, Yes.roundUp)(sink);
+        assert((sink.data == "1 day"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 5, 3, Yes.roundUp)(sink);
+        assert((sink.data == "1d"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = 6.days + 23.hours + 59.minutes;
+        dur.timeSinceInto!(No.abbreviate, 5, 4, No.roundUp)(sink);
+        assert((sink.data == "6 days"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 5, 4, No.roundUp)(sink);
+        assert((sink.data == "6d"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable dur = 6.days + 23.hours + 59.minutes;
+        dur.timeSinceInto!(No.abbreviate, 5, 4, Yes.roundUp)(sink);
+        assert((sink.data == "1 week"), sink.data);
+        sink.clear();
+        dur.timeSinceInto!(Yes.abbreviate, 5, 4, Yes.roundUp)(sink);
+        assert((sink.data == "1w"), sink.data);
+        sink.clear();
+    }
 }
 
 
@@ -783,20 +908,23 @@ unittest
             Passing 1 will express it in only seconds.
         truncateUnits = Number of units to skip from output, going from least
             significant (seconds) to most significant (years).
+        roundUp = Whether to round up or floor seconds, minutes and hours.
+            Larger units are floored regardless of this setting.
         duration = A period of time.
 
     Returns:
         A string with the passed duration expressed in natural English language.
  +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate,
-    uint numUnits = 7, uint truncateUnits = 0)
+    uint numUnits = 7, uint truncateUnits = 0,
+    Flag!"roundUp" roundUp = Yes.roundUp)
     (const Duration duration) pure
 {
     import std.array : Appender;
 
     Appender!(char[]) sink;
     sink.reserve(60);
-    duration.timeSinceInto!(abbreviate, numUnits, truncateUnits)(sink);
+    duration.timeSinceInto!(abbreviate, numUnits, truncateUnits, roundUp)(sink);
     return sink.data;
 }
 

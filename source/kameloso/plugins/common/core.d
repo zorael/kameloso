@@ -42,9 +42,13 @@ public:
 
 // IRCPlugin
 /++
-    Abstract [IRCPlugin] class.
+    Abstract IRC plugin class.
 
     This is currently shared with all `service`-class "plugins".
+
+    See_Also:
+        [IRCPluginImpl]
+        [IRCPluginState]
  +/
 abstract class IRCPlugin
 {
@@ -57,7 +61,11 @@ private:
 public:
     // CommandMetadata
     /++
-        Metadata about a [BotCommand]- and/or [BotRegex]-annotated event handler.
+        Metadata about a [kameloso.plugins.common.core.BotCommand]- and/or
+        [kameloso.plugins.common.core.BotRegex]-annotated event handler.
+
+        See_Also:
+            [commands]
      +/
     static struct CommandMetadata
     {
@@ -66,7 +74,7 @@ public:
             Description about what the command does, along with optional syntax.
 
             See_Also:
-                [Description]
+                [kameloso.plugins.common.core.Description]
          +/
         Description desc;
 
@@ -82,36 +90,37 @@ public:
 
     // state
     /++
-        An [IRCPluginState] instance containing variables and arrays that represent
-        the current state of the plugin. Should generally be passed by reference.
+        An [kameloso.plugins.common.core.IRCPluginState] instance containing
+        variables and arrays that represent the current state of the plugin.
+        Should generally be passed by reference.
      +/
     IRCPluginState state;
 
 
     // postprocess
     /++
-        Executed to let plugins modify an event mid-parse.
+        Allows a plugin to modify an event post-parsing.
      +/
     void postprocess(ref IRCEvent event) @system;
 
 
     // onEvent
     /++
-        Executed upon new IRC event parsed from the server.
+        Called to let the plugin react to a new event, parsed from the server.
      +/
     void onEvent(const ref IRCEvent event) @system;
 
 
     // initResources
     /++
-        Executed when the plugin is requested to initialise its disk resources.
+        Called when the plugin is requested to initialise its disk resources.
      +/
     void initResources() @system;
 
 
     // deserialiseConfigFrom
     /++
-        Read serialised configuration text into the plugin's settings struct.
+        Reads serialised configuration text into the plugin's settings struct.
 
         Stores an associative array of `string[]`s of missing entries in its
         first `out string[][string]` parameter, and the invalid encountered
@@ -124,14 +133,17 @@ public:
 
     // serialiseConfigInto
     /++
-        Executed when gathering things to put in the configuration file.
+        Called to let the plugin contribute settings when writing the configuration file.
+
+        Returns:
+            Boolean of whether something was added.
      +/
     bool serialiseConfigInto(ref Appender!(char[]) sink) const;
 
 
     // setSettingByName
     /++
-        Executed during start if we want to change a setting by its string name.
+        Called when we want to change a setting by its string name.
 
         Returns:
             Boolean of whether the set succeeded or not.
@@ -141,21 +153,23 @@ public:
 
     // start
     /++
-        Executed when connection has been established.
+        Called when connection has been established, to start the plugin;
+        its would-be constructor.
      +/
     void start() @system;
 
 
     // printSettings
     /++
-        Executed when we want a plugin to print its Settings struct.
+        Called when we want a plugin to print its
+        [kameloso.plugins.common.core.Settings]-annotated struct of settings.
      +/
     void printSettings() @system const;
 
 
     // teardown
     /++
-        Executed during shutdown of a connection session.
+        Called during shutdown of a connection; a plugin's would-be destructor.
      +/
     void teardown() @system;
 
@@ -183,23 +197,28 @@ public:
     // reload
     /++
         Reloads the plugin, where such is applicable.
+
+        Whatever this does is implementation-defined.
      +/
     void reload() @system;
 
 
     // onBusMessage
     /++
-        Executed when a bus message arrives from another plugin.
+        Called when a bus message arrives from another plugin.
+
+        It is passed to all plugins and it is up to the receiving plugin to
+        discard those not meant for it by examining the value of the `header` argument.
      +/
     void onBusMessage(const string header, shared Sendable content) @system;
 
 
     // isEnabled
     /++
-        Returns whether or not the plugin is enabled in its configuration section.
+        Returns whether or not the plugin is enabled in its settings.
 
         Returns:
-            true if the plugin should listen to events, false if not.
+            `true` if the plugin should listen to events, `false` if not.
      +/
     bool isEnabled() const @property pure nothrow @nogc;
 }
@@ -207,7 +226,7 @@ public:
 
 // IRCPluginImpl
 /++
-    Mixin that fully implements an [IRCPlugin].
+    Mixin that fully implements an [kameloso.plugins.common.core.IRCPlugin].
 
     Uses compile-time introspection to call module-level functions to extend behaviour.
 
@@ -225,6 +244,9 @@ public:
         mixin IRCPluginImpl;
     }
     ---
+
+    See_Also:
+        [kameloso.plugins.common.core.IRCPlugin]
  +/
 version(WithPlugins)
 mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
@@ -267,9 +289,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // isEnabled
     /++
-        Introspects the current plugin, looking for a [Settings]-annotated struct
-        member that has a bool annotated with [Enabler], which denotes it as the
-        bool that toggles a plugin on and off.
+        Introspects the current plugin, looking for a
+        [kameloso.plugins.common.core.Settings]-annotated struct
+        member that has a bool annotated with [kameloso.plugins.common.core.Enabler],
+        which denotes it as the bool that toggles a plugin on and off.
 
         It then returns its value.
 
@@ -327,13 +350,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     // allow
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [PermissionsRequired] of the handler in question. Wrapper function
-        that merely calls [allowImpl]. The point behind it is to make something
+        the annotated [kameloso.plugins.common.core.PermissionsRequired] of the
+        handler in question. Wrapper function that merely calls
+        [kameloso.plugins.common.core.IRCPluginImpl.allowImpl]. The point behind it is to make something
         that can be overridden and still allow it to call the original logic (below).
 
         Params:
             event = [dialect.defs.IRCEvent] to allow, or not.
-            perms = [PermissionsRequired] of the handler in question.
+            perms = [kameloso.plugins.common.core.PermissionsRequired] of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
@@ -348,14 +372,18 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     // allowImpl
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [PermissionsRequired] of the handler in question. Implementation function.
+        the annotated [kameloso.plugins.common.core.PermissionsRequired] of the
+        handler in question. Implementation function.
 
         Params:
             event = [dialect.defs.IRCEvent] to allow, or not.
-            perms = [PermissionsRequired] of the handler in question.
+            perms = [kameloso.plugins.common.core.PermissionsRequired] of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
+
+        See_Also:
+            [kameloso.plugins.common.core.filterSender]
      +/
     private FilterResult allowImpl(const ref IRCEvent event, const PermissionsRequired perms)
     {
@@ -386,17 +414,19 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // onEvent
     /++
-        Pass on the supplied [dialect.defs.IRCEvent] to [onEventImpl].
+        Pass on the supplied [dialect.defs.IRCEvent] to
+        [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
 
         This is made a separate function to allow plugins to override it and
         insert their own code, while still leveraging [onEventImpl] for the
         actual dirty work.
 
         Params:
-            event = Parsed [dialect.defs.IRCEvent] to pass onto [onEventImpl].
+            event = Parsed [dialect.defs.IRCEvent] to pass onto
+                [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
 
         See_Also:
-            [onEventImpl]
+            [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
      +/
     pragma(inline, true)
     override public void onEvent(const ref IRCEvent event) @system
@@ -1311,7 +1341,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         Loads configuration for this plugin from disk.
 
         This does not proxy a call but merely loads configuration from disk for
-        all struct variables annotated [Settings].
+        all struct variables annotated [kameloso.plugins.common.core.Settings].
 
         "Returns" two associative arrays for missing entries and invalid
         entries via its two out parameters.
@@ -1356,8 +1386,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // setSettingByName
     /++
-        Change a plugin's [Settings]-annotated settings struct member by their
-        string name.
+        Change a plugin's [kameloso.plugins.common.core.Settings]-annotated
+        settings struct member by their string name.
 
         This is used to allow for command-line argument to set any plugin's
         setting by only knowing its name.
@@ -1407,7 +1437,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // printSettings
     /++
-        Prints the plugin's [Settings]-annotated settings struct.
+        Prints the plugin's [kameloso.plugins.common.core.Settings]-annotated settings struct.
      +/
     override public void printSettings() const
     {
@@ -1447,7 +1477,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 settings text.
 
         Returns:
-            true if something was serialised into the passed sink; false if not.
+            `true` if something was serialised into the passed sink; `false` if not.
      +/
     override public bool serialiseConfigInto(ref Appender!(char[]) sink) const
     {
@@ -1585,14 +1615,17 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // commands
     /++
-        Collects all [BotCommand] command words and [BotRegex] regex expressions
+        Collects all [kameloso.plugins.common.core.BotCommand] command words and
+        [kameloso.plugins.common.core.BotRegex] regex expressions
         that this plugin offers at compile time, then at runtime returns them
         alongside their [Description]s and their visibility, as an associative
-        array of [IRCPlugin.CommandMetadata]s keyed by command name strings.
+        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata]s
+        keyed by command name strings.
 
         Returns:
-            Associative array of tuples of all [Descriptions] and whether they
-            are hidden, keyed by [BotCommand.word]s and [BotRegex.expression]s.
+            Associative array of tuples of all [kameloso.plugins.common.core.Descriptions]
+            and whether they are hidden, keyed by [kameloso.plugins.common.core.BotCommand.word]s
+            and [kameloso.plugins.common.core.BotRegex.expression]s.
      +/
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
     {
@@ -2006,7 +2039,10 @@ FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired le
     module. This allows for making more or less all functions top-level
     functions, since any state could be passed to it with variables of this type.
 
-    Plugin-specific state should be kept inside the [IRCPlugin] itself.
+    Plugin-specific state should be kept inside the [IRCPlugin] subclass itself.
+
+    See_Also:
+        [IRCPlugin]
  +/
 struct IRCPluginState
 {
@@ -2162,6 +2198,9 @@ final class IRCPluginInitialisationException : Exception
     A queued event to be replayed upon a WHOIS query response.
 
     It is abstract; all objects must be of a concrete [ReplayImpl] type.
+
+    See_Also:
+        [ReplayImpl]
  +/
 abstract class Replay
 {
@@ -2202,6 +2241,10 @@ abstract class Replay
     Params:
         F = Some function type.
         Payload = Optional payload type.
+
+    See_Also:
+        [Replay]
+        [replay]
  +/
 private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 {
@@ -2581,6 +2624,9 @@ enum PermissionsRequired
     Returns:
         A [Replay] with template parameters inferred from the arguments
         passed to this function.
+
+    See_Also:
+        [Replay]
  +/
 Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
     const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__) @safe
@@ -2603,6 +2649,9 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
     Returns:
         A [Replay] with template parameters inferred from the arguments
         passed to this function.
+
+    See_Also:
+        [Replay]
  +/
 Replay replay(Fn)(const ref IRCEvent event, const PermissionsRequired perms,
     Fn fn, const string caller = __FUNCTION__) @safe
@@ -2630,6 +2679,9 @@ Replay replay(Fn)(const ref IRCEvent event, const PermissionsRequired perms,
         // ...
     }
     ---
+
+    See_Also:
+        [BotRegex]
  +/
 struct BotCommand
 {
@@ -2687,6 +2739,8 @@ struct BotCommand
     }
     ---
 
+    See_Also:
+        [BotCommand]
  +/
 struct BotRegex
 {

@@ -39,6 +39,9 @@ public:
         fiber = [core.thread.fiber.Fiber] to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
         msecs = Whether `duration` is in milliseconds or seconds.
+
+    See_Also:
+        [removeDelayedFiber]
  +/
 void delay(IRCPlugin plugin, Fiber fiber, const long duration,
     const Flag!"msecs" msecs = No.msecs)
@@ -68,6 +71,9 @@ in ((fiber !is null), "Tried to delay a null Fiber")
         duration = Amount of time to delay the implicit fiber in the current context.
         msecs = Whether `period` is in milliseconds or seconds.
         yield = Whether or not to immediately yield the Fiber.
+
+    See_Also:
+        [removeDelayedFiber]
  +/
 void delay(IRCPlugin plugin, const long duration, const Flag!"msecs" msecs = No.msecs,
     const Flag!"yield" yield = No.yield)
@@ -89,6 +95,9 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         duration = Amount of time to delay the implicit fiber in the current context.
         yield = Whether or not to immediately yield the Fiber.
+
+    See_Also:
+        [removeDelayedFiber]
  +/
 void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield)
 in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
@@ -113,6 +122,9 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
         dg = Delegate to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
         msecs = Whether `duration` is in milliseconds or seconds.
+
+    See_Also:
+        [removeDelayedDelegate]
  +/
 void delay(IRCPlugin plugin, void delegate() dg, const long duration,
     const Flag!"msecs" msecs = No.msecs)
@@ -236,6 +248,9 @@ in ((dg !is null), "Tried to remove a delayed null delegate")
             [dialect.defs.IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent] that should trigger the
             passed awaiting fiber.
+
+    See_Also:
+        [unawait]
  +/
 void await(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
@@ -257,6 +272,9 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
         type = The kind of [dialect.defs.IRCEvent] that should trigger this
             implicit awaiting fiber (in the current context).
         yield = Whether or not to immediately yield the Fiber.
+
+    See_Also:
+        [unawait]
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type type,
     const Flag!"yield" yield = No.yield)
@@ -281,6 +299,9 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
         types = The kinds of [dialect.defs.IRCEvent] that should trigger
             the passed awaiting fiber, in an array with elements of type
             [dialect.defs.IRCEvent.Type].
+
+    See_Also:
+        [unawait]
  +/
 void await(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 in ((fiber !is null), "Tried to set up a null Fiber to await events")
@@ -307,6 +328,9 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
             this implicit awaiting fiber (in the current context), in an array
             with elements of type [dialect.defs.IRCEvent.Type].
         yield = Whether or not to immediately yield the Fiber.
+
+    See_Also:
+        [unawait]
  +/
 void await(IRCPlugin plugin, const IRCEvent.Type[] types,
     const Flag!"yield" yield = No.yield)
@@ -337,6 +361,9 @@ in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
             [dialect.defs.IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent] that should trigger the
             passed awaiting delegate.
+
+    See_Also:
+        [unawait]
  +/
 void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
 in ((dg !is null), "Tried to set up a null delegate to await events")
@@ -360,6 +387,9 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEven
             [dialect.defs.IRCEvent] of type `type` comes along.
         types = An array of the kinds of [dialect.defs.IRCEvent]s that should trigger the
             passed awaiting delegate.
+
+    See_Also:
+        [unawait]
  +/
 void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type[] types)
 in ((dg !is null), "Tried to set up a null delegate to await events")
@@ -385,6 +415,9 @@ in ((dg !is null), "Tried to set up a null delegate to await events")
             [dialect.defs.IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting thing.
+
+    See_Also:
+        [unawait]
  +/
 private void unawaitImpl(Thing, AA)(Thing thing, ref AA aa, const IRCEvent.Type type)
 in ((thing !is null), "Tried to unlist a null " ~ Thing.stringof ~ " from awaiting events")
@@ -436,6 +469,9 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
             [dialect.defs.IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting fiber.
+
+    See_Also:
+        [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 {
@@ -454,6 +490,9 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         type = The kind of [dialect.defs.IRCEvent] that would trigger this
             implicit awaiting fiber (in the current context).
+
+    See_Also:
+        [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type type)
 {
@@ -474,6 +513,9 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type type)
         types = The kinds of [dialect.defs.IRCEvent] that should trigger
             the passed awaiting fiber, in an array with elements of type
             [dialect.defs.IRCEvent.Type].
+
+    See_Also:
+        [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
@@ -496,6 +538,9 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
         types = The kinds of [dialect.defs.IRCEvent] that should trigger
             this implicit awaiting fiber (in the current context), in an array
             with elements of type [dialect.defs.IRCEvent.Type].
+
+    See_Also:
+        [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
@@ -518,6 +563,9 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
             [dialect.defs.IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting delegate.
+
+    See_Also:
+        [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
 {
@@ -537,6 +585,9 @@ void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.
             [dialect.defs.IRCEvent] of type `type` comes along.
         types = An array of the kinds of [dialect.defs.IRCEvent]s that would trigger the
             passed awaiting delegate.
+
+    See_Also:
+        [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type[] types)
 {
