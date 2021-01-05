@@ -93,6 +93,9 @@ public:
     /// Whether or not to bell on parsing errors.
     bool bellOnError = false;
 
+    /// Whether or not to hide events from blacklisted users.
+    bool hideBlacklistedUsers = false;
+
     /// Whether or not to log events.
     bool logs = false;
 
