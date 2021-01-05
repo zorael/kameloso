@@ -1012,14 +1012,15 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
     case timeout:
         // No point printing the errno, it'll just be EAGAIN or EWOULDBLOCK.
-        logger.error("Connection lost.");
+        logger.error("Connection timed out.");
         instance.conn.connected = false;
         return Next.returnFailure;
 
     case error:
         if (attempt.bytesReceived == 0)
         {
-            logger.error("Connection error: empty server response!");
+            //logger.error("Connection error: empty server response!");
+            logger.error("Connection lost.");
         }
         else
         {
