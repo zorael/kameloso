@@ -576,7 +576,26 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     import lu.json : JSONStorage, populateFromJSON;
     import lu.string : contains;
     import std.concurrency : send;
+    import std.conv : text;
+    import std.format : format;
     import std.json : JSONValue;
+
+    version(Colours)
+    {
+        import kameloso.terminal : colourByHash;
+    }
+    else
+    {
+        // No-colours passthrough noop
+        static string colourByHash(const string word, const Flag!"brightTerminal")
+        {
+            return word;
+        }
+    }
+
+    // Values from persistence.d etc
+    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+    enum examplePlaceholderValue = "<account>";
 
     JSONStorage json;
     json.reset();
@@ -585,7 +604,8 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     string[string] aa;
     aa.populateFromJSON(json);
 
-    bool didSomething;
+    immutable brightFlag = plugin.state.settings.brightTerminal ?
+        Yes.brightTerminal : No.brightTerminal;
 
     if (add)
     {
@@ -593,45 +613,91 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
 
         if (!mask.isValidHostmask(plugin.state.server))
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Invalid hostmask.");
+            if (event == IRCEvent.init)
+            {
+                logger.warningf(`Invalid hostmask: "%s%s%s"; must be in the form ` ~
+                    `"%1$snickname!ident@address%3$s".`,
+                    Tint.log, mask, Tint.warning);
+            }
+            else
+            {
+                import std.format : format;
+                privmsg(plugin.state, event.channel, event.sender.nickname,
+                    `Invalid hostmask: "%s"; must be in the form "%s".`
+                    .format(mask.ircBold, "nickname!ident@address".ircBold));
+            }
             return;
         }
 
         aa[mask] = account;
-        didSomething = true;
 
-        // Remove placeholder example since there should now be at least one true entry
-        enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+        // Remove any placeholder example since there should now be at least one true entry
         aa.remove(examplePlaceholderKey);
 
-        json.reset();
-        json = JSONValue(aa);
+        immutable colouredAccount = colourByHash(account, brightFlag);
+
+        if (event == IRCEvent.init)
+        {
+            logger.infof(`Added hostmask "%s%s%s", mapped to account %4$s%3$s.`,
+                Tint.log, mask, Tint.info, colouredAccount);
+        }
+        else
+        {
+            immutable message = `Added hostmask "%s", mapped to account %s.`
+                .format(mask.ircBold, account.ircColourByHash);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
     }
     else
     {
         // Allow for removing an invalid mask
 
-        if (mask in aa)
+        void complainNoSuchHostmask()
         {
-            aa.remove(mask);
-            didSomething = true;
+            if (event == IRCEvent.init)
+            {
+                logger.warningf(`No such hostmask "%s%s%s" for account %4$s%3$s.`,
+                    Tint.log, mask, Tint.warning, colourByHash(account, brightFlag));
+            }
+            else
+            {
+                immutable message = `No such hostmask "%s" for account %s.`
+                    .format(mask.ircBold, account.ircColourByHash);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
         }
 
-        json.reset();
-        json = JSONValue(aa);
+        if (const mappedAccount = mask in aa)
+        {
+            if (account != *mappedAccount) return complainNoSuchHostmask();  // Skip saving changes below
+
+            aa.remove(mask);
+
+            if (!aa.length) aa[examplePlaceholderKey] = examplePlaceholderValue;
+
+            if (event == IRCEvent.init)
+            {
+                immutable colouredAccount = colourByHash(account, brightFlag);
+                logger.infof(`Removed hostmask "%s%s%s" from account %4$s%3$s.`,
+                        Tint.log, mask, Tint.info, colouredAccount);
+            }
+            else
+            {
+                immutable message = `Removed hostmask "%s" from account %s.`
+                    .format(mask.ircBold, account.ircColourByHash);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+        }
+        else
+        {
+            return complainNoSuchHostmask();  // Skip saving changes below
+        }
     }
 
+    json.reset();
+    json = JSONValue(aa);
     json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
 
-    immutable message = didSomething ?
-        "Hostmask list updated." :
-        "No such hostmask on file.";
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
-
-    if (didSomething)
-    {
-        // Force persistence to reload the file with the new changes
-        plugin.state.mainThread.send(ThreadMessage.Reload());
-    }
+    // Force persistence to reload the file with the new changes
+    plugin.state.mainThread.send(ThreadMessage.Reload());
 }
