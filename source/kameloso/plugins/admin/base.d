@@ -931,12 +931,11 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] ([account] [hostmask]/[hostmask])"
+            "Usage: %s%s [add|del|list] [args...]"
             .format(plugin.state.settings.prefix, event.aux));
     }
 
     string slice = event.content;  // mutable
-
     immutable verb = slice.nom!(Yes.inherit)(' ');
 
     switch (verb)
@@ -946,13 +945,27 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         string mask;
 
         immutable results = slice.splitInto(account, mask);
-        if (results != SplitResults.match) return sendUsage();
+
+        if (results != SplitResults.match)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s add [account] [hostmask]"
+                .format(plugin.state.settings.prefix, event.aux));
+            return;
+        }
 
         return plugin.modifyHostmaskDefinition(Yes.add, account, mask, event);
 
     case "del":
     case "remove":
-        if (!slice.length || slice.contains(' ')) return sendUsage();
+        if (!slice.length || slice.contains(' '))
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Usage: %s%s del [hostmask]"
+                .format(plugin.state.settings.prefix, event.aux));
+            return;
+        }
+
         return plugin.modifyHostmaskDefinition(No.add, string.init, slice, event);
 
     case "list":
