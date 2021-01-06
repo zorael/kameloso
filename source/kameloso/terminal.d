@@ -1157,19 +1157,65 @@ unittest
     alias FG = TerminalForeground;
 
     {
-        immutable hash = colourByHash("kameloso", No.brightTerminal);
+        immutable hash = getColourByHash("kameloso", No.brightTerminal);
         assert((hash == FG.lightyellow), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("kameloso^", No.brightTerminal);
+        immutable hash = getColourByHash("kameloso^", No.brightTerminal);
         assert((hash == FG.green), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("zorael", No.brightTerminal);
+        immutable hash = getColourByHash("zorael", No.brightTerminal);
         assert((hash == FG.lightgrey), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("NO", No.brightTerminal);
+        immutable hash = getColourByHash("NO", No.brightTerminal);
         assert((hash == FG.lightred), Enum!FG.toString(hash));
+    }
+}
+
+
+// colourByHash
+/++
+    Shorthand function to colour a passed word by the hash of it.
+
+    Params:
+        word = String to colour.
+        bright = Whether or not the colour should be adapted for a bright terminal background.
+
+    Returns:
+        `word`, now in colour based on the hash of its contents.
+ +/
+version(Colours)
+string colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
+{
+    return word.colour(getColourByHash(word, bright));
+}
+
+///
+version(Colours)
+unittest
+{
+    import std.conv : text;
+
+    {
+        immutable coloured = "kameloso".colourByHash(No.brightTerminal);
+        assert((coloured == "\033[93mkameloso\033[0m"),
+            "kameloso".getColourByHash(No.brightTerminal).text);
+    }
+    {
+        immutable coloured = "kameloso".colourByHash(Yes.brightTerminal);
+        assert((coloured == "\033[93mkameloso\033[0m"),
+            "kameloso".getColourByHash(Yes.brightTerminal).text);
+    }
+    {
+        immutable coloured = "zorael".colourByHash(No.brightTerminal);
+        assert((coloured == "\033[37mzorael\033[0m"),
+            "zorael".getColourByHash(No.brightTerminal).text);
+    }
+    {
+        immutable coloured = "NO".colourByHash(No.brightTerminal);
+        assert((coloured == "\033[91mNO\033[0m"),
+            "NO".getColourByHash(No.brightTerminal).text);
     }
 }
