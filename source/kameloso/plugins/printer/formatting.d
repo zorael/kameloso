@@ -596,8 +596,8 @@ if (isOutputRange!(Sink, char[]))
 
         if (plugin.printerSettings.randomNickColours)
         {
-            import kameloso.terminal : colourByHash;
-            return colourByHash(nickname, bright ? fgBright[] : fgDark[]);
+            import kameloso.terminal : getColourByHash;
+            return getColourByHash(nickname, bright ? fgBright[] : fgDark[]);
         }
         else
         {
@@ -1216,14 +1216,14 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i; 0..numHighlights)
     {
-        import kameloso.terminal : colourByHash, colourWith;
+        import kameloso.terminal : getColourByHash, colourWith;
 
         immutable id = highlights[i].id;
         immutable start = highlights[i].start;
         immutable end = highlights[i].end;
 
         sink.put(dline[pos..start]);
-        sink.colourWith(colourful ? colourByHash(id, brightTerminal) : pre);
+        sink.colourWith(colourful ? getColourByHash(id, brightTerminal) : pre);
         sink.put(dline[start..end]);
         sink.colourWith(post);
 
