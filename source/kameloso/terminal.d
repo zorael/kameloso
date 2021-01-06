@@ -391,8 +391,11 @@ version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    sink.put(TerminalToken.format);
-    sink.put('[');
+    /*sink.put(TerminalToken.format);
+    sink.put('[');*/
+
+    enum string prelude = TerminalToken.format ~ "[";
+    sink.put(prelude);
 
     uint numCodes;
 
