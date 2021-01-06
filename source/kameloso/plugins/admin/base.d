@@ -1195,6 +1195,40 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         }
         break;
 
+    case "hostmask":
+        import lu.string : SplitResults, splitInto;
+
+        string subverb;
+        string account;
+        string mask;
+
+        immutable results = slice.splitInto(subverb, account, mask);
+        if ((results != SplitResults.match) && (subverb != "list"))
+        {
+            logger.warning("Invalid bus message syntax; " ~
+                "expected hostmask [add|del|list] [account] [hostmask]");
+            return;
+        }
+
+        switch (subverb)
+        {
+        case "add":
+        case "del":
+        case "remove":
+            immutable flag = (subverb == "add") ? Yes.add : No.add;
+            IRCEvent lvalueEvent;
+            return modifyHostmaskDefinition(plugin, flag, account, mask, lvalueEvent);
+
+        case "list":
+            IRCEvent lvalueEvent;
+            return listHostmaskDefinitions(plugin, lvalueEvent);
+
+        default:
+            logger.warningf("Invalid bus message %s subverb: %s", verb, subverb);
+            break;
+        }
+        break;
+
     case "summary":
         return plugin.onCommandSummary();
 
