@@ -989,15 +989,34 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 
     if (aa.length)
     {
-        import std.conv : to;
+        if (event == IRCEvent.init)
+        {
+            import std.json : JSONValue;
+            import std.stdio : writeln;
 
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current hostmasks: " ~ aa.to!string);
+            logger.log("Current hostmasks:");
+            // json can contain the example placeholder, so make a new one out of aa
+            writeln(JSONValue(aa).toPrettyString);
+        }
+        else
+        {
+            import std.conv : text;
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Current hostmasks: " ~ aa.text.ircBold);
+        }
     }
     else
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are presently no hostmasks defined.");
+        enum message = "There are presently no hostmasks defined.";
+
+        if (event == IRCEvent.init)
+        {
+            logger.info(message);
+        }
+        else
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
     }
 }
 
