@@ -35,8 +35,8 @@
     immutable kamelosoInverted = line.invert("kameloso");
     assert(line != kamelosoInverted);
 
-    immutable tintedNickname = "nickname".colourByHash(false);   // "for bright background" false
-    immutable tintedSubstring = "substring".colourByHash(true);  // "for bright background" true
+    immutable nicknameTint = "nickname".getColourByHash(Yes.brightTerminal);
+    immutable substringTint = "substring".getColourByHash(No.brightTerminal);
     ---
 
     It is used heavily in the Printer plugin, to format sections of its output
@@ -391,8 +391,11 @@ version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    sink.put(TerminalToken.format);
-    sink.put('[');
+    /*sink.put(TerminalToken.format);
+    sink.put('[');*/
+
+    enum string prelude = TerminalToken.format ~ "[";
+    sink.put(prelude);
 
     uint numCodes;
 
@@ -1061,7 +1064,7 @@ unittest
 }
 
 
-// colourByHash
+// getColourByHash
 /++
     Hashes the passed string and picks a [TerminalForeground] colour by modulo.
     Overload that takes an array of [TerminalForeground]s, to pick between.
@@ -1074,9 +1077,9 @@ unittest
         A [TerminalForeground] based on the passed string, picked from the
             passed `fgArray` array.
  +/
-TerminalForeground colourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
-in (word.length, "Tried to colour by hash but no word was given")
-in (fgArray.length, "Tried to colour by hash but with an empty colour array")
+TerminalForeground getColourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
+in (word.length, "Tried to get colour by hash but no word was given")
+in (fgArray.length, "Tried to get colour by hash but with an empty colour array")
 {
     size_t colourIndex = hashOf(word) % fgArray.length;
     return fgArray[colourIndex];
@@ -1097,21 +1100,21 @@ unittest
     ];
 
     {
-        immutable foreground = "kameloso".colourByHash(fgArray[]);
+        immutable foreground = "kameloso".getColourByHash(fgArray[]);
         assert((foreground == FG.blue), Enum!FG.toString(foreground));
     }
     {
-        immutable foreground = "zorael".colourByHash(fgArray[]);
+        immutable foreground = "zorael".getColourByHash(fgArray[]);
         assert((foreground == FG.green), Enum!FG.toString(foreground));
     }
     {
-        immutable foreground = "hirrsteff".colourByHash(fgArray[]);
+        immutable foreground = "hirrsteff".getColourByHash(fgArray[]);
         assert((foreground == FG.red), Enum!FG.toString(foreground));
     }
 }
 
 
-// colourByHash
+// getColourByHash
 /++
     Hashes the passed string and picks a [TerminalForeground] colour by modulo.
     Overload that picks any colour, taking care not to pick black or white based on
@@ -1119,8 +1122,8 @@ unittest
 
     Example:
     ---
-    immutable colouredNick = "kameloso".colourByHash(No.bright);
-    immutable colouredNickBright = "kameloso".colourByHash(Yes.bright);
+    immutable nickColour = "kameloso".getColourByHash(No.brightTerminal);
+    immutable brightNickColour = "kameloso".getColourByHash(Yes.brightTerminal);
     ---
 
     Params:
@@ -1131,9 +1134,9 @@ unittest
         A [TerminalForeground] based on the passed string.
  +/
 version(Colours)
-TerminalForeground colourByHash(const string word,
+TerminalForeground getColourByHash(const string word,
     const Flag!"brightTerminal" bright) pure @nogc nothrow
-in (word.length, "Tried to colour by hash but no word was given")
+in (word.length, "Tried to get colour by hash but no word was given")
 {
     import std.traits : EnumMembers;
 
@@ -1145,7 +1148,7 @@ in (word.length, "Tried to colour by hash but no word was given")
     static immutable TerminalForeground[foregroundMembers.length+(-2)] fgDark =
         TerminalForeground.white ~ [ foregroundMembers ][2..$-1];
 
-    return bright ? word.colourByHash(fgBright[]) : word.colourByHash(fgDark[]);
+    return bright ? word.getColourByHash(fgBright[]) : word.getColourByHash(fgDark[]);
 }
 
 ///
@@ -1157,19 +1160,65 @@ unittest
     alias FG = TerminalForeground;
 
     {
-        immutable hash = colourByHash("kameloso", No.brightTerminal);
+        immutable hash = getColourByHash("kameloso", No.brightTerminal);
         assert((hash == FG.lightyellow), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("kameloso^", No.brightTerminal);
+        immutable hash = getColourByHash("kameloso^", No.brightTerminal);
         assert((hash == FG.green), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("zorael", No.brightTerminal);
+        immutable hash = getColourByHash("zorael", No.brightTerminal);
         assert((hash == FG.lightgrey), Enum!FG.toString(hash));
     }
     {
-        immutable hash = colourByHash("NO", No.brightTerminal);
+        immutable hash = getColourByHash("NO", No.brightTerminal);
         assert((hash == FG.lightred), Enum!FG.toString(hash));
+    }
+}
+
+
+// colourByHash
+/++
+    Shorthand function to colour a passed word by the hash of it.
+
+    Params:
+        word = String to colour.
+        bright = Whether or not the colour should be adapted for a bright terminal background.
+
+    Returns:
+        `word`, now in colour based on the hash of its contents.
+ +/
+version(Colours)
+string colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
+{
+    return word.colour(getColourByHash(word, bright));
+}
+
+///
+version(Colours)
+unittest
+{
+    import std.conv : text;
+
+    {
+        immutable coloured = "kameloso".colourByHash(No.brightTerminal);
+        assert((coloured == "\033[93mkameloso\033[0m"),
+            "kameloso".getColourByHash(No.brightTerminal).text);
+    }
+    {
+        immutable coloured = "kameloso".colourByHash(Yes.brightTerminal);
+        assert((coloured == "\033[93mkameloso\033[0m"),
+            "kameloso".getColourByHash(Yes.brightTerminal).text);
+    }
+    {
+        immutable coloured = "zorael".colourByHash(No.brightTerminal);
+        assert((coloured == "\033[37mzorael\033[0m"),
+            "zorael".getColourByHash(No.brightTerminal).text);
+    }
+    {
+        immutable coloured = "NO".colourByHash(No.brightTerminal);
+        assert((coloured == "\033[91mNO\033[0m"),
+            "NO".getColourByHash(No.brightTerminal).text);
     }
 }

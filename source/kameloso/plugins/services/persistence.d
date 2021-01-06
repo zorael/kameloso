@@ -682,12 +682,13 @@ void initHostmaskResources(PersistenceService service)
     }
 
     enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
+    enum examplePlaceholderValue = "<account>";
 
     if (json.object.length == 0)
     {
         json[examplePlaceholderKey] = null;
         json[examplePlaceholderKey].str = null;
-        json[examplePlaceholderKey].str = "<account>";
+        json[examplePlaceholderKey].str = examplePlaceholderValue;
     }
     else if ((json.object.length > 1) && (examplePlaceholderKey in json))
     {

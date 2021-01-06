@@ -989,15 +989,34 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 
     if (aa.length)
     {
-        import std.conv : to;
+        if (event == IRCEvent.init)
+        {
+            import std.json : JSONValue;
+            import std.stdio : writeln;
 
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current hostmasks: " ~ aa.to!string);
+            logger.log("Current hostmasks:");
+            // json can contain the example placeholder, so make a new one out of aa
+            writeln(JSONValue(aa).toPrettyString);
+        }
+        else
+        {
+            import std.conv : text;
+            privmsg(plugin.state, event.channel, event.sender.nickname,
+                "Current hostmasks: " ~ aa.text.ircBold);
+        }
     }
     else
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are presently no hostmasks defined.");
+        enum message = "There are presently no hostmasks defined.";
+
+        if (event == IRCEvent.init)
+        {
+            logger.info(message);
+        }
+        else
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
     }
 }
 
@@ -1169,6 +1188,52 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         case "list":
             return plugin.listList(channel, verb);
+
+        default:
+            logger.warningf("Invalid bus message %s subverb: %s", verb, subverb);
+            break;
+        }
+        break;
+
+    case "hostmask":
+        import lu.string : nom;
+
+        immutable subverb = slice.nom!(Yes.inherit)(' ');
+
+        switch (subverb)
+        {
+        case "add":
+            import lu.string : SplitResults, splitInto;
+
+            string account;
+            string mask;
+
+            immutable results = slice.splitInto(account, mask);
+            if (results != SplitResults.match)
+            {
+                logger.warning("Invalid bus message syntax; " ~
+                    "expected hostmask add [account] [hostmask]");
+                return;
+            }
+
+            IRCEvent lvalueEvent;
+            return modifyHostmaskDefinition(plugin, Yes.add, account, mask, lvalueEvent);
+
+        case "del":
+        case "remove":
+            if (!slice.length)
+            {
+                logger.warning("Invalid bus message syntax; " ~
+                    "expected hostmask del [hostmask]");
+                return;
+            }
+
+            IRCEvent lvalueEvent;
+            return modifyHostmaskDefinition(plugin, No.add, string.init, slice, lvalueEvent);
+
+        case "list":
+            IRCEvent lvalueEvent;
+            return listHostmaskDefinitions(plugin, lvalueEvent);
 
         default:
             logger.warningf("Invalid bus message %s subverb: %s", verb, subverb);
