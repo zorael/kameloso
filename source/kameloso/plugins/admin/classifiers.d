@@ -652,45 +652,34 @@ void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     {
         // Allow for removing an invalid mask
 
-        void complainNoSuchHostmask()
-        {
-            if (event == IRCEvent.init)
-            {
-                logger.warningf(`No such hostmask "%s%s%s" for account %4$s%3$s.`,
-                    Tint.log, mask, Tint.warning, colourByHash(account, brightFlag));
-            }
-            else
-            {
-                immutable message = `No such hostmask "%s" for account %s.`
-                    .format(mask.ircBold, account.ircColourByHash);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            }
-        }
-
         if (const mappedAccount = mask in aa)
         {
-            if (account != *mappedAccount) return complainNoSuchHostmask();  // Skip saving changes below
-
             aa.remove(mask);
-
             if (!aa.length) aa[examplePlaceholderKey] = examplePlaceholderValue;
 
             if (event == IRCEvent.init)
             {
-                immutable colouredAccount = colourByHash(account, brightFlag);
-                logger.infof(`Removed hostmask "%s%s%s" from account %4$s%3$s.`,
-                        Tint.log, mask, Tint.info, colouredAccount);
+                logger.infof(`Removed hostmask "%s%s%s".`, Tint.log, mask, Tint.info);
             }
             else
             {
-                immutable message = `Removed hostmask "%s" from account %s.`
-                    .format(mask.ircBold, account.ircColourByHash);
+                immutable message = `Removed hostmask "%s".`.format(mask.ircBold);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
         }
         else
         {
-            return complainNoSuchHostmask();  // Skip saving changes below
+            if (event == IRCEvent.init)
+            {
+                logger.warningf(`No such hostmask "%s%s%s" on file.`,
+                    Tint.log, mask, Tint.warning);
+            }
+            else
+            {
+                immutable message = `No such hostmask "%s" on file.`.format(mask.ircBold);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+            return;  // Skip saving and updating below
         }
     }
 

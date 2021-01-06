@@ -1196,28 +1196,40 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         break;
 
     case "hostmask":
-        import lu.string : SplitResults, splitInto;
+        import lu.string : nom;
 
-        string subverb;
-        string account;
-        string mask;
-
-        immutable results = slice.splitInto(subverb, account, mask);
-        if ((results != SplitResults.match) && (subverb != "list"))
-        {
-            logger.warning("Invalid bus message syntax; " ~
-                "expected hostmask [add|del|list] [account] [hostmask]");
-            return;
-        }
+        immutable subverb = slice.nom!(Yes.inherit)(' ');
 
         switch (subverb)
         {
         case "add":
+            import lu.string : SplitResults, splitInto;
+
+            string account;
+            string mask;
+
+            immutable results = slice.splitInto(account, mask);
+            if (results != SplitResults.match)
+            {
+                logger.warning("Invalid bus message syntax; " ~
+                    "expected hostmask add [account] [hostmask]");
+                return;
+            }
+
+            IRCEvent lvalueEvent;
+            return modifyHostmaskDefinition(plugin, Yes.add, account, mask, lvalueEvent);
+
         case "del":
         case "remove":
-            immutable flag = (subverb == "add") ? Yes.add : No.add;
+            if (!slice.length)
+            {
+                logger.warning("Invalid bus message syntax; " ~
+                    "expected hostmask del [hostmask]");
+                return;
+            }
+
             IRCEvent lvalueEvent;
-            return modifyHostmaskDefinition(plugin, flag, account, mask, lvalueEvent);
+            return modifyHostmaskDefinition(plugin, No.add, string.init, slice, lvalueEvent);
 
         case "list":
             IRCEvent lvalueEvent;
