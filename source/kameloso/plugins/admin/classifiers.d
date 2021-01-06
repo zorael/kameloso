@@ -565,12 +565,14 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
         add = Whether to add or to remove the hostmask.
-        account = Account the hostmask will equate to.
+        account = Account the hostmask will equate to. May be empty if `add` is false.
         mask = String "nickname!ident@address.tld" hostmask.
         event = Instigating [dialect.defs.IRCEvent].
  +/
 void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
     const string account, const string mask, const ref IRCEvent event)
+in ((!add || account.length), "Tried to add a hostmask with no account to map it to")
+in (mask.length, "Tried to add an empty hostmask definition")
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage, populateFromJSON;
