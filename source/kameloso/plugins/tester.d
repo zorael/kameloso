@@ -119,7 +119,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
 
     void wrapTest(alias fun)()
     {
-        await(plugin, IRCEvent.Type.CHAN);
+        await(plugin, IRCEvent.Type.CHAN, No.yield);
         scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
         disableColours();
@@ -184,31 +184,33 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "all":
         void allDg()
         {
-            await(plugin, IRCEvent.Type.CHAN);
+            await(plugin, IRCEvent.Type.CHAN, No.yield);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
             disableColours();
             scope(exit) enableColours();
             expect("Setting changed.");
 
+            enum secondsBetween = 3;
+
             runTestAndReport!testAdminFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testAutomodesFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testChatbotFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testNotesFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testOnelinersFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testQuotesFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testSedReplaceFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testSeenFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testCounterFiber();
-            delay(plugin, 3, No.msecs, Yes.yield);
+            delay(plugin, secondsBetween, Yes.yield, No.msecs);
             runTestAndReport!testStopwatchFiber();
 
             logger.info("All tests finished!");
@@ -501,7 +503,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     // ------------ DANCE
 
-    await(plugin, IRCEvent.Type.EMOTE);
+    await(plugin, IRCEvent.Type.EMOTE, No.yield);
 
     send("get on up and DANCE");
     expect("dances :D-<");
@@ -557,19 +559,17 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 
     unawait(plugin, IRCEvent.Type.CHAN);
     part(plugin.state, origEvent.channel);
-    await(plugin, IRCEvent.Type.SELFPART);
-    Fiber.yield();
+    await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
     while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
     unawait(plugin, IRCEvent.Type.SELFPART);
 
-    await(plugin, IRCEvent.Type.SELFJOIN);
     join(plugin.state, origEvent.channel);
-    Fiber.yield();
+    await(plugin, IRCEvent.Type.SELFJOIN, Yes.yield);
     while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
     unawait(plugin, IRCEvent.Type.SELFJOIN);
 
-    await(plugin, IRCEvent.Type.CHAN);
-    Fiber.yield();
+    await(plugin, IRCEvent.Type.CHAN, No.yield);  // awaitReply yields
+    awaitReply();
     enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note"
         .format(plugin.state.client.nickname)) &&
         thisFiber.payload.content.endsWith("ago: test"),
