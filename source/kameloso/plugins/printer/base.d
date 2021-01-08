@@ -576,7 +576,7 @@ void start(PrinterPlugin plugin)
                 }
             }
 
-            delay(plugin, untilNextMidnight, No.msecs, Yes.yield);
+            delay(plugin, untilNextMidnight, Yes.yield, No.msecs);
         }
     }
 

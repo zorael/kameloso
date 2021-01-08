@@ -391,7 +391,7 @@ void onWelcome(PersistenceService service)
         while (true)
         {
             service.state.users = service.state.users.rehash();
-            delay(service, service.timeBetweenRehashes, No.msecs, Yes.yield);
+            delay(service, service.timeBetweenRehashes, Yes.yield, No.msecs);
         }
     }
 

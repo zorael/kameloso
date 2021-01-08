@@ -454,7 +454,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
             plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
-    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    delay(plugin, plugin.approximateQueryTime, Yes.yield, Yes.msecs);
     immutable response = waitForQueryResponse(plugin, url,
         plugin.twitchBotSettings.singleWorkerThread);
 
@@ -886,7 +886,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             accumulatingTime *= plugin.approximateQueryGrowthMultiplier;
             alias divisor = plugin.approximateQueryRetryTimeDivisor;
             immutable briefWait = cast(long)(accumulatingTime / divisor);
-            delay(plugin, briefWait, Yes.msecs, Yes.yield);
+            delay(plugin, briefWait, Yes.yield, Yes.msecs);
             continue;
         }
 

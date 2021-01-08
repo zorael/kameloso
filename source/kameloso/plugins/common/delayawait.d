@@ -69,14 +69,14 @@ in ((fiber !is null), "Tried to delay a null Fiber")
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         duration = Amount of time to delay the implicit fiber in the current context.
-        msecs = Whether `period` is in milliseconds or seconds.
         yield = Whether or not to immediately yield the Fiber.
+        msecs = Whether `period` is in milliseconds or seconds.
 
     See_Also:
         [removeDelayedFiber]
  +/
-void delay(IRCPlugin plugin, const long duration, const Flag!"msecs" msecs = No.msecs,
-    const Flag!"yield" yield = No.yield)
+void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield,
+    const Flag!"msecs" msecs = No.msecs)
 in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 {
     delay(plugin, Fiber.getThis, duration, msecs);
@@ -276,8 +276,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
     See_Also:
         [unawait]
  +/
-void await(IRCPlugin plugin, const IRCEvent.Type type,
-    const Flag!"yield" yield = No.yield)
+void await(IRCPlugin plugin, const IRCEvent.Type type, const Flag!"yield" yield)
 in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
 {
@@ -332,8 +331,7 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
     See_Also:
         [unawait]
  +/
-void await(IRCPlugin plugin, const IRCEvent.Type[] types,
-    const Flag!"yield" yield = No.yield)
+void await(IRCPlugin plugin, const IRCEvent.Type[] types, const Flag!"yield" yield)
 in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
 {
     foreach (immutable type; types)
