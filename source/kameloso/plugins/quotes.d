@@ -825,17 +825,9 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     plugin.quotes.object.remove(source);
     plugin.quotes.save(plugin.quotesFile);
 
-<<<<<<< HEAD
     enum pattern = "<b>%d<b> %s merged from <h>%s<h> into <h>%s<h>.";
     immutable quoteNoun = numToMerge.plurality("quote", "quotes");
     immutable message = pattern.format(numToMerge, quoteNoun, source, target);
-=======
-    enum pattern = "%s %s merged from %s into %s.";
-    immutable quoteNoun = numToMerge.plurality("quote", "quotes");
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(numToMerge.text.ircBold, quoteNoun, source.ircColourByHash, target.ircColourByHash) :
-        pattern.format(numToMerge, quoteNoun, source, target);
->>>>>>> 5789640e (quotes: plurality of number of quotes merged)
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
