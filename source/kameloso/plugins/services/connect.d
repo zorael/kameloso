@@ -1023,7 +1023,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 
                     raw(service.state, "NICK " ~ service.state.client.origNickname,
                         Yes.quiet, Yes.background);
-                    delay(service, service.nickRegainPeriodicity, Yes.yield, No.msecs);
+                    delay(service, service.nickRegainPeriodicity, Yes.yield);
                 }
             }
 
@@ -1456,6 +1456,8 @@ public:
 final class ConnectService : IRCPlugin
 {
 private:
+    import core.time : seconds;
+
     /// All Connect service settings gathered.
     ConnectSettings connectSettings;
 
@@ -1463,20 +1465,20 @@ private:
         How many seconds we should wait before we tire of waiting for authentication
         responses and just start joining channels.
      +/
-    enum authenticationGracePeriod = 15;
+    static immutable authenticationGracePeriod = 15.seconds;
 
     /++
         How many seconds to wait for a response to the request for the list of
         capabilities the server has. After these many seconds, it will just
         normally negotiate nickname and log in.
      +/
-    enum capLSTimeout = 15;
+    static immutable capLSTimeout = 15.seconds;
 
     /++
         How often to attempt to regain nickname, in seconds, if there was a collision
         and we had to rename ourselves during registration.
      +/
-    enum nickRegainPeriodicity = 600;
+    static immutable nickRegainPeriodicity = 600.seconds;
 
     /++
         Whether or not to append the alt nick sign as a separate step, or to

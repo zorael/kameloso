@@ -536,6 +536,7 @@ void start(PrinterPlugin plugin)
     import kameloso.constants : BufferSize;
     import kameloso.terminal : isTTY;
     import core.thread : Fiber;
+    import core.time : Duration;
 
     plugin.linebuffer.reserve(plugin.linebufferInitialSize);
 
@@ -545,16 +546,17 @@ void start(PrinterPlugin plugin)
         plugin.bell = string.init;
     }
 
-    static long untilNextMidnight()
+    static Duration untilNextMidnight()
     {
         import kameloso.common : nextMidnight;
         import std.datetime.systime : Clock;
+        import core.time : seconds;
 
         immutable now = Clock.currTime;
         immutable nowInUnix = now.toUnixTime;
         immutable nextMidnightTimestamp = now.nextMidnight.toUnixTime;
 
-        return (nextMidnightTimestamp - nowInUnix);
+        return (nextMidnightTimestamp - nowInUnix).seconds;
     }
 
     void daybreakDg()
@@ -576,7 +578,7 @@ void start(PrinterPlugin plugin)
                 }
             }
 
-            delay(plugin, untilNextMidnight, Yes.yield, No.msecs);
+            delay(plugin, untilNextMidnight, Yes.yield);
         }
     }
 

@@ -96,6 +96,7 @@ void startChannelQueries(ChanQueriesService service)
         import std.datetime.systime : Clock;
         import std.string : representation;
         import core.thread : Fiber;
+        import core.time : seconds;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -108,6 +109,8 @@ void startChannelQueries(ChanQueriesService service)
             service.querying = false;  // "Unlock"
         }
 
+        static immutable secondsBetween = service.secondsBetween.seconds;
+
         foreach (immutable i, immutable channelName; querylist)
         {
             if (channelName !in service.channelStates) continue;
@@ -115,7 +118,7 @@ void startChannelQueries(ChanQueriesService service)
             if (i > 0)
             {
                 // Delay between runs after first since aMode probes don't delay at end
-                delay(service, service.secondsBetween, Yes.yield);
+                delay(service, secondsBetween, Yes.yield);
             }
 
             version(WithPrinterPlugin)
@@ -143,7 +146,7 @@ void startChannelQueries(ChanQueriesService service)
 
                 while (thisFiber.payload.channel != channelName) Fiber.yield();
 
-                delay(service, service.secondsBetween, Yes.yield);
+                delay(service, secondsBetween, Yes.yield);
             }
 
             /// Event types that signal the end of a query response.
@@ -166,7 +169,7 @@ void startChannelQueries(ChanQueriesService service)
                 if (n > 0)
                 {
                     // Cannot await by event type; there are too many types.
-                    delay(service, service.secondsBetween, Yes.yield);
+                    delay(service, secondsBetween, Yes.yield);
                 }
 
                 version(WithPrinterPlugin)
@@ -246,6 +249,7 @@ void startChannelQueries(ChanQueriesService service)
         {
             import kameloso.common : logger;
             import kameloso.messaging : whois;
+            import core.time : seconds;
 
             if ((nickname !in service.state.users) ||
                 (service.state.users[nickname].account.length))
@@ -255,11 +259,12 @@ void startChannelQueries(ChanQueriesService service)
             }
 
             // Delay between runs after first since aMode probes don't delay at end
-            delay(service, service.secondsBetween, Yes.yield);
+            delay(service, secondsBetween, Yes.yield);
 
             while ((Clock.currTime.toUnixTime - lastQueryResults) < service.secondsBetween-1)
             {
-                delay(service, 1, Yes.yield);
+                static immutable oneSecond = 1.seconds;
+                delay(service, oneSecond, Yes.yield);
             }
 
             version(WithPrinterPlugin)
@@ -423,7 +428,7 @@ void onMyInfo(ChanQueriesService service)
         service.startChannelQueries();
     }
 
-    delay(service, &dg, service.secondsBeforeInitialQueries);
+    delay(service, &dg, service.timeBeforeInitialQueries);
 }
 
 
@@ -450,6 +455,8 @@ public:
 final class ChanQueriesService : IRCPlugin
 {
 private:
+    import core.time : seconds;
+
     /++
         Extra seconds delay between channel mode/user queries. Not delaying may
         cause kicks and disconnects if results are returned quickly.
@@ -457,7 +464,7 @@ private:
     enum secondsBetween = 3;
 
     /// Seconds after welcome event before the first round of channel-querying will start.
-    enum secondsBeforeInitialQueries = 60;
+    static immutable timeBeforeInitialQueries = 60.seconds;
 
     /++
         Short associative array of the channels the bot is in and which state(s)

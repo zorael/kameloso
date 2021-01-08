@@ -466,7 +466,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 // onWelcome
 /++
     Sets up a Fiber to periodically clear the lists of previous messages from
-    users once every [SedReplacePlugin.timeBetweenPurges] seconds.
+    users once every [SedReplacePlugin.timeBetweenPurges].
 
     This is to prevent the lists from becoming huge over time.
  +/
@@ -482,7 +482,7 @@ void onWelcome(SedReplacePlugin plugin)
         while (true)
         {
             plugin.prevlines = typeof(plugin.prevlines).init;
-            delay(plugin, plugin.timeBetweenPurges, Yes.yield, No.msecs);
+            delay(plugin, plugin.timeBetweenPurges, Yes.yield);
         }
     }
 
@@ -516,6 +516,8 @@ public:
 final class SedReplacePlugin : IRCPlugin
 {
 private:
+    import core.time : seconds;
+
     /// All sed-replace options gathered.
     SedReplaceSettings sedReplaceSettings;
 
@@ -523,7 +525,7 @@ private:
     enum replaceTimeoutSeconds = 3600;
 
     /// How often to purge the [prevlines] list of messages.
-    enum timeBetweenPurges = replaceTimeoutSeconds * 3;
+    static immutable timeBetweenPurges = (replaceTimeoutSeconds * 3).seconds;
 
     /++
         A `Line[string]` buffer of the previous line every user said, with

@@ -1653,7 +1653,7 @@ void onMyInfo(TwitchBotPlugin plugin)
             // Early yield if we shouldn't clean up
             if (nowInUnix < nextPrune)
             {
-                delay(plugin, plugin.timerPeriodicity, Yes.yield, No.msecs);
+                delay(plugin, plugin.timerPeriodicity, Yes.yield);
                 continue top;
             }
             else
@@ -1780,6 +1780,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
+    import core.time : seconds;
 
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
@@ -1890,7 +1891,7 @@ package:
         How often to check whether timers should fire, in seconds. A smaller
         number means better precision.
      +/
-    enum timerPeriodicity = 10;
+    static immutable timerPeriodicity = 10.seconds;
 
     /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
@@ -1961,7 +1962,7 @@ package:
         /++
             When broadcasting, how often to check and enumerate chatters.
          +/
-        enum chattersCheckPeriodicity = 180;
+        static immutable chattersCheckPeriodicity = 180.seconds;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
