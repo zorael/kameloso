@@ -280,9 +280,10 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
     import std.range : only;
 
-    foreach (immutable list; only("operator", "whitelist", "blacklist"))
+    foreach (immutable list; only("staff"))//, "operator", "whitelist", "blacklist"))
     {
         immutable asWhat =
+            (list == "staff") ? "staff" :
             (list == "operator") ? "an operator" :
             (list == "whitelist") ? "a whitelisted user" :
             /*(list == "blacklist") ?*/ "a blacklisted user";
@@ -304,6 +305,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         expect("No nickname supplied.");
 
         immutable asWhatList =
+            (list == "staff") ? "staff" :
             (list == "operator") ? "operators" :
             (list == "whitelist") ? "whitelisted users" :
             /*(list == "blacklist") ?*/ "blacklisted users";
