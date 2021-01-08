@@ -482,7 +482,7 @@ void onWelcome(SedReplacePlugin plugin)
         while (true)
         {
             plugin.prevlines = typeof(plugin.prevlines).init;
-            delay(plugin, plugin.timeBetweenPurges, No.msecs, Yes.yield);
+            delay(plugin, plugin.timeBetweenPurges, Yes.yield, No.msecs);
         }
     }
 

@@ -1653,7 +1653,7 @@ void onMyInfo(TwitchBotPlugin plugin)
             // Early yield if we shouldn't clean up
             if (nowInUnix < nextPrune)
             {
-                delay(plugin, plugin.timerPeriodicity, No.msecs, Yes.yield);
+                delay(plugin, plugin.timerPeriodicity, Yes.yield, No.msecs);
                 continue top;
             }
             else

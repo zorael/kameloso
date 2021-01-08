@@ -129,7 +129,7 @@ void startChannelQueries(ChanQueriesService service)
                 import kameloso.messaging : raw;
                 import std.conv : text;
 
-                await(service, types);
+                await(service, types, No.yield);
                 scope(exit) unawait(service, types);
 
                 version(WithPrinterPlugin)
@@ -226,7 +226,7 @@ void startChannelQueries(ChanQueriesService service)
             IRCEvent.Type.ERR_UNKNOWNCOMMAND,
         ];
 
-        await(service, whoisTypes);
+        await(service, whoisTypes, No.yield);
 
         scope(exit)
         {

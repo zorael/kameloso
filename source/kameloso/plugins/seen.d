@@ -928,7 +928,7 @@ void onWelcome(SeenPlugin plugin)
             plugin.updateAllObservedUsers();
             plugin.seenUsers = plugin.seenUsers.rehash();
             plugin.seenUsers.saveSeen(plugin.seenFile);
-            delay(plugin, plugin.timeBetweenSaves, No.msecs, Yes.yield);
+            delay(plugin, plugin.timeBetweenSaves, Yes.yield, No.msecs);
         }
     }
 

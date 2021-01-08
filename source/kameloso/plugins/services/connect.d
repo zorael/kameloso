@@ -1023,7 +1023,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 
                     raw(service.state, "NICK " ~ service.state.client.origNickname,
                         Yes.quiet, Yes.background);
-                    delay(service, service.nickRegainPeriodicity, No.msecs, Yes.yield);
+                    delay(service, service.nickRegainPeriodicity, Yes.yield, No.msecs);
                 }
             }
 
