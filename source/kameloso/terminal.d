@@ -597,7 +597,7 @@ unittest
     import std.conv : to;
     import std.stdio : write, writeln;
 
-    enum bright = Yes.bright;
+    enum bright = Yes.brightTerminal;
     // ▄█▀
 
     writeln("BRIGHT: ", bright);
@@ -714,7 +714,7 @@ unittest
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b,
-    const Flag!"bright" bright = No.bright)
+    const Flag!"brightTerminal" bright = No.brightTerminal)
 if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : toAlphaInto;
@@ -776,7 +776,7 @@ if (isOutputRange!(Sink, char[]))
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
     (const string word, const uint r, const uint g, const uint b,
-    const Flag!"bright" bright = No.bright) pure
+    const Flag!"brightTerminal" bright = No.brightTerminal) pure
 {
     import std.array : Appender;
 

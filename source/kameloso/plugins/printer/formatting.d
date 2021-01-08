@@ -538,7 +538,7 @@ if (isOutputRange!(Sink, char[]))
     string content = event.content;  // mutable
     bool shouldBell;
 
-    immutable bright = plugin.state.settings.brightTerminal ? Yes.bright : No.bright;
+    immutable bright = plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal;
 
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
