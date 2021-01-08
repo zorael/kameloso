@@ -703,18 +703,18 @@ unittest
     ---
 
     Params:
-        normalise = Whether or not to normalise colours so that they aren't too
-            dark or too bright.
         sink = Output range to write the final code into.
         r = Red value.
         g = Green value.
         b = Blue value.
         bright = Whether the terminal has a bright background or not.
+        normalise = Whether or not to normalise colours so that they aren't too
+            dark or too bright.
  +/
 version(Colours)
-void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b,
-    const Flag!"brightTerminal" bright = No.brightTerminal)
+void truecolour(Sink)(auto ref Sink sink, uint r, uint g, uint b,
+    const Flag!"brightTerminal" bright = No.brightTerminal,
+    const Flag!"normalise" normalise = Yes.normalise)
 if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : toAlphaInto;
@@ -724,7 +724,7 @@ if (isOutputRange!(Sink, char[]))
     // 2 truecolour?
     // r;g;bm
 
-    static if (normalise)
+    if (normalise)
     {
         if (bright)
         {
@@ -762,21 +762,21 @@ if (isOutputRange!(Sink, char[]))
     ---
 
     Params:
-        normalise = Whether or not to normalise colours so that they aren't too
-            dark or too bright.
         word = String to tint.
         r = Red value.
         g = Green value.
         b = Blue value.
         bright = Whether the terminal has a bright background or not.
+        normalise = Whether or not to normalise colours so that they aren't too
+            dark or too bright.
 
     Returns:
         The passed string word encompassed by terminal colour tags.
  +/
 version(Colours)
-string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, const uint r, const uint g, const uint b,
-    const Flag!"brightTerminal" bright = No.brightTerminal) pure
+string truecolour(const string word, const uint r, const uint g, const uint b,
+    const Flag!"brightTerminal" bright = No.brightTerminal,
+    const Flag!"normalise" normalise = Yes.normalise) pure
 {
     import std.array : Appender;
 
@@ -785,7 +785,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     // \033[48 for background
     sink.reserve(word.length + 23);
 
-    sink.truecolour!normalise(r, g, b, bright);
+    sink.truecolour(r, g, b, bright, normalise);
     sink.put(word);
     sink.colourWith(TerminalReset.all);
     return sink.data;
@@ -797,7 +797,7 @@ unittest
 {
     import std.format : format;
 
-    immutable name = "blarbhl".truecolour!(No.normalise)(255, 255, 255);
+    immutable name = "blarbhl".truecolour(255, 255, 255, No.brightTerminal, No.normalise);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
         "blarbhl", cast(char)TerminalToken.format);
