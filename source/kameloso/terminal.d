@@ -818,33 +818,35 @@ unittest
     ---
 
     Params:
-        caseSensitive = Whether or not to look for matches case-insensitively,
-            yet invert with the casing passed.
         line = Line to examine and invert a substring of.
         toInvert = Substring to invert.
+        caseSensitive = Whether or not to look for matches case-insensitively,
+            yet invert with the casing passed.
 
     Returns:
         Line with the substring in it inverted, if inversion was successful,
         else (a duplicate of) the line unchanged.
  +/
 version(Colours)
-string invert(Flag!"caseSensitive" caseSensitive = Yes.caseSensitive)
-    (const string line, const string toInvert)
+string invert(const string line, const string toInvert,
+    const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
 {
     import dialect.common : isValidNicknameCharacter;
     import std.array : Appender;
     import std.format : format;
     import std.string : indexOf;
 
-    static if (caseSensitive)
+    ptrdiff_t startpos;
+
+    if (caseSensitive)
     {
-        ptrdiff_t startpos = line.indexOf(toInvert);
+        startpos = line.indexOf(toInvert);
     }
     else
     {
         import std.algorithm.searching : countUntil;
         import std.uni : asLowerCase;
-        ptrdiff_t startpos = line.asLowerCase.countUntil(toInvert.asLowerCase);
+        startpos = line.asLowerCase.countUntil(toInvert.asLowerCase);
     }
 
     //assert((startpos != -1), "Tried to invert nonexistent text");
@@ -1032,17 +1034,17 @@ unittest
     // Case-insensitive tests
 
     {
-        immutable line = "KAMELOSO".invert!(No.caseSensitive)("kameloso");
+        immutable line = "KAMELOSO".invert("kameloso", No.caseSensitive);
         immutable expected = pre ~ "kameloso" ~ post;
         assert((line == expected), line);
     }
     {
-        immutable line = "KamelosoTV".invert!(No.caseSensitive)("kameloso");
+        immutable line = "KamelosoTV".invert("kameloso", No.caseSensitive);
         immutable expected = "KamelosoTV";
         assert((line == expected), line);
     }
     {
-        immutable line = "Blah blah kAmElOsO Blah blah".invert!(No.caseSensitive)("kameloso");
+        immutable line = "Blah blah kAmElOsO Blah blah".invert("kameloso", No.caseSensitive);
         immutable expected = "Blah blah " ~ pre ~ "kameloso" ~ post ~ " Blah blah";
         assert((line == expected), line);
     }
