@@ -50,11 +50,14 @@ public:
     /// Toggles whether or not the plugin should print to screen (as opposed to just log).
     bool printToScreen = true;
 
-    /// Whether or not to display nicks in random colour based on their nickname hash.
-    bool randomNickColours = true;
+    version(Colours)
+    {
+        /// Whether or not to display nicks in random colour based on their nickname hash.
+        bool randomNickColours = true;
 
-    /// Whether or not two users on the same account should be coloured identically.
-    bool colourByAccount = true;
+        /// Whether or not two users on the same account should be coloured identically.
+        bool colourByAccount = true;
+    }
 
     version(TwitchSupport)
     {
