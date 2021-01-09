@@ -2644,11 +2644,11 @@ void printSummary(const ref Kameloso instance)
         totalBytesReceived += entry.bytesReceived;
 
         writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
-            i+1, duration.timeSince!(Yes.abbreviate, 7, 0), entry.numEvents,
+            i+1, duration.timeSince!(7, 0)(Yes.abbreviate), entry.numEvents,
             entry.bytesReceived, startString, stopString);
     }
 
-    logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(No.abbreviate, 7, 1));
+    logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(7, 1));
     logger.infof("Total received: %s%,d%s bytes", Tint.log, totalBytesReceived, Tint.info);
 }
 
