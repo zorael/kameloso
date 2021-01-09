@@ -539,7 +539,11 @@ if (isOutputRange!(Sink, char[]))
     bool shouldBell;
 
     immutable bright = plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal;
-    immutable normalise = plugin.printerSettings.normaliseTruecolour ? Yes.normalise : No.normalise;
+
+    version(TwitchSupport)
+    {
+        immutable normalise = plugin.printerSettings.normaliseTruecolour ? Yes.normalise : No.normalise;
+    }
 
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
