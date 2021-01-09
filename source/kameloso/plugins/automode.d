@@ -388,7 +388,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         channelName = The channel the automode should play out in.
         mode = The mode string, when adding a new automode.
  +/
-void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname,
+void modifyAutomode(AutomodePlugin plugin, const Flag!"add" add, const string nickname,
     const string channelName, const string mode = string.init)
 in ((!add || mode.length), "Tried to add an empty automode")
 {

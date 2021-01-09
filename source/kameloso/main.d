@@ -2067,7 +2067,7 @@ Next tryConnect(ref Kameloso instance)
         [lu.common.Next.continue_] if resolution succeeded,
         [lu.common.Next.returnFailure] if it failed and the program should exit.
  +/
-Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
+Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;

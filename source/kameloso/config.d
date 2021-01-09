@@ -295,7 +295,7 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         banner = Whether or not to add the "kameloso bot" banner at the head of the file.
  +/
 void writeToDisk(const string filename, const string configurationText,
-    Flag!"addBanner" banner = Yes.addBanner)
+    const Flag!"addBanner" banner = Yes.addBanner)
 {
     import std.file : mkdirRecurse;
     import std.path : dirName;
