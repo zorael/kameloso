@@ -474,7 +474,7 @@ enum AlterationResult
         add = Whether to add to or remove from lists.
         list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
         account = Services account name to add or remove.
-        channel = Channel the account-class applies to.
+        channelName = Channel the account-class applies to.
 
     Returns:
         [AlterationResult.alreadyInList] if enlisting (`Yes.add`) and the account

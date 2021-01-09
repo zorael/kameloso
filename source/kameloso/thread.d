@@ -214,7 +214,7 @@ final class BusMessage(T) : Sendable
 
     /++
         Constructor that adds a passed payload to the internal stored [payload],
-        creating a *shared* [BusMessage].
+        creating a *shared* `BusMessage`.
      +/
     auto this(T payload) shared
     {
@@ -296,19 +296,18 @@ unittest
     ---
 
     Params:
-        T = Type to embed into the [CarryingFiber] as the type of [CarryingFiber.payload].
+        T = Type to embed into the `CarryingFiber` as the type of `CarryingFiber.payload`.
  +/
 final class CarryingFiber(T) : Fiber
 {
     /++
-        Embedded payload value in this [core.thread.fiber.Fiber]; what distinguishes
-        it from plain [core.thread.fiber.Fiber]s.
+        Embedded payload value in this Fiber; what distinguishes it from plain `Fiber`s.
      +/
     T payload;
 
     /++
         Constructor function merely taking a function/delegate pointer, to call
-        when invoking this [core.thread.fiber.Fiber] (via `.call()`).
+        when invoking this Fiber (via `.call()`).
      +/
     this(Fn, Args...)(Fn fn, Args args)
     {
@@ -317,9 +316,9 @@ final class CarryingFiber(T) : Fiber
     }
 
     /++
-        Constructor function taking a `T` [payload] to assign to its own
+        Constructor function taking a `T` `payload` to assign to its own
         internal `this.payload`, as well as a function/delegate pointer to call
-        when invoking this [core.thread.fiber.Fiber] (via `.call()`).
+        when invoking this Fiber (via `.call()`).
      +/
     this(Fn, Args...)(T payload, Fn fn, Args args)
     {
