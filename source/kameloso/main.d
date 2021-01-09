@@ -92,7 +92,7 @@ void signalHandler(int sig) nothrow @nogc @system
 
     // $ kill -l
     // https://man7.org/linux/man-pages/man7/signal.7.html
-    static immutable char*[32] signalNames =
+    static immutable string[32] signalNames =
     [
          0 : "<err>", /// Should never happen.
          1 : "HUP",   /// Hangup detected on controlling terminal or death of controlling process.
@@ -128,7 +128,7 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    printf("...caught signal SIG%s!\n", signalNames.ptr[sig]);
+    printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
     rawAbort = true;
 
     version(Posix)
