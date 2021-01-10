@@ -1878,7 +1878,7 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
             }
 
             event.content = event.content
-                .stripSeparatedPrefix!(Yes.demandSeparatingChars)(client.nickname);
+                .stripSeparatedPrefix(client.nickname, Yes.demandSeparatingChars);
 
             if (prefix.length && event.content.beginsWith(prefix))
             {

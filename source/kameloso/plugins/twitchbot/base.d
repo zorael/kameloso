@@ -2048,7 +2048,7 @@ package:
                 import kameloso.common : stripSeparatedPrefix;
 
                 immutable tail = event.content
-                    .stripSeparatedPrefix(this.state.client.nickname);
+                    .stripSeparatedPrefix(this.state.client.nickname, Yes.demandSeparatingChars);
 
                 // Specialcase "nickname: enable"
                 if (tail == "enable")
