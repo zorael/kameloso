@@ -107,8 +107,14 @@ public:
     // onEvent
     /++
         Called to let the plugin react to a new event, parsed from the server.
+
+        Params:
+            event = `dialect.defs.IRCEvent` in flight.
+
+        Returns:
+            `true` if at least one event handler was callled; `false` if not.
      +/
-    void onEvent(const ref IRCEvent event) @system;
+    bool onEvent(const ref IRCEvent event) @system;
 
 
     // initResources
@@ -429,7 +435,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
      +/
     pragma(inline, true)
-    override public void onEvent(const ref IRCEvent event) @system
+    override public bool onEvent(const ref IRCEvent event) @system
     {
         return onEventImpl(event);
     }
@@ -448,7 +454,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         Params:
             origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
      +/
-    private void onEventImpl(/*const*/ IRCEvent origEvent) @system
+    private bool onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -475,6 +481,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             repeat,
             return_,
         }
+
+        bool triggeredSomething;
 
         /++
             Process a function.
@@ -1055,6 +1063,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     .format(fullyQualifiedName!fun, typeof(fun).stringof));
             }
 
+            triggeredSomething = true;
+
             import kameloso.plugins.common.core : Chainable, Terminating;
 
             static if (hasUDA!(fun, Chainable) ||
@@ -1195,6 +1205,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         tryProcess!pluginFuns(origEvent);
         tryProcess!lateFuns(origEvent);
         tryProcess!cleanupFuns(origEvent);
+
+        return triggeredSomething;
     }
 
 
