@@ -1559,7 +1559,7 @@ in (filename.length, "Tried to save resources to an empty filename")
     JSONStorage storage;
 
     storage = JSONValue(resource);
-    storage.save!(JSONStorage.KeyOrderStrategy.adjusted)(filename);
+    storage.save(filename);
 }
 
 

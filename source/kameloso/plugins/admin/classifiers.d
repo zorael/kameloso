@@ -550,7 +550,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         }
     }
 
-    json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.userFile);
+    json.save(plugin.userFile);
 
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
