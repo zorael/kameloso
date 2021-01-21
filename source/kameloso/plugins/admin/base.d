@@ -887,7 +887,8 @@ void cycle(AdminPlugin plugin, const string channelName,
                 }
                 else
                 {
-                    return delay(plugin, &joinDg, delaySecs);
+                    import core.time : seconds;
+                    return delay(plugin, &joinDg, delaySecs.seconds);
                 }
             }
 

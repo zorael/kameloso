@@ -1032,7 +1032,7 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
             immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
             immutable diff = Clock.currTime - when;
-            immutable timeline = diff.timeSince!(No.abbreviate, 7, 3);
+            immutable timeline = diff.timeSince!(7, 3);
             immutable datestamp = "%s %d"
                 .format(months[cast(int)when.month-1], when.year);
 
@@ -1559,7 +1559,7 @@ in (filename.length, "Tried to save resources to an empty filename")
     JSONStorage storage;
 
     storage = JSONValue(resource);
-    storage.save!(JSONStorage.KeyOrderStrategy.adjusted)(filename);
+    storage.save(filename);
 }
 
 
@@ -1653,7 +1653,7 @@ void onMyInfo(TwitchBotPlugin plugin)
             // Early yield if we shouldn't clean up
             if (nowInUnix < nextPrune)
             {
-                delay(plugin, plugin.timerPeriodicity, Yes.yield, No.msecs);
+                delay(plugin, plugin.timerPeriodicity, Yes.yield);
                 continue top;
             }
             else
@@ -1780,6 +1780,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
+    import core.time : seconds;
 
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
@@ -1890,7 +1891,7 @@ package:
         How often to check whether timers should fire, in seconds. A smaller
         number means better precision.
      +/
-    enum timerPeriodicity = 10;
+    static immutable timerPeriodicity = 10.seconds;
 
     /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
@@ -1961,7 +1962,7 @@ package:
         /++
             When broadcasting, how often to check and enumerate chatters.
          +/
-        enum chattersCheckPeriodicity = 180;
+        static immutable chattersCheckPeriodicity = 180.seconds;
 
         /// The thread ID of the persistent worker thread.
         Tid persistentWorkerTid;
@@ -2002,7 +2003,7 @@ package:
                 [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
                 after verifying we should process the event.
      +/
-    override public void onEvent(const ref IRCEvent origEvent)
+    override public bool onEvent(const ref IRCEvent origEvent)
     {
         IRCEvent event = origEvent;
 
@@ -2039,7 +2040,7 @@ package:
                     {
                         if (room.enabled) return onEventImpl(event);
                     }
-                    return;
+                    return false;
                 }
             }
             /*else if (event.content.beginsWith(this.state.client.nickname))
@@ -2047,7 +2048,7 @@ package:
                 import kameloso.common : stripSeparatedPrefix;
 
                 immutable tail = event.content
-                    .stripSeparatedPrefix(this.state.client.nickname);
+                    .stripSeparatedPrefix(this.state.client.nickname, Yes.demandSeparatingChars);
 
                 // Specialcase "nickname: enable"
                 if (tail == "enable")
@@ -2062,6 +2063,7 @@ package:
                     {
                         if (room.enabled) return onEventImpl(event);
                     }
+                    return false;
                 }
             }*/
             else

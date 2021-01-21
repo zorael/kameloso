@@ -57,6 +57,9 @@ private import std.datetime.systime : Clock;
 // [std.typecons] for [std.typecons.Flag] and its friends.
 private import std.typecons : Flag, No, Yes;
 
+// [core.time] for [core.time.seconds], with which we can delay some actions.
+private import core.time : seconds;
+
 
 /+
     Most of the module can (and ideally should) be kept private. Our surface
@@ -271,7 +274,7 @@ private:  // Module-level private.
     /++
         The amount of seconds after which seen users should be saved to disk.
      +/
-    enum timeBetweenSaves = 300;
+    static immutable timeBetweenSaves = 300.seconds;
 
 
     // IRCPluginImpl
@@ -744,7 +747,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 
             immutable timestamp = SysTime.fromUnixTime(*userTimestamp);
             immutable diff = (Clock.currTime - timestamp);
-            immutable elapsed = timeSince!(No.abbreviate, 7, 2)(diff);
+            immutable elapsed = timeSince!(7, 2)(diff);
 
             immutable message = plugin.state.settings.colouredOutgoing ?
                 pattern.format(requestedUser.ircColourByHash.ircBold, elapsed) :
@@ -928,7 +931,7 @@ void onWelcome(SeenPlugin plugin)
             plugin.updateAllObservedUsers();
             plugin.seenUsers = plugin.seenUsers.rehash();
             plugin.seenUsers.saveSeen(plugin.seenFile);
-            delay(plugin, plugin.timeBetweenSaves, Yes.yield, No.msecs);
+            delay(plugin, plugin.timeBetweenSaves, Yes.yield);
         }
     }
 

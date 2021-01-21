@@ -284,6 +284,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
     import core.thread : Fiber;
+    import core.time : seconds;
 
     immutable dancePos = event.content.indexOf("DANCE");
     if (dancePos == -1) return;
@@ -311,7 +312,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     // Should dance. Stagger it a bit with a second in between.
-    enum secondsBetweenDances = 1;
+    static immutable timeBetweenDances = 1.seconds;
 
     void danceDg()
     {
@@ -319,10 +320,10 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
         import kameloso.messaging : emote;
 
         emote(plugin.state, event.channel, "dances :D-<");
-        delay(plugin, secondsBetweenDances, Yes.yield);
+        delay(plugin, timeBetweenDances, Yes.yield);
 
         emote(plugin.state, event.channel, "dances :D|-<");
-        delay(plugin, secondsBetweenDances, Yes.yield);
+        delay(plugin, timeBetweenDances, Yes.yield);
 
         emote(plugin.state, event.channel, "dances :D/-<");
     }

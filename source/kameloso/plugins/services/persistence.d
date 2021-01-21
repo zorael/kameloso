@@ -391,7 +391,7 @@ void onWelcome(PersistenceService service)
         while (true)
         {
             service.state.users = service.state.users.rehash();
-            delay(service, service.timeBetweenRehashes, Yes.yield, No.msecs);
+            delay(service, service.timeBetweenRehashes, Yes.yield);
         }
     }
 
@@ -724,9 +724,10 @@ final class PersistenceService : IRCPlugin
 {
 private:
     import kameloso.constants : KamelosoFilenames;
+    import core.time : seconds;
 
     /// How often to rehash associative arrays, optimising access.
-    enum timeBetweenRehashes = 3 * 3600;
+    enum timeBetweenRehashes = (3 * 3600).seconds;
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;

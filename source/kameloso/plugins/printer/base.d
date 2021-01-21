@@ -50,11 +50,14 @@ public:
     /// Toggles whether or not the plugin should print to screen (as opposed to just log).
     bool printToScreen = true;
 
-    /// Whether or not to display nicks in random colour based on their nickname hash.
-    bool randomNickColours = true;
+    version(Colours)
+    {
+        /// Whether or not to display nicks in random colour based on their nickname hash.
+        bool randomNickColours = true;
 
-    /// Whether or not two users on the same account should be coloured identically.
-    bool colourByAccount = true;
+        /// Whether or not two users on the same account should be coloured identically.
+        bool colourByAccount = true;
+    }
 
     version(TwitchSupport)
     {
@@ -536,6 +539,7 @@ void start(PrinterPlugin plugin)
     import kameloso.constants : BufferSize;
     import kameloso.terminal : isTTY;
     import core.thread : Fiber;
+    import core.time : Duration;
 
     plugin.linebuffer.reserve(plugin.linebufferInitialSize);
 
@@ -545,16 +549,17 @@ void start(PrinterPlugin plugin)
         plugin.bell = string.init;
     }
 
-    static long untilNextMidnight()
+    static Duration untilNextMidnight()
     {
         import kameloso.common : nextMidnight;
         import std.datetime.systime : Clock;
+        import core.time : seconds;
 
         immutable now = Clock.currTime;
         immutable nowInUnix = now.toUnixTime;
         immutable nextMidnightTimestamp = now.nextMidnight.toUnixTime;
 
-        return (nextMidnightTimestamp - nowInUnix);
+        return (nextMidnightTimestamp - nowInUnix).seconds;
     }
 
     void daybreakDg()
@@ -576,7 +581,7 @@ void start(PrinterPlugin plugin)
                 }
             }
 
-            delay(plugin, untilNextMidnight, Yes.yield, No.msecs);
+            delay(plugin, untilNextMidnight, Yes.yield);
         }
     }
 

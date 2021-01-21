@@ -20,6 +20,7 @@ import dialect.defs;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import core.time : Duration;
 
 public:
 
@@ -27,7 +28,7 @@ public:
 // delay
 /++
     Queues a [core.thread.fiber.Fiber] to be called at a point `duration`
-    seconds or milliseconds later, by appending it to the `plugin`'s
+    later, by appending it to the `plugin`'s
     [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
 
     Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp]
@@ -38,23 +39,18 @@ public:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         fiber = [core.thread.fiber.Fiber] to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
-        msecs = Whether `duration` is in milliseconds or seconds.
 
     See_Also:
         [removeDelayedFiber]
  +/
-void delay(IRCPlugin plugin, Fiber fiber, const long duration,
-    const Flag!"msecs" msecs = No.msecs)
+void delay(IRCPlugin plugin, Fiber fiber, const Duration duration)
 in ((fiber !is null), "Tried to delay a null Fiber")
 {
     import kameloso.thread : ScheduledFiber;
     import std.datetime.systime : Clock;
 
-    immutable time = Clock.currStdTime + (msecs ?
-        (duration * 10_000) :  // hnsecs -> msecs
-        (duration * 10_000_000));  // hnsecs -> seconds
+    immutable time = Clock.currStdTime + duration.total!"hnsecs";
     plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
-
     plugin.state.updateSchedule();
 }
 
@@ -62,32 +58,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 // delay
 /++
     Queues a [core.thread.fiber.Fiber] to be called at a point `duration`
-    seconds or milliseconds later, by appending it to the `plugin`'s
-    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
-
-    Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
-        duration = Amount of time to delay the implicit fiber in the current context.
-        yield = Whether or not to immediately yield the Fiber.
-        msecs = Whether `period` is in milliseconds or seconds.
-
-    See_Also:
-        [removeDelayedFiber]
- +/
-void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield,
-    const Flag!"msecs" msecs = No.msecs)
-in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
-{
-    delay(plugin, Fiber.getThis, duration, msecs);
-    if (yield) Fiber.yield();
-}
-
-
-// delay
-/++
-    Queues a [core.thread.fiber.Fiber] to be called at a point `duration`
-    seconds later, by appending it to the `plugin`'s
+    later, by appending it to the `plugin`'s
     [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
     Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
 
@@ -99,10 +70,10 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
     See_Also:
         [removeDelayedFiber]
  +/
-void delay(IRCPlugin plugin, const long duration, const Flag!"yield" yield)
+void delay(IRCPlugin plugin, const Duration duration, const Flag!"yield" yield)
 in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 {
-    delay(plugin, Fiber.getThis, duration, No.msecs);
+    delay(plugin, Fiber.getThis, duration);
     if (yield) Fiber.yield();
 }
 
@@ -110,7 +81,7 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 // delay
 /++
     Queues a `void delegate()` delegate to be called at a point `duration`
-    seconds or milliseconds later, by appending it to the `plugin`'s
+    later, by appending it to the `plugin`'s
     [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates].
 
     Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp]
@@ -121,23 +92,18 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         dg = Delegate to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
-        msecs = Whether `duration` is in milliseconds or seconds.
 
     See_Also:
         [removeDelayedDelegate]
  +/
-void delay(IRCPlugin plugin, void delegate() dg, const long duration,
-    const Flag!"msecs" msecs = No.msecs)
+void delay(IRCPlugin plugin, void delegate() dg, const Duration duration)
 in ((dg !is null), "Tried to delay a null delegate")
 {
     import kameloso.thread : ScheduledDelegate;
     import std.datetime.systime : Clock;
 
-    immutable time = Clock.currStdTime + (msecs ?
-        (duration * 10_000) :  // hnsecs -> msecs
-        (duration * 10_000_000));  // hnsecs -> seconds
+    immutable time = Clock.currStdTime + duration.total!"hnsecs";
     plugin.state.scheduledDelegates ~= ScheduledDelegate(dg, time);
-
     plugin.state.updateSchedule();
 }
 

@@ -110,9 +110,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     /// Write buffered lines.
     static void writeEventToFile(PrinterPlugin plugin, const ref IRCEvent event,
         const string key, const string givenPath = string.init,
-        Flag!"extendPath" extendPath = Yes.extendPath,
-        Flag!"raw" raw = No.raw,
-        Flag!"errors" errors = No.errors)
+        const Flag!"extendPath" extendPath = Yes.extendPath,
+        const Flag!"raw" raw = No.raw,
+        const Flag!"errors" errors = No.errors)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;

@@ -538,7 +538,12 @@ if (isOutputRange!(Sink, char[]))
     string content = event.content;  // mutable
     bool shouldBell;
 
-    immutable bright = plugin.state.settings.brightTerminal ? Yes.bright : No.bright;
+    immutable bright = plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal;
+
+    version(TwitchSupport)
+    {
+        immutable normalise = plugin.printerSettings.normaliseTruecolour ? Yes.normalise : No.normalise;
+    }
 
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
@@ -627,15 +632,7 @@ if (isOutputRange!(Sink, char[]))
 
                 int r, g, b;
                 user.colour.numFromHex(r, g, b);
-
-                if (plugin.printerSettings.normaliseTruecolour)
-                {
-                    sink.truecolour!(Yes.normalise)(r, g, b, bright);
-                }
-                else
-                {
-                    sink.truecolour!(No.normalise)(r, g, b, bright);
-                }
+                sink.truecolour(r, g, b, bright, normalise);
                 coloured = true;
             }
         }

@@ -258,7 +258,7 @@ It can technically be any string and not just one character. It may include spac
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
-> In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services.
+> In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
 
 ## Twitch
 
@@ -338,8 +338,8 @@ For more information and help, first see [the wiki](https://github.com/zorael/ka
 
 If you still can't find what you're looking for, or if you have suggestions on how to improve the bot, you can...
 
-* ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
 * ...pop by the [`#kameloso`](irc://irc.freenode.net/kameloso) channel on freenode
+* ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
 * ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new)
 
 # Known issues

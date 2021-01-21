@@ -432,6 +432,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     import std.concurrency : prioritySend, send, spawn;
     import std.datetime.systime : Clock, SysTime;
     import etc.c.curl : CurlError;
+    import core.time : msecs;
 
     SysTime pre;
 
@@ -454,7 +455,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
             plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
-    delay(plugin, plugin.approximateQueryTime, Yes.yield, Yes.msecs);
+    delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url,
         plugin.twitchBotSettings.singleWorkerThread);
 
@@ -471,8 +472,8 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     {
         immutable post = Clock.currTime;
         immutable diff = (post - pre);
-        immutable msecs = diff.total!"msecs";
-        plugin.averageApproximateQueryTime(msecs);
+        immutable msecs_ = diff.total!"msecs";
+        plugin.averageApproximateQueryTime(msecs_);
     }
     else
     {
@@ -843,7 +844,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
             plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
-    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
     ---
@@ -863,6 +864,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
+    import core.time : msecs;
 
     immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;
@@ -886,7 +888,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             accumulatingTime *= plugin.approximateQueryGrowthMultiplier;
             alias divisor = plugin.approximateQueryRetryTimeDivisor;
             immutable briefWait = cast(long)(accumulatingTime / divisor);
-            delay(plugin, briefWait, Yes.yield, Yes.msecs);
+            delay(plugin, briefWait.msecs, Yes.yield);
             continue;
         }
 

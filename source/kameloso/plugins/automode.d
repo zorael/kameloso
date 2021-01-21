@@ -53,7 +53,7 @@ void saveAutomodes(AutomodePlugin plugin)
     JSONStorage automodes;
     pruneChannels(plugin.automodes);
     automodes.storage = JSONValue(plugin.automodes);
-    automodes.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.automodeFile);
+    automodes.save(plugin.automodeFile);
 }
 
 
@@ -83,7 +83,7 @@ void initResources(AutomodePlugin plugin)
     // Let other Exceptions pass.
 
     // Adjust saved JSON layout to be more easily edited
-    json.save!(JSONStorage.KeyOrderStrategy.adjusted)(plugin.automodeFile);
+    json.save(plugin.automodeFile);
 }
 
 
@@ -388,7 +388,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         channelName = The channel the automode should play out in.
         mode = The mode string, when adding a new automode.
  +/
-void modifyAutomode(AutomodePlugin plugin, Flag!"add" add, const string nickname,
+void modifyAutomode(AutomodePlugin plugin, const Flag!"add" add, const string nickname,
     const string channelName, const string mode = string.init)
 in ((!add || mode.length), "Tried to add an empty automode")
 {

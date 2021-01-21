@@ -313,6 +313,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     import kameloso.plugins.common.delayawait : await, delay;
     import kameloso.constants : BufferSize;
+    import core.time : seconds;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
 
@@ -322,7 +323,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     await(plugin, fiber, IRCEvent.Type.CHAN);
-    delay(plugin, fiber, dur);
+    delay(plugin, fiber, dur.seconds);
     plugin.channelVoteInstances[event.channel] = id;
 
     const sortedChoices = voteChoices
@@ -357,27 +358,27 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (dur >= 1200)
     {
-        delay(plugin, (() => dgReminderImpl(600)), dur-600);
+        delay(plugin, (() => dgReminderImpl(600)), (dur-600).seconds);
     }
 
     if (dur >= 600)
     {
-        delay(plugin, (() => dgReminderImpl(300)), dur-300);
+        delay(plugin, (() => dgReminderImpl(300)), (dur-300).seconds);
     }
 
     if (dur >= 240)
     {
-        delay(plugin, (() => dgReminderImpl(180)), dur-180);
+        delay(plugin, (() => dgReminderImpl(180)), (dur-180).seconds);
     }
 
     if (dur >= 60)
     {
-        delay(plugin, (() => dgReminderImpl(30)), dur-30);
+        delay(plugin, (() => dgReminderImpl(30)), (dur-30).seconds);
     }
 
     if (dur >= 20)
     {
-        delay(plugin, (() => dgReminderImpl(10)), dur-10);
+        delay(plugin, (() => dgReminderImpl(10)), (dur-10).seconds);
     }
 
     chan(plugin.state, event.channel,

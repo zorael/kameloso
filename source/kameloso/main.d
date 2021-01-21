@@ -92,43 +92,43 @@ void signalHandler(int sig) nothrow @nogc @system
 
     // $ kill -l
     // https://man7.org/linux/man-pages/man7/signal.7.html
-    static immutable char*[32] signalNames =
+    static immutable string[32] signalNames =
     [
-         0 : "<err>\0", /// Should never happen.
-         1 : "HUP\0",   /// Hangup detected on controlling terminal or death of controlling process.
-         2 : "INT\0",   /// Interrupt from keyboard.
-         3 : "QUIT\0",  /// Quit from keyboard.
-         4 : "ILL\0",   /// Illegal instruction.
-         5 : "TRAP\0",  /// Trace/breakpoint trap.
-         6 : "ABRT\0",  /// Abort signal from `abort(3)`.
-         7 : "BUS\0",   /// Bus error: access to an undefined portion of a memory object.
-         8 : "FPE\0",   /// Floating-point exception.
-         9 : "KILL\0",  /// Kill signal.
-        10 : "USR1\0",  /// User-defined signal 1.
-        11 : "SEGV\0",  /// Invalid memory reference.
-        12 : "USR2\0",  /// User-defined signal 2.
-        13 : "PIPE\0",  /// Broken pipe: write to pipe with no readers.
-        14 : "ALRM\0",  /// Timer signal from `alarm(2)`.
-        15 : "TERM\0",  /// Termination signal.
-        16 : "STKFLT\0",/// Stack fault on coprocessor. (unused?)
-        17 : "CHLD\0",  /// Child stopped or terminated.
-        18 : "CONT\0",  /// Continue if stopped.
-        19 : "STOP\0",  /// Stop process.
-        20 : "TSTP\0",  /// Stop typed at terminal.
-        21 : "TTIN\0",  /// Terminal input for background process.
-        22 : "TTOU\0",  /// Terminal output for background process.
-        23 : "URG\0",   /// Urgent condition on socket. (4.2 BSD)
-        24 : "XCPU\0",  /// CPU time limit exceeded. (4.2 BSD)
-        25 : "XFSZ\0",  /// File size limit exceeded. (4.2 BSD)
-        26 : "VTALRM\0",/// Virtual alarm clock. (4.2 BSD)
-        27 : "PROF\0",  /// Profile alarm clock.
-        28 : "WINCH\0", /// Window resize signal. (4.3 BSD, Sun)
-        29 : "POLL\0",  /// Pollable event; a synonym for `SIGIO`: I/O now possible. (System V)
-        30 : "PWR\0",   /// Power failure. (System V)
-        31 : "SYS\0",   /// Bad system call. (SVr4)
+         0 : "<err>", /// Should never happen.
+         1 : "HUP",   /// Hangup detected on controlling terminal or death of controlling process.
+         2 : "INT",   /// Interrupt from keyboard.
+         3 : "QUIT",  /// Quit from keyboard.
+         4 : "ILL",   /// Illegal instruction.
+         5 : "TRAP",  /// Trace/breakpoint trap.
+         6 : "ABRT",  /// Abort signal from `abort(3)`.
+         7 : "BUS",   /// Bus error: access to an undefined portion of a memory object.
+         8 : "FPE",   /// Floating-point exception.
+         9 : "KILL",  /// Kill signal.
+        10 : "USR1",  /// User-defined signal 1.
+        11 : "SEGV",  /// Invalid memory reference.
+        12 : "USR2",  /// User-defined signal 2.
+        13 : "PIPE",  /// Broken pipe: write to pipe with no readers.
+        14 : "ALRM",  /// Timer signal from `alarm(2)`.
+        15 : "TERM",  /// Termination signal.
+        16 : "STKFLT",/// Stack fault on coprocessor. (unused?)
+        17 : "CHLD",  /// Child stopped or terminated.
+        18 : "CONT",  /// Continue if stopped.
+        19 : "STOP",  /// Stop process.
+        20 : "TSTP",  /// Stop typed at terminal.
+        21 : "TTIN",  /// Terminal input for background process.
+        22 : "TTOU",  /// Terminal output for background process.
+        23 : "URG",   /// Urgent condition on socket. (4.2 BSD)
+        24 : "XCPU",  /// CPU time limit exceeded. (4.2 BSD)
+        25 : "XFSZ",  /// File size limit exceeded. (4.2 BSD)
+        26 : "VTALRM",/// Virtual alarm clock. (4.2 BSD)
+        27 : "PROF",  /// Profile alarm clock.
+        28 : "WINCH", /// Window resize signal. (4.3 BSD, Sun)
+        29 : "POLL",  /// Pollable event; a synonym for `SIGIO`: I/O now possible. (System V)
+        30 : "PWR",   /// Power failure. (System V)
+        31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    printf("...caught signal SIG%s!\n", signalNames.ptr[sig]);
+    printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
     rawAbort = true;
 
     version(Posix)
@@ -1186,7 +1186,9 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
             try
             {
-                plugin.onEvent(event);
+                immutable triggeredSomething = plugin.onEvent(event);
+                if (!triggeredSomething) continue;
+
                 if (plugin.state.hasReplays) processReplays(instance, plugin);
                 if (plugin.state.repeats.length) processRepeats(instance, plugin);
                 processAwaitingDelegates(plugin, event);
@@ -2067,7 +2069,7 @@ Next tryConnect(ref Kameloso instance)
         [lu.common.Next.continue_] if resolution succeeded,
         [lu.common.Next.returnFailure] if it failed and the program should exit.
  +/
-Next tryResolve(ref Kameloso instance, Flag!"firstConnect" firstConnect)
+Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
@@ -2644,11 +2646,11 @@ void printSummary(const ref Kameloso instance)
         totalBytesReceived += entry.bytesReceived;
 
         writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
-            i+1, duration.timeSince!(Yes.abbreviate, 7, 0), entry.numEvents,
+            i+1, duration.timeSince!(7, 0)(Yes.abbreviate), entry.numEvents,
             entry.bytesReceived, startString, stopString);
     }
 
-    logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(No.abbreviate, 7, 1));
+    logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(7, 1));
     logger.infof("Total received: %s%,d%s bytes", Tint.log, totalBytesReceived, Tint.info);
 }
 
