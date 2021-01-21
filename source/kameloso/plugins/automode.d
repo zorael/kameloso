@@ -74,6 +74,7 @@ void initResources(AutomodePlugin plugin)
     }
     catch (JSONException e)
     {
+        import kameloso.plugins.common.base : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

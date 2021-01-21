@@ -226,6 +226,26 @@ final class IRCPluginSettingsException : Exception
 }
 
 
+// IRCPluginInitialisationException
+/++
+    Exception thrown when an IRC plugin failed to initialise itself or its resources.
+
+    A normal [object.Exception], which only differs in the sense that we can deduce
+    what went wrong by its type.
+ +/
+final class IRCPluginInitialisationException : Exception
+{
+    /// Wraps normal Exception constructors.
+    this(const string message,
+        const string file = __FILE__,
+        const int line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
 // catchUser
 /++
     Catch an [dialect.defs.IRCUser], saving it to the [kameloso.plugins.common.core.IRCPlugin]'s

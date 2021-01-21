@@ -1570,6 +1570,7 @@ in (filename.length, "Tried to save resources to an empty filename")
  +/
 void initResources(TwitchBotPlugin plugin)
 {
+    import kameloso.plugins.common.base : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists;
     import std.json : JSONException;
