@@ -216,7 +216,9 @@ unittest
 final class IRCPluginSettingsException : Exception
 {
     /// Wraps normal Exception constructors.
-    this(const string message, const string file = __FILE__, const int line = __LINE__,
+    this(const string message,
+        const string file = __FILE__,
+        const int line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         super(message, file, line, nextInChain);

@@ -726,8 +726,12 @@ final class TitleFetchException : Exception
         Create a new [TitleFetchException], attaching an URL, a HTTP status code and
         a cURL error code.
      +/
-    this(const string message, const string url, const uint httpCode, const uint errorCode,
-        const string file = __FILE__, const size_t line = __LINE__,
+    this(const string message,
+        const string url,
+        const uint httpCode,
+        const uint errorCode,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.httpCode = httpCode;
@@ -738,7 +742,9 @@ final class TitleFetchException : Exception
     /++
         Create a new [TitleFetchException], without attaching anything.
      +/
-    this(const string message, const string file = __FILE__, const size_t line = __LINE__,
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         super(message, file, line, nextInChain);
