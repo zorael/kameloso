@@ -1311,15 +1311,20 @@ final class SSLException : Exception
     int code;
 
     /// Constructor attaching an error code.
-    this(const string msg, const int code, const string file = __FILE__,
-        const size_t line = __LINE__, Throwable nextInChain = null) pure nothrow @nogc @safe
+    this(const string msg,
+        const int code,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.code = code;
         super(msg, file, line, nextInChain);
     }
 
     /// Passthrough constructor.
-    this(const string msg, const string file = __FILE__, const size_t line = __LINE__,
+    this(const string msg,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         super(msg, file, line, nextInChain);

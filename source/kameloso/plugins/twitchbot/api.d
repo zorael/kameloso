@@ -927,9 +927,13 @@ final class TwitchQueryException : Exception
         Create a new [TwitchQueryException], attaching a response body and a
         HTTP return code.
      +/
-    this(const string message, const string responseBody, const string error,
-        const uint code, const uint errorCode,
-        const string file = __FILE__, const size_t line = __LINE__,
+    this(const string message,
+        const string responseBody,
+        const string error,
+        const uint code,
+        const uint errorCode,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.responseBody = responseBody;
@@ -942,7 +946,9 @@ final class TwitchQueryException : Exception
     /++
         Create a new [TwitchQueryException], without attaching anything.
      +/
-    this(const string message, const string file = __FILE__, const size_t line = __LINE__,
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         super(message, file, line, nextInChain);
