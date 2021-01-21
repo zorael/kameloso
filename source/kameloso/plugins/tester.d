@@ -184,6 +184,8 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
     case "all":
         void allDg()
         {
+            import core.time : seconds;
+
             await(plugin, IRCEvent.Type.CHAN, No.yield);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
@@ -191,26 +193,26 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
             scope(exit) enableColours();
             expect("Setting changed.");
 
-            enum secondsBetween = 3;
+            static immutable timeInBetween = 3.seconds;
 
             runTestAndReport!testAdminFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testAutomodesFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testChatbotFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testNotesFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testOnelinersFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testQuotesFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testSedReplaceFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testSeenFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testCounterFiber();
-            delay(plugin, secondsBetween, Yes.yield, No.msecs);
+            delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testStopwatchFiber();
 
             logger.info("All tests finished!");
