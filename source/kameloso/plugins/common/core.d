@@ -1366,7 +1366,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 of unexpected configuration entries that did not belong.
      +/
     override public void deserialiseConfigFrom(const string configFile,
-        out string[][string] missingEntries, out string[][string] invalidEntries)
+        out string[][string] missingEntries,
+        out string[][string] invalidEntries)
     {
         import kameloso.config : readConfigInto;
         import lu.meld : MeldingStrategy, meldInto;
@@ -1949,7 +1950,8 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event
         A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
  +/
-FilterResult filterSender(const ref IRCEvent event, const PermissionsRequired level,
+FilterResult filterSender(const ref IRCEvent event,
+    const PermissionsRequired level,
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
@@ -2622,8 +2624,11 @@ enum PermissionsRequired
     See_Also:
         [Replay]
  +/
-Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
-    const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__) @safe
+Replay replay(Fn, SubPlugin)(SubPlugin subPlugin,
+    const ref IRCEvent event,
+    const PermissionsRequired perms,
+    Fn fn,
+    const string caller = __FUNCTION__) @safe
 {
     return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event, perms, fn, caller);
 }
@@ -2647,8 +2652,10 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin, const ref IRCEvent event,
     See_Also:
         [Replay]
  +/
-Replay replay(Fn)(const ref IRCEvent event, const PermissionsRequired perms,
-    Fn fn, const string caller = __FUNCTION__) @safe
+Replay replay(Fn)(const ref IRCEvent event,
+    const PermissionsRequired perms,
+    Fn fn,
+    const string caller = __FUNCTION__) @safe
 {
     return new ReplayImpl!Fn(event, perms, fn, caller);
 }
