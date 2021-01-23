@@ -1186,9 +1186,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
             try
             {
-                immutable triggeredSomething = plugin.onEvent(event);
-                if (!triggeredSomething) continue;
-
+                plugin.onEvent(event);
                 if (plugin.state.hasReplays) processReplays(instance, plugin);
                 if (plugin.state.repeats.length) processRepeats(instance, plugin);
                 processAwaitingDelegates(plugin, event);
