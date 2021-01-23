@@ -2004,7 +2004,7 @@ package:
                 [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
                 after verifying we should process the event.
      +/
-    override public bool onEvent(const ref IRCEvent origEvent)
+    override public void onEvent(const ref IRCEvent origEvent)
     {
         IRCEvent event = origEvent;
 
@@ -2041,7 +2041,7 @@ package:
                     {
                         if (room.enabled) return onEventImpl(event);
                     }
-                    return false;
+                    return;
                 }
             }
             /*else if (event.content.beginsWith(this.state.client.nickname))
@@ -2064,7 +2064,6 @@ package:
                     {
                         if (room.enabled) return onEventImpl(event);
                     }
-                    return false;
                 }
             }*/
             else
