@@ -447,7 +447,6 @@ void clearNotes(NotesPlugin plugin, const string id, const string channel)
 in (id.length, "Tried to clear notes for an empty id")
 //in (channel.length, "Tried to clear notes with an empty channel string")
 {
-    import std.format : format;
     import std.json : JSONType;
 
     if (id in plugin.notes[channel])
@@ -459,8 +458,8 @@ in (id.length, "Tried to clear notes for an empty id")
             return;
         }
 
-        logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-            Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");
+        /*logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
+            Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");*/
         plugin.notes[channel].object.remove(id);
         plugin.pruneNotes();
     }

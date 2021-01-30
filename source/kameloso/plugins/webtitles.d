@@ -554,10 +554,13 @@ void reportTitle(TitleLookupRequest request,
         line = request.results.title;
     }
 
-    if (line.length > 510)
+    // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
+    enum maxLen = (510 - 61);
+
+    if (line.length > maxLen)
     {
-        // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
-        line = line[0..504] ~ " [...]";
+        // " [...]".length == 6
+        line = line[0..(maxLen-6)] ~ " [...]";
     }
 
     chan(request.state, request.event.channel, line);
