@@ -77,6 +77,7 @@ versions \
     "TraceWhois" \
     "GCStatsOnExit" \
     "PrintAccountNamesToo" \
+    "OmniscientSeen" \
     "ProfileGC"
 */
 
@@ -144,6 +145,7 @@ configuration "unittest" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "OmniscientQueries" \
+        "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainRepeat" \
         "GCStatsOnExit" \
@@ -160,6 +162,7 @@ configuration "unittest-lowmem" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "OmniscientQueries" \
+        "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainRepeat" \
         "GCStatsOnExit" \
