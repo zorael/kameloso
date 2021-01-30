@@ -895,6 +895,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     {
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
+        import lu.string : beginsWith;
 
         enum pattern = "%s%s%s %s is %9$sNOT%3$s repeating %1$s%5$s%3$s-level event " ~
             "(which would have invoked %1$s%6$s%3$s) " ~
