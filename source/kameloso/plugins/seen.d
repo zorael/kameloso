@@ -351,6 +351,34 @@ private:
 }
 
 
+version(OmniscientSeen)
+{
+    // omniscientChannelPolicy
+    /++
+        The [kameloso.plugins.common.core.ChannelPolicy] annotation dictates
+        whether or not an annotated function should be called based on the *channel*
+        the event took place in, if applicable.
+
+        The three policies are [kameloso.plugins.common.core.ChannelPolicy.home],
+        in which only events in channels in the [kameloso.kameloso.IRCBot.homeChannels]
+        array will be allowed to trigger it; [kameloso.plugins.common.core.ChannelPolicy.guest]
+        in which only events outside of such home channels will be allowed to trigger;
+        or [kameloso.plugins.common.core.ChannelPolicy.any], in which case anywhere goes.
+        For events that don't correspond to a channel (such as
+        [dialect.defs.IRCEvent.Type.QUERY]) the setting is ignored.
+
+        This constant is a compile-time setting for all event handlers where
+        whether a channel is a home or not is of interest (or even applies).
+     +/
+    enum omniscientChannelPolicy = ChannelPolicy.any;
+}
+else
+{
+    /// Ditto
+    enum omniscientChannelPolicy = ChannelPolicy.home;
+}
+
+
 // onSomeAction
 /++
     Whenever a user does something, record this user as having been seen at the
@@ -367,14 +395,6 @@ private:
     doesn't ring well with catch-all functions like these. It's sensible to save
     [kameloso.plugins.common.core.Chainable] only for the modules and functions that
     actually need it.
-
-    The [kameloso.plugins.common.core.ChannelPolicy] annotation dictates whether or not this
-    function should be called based on the *channel* the event took place in, if
-    applicable. The two policies are [kameloso.plugins.common.core.ChannelPolicy.home],
-    in which only events in channels in the [kameloso.kameloso.IRCBot.homeChannels]
-    array will be allowed to trigger this; or [kameloso.plugins.common.core.ChannelPolicy.any],
-    in which case anywhere goes. For events that don't correspond to a channel (such as
-    [dialect.defs.IRCEvent.Type.QUERY]) the setting is ignored.
 
     The [kameloso.plugins.common.core.PermissionsRequired] annotation dictates who is
     authorised to trigger the function. It has six policies, in increasing
@@ -442,7 +462,7 @@ private:
 @(IRCEvent.Type.TWITCH_SUBUPGRADE)
 @(IRCEvent.Type.TWITCH_TIMEOUT)
 @(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@omniscientChannelPolicy
 void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 {
     /+
@@ -500,14 +520,6 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
     the new nickname, and remove the old one.
 
     Bookkeeping; this is to avoid getting ghost entries in the seen array.
-
-    Like [dialect.defs.IRCEvent.Type.QUIT],
-    [dialect.defs.IRCEvent.Type.NICK] events don't carry a channel, so we
-    can't annotate it [kameloso.plugins.common.core.ChannelPolicy.home]; all we know
-    is that the user is in one or more channels we're currently in. We can't
-    tell whether it's in a home or not. As such, only update if the user has
-    already been observed at least once, which should always be the case (provided
-    [dialect.defs.IRCEvent.Type.RPL_NAMREPLY] lists on join).
  +/
 @Chainable
 @(IRCEvent.Type.NICK)
@@ -535,7 +547,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
     shortly after having joined one, as a service to other plugins.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
-@(ChannelPolicy.home)
+@omniscientChannelPolicy
 void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     // Update the user's entry
@@ -554,7 +566,7 @@ void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
     strip that away.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
-@(ChannelPolicy.home)
+@omniscientChannelPolicy
 void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
@@ -587,7 +599,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(IRCEvent.Type.RPL_ENDOFWHO)
-@(ChannelPolicy.home)
+@omniscientChannelPolicy
 void onEndOfList(SeenPlugin plugin)
 {
     plugin.seenUsers = plugin.seenUsers.rehash();
@@ -646,7 +658,7 @@ void onEndOfList(SeenPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
+@omniscientChannelPolicy
 @BotCommand(PrefixPolicy.prefixed, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
@@ -1085,9 +1097,10 @@ mixin UserAwareness;
     about the channels the bot is in, their topics, modes and list of
     participants. Channel awareness requires user awareness, but not the other way around.
 
-    We will want it to limit the amount of tracked users to people in our home channels.
+    Depending on the value of [omniscientChannelPolicy] we may want it to limit
+    the amount of tracked users to people in our home channels.
  +/
-mixin ChannelAwareness;
+mixin ChannelAwareness!omniscientChannelPolicy;
 
 
 /++
