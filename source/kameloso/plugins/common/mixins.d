@@ -866,14 +866,20 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     {
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
+        import lu.string : beginsWith;
 
         enum pattern = "%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
             "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
 
+        immutable caller = repeat.replay.caller.beginsWith("kameloso.plugins.") ?
+            repeat.replay.caller[17..$] :
+            repeat.replay.caller;
+
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
             repeat.replay.perms,
-            repeat.replay.caller, repeat.replay.event.sender.nickname,
+            caller,
+            repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_);
     }
 
