@@ -900,10 +900,15 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
             "(which would have invoked %1$s%6$s%3$s) " ~
             "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
 
+        immutable caller = repeat.replay.caller.beginsWith("kameloso.plugins.") ?
+            repeat.replay.caller[17..$] :
+            repeat.replay.caller;
+
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
             repeat.replay.perms,
-            repeat.replay.caller, repeat.replay.event.sender.nickname,
+            caller,
+            repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_,
             Tint.warning);
     }
