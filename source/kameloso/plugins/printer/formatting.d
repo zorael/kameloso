@@ -407,7 +407,8 @@ if (isOutputRange!(Sink, char[]))
         .put(sink, " ! ", event.errors, " !");
     }
 
-    shouldBell = shouldBell || (event.errors.length && bellOnError);
+    shouldBell = shouldBell || ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
+        (event.errors.length && bellOnError);
 
     if (shouldBell) sink.put(plugin.bell);
 }
@@ -978,7 +979,8 @@ if (isOutputRange!(Sink, char[]))
 
     sink.colourWith(FG.default_);  // same for bright and dark
 
-    shouldBell = shouldBell || (event.errors.length && bellOnError);
+    shouldBell = shouldBell || ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
+        (event.errors.length && bellOnError);
 
     if (shouldBell) sink.put(plugin.bell);
 }

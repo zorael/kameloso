@@ -91,7 +91,7 @@ public:
     bool filterWhois = true;
 
     /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
-    bool bellOnMention = true;
+    bool bellOnMention = false;
 
     /// Whether or not to bell on parsing errors.
     bool bellOnError = false;
