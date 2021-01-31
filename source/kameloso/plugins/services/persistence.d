@@ -261,7 +261,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     case SELFJOIN:
                         // Work around SELFJOINs inheriting "*" accounts on older dialect
                         // There will be a fix in v1.1.2
-                        goto case JOIN;
+                        if (stored.account == "*") stored.account = string.init;
+                        break;
                 }
 
                 case ACCOUNT:
