@@ -844,39 +844,6 @@ void start(WebtitlesPlugin plugin)
 }
 
 
-import kameloso.thread : Sendable;
-
-// onBusMessage
-/++
-    Catches bus messages with the "`webtitles`" header requesting URLs to be
-    looked up and the titles of which reported.
-
-    Only relevant on Twitch servers with the Twitch bot plugin when it's filtering
-    links, so gate it behind version TwitchBotPlugin.
-
-    Params:
-        plugin = The current [WebtitlesPlugin].
-        header = String header describing the passed content payload.
-        content = Message content.
- +/
-version(TwitchBotPlugin)
-void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
-{
-    if (header != "webtitles") return;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-    import kameloso.plugins.common.base : EventURLs;
-    import kameloso.thread : BusMessage;
-
-    auto message = cast(BusMessage!EventURLs)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
-
-    auto eventAndURLs = message.payload;  // Mustn't be const
-    plugin.lookupURLs(eventAndURLs.event, eventAndURLs.urls);
-}
-
-
 mixin MinimalAuthentication;
 
 public:
