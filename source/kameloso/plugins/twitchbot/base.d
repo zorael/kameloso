@@ -2057,25 +2057,12 @@ package:
         The function to call is [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
 
         Params:
-            origEvent = Parsed [dialect.defs.IRCEvent] to pass onto
+            event = Parsed [dialect.defs.IRCEvent] to pass onto
                 [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
                 after verifying we should process the event.
      +/
-    override public void onEvent(const ref IRCEvent origEvent)
+    override public void onEvent(const ref IRCEvent event)
     {
-        IRCEvent event = origEvent;
-
-        if (this.twitchBotSettings.promoteBroadcasters)
-        {
-            if (event.sender.nickname.length && event.channel.length &&
-                (event.sender.class_ < IRCUser.Class.staff) &&
-                (event.sender.nickname == event.channel[1..$]))
-            {
-                // Sender is broadcaster but is not registered as staff
-                event.sender.class_ = IRCUser.Class.staff;
-            }
-        }
-
         if ((event.type == IRCEvent.Type.CHAN) || (event.type == IRCEvent.Type.SELFCHAN))
         {
             import lu.string : beginsWith;
