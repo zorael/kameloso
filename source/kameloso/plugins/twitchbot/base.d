@@ -1790,6 +1790,7 @@ void teardown(TwitchBotPlugin plugin)
 void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 {
     if (!event.sender.nickname.length || !event.channel.length) return;
+    else if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     if (plugin.twitchBotSettings.promoteBroadcasters)
     {
@@ -1806,7 +1807,6 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     if (plugin.twitchBotSettings.promoteModerators)
     {
         if ((event.sender.class_ < IRCUser.Class.operator) &&
-            (event.sender.class_ != IRCUser.Class.blacklist) &&
             event.sender.badges.contains("mod"))
         {
             // Sender is moderator but is not registered as at least operator
@@ -1817,11 +1817,20 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     if (plugin.twitchBotSettings.promoteVIPs)
     {
         if ((event.sender.class_ < IRCUser.Class.whitelist) &&
-            (event.sender.class_ != IRCUser.Class.blacklist) &&
             event.sender.badges.contains("vip/"))
         {
             // Sender is VIP but is not registered as at least whitelist
             event.sender.class_ = IRCUser.Class.whitelist;
+        }
+    }
+
+    if (plugin.twitchBotSettings.promoteSubscribers)
+    {
+        if ((event.sender.class_ < IRCUser.Class.registered) &&
+            event.sender.badges.contains("sub"))
+        {
+            // Sender is subscriber but is not registered as at least registered
+            event.sender.class_ = IRCUser.Class.registered;
         }
     }
 }
