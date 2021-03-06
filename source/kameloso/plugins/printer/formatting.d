@@ -117,6 +117,11 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(arg);
         }
+        else static if (is(T == enum))
+        {
+            import lu.conv : Enum;
+            sink.put(Enum!T.toString(arg));
+        }
         else static if (is(T == bool))
         {
             sink.put(arg ? "true" : "false");
