@@ -1371,7 +1371,7 @@ package:
         How often to check whether timers should fire, in seconds. A smaller
         number means better precision.
      +/
-    static immutable timerPeriodicity = 10.seconds;
+    static immutable timerPeriodicity = 5.seconds;
 
     /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
