@@ -77,12 +77,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /++
-        Whether or not subscribers are always implicitly (at least) class
-        [dialect.defs.IRCUser.Class.registered].
-     +/
-    bool promoteSubscribers = true;
-
     /// Whether or not to use features dependent on the Twitch API.
     bool enableAPIFeatures = true;
 
@@ -1828,14 +1822,12 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         }
     }
 
-    if (plugin.twitchBotSettings.promoteSubscribers)
+    // There's no "!regulars"; just map subscribers to registered 1:1
+    if ((event.sender.class_ < IRCUser.Class.registered) &&
+        event.sender.badges.contains("subscriber/"))
     {
-        if ((event.sender.class_ < IRCUser.Class.registered) &&
-            event.sender.badges.contains("subscriber/"))
-        {
-            // Sender is subscriber but is not registered as at least registered
-            event.sender.class_ = IRCUser.Class.registered;
-        }
+        // Sender is subscriber but is not registered as at least registered
+        event.sender.class_ = IRCUser.Class.registered;
     }
 }
 
