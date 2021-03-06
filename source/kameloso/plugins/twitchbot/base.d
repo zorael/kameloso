@@ -1776,6 +1776,51 @@ void teardown(TwitchBotPlugin plugin)
 }
 
 
+// postprocess
+/++
+    Hijacks a reference to a [dialect.defs.IRCEvent] and modifies the sender's
+    class based on the user's badges (and the current settings).
+ +/
+void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
+{
+    if (!event.sender.nickname.length || !event.channel.length) return;
+
+    if (plugin.twitchBotSettings.promoteBroadcasters)
+    {
+        if ((event.sender.class_ < IRCUser.Class.staff) &&
+            (event.sender.nickname == event.channel[1..$]))
+        {
+            // Sender is broadcaster but is not registered as staff
+            event.sender.class_ = IRCUser.Class.staff;
+        }
+    }
+
+    if (plugin.twitchBotSettings.promoteModerators)
+    {
+        import lu.string : contains;
+
+        if ((event.sender.class_ < IRCUser.Class.operator) &&
+            event.sender.badges.contains("mod"))
+        {
+            // Sender is moderator but is not registered as at least operator
+            event.sender.class_ = IRCUser.Class.operator;
+        }
+    }
+
+    if (plugin.twitchBotSettings.promoteSubscribers)
+    {
+        import lu.string : contains;
+
+        if ((event.sender.class_ < IRCUser.Class.whitelist) &&
+            event.sender.badges.contains("sub"))
+        {
+            // Sender is subscriber but is not registered as at least whitelist
+            event.sender.class_ = IRCUser.Class.whitelist;
+        }
+    }
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
