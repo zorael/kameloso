@@ -37,7 +37,7 @@ import std.typecons : Flag, No, Yes;
     bool wordAloneIncrements = false;
 
     /// User level required to bump a counter.
-    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.whitelist;
 }
 
 
