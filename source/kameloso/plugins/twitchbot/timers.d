@@ -129,22 +129,17 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 continue;
             }
 
-            if (room.enabled)
-            {
-                import std.array : replace;
-                import std.conv : text;
-                import std.random : uniform;
+            import std.array : replace;
+            import std.conv : text;
+            import std.random : uniform;
 
-                immutable line = timerDef.line
-                    .replace("$streamer", streamer)
-                    .replace("$channel", channelName[1..$])
-                    .replace("$bot", plugin.state.client.nickname)
-                    .replace("$random", uniform!"[]"(0, 100).text);
+            immutable line = timerDef.line
+                .replace("$streamer", streamer)
+                .replace("$channel", channelName[1..$])
+                .replace("$bot", plugin.state.client.nickname)
+                .replace("$random", uniform!"[]"(0, 100).text);
 
-                chan(plugin.state, channelName, line);
-            }
-
-            // If channel is disabled, silently fizzle but keep updating counts
+            chan(plugin.state, channelName, line);
 
             lastMessageCount = room.messageCount;
             lastTimestamp = now;

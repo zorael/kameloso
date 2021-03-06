@@ -210,32 +210,6 @@ void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onCommandEnableDisable
-/++
-    Toggles whether or not the bot should operate in this channel.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "enable")
-@BotCommand(PrefixPolicy.prefixed, "disable")
-@Description("Toggles the Twitch bot in the current channel.")
-void onCommandEnableDisable(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    if (event.aux == "enable")
-    {
-        plugin.rooms[event.channel].enabled = true;
-        chan(plugin.state, event.channel, "Bot enabled!");
-    }
-    else /*if (event.aux == "disable")*/
-    {
-        plugin.rooms[event.channel].enabled = false;
-        chan(plugin.state, event.channel, "Bot disabled.");
-    }
-}
-
-
 // onCommandUptime
 /++
     Reports how long the streamer has been streaming.
@@ -1135,7 +1109,6 @@ void onMyInfo(TwitchBotPlugin plugin)
                     {
                         foreach (immutable channelName, room; plugin.rooms)
                         {
-                            if (!room.enabled) continue;
                             room.follows = getFollows(plugin, room.id);
                         }
                     }
@@ -1319,9 +1292,6 @@ package:
             this.name = name;
         }
 
-        /// Toggle of whether or not the bot should operate in this channel.
-        bool enabled = true;
-
         /// Name of the channel.
         string name;
 
@@ -1466,83 +1436,6 @@ package:
         return ((state.server.daemon == IRCServer.Daemon.twitch) ||
             (state.server.daemon == IRCServer.Daemon.unset)) &&
             (twitchBotSettings.enabled || twitchBotSettings.keygen);
-    }
-
-
-    // onEvent
-    /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.onEvent] and inject a server check, so this
-        plugin does nothing on non-Twitch servers. Also filters [dialect.defs.IRCEvent.Type.CHAN]
-        events to only trigger on active channels (that have its [TwitchBotPlugin.Room.enabled]
-        set to true).
-
-        The function to call is [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
-
-        Params:
-            event = Parsed [dialect.defs.IRCEvent] to pass onto
-                [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
-                after verifying we should process the event.
-     +/
-    override public void onEvent(const ref IRCEvent event)
-    {
-        if ((event.type == IRCEvent.Type.CHAN) || (event.type == IRCEvent.Type.SELFCHAN))
-        {
-            import lu.string : beginsWith;
-
-            immutable prefix = this.state.settings.prefix;
-
-            if (event.content.beginsWith(prefix) &&
-                (event.content.length > prefix.length))
-            {
-                // Specialcase prefixed "enable"
-                if (event.content[prefix.length..$] == "enable")
-                {
-                    // Always pass through
-                    return onEventImpl(event);
-                }
-                else
-                {
-                    // Only pass through if the channel is enabled
-                    if (const room = event.channel in rooms)
-                    {
-                        if (room.enabled) return onEventImpl(event);
-                    }
-                    return;
-                }
-            }
-            /*else if (event.content.beginsWith(this.state.client.nickname))
-            {
-                import kameloso.common : stripSeparatedPrefix;
-
-                immutable tail = event.content
-                    .stripSeparatedPrefix(this.state.client.nickname, Yes.demandSeparatingChars);
-
-                // Specialcase "nickname: enable"
-                if (tail == "enable")
-                {
-                    // Always pass through
-                    return onEventImpl(event);
-                }
-                else
-                {
-                    // Only pass through if the channel is enabled
-                    if (const room = event.channel in rooms)
-                    {
-                        if (room.enabled) return onEventImpl(event);
-                    }
-                }
-            }*/
-            else
-            {
-                // Normal non-command channel message
-                return onEventImpl(event);
-            }
-        }
-        else
-        {
-            // Other event
-            return onEventImpl(event);
-        }
     }
 
     mixin IRCPluginImpl;
