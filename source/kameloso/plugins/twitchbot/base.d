@@ -48,7 +48,7 @@ public:
     bool bellOnMessage = false;
 
     /// Whether or not to bell on important events, like subscriptions.
-    bool bellOnImportant = true;
+    bool bellOnImportant = false;
 
     /// Whether or not to filter URLs in user messages.
     bool filterURLs = false;
