@@ -842,6 +842,7 @@ void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
     case unset:
     case blacklist:
     case anyone:
+    case registered:
         room = event.channel in plugin.rooms;
 
         if (!room)
@@ -1296,6 +1297,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     case unset:
     case blacklist:
     case anyone:
+    case registered:
         // Drop down, continue to phrase bans
         break;
 
