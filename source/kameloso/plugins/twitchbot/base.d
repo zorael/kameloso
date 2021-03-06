@@ -1809,7 +1809,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     if (plugin.twitchBotSettings.promoteModerators)
     {
         if ((event.sender.class_ < IRCUser.Class.operator) &&
-            event.sender.badges.contains("mod"))
+            event.sender.badges.contains("moderator/"))
         {
             // Sender is moderator but is not registered as at least operator
             event.sender.class_ = IRCUser.Class.operator;
@@ -1829,7 +1829,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     if (plugin.twitchBotSettings.promoteSubscribers)
     {
         if ((event.sender.class_ < IRCUser.Class.registered) &&
-            event.sender.badges.contains("sub"))
+            event.sender.badges.contains("subscriber/"))
         {
             // Sender is subscriber but is not registered as at least registered
             event.sender.class_ = IRCUser.Class.registered;
