@@ -155,7 +155,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
         plugin = The current [TwitchBotPlugin].
         channelName = The name of the channel we're supposedly joining.
  +/
-package void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.rooms) return;
