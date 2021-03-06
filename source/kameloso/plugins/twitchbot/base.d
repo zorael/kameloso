@@ -65,6 +65,18 @@ public:
     /// Whether or not broadcasters are always implicitly class [dialect.defs.IRCUser.Class.staff].
     bool promoteBroadcasters = true;
 
+    /++
+        Whether or not moderators are always implicitly (at least) class
+        [dialect.defs.IRCUser.Class.operator].
+     +/
+    bool promoteModerators = true;
+
+    /++
+        Whether or not subscribers are always implicitly (at least) class
+        [dialect.defs.IRCUser.Class.whitelist].
+     +/
+    bool promoteSubscribers = true;
+
     /// Whether or not to use features dependent on the Twitch API.
     bool enableAPIFeatures = true;
 
