@@ -72,10 +72,10 @@ public:
     bool promoteModerators = true;
 
     /++
-        Whether or not subscribers are always implicitly (at least) class
+        Whether or not VIPs are always implicitly (at least) class
         [dialect.defs.IRCUser.Class.whitelist].
      +/
-    bool promoteSubscribers = true;
+    bool promoteVIPs = true;
 
     /// Whether or not to use features dependent on the Twitch API.
     bool enableAPIFeatures = true;
@@ -1808,13 +1808,13 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         }
     }
 
-    if (plugin.twitchBotSettings.promoteSubscribers)
+    if (plugin.twitchBotSettings.promoteVIPs)
     {
         if ((event.sender.class_ < IRCUser.Class.whitelist) &&
             (event.sender.class_ != IRCUser.Class.blacklist) &&
-            event.sender.badges.contains("sub"))
+            event.sender.badges.contains("vip/"))
         {
-            // Sender is subscriber but is not registered as at least whitelist
+            // Sender is VIP but is not registered as at least whitelist
             event.sender.class_ = IRCUser.Class.whitelist;
         }
     }
