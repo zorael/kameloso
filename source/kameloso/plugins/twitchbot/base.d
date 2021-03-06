@@ -1795,11 +1795,12 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         }
     }
 
+    import lu.string : contains;
+
     if (plugin.twitchBotSettings.promoteModerators)
     {
-        import lu.string : contains;
-
         if ((event.sender.class_ < IRCUser.Class.operator) &&
+            (event.sender.class_ != IRCUser.Class.blacklist) &&
             event.sender.badges.contains("mod"))
         {
             // Sender is moderator but is not registered as at least operator
@@ -1809,9 +1810,8 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 
     if (plugin.twitchBotSettings.promoteSubscribers)
     {
-        import lu.string : contains;
-
         if ((event.sender.class_ < IRCUser.Class.whitelist) &&
+            (event.sender.class_ != IRCUser.Class.blacklist) &&
             event.sender.badges.contains("sub"))
         {
             // Sender is subscriber but is not registered as at least whitelist
