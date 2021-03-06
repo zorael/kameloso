@@ -1787,11 +1787,15 @@ void teardown(TwitchBotPlugin plugin)
 // postprocess
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent] and modifies the sender's
-    class based on the user's badges (and the current settings).
+    class based on its badges (and the current settings).
  +/
 void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 {
+    import lu.string : contains;
+    import std.algorithm.searching : canFind;
+
     if (!event.sender.nickname.length || !event.channel.length) return;
+    else if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
     else if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     if (plugin.twitchBotSettings.promoteBroadcasters)
@@ -1803,8 +1807,6 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
             event.sender.class_ = IRCUser.Class.staff;
         }
     }
-
-    import lu.string : contains;
 
     if (plugin.twitchBotSettings.promoteModerators)
     {
