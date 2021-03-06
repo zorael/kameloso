@@ -169,8 +169,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
             if (!set)
             {
-                // All else failed, consider it a random
-                user.class_ = IRCUser.Class.anyone;
+                // All else failed, consider it a registered random
+                user.class_ = IRCUser.Class.registered;
             }
 
             // Record this channel as being the one the current class_ applies to.
@@ -319,7 +319,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
         {
             // Not a channel or not a home. Additionally not an admin nor us
-            stored.class_ = IRCUser.Class.anyone;
+            stored.class_ = (stored.account.length && (stored.account != "*")) ?
+                IRCUser.Class.registered : IRCUser.Class.anyone;
             service.userClassCurrentChannelCache.remove(user.nickname);
         }
         else
