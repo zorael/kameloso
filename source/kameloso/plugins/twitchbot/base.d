@@ -1780,55 +1780,66 @@ void teardown(TwitchBotPlugin plugin)
 
 // postprocess
 /++
-    Hijacks a reference to a [dialect.defs.IRCEvent] and modifies the sender's
-    class based on its badges (and the current settings).
+    Hijacks a reference to a [dialect.defs.IRCEvent] and modifies the sender and
+    target class based on their badges (and the current settings).
  +/
 void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 {
-    import lu.string : contains;
     import std.algorithm.searching : canFind;
 
     if (!event.sender.nickname.length || !event.channel.length) return;
     else if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
-    else if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
-    if (plugin.twitchBotSettings.promoteBroadcasters)
+    static void postprocessImpl(const TwitchBotPlugin plugin,
+        const ref IRCEvent event, ref IRCUser user)
     {
-        if ((event.sender.class_ < IRCUser.Class.staff) &&
-            (event.sender.nickname == event.channel[1..$]))
+        import lu.string : contains;
+
+        if (user.class_ == IRCUser.Class.blacklist) return;
+
+        if (plugin.twitchBotSettings.promoteBroadcasters)
         {
-            // Sender is broadcaster but is not registered as staff
-            event.sender.class_ = IRCUser.Class.staff;
+            if ((user.class_ < IRCUser.Class.staff) &&
+                (user.nickname == event.channel[1..$]))
+            {
+                // User is broadcaster but is not registered as staff
+                user.class_ = IRCUser.Class.staff;
+                return;
+            }
+        }
+
+        if (plugin.twitchBotSettings.promoteModerators)
+        {
+            if ((user.class_ < IRCUser.Class.operator) &&
+                user.badges.contains("moderator/"))
+            {
+                // User is moderator but is not registered as at least operator
+                user.class_ = IRCUser.Class.operator;
+                return;
+            }
+        }
+
+        if (plugin.twitchBotSettings.promoteVIPs)
+        {
+            if ((user.class_ < IRCUser.Class.whitelist) &&
+                user.badges.contains("vip/"))
+            {
+                // User is VIP but is not registered as at least whitelist
+                user.class_ = IRCUser.Class.whitelist;
+                return;
+            }
+        }
+
+        // There is no "registered" list; just map subscribers to registered 1:1
+        if ((user.class_ < IRCUser.Class.registered) &&
+            user.badges.contains("subscriber/"))
+        {
+            user.class_ = IRCUser.Class.registered;
         }
     }
 
-    if (plugin.twitchBotSettings.promoteModerators)
-    {
-        if ((event.sender.class_ < IRCUser.Class.operator) &&
-            event.sender.badges.contains("moderator/"))
-        {
-            // Sender is moderator but is not registered as at least operator
-            event.sender.class_ = IRCUser.Class.operator;
-        }
-    }
-
-    if (plugin.twitchBotSettings.promoteVIPs)
-    {
-        if ((event.sender.class_ < IRCUser.Class.whitelist) &&
-            event.sender.badges.contains("vip/"))
-        {
-            // Sender is VIP but is not registered as at least whitelist
-            event.sender.class_ = IRCUser.Class.whitelist;
-        }
-    }
-
-    // There's no "!regulars"; just map subscribers to registered 1:1
-    if ((event.sender.class_ < IRCUser.Class.registered) &&
-        event.sender.badges.contains("subscriber/"))
-    {
-        // Sender is subscriber but is not registered as at least registered
-        event.sender.class_ = IRCUser.Class.registered;
-    }
+    if (event.sender.badges.length) postprocessImpl(plugin, event, event.sender);
+    if (event.target.badges.length) postprocessImpl(plugin, event, event.target);
 }
 
 
