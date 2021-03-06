@@ -912,21 +912,5 @@ private:
      +/
     enum lookupBufferSize = 8192;
 
-
-    // isEnabled
-    /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
-        a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when [WebtitlesSettings.enabled] is false.
-
-        Returns:
-            `true` if this plugin should react to events; `false` if not.
-     +/
-    version(TwitchSupport)
-    override public bool isEnabled() const @property pure nothrow @nogc
-    {
-        return (state.server.daemon != IRCServer.Daemon.twitch) && webtitlesSettings.enabled;
-    }
-
     mixin IRCPluginImpl;
 }
