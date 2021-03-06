@@ -77,6 +77,12 @@ public:
      +/
     bool promoteVIPs = true;
 
+    /++
+        Whether or not subscribers are always implicitly (at least) class
+        [dialect.defs.IRCUser.Class.registered].
+     +/
+    bool promoteSubscribers = true;
+
     /// Whether or not to use features dependent on the Twitch API.
     bool enableAPIFeatures = true;
 
